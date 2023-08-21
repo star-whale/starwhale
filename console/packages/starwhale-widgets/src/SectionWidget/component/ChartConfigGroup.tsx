@@ -53,13 +53,76 @@ export default function ChartConfigGroup({
                     actions?.[item?.type]()
                 }}
             />
-            <Button kind='tertiary' className={styles.icon} onClick={() => onReload()}>
+            <Button
+                kind='tertiary'
+                className={styles.icon}
+                onClick={() => onReload()}
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            'backgroundColor': '#F4F5F7',
+                            'color': 'rgba(2,16,43,0.60)',
+                            ':hover': {
+                                color: '#2B65D9;',
+                            },
+                            ':focus': {
+                                color: '#2B65D9;',
+                            },
+                            ':active': {
+                                color: '#2B65D9;',
+                            },
+                        },
+                    },
+                }}
+            >
                 <IconFont type='reset' size={12} />
             </Button>
-            <Button kind='tertiary' className={styles.icon} onClick={() => onDownload()}>
+            <Button
+                kind='tertiary'
+                className={styles.icon}
+                onClick={() => onDownload()}
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            'backgroundColor': '#F4F5F7',
+                            'color': 'rgba(2,16,43,0.60)',
+                            ':hover': {
+                                color: '#2B65D9;',
+                            },
+                            ':focus': {
+                                color: '#2B65D9;',
+                            },
+                            ':active': {
+                                color: '#2B65D9;',
+                            },
+                        },
+                    },
+                }}
+            >
                 <IconFont type='download' size={12} />
             </Button>
-            <Button kind='tertiary' className={styles.icon} onClick={() => onPreview()}>
+            <Button
+                kind='tertiary'
+                className={styles.icon}
+                onClick={() => onPreview()}
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            'backgroundColor': '#F4F5F7',
+                            'color': 'rgba(2,16,43,0.60)',
+                            ':hover': {
+                                color: '#2B65D9;',
+                            },
+                            ':focus': {
+                                color: '#2B65D9;',
+                            },
+                            ':active': {
+                                color: '#2B65D9;',
+                            },
+                        },
+                    },
+                }}
+            >
                 <IconFont type='fullscreen' size={12} />
             </Button>
         </div>
