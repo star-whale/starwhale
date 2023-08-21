@@ -88,6 +88,9 @@ public class JobVo implements Serializable {
     @JsonProperty("comment")
     private String comment;
 
+    @JsonProperty("stepSpec")
+    private String stepSpec;
+
     @JsonProperty("resourcePool")
     private String resourcePool;
 
