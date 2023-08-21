@@ -83,10 +83,11 @@ class StandaloneRuntimeTestCase(TestCase):
         os.environ.pop("SW_CONTAINER", None)
         os.environ.pop("SW_RUNTIME_FORCE_RUN_COMMAND", None)
 
+    @patch("starwhale.core.runtime.model.activate_python_env")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
     def test_quickstart_from_ishell_venv(
-        self, m_venv: MagicMock, m_call: MagicMock
+        self, m_venv: MagicMock, m_call: MagicMock, m_activate: MagicMock
     ) -> None:
         workdir = "/home/starwhale/myproject"
         venv_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "venv")
@@ -102,6 +103,7 @@ class StandaloneRuntimeTestCase(TestCase):
             interactive=True,
         )
 
+        assert m_activate.call_count == 1
         assert os.path.exists(os.path.join(workdir, runtime_path))
         assert m_venv.call_count == 1
         assert m_venv.call_args[0][0] == [
@@ -133,6 +135,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not os.path.exists(os.path.join(workdir, runtime_path))
 
         m_venv.reset_mock()
+        m_activate.reset_mock()
 
         StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
@@ -140,6 +143,7 @@ class StandaloneRuntimeTestCase(TestCase):
             mode=PythonRunEnv.VENV,
             disable_create_env=True,
         )
+        assert m_activate.call_count == 0
         assert m_venv.call_count == 0
 
         _rt_config = RuntimeConfig.create_by_yaml(Path(workdir) / runtime_path)
