@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 import typing as t
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -10,6 +11,7 @@ import numpy
 import torch
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedTokenizerBase
+from transformers.generation import GenerationConfig
 
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.debug import console
@@ -18,6 +20,9 @@ try:
     from ..benchmark import BenchmarkType
 except ImportError:
     from benchmark import BenchmarkType
+
+# disable utils warn log
+logging.getLogger("transformers.generation.utils").setLevel(logging.ERROR)
 
 
 class LLMBase(ABC):
@@ -62,7 +67,7 @@ class LLMBase(ABC):
         input_prompt: str,
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-    ) -> t.Any:
+    ) -> str:
         raise NotImplementedError
 
     def calculate_tokens_length(self, input_prompt: str) -> int:
@@ -75,6 +80,7 @@ class HuggingfaceLLMBase(LLMBase):
 
         self._tokenizer = None
         self._model = None
+        self._choices_info = None
 
     @abstractmethod
     def get_hf_repo_id(self) -> str:
@@ -88,6 +94,10 @@ class HuggingfaceLLMBase(LLMBase):
 
     def get_adapter_dir(self) -> Path:
         return self.get_pretrained_dir() / self.get_name() / "adapter"
+
+    @property
+    def enable_load_generation_config(self) -> bool:
+        return False
 
     def download(self) -> None:
         self.download_base()
@@ -134,10 +144,16 @@ class HuggingfaceLLMBase(LLMBase):
             self._model = AutoModelForCausalLM.from_pretrained(
                 path,
                 torch_dtype=torch.float16,
+                fp16=True,
                 device_map="auto",
                 trust_remote_code=True,
                 load_in_8bit=os.environ.get("LOAD_IN_8BIT", "0") == "1",
             )
+
+            if self.enable_load_generation_config:
+                self._model.generation_config = GenerationConfig.from_pretrained(
+                    path, trust_remote_code=True
+                )
 
             self._model.eval()
 
@@ -153,37 +169,67 @@ class HuggingfaceLLMBase(LLMBase):
     def calculate_tokens_length(self, input_prompt: str) -> int:
         return len(self._get_tokenizer().encode(input_prompt))
 
+    def get_generate_kwargs(self) -> t.Dict[str, t.Any]:
+        # TODO: support custom kwargs
+        return dict(
+            temperature=float(os.environ.get("TEMPERATURE", 0.7)),
+            top_p=float(os.environ.get("TOP_P", 0.9)),
+            top_k=int(os.environ.get("TOP_K", 30)),
+            repetition_penalty=float(os.environ.get("REPETITION_PENALTY", 1.3)),
+        )
+
     def do_predict(
         self,
         input_prompt: str,
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-    ) -> t.Any:
+    ) -> str:
         # TODO: add self prompt wrapper
 
         if benchmark_type == BenchmarkType.MultipleChoice:
-            out = self._do_predict_with_logits(
-                input_prompt,
-                choices=["A", "B", "C", "D"],
-            )
+            out = self._do_predict_with_logits(input_prompt)
         else:
             out = self._do_predict_with_generate(input_prompt, max_new_tokens)
         return out
 
+    def _get_choices_info(self) -> t.Dict:
+        if self._choices_info is not None:
+            return self._choices_info
+
+        choices = ["A", "B", "C", "D"]
+
+        tokenizer = self._get_tokenizer()
+        ids = []
+        for i in choices:
+            _id = tokenizer.convert_tokens_to_ids(i)
+            if _id is None:
+                # Example: Qwen use byte pair, so we should use byte choices
+                _id = tokenizer.convert_tokens_to_ids(i.encode())
+
+            if _id is None:
+                raise ValueError(f"not found token id for {i}")
+
+            ids.append(_id)
+
+        self._choices_info = {
+            "choices": choices,
+            "ids": ids,
+            "idx_map": {i: j for i, j in enumerate(choices)},
+        }
+        return self._choices_info
+
     @torch.no_grad()
-    def _do_predict_with_logits(self, input_prompt: str, choices: t.List) -> str:
+    def _do_predict_with_logits(self, input_prompt: str) -> str:
         model = self._get_model()
         tokenizer = self._get_tokenizer()
+        choices_info = self._get_choices_info()
         inputs = tokenizer(input_prompt, return_tensors="pt").to(model.device)
-
-        choices_token_ids = [tokenizer.convert_tokens_to_ids(i) for i in choices]
-        choices_idx_map = {i: j for i, j in enumerate(choices)}
 
         outputs = model(**inputs)
         last_logits = outputs.logits[:, -1, :]
-        choice_logits = last_logits[:, choices_token_ids].detach().cpu().numpy()
+        choice_logits = last_logits[:, choices_info["ids"]].detach().cpu().numpy()
         pred_prob_idx = numpy.argmax(choice_logits[0])
-        return choices_idx_map[pred_prob_idx]
+        return choices_info["idx_map"][pred_prob_idx]
 
     @torch.no_grad()
     def _do_predict_with_generate(
@@ -194,14 +240,10 @@ class HuggingfaceLLMBase(LLMBase):
         model = self._get_model()
         tokenizer = self._get_tokenizer()
         inputs = tokenizer(input_prompt, return_tensors="pt").to(model.device)
-        # TODO: support custom kwargs
         outputs = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
-            temperature=float(os.environ.get("TEMPERATURE", 0.7)),
-            top_p=float(os.environ.get("TOP_P", 0.9)),
-            top_k=float(os.environ.get("TOP_K", 0)),
-            repetition_penalty=float(os.environ.get("REPETITION_PENALTY", 1.1)),
+            **self.get_generate_kwargs(),
         )
         return tokenizer.decode(outputs[0], skip_special_tokens=True)
 

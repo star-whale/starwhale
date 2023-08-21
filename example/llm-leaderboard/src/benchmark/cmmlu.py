@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import re
 import typing as t
 
 from starwhale import dataset
+from starwhale.utils.debug import console
 from starwhale.base.uri.resource import Resource
 
 from .base import register, BenchmarkBase, BenchmarkType
@@ -100,12 +102,38 @@ class Cmmlu(BenchmarkBase):
             question += f"{features['answer']} \n\n"
         return question
 
+    def _ingest_choice(self, content: str) -> str:
+        content = content.strip().upper()
+
+        if not content:
+            raise ValueError("cannot ingest choice from empty content")
+
+        if content[0] in self._CHOICES:
+            return content[0]
+
+        patterns = [
+            (r"(答案)?(选项)?(是|为)?(.*?)([ABCD])", 5),
+            (r"选(项|择)?(.*?)([ABCD])", 3),
+        ]
+
+        for pattern, index in patterns:
+            match = re.search(pattern, content)
+            if match:
+                return match.group(index)
+
+        raise ValueError(f"cannot ingest ABCD choice from {content}")
+
     def calculate_score(self, predict_result: str, input_features: t.Dict) -> t.Dict:
-        # TODO: support ingest A,B,C,D from the complex string, for example Chatgpt Answer
-        predict_result = predict_result.strip().upper()
-        score = 1 if input_features["answer"].upper() == predict_result else 0
+        try:
+            choice = self._ingest_choice(predict_result)
+        except ValueError:
+            console.error(f"cannot ingest choice from {predict_result}")
+            choice = "N/A"
+
+        score = 1 if input_features["answer"].upper() == choice else 0
         return {
             "predict": predict_result,
+            "choice": choice,
             "score": score,
         }
 

@@ -9,3 +9,6 @@ sentencepiece
 starwhale>=0.5.10
 transformers_stream_generator
 numpy
+tiktoken
+scipy
+flash-attn

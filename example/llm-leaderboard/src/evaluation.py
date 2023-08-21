@@ -31,7 +31,7 @@ _g_llm = None
 _g_benchmarks: t.Dict[str, BenchmarkBase] = {}
 
 max_prompt_length = int(os.environ.get("MAX_PROMPT_LENGTH", 2048))
-max_new_tokens = int(os.environ.get("MAX_NEW_TOKENS", 32))
+max_new_tokens = int(os.environ.get("MAX_NEW_TOKENS", 256))
 
 
 # TODO: support multi-gpus evaluation
