@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
@@ -12,6 +12,7 @@ import { Resizable } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
+import { EvalSectionDeleteEvent } from '@starwhale/core/events/app'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
@@ -61,8 +62,9 @@ export const CONFIG: WidgetConfig = {
         title: '',
         isExpaned: true,
         isEvaluationList: false,
-        isEvaluationListShow: false,
+        isEvaluationListShow: true,
         evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
+        evalTableCurrentViewData: {},
         layoutConfig: {
             padding: 20,
             columnsPerPage: 3,
@@ -83,6 +85,7 @@ const selector = (s: any) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
+    panelGroup: s.panelGroup,
 })
 
 // @ts-ignore
@@ -103,6 +106,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         layout,
         isEvaluationList,
         evalSelectData,
+        evalTableCurrentViewData,
         isEvaluationListShow,
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
@@ -124,6 +128,11 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }
     const handleReloadPanel = (id: string) => {
         eventBus.publish(new PanelChartReloadEvent({ id }))
+    }
+    const handleSelectCurrentViewDataChange = (data: any) => {
+        props.onOptionChange?.({
+            evalTableCurrentViewData: data,
+        })
     }
     const handleSelectDataChange = (data: any) => {
         props.onOptionChange?.({
@@ -169,6 +178,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
 
     const handleSectionDelete = () => {
         props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
+        if (isEvaluationList) eventBus.publish(new EvalSectionDeleteEvent({ id: props.id }))
     }
 
     const handleChartAddSave = (formData: any) => {
@@ -308,10 +318,25 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
 
     const form = useRef(new WidgetFormModel())
     useEffect(() => {
-        form.current.initPanelSchema()
-    }, [t])
+        form.current.initPanelSchema({
+            panelGroup: api.panelGroup,
+        })
+    }, [t, api.panelGroup])
 
     // console.log(evalSelectData)
+    useLayoutEffect(() => {
+        if (!wrapperRef.current) return
+        const wrect = wrapperRef.current.getBoundingClientRect()
+        if (wrect.width < rect.width) {
+            setRect((prev) => {
+                return {
+                    ...prev,
+                    width: wrect.width - padding * 2,
+                }
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return (
         <PanelContextProvider value={{ evalSelectData }}>
@@ -361,6 +386,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                         <EvalSelectList
                             editing={isEvaluationListShow}
                             onEditingChange={handleEvaluationListShowChange}
+                            currentView={evalTableCurrentViewData}
+                            onCurrentViewChange={handleSelectCurrentViewDataChange}
                             value={evalSelectData}
                             onSelectDataChange={handleSelectDataChange}
                         />

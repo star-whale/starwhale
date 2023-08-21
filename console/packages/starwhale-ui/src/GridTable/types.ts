@@ -21,6 +21,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     selectable?: boolean
     previewable?: boolean
     queryinline?: boolean
+    columnleinline?: boolean
     fillable?: boolean
     removable?: boolean
     id?: string
@@ -52,6 +53,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     onInit?: (state: Partial<IGridState>) => void
     getColumns?: () => any[]
     paginationable?: boolean
+    wrapperRef?: React.MutableRefObject<HTMLElement | undefined>
 }
 
 export interface IToolBarProps {

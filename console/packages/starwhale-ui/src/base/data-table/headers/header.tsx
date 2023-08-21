@@ -39,6 +39,7 @@ export type HeaderContextT = {
     sortDirection: SortDirectionsT
     tableHeight: number
     widths: Map<any, any>
+    wrapperWidth?: number
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -82,7 +83,6 @@ type HeaderProps = {
     hoverIndex: number
     index: number
     isSortable: boolean
-    querySlot: React.ReactNode
     isSelectable: boolean
     isQueryInline?: boolean
     isSelectedAll?: boolean
@@ -109,6 +109,7 @@ type HeaderProps = {
     sortIndex: number
     sortDirection: SortDirectionsT
     tableHeight: number
+    wrapperWidth: number
 }
 
 function Header(props: HeaderProps) {
@@ -223,7 +224,6 @@ function Header(props: HeaderProps) {
                 sortDirection={props.sortIndex === props.index ? props.sortDirection : null}
                 title={props.columnTitle}
                 isQueryInline={props.isQueryInline && props.index === 0}
-                querySlot={props.querySlot}
             />
             {props.resizableColumnWidths && (
                 <div

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React from 'react'
 import { ColumnT, ConfigT } from '../../base/data-table/types'
-import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
+import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
 import { ITableState } from '../store'
 
 const selector = (state: ITableState) => ({
@@ -11,6 +11,7 @@ const selector = (state: ITableState) => ({
 
 function useGridCurrentView(columns: ColumnT[]) {
     const { currentView: view } = useStore(selector)
+    const store = useStoreApi()
 
     const columnIds = React.useMemo(() => {
         return columns.map((c) => c.key)
@@ -50,10 +51,20 @@ function useGridCurrentView(columns: ColumnT[]) {
         return view.id === 'all'
     }, [view])
 
+    const setCurrentView = React.useCallback(
+        (currentView: ConfigT) => {
+            store.setState({
+                currentView: _.merge($view, currentView),
+            })
+        },
+        [store, $view]
+    )
+
     return {
         ids: $ids,
         columns: $columns,
         currentView: $view,
+        setCurrentView,
         isAllRuns,
     }
 }

@@ -190,8 +190,6 @@ start_starwhale() {
   --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
   --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
   --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
-  --set mirror.pypi.retries=10 \
-  --set mirror.pypi.timeout=600 \
   --set controller.ingress.enabled=true \
   --set controller.ingress.host=$CONTROLLER_HOST \
   --set minio.ingress.enabled=true \

@@ -36,6 +36,11 @@ export class SectionAddEvent extends BusEventWithPayload<SectionAddPayload> {
     static type = 'add-section'
 }
 
+type EvalSectionDeletePayload = { id: string }
+export class EvalSectionDeleteEvent extends BusEventWithPayload<EvalSectionDeletePayload> {
+    static type = 'delete-eval-section'
+}
+
 export class PanelChartSaveEvent extends BusEventBase {
     static type = 'panel-chart-save'
 }

@@ -5,6 +5,8 @@ import shallow from 'zustand/shallow'
 import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
 import { ITableState } from '../store'
+import useGrid from '../../hooks/useGrid'
+import { ConfigT } from '@starwhale/ui/base/data-table/types'
 
 type StoreUpdaterProps = ITableProps
 
@@ -62,6 +64,7 @@ const StoreUpdater = ({
 }: StoreUpdaterProps) => {
     const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
+    const { setCurrentView } = useGrid()
 
     useEffect(() => {
         return () => {
@@ -72,7 +75,6 @@ const StoreUpdater = ({
     useDirectStoreUpdater('queryable', queryable, store.setState)
     useDirectStoreUpdater('fillable', fillable, store.setState)
     useDirectStoreUpdater('onViewsChange', onViewsChange, store.setState)
-    useDirectStoreUpdater('currentView', currentView, store.setState)
     useDirectStoreUpdater('onCurrentViewChange', onCurrentViewChange, store.setState)
     useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
     useDirectStoreUpdater('onSave', onSave, store.setState)
@@ -89,7 +91,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
     useDirectStoreUpdater('onRemove', onRemove, store.setState)
 
-    // useStoreUpdater<Node[]>(nodes, setNodes)
+    useStoreUpdater<ConfigT>(currentView, setCurrentView)
     // useStoreUpdater(columns, store.setColumns)
     return null
 }

@@ -9,16 +9,13 @@ export enum UI_DATA {
     DataTableColumns = 'DataTableColumns',
 }
 
-export const chartTypeField = (): RJSFSchema | undefined => {
-    const panels = WidgetFactory.getPanels()
-    if (!panels || panels.length === 0) return undefined
-
+export const chartTypeField = (panelGroup): RJSFSchema | undefined => {
     return {
         chartType: {
             type: 'string',
             title: i18n.t('panel.chart.type'),
             oneOf:
-                WidgetFactory.getPanels().map((v) => ({
+                WidgetFactory.getPanels(panelGroup).map((v) => ({
                     const: v.type,
                     title: v.name,
                 })) ?? [],

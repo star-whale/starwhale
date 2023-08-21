@@ -28,21 +28,14 @@ class WidgetFactory {
         return Array.from(this.widgetMap.keys())
     }
 
-    static setPanelGroup(panelGroup: WidgetGroupType) {
-        this.panelGroup = panelGroup
-    }
-
-    static getPanels() {
+    static getPanels(panelGroup = WidgetGroupType.PANEL) {
         return Array.from(this.widgetMap.values())
             .filter((plugin) => {
                 if (_.isString(plugin.defaults?.group))
-                    return (
-                        plugin.defaults?.group === this.panelGroup ||
-                        plugin.defaults?.group.includes(WidgetGroupType.ALL)
-                    )
+                    return plugin.defaults?.group === panelGroup || plugin.defaults?.group.includes(WidgetGroupType.ALL)
                 if (_.isArray(plugin.defaults?.group))
                     return (
-                        plugin.defaults?.group.includes(this.panelGroup) ||
+                        plugin.defaults?.group.includes(panelGroup) ||
                         plugin.defaults?.group.includes(WidgetGroupType.ALL)
                     )
                 return false
@@ -78,10 +71,8 @@ function withDefaultWidgets(EditorApp: React.FC) {
         WidgetFactory.register(w.getType(), w)
     })
 
-    WidgetFactory.setPanelGroup(WidgetGroupType.PANEL)
-
     return (props: any) => {
-        return <EditorApp {...props} />
+        return <EditorApp {...props} panelGroup={WidgetGroupType.PANEL} />
     }
 }
 
@@ -92,10 +83,8 @@ function withReportWidgets(EditorApp: React.FC) {
         WidgetFactory.register(w.getType(), w)
     })
 
-    WidgetFactory.setPanelGroup(WidgetGroupType.REPORT)
-
     return (props: any) => {
-        return <EditorApp {...props} />
+        return <EditorApp {...props} panelGroup={WidgetGroupType.REPORT} />
     }
 }
 

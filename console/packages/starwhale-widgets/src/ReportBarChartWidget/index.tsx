@@ -6,6 +6,7 @@ import { UI_DATA } from '@starwhale/core/form/schemas/fields'
 import { getBarChartConfig } from '@starwhale/ui/Plotly/utils'
 import { decordRecords } from '@starwhale/core/datastore'
 import { usePanelDatastore } from '@starwhale/core'
+import { getColor } from '@starwhale/core/utils'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
@@ -59,8 +60,9 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
     const { chartTitle: title, labels: xattr = [], metrics: yattr = [] } = formData ?? {}
     const { getTableRecordMap } = usePanelDatastore()
     const m = getTableRecordMap()
-    const barData: { x: any[]; y: any[]; type: string; name: string }[] = []
+    const barData: { x: any[]; y: any[]; type: string; name: string; marker: any }[] = []
 
+    let curr = 0
     Object.entries(m).forEach(([, records]) => {
         if (!records) return
         decordRecords(records as any).forEach((item: any) => {
@@ -83,7 +85,11 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
                 y,
                 type: 'bar',
                 name: names.join(' '),
+                marker: {
+                    color: getColor(curr),
+                },
             })
+            curr += 1
         })
     })
 
