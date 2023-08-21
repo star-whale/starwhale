@@ -1238,6 +1238,10 @@ def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True
     assert isinstance(ds, Dataset)
     assert isinstance(ctx, Context)
 
+@handler()
+def f_no_args():
+    print("code here is executed")
+
 
 """
         self._ensure_py_script(content)
@@ -1338,6 +1342,26 @@ def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True
                 "ext_cmd_args": "--ds",
             },
         ]
+        assert jobs_info["mock_user_module:f_no_args"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "f_no_args",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:f_no_args",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "f_no_args",
+                "expose": 0,
+                "virtual": False,
+                "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
+            },
+        ]
         steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
         context = Context(
             workdir=self.workdir,
@@ -1365,6 +1389,22 @@ def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True
             workdir=self.workdir,
             step=steps[0],
             handler_args=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+        )
+        result = task.execute()
+        assert result.status == "success"
+
+        steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
+        context = Context(
+            workdir=self.workdir,
+            project="test",
+            version="123",
+        )
+        task = TaskExecutor(
+            index=1,
+            context=context,
+            workdir=self.workdir,
+            step=steps[0],
+            handler_args=[],
         )
         result = task.execute()
         assert result.status == "success"
