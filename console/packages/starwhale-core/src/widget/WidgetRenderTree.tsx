@@ -21,7 +21,7 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
                 <WrapedWidgetNode
                     key={id ?? i}
                     id={id}
-                    path={[...path, 'children', i].join(',')}
+                    path={[...path, 'children', i]}
                     childWidgets={childChildren}
                     {...childRest}
                 />

@@ -14,7 +14,7 @@ function arrayOverride(objValue: any, srcValue: any) {
     }
 }
 
-const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
+export const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
 
 export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
     console.log('store init')
@@ -114,6 +114,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                         ) =>
                             update(
                                 produce((state: WidgetStoreState) => {
+                                    console.log(paths, sourcePaths, widgets, payload)
                                     const { type } = widgets
                                     const currentIndex = getCurrentIndex(paths)
                                     const curr = _.get(get(), sourcePaths) ?? []

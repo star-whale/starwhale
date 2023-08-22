@@ -55,6 +55,7 @@ const StoreUpdater = ({
     records,
     getId = globalGetId,
     queryable,
+    sortable,
     onIncludedRowsChange,
     onRowHighlightChange,
     onRowSelectedChange,
@@ -73,6 +74,7 @@ const StoreUpdater = ({
     }, [reset])
 
     useDirectStoreUpdater('queryable', queryable, store.setState)
+    useDirectStoreUpdater('sortable', sortable, store.setState)
     useDirectStoreUpdater('fillable', fillable, store.setState)
     useDirectStoreUpdater('onViewsChange', onViewsChange, store.setState)
     useDirectStoreUpdater('onCurrentViewChange', onCurrentViewChange, store.setState)

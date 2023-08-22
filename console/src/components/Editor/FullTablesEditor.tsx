@@ -1,16 +1,17 @@
 import React, { useMemo, useRef } from 'react'
 import EditorContextProvider, { StoreType } from '@starwhale/core/context/EditorContextProvider'
 import { createCustomStore } from '@starwhale/core/store'
-import WidgetRenderTree, { WidgetRenderTreePropsT } from '@starwhale/core/widget/WidgetRenderTree'
+import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useFetchDatastoreAllTables, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { withProject } from './Editor'
 import { withDefaultWidgets } from '@starwhale/core/widget'
+import StoreUpdater from '@starwhale/core/store/StoreUpdater'
 
 function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
-    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any }) {
+    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const { prefix } = props.dynamicVars
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
@@ -82,13 +83,14 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
                     dynamicVars: props.dynamicVars,
                 }}
             >
+                <StoreUpdater {...props} />
                 <EditorApp {...props} />
             </EditorContextProvider>
         )
     }
 }
 
-const FullTablesEditor = withProject(withDefaultWidgets(withEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree)))
+const FullTablesEditor = withProject(withDefaultWidgets(withEditorContext(WidgetRenderTree)))
 
 export { FullTablesEditor }
 export default FullTablesEditor

@@ -4,7 +4,7 @@ import { useDeepEffect } from '../../utils/useDeepEffects'
 import { tranformState } from '../utils'
 import React from 'react'
 import produce from 'immer'
-import { useStore, useStoreApi } from '@starwhale/core/store'
+import { SYNCKESY, useStore, useStoreApi } from '@starwhale/core/store'
 import shallow from 'zustand/shallow'
 
 const selector = (s: any) => ({
@@ -23,7 +23,7 @@ export default function useRestoreState(dynamicVars: Record<string, any>) {
             })
         })
 
-        return data
+        return _.pick(data, SYNCKESY)
     }, [store])
 
     // use  api store
