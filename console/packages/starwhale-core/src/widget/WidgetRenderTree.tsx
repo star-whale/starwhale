@@ -3,11 +3,10 @@ import { Subscription } from 'rxjs'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
-import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
+import { WidgetProps, WidgetTreeNode } from '../types'
 import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
-import { useIfChanged } from '../utils'
 import { useStoreApi } from '../store'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
@@ -45,10 +44,6 @@ export function WidgetRenderTree() {
     const api = store(selector, shallow)
     const { tree } = api
     const storeApi = useStoreApi()
-
-    useIfChanged({
-        tree,
-    })
 
     const { toSave } = useRestoreState(dynamicVars)
 

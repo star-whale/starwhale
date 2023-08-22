@@ -28,18 +28,11 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     const { widget } = useWidget(type)
     const [error] = useState<string | undefined>()
     const optionsWithDefaults = React.useMemo(
-        () =>
-            _.merge(
-                {
-                    ...optionConfig,
-                },
-                widget?.defaults?.optionConfig ?? empty,
-                optionConfig
-            ),
+        () => _.merge({}, widget?.defaults?.optionConfig ?? empty, optionConfig),
         [widget?.defaults, optionConfig]
     )
     const fieldsWithDefaults = React.useMemo(
-        () => _.merge({ ...fieldConfig }, widget?.defaults?.fieldConfig ?? empty, fieldConfig),
+        () => _.merge({}, widget?.defaults?.fieldConfig ?? empty, fieldConfig),
         [widget?.defaults, fieldConfig]
     )
 
