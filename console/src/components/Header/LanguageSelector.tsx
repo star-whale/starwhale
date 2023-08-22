@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Select from '@starwhale/ui/Select'
 import IconFont from '@starwhale/ui/IconFont'
 import { languages } from '@/consts'
 import i18n from '@/i18n'
 import { expandBorder } from '@starwhale/ui/utils'
 import useTranslation from '@/hooks/useTranslation'
+import useGlobalState from '@/hooks/global'
 
 export interface IRoleSelectorProps {
     value?: string
@@ -24,6 +25,12 @@ export default function LanguageSelector() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [i18n.language, languages])
     const [t] = useTranslation()
+
+    const [, setLocale] = useGlobalState('locale')
+
+    useEffect(() => {
+        setLocale(languageValue.id)
+    }, [languageValue.id, setLocale])
 
     return (
         <Select

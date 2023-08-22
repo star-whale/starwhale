@@ -40,6 +40,7 @@ const initialState = {
     role: Role.NONE as Role,
     vscodeTheme: 'light' as string,
     systemFeatures: { disabled: [] } as ISystemFeaturesSchema,
+    locale: 'zh' as string,
 }
 
 const { useGlobalState } = createGlobalState(initialState)

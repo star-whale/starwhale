@@ -13,6 +13,7 @@ import i18n from './i18n'
 import locales from '@starwhale/ui/i18n'
 import { NoneBackgroundPending } from '@/pages/Home/Pending'
 import { apiInit } from '@/api'
+import useGlobalState from './hooks/global'
 
 apiInit()
 
@@ -25,10 +26,12 @@ export default function App({ simple = false }): any {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()
 
+    const [locale] = useGlobalState('locale')
+
     const overrideLanguage = React.useMemo(() => {
         // @ts-ignore
-        return locales?.[i18n.language] ?? {}
-    }, [])
+        return locales?.[locale] || locales?.[i18n.language] || {}
+    }, [locale])
 
     return (
         // @ts-ignore
