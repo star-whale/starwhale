@@ -40,6 +40,7 @@ export default function WidgetFormModal({
     const config = store(React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId]))
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
+    const { preview } = payload
 
     // for data fetch from context not current widget
     const { getTableDistinctColumnTypes, getPrefixes } = usePanelDatastore()
@@ -122,7 +123,7 @@ export default function WidgetFormModal({
                 },
             }}
         >
-            <ModalHeader>{t('panel.chart.edit')}</ModalHeader>
+            <ModalHeader>{!preview && t('panel.chart.edit')}</ModalHeader>
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
@@ -145,6 +146,7 @@ export default function WidgetFormModal({
                             <WidgetRenderer
                                 type={type}
                                 data={$data}
+                                optionConfig={config.optionConfig}
                                 fieldConfig={{
                                     data: formData,
                                 }}
@@ -152,39 +154,43 @@ export default function WidgetFormModal({
                         </div>
                     )}
                 </div>
-                <WidgetEditForm
-                    ref={formRef}
-                    form={form}
-                    formData={$formData}
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                />
+                {!preview && (
+                    <WidgetEditForm
+                        ref={formRef}
+                        form={form}
+                        formData={$formData}
+                        onChange={handleFormChange}
+                        onSubmit={handleFormSubmit}
+                    />
+                )}
             </ModalBody>
-            <ModalFooter>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1 }} />
-                    <Button
-                        size='compact'
-                        kind='secondary'
-                        type='button'
-                        onClick={() => {
-                            setisPanelModalOpen(false)
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    &nbsp;&nbsp;
-                    <Button
-                        size='compact'
-                        onClick={() => {
-                            // @ts-ignore
-                            formRef.current?.submit()
-                        }}
-                    >
-                        Submit
-                    </Button>
-                </div>
-            </ModalFooter>
+            {!preview && (
+                <ModalFooter>
+                    <div style={{ display: 'flex' }}>
+                        <div style={{ flexGrow: 1 }} />
+                        <Button
+                            size='compact'
+                            kind='secondary'
+                            type='button'
+                            onClick={() => {
+                                setisPanelModalOpen(false)
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        &nbsp;&nbsp;
+                        <Button
+                            size='compact'
+                            onClick={() => {
+                                // @ts-ignore
+                                formRef.current?.submit()
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </div>
+                </ModalFooter>
+            )}
         </Modal>
     )
 }

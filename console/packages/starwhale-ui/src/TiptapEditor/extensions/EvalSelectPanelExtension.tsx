@@ -46,7 +46,7 @@ const Component = (props: NodeViewProps) => {
     // console.log('node.attrs.state', node.attrs.state?.widgets)
 
     return (
-        <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>
+        <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm')}>
             {node.type.spec.draggable ? (
                 <div draggable='true' data-drag-handle=''>
                     {memoe}

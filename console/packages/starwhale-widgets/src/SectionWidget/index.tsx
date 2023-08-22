@@ -20,7 +20,6 @@ import useTranslation from '@/hooks/useTranslation'
 import EvalSelectList from '@/components/Editor/EvalSelectList'
 import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 import { WidgetFormModal, WidgetFormModel } from '@starwhale/core/form'
-import WidgetPreviewModal from '@starwhale/core/form/WidgetPreviewModal'
 import shallow from 'zustand/shallow'
 
 const useStyles = createUseStyles({
@@ -92,10 +91,14 @@ const selector = (s: any) => ({
 function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     const { store } = useEditorContext()
     const api = store(selector, shallow)
-    const [editWidget, setEditWidget] = useState<{ type?: string; path?: any[]; id?: string; data?: any }>({})
+    const [editWidget, setEditWidget] = useState<{
+        type?: string
+        path?: any[]
+        id?: string
+        data?: any
+        preview?: boolean
+    }>({})
     const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
-    const [viewWidget, setViewWidget] = useState<{ id?: string }>({})
-    const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
 
     const [t] = useTranslation()
     const styles = useStyles()
@@ -206,12 +209,12 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }
 
     const handleChartPreview = (id: string) => {
-        setViewWidget({ id })
-        setIsPanelPreviewModalOpen(true)
+        setEditWidget({ id, preview: true })
+        setIsPanelModalOpen(true)
     }
 
     const handleChartEdit = (id: string) => {
-        setEditWidget({ id })
+        setEditWidget({ id, preview: false })
         setIsPanelModalOpen(true)
     }
 
@@ -420,12 +423,6 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                     }
                     setIsPanelModalOpen(false)
                 }}
-            />
-            <WidgetPreviewModal
-                id={viewWidget.id}
-                isShow={isPanelPreviewModalOpen}
-                setIsShow={setIsPanelPreviewModalOpen}
-                store={store}
             />
         </PanelContextProvider>
     )

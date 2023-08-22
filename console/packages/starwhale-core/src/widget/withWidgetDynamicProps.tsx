@@ -141,8 +141,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [recordInfo.isSuccess, query, records, columnTypes, getTableRecordMap, getTableColumnTypeMap])
 
-        // console.log('id', props)
-
         // useIfChanged({
         //     ...props,
         //     getPrefixes,
