@@ -41,7 +41,7 @@ export default function useRestoreState(dynamicVars: Record<string, any>) {
         // }
 
         try {
-            let data = typeof initialState === 'string' ? JSON.parse(initialState) : initialState
+            let data = _.pick(typeof initialState === 'string' ? JSON.parse(initialState) : initialState, SYNCKESY)
 
             // for origin data
             const isOrigin = !_.get(data, 'tree.0.id')

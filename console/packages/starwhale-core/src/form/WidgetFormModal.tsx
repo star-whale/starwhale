@@ -18,7 +18,7 @@ const PAGE_TABLE_SIZE = 200
 
 export default function WidgetFormModal({
     store,
-    handleFormSubmit,
+    onFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
@@ -29,7 +29,7 @@ export default function WidgetFormModal({
     form: WidgetFormModel
     isShow?: boolean
     setIsShow?: any
-    handleFormSubmit: (args: any) => void
+    onFormSubmit: (args: any) => void
     id?: string
     payload?: any
 }) {
@@ -39,6 +39,7 @@ export default function WidgetFormModal({
     const { prefix } = dynamicVars
     const config = store(React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId]))
     const [formData, setFormData] = React.useState<Record<string, any>>({})
+    const [optionConfig, setOptionConfig] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
     const { preview } = payload
 
@@ -61,6 +62,13 @@ export default function WidgetFormModal({
             }
         })
     }
+    const handleOptionChange = (data: any) => setOptionConfig({ ...data })
+    const handleFormSubmit = ({ formData: tmp }) =>
+        onFormSubmit?.({
+            formData: tmp,
+            optionConfig,
+        })
+
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
 
@@ -150,6 +158,7 @@ export default function WidgetFormModal({
                                 fieldConfig={{
                                     data: formData,
                                 }}
+                                onOptionChange={handleOptionChange}
                             />
                         </div>
                     )}

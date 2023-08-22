@@ -64,7 +64,8 @@ export function useDatastoreColumns(
             })
 
         return columnsWithAttrs
-    }, [columnTypes, options])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [columnTypes, options.fillWidth, options.showLink, options.fillWidth, options.parseLink, options.showPrivate])
 
     return columns
 }

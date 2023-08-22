@@ -183,7 +183,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         if (isEvaluationList) eventBus.publish(new EvalSectionDeleteEvent({ id: props.id }))
     }
 
-    const handleChartAddSave = (formData: any) => {
+    const handleChartAddSave = ({ formData, optionConfig: tmp }: any) => {
         const { path } = editWidget
         if (!path || path.length === 0) return
         api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
@@ -191,16 +191,18 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
             fieldConfig: {
                 data: formData,
             },
+            optionConfig: tmp,
         })
     }
 
-    const handleChartEditSave = (formData: any) => {
+    const handleChartEditSave = ({ formData, optionConfig: tmp }: any) => {
         const { id } = editWidget
         api.onWidgetChange(id, {
             type: formData.chartType,
             fieldConfig: {
                 data: formData,
             },
+            optionConfig: tmp,
         })
     }
 
@@ -415,11 +417,11 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 isShow={isPanelModalOpen}
                 setIsShow={setIsPanelModalOpen}
                 store={store}
-                handleFormSubmit={({ formData }: any) => {
+                onFormSubmit={(data: any) => {
                     if (editWidget?.type === 'add') {
-                        handleChartAddSave(formData)
+                        handleChartAddSave(data)
                     } else {
-                        handleChartEditSave(formData)
+                        handleChartEditSave(data)
                     }
                     setIsPanelModalOpen(false)
                 }}

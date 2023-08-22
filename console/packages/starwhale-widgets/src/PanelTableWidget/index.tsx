@@ -45,6 +45,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
             previewable
             fillable
             paginationable
+            currentView={optionConfig?.currentView}
             page={page}
             onPageChange={onPageChange}
             onCurrentViewChange={onCurrentViewChange}
