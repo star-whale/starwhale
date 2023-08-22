@@ -12,9 +12,6 @@ function arrayOverride(objValue: any, srcValue: any) {
     if (_.isArray(objValue)) {
         return srcValue
     }
-    if (_.isObject(objValue)) {
-        return srcValue
-    }
 }
 
 const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
@@ -51,9 +48,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                         onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
                             update(
                                 produce((state: WidgetStoreState) => {
-                                    const nodes = _.get(get(), paths)
-                                    // console.log(get(), nodes, paths)
-
+                                    const nodes = _.get(state, paths)
                                     const ordered = newOrderList
                                         .map((item) => nodes.find((v: any) => v?.id === item.id))
                                         .filter((v: any) => !!v)
@@ -64,7 +59,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                         onConfigChange: (paths: any, config: any) =>
                             update(
                                 produce((state: WidgetStoreState) => {
-                                    const rawConfig = _.merge({}, _.get(get(), paths))
+                                    const rawConfig = _.get(state, paths)
                                     _.set(state, paths, _.mergeWith(rawConfig, config, arrayOverride))
                                 }),
                                 'onConfigChange'

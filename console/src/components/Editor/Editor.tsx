@@ -30,7 +30,7 @@ export function withProject(EditorApp: React.FC) {
 
 const empty = {}
 
-export function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
+export function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<any>, rawState: WidgetStateT) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const state = useMemo(() => tranformState(rawState) as WidgetStateT, [])
         const store = useRef<StoreType>()
@@ -52,9 +52,8 @@ export function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorApp
                     dynamicVars: props.dynamicVars || empty,
                 }}
             >
-                {/* @ts-ignore */}
                 <StoreUpdater {...props} />
-                <EditorApp {...props} />
+                <EditorApp />
             </EditorContextProvider>
         )
     }

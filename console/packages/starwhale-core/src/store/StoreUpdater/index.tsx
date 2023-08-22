@@ -5,6 +5,9 @@ import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
 
 type StoreUpdaterProps = Pick<WidgetStoreState, 'panelGroup' | 'editable'> & {
     onStateChange?: (param: WidgetStateT) => void
+    initialState?: any
+    onSave?: (state: WidgetStateT) => void
+    onEvalSectionDelete?: () => void
 }
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
@@ -37,7 +40,14 @@ const selector = (s: WidgetStoreState) => ({
     // initState: s.initState,
 })
 
-const StoreUpdater = ({ onStateChange, editable, panelGroup }: StoreUpdaterProps) => {
+const StoreUpdater = ({
+    onStateChange,
+    editable,
+    panelGroup,
+    onEvalSectionDelete,
+    onSave,
+    initialState,
+}: StoreUpdaterProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -51,6 +61,11 @@ const StoreUpdater = ({ onStateChange, editable, panelGroup }: StoreUpdaterProps
     useDirectStoreUpdater('editable', editable, store.setState)
     useDirectStoreUpdater('panelGroup', panelGroup, store.setState)
     useDirectStoreUpdater('onStateChange', onStateChange, store.setState)
+    // positive: for eval
+    useDirectStoreUpdater('onEvalSectionDelete', onEvalSectionDelete, store.setState)
+    useDirectStoreUpdater('onSave', onSave, store.setState)
+    useDirectStoreUpdater('initialState', initialState, store.setState)
+
     return null
 }
 

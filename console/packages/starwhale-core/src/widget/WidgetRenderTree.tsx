@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo } from 'react'
-import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
@@ -8,47 +7,50 @@ import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
 import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
+import { useIfChanged } from '../utils'
+import { useStoreApi } from '../store'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
-    return (
-        <WidgetRenderer {...props}>
-            {childWidgets &&
-                childWidgets.length > 0 &&
-                childWidgets.map((node, i) => {
-                    const { children: childChildren, id, ...childRest } = node ?? {}
-                    return (
-                        <WrapedWidgetNode
-                            key={id ?? i}
-                            id={id}
-                            path={[...path, 'children', i]}
-                            childWidgets={childChildren}
-                            {...childRest}
-                        />
-                    )
-                })}
-        </WidgetRenderer>
-    )
+
+    const $child = React.useMemo(() => {
+        if (!childWidgets) return null
+
+        return childWidgets.map((node, i) => {
+            const { children: childChildren, id, ...childRest } = node || {}
+            return (
+                <WrapedWidgetNode
+                    key={id ?? i}
+                    id={id}
+                    path={[...path, 'children', i].join(',')}
+                    childWidgets={childChildren}
+                    {...childRest}
+                />
+            )
+        })
+    }, [childWidgets, path])
+
+    return <WidgetRenderer {...props}>{$child}</WidgetRenderer>
 })
 
 const selector = (s: any) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
+    tree: s.tree,
 })
 
-export type WidgetRenderTreePropsT = {
-    initialState?: any
-    onSave?: (state: WidgetStateT) => void
-    onEvalSectionDelete?: () => void
-}
-
-export function WidgetRenderTree({ initialState, onSave, onEvalSectionDelete }: WidgetRenderTreePropsT) {
+export function WidgetRenderTree() {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
-    const tree = store((state) => state.tree, deepEqual)
+    const { tree } = api
+    const storeApi = useStoreApi()
 
-    const { toSave } = useRestoreState(store, initialState, dynamicVars)
+    useIfChanged({
+        tree,
+    })
+
+    const { toSave } = useRestoreState(dynamicVars)
 
     // @ts-ignore
     const handleAddSection = ({ path, type }) => {
@@ -70,14 +72,14 @@ export function WidgetRenderTree({ initialState, onSave, onEvalSectionDelete }: 
         subscription.add(
             eventBus.getStream(PanelChartSaveEvent).subscribe({
                 next: async () => {
-                    onSave?.(toSave())
+                    storeApi.getState()?.onSave?.(toSave())
                 },
             })
         )
         subscription.add(
             eventBus.getStream(EvalSectionDeleteEvent).subscribe({
                 next: async () => {
-                    onEvalSectionDelete?.()
+                    storeApi.getState()?.onEvalSectionDelete?.()
                 },
             })
         )

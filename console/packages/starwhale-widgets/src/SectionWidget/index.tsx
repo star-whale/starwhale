@@ -108,14 +108,13 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         evalSelectData,
         evalTableCurrentViewData,
         isEvaluationListShow,
+        title = t('panel.name'),
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
+    const [isModelOpen, setIsModelOpen] = useState(false)
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
-    const title = optionConfig?.title || t('panel.name')
-
-    const [isModelOpen, setIsModelOpen] = useState(false)
 
     const handleSectionForm = ({ name }: { name: string }) => {
         props.onOptionChange?.({
@@ -337,6 +336,12 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    // useIfChanged({
+    //     optionConfig,
+    //     evalSelectData,
+    //     isEvaluationListShow,
+    // })
 
     return (
         <PanelContextProvider value={{ evalSelectData }}>
