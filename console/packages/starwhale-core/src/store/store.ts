@@ -27,7 +27,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                     const update = (updateAttrs: Partial<WidgetStoreState> | any, name?: string) => {
                         const { onStateChange } = get()
                         set(updateAttrs, undefined, name)
-                        onStateChange?.(get())
+                        onStateChange?.(_.pick(get(), SYNCKESY))
                     }
 
                     return {

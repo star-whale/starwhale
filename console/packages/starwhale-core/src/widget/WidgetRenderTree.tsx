@@ -67,7 +67,7 @@ export function WidgetRenderTree() {
         subscription.add(
             eventBus.getStream(PanelChartSaveEvent).subscribe({
                 next: async () => {
-                    storeApi.getState()?.onSave?.(toSave())
+                    storeApi.getState()?.onSave?.(toSave() as any)
                 },
             })
         )

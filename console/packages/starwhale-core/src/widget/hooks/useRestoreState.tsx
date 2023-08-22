@@ -16,14 +16,14 @@ export default function useRestoreState(dynamicVars: Record<string, any>) {
     const store = useStoreApi()
 
     const toSave = React.useCallback(() => {
-        let data = store.getState()
+        let data = store.getState().getRawConfigs()
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
             })
         })
 
-        return _.pick(data, SYNCKESY)
+        return data
     }, [store])
 
     // use  api store
@@ -45,7 +45,7 @@ export default function useRestoreState(dynamicVars: Record<string, any>) {
 
             // for origin data
             const isOrigin = !_.get(data, 'tree.0.id')
-            if (isOrigin) data = tranformState(data)
+            if (isOrigin) data = tranformState(data as any)
 
             Object.keys(data?.widgets).forEach((id) => {
                 const origin = replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars)

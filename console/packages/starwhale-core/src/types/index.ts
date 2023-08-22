@@ -21,6 +21,7 @@ export type WidgetStoreState = {
     panelGroup?: WidgetGroupType[] | WidgetGroupType
     isEditable: () => boolean
     setRawConfigs: (configs: any) => void
+    getRawConfigs: () => any
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any

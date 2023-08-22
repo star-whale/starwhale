@@ -43,8 +43,6 @@ const Component = (props: NodeViewProps) => {
         )
     }, [props.deleteNode, node.attrs.state, props.editor.isEditable, onStateChange])
 
-    // console.log('node.attrs.state', node.attrs.state?.widgets)
-
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm')}>
             {node.type.spec.draggable ? (
