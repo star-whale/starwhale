@@ -1,6 +1,5 @@
 import create, { StateCreator, StoreApi, UseBoundStore } from 'zustand'
 import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
-import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
@@ -99,7 +98,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
         onViewAdd: (view) => update({ views: [...get().views, view] }, 'onViewAdd'),
         onViewUpdate: (view) => {
             const $view = { ...view, updated: false, updateColumn: false, version: 0 }
-            const $views = { ...get().views }
+            const $views = [...get().views]
             const $oldViewIndex = $views?.findIndex((v) => v.id === $view.id)
 
             if ($oldViewIndex > -1) {
@@ -216,14 +215,12 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
 const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, get, store) => ({
     viewEditing: {},
     viewModelShow: false,
-    onShowViewModel: (viewModelShow, viewEditing) =>
+    onShowViewModel: (viewModelShow, viewEditing: any) =>
         set(
-            produce((state) => {
-                // eslint-disable-next-line no-param-reassign
-                state.viewEditing = viewEditing
-                // eslint-disable-next-line no-param-reassign
-                state.viewModelShow = viewModelShow
-            }),
+            {
+                viewEditing,
+                viewModelShow,
+            },
             undefined,
             'onShowViewModel'
         ),
