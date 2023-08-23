@@ -26,6 +26,7 @@ import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +69,8 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
             @Override
             public void onNext(Frame object) {
                 try {
-                    logLines.put(object.toString());
+                    // ignore stream type
+                    logLines.put(new String(object.getPayload(), StandardCharsets.UTF_8).trim());
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
