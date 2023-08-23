@@ -127,7 +127,7 @@ def ensure_link(src: t.Union[str, Path], dest: t.Union[str, Path]) -> None:
 
 
 def blake2b_file(fpath: t.Union[str, Path]) -> str:
-    _chunk_size = 8192
+    _chunk_size = 100 * 1024 * 1024
     fpath = Path(fpath)
     # blake2b is more faster and better than md5,sha1,sha2
     _hash = hashlib.blake2b(digest_size=DIGEST_SIZE)

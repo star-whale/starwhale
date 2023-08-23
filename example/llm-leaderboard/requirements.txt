@@ -1,0 +1,14 @@
+transformers[torch,accelerate]>=4.31.0
+bitsandbytes>=0.41.1
+peft>=0.4.0
+huggingface-hub
+gradio >= 3.37.0
+scikit-learn
+einops
+sentencepiece
+starwhale>=0.5.10
+transformers_stream_generator
+numpy
+tiktoken
+scipy
+flash-attn
