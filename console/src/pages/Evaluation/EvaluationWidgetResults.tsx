@@ -22,17 +22,8 @@ import TextLink from '@/components/Link/TextLink'
 
 const PAGE_TABLE_SIZE = 100
 
-export interface IDatasetLinkProps {
-    versionId: number,
-    datasetId: number,
-    projectId: number,
-    name: string,
-    version: string,
-}
-
 function Summary({ fetch }: any) {
     const [t] = useTranslation()
-    console.log(fetch.data)
     const record: Record<string, any> = fetch?.data?.records?.[0]
     const [expanded, setExpanded] = React.useState<boolean>(false)
 
