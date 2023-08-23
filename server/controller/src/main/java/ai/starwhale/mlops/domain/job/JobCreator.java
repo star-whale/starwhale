@@ -114,32 +114,6 @@ public class JobCreator {
         var modelVersion = StringUtils.hasText(modelVersionUrl) ? modelService.findModelVersion(modelVersionUrl) : null;
         var model = null == modelVersion ? null : modelService.findModel(modelVersion.getModelId());
 
-        RuntimeVersion runtimeVersion;
-        if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
-        } else if (null != modelVersion) {
-            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
-            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
-            if (!StringUtils.hasText(runtimeVersionUrl)) {
-                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
-            }
-            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
-                    runtime.getId(),
-                    runtimeVersionUrl
-            ));
-        } else {
-            runtimeVersion = null;
-        }
-        var runtime = null == runtimeVersion ? null :
-                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
-
-        var datasetVersionIdMaps = StringUtils.hasText(datasetVersionUrls)
-                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetDao::getDatasetVersion)
-                .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName))
-                : new HashMap<Long, String>();
-
         if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
                 || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
             throw new StarwhaleApiException(
@@ -180,6 +154,34 @@ public class JobCreator {
             }
         }
 
+        RuntimeVersion runtimeVersion;
+        if (StringUtils.hasText(runtimeVersionUrl)) {
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
+        } else if (null != modelVersion) {
+            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
+            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
+            if (!StringUtils.hasText(runtimeVersionUrl)) {
+                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
+            }
+            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
+                    runtime.getId(),
+                    runtimeVersionUrl
+            ));
+        } else {
+            runtimeVersion = null;
+        }
+        var runtime = null == runtimeVersion ? null :
+                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
+
+        List<DatasetVersion> datasets = StringUtils.hasText(datasetVersionUrls)
+                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
+                .map(datasetDao::getDatasetVersion)
+                .collect(Collectors.toList())
+                : List.of();
+        var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
+                : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
                 .ownerId(creator.getId())
@@ -194,6 +196,7 @@ public class JobCreator {
                 .modelVersionValue(null == modelVersion ? null : modelVersion.getName())
                 .modelName(null == model ? null : model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
+                .datasets(datasets)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
