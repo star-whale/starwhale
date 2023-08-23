@@ -17,18 +17,11 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
     const [t] = useTranslation()
     const [, theme] = themedUseStyletron()
 
-    const [views, setViews] = React.useState(
-        props.views.map((v) => ({
-            ...v,
-        }))
-    )
+    const [views, setViews] = React.useState<ConfigT[]>([])
 
     useDeepEffect(() => {
-        setViews(
-            props.views.map((v) => ({
-                ...v,
-            }))
-        )
+        if (!props.views) return
+        setViews(props.views)
     }, [props.views])
 
     const handleDefault = useEventCallback((view, rowIndex, value) => {
@@ -137,8 +130,28 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
             >
                 {(row: any, rowIndex) => <Toggle value={row.isShow} onChange={(v) => handleShow(row, rowIndex, v)} />}
             </TableBuilderColumn>
-            <TableBuilderColumn header='Views'>{(row: any) => row.name}</TableBuilderColumn>
-            <TableBuilderColumn header=''>
+            <TableBuilderColumn
+                header='Views'
+                overrides={{
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                        },
+                    },
+                }}
+            >
+                {(row: any) => row.name}
+            </TableBuilderColumn>
+            <TableBuilderColumn
+                header=''
+                overrides={{
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                        },
+                    },
+                }}
+            >
                 {(row: any, rowIndex) => (
                     <>
                         <StyledLink onClick={() => props.onEdit?.(row, rowIndex as number)}>{t('Edit')}</StyledLink>

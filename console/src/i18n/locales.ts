@@ -32,6 +32,10 @@ const basic = {
         en: 'Add',
         zh: '添加',
     },
+    'save': {
+        en: 'Save',
+        zh: '保存',
+    },
     'en': {
         en: 'English',
         zh: '英文',
