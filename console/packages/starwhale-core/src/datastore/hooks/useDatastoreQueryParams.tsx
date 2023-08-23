@@ -2,7 +2,6 @@ import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
 import { DatastorePageT } from '../types'
-import _ from 'lodash'
 
 export type TableQueryParamsT = {
     tableName?: string
