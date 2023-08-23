@@ -59,6 +59,14 @@ function FormFieldModel({
                 })
             }
         }
+
+        if ('modelVersionHandler' in _changes && fullStepSource) {
+            form.setFieldsValue({
+                stepSpecOverWrites: yaml.dump(
+                    fullStepSource.filter((v: StepSpec) => v?.job_name === _changes.modelVersionHandler)
+                ),
+            })
+        }
     })
 
     const modelVersionHandler = form.getFieldValue('modelVersionHandler')
@@ -71,13 +79,6 @@ function FormFieldModel({
         if (!modelVersionHandler) {
             form.setFieldsValue({
                 modelVersionHandler: fullStepSource.find((v) => v)?.job_name ?? '',
-            })
-        }
-        if (modelVersionHandler) {
-            form.setFieldsValue({
-                stepSpecOverWrites: yaml.dump(
-                    fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
-                ),
             })
         }
         forceUpdate()

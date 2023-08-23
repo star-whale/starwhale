@@ -63,6 +63,7 @@ export interface IJobSchema extends IResourceSchema {
     timeToLiveInSec?: number
     isBuiltinRuntime?: boolean
     jobName?: string
+    stepSpec: string
 }
 
 export type IJobDetailSchema = IJobSchema

@@ -176,6 +176,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             datasetVersionUrls: job.datasetList?.map((v) => v.version?.id) as string[],
             modelVersionUrl: job.model?.version?.id,
             modelVersionHandler: job.jobName,
+            stepSpecOverWrites: job.stepSpec,
         })
         forceUpdate()
     }, [form, job])
