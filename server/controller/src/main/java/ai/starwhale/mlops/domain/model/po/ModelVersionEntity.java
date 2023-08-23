@@ -62,4 +62,8 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
         return versionName;
     }
 
+    public Boolean isNull() {
+        return null == id;
+    }
+
 }

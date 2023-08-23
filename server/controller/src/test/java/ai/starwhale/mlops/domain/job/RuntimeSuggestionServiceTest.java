@@ -88,7 +88,7 @@ public class RuntimeSuggestionServiceTest {
                         .build()
         );
         // eval job exists and no online eval job
-        when(jobMapper.listJobs(projectId, modelVersionId)).thenReturn(jobs);
+        when(jobMapper.listUserJobs(projectId, modelVersionId)).thenReturn(jobs);
         suggestions = runtimeSuggestionService.getSuggestions(projectId, modelVersionId);
         // get the max id of the used runtime version
         Assertions.assertEquals(List.of(runtimeVo2), suggestions);

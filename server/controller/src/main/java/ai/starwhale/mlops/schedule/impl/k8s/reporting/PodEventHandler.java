@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
-import ai.starwhale.mlops.domain.dataset.DatasetService;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
-import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -43,22 +40,16 @@ import org.springframework.util.StringUtils;
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     final TaskLogSaver taskLogSaver;
-    final BuildLogCollector buildLogCollector;
     final TaskReportReceiver taskReportReceiver;
     final HotJobHolder jobHolder;
-    final DatasetService datasetService;
 
     public PodEventHandler(
             TaskLogSaver taskLogSaver,
-            BuildLogCollector buildLogCollector,
             TaskReportReceiver taskReportReceiver,
-            HotJobHolder jobHolder,
-            DatasetService datasetService) {
+            HotJobHolder jobHolder) {
         this.taskLogSaver = taskLogSaver;
-        this.buildLogCollector = buildLogCollector;
         this.taskReportReceiver = taskReportReceiver;
         this.jobHolder = jobHolder;
-        this.datasetService = datasetService;
     }
 
     @Override
@@ -81,10 +72,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             switch (type) {
                 case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
                     updateEvalTask(newObj);
-                    collectLog(newObj, type);
-                    break;
-                case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
-                    updateDatasetBuild(newObj);
                     collectLog(newObj, type);
                     break;
                 default:
@@ -111,23 +98,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             id = null;
         }
         return id;
-    }
-
-    private void updateDatasetBuild(V1Pod pod) {
-        if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
-            return;
-        }
-        var phase = pod.getStatus().getPhase();
-        if (StringUtils.hasText(phase)) {
-            switch (phase) {
-                case "Running":
-                    var id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
-                    datasetService.updateBuildStatus(id, BuildStatus.BUILDING);
-                    break;
-                default:
-
-            }
-        }
     }
 
     private void updateEvalTask(V1Pod pod) {
@@ -223,11 +193,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                     Task task = optionalTasks.stream().findAny().get();
                     taskLogSaver.saveLog(task);
                 }
-                break;
-            case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
-                String jobName = pod.getMetadata().getLabels().get("job-name");
-                id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
-                buildLogCollector.collect(jobName, id);
                 break;
             default:
         }

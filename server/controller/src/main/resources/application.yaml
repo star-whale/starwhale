@@ -48,6 +48,8 @@ sw:
   task:
     dev-port: ${SW_TASK_DEV_PORT:8000}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
+  job:
+    virtual-specs: ${SW_JOB_VIRTUAL_SPECS_PATH:}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
     min-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MIN_TTL_SECS:1800} # 30min

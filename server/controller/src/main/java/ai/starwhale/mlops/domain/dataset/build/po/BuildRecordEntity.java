@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.dataset.build.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.BuildType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,13 +32,14 @@ import lombok.experimental.SuperBuilder;
 public class BuildRecordEntity extends BaseEntity {
     private Long id;
     private Long datasetId;
+    private Long taskId;
     private Long projectId;
     private Boolean shared;
     private Boolean cleaned;
     private String datasetName;
-    private BuildStatus status;
     private BuildType type;
     private String storagePath;
     private String logPath;
     private String format;
+
 }

@@ -1,0 +1,5 @@
+- job_name: dataset_build
+  name: dataset_build
+  show_name: dataset_build
+  concurrency: 1
+  require_dataset: false

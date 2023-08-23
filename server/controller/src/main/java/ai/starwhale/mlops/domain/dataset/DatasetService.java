@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_CPU;
-import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_MEMORY;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
@@ -28,12 +26,11 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
-import ai.starwhale.mlops.common.DockerImage;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -45,7 +42,6 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
@@ -58,12 +54,21 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
+import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.spec.Env;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.step.VirtualJobLoader;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -75,21 +80,12 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,10 +99,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Slf4j
@@ -119,7 +114,6 @@ public class DatasetService {
     private final DatasetVoConverter datasetVoConverter;
     private final DatasetVersionVoConverter versionConvertor;
     private final StorageService storageService;
-    private final StorageAccessService storageAccessService;
     private final ProjectService projectService;
     private final DatasetDao datasetDao;
     private final IdConverter idConvertor;
@@ -128,14 +122,18 @@ public class DatasetService {
     private final UriAccessor uriAccessor;
     private final DataLoader dataLoader;
     private final TrashService trashService;
-    private final K8sClient k8sClient;
-    private final K8sJobTemplate k8sJobTemplate;
-    private final DatasetBuildTokenValidator datasetBuildTokenValidator;
     private final SystemSettingService systemSettingService;
-    private final String instanceUri;
     private final BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
+
+    private final JobCreator jobCreator;
+
+    private final VirtualJobLoader virtualJobLoader;
+
+    private final JobSpecParser jobSpecParser;
+
+    private final TaskMapper taskMapper;
 
     public DatasetService(
             ProjectService projectService,
@@ -146,7 +144,6 @@ public class DatasetService {
             DatasetVoConverter datasetVoConverter,
             DatasetVersionVoConverter versionConvertor,
             StorageService storageService,
-            StorageAccessService storageAccessService,
             DatasetDao datasetDao,
             IdConverter idConvertor,
             VersionAliasConverter versionAliasConvertor,
@@ -154,12 +151,9 @@ public class DatasetService {
             UriAccessor uriAccessor,
             DataLoader dataLoader,
             TrashService trashService,
-            K8sClient k8sClient,
-            K8sJobTemplate k8sJobTemplate,
-            DatasetBuildTokenValidator datasetBuildTokenValidator,
             SystemSettingService systemSettingService,
-            @Value("${sw.instance-uri}") String instanceUri
-    ) {
+            JobCreator jobCreator, VirtualJobLoader virtualJobLoader, JobSpecParser jobSpecParser,
+            TaskMapper taskMapper) {
         this.projectService = projectService;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -168,7 +162,6 @@ public class DatasetService {
         this.datasetVoConverter = datasetVoConverter;
         this.versionConvertor = versionConvertor;
         this.storageService = storageService;
-        this.storageAccessService = storageAccessService;
         this.datasetDao = datasetDao;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
@@ -176,11 +169,11 @@ public class DatasetService {
         this.uriAccessor = uriAccessor;
         this.dataLoader = dataLoader;
         this.trashService = trashService;
-        this.k8sClient = k8sClient;
-        this.k8sJobTemplate = k8sJobTemplate;
-        this.datasetBuildTokenValidator = datasetBuildTokenValidator;
         this.systemSettingService = systemSettingService;
-        this.instanceUri = instanceUri;
+        this.jobCreator = jobCreator;
+        this.virtualJobLoader = virtualJobLoader;
+        this.jobSpecParser = jobSpecParser;
+        this.taskMapper = taskMapper;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -239,13 +232,13 @@ public class DatasetService {
             map.get(entity.getDatasetId())
                     .getVersions()
                     .add(DatasetVersionViewVo.builder()
-                                 .id(idConvertor.convert(entity.getId()))
-                                 .versionName(entity.getVersionName())
-                                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                                 .createdTime(entity.getCreatedTime().getTime())
-                                 .shared(toInt(entity.getShared()))
-                                 .build());
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                            .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(toInt(entity.getShared()))
+                            .build());
         }
         return map.values();
     }
@@ -408,7 +401,7 @@ public class DatasetService {
 
     public DatasetVersion query(String projectUrl, String datasetUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                                                                  .create(projectUrl, datasetUrl, versionUrl));
+                .create(projectUrl, datasetUrl, versionUrl));
         return datasetDao.getDatasetVersion(versionId);
     }
 
@@ -442,34 +435,8 @@ public class DatasetService {
         }));
     }
 
-    @Transactional
     public void build(CreateBuildRecordRequest request) {
         var project = projectService.findProject(request.getProjectUrl());
-        if (request.getDatasetId() == null || request.getDatasetId() == 0) {
-            // create new dataset
-            // check the dataset name whether already in the same project
-            var ds = datasetMapper.findByName(request.getDatasetName(), project.getId(), true);
-            if (null != ds) {
-                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
-                        "The dataset:{0} in project:{1} is already exists, please use another name.",
-                        request.getDatasetName(), project.getName()
-                ));
-            }
-        } else {
-            var ds = datasetMapper.find(request.getDatasetId());
-            if (null == ds) {
-                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
-                        "The dataset:{0} in project:{1} doesn't exists, please check it.",
-                        request.getDatasetName(), project.getName()
-                ));
-            }
-            if (!ds.getDatasetName().equals(request.getDatasetName())) {
-                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
-                        "The dataset:{0} is different with the exist dataset:{1}.",
-                        request.getDatasetName(), ds.getDatasetName()
-                ));
-            }
-        }
         var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
                 project.getId(), request.getDatasetName());
         if (buildings.size() > 0) {
@@ -478,147 +445,80 @@ public class DatasetService {
                     request.getDatasetName(), project.getName()
             ));
         }
+
+        if (null == systemSettingService.getRunTimeProperties()
+                || null == systemSettingService.getRunTimeProperties().getDatasetBuild()
+                || !StringUtils.hasText(
+                systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool())) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset build setting is required in system setting");
+        }
+        List<StepSpec> stepSpecs;
+        try {
+            String dsBuildSteps = virtualJobLoader.loadJobStepSpecs("dataset_build");
+            stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(dsBuildSteps);
+        } catch (JsonProcessingException e) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec not valid in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        } catch (IOException e) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec not found in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        }
+        if (CollectionUtils.isEmpty(stepSpecs)) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec is empty in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        }
+        stepSpecs.forEach(stepSpec -> {
+            List<Env> env = stepSpec.getEnv();
+            if (null == env) {
+                env = new ArrayList<>();
+            }
+            env.add(new Env("DATASET_BUILD_NAME", request.getDatasetName()));
+            env.add(new Env("DATASET_BUILD_TYPE", String.valueOf(request.getType())));
+            env.add(new Env("DATASET_BUILD_DIR_PREFIX", request.getStoragePath()));
+            stepSpec.setEnv(env);
+        });
+        String stepSpecOverWrites;
+        try {
+            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
+        } catch (JsonProcessingException e) {
+            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
+                    e);
+        }
+        Job job = jobCreator.createJob(project, null, null, null, null,
+                systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool(), null,
+                stepSpecOverWrites,
+                JobType.BUILT_IN, null, false, null, null, userService.currentUserDetail());
         var entity = BuildRecordEntity.builder()
                 .datasetId(request.getDatasetId())
                 .projectId(project.getId())
+                .taskId(job.getSteps().get(0).getTasks().get(0).getId())
                 .shared(request.getShared())
                 .datasetName(request.getDatasetName())
                 .storagePath(request.getStoragePath())
                 .type(request.getType())
-                .status(BuildStatus.CREATED)
                 .createdTime(new Date())
                 .build();
-        var res = buildRecordMapper.insert(entity) > 0;
-        if (res) {
-            // start build
-            var user = userService.currentUserDetail();
-            DockerImage image = null;
-            String swVersion = "";
-            String pyVersion = "";
-            String rp = null;
-            var runConfig = systemSettingService.getRunTimeProperties();
-            if (runConfig != null && runConfig.getDatasetBuild() != null) {
-                rp = runConfig.getDatasetBuild().getResourcePool();
-                if (StringUtils.hasText(runConfig.getDatasetBuild().getImage())) {
-                    image = new DockerImage(runConfig.getDatasetBuild().getImage());
-                }
-                if (StringUtils.hasText(runConfig.getDatasetBuild().getClientVersion())) {
-                    swVersion = runConfig.getDatasetBuild().getClientVersion();
-                }
-                if (StringUtils.hasText(runConfig.getDatasetBuild().getPythonVersion())) {
-                    pyVersion = runConfig.getDatasetBuild().getPythonVersion();
-                }
-            }
-            if (null == image || !StringUtils.hasText(swVersion) || !StringUtils.hasText(pyVersion)) {
-                throw new SwValidationException(ValidSubject.DATASET, "Please config dataset build setting!");
-            }
-            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
-
-            var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD);
-
-            // record id to annotations
-            var info = Map.of("id", String.valueOf(entity.getId()));
-            k8sJobTemplate.updateAnnotations(job.getMetadata(), info);
-            k8sJobTemplate.updateAnnotations(job.getSpec().getTemplate().getMetadata(), info);
-
-            Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-            var envVars = List.of(
-                    new V1EnvVar().name("SW_VERSION").value(swVersion),
-                    new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(pyVersion),
-                    new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runConfig.getPypi().getIndexUrl()),
-                    new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runConfig.getPypi().getExtraIndexUrl()),
-                    new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runConfig.getPypi().getTrustedHost()),
-                    new V1EnvVar().name("SW_PYPI_TIMEOUT").value(String.valueOf(runConfig.getPypi().getTimeout())),
-                    new V1EnvVar().name("SW_PYPI_RETRIES").value(String.valueOf(runConfig.getPypi().getRetries())),
-                    new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
-                    new V1EnvVar().name("SW_PROJECT").value(project.getName()),
-                    new V1EnvVar().name("SW_TOKEN").value(datasetBuildTokenValidator.getToken(user, entity.getId())),
-                    new V1EnvVar().name("DATASET_BUILD_NAME").value(entity.getDatasetName()),
-                    new V1EnvVar().name("DATASET_BUILD_TYPE").value(String.valueOf(entity.getType())),
-                    new V1EnvVar().name("DATASET_BUILD_DIR_PREFIX").value(entity.getStoragePath())
-            );
-            DockerImage finalImage = image;
-            k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
-                ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-                containerOverwriteSpec.setEnvs(envVars);
-                containerOverwriteSpec.setImage(
-                        finalImage.resolve(systemSettingService.getDockerSetting().getRegistryForPull()));
-                containerOverwriteSpec.setCmds(List.of("dataset_build"));
-                List<RuntimeResource> resources = Objects.isNull(pool) ? List.of()
-                        : pool.validateAndPatchResource(List.of(
-                        RuntimeResource.builder().type(RESOURCE_CPU).build(),
-                        RuntimeResource.builder().type(RESOURCE_MEMORY).build()
-                ));
-                log.info("using resource pool {}, patched resources {}", pool, resources);
-                containerOverwriteSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(resources));
-
-                ret.put(templateContainer.getName(), containerOverwriteSpec);
-            });
-            Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
-            var toleration = pool != null ? pool.getTolerations() : null;
-            k8sJobTemplate.renderJob(job, String.format("%s-%d", entity.getDatasetName(), entity.getId()),
-                                     "Never", 0, ret, nodeSelector, toleration, null
-            );
-
-            log.debug("deploying dataset build job to k8s :{}", JSONUtil.toJsonStr(job));
-            try {
-                k8sClient.deployJob(job);
-            } catch (ApiException e) {
-                throw new SwProcessException(ErrorType.K8S, "deploy dataset build job failed", e);
-            }
-        } else {
-            throw new SwProcessException(ErrorType.DB, "create build record failed");
-        }
+        buildRecordMapper.insert(entity);
     }
 
-    @Transactional
-    public boolean updateBuildStatus(Long id, BuildStatus status) {
-        var record = buildRecordMapper.selectById(id);
-        if (record == null) {
-            log.warn("build record:{} can't find when update status to {}.", id, status);
-            return false;
-        }
-        var res = buildRecordMapper.updateStatus(id, status) > 0;
-        if (res && status == BuildStatus.SUCCESS && record.getShared()) {
-            // update shared
-            var dataset = datasetMapper.findByName(record.getDatasetName(), record.getProjectId(), false);
-            if (dataset != null) {
-                var version = datasetVersionMapper.findByLatest(dataset.getId());
-                if (version != null) {
-                    datasetVersionMapper.updateShared(version.getId(), true);
-                }
-            }
-        }
-        return res;
-    }
-
-    public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, BuildStatus status, PageParams pageParams) {
+    public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, PageParams pageParams) {
         var project = projectService.findProject(projectUrl);
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = buildRecordMapper.selectByStatus(project.getId(), status);
-        return PageUtil.toPageInfo(entities, entity -> BuildRecordVo.builder()
-                .id(String.valueOf(entity.getId()))
-                .datasetId(String.valueOf(entity.getDatasetId()))
-                .datasetName(entity.getDatasetName())
-                .type(entity.getType())
-                .status(entity.getStatus())
-                .createTime(entity.getCreatedTime().getTime())
-                .build()
+        var entities = buildRecordMapper.list(project.getId());
+        return PageUtil.toPageInfo(entities, entity -> {
+                    TaskEntity task = taskMapper.findTaskById(entity.getTaskId()); // todo speed this up
+                    return BuildRecordVo.builder()
+                            .id(String.valueOf(entity.getId()))
+                            .taskId(String.valueOf(entity.getTaskId()))
+                            .datasetId(String.valueOf(entity.getDatasetId()))
+                            .datasetName(entity.getDatasetName())
+                            .type(entity.getType())
+                            .status(null == task ? TaskStatus.SUCCESS : task.getTaskStatus())
+                            .createTime(entity.getCreatedTime().getTime())
+                            .build();
+                }
         );
-    }
-
-    public String buildLogContent(Long id) {
-        var record = buildRecordMapper.selectById(id);
-        if (StringUtils.hasText(record.getLogPath())) {
-            try (InputStream inputStream = storageAccessService.get(record.getLogPath())) {
-                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new SwProcessException(ErrorType.DB,
-                                             MessageFormat.format("read build log path failed {0}", id), e
-                );
-            }
-        }
-        return "";
     }
 
     public void addDatasetVersionTag(

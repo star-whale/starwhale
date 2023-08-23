@@ -32,6 +32,7 @@
     j.dev_password,
     j.auto_release_time,
     j.pinned_time,
+    j.virtual_job_name,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -52,15 +53,16 @@
     mv.version_order as mv_version_order,
     mv.built_in_runtime as mv_built_in_runtime,
     m.model_name as model_name
-    from job_info as j,
-    user_info as u,
-    project_info as p,
-    model_version as mv,
-    model_info as m
-    where u.id = j.owner_id
-    and p.id = j.project_id
-    and mv.id = j.model_version_id
-    and m.id = mv.model_id) as j2
+    from job_info as j
+    inner join user_info as u
+    on u.id = j.owner_id
+    inner join project_info as p
+    on p.id = j.project_id
+    left outer join model_version as mv
+    on j.model_version_id = mv.id
+    left outer join model_info as m
+    on mv.model_id = m.id
+    ) as j2
   </sql>
 
   <select id="listJobs" resultMap="jobResultMap">
@@ -68,6 +70,19 @@
     <where>
       and job_is_deleted = 0
       and project_id = #{projectId}
+    </where>
+    <if test="modelId != null and modelId != ''">
+      and model_version_id = #{modelId}
+    </if>
+    order by pinned_time desc, job_id desc
+  </select>
+
+  <select id="listUserJobs" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_is_deleted = 0
+      and project_id = #{projectId}
+      AND job_type in('EVALUATION', 'TRAIN', 'FINE_TUNE', 'SERVING')
     </where>
     <if test="modelId != null and modelId != ''">
       and model_version_id = #{modelId}
@@ -174,6 +189,7 @@
     dev_mode,
     dev_way,
     dev_password,
+    virtual_job_name,
     auto_release_time)
     values (#{job.jobUuid},
     #{job.projectId},
@@ -189,6 +205,7 @@
     #{job.devMode},
     #{job.devWay},
     #{job.devPassword},
+    #{job.virtualJobName},
     #{job.autoReleaseTime}
     )
   </insert>
@@ -214,6 +231,7 @@
     <result property="devMode" column="dev_mode"/>
     <result property="devWay" column="dev_way"/>
     <result property="devPassword" column="dev_password"/>
+    <result property="virtualJobName" column="virtual_job_name"/>
     <result property="autoReleaseTime" column="auto_release_time"/>
     <result property="pinned" column="pinned"/>
     <result property="pinnedTime" column="pinned_time"/>

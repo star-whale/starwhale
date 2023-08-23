@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.domain.dataset.DatasetService;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
@@ -44,19 +42,16 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     private final TaskReportReceiver taskReportReceiver;
     private final TaskStatusMachine taskStatusMachine;
     private final RuntimeService runtimeService;
-    private final DatasetService datasetService;
     private final K8sClient k8sClient;
 
     public JobEventHandler(
             TaskReportReceiver taskReportReceiver,
             TaskStatusMachine taskStatusMachine,
             RuntimeService runtimeService,
-            DatasetService datasetService,
             K8sClient k8sClient) {
         this.taskReportReceiver = taskReportReceiver;
         this.taskStatusMachine = taskStatusMachine;
         this.runtimeService = runtimeService;
-        this.datasetService = datasetService;
         this.k8sClient = k8sClient;
     }
 
@@ -96,9 +91,6 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
                     updateEvalTask(job, false);
                     break;
-                case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
-                    updateDatasetBuildRecord(job);
-                    break;
                 case K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER:
                     updateImageBuildTask(job);
                     break;
@@ -121,23 +113,6 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             log.info("image:{} build success", image);
             runtimeService.updateBuiltImage(version, image);
         }
-    }
-
-    private void updateDatasetBuildRecord(V1Job job) {
-        V1JobStatus status = job.getStatus();
-        if (status == null) {
-            return;
-        }
-        var jobName = jobName(job);
-        var buildId = Long.parseLong(job.getMetadata().getAnnotations().get("id"));
-        if (null != status.getSucceeded()) {
-            log.info("dataset:{} build success", jobName);
-            datasetService.updateBuildStatus(buildId, BuildStatus.SUCCESS);
-        } else if (null != status.getFailed()) {
-            log.info("dataset:{} build failed", jobName);
-            datasetService.updateBuildStatus(buildId, BuildStatus.FAILED);
-        }
-
     }
 
     private void updateEvalTask(V1Job job, boolean onDelete) {

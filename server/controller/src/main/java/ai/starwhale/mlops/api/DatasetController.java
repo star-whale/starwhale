@@ -35,7 +35,6 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.ReadMode;
@@ -469,12 +468,11 @@ public class DatasetController implements DatasetApi {
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<BuildRecordVo>>> listBuildRecords(
             String projectUrl,
-            BuildStatus status,
             Integer pageNum,
             Integer pageSize
     ) {
         return ResponseEntity.ok(Code.success.asResponse(
-                datasetService.listBuildRecords(projectUrl, status, new PageParams(pageNum, pageSize))));
+                datasetService.listBuildRecords(projectUrl,  new PageParams(pageNum, pageSize))));
     }
 
 

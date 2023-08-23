@@ -52,6 +52,7 @@ export interface IDatasetTaskBuildSchema {
     id: string
     datasetId: string
     projectId: string
+    taskId: string
     datasetName: string
     status: TaskBuildStatusType
     type: string
@@ -62,6 +63,7 @@ export enum TaskBuildStatusType {
     CREATED = 'CREATED',
     UPLOADING = 'UPLOADING',
     BUILDING = 'BUILDING',
+    RUNNING = 'RUNNING',
     SUCCESS = 'SUCCESS',
     FAILED = 'FAILED',
 }

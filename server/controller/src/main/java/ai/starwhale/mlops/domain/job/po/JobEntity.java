@@ -86,6 +86,7 @@ public class JobEntity extends BaseEntity implements BundleEntity {
     private Date autoReleaseTime;
 
     private Date pinnedTime;
+    private String virtualJobName;
 
     @Override
     public String getName() {

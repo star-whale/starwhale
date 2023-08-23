@@ -70,7 +70,7 @@ public class RuntimeSuggestionService {
             }
 
             // get the last used runtime in eval jobs
-            var jobs = jobMapper.listJobs(projectId, modelVersionId);
+            var jobs = jobMapper.listUserJobs(projectId, modelVersionId);
             var runtimes = jobs.stream().map(JobEntity::getRuntimeVersionId).sorted(Comparator.reverseOrder());
             var runtimeVersionId = runtimes.findFirst().orElse(null);
             if (runtimeVersionId != null) {

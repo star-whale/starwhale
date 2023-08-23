@@ -117,25 +117,25 @@ public class JobBoConverterTest {
 
         JobSpecParser jobSpecParser = mock(JobSpecParser.class);
         when(jobSpecParser.parseAndFlattenStepFromYaml(any()))
-                .thenReturn(List.of(new StepSpec()));
+                .thenReturn(List.of(StepSpec.builder().name("step_name").build()));
         StepConverter stepConverter = mock(StepConverter.class);
         given(stepConverter.fromEntity(any()))
                 .willAnswer(invocation -> {
                     StepEntity entity = invocation.getArgument(0);
-                    return Step.builder().id(entity.getId()).status(entity.getStatus()).build();
+                    return Step.builder().id(entity.getId()).name("step_name").status(entity.getStatus()).build();
                 });
         TaskBoConverter taskBoConverter = mock(TaskBoConverter.class);
         when(taskBoConverter.fromTaskEntity(anyList(), any())).thenReturn(List.of());
         StepMapper stepMapper = mock(StepMapper.class);
         when(stepMapper.findByJobId(jobEntity.getId()))
                 .thenReturn(List.of(
-                    StepEntity.builder()
-                        .id(1L)
-                        .status(StepStatus.RUNNING)
-                        .build(),
-                    StepEntity.builder()
-                        .id(2L)
-                        .lastStepId(1L).build()
+                        StepEntity.builder()
+                                .id(1L)
+                                .status(StepStatus.RUNNING)
+                                .build(),
+                        StepEntity.builder()
+                                .id(2L)
+                                .lastStepId(1L).build()
                 ));
         TaskMapper taskMapper = mock(TaskMapper.class);
         when(taskMapper.findByStepId(any())).thenReturn(
@@ -174,14 +174,14 @@ public class JobBoConverterTest {
         Assertions.assertNotNull(swrt);
         Assertions.assertEquals(runtimeVersionEntity.getVersionName(), swrt.getVersion());
         Assertions.assertEquals(runtimeEntity.getRuntimeName(), swrt.getName());
-        Assertions.assertEquals(runtimeVersionEntity.getStoragePath(), swrt.getStoragePath());
 
         Model model = job.getModel();
         Assertions.assertNotNull(model);
         Assertions.assertEquals(jobEntity.getModelVersion().getVersionName(), model.getVersion());
         Assertions.assertEquals(jobEntity.getModelVersion().getId(), model.getId());
         Assertions.assertEquals(modelEntity.getModelName(), model.getName());
-        Assertions.assertEquals(List.of(new StepSpec()), model.getStepSpecs());
+        Assertions.assertEquals(List.of(StepSpec.builder().name("step_name").concurrency(null).build()),
+                model.getStepSpecs());
 
         List<DataSet> dataSets = job.getDataSets();
         Assertions.assertNotNull(dataSets);

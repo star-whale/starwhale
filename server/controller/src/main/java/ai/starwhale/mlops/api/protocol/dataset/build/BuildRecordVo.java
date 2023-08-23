@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.dataset.build;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -27,8 +27,9 @@ public class BuildRecordVo {
     private String id;
     private String datasetId;
     private String projectId;
+    private String taskId;
     private String datasetName;
-    private BuildStatus status;
+    private TaskStatus status;
     private BuildType type;
     private Long createTime;
 }

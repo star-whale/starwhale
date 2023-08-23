@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.datastore.DataStore;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.lock.ControllerLockImpl;
@@ -50,7 +50,7 @@ public class UpgradeServiceTest {
 
     private UpgradeAccess upgradeAccess;
     private ControllerLock controllerLock;
-    private JobService jobService;
+    private JobServiceForWeb jobServiceForWeb;
     private DataStore dataStore;
     private K8sClient k8sClient;
     private UpgradeStepManager upgradeStepManager;
@@ -67,7 +67,7 @@ public class UpgradeServiceTest {
         Mockito.when(upgradeAccess.readLog(anyString()))
                 .thenReturn(List.of(UpgradeLog.builder().build()));
         controllerLock = new ControllerLockImpl();
-        jobService = mock(JobService.class);
+        jobServiceForWeb = mock(JobServiceForWeb.class);
         dataStore = mock(DataStore.class);
         k8sClient = mock(K8sClient.class);
 
@@ -91,7 +91,7 @@ public class UpgradeServiceTest {
         currentVersionNumber = "0.4.0";
         latestVersionApiUrl = "";
 
-        upgradeService = new UpgradeService(upgradeAccess, controllerLock, jobService, dataStore,
+        upgradeService = new UpgradeService(upgradeAccess, controllerLock, jobServiceForWeb, dataStore,
                 k8sClient, upgradeStepManager, restTemplate, currentVersionNumber, latestVersionApiUrl);
     }
 
@@ -115,7 +115,7 @@ public class UpgradeServiceTest {
 
         Mockito.when(k8sClient.getNotReadyPods(anyString()))
                 .thenReturn(List.of());
-        Mockito.when(jobService.listHotJobs())
+        Mockito.when(jobServiceForWeb.listHotJobs())
                 .thenReturn(List.of(new Job()));
 
         assertThrows(SwValidationException.class, () -> {
@@ -123,7 +123,7 @@ public class UpgradeServiceTest {
         });
         Assertions.assertFalse(controllerLock.isLocked(ControllerLock.TYPE_WRITE_REQUEST));
 
-        Mockito.when(jobService.listHotJobs())
+        Mockito.when(jobServiceForWeb.listHotJobs())
                 .thenReturn(List.of());
 
         upgradeService.upgrade(new Version("0.4.1", "server:0.4.1"));

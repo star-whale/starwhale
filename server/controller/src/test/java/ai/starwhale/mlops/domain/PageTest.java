@@ -24,7 +24,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -59,8 +59,7 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import ai.starwhale.mlops.schedule.TaskCommandGetter;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
 import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
@@ -98,16 +97,16 @@ import org.springframework.context.annotation.Import;
         }
 )
 @ImportAutoConfiguration(PageHelperAutoConfiguration.class)
-@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, TaskRunningEnvBuilder.class,
+@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class,
+        TaskContainerSpecificationFinder.class,
         TaskLogCollectorFactoryDocker.class,
         DockerClientFinderSimpleImpl.class,
-        ContainerTaskMapper.class,
-        TaskCommandGetter.class})
+        ContainerTaskMapper.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PageTest extends MySqlContainerHolder {
 
     @Autowired
-    private JobService jobService;
+    private JobServiceForWeb jobServiceForWeb;
     @Autowired
     private JobMapper jobMapper;
     @Autowired
@@ -175,12 +174,12 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = reportMapper.insert(
                     ReportEntity.builder()
-                        .uuid(UUID.randomUUID().toString())
-                        .title(String.format("report-%d", i))
-                        .content(String.format("content-%d", i))
-                        .projectId(projectId)
-                        .ownerId(userId)
-                        .build());
+                            .uuid(UUID.randomUUID().toString())
+                            .title(String.format("report-%d", i))
+                            .content(String.format("content-%d", i))
+                            .projectId(projectId)
+                            .ownerId(userId)
+                            .build());
             assertTrue(res > 0);
         }
 
@@ -370,13 +369,13 @@ public class PageTest extends MySqlContainerHolder {
         }
 
         // no.1
-        var page = jobService.listJobs(projectName, null,
+        var page = jobServiceForWeb.listJobs(projectName, null,
                 PageParams.builder().pageNum(1).pageSize(10).build());
         assertEquals(10, page.getSize());
         assertEquals(19, page.getTotal());
 
         // no.2
-        page = jobService.listJobs(projectName, null,
+        page = jobServiceForWeb.listJobs(projectName, null,
                 PageParams.builder().pageNum(2).pageSize(10).build());
         assertEquals(9, page.getSize());
         assertEquals(19, page.getTotal());

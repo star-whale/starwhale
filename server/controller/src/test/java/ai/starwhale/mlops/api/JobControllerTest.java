@@ -50,7 +50,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.job.DevWay;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.task.TaskService;
@@ -67,7 +67,7 @@ public class JobControllerTest {
 
     private JobController controller;
 
-    private JobService jobService;
+    private JobServiceForWeb jobServiceForWeb;
 
     private TaskService taskService;
 
@@ -81,14 +81,14 @@ public class JobControllerTest {
 
     @BeforeEach
     public void setUp() {
-        jobService = mock(JobService.class);
+        jobServiceForWeb = mock(JobServiceForWeb.class);
         taskService = mock(TaskService.class);
         modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
         runtimeSuggestionService = mock(RuntimeSuggestionService.class);
         featuresProperties = new FeaturesProperties();
         controller = new JobController(
-                jobService,
+                jobServiceForWeb,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
@@ -100,7 +100,7 @@ public class JobControllerTest {
 
     @Test
     public void testListJobs() {
-        given(jobService.listJobs(same("p1"), same(1L), any(PageParams.class)))
+        given(jobServiceForWeb.listJobs(same("p1"), same(1L), any(PageParams.class)))
                 .willAnswer(invocation -> {
                     PageParams pageParams = invocation.getArgument(2);
                     try (Page<JobVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
@@ -120,7 +120,7 @@ public class JobControllerTest {
 
     @Test
     public void testFindJob() {
-        given(jobService.findJob(same("p1"), same("j1")))
+        given(jobServiceForWeb.findJob(same("p1"), same("j1")))
                 .willReturn(JobVo.builder().id("j1").build());
         var resp = controller.findJob("p1", "j1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -152,7 +152,7 @@ public class JobControllerTest {
 
     @Test
     public void testCreatJob() {
-        given(jobService.createJob(anyString(), anyString(), anyString(), anyString(), anyString(),
+        given(jobServiceForWeb.createJob(anyString(), anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString(), any(), any(), eq(DevWay.VS_CODE), eq(false), anyString(),
                 any())).willReturn(1L);
         JobRequest jobRequest = new JobRequest();
@@ -182,11 +182,11 @@ public class JobControllerTest {
     @Test
     public void testAction() {
         doAnswer(invocation -> invoked = "cancel_" + invocation.getArgument(0))
-                .when(jobService).cancelJob(anyString());
+                .when(jobServiceForWeb).cancelJob(anyString());
         doAnswer(invocation -> invoked = "pause_" + invocation.getArgument(0))
-                .when(jobService).pauseJob(anyString());
+                .when(jobServiceForWeb).pauseJob(anyString());
         doAnswer(invocation -> invoked = "resume_" + invocation.getArgument(0))
-                .when(jobService).resumeJob(anyString());
+                .when(jobServiceForWeb).resumeJob(anyString());
 
         controller.action("", "job1", "cancel");
         assertThat(invoked, is("cancel_job1"));
@@ -206,7 +206,7 @@ public class JobControllerTest {
 
     @Test
     public void testGetJobResult() {
-        given(jobService.getJobResult(anyString(), anyString()))
+        given(jobServiceForWeb.getJobResult(anyString(), anyString()))
                 .willAnswer(invocation -> "result_" + invocation.getArgument(0)
                         + "_" + invocation.getArgument(1));
         var resp = controller.getJobResult("project1", "job1");
@@ -216,7 +216,7 @@ public class JobControllerTest {
 
     @Test
     public void testModifyJobComment() {
-        given(jobService.updateJobComment(same("p1"), same("j1"), same("comment1")))
+        given(jobServiceForWeb.updateJobComment(same("p1"), same("j1"), same("comment1")))
                 .willReturn(true);
         JobModifyRequest request = new JobModifyRequest();
         request.setComment("comment1");
@@ -229,7 +229,7 @@ public class JobControllerTest {
 
     @Test
     public void testRemoveJob() {
-        given(jobService.removeJob(same("p1"), same("j1")))
+        given(jobServiceForWeb.removeJob(same("p1"), same("j1")))
                 .willReturn(true);
 
         var resp = controller.removeJob("p1", "j1");
@@ -241,7 +241,7 @@ public class JobControllerTest {
 
     @Test
     public void testRecoverJob() {
-        given(jobService.recoverJob(same("p1"), same("j1")))
+        given(jobServiceForWeb.recoverJob(same("p1"), same("j1")))
                 .willReturn(true);
 
         var resp = controller.recoverJob("p1", "j1");
@@ -298,7 +298,7 @@ public class JobControllerTest {
         var disabled = List.of("job-pause");
         featuresProperties.setDisabled(disabled);
         var controller = new JobController(
-                jobService,
+                jobServiceForWeb,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
@@ -318,7 +318,7 @@ public class JobControllerTest {
         var disabled = List.of("job-resume");
         featuresProperties.setDisabled(disabled);
         var controller = new JobController(
-                jobService,
+                jobServiceForWeb,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
@@ -335,7 +335,7 @@ public class JobControllerTest {
 
     @Test
     public void testJobExec() {
-        when(jobService.exec(anyString(), anyString(), anyString(), any()))
+        when(jobServiceForWeb.exec(anyString(), anyString(), anyString(), any()))
                 .thenReturn(ExecResponse.builder().stdout("foo").stderr("bar").build());
         var resp = controller.exec("p1", "j1", "t1", new ExecRequest());
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -346,7 +346,7 @@ public class JobControllerTest {
 
     @Test
     public void testModifyJobPinStatus() {
-        given(jobService.updateJobPinStatus(same("p1"), same("j1"), same(true)))
+        given(jobServiceForWeb.updateJobPinStatus(same("p1"), same("j1"), same(true)))
                 .willReturn(true);
         JobModifyPinRequest request = new JobModifyPinRequest();
         request.setPinned(true);

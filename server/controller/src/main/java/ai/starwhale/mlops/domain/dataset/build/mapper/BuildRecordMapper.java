@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset.build.mapper;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import java.util.List;
 import java.util.Objects;
@@ -31,29 +30,25 @@ import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface BuildRecordMapper {
-    String COLUMNS_FOR_INSERT = "dataset_id, dataset_name, project_id, "
-            + "type, status, storage_path, log_path, format, shared, created_time";
+    String COLUMNS_FOR_INSERT = "dataset_id, dataset_name, project_id, task_id,"
+            + "type, storage_path, log_path, format, shared, created_time";
     String COLUMNS_FOR_SELECT = "id, " + COLUMNS_FOR_INSERT;
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record WHERE id = #{id}")
     BuildRecordEntity selectById(Long id);
 
-    @SelectProvider(value = SqlProvider.class, method = "listByStatus")
-    List<BuildRecordEntity> selectByStatus(
-            @Param("projectId") Long projectId, @Param("status") BuildStatus status);
+    @SelectProvider(value = SqlProvider.class, method = "list")
+    List<BuildRecordEntity> list(@Param("projectId") Long projectId);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
-            + "WHERE project_id = #{projectId} AND dataset_name = #{datasetName} AND status = 'BUILDING' "
+            + "WHERE project_id = #{projectId} AND dataset_name = #{datasetName} "
             + "FOR UPDATE")
     List<BuildRecordEntity> selectBuildingInOneProjectForUpdate(
             @Param("projectId") Long projectId, @Param("datasetName") String datasetName);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
-            + "WHERE (status = 'SUCCESS' or status = 'FAILED') AND cleaned = 0")
-    List<BuildRecordEntity> selectFinishedAndUncleaned();
-
-    @Update("UPDATE dataset_build_record set status = #{status} WHERE id = #{id}")
-    int updateStatus(@Param("id") Long id, @Param("status") BuildStatus status);
+            + "WHERE cleaned = 0")
+    List<BuildRecordEntity> selectUncleaned();
 
     @Update("UPDATE dataset_build_record set log_path = #{path} WHERE id = #{id}")
     int updateLogPath(@Param("id") Long id, @Param("path") String logPath);
@@ -63,23 +58,20 @@ public interface BuildRecordMapper {
 
     @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
             + "VALUES ("
-            + "#{datasetId}, #{datasetName}, #{projectId}, "
-            + "#{type}, #{status}, #{storagePath}, #{logPath}, #{format}, #{shared}, #{createdTime}"
+            + "#{datasetId}, #{datasetName}, #{projectId}, #{taskId},"
+            + "#{type}, #{storagePath}, #{logPath}, #{format}, #{shared}, #{createdTime}"
             + ")")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(BuildRecordEntity buildRecord);
 
     class SqlProvider {
-        public String listByStatus(@Param("projectId") Long projectId, @Param("status") BuildStatus status) {
+        public String list(@Param("projectId") Long projectId) {
             return new SQL() {
                 {
                     SELECT(COLUMNS_FOR_SELECT);
                     FROM("dataset_build_record");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
-                    }
-                    if (null != status) {
-                        WHERE("status = #{status}");
                     }
                     ORDER_BY("id desc");
                 }

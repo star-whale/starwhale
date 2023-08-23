@@ -31,7 +31,6 @@ import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.api.protocol.upload.UploadResult;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -460,8 +459,6 @@ public interface DatasetApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable(name = "projectUrl")
             String projectUrl,
-            @RequestParam(value = "status", required = false)
-            BuildStatus status,
             @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
             @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10")
