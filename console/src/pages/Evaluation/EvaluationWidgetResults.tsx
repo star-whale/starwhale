@@ -18,12 +18,22 @@ import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import useTranslation from '@/hooks/useTranslation'
+import TextLink from '@/components/Link/TextLink'
 
 const PAGE_TABLE_SIZE = 100
 
+export interface IDatasetLinkProps {
+    versionId: number,
+    datasetId: number,
+    projectId: number,
+    name: string,
+    version: string,
+}
+
 function Summary({ fetch }: any) {
     const [t] = useTranslation()
-    const record: Record<string, string> = fetch?.data?.records?.[0]
+    console.log(fetch.data)
+    const record: Record<string, any> = fetch?.data?.records?.[0]
     const [expanded, setExpanded] = React.useState<boolean>(false)
 
     return (
@@ -133,10 +143,19 @@ function Summary({ fetch }: any) {
                                     if (a === 'id') return -1
                                     return a > b ? 1 : -1
                                 })
-                                .filter((label) => typeof record[label] !== 'object')
+                                .filter((label) => (label === 'sys/datasets' || typeof record[label] !== 'object'))
                                 .map((label) => {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
+                                    if (label === 'sys/datasets') {
+                                        value = record[label].map((ds, i) => {
+                                                return <TextLink
+                                                        key={ds.version_id}
+                                                        to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}>
+                                                            {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
+                                                    </TextLink>
+                                            }) ?? []
+                                    }
 
                                     return (
                                         <React.Fragment key={label}>
