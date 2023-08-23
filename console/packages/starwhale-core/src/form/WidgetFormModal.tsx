@@ -49,18 +49,27 @@ export default function WidgetFormModal({
     const prefixes = React.useMemo(() => getPrefixes(), [config, payload])
 
     const handleFormChange = (data: any) => {
-        setFormData((prev) => {
-            // FIXME only when tableName changed from array to singe select, reset value
-            if (data.chartType !== prev.chartType) {
-                return {
-                    ...data,
-                    tableName: undefined,
-                }
-            }
-            return {
+        setFormData(data)
+
+        if (!formData?.chartType || !data.chartType) return
+
+        if (formData?.chartType !== data.chartType) {
+            setOptionConfig({})
+            setFormData({
                 ...data,
-            }
-        })
+                tableName: undefined,
+            })
+        }
+
+        if (
+            _.isArray(formData.tableName) &&
+            _.isArray(data.tableName) &&
+            formData.tableName.length > 0 &&
+            data.tableName.length > 0 &&
+            formData.tableName.join(',') !== data.tableName.join(',')
+        ) {
+            setOptionConfig({})
+        }
     }
     const handleOptionChange = (data: any) => setOptionConfig({ ...data })
     const handleFormSubmit = ({ formData: tmp }) =>
@@ -75,6 +84,9 @@ export default function WidgetFormModal({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
         tableName,
+        queries: _.isEmpty(optionConfig)
+            ? config?.optionConfig?.currentView?.queries
+            : optionConfig?.currentView?.queries,
         prefixFn: React.useCallback(
             (tname: string) => {
                 const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
@@ -83,11 +95,10 @@ export default function WidgetFormModal({
             [prefixes]
         ),
     })
+
     const $data = useFetchDatastoreByTable(params)
 
     const $formData = React.useMemo(() => {
-        if (!formData?.chartType) return {}
-
         const defaults = form.widget?.defaults
         const prev = { ...formData }
         Object.entries(defaults?.fieldConfig?.data ?? {}).forEach(([key, value]) => {
@@ -109,7 +120,10 @@ export default function WidgetFormModal({
     }
 
     useEffect(() => {
-        if (config) setFormData(config.fieldConfig?.data ?? {})
+        if (config) {
+            setFormData({ ...(config.fieldConfig?.data ?? {}) })
+            setOptionConfig({})
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editWidgetId, config])
 
