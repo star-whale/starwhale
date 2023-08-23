@@ -30,7 +30,7 @@ import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface BuildRecordMapper {
-    String COLUMNS_FOR_INSERT = "dataset_id, dataset_name, project_id, task_id,"
+    String COLUMNS_FOR_INSERT = "dataset_name, project_id, task_id,"
             + "type, storage_path, log_path, format, shared, created_time";
     String COLUMNS_FOR_SELECT = "id, " + COLUMNS_FOR_INSERT;
 
@@ -58,7 +58,7 @@ public interface BuildRecordMapper {
 
     @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
             + "VALUES ("
-            + "#{datasetId}, #{datasetName}, #{projectId}, #{taskId},"
+            + "#{datasetName}, #{projectId}, #{taskId},"
             + "#{type}, #{storagePath}, #{logPath}, #{format}, #{shared}, #{createdTime}"
             + ")")
     @Options(useGeneratedKeys = true, keyProperty = "id")

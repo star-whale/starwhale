@@ -31,7 +31,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class BuildRecordEntity extends BaseEntity {
     private Long id;
-    private Long datasetId;
     private Long taskId;
     private Long projectId;
     private Boolean shared;

@@ -25,7 +25,6 @@ import lombok.Data;
 @Builder
 public class BuildRecordVo {
     private String id;
-    private String datasetId;
     private String projectId;
     private String taskId;
     private String datasetName;

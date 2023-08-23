@@ -455,7 +455,6 @@ public class DatasetController implements DatasetApi {
             DatasetBuildRequest datasetBuildRequest
     ) {
         datasetService.build(CreateBuildRecordRequest.builder()
-                                     .datasetId(datasetBuildRequest.getDatasetId())
                                      .datasetName(datasetName)
                                      .shared(datasetBuildRequest.getShared())
                                      .projectUrl(projectUrl)

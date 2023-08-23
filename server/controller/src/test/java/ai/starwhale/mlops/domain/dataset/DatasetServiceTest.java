@@ -575,7 +575,6 @@ public class DatasetServiceTest {
         // case1-1: patch and the dataset is not exist
         given(datasetMapper.find(1L)).willReturn(null);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
@@ -583,14 +582,12 @@ public class DatasetServiceTest {
         // case1-2: patch and the dataset name in param is not right
         given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("already-dataset").build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
         );
         given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("Test-build-ds").build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
@@ -600,7 +597,6 @@ public class DatasetServiceTest {
         given(datasetMapper.findByName(datasetName, projectId, true))
                 .willReturn(DatasetEntity.builder().build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
@@ -611,7 +607,6 @@ public class DatasetServiceTest {
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
                 .willReturn(List.of(BuildRecordEntity.builder().build()));
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
@@ -621,7 +616,6 @@ public class DatasetServiceTest {
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
         given(buildRecordMapper.insert(any())).willReturn(0);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
                 .build())
@@ -632,7 +626,6 @@ public class DatasetServiceTest {
 
         // without configs
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
                 .datasetName(datasetName)
                 .shared(true)
                 .type(BuildType.IMAGE)
@@ -643,7 +636,6 @@ public class DatasetServiceTest {
         systemSettingService.getRunTimeProperties().setDatasetBuild(
                 new RunTimeProperties.RunConfig("default", "image", "0.5.6", "3.10"));
         service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
                 .datasetName(datasetName)
                 .shared(true)
                 .type(BuildType.IMAGE)
