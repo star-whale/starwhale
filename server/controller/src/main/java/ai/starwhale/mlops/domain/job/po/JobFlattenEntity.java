@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job.po;
 
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DataSetsColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevWayColumn;
@@ -52,6 +53,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -126,6 +128,9 @@ public class JobFlattenEntity {
 
     @JsonProperty(DataSetIdVersionMapColumn)
     private Map<Long, String> datasetIdVersionMap;
+
+    @JsonProperty(DataSetsColumn)
+    private List<Object> datasets;
 
     @JsonProperty(ResultOutputPathColumn)
     private String resultOutputPath;
