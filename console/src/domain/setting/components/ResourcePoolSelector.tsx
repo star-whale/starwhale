@@ -22,9 +22,12 @@ export default function ResourcePoolSelector({
         (id: string) => {
             const { data } = pools
             const item = data?.find((v) => v.name === id) ?? (data?.[0] as any)
+            // when init value specified, the id will equal to value
+            // we need to trigger onChangeItem to notify the other components which depend on the resource,
+            // so we do not wrap onChangeItem in the condition
+            onChangeItem?.(item, data)
             if (value !== id) {
                 onChange?.(id)
-                onChangeItem?.(item, data)
             }
         },
         [onChange, onChangeItem, pools, value]
