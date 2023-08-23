@@ -71,7 +71,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                                         return (
                                             <ConfirmButton
                                                 as='link'
-                                                title='Are you sure to delete this chart?'
+                                                title={t('panel.chart.delete.title')}
                                                 onClick={async (e) => {
                                                     e.preventDefault()
                                                     onOptionSelect(item)

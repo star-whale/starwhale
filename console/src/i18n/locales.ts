@@ -716,6 +716,10 @@ const widget = {
         en: 'Model Build-in',
         zh: '模型内置配置',
     },
+    'panel.chart.delete.title': {
+        en: 'Are you sure to delete this chart?',
+        zh: '确定要删除该图表吗？',
+    },
 }
 
 const locales0 = {

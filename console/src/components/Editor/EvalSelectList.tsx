@@ -60,9 +60,30 @@ const RenderButton = ({ count, editing, toggle }) => {
                     {count}
                 </span>
             </p>
-            <ExtendButton noPadding kind='tertiary' as='link' onClick={toggle}>
-                <Text tooltip={editing ? t('Minimize') : t('Edit')} size='small'>
-                    <IconFont type={editing ? 'unfold21' : 'fold21'} />
+            <ExtendButton
+                noPadding
+                kind='tertiary'
+                as='link'
+                onClick={toggle}
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            'color': 'rgba(2,16,43,0.60)',
+                            ':hover': {
+                                color: '#5181E0',
+                            },
+                            ':focus': {
+                                color: '#1C4CAD',
+                            },
+                            ':active': {
+                                color: '#1C4CAD',
+                            },
+                        },
+                    },
+                }}
+            >
+                <Text tooltip={editing ? t('Minimize') : t('Edit')} size='small' style={{ color: 'inherit' }}>
+                    <IconFont type={editing ? 'arrow_down' : 'arrow_top'} size={18} style={{ color: 'inherit' }} />
                 </Text>
             </ExtendButton>
         </div>

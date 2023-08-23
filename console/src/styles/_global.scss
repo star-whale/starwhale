@@ -41,7 +41,14 @@ a:-webkit-any-link {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(2, 16, 43, 0.12);
+    background: rgba(2, 16, 43, 0.2);
+    border-radius: 4px;
+    width: 8px;
+    cursor: pointer !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(2, 16, 43, 0.4);
     border-radius: 4px;
     width: 8px;
     cursor: pointer !important;

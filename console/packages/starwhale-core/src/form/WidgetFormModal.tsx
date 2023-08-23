@@ -71,7 +71,6 @@ export default function WidgetFormModal({
 
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
-
     const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
@@ -87,6 +86,8 @@ export default function WidgetFormModal({
     const $data = useFetchDatastoreByTable(params)
 
     const $formData = React.useMemo(() => {
+        if (!formData?.chartType) return {}
+
         const defaults = form.widget?.defaults
         const prev = { ...formData }
         Object.entries(defaults?.fieldConfig?.data ?? {}).forEach(([key, value]) => {
@@ -154,7 +155,7 @@ export default function WidgetFormModal({
                             <WidgetRenderer
                                 type={type}
                                 data={$data}
-                                optionConfig={config.optionConfig}
+                                optionConfig={config?.optionConfig}
                                 fieldConfig={{
                                     data: formData,
                                 }}
