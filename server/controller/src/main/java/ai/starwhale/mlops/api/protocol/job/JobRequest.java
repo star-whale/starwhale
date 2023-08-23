@@ -35,15 +35,18 @@ public class JobRequest implements Serializable {
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
+    @NotNull
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
 
     @JsonProperty("comment")
     private String comment;
 
+    @NotNull
     @JsonProperty("resourcePool")
     private String resourcePool;
 
+    @NotNull
     @JsonProperty("handler")
     private String handler;
 

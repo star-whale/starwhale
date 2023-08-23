@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api.protocol.dataset;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -28,15 +29,21 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Dataset View object", title = "Dataset")
 public class DatasetViewVo {
 
+    @NotNull
     private String ownerName;
 
+    @NotNull
     private String projectName;
 
+    @NotNull
     private String datasetId;
 
+    @NotNull
     private String datasetName;
 
+    @NotNull
     private Integer shared;
 
+    @NotNull
     private List<DatasetVersionViewVo> versions;
 }

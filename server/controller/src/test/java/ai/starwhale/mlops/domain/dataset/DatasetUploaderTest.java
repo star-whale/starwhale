@@ -121,6 +121,7 @@ public class DatasetUploaderTest {
         Long dsVersionId = 1L;
         uploadRequest.setUploadId(dsVersionId);
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        uploadRequest.setProject("project");
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.uploadHashedBlob(
                 dsVersionId,

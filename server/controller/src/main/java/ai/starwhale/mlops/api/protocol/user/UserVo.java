@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -31,12 +32,16 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class UserVo {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String name;
 
+    @NotNull
     private Long createdTime;
 
+    @NotNull
     private Boolean isEnabled;
 
     private String systemRole;

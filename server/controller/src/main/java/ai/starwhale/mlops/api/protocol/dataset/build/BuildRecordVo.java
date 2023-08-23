@@ -18,17 +18,31 @@ package ai.starwhale.mlops.api.protocol.dataset.build;
 
 import ai.starwhale.mlops.domain.dataset.build.BuildType;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class BuildRecordVo {
+    @NotNull
     private String id;
+
+    @NotNull
     private String projectId;
+
+    @NotNull
     private String taskId;
+
+    @NotNull
     private String datasetName;
+
+    @NotNull
     private TaskStatus status;
+
+    @NotNull
     private BuildType type;
+
+    @NotNull
     private Long createTime;
 }

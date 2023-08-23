@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -36,18 +37,23 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Job object", title = "Job")
 public class JobVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("uuid")
     private String uuid;
 
+    @NotNull
     @JsonProperty("modelName")
     private String modelName;
 
+    @NotNull
     @JsonProperty("modelVersion")
     private String modelVersion;
 
+    @NotNull
     @JsonProperty("model")
     private ModelVo model;
 
@@ -61,6 +67,7 @@ public class JobVo implements Serializable {
     @JsonProperty("datasetList")
     private List<DatasetVo> datasetList;
 
+    @NotNull
     @JsonProperty("runtime")
     private RuntimeVo runtime;
 
@@ -73,15 +80,18 @@ public class JobVo implements Serializable {
     @JsonProperty("deviceAmount")
     private Integer deviceAmount;
 
+    @NotNull
     @JsonProperty("owner")
     private UserVo owner;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
     @JsonProperty("stopTime")
     private Long stopTime;
 
+    @NotNull
     @JsonProperty("jobStatus")
     private JobStatus jobStatus;
 
@@ -91,6 +101,7 @@ public class JobVo implements Serializable {
     @JsonProperty("stepSpec")
     private String stepSpec;
 
+    @NotNull
     @JsonProperty("resourcePool")
     private String resourcePool;
 
@@ -99,6 +110,7 @@ public class JobVo implements Serializable {
     // expose links is used to get the serving url of the model, it may contain:
     // 1. vscode url when the model is running under dev mode
     // 2. serving url when the model is running a web handler (which using the non-zero expose handler decorator)
+    @NotNull
     private List<ExposedLinkVo> exposedLinks;
 
     @JsonProperty("duration")

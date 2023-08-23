@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -32,18 +33,23 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class RuntimeInfoVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 
+    @NotNull
     @JsonProperty("versionId")
     private String versionId;
 
+    @NotNull
     @JsonProperty("versionName")
     private String versionName;
 
+    @NotNull
     @JsonProperty("versionAlias")
     private String versionAlias;
 
@@ -53,15 +59,19 @@ public class RuntimeInfoVo implements Serializable {
     @JsonProperty("versionMeta")
     private String versionMeta;
 
+    @NotNull
     @JsonProperty("manifest")
     private String manifest;
 
+    @NotNull
     @JsonProperty("shared")
     private Integer shared;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
+    @NotNull
     private RuntimeVersionVo versionInfo;
 
     @JsonProperty("files")

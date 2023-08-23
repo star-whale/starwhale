@@ -25,11 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class GraphVo {
 
+    @NotNull
     String id;
 
     /**
@@ -37,6 +39,7 @@ public class GraphVo {
      */
     Map<String, List<GraphNodeVo>> groupingNodes = new HashMap<>();
 
+    @NotNull
     List<GraphEdgeVo> edges;
 
     public GraphVo(Graph graph) {
@@ -61,11 +64,13 @@ public class GraphVo {
         /**
          * id of the node
          */
+        @NotNull
         String id;
 
         /**
          * type of the node e.g. TaskStatus or JobStatus
          */
+        @NotNull
         String type;
 
         /**
@@ -86,11 +91,13 @@ public class GraphVo {
         /**
          * id for node of edge start
          */
+        @NotNull
         String from;
 
         /**
          * id for node of edge end
          */
+        @NotNull
         String to;
 
         /**

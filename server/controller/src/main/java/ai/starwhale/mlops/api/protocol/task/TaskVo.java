@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,20 +34,25 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class TaskVo implements Serializable {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String uuid;
 
     private Long startedTime;
 
     private Long finishedTime;
 
+    @NotNull
     private TaskStatus taskStatus;
 
     private Integer retryNum;
 
+    @NotNull
     private String resourcePool;
 
+    @NotNull
     private String stepName;
 
     private List<ExposedLinkVo> exposedLinks;

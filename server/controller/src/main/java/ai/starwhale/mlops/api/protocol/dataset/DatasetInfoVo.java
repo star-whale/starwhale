@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -32,15 +33,19 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class DatasetInfoVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 
+    @NotNull
     @JsonProperty("versionId")
     private String versionId;
 
+    @NotNull
     @JsonProperty("versionName")
     private String versionName;
 
@@ -55,9 +60,11 @@ public class DatasetInfoVo implements Serializable {
     @JsonProperty("versionTag")
     private String versionTag;
 
+    @NotNull
     @JsonProperty("shared")
     private Integer shared;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -66,6 +73,7 @@ public class DatasetInfoVo implements Serializable {
     private List<FlattenFileVo> files;
 
     // leave this field for backward compatibility, client uses this field
+    @NotNull
     @JsonProperty("versionMeta")
     private String versionMeta;
 

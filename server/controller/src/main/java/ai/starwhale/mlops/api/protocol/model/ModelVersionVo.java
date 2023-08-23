@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -32,15 +33,19 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ModelVersionVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 
+    @NotNull
     @JsonProperty("alias")
     private String alias;
 
+    @NotNull
     private Boolean latest;
 
     private List<String> tags;
@@ -48,18 +53,21 @@ public class ModelVersionVo implements Serializable {
     @JsonProperty("size")
     private Long size;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
     @JsonProperty("owner")
     private UserVo owner;
 
+    @NotNull
     @JsonProperty("shared")
     private Integer shared;
 
     @JsonProperty("builtInRuntime")
     private String builtInRuntime;
 
+    @NotNull
     private List<StepSpec> stepSpecs;
 
     public static ModelVersionVo empty() {
