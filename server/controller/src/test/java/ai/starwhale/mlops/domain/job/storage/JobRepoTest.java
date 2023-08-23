@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -103,6 +104,17 @@ public class JobRepoTest {
                 .modelVersionValue("1z2x3c4v5b6n")
                 .modelName("test-model")
                 .datasetIdVersionMap(Map.of(1L, "qwerty", 2L, "asdfgh"))
+                .datasets(List.of(
+                        DatasetVersion.builder()
+                                .id(1L)
+                                .versionName("version")
+                                .versionTag("v1")
+                                .datasetName("ds")
+                                .datasetId(2L)
+                                .projectId(3L)
+                                .indexTable("/p/1/ds/tt/asdf")
+                                .build()
+                ))
                 .comment("")
                 .resultOutputPath("path/result/test")
                 .jobStatus(JobStatus.CREATED)
@@ -120,6 +132,17 @@ public class JobRepoTest {
         assertThat("convert",
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
+        );
+        assertThat("convert",
+                jobRepo.convertDatasetToDatastoreValue(jobEntity.getDatasets()),
+                is(List.of(Map.of(
+                        "version_id", "0000000000000001",
+                        "version_tag", "v1",
+                        "dataset_id", "0000000000000002",
+                        "project_id", "0000000000000003",
+                        "dataset_name", "ds",
+                        "dataset_version", "version",
+                        "index_table", "/p/1/ds/tt/asdf")))
         );
     }
 

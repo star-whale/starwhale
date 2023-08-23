@@ -18,8 +18,8 @@ package ai.starwhale.mlops.domain.job.po;
 
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DataSetsColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DataSetsColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevWayColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
@@ -44,6 +44,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -130,7 +131,7 @@ public class JobFlattenEntity {
     private Map<Long, String> datasetIdVersionMap;
 
     @JsonProperty(DataSetsColumn)
-    private List<Object> datasets;
+    private List<DatasetVersion> datasets;
 
     @JsonProperty(ResultOutputPathColumn)
     private String resultOutputPath;

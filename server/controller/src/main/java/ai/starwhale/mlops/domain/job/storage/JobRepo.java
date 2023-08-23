@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.storage;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DataSetsColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
@@ -55,6 +56,7 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -169,6 +171,7 @@ public class JobRepo {
         record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
         record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
         record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
+        record.put(DataSetsColumn, convertDatasetToDatastoreValue(jobEntity.getDatasets()));
         record.put(OwnerIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getOwnerId()), false, false));
         record.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
@@ -187,6 +190,28 @@ public class JobRepo {
                 .collect(Collectors.toMap(
                         k -> (String) BaseValue.encode(new Int64Value(k), false, false),
                         origin::get));
+    }
+
+    public List<Map<String, String>> convertDatasetToDatastoreValue(List<DatasetVersion> origin) {
+        if (CollectionUtils.isEmpty(origin)) {
+            return List.of();
+        }
+        List<Map<String, String>> res = new ArrayList<>();
+        for (DatasetVersion datasetVersion : origin) {
+            res.add(Map.of(
+                    "version_id", (String) BaseValue.encode(
+                            new Int64Value(datasetVersion.getId()), false, false),
+                    "version_tag", datasetVersion.getVersionTag(),
+                    "dataset_id", (String) BaseValue.encode(
+                            new Int64Value(datasetVersion.getDatasetId()), false, false),
+                    "project_id", (String) BaseValue.encode(
+                            new Int64Value(datasetVersion.getProjectId()), false, false),
+                    "dataset_name", datasetVersion.getDatasetName(),
+                    "dataset_version", datasetVersion.getVersionName(),
+                    "index_table", datasetVersion.getIndexTable()
+            ));
+        }
+        return res;
     }
 
     public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
@@ -337,17 +362,17 @@ public class JobRepo {
         }
         this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), List.of(
-                    ColumnRecord.builder()
-                        .property(FinishTimeColumn)
-                        .type(INT64)
-                        .value((String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false))
-                        .build(),
-                    ColumnRecord.builder()
-                        .property(DurationColumn)
-                        .type(INT64)
-                        .value((String) BaseValue.encode(new Int64Value(duration), false, false))
-                        .build()
-            ));
+                        ColumnRecord.builder()
+                                .property(FinishTimeColumn)
+                                .type(INT64)
+                                .value((String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false))
+                                .build(),
+                        ColumnRecord.builder()
+                                .property(DurationColumn)
+                                .type(INT64)
+                                .value((String) BaseValue.encode(new Int64Value(duration), false, false))
+                                .build()
+                ));
     }
 
     public int updateJobComment(Long jobId, String comment) {

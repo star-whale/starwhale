@@ -72,7 +72,19 @@ public interface JobSchema {
                 .valueType(ColumnSchemaDesc.builder().type(STRING).build())
                 .build(),
             ColumnSchemaDesc.builder().name(DataSetsColumn).type(LIST)
-                .elementType(ColumnSchemaDesc.builder().type(STRING).build())
+                .elementType(ColumnSchemaDesc.builder()
+                        .type(OBJECT)
+                        .pythonType("object")
+                        .attributes(List.of(
+                                ColumnSchemaDesc.builder().name("version_id").type(INT64).build(),
+                                ColumnSchemaDesc.builder().name("version_tag").type(STRING).build(),
+                                ColumnSchemaDesc.builder().name("dataset_id").type(INT64).build(),
+                                ColumnSchemaDesc.builder().name("project_id").type(INT64).build(),
+                                ColumnSchemaDesc.builder().name("dataset_name").type(STRING).build(),
+                                ColumnSchemaDesc.builder().name("dataset_version").type(STRING).build(),
+                                ColumnSchemaDesc.builder().name("index_table").type(STRING).build()
+                        ))
+                        .build())
                 .build(),
             ColumnSchemaDesc.builder().name(OwnerIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(OwnerNameColumn).type(STRING).build(),
