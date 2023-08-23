@@ -18,5 +18,6 @@
 alter table job_info MODIFY COLUMN model_version_id bigint;
 alter table job_info MODIFY COLUMN runtime_version_id bigint;
 alter table dataset_build_record drop column status;
+alter table dataset_build_record drop column dataset_id;
 alter table dataset_build_record add column task_id bigint;
 ALTER TABLE job_info ADD virtual_job_name varchar(255);

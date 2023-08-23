@@ -490,7 +490,6 @@ public class DatasetService {
                 stepSpecOverWrites,
                 JobType.BUILT_IN, null, false, null, null, userService.currentUserDetail());
         var entity = BuildRecordEntity.builder()
-                .datasetId(request.getDatasetId())
                 .projectId(project.getId())
                 .taskId(job.getSteps().get(0).getTasks().get(0).getId())
                 .shared(request.getShared())
@@ -511,7 +510,6 @@ public class DatasetService {
                     return BuildRecordVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .taskId(String.valueOf(entity.getTaskId()))
-                            .datasetId(String.valueOf(entity.getDatasetId()))
                             .datasetName(entity.getDatasetName())
                             .type(entity.getType())
                             .status(null == task ? TaskStatus.SUCCESS : task.getTaskStatus())

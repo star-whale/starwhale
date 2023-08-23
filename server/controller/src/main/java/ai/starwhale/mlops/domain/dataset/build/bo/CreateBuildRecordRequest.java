@@ -23,7 +23,6 @@ import lombok.Data;
 @Data
 @Builder
 public class CreateBuildRecordRequest {
-    private Long datasetId;
     private String projectUrl;
     private String datasetName;
     private Boolean shared;
