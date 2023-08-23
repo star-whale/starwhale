@@ -1,6 +1,6 @@
 import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { useClickAway } from 'react-use'
 import _ from 'lodash'
 import FilterRenderer from './FilterRenderer'
@@ -92,13 +92,9 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
-    const [items, setItems] = useState<ValueT[]>(value)
     const [editingItem, setEditingItem] = useState<{ index: any; value: ValueT } | null>(null)
 
-    useEffect(() => {
-        if (_.isEqual(value, items)) return
-        setItems(value ?? [])
-    }, [value, items])
+    const items = value
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
@@ -131,7 +127,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                             newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
                         }
                         newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                        setItems(newItems)
                         onChange?.(newItems)
                         setEditingItem({ index: -1, value: {} })
                     }}
@@ -161,7 +156,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                         newItems.push(newValue)
                     }
                     newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                    setItems(newItems)
                     onChange?.(newItems)
                 }}
             />

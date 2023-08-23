@@ -6,6 +6,13 @@ import _ from 'lodash'
 import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
 
+// eslint-disable-next-line
+export function arrayOverride(objValue: any, srcValue: any) {
+    if (_.isArray(objValue)) {
+        return srcValue
+    }
+}
+
 // eslint-disable-next-line prefer-template
 const getId = (str: string) => str + '-' + uuid().substring(0, 8)
 

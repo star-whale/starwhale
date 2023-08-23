@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { ColumnT, ConfigT } from '../../base/data-table/types'
 import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
-import { ITableState } from '../store'
+import { ITableState, arrayOverride } from '../store'
 
 const selector = (state: ITableState) => ({
     currentView: state.currentView,
@@ -52,9 +52,10 @@ function useGridCurrentView(columns: ColumnT[]) {
     }, [view])
 
     const setCurrentView = React.useCallback(
-        (currentView: ConfigT) => {
+        (next: ConfigT) => {
+            if ($view === next) return
             store.setState({
-                currentView: _.merge($view, currentView),
+                currentView: _.mergeWith($view, next, arrayOverride),
             })
         },
         [store, $view]

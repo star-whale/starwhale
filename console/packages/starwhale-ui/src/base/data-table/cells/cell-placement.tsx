@@ -116,6 +116,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                     ":hover [data-type='cell-fullscreen']": {
                         display: 'grid',
                     },
+                    'minWidth': columnIndex == 0 ? '120px' : 'auto',
                 })
             )}
             style={style}

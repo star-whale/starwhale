@@ -110,7 +110,9 @@ function FilterToQuery(
             }
             return item
         })
-        .filter((item: any) => !_.isEmpty(item.value) && item.op && item.property)
+        .filter((item: any) => {
+            return item.value && item.op && item.property
+        })
         .map((item: any) => {
             return getFilter(item?.property, item.value, item.op, item?.type as DataTypes)
         })

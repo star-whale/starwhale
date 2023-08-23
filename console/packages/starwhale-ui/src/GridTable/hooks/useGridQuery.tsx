@@ -11,7 +11,7 @@ import useTranslation from '@/hooks/useTranslation'
 
 const non: any = []
 const selector = (state: IGridState) => ({
-    queries: state.currentView?.queries ?? non,
+    queries: state.currentView?.queries || non,
     onCurrentViewQueriesChange: state.onCurrentViewQueriesChange,
 })
 
