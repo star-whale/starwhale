@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.upgrade;
 
 import ai.starwhale.mlops.datastore.DataStore;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
@@ -55,7 +55,7 @@ public class UpgradeService {
     public static final String LABEL_CONTROLLER = "starwhale.ai/role=controller";
     private final UpgradeAccess upgradeAccess;
     private final ControllerLock controllerLock;
-    private final JobService jobService;
+    private final JobServiceForWeb jobServiceForWeb;
     private final DataStore dataStore;
     private final K8sClient k8sClient;
     private final UpgradeStepManager upgradeStepManager;
@@ -70,7 +70,7 @@ public class UpgradeService {
 
     public UpgradeService(UpgradeAccess upgradeAccess,
             ControllerLock controllerLock,
-            JobService jobService,
+            JobServiceForWeb jobServiceForWeb,
             DataStore dataStore,
             K8sClient k8sClient,
             UpgradeStepManager upgradeStepManager,
@@ -79,7 +79,7 @@ public class UpgradeService {
             @Value("${sw.public-api.latest-version}") String latestVersionApiUrl) {
         this.upgradeAccess = upgradeAccess;
         this.controllerLock = controllerLock;
-        this.jobService = jobService;
+        this.jobServiceForWeb = jobServiceForWeb;
         this.dataStore = dataStore;
         this.k8sClient = k8sClient;
         this.currentVersionNumber = StrUtil.subBefore(starwhaleVersion, ":", false);
@@ -191,7 +191,7 @@ public class UpgradeService {
         }
 
         // 2. no hot job is remaining
-        List<Job> jobs = jobService.listHotJobs();
+        List<Job> jobs = jobServiceForWeb.listHotJobs();
         if (jobs.size() > 0) {
             throw new SwValidationException(ValidSubject.UPGRADE, "There are still remaining hot jobs.");
         }

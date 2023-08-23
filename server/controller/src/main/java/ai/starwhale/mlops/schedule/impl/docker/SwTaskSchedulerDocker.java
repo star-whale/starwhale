@@ -19,9 +19,9 @@ package ai.starwhale.mlops.schedule.impl.docker;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.TaskCommandGetter;
-import ai.starwhale.mlops.schedule.TaskCommandGetter.TaskCommand;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
@@ -57,25 +57,23 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
     final ContainerTaskMapper containerTaskMapper;
     final DockerTaskReporter dockerTaskReporter;
     final ExecutorService cmdExecThreadPool;
-    final TaskRunningEnvBuilder taskRunningEnvBuilder;
+    final TaskContainerSpecificationFinder taskContainerSpecificationFinder;
     final String network;
     final String nodeIp;
-    final TaskCommandGetter taskCommandGetter;
 
     final HostResourceConfigBuilder hostResourceConfigBuilder;
 
     public SwTaskSchedulerDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
             DockerTaskReporter dockerTaskReporter, ExecutorService cmdExecThreadPool,
-            TaskRunningEnvBuilder taskRunningEnvBuilder, String network, String nodeIp,
-            TaskCommandGetter taskCommandGetter, HostResourceConfigBuilder hostResourceConfigBuilder) {
+            TaskContainerSpecificationFinder taskContainerSpecificationFinder, String network, String nodeIp,
+            HostResourceConfigBuilder hostResourceConfigBuilder) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
         this.dockerTaskReporter = dockerTaskReporter;
         this.cmdExecThreadPool = cmdExecThreadPool;
-        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
+        this.taskContainerSpecificationFinder = taskContainerSpecificationFinder;
         this.network = network;
         this.nodeIp = nodeIp;
-        this.taskCommandGetter = taskCommandGetter;
         this.hostResourceConfigBuilder = hostResourceConfigBuilder;
     }
 
@@ -87,7 +85,8 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         for (Task task : tasks) {
             DockerClient dockerClient = dockerClientFinder.findProperDockerClient(
                     task.getStep().getResourcePool());
-            String image = task.getStep().getJob().getJobRuntime().getImage();
+            ContainerSpecification containerSpecification = taskContainerSpecificationFinder.findCs(task);
+            String image = containerSpecification.getImage();
             dockerClient.pullImageCmd(image).exec(new ResultCallback<PullResponseItem>() {
                 @Override
                 public void onStart(Closeable closeable) {
@@ -128,16 +127,17 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                     labels.putAll(CONTAINER_LABELS);
 
                     CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
-                            .withEnv(buildEnvs(task))
+                            .withEnv(buildEnvs(containerSpecification.getContainerEnvs()))
                             .withName(containerTaskMapper.containerName(task))
-                            .withHostConfig(hostResourceConfigBuilder.build(
-                                    taskRunningEnvBuilder.deviceResourceRequirements(task)).withNetworkMode(network))
+                            .withHostConfig(hostResourceConfigBuilder
+                                    .build(task.getTaskRequest().getRuntimeResources())
+                                    .withNetworkMode(network))
                             .withLabels(labels);
-                    TaskCommand taskCommand = taskCommandGetter.getCmd(task);
-                    if (null != taskCommand.getEntrypoint()) {
-                        createContainerCmd.withEntrypoint(taskCommand.getEntrypoint());
-                    } else if (null != taskCommand.getCmd()) {
-                        createContainerCmd.withCmd(taskCommand.getCmd());
+                    ContainerCommand containerCommand = containerSpecification.getCmd();
+                    if (null != containerCommand.getEntrypoint()) {
+                        createContainerCmd.withEntrypoint(containerCommand.getEntrypoint());
+                    } else if (null != containerCommand.getCmd()) {
+                        createContainerCmd.withCmd(containerCommand.getCmd());
                     }
                     CreateContainerResponse createContainerResponse = createContainerCmd.exec();
                     dockerClient.startContainerCmd(createContainerResponse.getId()).exec();
@@ -162,9 +162,8 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
     }
 
     @NotNull
-    private List<String> buildEnvs(Task task) {
-        Map<String, String> containerEnvs = taskRunningEnvBuilder.buildCoreContainerEnvs(task);
-        List<String> envs = containerEnvs.entrySet().stream().map(
+    private List<String> buildEnvs(Map<String, String> env) {
+        List<String> envs = env.entrySet().stream().map(
                 es -> String.format("%s=%s", es.getKey(), es.getValue())
         ).collect(Collectors.toList());
         return envs;

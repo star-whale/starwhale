@@ -35,6 +35,7 @@ public class ContainerOverwriteSpec {
     String image;
 
     List<String> cmds;
+    List<String> entrypoint;
 
     ResourceOverwriteSpec resourceOverwriteSpec;
 

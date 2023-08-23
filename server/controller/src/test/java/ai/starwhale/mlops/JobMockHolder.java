@@ -49,7 +49,7 @@ public class JobMockHolder {
                 .id(atomicLong.incrementAndGet())
                 .uuid(UUID.randomUUID().toString())
                 .jobRuntime(
-                        JobRuntime.builder().name("runtime1").version("version1").storagePath(jobDir)
+                        JobRuntime.builder().name("runtime1").version("version1")
                                 .build())
                 .model(Model.builder().id(1L).name("swmp1").version("versionsmp1").build())
                 .dataSets(List.of(DataSet.builder().id(1L).name("swds1").version("versionswds1").path(

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
+import ai.starwhale.mlops.common.util.FileResourceUtil;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -33,10 +34,6 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +64,6 @@ public class K8sJobTemplate {
     public static final String LABEL_APP = "app";
     public static final String LABEL_WORKLOAD_TYPE = "starwhale-workload-type";
     public static final String WORKLOAD_TYPE_EVAL = "eval";
-    public static final String WORKLOAD_TYPE_DATASET_BUILD = "dataset-build";
     public static final String WORKLOAD_TYPE_ONLINE_EVAL = "online-eval";
     public static final String WORKLOAD_TYPE_IMAGE_BUILDER = "image-builder";
     public static final int ONLINE_EVAL_PORT_IN_POD = 8080;
@@ -83,9 +79,10 @@ public class K8sJobTemplate {
             @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
     )
             throws IOException {
-        this.evalJobTemplate = getJobDefaultTemplate(evalJobTemplatePath, "template/job.yaml");
-        this.imageBuildJobTemplate = getJobDefaultTemplate(imageBuildJobTemplatePath, "template/image-build.yaml");
-        this.modelServingJobTemplate = getJobDefaultTemplate(msPath, "template/model-serving.yaml");
+        this.evalJobTemplate = FileResourceUtil.getFileContent(evalJobTemplatePath, "template/job.yaml");
+        this.imageBuildJobTemplate = FileResourceUtil.getFileContent(imageBuildJobTemplatePath,
+                "template/image-build.yaml");
+        this.modelServingJobTemplate = FileResourceUtil.getFileContent(msPath, "template/model-serving.yaml");
         this.pipCacheHostPath = pipCacheHostPath;
     }
 
@@ -109,7 +106,6 @@ public class K8sJobTemplate {
         V1Job job;
         switch (type) {
             case WORKLOAD_TYPE_EVAL:
-            case WORKLOAD_TYPE_DATASET_BUILD:
                 job = Yaml.loadAs(evalJobTemplate, V1Job.class);
                 break;
             case WORKLOAD_TYPE_IMAGE_BUILDER:
@@ -147,14 +143,14 @@ public class K8sJobTemplate {
             }
             originTolerations.addAll(
                     tolerations.stream()
-                        .map(t -> new V1Toleration()
-                            .key(t.getKey())
-                            .operator(t.getOperator())
-                            .value(t.getValue())
-                            .effect(t.getEffect())
-                            .tolerationSeconds(t.getTolerationSeconds())
-                        )
-                        .collect(Collectors.toList())
+                            .map(t -> new V1Toleration()
+                                    .key(t.getKey())
+                                    .operator(t.getOperator())
+                                    .value(t.getValue())
+                                    .effect(t.getEffect())
+                                    .tolerationSeconds(t.getTolerationSeconds())
+                            )
+                            .collect(Collectors.toList())
             );
             podSpec.tolerations(originTolerations);
         }
@@ -281,6 +277,9 @@ public class K8sJobTemplate {
             if (!CollectionUtils.isEmpty(containerOverwriteSpec.cmds)) {
                 c.args(containerOverwriteSpec.cmds);
             }
+            if (!CollectionUtils.isEmpty(containerOverwriteSpec.entrypoint)) {
+                c.command(containerOverwriteSpec.entrypoint);
+            }
             if (StringUtils.hasText(containerOverwriteSpec.image)) {
                 c.image(containerOverwriteSpec.image);
             }
@@ -310,25 +309,11 @@ public class K8sJobTemplate {
         }
     }
 
-    /**
-     * getJobDefaultTemplate returns the template content, prefer using the sysFsPath than fallbackRc
-     *
-     * @param sysFsPath  system filesystem path, return the filesystem file contents when not empty
-     * @param fallbackRc resource path when system filesystem path not specified
-     * @return template file content
-     * @throws IOException when reading template file
-     */
-    private String getJobDefaultTemplate(String sysFsPath, String fallbackRc) throws IOException {
-        if (StringUtils.hasText(sysFsPath)) {
-            return Files.readString(Paths.get(sysFsPath));
-        }
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(fallbackRc);
-        return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-    }
 
     /**
      * add device info to the spec, mainly used for ali ask eci-profile
-     * <a href="https://www.alibabacloud.com/help/en/elastic-container-instance/latest/configure-elastic-container-instance-profile">more</a>
+     * <a
+     * href="https://www.alibabacloud.com/help/en/elastic-container-instance/latest/configure-elastic-container-instance-profile">more</a>
      *
      * @param podTemplateSpec which device info labels will be patched to
      * @param specs           which contains the device info

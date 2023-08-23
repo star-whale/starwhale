@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -26,7 +25,9 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
@@ -35,6 +36,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -54,24 +56,24 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
 
     final K8sJobTemplate k8sJobTemplate;
 
-    final TaskRunningEnvBuilder taskRunningEnvBuilder;
+    final TaskContainerSpecificationFinder taskContainerSpecificationFinder;
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
+
     public K8sSwTaskScheduler(
             K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
-            TaskRunningEnvBuilder taskRunningEnvBuilder,
+            TaskContainerSpecificationFinder taskContainerSpecificationFinder,
             String restartPolicy,
             Integer backoffLimit,
             StorageAccessService storageAccessService,
-            ThreadPoolTaskScheduler cmdExecThreadPool
-    ) {
+            ThreadPoolTaskScheduler cmdExecThreadPool) {
         this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
-        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
+        this.taskContainerSpecificationFinder = taskContainerSpecificationFinder;
         this.storageAccessService = storageAccessService;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
@@ -118,6 +120,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
 
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
+        ContainerSpecification containerSpecification = taskContainerSpecificationFinder.findCs(task);
         try {
             V1Job k8sJob = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
 
@@ -125,14 +128,18 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             Map<String, ContainerOverwriteSpec> containerSpecMap = new HashMap<>();
 
             var job = task.getStep().getJob();
-            JobRuntime jobRuntime = job.getJobRuntime();
 
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-                containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
-                containerOverwriteSpec.setCmds(List.of("run"));
+                containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(containerSpecification.getContainerEnvs()));
+                ContainerCommand containerCommand = containerSpecification.getCmd();
+                containerOverwriteSpec.setCmds(
+                        containerCommand.getCmd() == null ? List.of() : Arrays.asList(containerCommand.getCmd()));
+                containerOverwriteSpec.setEntrypoint(
+                        containerCommand.getEntrypoint() == null ? List.of()
+                                : Arrays.asList(containerCommand.getEntrypoint()));
                 containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
-                containerOverwriteSpec.setImage(jobRuntime.getImage());
+                containerOverwriteSpec.setImage(containerSpecification.getImage());
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
@@ -213,8 +220,8 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
     }
 
     @NotNull
-    private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
-        var envs = mapToEnv(taskRunningEnvBuilder.buildCoreContainerEnvs(task));
+    private List<V1EnvVar> buildCoreContainerEnvs(Map<String, String> env) {
+        var envs = mapToEnv(env);
         envs.add(
                 new V1EnvVar()
                         .name("SW_POD_NAME")

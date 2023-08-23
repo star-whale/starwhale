@@ -51,10 +51,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     private final JobBoConverter jobBoConverter;
 
     public JobDao(JobRepo jobRepo,
-                  JobMapper jobMapper,
-                  JobDatasetVersionMapper datasetVersionMapper,
-                  IdConverter idConvertor,
-                  JobBoConverter jobBoConverter) {
+            JobMapper jobMapper,
+            JobDatasetVersionMapper datasetVersionMapper,
+            IdConverter idConvertor,
+            JobBoConverter jobBoConverter) {
         this.jobRepo = jobRepo;
         this.jobMapper = jobMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -87,7 +87,11 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
             }
             // TODO: only sync evaluation repo
-            return jobRepo.addJob(jobFlattenEntity) > 0;
+            if (jobFlattenEntity.getType() == JobType.EVALUATION) {
+                return jobRepo.addJob(jobFlattenEntity) > 0;
+            }
+            return true;
+
         }
         return false;
     }
@@ -112,12 +116,13 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .devWay(flattenEntity.getDevWay())
                 .devPassword(flattenEntity.getDevPassword())
                 .autoReleaseTime(flattenEntity.getAutoReleaseTime())
+                .virtualJobName(flattenEntity.getName())
                 .build();
     }
 
 
     public List<JobEntity> listJobs(Long projectId, Long modelId) {
-        return jobMapper.listJobs(projectId, modelId);
+        return jobMapper.listUserJobs(projectId, modelId);
     }
 
     public List<Job> findJobByStatusIn(List<JobStatus> jobStatuses) {

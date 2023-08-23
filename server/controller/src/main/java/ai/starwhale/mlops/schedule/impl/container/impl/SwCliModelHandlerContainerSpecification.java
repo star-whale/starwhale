@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
-
+package ai.starwhale.mlops.schedule.impl.container.impl;
 
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
@@ -26,6 +25,8 @@ import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -35,14 +36,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-
 @Slf4j
-@Service
-public class TaskRunningEnvBuilder {
+public class SwCliModelHandlerContainerSpecification implements ContainerSpecification {
+
 
     static final String FORMATTER_URI_ARTIFACT = "%s/project/%s/%s/%s/version/%s";
     static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
@@ -52,22 +51,26 @@ public class TaskRunningEnvBuilder {
     final RunTimeProperties runTimeProperties;
     final TaskTokenValidator taskTokenValidator;
 
-    public TaskRunningEnvBuilder(
+    final Task task;
+
+    public SwCliModelHandlerContainerSpecification(
             @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.task.dev-port}") int devPort,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             RunTimeProperties runTimeProperties,
-            TaskTokenValidator taskTokenValidator
+            TaskTokenValidator taskTokenValidator,
+            Task task
     ) {
         this.instanceUri = instanceUri;
         this.devPort = devPort;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.runTimeProperties = runTimeProperties;
         this.taskTokenValidator = taskTokenValidator;
+        this.task = task;
     }
 
 
-    public Map<String, String> buildCoreContainerEnvs(Task task) {
+    public Map<String, String> getContainerEnvs() {
         Job swJob = task.getStep().getJob();
         var model = swJob.getModel();
         var runtime = swJob.getJobRuntime();
@@ -163,7 +166,18 @@ public class TaskRunningEnvBuilder {
         return coreContainerEnvs;
     }
 
-    public List<RuntimeResource> deviceResourceRequirements(Task task) {
+    @Override
+    public ContainerCommand getCmd() {
+        return ContainerCommand.builder().cmd(new String[]{"run"}).build();
+    }
+
+    @Override
+    public String getImage() {
+        return task.getStep().getJob().getJobRuntime().getImage();
+    }
+
+
+    private List<RuntimeResource> deviceResourceRequirements(Task task) {
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
         var pool = task.getStep().getResourcePool();
         if (pool == null) {

@@ -98,6 +98,8 @@ public class Job extends TimeConcern {
 
     Date pinnedTime;
 
+    String virtualJobName;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -107,12 +109,12 @@ public class Job extends TimeConcern {
             return false;
         }
         Job job = (Job) o;
-        return uuid.equals(job.uuid);
+        return id.equals(job.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(uuid);
+        return Objects.hash(id);
     }
 
     @Override

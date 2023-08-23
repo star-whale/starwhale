@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
@@ -112,68 +113,103 @@ public class JobBoConverter {
         List<DataSet> dataSets = datasetDao.listDatasetVersionsOfJob(jobEntity.getId())
                 .stream().map(datasetBoConverter::fromVersion)
                 .collect(Collectors.toList());
-        ModelEntity modelEntity = modelMapper.find(
-                jobEntity.getModelVersion().getModelId());
+        Model model = modelFromJob(jobEntity);
+        JobRuntime jobRuntime = runtimeFromJob(jobEntity);
+        Job job = Job.builder()
+                .id(jobEntity.getId())
+                .uuid(jobEntity.getJobUuid())
+                .project(Project.builder()
+                        .id(jobEntity.getProjectId())
+                        .name(jobEntity.getProject().getProjectName())
+                        .build())
+                .jobRuntime(jobRuntime)
+                .status(jobEntity.getJobStatus())
+                .type(jobEntity.getType())
+                .model(model)
+                .stepSpec(jobEntity.getStepSpec())
+                .dataSets(dataSets)
+                .outputDir(jobEntity.getResultOutputPath())
+                .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
+                .owner(User.builder()
+                        .id(jobEntity.getOwner().getId())
+                        .name(jobEntity.getOwner().getUserName())
+                        .createdTime(jobEntity.getOwner().getCreatedTime())
+                        .build())
+                .createdTime(jobEntity.getCreatedTime())
+                .finishedTime(jobEntity.getFinishedTime())
+                .durationMs(jobEntity.getDurationMs())
+                .comment(jobEntity.getComment())
+                .devMode(jobEntity.isDevMode())
+                .devWay(jobEntity.getDevWay())
+                .devPassword(jobEntity.getDevPassword())
+                .autoReleaseTime(jobEntity.getAutoReleaseTime())
+                .pinnedTime(jobEntity.getPinnedTime())
+                .virtualJobName(jobEntity.getVirtualJobName())
+                .build();
+        return fillStepsAndTasks(job);
+    }
+
+    private Model modelFromJob(JobEntity jobEntity) {
+
+        if (null != jobEntity.getModelVersion() && StringUtils.hasText(
+                jobEntity.getModelVersion().getJobs())) { // virtual jobs use no swcli models
+            List<StepSpec> stepSpecs;
+            try {
+                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(jobEntity.getModelVersion().getJobs());
+            } catch (JsonProcessingException e) {
+                log.error("error while parsing job stepSpec, controller version not compile with database data??", e);
+                throw new SwValidationException(ValidSubject.JOB, e.getMessage());
+            }
+            ModelEntity modelEntity = modelMapper.find(
+                    jobEntity.getModelVersion().getModelId());
+            Model model = Model
+                    .builder()
+                    .id(jobEntity.getModelVersionId())
+                    .name(modelEntity.getModelName())
+                    .version(jobEntity.getModelVersion().getVersionName())
+                    .projectId(modelEntity.getProjectId())
+                    .stepSpecs(stepSpecs)
+                    .build();
+            return model;
+        } else {
+            List<StepSpec> stepSpecs;
+            try {
+                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(jobEntity.getStepSpec());
+            } catch (JsonProcessingException e) {
+                log.error("error while parsing job stepSpec, controller version not compile with database data??", e);
+                throw new SwValidationException(ValidSubject.JOB, e.getMessage());
+            }
+            return Model
+                    .builder()
+                    .id(-1L)
+                    .name(jobEntity.getVirtualJobName())
+                    .projectId(jobEntity.getProjectId())
+                    .stepSpecs(stepSpecs)
+                    .build();
+        }
+
+    }
+
+    private JobRuntime runtimeFromJob(JobEntity jobEntity) {
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.find(
                 jobEntity.getRuntimeVersionId());
+        if (null == runtimeVersionEntity) {
+            return null; // virtual jobs use no swcli runtimes
+        }
         RuntimeEntity runtimeEntity = runtimeMapper.find(
                 runtimeVersionEntity.getRuntimeId());
         String builtImage = runtimeVersionEntity.getBuiltImage();
         String image = StringUtils.hasText(builtImage) ? builtImage : runtimeVersionEntity.getImage(
-                    systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
-
-        Job job;
-        try {
-            job = Job.builder()
-                    .id(jobEntity.getId())
-                    .uuid(jobEntity.getJobUuid())
-                    .project(Project.builder()
-                            .id(jobEntity.getProjectId())
-                            .name(jobEntity.getProject().getProjectName())
-                            .build())
-                    .jobRuntime(JobRuntime.builder()
-                            .id(runtimeVersionEntity.getId())
-                            .name(runtimeEntity.getRuntimeName())
-                            .version(runtimeVersionEntity.getVersionName())
-                            .projectId(runtimeEntity.getProjectId())
-                            .storagePath(runtimeVersionEntity.getStoragePath())
-                            .manifest(runtimeVersionEntity.getVersionMetaObj())
-                            .image(image)
-                            .build())
-                    .status(jobEntity.getJobStatus())
-                    .type(jobEntity.getType())
-                    .model(Model
-                            .builder()
-                            .id(jobEntity.getModelVersionId())
-                            .name(modelEntity.getModelName())
-                            .version(jobEntity.getModelVersion().getVersionName())
-                            .projectId(modelEntity.getProjectId())
-                            .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(jobEntity.getModelVersion().getJobs()))
-                            .build()
-                    )
-                    .stepSpec(jobEntity.getStepSpec())
-                    .dataSets(dataSets)
-                    .outputDir(jobEntity.getResultOutputPath())
-                    .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
-                    .owner(User.builder()
-                            .id(jobEntity.getOwner().getId())
-                            .name(jobEntity.getOwner().getUserName())
-                            .createdTime(jobEntity.getOwner().getCreatedTime())
-                            .build())
-                    .createdTime(jobEntity.getCreatedTime())
-                    .finishedTime(jobEntity.getFinishedTime())
-                    .durationMs(jobEntity.getDurationMs())
-                    .comment(jobEntity.getComment())
-                    .devMode(jobEntity.isDevMode())
-                    .devWay(jobEntity.getDevWay())
-                    .devPassword(jobEntity.getDevPassword())
-                    .autoReleaseTime(jobEntity.getAutoReleaseTime())
-                    .pinnedTime(jobEntity.getPinnedTime())
-                    .build();
-        } catch (JsonProcessingException e) {
-            throw new SwValidationException(ValidSubject.JOB, e.getMessage());
-        }
-        return fillStepsAndTasks(job);
+                systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
+        JobRuntime jobRuntime = JobRuntime.builder()
+                .id(runtimeVersionEntity.getId())
+                .name(runtimeEntity.getRuntimeName())
+                .version(runtimeVersionEntity.getVersionName())
+                .projectId(runtimeEntity.getProjectId())
+                .manifest(runtimeVersionEntity.getVersionMetaObj())
+                .image(image)
+                .build();
+        return jobRuntime;
     }
 
     public Job fillStepsAndTasks(Job job) {
@@ -185,6 +221,7 @@ public class JobBoConverter {
                     // backward compatibility
                     step.setResourcePool(job.getResourcePool());
                 }
+                step.setSpec(job.getModel().specOfStep(step.getName()).orElseThrow());
                 return step;
             } catch (IOException e) {
                 log.error("can not convert step entity to step", e);

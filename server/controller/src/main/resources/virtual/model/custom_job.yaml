@@ -1,0 +1,27 @@
+- job_name: dataset_build
+  name: dataset_build
+  show_name: dataset_build
+  concurrency: 1
+  resources:
+    - type: cpu
+      limit: 1
+      request: 1
+  require_dataset: false
+  container_spec:
+    image: "aabbcc"
+    cmds:
+      - a
+      - b
+    entrypoint:
+      - a
+      - b
+- job_name: xx
+  name: xx
+  container_spec:
+    image: "aabbcc"
+    cmds:
+      - a
+      - b
+    entrypoint:
+      - a
+      - b

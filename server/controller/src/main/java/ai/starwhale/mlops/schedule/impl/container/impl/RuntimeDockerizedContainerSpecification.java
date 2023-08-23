@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.schedule.impl.container.impl;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Service;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
+import java.util.Map;
 
-@Service
-public class TaskCommandGetter {
+public class RuntimeDockerizedContainerSpecification implements ContainerSpecification {
 
-    public TaskCommand getCmd(Task task) {
-        //TODO get the real command of tasks according to schema of task
-        return TaskCommand.builder().cmd(new String[]{"run"}).build();
+    final Task task;
+
+    public RuntimeDockerizedContainerSpecification(Task task) {
+        this.task = task;
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TaskCommand {
 
-        String[] cmd;
-        String[] entrypoint;
+    @Override
+    public Map<String, String> getContainerEnvs() {
+        return null;
     }
+
+    @Override
+    public ContainerCommand getCmd() {
+        return null;
+    }
+
+    @Override
+    public String getImage() {
+        return null;
+    }
+
 
 }

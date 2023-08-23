@@ -30,8 +30,6 @@ import org.springframework.validation.annotation.Validated;
 @AllArgsConstructor
 public class DatasetBuildRequest {
 
-    private Long datasetId;
-
     @NotNull(message = "type can not be null")
     private BuildType type;
 

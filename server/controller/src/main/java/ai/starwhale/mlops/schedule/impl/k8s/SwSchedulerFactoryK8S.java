@@ -18,7 +18,7 @@ package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.schedule.SwSchedulerAbstractFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollectorFactory;
 import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -36,7 +36,7 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
 
     final K8sJobTemplate k8sJobTemplate;
 
-    final TaskRunningEnvBuilder taskRunningEnvBuilder;
+    final TaskContainerSpecificationFinder taskContainerSpecificationFinder;
 
     final String restartPolicy;
     final int backoffLimit;
@@ -46,7 +46,7 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
     public SwSchedulerFactoryK8S(
             K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
-            TaskRunningEnvBuilder taskRunningEnvBuilder,
+            TaskContainerSpecificationFinder taskContainerSpecificationFinder,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
             StorageAccessService storageAccessService,
@@ -54,7 +54,7 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
     ) {
         this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
-        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
+        this.taskContainerSpecificationFinder = taskContainerSpecificationFinder;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
         this.storageAccessService = storageAccessService;
@@ -67,12 +67,11 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
         return new K8sSwTaskScheduler(
                 k8sClient,
                 k8sJobTemplate,
-                taskRunningEnvBuilder,
+                taskContainerSpecificationFinder,
                 restartPolicy,
                 backoffLimit,
                 storageAccessService,
-                cmdExecThreadPool
-        );
+                cmdExecThreadPool);
     }
 
     @Bean

@@ -19,31 +19,18 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.dataset.DatasetService;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
-import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -60,15 +47,11 @@ import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import cn.hutool.core.util.IdUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -82,61 +65,45 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
-public class JobService {
+public class JobServiceForWeb {
+
     private final TaskMapper taskMapper;
     private final JobConverter jobConvertor;
-    private final JobBoConverter jobBoConverter;
-    private final JobSpliterator jobSpliterator;
     private final HotJobHolder hotJobHolder;
     private final JobLoader jobLoader;
     private final SwTaskScheduler swTaskScheduler;
     private final ResultQuerier resultQuerier;
-    private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
     private final ProjectService projectService;
     private final JobDao jobDao;
-    private final ModelService modelService;
-    private final DatasetService datasetService;
-    private final RuntimeService runtimeService;
     private final JobUpdateHelper jobUpdateHelper;
 
     private final TrashService trashService;
-    private final SystemSettingService systemSettingService;
-    private final JobSpecParser jobSpecParser;
 
-    public JobService(
+    private final JobCreator jobCreator;
+
+    public JobServiceForWeb(
             TaskMapper taskMapper, JobConverter jobConvertor,
-            JobBoConverter jobBoConverter, RuntimeService runtimeService,
-            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-            ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
-            ResultQuerier resultQuerier, DatasetService datasetService,
-            StoragePathCoordinator storagePathCoordinator,
+            HotJobHolder hotJobHolder,
+            ProjectService projectService, JobDao jobDao, JobLoader jobLoader,
+            ResultQuerier resultQuerier,
             UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
-            SystemSettingService systemSettingService, JobSpecParser jobSpecParser,
-            SwTaskScheduler swTaskScheduler) {
+            SwTaskScheduler swTaskScheduler, JobCreator jobCreator) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
-        this.jobBoConverter = jobBoConverter;
-        this.runtimeService = runtimeService;
-        this.jobSpliterator = jobSpliterator;
         this.hotJobHolder = hotJobHolder;
         this.projectService = projectService;
         this.jobDao = jobDao;
         this.jobLoader = jobLoader;
-        this.modelService = modelService;
         this.resultQuerier = resultQuerier;
-        this.datasetService = datasetService;
-        this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
         this.trashService = trashService;
-        this.systemSettingService = systemSettingService;
-        this.jobSpecParser = jobSpecParser;
         this.swTaskScheduler = swTaskScheduler;
+        this.jobCreator = jobCreator;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -188,111 +155,14 @@ public class JobService {
 
     @Transactional
     public Long createJob(String projectUrl,
-                          String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
-                          String comment, String resourcePool,
-                          String handler, String stepSpecOverWrites, JobType type,
-                          DevWay devWay, boolean devMode, String devPassword, Long ttlInSec) {
+            String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
+            String comment, String resourcePool,
+            String handler, String stepSpecOverWrites, JobType type,
+            DevWay devWay, boolean devMode, String devPassword, Long ttlInSec) {
         User user = userService.currentUserDetail();
-        String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
-        var modelVersion = modelService.findModelVersion(modelVersionUrl);
-        var model = modelService.findModel(modelVersion.getModelId());
-
-        RuntimeVersion runtimeVersion;
-        if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
-        } else {
-            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
-            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
-            if (!StringUtils.hasText(runtimeVersionUrl)) {
-                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
-            }
-            runtimeVersion = runtimeService.findBuiltInRuntimeVersion(model.getProjectId(), runtimeVersionUrl);
-        }
-        var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
-
-        var datasetVersionIdMaps = StringUtils.hasText(datasetVersionUrls)
-                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
-                        .map(datasetService::findDatasetVersion)
-                        .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName))
-                    : new HashMap<Long, String>();
-
-        if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
-                || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided only one"),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        List<StepSpec> steps;
-        try {
-            steps = StringUtils.hasText(stepSpecOverWrites)
-                    ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
-                    : jobSpecParser.parseStepFromYaml(modelVersion.getJobs(), handler);
-            for (var s : steps) {
-                s.verifyStepSpecArgs();
-            }
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(steps);
-        } catch (JsonProcessingException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "failed to parse job step", e), HttpStatus.BAD_REQUEST);
-        }
-
-        if (CollectionUtils.isEmpty(steps)) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "no stepSpec is configured"), HttpStatus.BAD_REQUEST);
-        }
-
-        var pool = systemSettingService.queryResourcePool(resourcePool);
-        if (pool != null) {
-            for (var step : steps) {
-                pool.validateResources(step.getResources());
-            }
-            if (!pool.allowUser(user.getId())) {
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.JOB, "user is not allowed to use this resource pool"),
-                        HttpStatus.BAD_REQUEST);
-            }
-        }
-
-        JobFlattenEntity jobEntity = JobFlattenEntity.builder()
-                .jobUuid(jobUuid)
-                .ownerId(user.getId())
-                .ownerName(user.getName())
-                .runtimeVersionId(runtimeVersion.getId())
-                .runtimeVersionValue(runtimeVersion.getVersionName())
-                .runtimeName(runtime.getName())
-                .projectId(project.getId())
-                .project(project)
-                .modelVersionId(modelVersion.getId())
-                .modelVersionValue(modelVersion.getName())
-                .modelName(model.getName())
-                .datasetIdVersionMap(datasetVersionIdMaps)
-                .comment(comment)
-                .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
-                .jobStatus(JobStatus.CREATED)
-                .type(type)
-                .resourcePool(resourcePool)
-                .stepSpec(stepSpecOverWrites)
-                .createdTime(new Date())
-                .modifiedTime(new Date())
-                .devMode(devMode)
-                .devWay(devMode ? devWay : null)
-                .devPassword(devMode ? devPassword : null)
-                .autoReleaseTime(ttlInSec == null ? null : new Date(System.currentTimeMillis() + ttlInSec * 1000))
-                .build();
-
-        jobDao.addJob(jobEntity);
-        var jobId = jobEntity.getId();
-        log.info("Job has been created. ID={}", jobId);
-
-        var job = jobDao.findJobById(jobId);
-        jobSpliterator.split(job);
-        jobBoConverter.fillStepsAndTasks(job);
-        jobLoader.load(job, false);
-        jobUpdateHelper.updateJob(job);
-
-        return jobId;
+        return jobCreator.createJob(project, modelVersionUrl, datasetVersionUrls, runtimeVersionUrl, comment,
+                resourcePool, handler, stepSpecOverWrites, type, devWay, devMode, devPassword, ttlInSec, user).getId();
     }
 
     @Transactional

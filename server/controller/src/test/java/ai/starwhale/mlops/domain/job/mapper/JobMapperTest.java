@@ -64,6 +64,7 @@ public class JobMapperTest extends MySqlContainerHolder {
     ModelVersionEntity modelVersionEntity;
     JobEntity jobPaused;
     JobEntity jobCreated;
+    JobEntity jobBuiltIn;
 
     @BeforeEach
     public void initData() {
@@ -96,23 +97,55 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .devMode(true)
                 .autoReleaseTime(new Date(123 * 1000L))
                 .projectId(project.getId()).ownerId(user.getId()).build();
+        jobBuiltIn = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
+                .resultOutputPath("").type(JobType.BUILT_IN)
+                .stepSpec("stepSpec2")
+                .devMode(true)
+                .autoReleaseTime(new Date(123 * 1000L))
+                .projectId(project.getId()).ownerId(user.getId()).build();
         jobMapper.addJob(jobPaused);
         jobMapper.addJob(jobCreated);
+        jobMapper.addJob(jobBuiltIn);
     }
 
     @Test
     public void testListJobs() {
         List<JobEntity> jobEntities = jobMapper.listJobs(project.getId(), null);
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
-                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
         jobEntities = jobMapper.listJobs(project.getId(), modelVersionEntity.getId());
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
-                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
         jobEntities = jobMapper.listJobs(project.getId(), modelVersionEntity.getId() + 1234L);
+        Assertions.assertIterableEquals(List.of(), jobEntities);
+
+    }
+
+    private JobEntity getExpectedJob(JobEntity jobEntity) {
+        if (jobEntity.getType() == JobType.BUILT_IN) {
+            return jobBuiltIn;
+        }
+        return jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated;
+    }
+
+    @Test
+    public void testListUserJobs() {
+        List<JobEntity> jobEntities = jobMapper.listUserJobs(project.getId(), null);
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
+                        project, modelVersionEntity, jobEntity));
+        jobEntities = jobMapper.listUserJobs(project.getId(), modelVersionEntity.getId());
+        Assertions.assertEquals(2, jobEntities.size());
+        jobEntities.forEach(
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
+                        project, modelVersionEntity, jobEntity));
+        jobEntities = jobMapper.listUserJobs(project.getId(), modelVersionEntity.getId() + 1234L);
         Assertions.assertIterableEquals(List.of(), jobEntities);
 
     }
@@ -120,6 +153,25 @@ public class JobMapperTest extends MySqlContainerHolder {
     @Test
     public void testFindById() {
         validateJob(jobCreated, user, project, modelVersionEntity, jobMapper.findJobById(jobCreated.getId()));
+    }
+
+    @Test
+    public void testFindByWithoutModelAndRuntime() {
+        var virtualJob = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
+                .resourcePool("rp").runtimeVersionId(-1L).modelVersionId(-1L)
+                .resultOutputPath("").type(JobType.EVALUATION)
+                .stepSpec("stepSpec2")
+                .devMode(true)
+                .autoReleaseTime(new Date(123 * 1000L))
+                .virtualJobName("vir_n")
+                .projectId(project.getId()).ownerId(user.getId()).build();
+        jobMapper.addJob(virtualJob);
+        var je = jobMapper.findJobById(virtualJob.getId());
+        Assertions.assertNull(je.getModelName());
+        Assertions.assertTrue(je.getModelVersion().isNull());
+        Assertions.assertEquals(-1L, je.getRuntimeVersionId());
+        Assertions.assertEquals(-1L, je.getModelVersionId());
+        Assertions.assertEquals("vir_n", je.getVirtualJobName());
     }
 
     @Test
@@ -135,15 +187,15 @@ public class JobMapperTest extends MySqlContainerHolder {
         validateJob(jobPaused, user, project, modelVersionEntity, jobEntities.get(0));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED));
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
-                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED, JobStatus.FAIL));
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
-                jobEntity -> validateJob(jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated, user,
+                jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.CANCELED));

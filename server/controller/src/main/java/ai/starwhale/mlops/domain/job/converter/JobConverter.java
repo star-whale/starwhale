@@ -90,6 +90,9 @@ public class JobConverter {
     }
 
     private ModelVo findModelByVersionIds(Long versionId) {
+        if (null == versionId) {
+            return null;
+        }
         List<ModelVo> modelVos = modelService.findModelByVersionId(List.of(versionId));
         if (CollectionUtils.isEmpty(modelVos) || modelVos.size() > 1) {
             throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and model");
@@ -98,6 +101,9 @@ public class JobConverter {
     }
 
     private RuntimeVo findRuntimeByVersionIds(Long versionId) {
+        if (null == versionId) {
+            return null;
+        }
         List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(List.of(versionId));
         if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
             throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and runtime");
@@ -206,7 +212,7 @@ public class JobConverter {
                 .jobName(extractJobName(jobEntity.getStepSpec()))
                 .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtime)
-                .builtinRuntime(runtime.getVersion().getName()
+                .builtinRuntime(null == runtime ? null : runtime.getVersion().getName()
                         .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
                 .datasets(datasetVersions)
                 .datasetList(datasetList)

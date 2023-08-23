@@ -44,11 +44,6 @@ public class JobRuntime {
      */
     String version;
 
-    /**
-     * the storagePath for the runtime
-     */
-    String storagePath;
-
     String image;
 
     RuntimeService.RuntimeManifest manifest;

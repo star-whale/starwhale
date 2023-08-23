@@ -46,7 +46,6 @@ public class TaskBoConverterTest {
                         .model(model)
                         .jobRuntime(JobRuntime.builder()
                                 .name("name_swrt")
-                                .storagePath("path_storage")
                                 .version("version_swrt")
                                 .build())
                         .build())

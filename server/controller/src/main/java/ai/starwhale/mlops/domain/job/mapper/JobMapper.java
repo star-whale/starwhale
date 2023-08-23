@@ -28,6 +28,15 @@ public interface JobMapper {
 
     List<JobEntity> listJobs(@Param("projectId") Long projectId, @Param("modelId") Long modelId);
 
+    /**
+     * built-in jobs are excluded
+     *
+     * @param projectId the project where the job belongs to
+     * @param modelId   the model where the job run against
+     * @return all the jobs matched
+     */
+    List<JobEntity> listUserJobs(@Param("projectId") Long projectId, @Param("modelId") Long modelId);
+
     JobEntity findJobById(@Param("jobId") Long jobId);
 
     JobEntity findJobByUuid(@Param("uuid") String uuid);

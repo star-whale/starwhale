@@ -26,10 +26,11 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.TaskCommandGetter;
-import ai.starwhale.mlops.schedule.TaskCommandGetter.TaskCommand;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
@@ -60,11 +61,10 @@ public class SwTaskSchedulerDockerTest {
     ContainerTaskMapper containerTaskMapper;
     DockerTaskReporter dockerTaskReporter;
     ExecutorService cmdExecThreadPool;
-    TaskRunningEnvBuilder taskRunningEnvBuilder;
+    TaskContainerSpecificationFinder taskContainerSpecificationFinder;
     String network;
     String nodeIp;
     SwTaskSchedulerDocker swTaskSchedulerDocker;
-    TaskCommandGetter taskCommandGetter;
     DockerClient dockerClient;
 
     TaskReportReceiver taskReportReceiver;
@@ -84,9 +84,12 @@ public class SwTaskSchedulerDockerTest {
         when(containerTaskMapper.containerName(any())).thenReturn(containerName);
         dockerTaskReporter = mock(DockerTaskReporter.class);
         cmdExecThreadPool = Executors.newCachedThreadPool();
-        ;
-        taskRunningEnvBuilder = mock(TaskRunningEnvBuilder.class);
-        taskCommandGetter = mock(TaskCommandGetter.class);
+        taskContainerSpecificationFinder = mock(TaskContainerSpecificationFinder.class);
+        ContainerSpecification cs = mock(ContainerSpecification.class);
+        when(cs.getContainerEnvs()).thenReturn(Map.of("ENV_NAME", "env_value"));
+        when(cs.getImage()).thenReturn(IMAGE_BUSY_BOX);
+        when(cs.getCmd()).thenReturn(new ContainerCommand(new String[]{"tail", "-f", "/dev/null"}, null));
+        when(taskContainerSpecificationFinder.findCs(any())).thenReturn(cs);
         network = "host";
         nodeIp = "127.1.0.2";
         swTaskSchedulerDocker = new SwTaskSchedulerDocker(
@@ -94,10 +97,10 @@ public class SwTaskSchedulerDockerTest {
                 containerTaskMapper,
                 dockerTaskReporter,
                 cmdExecThreadPool,
-                taskRunningEnvBuilder,
+                taskContainerSpecificationFinder,
                 network,
                 nodeIp,
-                taskCommandGetter, new HostResourceConfigBuilder());
+                new HostResourceConfigBuilder());
         try {
             dockerClient.removeContainerCmd(containerName).withForce(true).exec();
         } catch (Exception e) {
@@ -115,6 +118,7 @@ public class SwTaskSchedulerDockerTest {
                         .job(Job.builder().jobRuntime(JobRuntime.builder().image(IMAGE_BUSY_BOX).build()).build())
                         .build()
                 )
+                .taskRequest(new TaskRequest())
                 .build();
         testSchedule(task);
         Object lock = new Object();
@@ -122,7 +126,8 @@ public class SwTaskSchedulerDockerTest {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 List<ReportedTask> reportedTasks = (List<ReportedTask>) invocationOnMock.getArguments()[0];
-                if (reportedTasks.get(0).getStatus() == TaskStatus.RUNNING) {
+                if (reportedTasks.get(0).getStatus() == TaskStatus.RUNNING
+                        || reportedTasks.get(0).getStatus() == TaskStatus.FAIL) {
                     synchronized (lock) {
                         lock.notifyAll();
                     }
@@ -148,10 +153,6 @@ public class SwTaskSchedulerDockerTest {
     }
 
     private void testSchedule(Task task) {
-        when(taskCommandGetter.getCmd(any())).thenReturn(
-                new TaskCommand(new String[]{"tail", "-f", "/dev/null"}, null));
-        when(taskRunningEnvBuilder.buildCoreContainerEnvs(any())).thenReturn(Map.of("ENV_NAME", "env_value"));
-
         swTaskSchedulerDocker.schedule(Set.of(task), taskReportReceiver);
 
     }

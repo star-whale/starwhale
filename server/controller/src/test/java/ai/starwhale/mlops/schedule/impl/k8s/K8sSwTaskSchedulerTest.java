@@ -43,7 +43,9 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwProcessException;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
+import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
+import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
@@ -82,14 +84,20 @@ public class K8sSwTaskSchedulerTest {
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
+        TaskContainerSpecificationFinder tcsFinder = mock(TaskContainerSpecificationFinder.class);
+        ContainerSpecification containerSpecification = mock(ContainerSpecification.class);
+        when(tcsFinder.findCs(any())).thenReturn(containerSpecification);
+        when(containerSpecification.getContainerEnvs()).thenReturn(Map.of("NVIDIA_VISIBLE_DEVICES", ""));
+        when(containerSpecification.getCmd()).thenReturn(
+                new ContainerCommand(new String[]{"run"}, new String[]{"bash", "entrypoint.sh"}));
+        when(containerSpecification.getImage()).thenReturn("testimage");
         return new K8sSwTaskScheduler(k8sClient,
                 new K8sJobTemplateMock(""),
-                mock(TaskRunningEnvBuilder.class),
+                tcsFinder,
                 "rp",
                 10,
                 storageAccessService,
-                mock(ThreadPoolTaskScheduler.class)
-        );
+                mock(ThreadPoolTaskScheduler.class));
     }
 
     @Test
@@ -106,20 +114,11 @@ public class K8sSwTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sSwTaskScheduler(
-                client,
-                k8sJobTemplate,
-                mock(TaskRunningEnvBuilder.class),
-                "rp",
-                50,
-                mock(StorageAccessService.class),
-                mock(ThreadPoolTaskScheduler.class)
-        );
+        var scheduler = buildK8sScheduler(client);
         var task = mockTask(false);
         var pool = task.getStep().getResourcePool();
         // add GPU resource
-        var resources = List.of(new Resource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f, 1f));
+        var resources = List.of(new Resource(ResourceOverwriteSpec.RESOURCE_CPU, 1f, 0f, 1f));
         pool.setResources(resources);
 
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
@@ -140,16 +139,7 @@ public class K8sSwTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sSwTaskScheduler(
-                client,
-                k8sJobTemplate,
-                mock(TaskRunningEnvBuilder.class),
-                "rp",
-                50,
-                mock(StorageAccessService.class),
-                mock(ThreadPoolTaskScheduler.class)
-        );
+        var scheduler = buildK8sScheduler(client);
         var task = mockTask(true);
         scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
@@ -167,8 +157,7 @@ public class K8sSwTaskSchedulerTest {
                 .jobRuntime(JobRuntime.builder()
                         .name("swrtN")
                         .version("swrtV")
-                        .image("imageRT")
-                        .storagePath("path_rt")
+                        .image("testimage")
                         .projectId(102L)
                         .manifest(new RuntimeService.RuntimeManifest(
                                 "",
@@ -219,16 +208,12 @@ public class K8sSwTaskSchedulerTest {
                 Map<String, String> nodeSelectors, List<Toleration> tolerations, Map<String, String> annotations) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
             Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
-            Assertions.assertEquals("imageRT", worker.getImage());
+            Assertions.assertEquals("testimage", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
             return null;
         }
 
-        private void assertMapEquals(Map<String, String> expectedEnvs, Map<String, String> actualEnv) {
-            Assertions.assertEquals(expectedEnvs.size(), actualEnv.size());
-            expectedEnvs.forEach((k, v) -> Assertions.assertEquals(v, actualEnv.get(k)));
-        }
     }
 
     @Test
@@ -243,12 +228,11 @@ public class K8sSwTaskSchedulerTest {
         var scheduler = new K8sSwTaskScheduler(
                 client,
                 mock(K8sJobTemplate.class),
-                mock(TaskRunningEnvBuilder.class),
+                mock(TaskContainerSpecificationFinder.class),
                 restartPolicy,
                 backoffLimit,
                 mock(StorageAccessService.class),
-                threadPoolTaskScheduler
-        );
+                threadPoolTaskScheduler);
 
         var task = Task.builder().id(7L).build();
         var podList = new V1PodList();
@@ -283,12 +267,11 @@ public class K8sSwTaskSchedulerTest {
         var scheduler = new K8sSwTaskScheduler(
                 client,
                 mock(K8sJobTemplate.class),
-                mock(TaskRunningEnvBuilder.class),
+                mock(TaskContainerSpecificationFinder.class),
                 restartPolicy,
                 backoffLimit,
                 mock(StorageAccessService.class),
-                threadPoolTaskScheduler
-        );
+                threadPoolTaskScheduler);
 
         var task = Task.builder().id(7L).build();
         scheduler.stop(List.of(task));

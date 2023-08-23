@@ -55,7 +55,12 @@ export async function fetchDatasetBuildList(
     return resp.data
 }
 
-export async function fetchDatasetTaskOfflineLogFiles(datasetName: string, taskId: string): Promise<any> {
-    const resp = await axios.get<string[]>(`/api/v1/log/offline/dataset/${datasetName}/build/${taskId}`)
+export async function fetchDatasetTaskOfflineLogFiles(taskId: string): Promise<any> {
+    const resp = await axios.get<string[]>(`/api/v1/log/offline/${taskId}`)
+    return resp.data
+}
+
+export async function fetchTaskOfflineFileLog(taskId: string, fileId: string): Promise<any> {
+    const resp = await axios.get<string>(`/api/v1/log/offline/${taskId}/${fileId}`)
     return resp.data
 }

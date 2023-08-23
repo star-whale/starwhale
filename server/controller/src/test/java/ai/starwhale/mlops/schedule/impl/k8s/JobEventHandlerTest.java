@@ -26,7 +26,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
@@ -50,7 +49,6 @@ import org.mockito.ArgumentCaptor;
 public class JobEventHandlerTest {
 
     TaskReportReceiver taskReportReceiver;
-    DatasetService datasetService;
     JobEventHandler jobEventHandler;
     private final K8sClient k8sClient = mock(K8sClient.class);
     private final OffsetDateTime startTime = OffsetDateTime.now().minusMinutes(1);
@@ -59,10 +57,9 @@ public class JobEventHandlerTest {
     @BeforeEach
     public void setUp() throws ApiException {
         taskReportReceiver = mock(TaskReportReceiver.class);
-        datasetService = mock(DatasetService.class);
         TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
         jobEventHandler = new JobEventHandler(
-                taskReportReceiver, taskStatusMachine, mock(RuntimeService.class), datasetService, k8sClient);
+                taskReportReceiver, taskStatusMachine, mock(RuntimeService.class), k8sClient);
 
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
         pod.setStatus(new V1PodStatus().startTime(startTime));

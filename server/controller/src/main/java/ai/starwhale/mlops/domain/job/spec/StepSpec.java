@@ -77,6 +77,10 @@ public class StepSpec {
     @JsonProperty("require_dataset")
     private Boolean requireDataset;
 
+    @JsonProperty("container_spec")
+    ContainerSpec containerSpec;
+
+
     @JsonProperty("parameters_sig")
     private List<Map<String, String>> parametersSig;
 

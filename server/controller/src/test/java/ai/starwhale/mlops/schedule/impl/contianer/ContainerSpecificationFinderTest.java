@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.schedule.impl.contianer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -39,13 +39,14 @@ import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.schedule.impl.container.impl.SwCliModelHandlerContainerSpecification;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TaskRunningEnvBuilderTest {
+public class ContainerSpecificationFinderTest {
 
     static final String CONDARC = "channels:\n"
             + "  - defaults\n"
@@ -109,11 +110,11 @@ public class TaskRunningEnvBuilderTest {
                 "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
-        TaskRunningEnvBuilder builder = new TaskRunningEnvBuilder("http://instanceUri",
+        SwCliModelHandlerContainerSpecification builder = new SwCliModelHandlerContainerSpecification("http://instanceUri",
                 8000,
                 50,
-                runTimeProperties, taskTokenValidator);
-        assertMapEquals(expectedEnvs, builder.buildCoreContainerEnvs(mockTask(true)));
+                runTimeProperties, taskTokenValidator, mockTask(true));
+        assertMapEquals(expectedEnvs, builder.getContainerEnvs());
     }
 
     private void assertMapEquals(Map<String, String> expectedEnvs, Map<String, String> actualEnv) {
@@ -129,7 +130,6 @@ public class TaskRunningEnvBuilderTest {
                         .name("swrtN")
                         .version("swrtV")
                         .image("imageRT")
-                        .storagePath("path_rt")
                         .projectId(102L)
                         .manifest(new RuntimeService.RuntimeManifest(
                                 "",

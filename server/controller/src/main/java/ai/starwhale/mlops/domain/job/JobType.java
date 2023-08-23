@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job;
 
-@Deprecated
 public enum JobType {
-    EVALUATION, TRAIN, FINE_TUNE, SERVING, CUSTOM
+    EVALUATION, TRAIN, FINE_TUNE, SERVING, BUILT_IN
 }

@@ -35,7 +35,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.task.TaskService;
@@ -56,7 +56,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.api-prefix}")
 public class JobController implements JobApi {
 
-    private final JobService jobService;
+    private final JobServiceForWeb jobServiceForWeb;
     private final TaskService taskService;
     private final ModelServingService modelServingService;
     private final RuntimeSuggestionService runtimeSuggestionService;
@@ -66,7 +66,7 @@ public class JobController implements JobApi {
     private final FeaturesProperties featuresProperties;
 
     public JobController(
-            JobService jobService,
+            JobServiceForWeb jobServiceForWeb,
             TaskService taskService,
             ModelServingService modelServingService,
             RuntimeSuggestionService runtimeSuggestionService,
@@ -74,7 +74,7 @@ public class JobController implements JobApi {
             DagQuerier dagQuerier,
             FeaturesProperties featuresProperties
     ) {
-        this.jobService = jobService;
+        this.jobServiceForWeb = jobServiceForWeb;
         this.taskService = taskService;
         this.modelServingService = modelServingService;
         this.runtimeSuggestionService = runtimeSuggestionService;
@@ -82,12 +82,12 @@ public class JobController implements JobApi {
         this.dagQuerier = dagQuerier;
         this.featuresProperties = featuresProperties;
         var actions = InvokerManager.<String, String>create()
-                .addInvoker("cancel", jobService::cancelJob);
+                .addInvoker("cancel", jobServiceForWeb::cancelJob);
         if (featuresProperties.isJobPauseEnabled()) {
-            actions.addInvoker("pause", jobService::pauseJob);
+            actions.addInvoker("pause", jobServiceForWeb::pauseJob);
         }
         if (featuresProperties.isJobResumeEnabled()) {
-            actions.addInvoker("resume", jobService::resumeJob);
+            actions.addInvoker("resume", jobServiceForWeb::resumeJob);
         }
         this.jobActions = actions.unmodifiable();
     }
@@ -100,7 +100,7 @@ public class JobController implements JobApi {
             Integer pageSize
     ) {
 
-        PageInfo<JobVo> jobVos = jobService.listJobs(projectUrl, idConvertor.revert(modelId),
+        PageInfo<JobVo> jobVos = jobServiceForWeb.listJobs(projectUrl, idConvertor.revert(modelId),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
@@ -110,7 +110,7 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<JobVo>> findJob(String projectUrl, String jobUrl) {
-        JobVo job = jobService.findJob(projectUrl, jobUrl);
+        JobVo job = jobServiceForWeb.findJob(projectUrl, jobUrl);
         return ResponseEntity.ok(Code.success.asResponse(job));
     }
 
@@ -144,7 +144,7 @@ public class JobController implements JobApi {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
                     HttpStatus.BAD_REQUEST);
         }
-        Long jobId = jobService.createJob(projectUrl,
+        Long jobId = jobServiceForWeb.createJob(projectUrl,
                 jobRequest.getModelVersionUrl(),
                 jobRequest.getDatasetVersionUrls(),
                 jobRequest.getRuntimeVersionUrl(),
@@ -179,7 +179,7 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<Object>> getJobResult(String projectUrl, String jobUrl) {
-        Object jobResult = jobService.getJobResult(projectUrl, jobUrl);
+        Object jobResult = jobServiceForWeb.getJobResult(projectUrl, jobUrl);
         return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 
@@ -189,7 +189,7 @@ public class JobController implements JobApi {
             String jobUrl,
             JobModifyRequest jobModifyRequest
     ) {
-        Boolean res = jobService.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
+        Boolean res = jobServiceForWeb.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
 
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job comment failed."),
@@ -204,7 +204,7 @@ public class JobController implements JobApi {
             String jobUrl,
             JobModifyPinRequest jobRequest
     ) {
-        Boolean res = jobService.updateJobPinStatus(projectUrl, jobUrl, jobRequest.isPinned());
+        Boolean res = jobServiceForWeb.updateJobPinStatus(projectUrl, jobUrl, jobRequest.isPinned());
 
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job pin status failed."),
@@ -220,7 +220,7 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> removeJob(String projectUrl, String jobUrl) {
-        Boolean res = jobService.removeJob(projectUrl, jobUrl);
+        Boolean res = jobServiceForWeb.removeJob(projectUrl, jobUrl);
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Remove job failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -230,7 +230,7 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverJob(String projectUrl, String jobUrl) {
-        Boolean res = jobService.recoverJob(projectUrl, jobUrl);
+        Boolean res = jobServiceForWeb.recoverJob(projectUrl, jobUrl);
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover job failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -288,7 +288,7 @@ public class JobController implements JobApi {
             String taskId,
             ExecRequest execRequest
     ) {
-        var resp = jobService.exec(projectUrl, jobUrl, taskId, execRequest);
+        var resp = jobServiceForWeb.exec(projectUrl, jobUrl, taskId, execRequest);
         return ResponseEntity.ok(Code.success.asResponse(resp));
     }
 }

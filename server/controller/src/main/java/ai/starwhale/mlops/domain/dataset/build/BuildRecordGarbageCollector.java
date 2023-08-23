@@ -18,6 +18,9 @@ package ai.starwhale.mlops.domain.dataset.build;
 
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -32,26 +35,38 @@ public class BuildRecordGarbageCollector {
 
     private final BuildRecordMapper mapper;
 
+    private final TaskMapper taskMapper;
+
     private final StorageAccessService storageAccessService;
 
-    public BuildRecordGarbageCollector(BuildRecordMapper mapper, StorageAccessService storageAccessService) {
+    private final TaskStatusMachine taskStatusMachine;
+
+    public BuildRecordGarbageCollector(BuildRecordMapper mapper, TaskMapper taskMapper,
+            StorageAccessService storageAccessService,
+            TaskStatusMachine taskStatusMachine) {
         this.mapper = mapper;
+        this.taskMapper = taskMapper;
         this.storageAccessService = storageAccessService;
+        this.taskStatusMachine = taskStatusMachine;
     }
 
     @Scheduled(cron = "${sw.dataset.build.gc-rate:0 0 0 * * ?}")
     public void gc() {
-        var finished = mapper.selectFinishedAndUncleaned();
-        for (BuildRecordEntity finishedRecord : finished) {
+        var uncleaned = mapper.selectUncleaned();
+        for (BuildRecordEntity record : uncleaned) {
+            TaskEntity task = taskMapper.findTaskById(record.getTaskId());
+            if (!taskStatusMachine.isFinal(task.getTaskStatus())) {
+                continue;
+            }
             try {
-                var files = storageAccessService.list(finishedRecord.getStoragePath())
+                var files = storageAccessService.list(record.getStoragePath())
                         .collect(Collectors.toList());
                 for (String file : files) {
                     storageAccessService.delete(file);
                 }
-                mapper.updateCleaned(finishedRecord.getId());
+                mapper.updateCleaned(record.getId());
             } catch (IOException e) {
-                log.warn("delete storage file path:{} failed", finishedRecord.getStoragePath(), e);
+                log.warn("delete storage file path:{} failed", record.getStoragePath(), e);
             }
         }
     }

@@ -28,6 +28,9 @@ public class HostResourceConfigBuilder {
 
     HostConfig build(List<RuntimeResource> runtimeResources) {
         HostConfig hostConfig = HostConfig.newHostConfig();
+        if (null == runtimeResources) {
+            return hostConfig;
+        }
         runtimeResources.forEach(runtimeResource -> {
             if (ResourceOverwriteSpec.RESOURCE_CPU.equals(runtimeResource.getType())) {
                 // docker has no cpu reservation for a container. So, request is not processed
