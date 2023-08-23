@@ -43,14 +43,12 @@ public class ContainerTaskMapperTest {
         when(dockerClientFinder.findProperDockerClient(any())).thenReturn(dockerClient);
     }
 
-    static final String IMAGE_HELLO_WORLD = "hello-world:linux";
-
     @Test
     public void testContainerExistedOne() throws InterruptedException {
         ContainerTaskMapper cm = new ContainerTaskMapper(dockerClientFinder);
         String containerName = "sw-ut-container";
-        try (var tc = localDockerTool.startContainerBlocking(IMAGE_HELLO_WORLD, containerName,
-                Map.of("starwhale-task-id", "1"), null, null)) {
+        try (var tc = localDockerTool.startContainerBlocking("busybox:latest", containerName,
+                Map.of("starwhale-task-id", "1"), new String[]{"sleep", "100000000"}, null)) {
             Task task = Task.builder().id(1L).step(new Step()).build();
             Container container = cm.containerOfTask(task);
             Assertions.assertEquals("/" + containerName, container.getNames()[0]);
