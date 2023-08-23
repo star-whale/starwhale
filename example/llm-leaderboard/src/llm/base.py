@@ -135,19 +135,12 @@ class HuggingfaceLLMBase(LLMBase):
 
     def _get_model(self) -> t.Any:
         if self._model is None:
-            import torch
-
             path = self.get_base_dir()
             console.print(f":monkey: try to load base model({path}) into memory...")
 
             # TODO: support custom kwargs
             self._model = AutoModelForCausalLM.from_pretrained(
-                path,
-                torch_dtype=torch.float16,
-                fp16=True,
-                device_map="auto",
-                trust_remote_code=True,
-                load_in_8bit=os.environ.get("LOAD_IN_8BIT", "0") == "1",
+                path, **self.get_pretrained_model_kwargs()
             )
 
             if self.enable_load_generation_config:
@@ -168,6 +161,14 @@ class HuggingfaceLLMBase(LLMBase):
 
     def calculate_tokens_length(self, input_prompt: str) -> int:
         return len(self._get_tokenizer().encode(input_prompt))
+
+    def get_pretrained_model_kwargs(self) -> t.Dict[str, t.Any]:
+        return dict(
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True,
+            load_in_8bit=os.environ.get("LOAD_IN_8BIT", "0") == "1",
+        )
 
     def get_generate_kwargs(self) -> t.Dict[str, t.Any]:
         # TODO: support custom kwargs

@@ -1,12 +1,25 @@
 from __future__ import annotations
 
+import typing as t
+
 import torch
 
 from .base import register, HuggingfaceLLMBase
 
 
+class QwenBase(HuggingfaceLLMBase):
+    @property
+    def enable_load_generation_config(self) -> bool:
+        return True
+
+    def get_pretrained_model_kwargs(self) -> t.Dict[str, t.Any]:
+        kwargs = super().get_pretrained_model_kwargs()
+        kwargs["fp16"] = True
+        return kwargs
+
+
 @register()
-class Qwen7b(HuggingfaceLLMBase):
+class Qwen7b(QwenBase):
     def get_hf_repo_id(self) -> str:
         return "Qwen/Qwen-7B"
 
@@ -20,7 +33,7 @@ class Qwen7b(HuggingfaceLLMBase):
 
 
 @register()
-class Qwen7bChat(HuggingfaceLLMBase):
+class Qwen7bChat(QwenBase):
     def get_hf_repo_id(self) -> str:
         return "Qwen/Qwen-7B-Chat"
 
@@ -43,7 +56,3 @@ class Qwen7bChat(HuggingfaceLLMBase):
             **self.get_generate_kwargs(),
         )
         return pred
-
-    @property
-    def enable_load_generation_config(self) -> bool:
-        return True
