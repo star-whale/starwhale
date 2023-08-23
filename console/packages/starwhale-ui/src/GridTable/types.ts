@@ -18,6 +18,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     compareable?: boolean
     isLoading?: boolean
     queryable?: boolean
+    sortable?: boolean
     selectable?: boolean
     previewable?: boolean
     queryinline?: boolean

@@ -5,19 +5,21 @@ import { useWidget } from './hooks/useWidget'
 import { WidgetRendererProps } from '../types'
 
 const DEBUG = false
+const empty = {}
+const emptyfn = () => {}
 export function WidgetRenderer<P extends object = any, F extends object = any>(props: WidgetRendererProps<P, F>) {
     const {
         id,
         type,
         path,
         data,
-        optionConfig = {},
-        onOptionChange = () => {},
-        fieldConfig = {},
-        onFieldChange = () => {},
-        onLayoutOrderChange = () => {},
-        onLayoutChildrenChange = () => {},
-        onLayoutCurrentChange = () => {},
+        optionConfig = empty,
+        onOptionChange = emptyfn,
+        fieldConfig = empty,
+        onFieldChange = emptyfn,
+        onLayoutOrderChange = emptyfn,
+        onLayoutChildrenChange = emptyfn,
+        onLayoutCurrentChange = emptyfn,
         children,
         eventBus,
         ...rest
@@ -26,11 +28,11 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     const { widget } = useWidget(type)
     const [error] = useState<string | undefined>()
     const optionsWithDefaults = React.useMemo(
-        () => _.merge({}, widget?.defaults?.optionConfig ?? {}, optionConfig),
+        () => _.merge({}, widget?.defaults?.optionConfig ?? empty, optionConfig),
         [widget?.defaults, optionConfig]
     )
     const fieldsWithDefaults = React.useMemo(
-        () => _.merge({}, widget?.defaults?.fieldConfig ?? {}, fieldConfig),
+        () => _.merge({}, widget?.defaults?.fieldConfig ?? empty, fieldConfig),
         [widget?.defaults, fieldConfig]
     )
 
@@ -68,7 +70,7 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
                 // renderCounter={0}
                 // replaceVariables={(str: string) => str}
                 // @ts-ignore
-                defaults={widget.defaults ?? {}}
+                defaults={widget.defaults ?? empty}
                 optionConfig={optionsWithDefaults}
                 onOptionChange={onOptionChange}
                 //

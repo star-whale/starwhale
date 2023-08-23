@@ -199,6 +199,41 @@ function ConfigViews() {
 
 export default ConfigViews
 
+const ListItem = ({
+    data,
+    index,
+    style,
+}: {
+    data: { props: OptionListProps }[]
+    index: number
+    style: React.CSSProperties
+}) => {
+    const [css] = themedUseStyletron()
+    // eslint-disable-next-line
+    const { item, overrides, ...restChildProps } = data[index].props
+
+    return (
+        <StyledDropdownListItem
+            className={classNames(
+                'text-ellipsis',
+                css({
+                    'boxSizing': 'border-box',
+                    ':hover': {
+                        backgroundColor: '#EBF1FF',
+                    },
+                })
+            )}
+            style={style}
+            title={item.label}
+            // eslint-disable-next-line
+            {..._.omit(restChildProps, ['resetMenu', 'renderAll', 'renderHrefAsAnchor', 'getItemLabel'])}
+            key={item.id}
+        >
+            {item.label}
+        </StyledDropdownListItem>
+    )
+}
+
 const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
     const overrides = {
         BaseButton: {
@@ -217,41 +252,6 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
         },
     }
     const [t] = useTranslation()
-
-    const ListItem = ({
-        data,
-        index,
-        style,
-    }: {
-        data: { props: OptionListProps }[]
-        index: number
-        style: React.CSSProperties
-    }) => {
-        const [css] = themedUseStyletron()
-        // eslint-disable-next-line
-        const { item, overrides, ...restChildProps } = data[index].props
-
-        return (
-            <StyledDropdownListItem
-                className={classNames(
-                    'text-ellipsis',
-                    css({
-                        'boxSizing': 'border-box',
-                        ':hover': {
-                            backgroundColor: '#EBF1FF',
-                        },
-                    })
-                )}
-                style={style}
-                title={item.label}
-                // eslint-disable-next-line
-                {..._.omit(restChildProps, ['resetMenu', 'renderAll', 'renderHrefAsAnchor', 'getItemLabel'])}
-                key={item.id}
-            >
-                {item.label}
-            </StyledDropdownListItem>
-        )
-    }
 
     const children = React.Children.toArray(props.children)
     let items = null

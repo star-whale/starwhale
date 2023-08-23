@@ -157,13 +157,11 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 </div>
             )}
             {columnIndex === 0 && (
-                <div className='flex gap-8px'>
-                    {removable ? (
+                <div className='flex gap-8px min-w-auto'>
+                    {removable && (
                         <ExtendButton negative icon='item-reduce' onClick={() => onRemove?.(getId(value.record))} />
-                    ) : (
-                        !isSelectable && <p className='w-30px' />
                     )}
-                    {(columnleinline || queryinline) && <p className='w-30px' />}
+                    {(columnleinline || queryinline) && !isSelectable && <p className='w-38px' />}
                 </div>
             )}
             <Cell

@@ -5,12 +5,13 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
 import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 
-import { useIsInViewport } from '../utils'
+import { useEventCallback, useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelChartDownloadEvent, PanelChartReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
+import { usePanelDatastore } from '../context'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -58,11 +59,21 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             },
             [api, path]
         )
+        const handleOptionConfigChange = useEventCallback((config) =>
+            api.onConfigChange(['widgets', id, 'optionConfig'], config)
+        )
+        const handleFieldConfigChange = useEventCallback((config) =>
+            api.onConfigChange(['widgets', id, 'fieldConfig'], config)
+        )
+
+        const { getPrefixes } = usePanelDatastore()
+        const prefixes = React.useMemo(() => getPrefixes(), [getPrefixes])
 
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
         const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
+
         const { page, setPage, params } = useDatastorePage({
             pageNum: 1,
             pageSize: 1000,
@@ -70,7 +81,15 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             sortDirection: tableConfig?.sortDirection || 'DESC',
             queries: tableConfig?.queries,
             tableName,
+            prefixFn: React.useCallback(
+                (tname: string) => {
+                    const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
+                    return p || ''
+                },
+                [prefixes]
+            ),
         })
+
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
         const {
@@ -122,6 +141,26 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [recordInfo.isSuccess, query, records, columnTypes, getTableRecordMap, getTableColumnTypeMap])
 
+        // useIfChanged({
+        //     ...props,
+        //     getPrefixes,
+        //     path: props.path,
+        //     data: $data,
+        //     query,
+        //     records,
+        //     columnTypes,
+        //     getTableRecordMap,
+        //     getTableColumnTypeMap,
+        //     params,
+        //     prefixes,
+        //     overrides,
+        //     optionConfig: overrides.optionConfig,
+        //     evalSelectData: overrides.optionConfig?.evalSelectData,
+        // })
+
+        const handleDataReload = useEventCallback(() => query && recordInfo.refetch())
+        const handleDataDownload = useEventCallback(() => query && exportTable(query))
+
         return (
             <div
                 ref={myRef as any}
@@ -140,14 +179,14 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                         page={page}
                         onPageChange={setPage}
                         optionConfig={overrides?.optionConfig}
-                        onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
+                        onOptionChange={handleOptionConfigChange}
                         fieldConfig={overrides?.fieldConfig}
-                        onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
+                        onFieldChange={handleFieldConfigChange}
                         onLayoutOrderChange={handleLayoutOrderChange}
                         onLayoutChildrenChange={handleLayoutChildrenChange}
                         onLayoutCurrentChange={handleLayoutCurrentChange}
-                        onDataReload={() => query && recordInfo.refetch()}
-                        onDataDownload={() => query && exportTable(query)}
+                        onDataReload={handleDataReload}
+                        onDataDownload={handleDataDownload}
                         eventBus={eventBus}
                     />
                 )}

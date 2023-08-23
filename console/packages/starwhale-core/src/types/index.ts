@@ -21,6 +21,7 @@ export type WidgetStoreState = {
     panelGroup?: WidgetGroupType[] | WidgetGroupType
     isEditable: () => boolean
     setRawConfigs: (configs: any) => void
+    getRawConfigs: () => any
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any
@@ -38,6 +39,9 @@ export type WidgetStateT = {
 
 export type WideteExternalState = {
     onStateChange?: any
+    initialState?: any
+    onSave?: (state: WidgetStateT) => void
+    onEvalSectionDelete?: () => void
 }
 
 // -----------the config of options/field---------------

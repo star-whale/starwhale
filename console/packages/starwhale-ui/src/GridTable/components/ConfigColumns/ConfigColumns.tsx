@@ -181,11 +181,11 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }>((props: PropsT 
     )
 })
 
-function StatefulConfigColumns(props) {
+const StatefulConfigColumns = React.forwardRef((props: any, ref: any) => {
     const [isOpen, setIsOpen] = React.useState(false)
 
-    return <ConfigColumns {...props} isOpen={isOpen} setIsOpen={setIsOpen} />
-}
+    return <ConfigColumns {...props} isOpen={isOpen} setIsOpen={setIsOpen} ref={ref} />
+})
 
 export { ConfigColumns, StatefulConfigColumns }
 

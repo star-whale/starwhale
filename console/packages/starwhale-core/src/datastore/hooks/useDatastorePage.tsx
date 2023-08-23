@@ -10,6 +10,7 @@ export type DatastorePagePropsT = {
     sortDirection?: 'ASC' | 'DESC' | string
     queries?: any[]
     tableName?: string | string[]
+    prefixFn?: (tableName: string) => string
 }
 
 function useDatastorePage({
@@ -19,6 +20,7 @@ function useDatastorePage({
     sortDirection = 'DESC',
     queries,
     tableName,
+    prefixFn = getTableShortNamePrefix,
 }: DatastorePagePropsT) {
     const [page, setPage] = React.useState<DatastorePageT>({} as any)
 
@@ -68,7 +70,7 @@ function useDatastorePage({
                 if (_.isObject(t) && 'columnPrefix' in t) return t
                 return {
                     tableName: t,
-                    columnPrefix: getTableShortNamePrefix(t),
+                    columnPrefix: [prefixFn?.(t), getTableShortNamePrefix(t)].filter(Boolean).join(' '),
                 }
             })
 
@@ -77,7 +79,7 @@ function useDatastorePage({
                 ...options,
             })
         },
-        [$page]
+        [$page, prefixFn]
     )
 
     const getQueryParams = React.useCallback(

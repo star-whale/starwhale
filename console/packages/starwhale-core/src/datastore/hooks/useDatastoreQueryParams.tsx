@@ -162,6 +162,7 @@ export function getScanQuery(tables: ScanTableRequest['tables'], options: Datast
     }
 
     const recordQuery = {
+        ...(options?.query ?? {}),
         tables,
         start,
         limit,

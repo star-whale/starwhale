@@ -20,7 +20,6 @@ import useTranslation from '@/hooks/useTranslation'
 import EvalSelectList from '@/components/Editor/EvalSelectList'
 import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 import { WidgetFormModal, WidgetFormModel } from '@starwhale/core/form'
-import WidgetPreviewModal from '@starwhale/core/form/WidgetPreviewModal'
 import shallow from 'zustand/shallow'
 
 const useStyles = createUseStyles({
@@ -92,10 +91,14 @@ const selector = (s: any) => ({
 function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     const { store } = useEditorContext()
     const api = store(selector, shallow)
-    const [editWidget, setEditWidget] = useState<{ type?: string; path?: any[]; id?: string; data?: any }>({})
+    const [editWidget, setEditWidget] = useState<{
+        type?: string
+        path?: any[]
+        id?: string
+        data?: any
+        preview?: boolean
+    }>({})
     const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
-    const [viewWidget, setViewWidget] = useState<{ id?: string }>({})
-    const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
 
     const [t] = useTranslation()
     const styles = useStyles()
@@ -108,14 +111,13 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         evalSelectData,
         evalTableCurrentViewData,
         isEvaluationListShow,
+        title = t('panel.name'),
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
+    const [isModelOpen, setIsModelOpen] = useState(false)
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
-    const title = optionConfig?.title || t('panel.name')
-
-    const [isModelOpen, setIsModelOpen] = useState(false)
 
     const handleSectionForm = ({ name }: { name: string }) => {
         props.onOptionChange?.({
@@ -181,7 +183,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         if (isEvaluationList) eventBus.publish(new EvalSectionDeleteEvent({ id: props.id }))
     }
 
-    const handleChartAddSave = (formData: any) => {
+    const handleChartAddSave = ({ formData, optionConfig: tmp }: any) => {
         const { path } = editWidget
         if (!path || path.length === 0) return
         api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
@@ -189,16 +191,18 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
             fieldConfig: {
                 data: formData,
             },
+            optionConfig: tmp,
         })
     }
 
-    const handleChartEditSave = (formData: any) => {
+    const handleChartEditSave = ({ formData, optionConfig: tmp }: any) => {
         const { id } = editWidget
         api.onWidgetChange(id, {
             type: formData.chartType,
             fieldConfig: {
                 data: formData,
             },
+            optionConfig: tmp,
         })
     }
 
@@ -207,12 +211,12 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }
 
     const handleChartPreview = (id: string) => {
-        setViewWidget({ id })
-        setIsPanelPreviewModalOpen(true)
+        setEditWidget({ id, preview: true })
+        setIsPanelModalOpen(true)
     }
 
     const handleChartEdit = (id: string) => {
-        setEditWidget({ id })
+        setEditWidget({ id, preview: false })
         setIsPanelModalOpen(true)
     }
 
@@ -338,6 +342,12 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    // useIfChanged({
+    //     optionConfig,
+    //     evalSelectData,
+    //     isEvaluationListShow,
+    // })
+
     return (
         <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
@@ -407,20 +417,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 isShow={isPanelModalOpen}
                 setIsShow={setIsPanelModalOpen}
                 store={store}
-                handleFormSubmit={({ formData }: any) => {
+                onFormSubmit={(data: any) => {
                     if (editWidget?.type === 'add') {
-                        handleChartAddSave(formData)
+                        handleChartAddSave(data)
                     } else {
-                        handleChartEditSave(formData)
+                        handleChartEditSave(data)
                     }
                     setIsPanelModalOpen(false)
                 }}
-            />
-            <WidgetPreviewModal
-                id={viewWidget.id}
-                isShow={isPanelPreviewModalOpen}
-                setIsShow={setIsPanelPreviewModalOpen}
-                store={store}
             />
         </PanelContextProvider>
     )

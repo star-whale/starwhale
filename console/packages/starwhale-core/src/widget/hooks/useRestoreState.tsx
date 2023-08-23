@@ -2,14 +2,21 @@ import _ from 'lodash'
 import { PANEL_DYNAMIC_MATCHES, replacer } from '../utils/replacer'
 import { useDeepEffect } from '../../utils/useDeepEffects'
 import { tranformState } from '../utils'
-import { StoreType } from '@starwhale/core/context'
 import React from 'react'
 import produce from 'immer'
+import { SYNCKESY, useStore, useStoreApi } from '@starwhale/core/store'
+import shallow from 'zustand/shallow'
 
-// @FIXME move to store
-export default function useRestoreState<T>(store: StoreType, initialState: T, dynamicVars: Record<string, any>) {
+const selector = (s: any) => ({
+    initialState: s.initialState,
+})
+
+export default function useRestoreState(dynamicVars: Record<string, any>) {
+    const { initialState } = useStore(selector, shallow)
+    const store = useStoreApi()
+
     const toSave = React.useCallback(() => {
-        let data = store.getState()
+        let data = store.getState().getRawConfigs()
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
@@ -20,9 +27,10 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
     }, [store])
 
     // use  api store
+    const inited = React.useRef(false)
     useDeepEffect(() => {
         if (!initialState) return
-        // console.log('store inited')
+        if (inited.current) return
 
         // @FIXME check this
         // const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
@@ -33,11 +41,11 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
         // }
 
         try {
-            let data = typeof initialState === 'string' ? JSON.parse(initialState) : initialState
+            let data = _.pick(typeof initialState === 'string' ? JSON.parse(initialState) : initialState, SYNCKESY)
 
             // for origin data
             const isOrigin = !_.get(data, 'tree.0.id')
-            if (isOrigin) data = tranformState(data)
+            if (isOrigin) data = tranformState(data as any)
 
             Object.keys(data?.widgets).forEach((id) => {
                 const origin = replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars)
@@ -45,6 +53,7 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
             })
 
             store.getState().setRawConfigs(data)
+            inited.current = true
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)

@@ -102,7 +102,27 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 />
             )}
         >
-            <Button kind='tertiary' className={styles.icon}>
+            <Button
+                kind='tertiary'
+                className={styles.icon}
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            'backgroundColor': '#F4F5F7',
+                            'color': 'rgba(2,16,43,0.60)',
+                            ':hover': {
+                                color: '#2B65D9;',
+                            },
+                            ':focus': {
+                                color: '#2B65D9;',
+                            },
+                            ':active': {
+                                color: '#2B65D9;',
+                            },
+                        },
+                    },
+                }}
+            >
                 <IconFont type='setting' size={12} />
             </Button>
         </StatefulPopover>

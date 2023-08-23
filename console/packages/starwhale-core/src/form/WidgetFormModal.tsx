@@ -18,7 +18,7 @@ const PAGE_TABLE_SIZE = 200
 
 export default function WidgetFormModal({
     store,
-    handleFormSubmit,
+    onFormSubmit,
     id: editWidgetId = '',
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
@@ -29,7 +29,7 @@ export default function WidgetFormModal({
     form: WidgetFormModel
     isShow?: boolean
     setIsShow?: any
-    handleFormSubmit: (args: any) => void
+    onFormSubmit: (args: any) => void
     id?: string
     payload?: any
 }) {
@@ -39,7 +39,9 @@ export default function WidgetFormModal({
     const { prefix } = dynamicVars
     const config = store(React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId]))
     const [formData, setFormData] = React.useState<Record<string, any>>({})
+    const [optionConfig, setOptionConfig] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
+    const { preview } = payload
 
     // for data fetch from context not current widget
     const { getTableDistinctColumnTypes, getPrefixes } = usePanelDatastore()
@@ -60,12 +62,27 @@ export default function WidgetFormModal({
             }
         })
     }
+    const handleOptionChange = (data: any) => setOptionConfig({ ...data })
+    const handleFormSubmit = ({ formData: tmp }) =>
+        onFormSubmit?.({
+            formData: tmp,
+            optionConfig,
+        })
+
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
+
     const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
         tableName,
+        prefixFn: React.useCallback(
+            (tname: string) => {
+                const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
+                return p || ''
+            },
+            [prefixes]
+        ),
     })
     const $data = useFetchDatastoreByTable(params)
 
@@ -114,7 +131,7 @@ export default function WidgetFormModal({
                 },
             }}
         >
-            <ModalHeader>{t('panel.chart.edit')}</ModalHeader>
+            <ModalHeader>{!preview && t('panel.chart.edit')}</ModalHeader>
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
@@ -137,46 +154,52 @@ export default function WidgetFormModal({
                             <WidgetRenderer
                                 type={type}
                                 data={$data}
+                                optionConfig={config.optionConfig}
                                 fieldConfig={{
                                     data: formData,
                                 }}
+                                onOptionChange={handleOptionChange}
                             />
                         </div>
                     )}
                 </div>
-                <WidgetEditForm
-                    ref={formRef}
-                    form={form}
-                    formData={$formData}
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                />
+                {!preview && (
+                    <WidgetEditForm
+                        ref={formRef}
+                        form={form}
+                        formData={$formData}
+                        onChange={handleFormChange}
+                        onSubmit={handleFormSubmit}
+                    />
+                )}
             </ModalBody>
-            <ModalFooter>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1 }} />
-                    <Button
-                        size='compact'
-                        kind='secondary'
-                        type='button'
-                        onClick={() => {
-                            setisPanelModalOpen(false)
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    &nbsp;&nbsp;
-                    <Button
-                        size='compact'
-                        onClick={() => {
-                            // @ts-ignore
-                            formRef.current?.submit()
-                        }}
-                    >
-                        Submit
-                    </Button>
-                </div>
-            </ModalFooter>
+            {!preview && (
+                <ModalFooter>
+                    <div style={{ display: 'flex' }}>
+                        <div style={{ flexGrow: 1 }} />
+                        <Button
+                            size='compact'
+                            kind='secondary'
+                            type='button'
+                            onClick={() => {
+                                setisPanelModalOpen(false)
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        &nbsp;&nbsp;
+                        <Button
+                            size='compact'
+                            onClick={() => {
+                                // @ts-ignore
+                                formRef.current?.submit()
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </div>
+                </ModalFooter>
+            )}
         </Modal>
     )
 }
