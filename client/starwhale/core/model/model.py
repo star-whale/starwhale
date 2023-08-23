@@ -6,9 +6,8 @@ import json
 import shutil
 import typing as t
 import tarfile
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
-from http import HTTPStatus
 from pathlib import Path
 from collections import defaultdict
 
@@ -29,7 +28,6 @@ from starwhale.consts import (
     FileFlag,
     FileNode,
     RunStatus,
-    HTTPMethod,
     CREATED_AT_KEY,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
@@ -79,8 +77,12 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
+from starwhale.base.models.model import File, JobHandlers, LocalModelInfo
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
+from starwhale.base.client.api.job import JobApi
+from starwhale.base.client.api.model import ModelApi
+from starwhale.base.client.models.models import JobRequest, ModelInfoVo
 
 
 @unique
@@ -155,6 +157,10 @@ class Model(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Model: {self.uri}"
 
+    @abstractmethod
+    def info(self) -> ModelInfoVo | LocalModelInfo | None:
+        raise NotImplementedError
+
     @classmethod
     def get_model(cls, uri: Resource) -> Model:
         _cls = cls._get_cls(uri)
@@ -193,15 +199,15 @@ class Model(BaseBundle, metaclass=ABCMeta):
 
 
 def resource_to_file_node(
-    files: t.List[t.Dict[str, t.Any]], parent_path: Path
+    files: t.List[File], parent_path: Path
 ) -> t.Dict[str, FileNode]:
     return {
-        _f["path"]: FileNode(
-            path=parent_path / _f["path"],
-            name=_f.get("name") or os.path.basename(_f["path"]),
-            size=_f.get("size") or file_stat(parent_path / _f["path"]).st_size,
-            signature=_f.get("signature") or blake2b_file(parent_path / _f["path"]),
-            file_desc=FileDesc[_f["desc"]],
+        _f.path: FileNode(
+            path=parent_path / _f.path,
+            name=_f.name or os.path.basename(_f.path),
+            size=_f.size or file_stat(parent_path / _f.path).st_size,
+            signature=_f.signature or blake2b_file(parent_path / _f.path),
+            file_desc=FileDesc[_f.desc],
         )
         for _f in files
     }
@@ -254,6 +260,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             func_name=func.__qualname__,
             module_name=func.__module__,
             expose=8080,
+            concurrency=1,
+            replicas=1,
             virtual=True,
             extra_kwargs={
                 "search_modules": search_modules,
@@ -486,32 +494,23 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             "compare_version": compare_file_maps,
         }
 
-    def info(self) -> t.Dict[str, t.Any]:
-        ret: t.Dict[str, t.Any] = {}
+    def info(self) -> ModelInfoVo | LocalModelInfo | None:
         if not self.store.bundle_path.exists():
-            return ret
+            return None
 
-        job_yaml = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
-        ret["basic"] = copy.deepcopy(self.store.digest)
-        ret["basic"].update(
-            {
-                "name": self.uri.name,
-                "version": self.uri.version,
-                "project": self.uri.project.name,
-                "path": str(self.store.bundle_path),
-                "tags": StandaloneTag(self.uri).list(),
-                "handlers": sorted(
-                    {k for k, v in job_yaml.items() if not v[0].get("virtual", False)}
-                ),
-            }
+        data = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
+        handlers = JobHandlers.parse_obj(data)
+
+        return LocalModelInfo(
+            name=self.uri.name,
+            version=self.uri.version,
+            project=self.uri.project.name,
+            path=str(self.store.bundle_path),
+            tags=StandaloneTag(self.uri).list(),
+            handlers=handlers.__root__,
+            model_yaml=(self.store.hidden_sw_dir / DefaultYAMLName.MODEL).read_text(),
+            files=self.store.resource_files,
         )
-
-        ret["model_yaml"] = (
-            self.store.hidden_sw_dir / DefaultYAMLName.MODEL
-        ).read_text()
-        ret["handlers"] = job_yaml
-        ret["files"] = self.store.resource_files
-        return ret
 
     def history(
         self,
@@ -887,6 +886,10 @@ class CloudModel(CloudBundleModelMixin, Model):
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
 
+    def info(self) -> ModelInfoVo | LocalModelInfo | None:  # type: ignore
+        uri = self.uri
+        return ModelApi(uri.instance).info(uri).raise_on_error().data().data
+
     @classmethod
     @ignore_error(({}, {}))
     def list(
@@ -915,10 +918,9 @@ class CloudModel(CloudBundleModelMixin, Model):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
-        run_handler: str | int,
+        run_handler: str,
         resource_pool: str = "default",
     ) -> t.Tuple[bool, str]:
-        crm = CloudRequestMixed()
         _model_uri = Resource(
             model_uri, ResourceType.model, project=project_uri, refine=True
         )
@@ -936,30 +938,20 @@ class CloudModel(CloudBundleModelMixin, Model):
             if runtime_uri
             else None
         )
-        r = crm.do_http_request(
-            f"/project/{project_uri.name}/job",
-            method=HTTPMethod.POST,
-            instance=project_uri.instance,
-            data=json.dumps(
-                {
-                    "modelVersionUrl": _model_uri.info().get("versionId")
-                    or _model_uri.version,
-                    "datasetVersionUrls": ",".join(
-                        [
-                            str(i.info().get("versionId") or i.version)
-                            for i in _dataset_uris
-                        ]
-                    ),
-                    "runtimeVersionUrl": _runtime_uri.info().get("versionId")
-                    or _runtime_uri.version
-                    if _runtime_uri
-                    else "",
-                    "resourcePool": resource_pool,
-                    "handler": run_handler,
-                }
+        runtime_version_url = ""
+        if _runtime_uri:
+            runtime_version_url = (
+                _runtime_uri.info().get("versionId") or _runtime_uri.version
+            )
+
+        req = JobRequest(
+            model_version_url=_model_uri.info().get("versionId") or _model_uri.version,
+            dataset_version_urls=",".join(
+                [str(i.info().get("versionId") or i.version) for i in _dataset_uris]
             ),
+            runtime_version_url=runtime_version_url,
+            resource_pool=resource_pool,
+            handler=run_handler,
         )
-        if r.status_code == HTTPStatus.OK:
-            return True, r.json()["data"]
-        else:
-            return False, r.json()["message"]
+        resp = JobApi(project_uri.instance).create(project_uri.name, req)
+        return resp.is_success(), resp.data().message

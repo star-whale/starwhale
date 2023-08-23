@@ -9,7 +9,6 @@ from rich.text import Text
 from rich.tree import Tree
 from rich.panel import Panel
 from rich.table import Table
-from rich.pretty import Pretty
 from rich.syntax import Syntax
 from rich.console import Group
 
@@ -25,12 +24,18 @@ from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.base.uri.project import Project
+from starwhale.core.model.model import (
+    Model,
+    CloudModel,
+    ModelConfig,
+    ModelInfoFilter,
+    StandaloneModel,
+)
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.models.model import LocalModelInfo
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
-
-from .model import Model, CloudModel, ModelConfig, ModelInfoFilter, StandaloneModel
 
 
 class ModelTermView(BaseTermView, TagViewMixin):
@@ -53,7 +58,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
 
     def info(self, output_filter: ModelInfoFilter = ModelInfoFilter.basic) -> None:
         info = self.model.info()
-        if not info:
+        if info is None:
             console.print(f":bird: model info not found: [bold red]{self.uri}[/]")
             return
 
@@ -68,27 +73,34 @@ class ModelTermView(BaseTermView, TagViewMixin):
             table.add_column("Handler Name", style="cyan")
             table.add_column("Steps", style="green")
 
-            handlers = sorted(info.get("handlers", {}).items())
+            if isinstance(info, LocalModelInfo):
+                h = info.handlers
+            else:
+                h = {}
+            handlers = sorted(h.items())
             for index, (name, steps) in enumerate(handlers):
                 steps_content = []
                 for step in steps:
-                    steps_content.append(f":palm_tree: {step['name']}")
-                    steps_content.append(f"\t - replicas: {step['replicas']}")
-                    steps_content.append(f"\t - needs: {' '.join(step['needs'])}")
+                    steps_content.append(f":palm_tree: {step.name}")
+                    steps_content.append(f"\t - replicas: {step.replicas}")
+                    steps_content.append(f"\t - needs: {' '.join(step.needs or [])}")
                 table.add_row(str(index), name, "\n".join(steps_content))
             return table
 
-        def _render_files_tree() -> Tree:
-            files = info.get("files", [])
+        def render_files_tree() -> None:
+            if not isinstance(info, LocalModelInfo):
+                return
+
+            files = info.files or []
             unfold_files: t.Dict[str, t.Any] = {}
             for f in files:
-                path = Path(f["path"])
+                path = Path(f.path)
                 parent = unfold_files
                 for p in path.parent.parts:
                     parent.setdefault(p, {})
                     parent = parent[p]
 
-                parent[path.name] = f"{pretty_bytes(f['size'])}"
+                parent[path.name] = f"{pretty_bytes(f.size or 0)}"
 
             root = Tree("Model Resource Files Tree", style="bold bright_blue")
 
@@ -101,29 +113,35 @@ class ModelTermView(BaseTermView, TagViewMixin):
                         tree.add(f":page_facing_up: {k} ({v})")
 
             _walk(root, unfold_files)
-            return root
+            console.print(root)
 
-        basic_content = Pretty(info.get("basic", {}), expand_all=True)
-        model_yaml_content = Syntax(
-            info.get("model_yaml", ""), "yaml", theme="ansi_dark"
-        )
+        def render_basic() -> None:
+            if info is None:
+                return
+            console.print(info)
+
+        def render_yaml() -> None:
+            if not isinstance(info, LocalModelInfo):
+                return
+            content = Syntax(info.model_yaml, "yaml", theme="ansi_dark")
+            console.print(content)
+
         handlers_content = _render_handlers()
-        files_content = _render_files_tree()
 
         # TODO: support files tree
         if output_filter == ModelInfoFilter.basic:
-            console.print(basic_content)
+            render_basic()
         elif output_filter == ModelInfoFilter.model_yaml:
-            console.print(model_yaml_content)
+            render_yaml()
         elif output_filter == ModelInfoFilter.handlers:
             console.print(handlers_content)
         elif output_filter == ModelInfoFilter.files:
-            console.print(files_content)
+            render_files_tree()
         else:
             console.rule("[green bold] Model Basic Info")
-            console.print(basic_content)
+            render_basic()
             console.rule("[green bold] model.yaml")
-            console.print(model_yaml_content)
+            render_yaml()
             console.rule("[green bold] Model Handlers")
             console.print(handlers_content)
 
@@ -201,7 +219,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
         dataset_uris: t.List[str],
         runtime_uri: str,
         resource_pool: str,
-        run_handler: str | int,
+        run_handler: str,
     ) -> t.Tuple[bool, str]:
         ok, version_or_reason = CloudModel.run(
             project_uri=project_uri,
@@ -444,16 +462,29 @@ class ModelTermViewJson(ModelTermView):
 
     def info(self, output_filter: ModelInfoFilter = ModelInfoFilter.basic) -> None:
         info = self.model.info()
-        if output_filter == ModelInfoFilter.basic:
-            info = {"basic": info.get("basic", {})}
-        elif output_filter == ModelInfoFilter.model_yaml:
-            info = {"model_yaml": info.get("model_yaml", "")}
-        elif output_filter == ModelInfoFilter.handlers:
-            info = {"handlers": info.get("handlers", {})}
-        elif output_filter == ModelInfoFilter.files:
-            info = {"files": info.get("files", [])}
+        if info is None:
+            return
 
-        self.pretty_json(info)
+        out: t.Dict[str, t.Any] = dict()
+        if output_filter == ModelInfoFilter.basic:
+            out = info.dict()
+        elif output_filter == ModelInfoFilter.model_yaml:
+            if isinstance(info, LocalModelInfo):
+                out = {"data": info.model_yaml}
+            else:
+                # TODO support remote model yaml
+                out = {"data": ""}
+        elif output_filter == ModelInfoFilter.handlers:
+            if isinstance(info, LocalModelInfo):
+                out = {"handlers": info.handlers}
+            else:
+                out = {"handlers": []}
+        elif output_filter == ModelInfoFilter.files:
+            if isinstance(info, LocalModelInfo):
+                out = {"files": info.files}
+            else:
+                out = {"files": []}
+        self.pretty_json(out)
 
     def history(self, fullname: bool = False) -> None:
         fullname = fullname or self.uri.instance.is_cloud

@@ -46,10 +46,21 @@ from starwhale.core.model.model import (
     resource_to_file_node,
 )
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.models.model import (
+    File,
+    JobHandlers,
+    LocalModelInfo,
+    StepSpecClient,
+)
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
 from starwhale.core.runtime.process import Process
+from starwhale.base.client.models.models import (
+    JobRequest,
+    ResponseMessageString,
+    ResponseMessageListString,
+)
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -153,87 +164,46 @@ class StandaloneModelTestCase(TestCase):
         job_yaml_path = bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         assert job_yaml_path.exists()
-        job_contents = load_yaml(job_yaml_path)
+        job_contents = JobHandlers.parse_obj(load_yaml(job_yaml_path)).__root__
+
         assert job_contents == {
             "base": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "test_func1",
-                    "module_name": "mock",
-                    "name": "base",
-                    "needs": [],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "t1",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                }
+                StepSpecClient(
+                    name="base",
+                    show_name="t1",
+                    func_name="test_func1",
+                    module_name="mock",
+                    concurrency=1,
+                )
             ],
             "depend": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "test_func1",
-                    "module_name": "mock",
-                    "name": "base",
-                    "needs": [],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "t1",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "test_func2",
-                    "module_name": "mock",
-                    "name": "depend",
-                    "needs": ["base"],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "t2",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
+                StepSpecClient(
+                    name="base",
+                    show_name="t1",
+                    func_name="test_func1",
+                    module_name="mock",
+                    concurrency=1,
+                ),
+                StepSpecClient(
+                    name="depend",
+                    show_name="t2",
+                    func_name="test_func2",
+                    module_name="mock",
+                    concurrency=1,
+                    needs=["base"],
+                ),
             ],
             "serving": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "expose": 8080,
-                    "extra_args": [],
-                    "extra_kwargs": {
-                        "search_modules": ["mnist.evaluator:MNISTInference"]
-                    },
-                    "func_name": "StandaloneModel._serve_handler",
-                    "module_name": "starwhale.core.model.model",
-                    "name": "serving",
-                    "needs": [],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "virtual handler for model serving",
-                    "virtual": True,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                }
+                StepSpecClient(
+                    name="serving",
+                    show_name="virtual handler for model serving",
+                    func_name="StandaloneModel._serve_handler",
+                    module_name="starwhale.core.model.model",
+                    concurrency=1,
+                    expose=8080,
+                    virtual=True,
+                    extra_kwargs={"search_modules": ["mnist.evaluator:MNISTInference"]},
+                ),
             ],
         }
 
@@ -266,9 +236,9 @@ class StandaloneModelTestCase(TestCase):
         sm = StandaloneModel(model_uri)
         _info = sm.info()
 
-        assert _info["basic"]["version"] == build_version
-        assert _info["basic"]["name"] == self.name
-        assert "size" in _info["basic"]
+        assert isinstance(_info, LocalModelInfo)
+        assert _info.version == build_version
+        assert _info.name == self.name
 
         _list, _ = StandaloneModel.list(Project(""))
         assert len(_list) == 1
@@ -494,7 +464,16 @@ class StandaloneModelTestCase(TestCase):
         ensure_dir("tmp")
         ensure_file(_file, "123456")
         fd = resource_to_file_node(
-            [{"path": "file.txt", "desc": "SRC"}], parent_path=Path("tmp")
+            [
+                File(
+                    path="file.txt",
+                    desc="SRC",
+                    name="name",
+                    signature="sig",
+                    duplicate_check=False,
+                )
+            ],
+            parent_path=Path("tmp"),
         )
         assert "file.txt" in fd
         assert fd.get("file.txt").size == 6
@@ -1056,7 +1035,12 @@ class CloudModelTest(TestCase):
         tag_url = (
             "https://foo.com/api/v1/project/starwhale/model/mnist/version/123456a/tag"
         )
-        add_tag_request = rm.post(tag_url)
+        add_tag_request = rm.post(
+            tag_url,
+            json=ResponseMessageString(
+                code="success", message="success", data="success"
+            ).dict(),
+        )
         ModelTermView(uri).tag(tags=["t1", "t2"], force_add=True)
         assert add_tag_request.call_count == 2
         assert add_tag_request.last_request.json() == {"force": True, "tag": "t2"}
@@ -1070,7 +1054,7 @@ class CloudModelTest(TestCase):
         ModelTermView(uri).tag(tags=["t1"], ignore_errors=True, force_add=False)
         assert add_tag_request.call_count == 1
 
-        with self.assertRaisesRegex(RuntimeError, error_message):
+        with self.assertRaisesRegex(Exception, error_message):
             ModelTermView(uri).tag(tags=["t1"], ignore_errors=False, force_add=False)
 
         remove_tag_request = rm.delete(f"{tag_url}/t1")
@@ -1080,14 +1064,21 @@ class CloudModelTest(TestCase):
         remove_tag_request = rm.delete(
             f"{tag_url}/t1",
             status_code=500,
-            json={"data": "failed", "code": 500, "message": error_message},
+            json=ResponseMessageString(
+                code="failed", message=error_message, data="failed"
+            ).dict(),
         )
         ModelTermView(uri).tag(tags=["t1"], ignore_errors=True, remove=True)
         assert remove_tag_request.call_count == 1
         with self.assertRaisesRegex(RuntimeError, error_message):
             ModelTermView(uri).tag(tags=["t1"], ignore_errors=False, remove=True)
 
-        list_tag_request = rm.get(tag_url, json={"data": ["t1", "t2"]})
+        list_tag_request = rm.get(
+            tag_url,
+            json=ResponseMessageListString(
+                code="success", message="success", data=["t1", "t2"]
+            ).dict(),
+        )
         ModelTermView(uri).tag(tags=[])
         assert list_tag_request.call_count == 1
 
@@ -1124,7 +1115,10 @@ class CloudModelTest(TestCase):
             },
         )
         rm.post(
-            "https://foo.com/api/v1/project/starwhale/job", json={"data": "success"}
+            "https://foo.com/api/v1/project/starwhale/job",
+            json=ResponseMessageString(
+                code="success", message="success", data="success"
+            ).dict(),
         )
         result, data = CloudModel.run(
             project_uri=Project("https://foo.com/project/starwhale"),
@@ -1143,13 +1137,12 @@ class CloudModelTest(TestCase):
         assert rm.request_history[1].method == "GET"
         assert rm.request_history[2].qs == {"versionurl": ["323456a"]}
         assert rm.request_history[2].method == "GET"
-        assert json.loads(rm.request_history[3].text) == {
-            "modelVersionUrl": "100",
-            "datasetVersionUrls": "200",
-            "runtimeVersionUrl": "300",
-            "resourcePool": "default",
-            "handler": "test:predict",
-        }
+        req = JobRequest(**json.loads(rm.request_history[3].text))
+        assert req.model_version_url == "100"
+        assert req.dataset_version_urls == "200"
+        assert req.runtime_version_url == "300"
+        assert req.resource_pool == "default"
+        assert req.handler == "test:predict"
         assert rm.request_history[3].method == "POST"
 
     def test_cli_list(self) -> None:

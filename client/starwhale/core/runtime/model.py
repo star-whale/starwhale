@@ -7,7 +7,7 @@ import typing as t
 import platform
 import tempfile
 import subprocess
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
@@ -701,6 +701,10 @@ class RuntimeConfig(ASDictMixin):
 
 
 class Runtime(BaseBundle, metaclass=ABCMeta):
+    @abstractmethod
+    def info(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
     @classmethod
     def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
         StandaloneRuntime.restore(workdir, isolated_env_dir)

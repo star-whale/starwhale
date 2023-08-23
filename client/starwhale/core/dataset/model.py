@@ -48,6 +48,10 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Dataset: {self.uri}"
 
     @abstractmethod
+    def info(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
+    @abstractmethod
     def summary(self) -> t.Optional[DatasetSummary]:
         raise NotImplementedError
 
