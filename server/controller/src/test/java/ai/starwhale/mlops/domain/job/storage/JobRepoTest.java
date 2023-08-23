@@ -108,7 +108,6 @@ public class JobRepoTest {
                         DatasetVersion.builder()
                                 .id(1L)
                                 .versionName("version")
-                                .versionTag("v1")
                                 .datasetName("ds")
                                 .datasetId(2L)
                                 .projectId(3L)
@@ -137,7 +136,6 @@ public class JobRepoTest {
                 jobRepo.convertDatasetToDatastoreValue(jobEntity.getDatasets()),
                 is(List.of(Map.of(
                         "version_id", "0000000000000001",
-                        "version_tag", "v1",
                         "dataset_id", "0000000000000002",
                         "project_id", "0000000000000003",
                         "dataset_name", "ds",

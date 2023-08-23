@@ -77,7 +77,6 @@ public interface JobSchema {
                         .pythonType("object")
                         .attributes(List.of(
                                 ColumnSchemaDesc.builder().name("version_id").type(INT64).build(),
-                                ColumnSchemaDesc.builder().name("version_tag").type(STRING).build(),
                                 ColumnSchemaDesc.builder().name("dataset_id").type(INT64).build(),
                                 ColumnSchemaDesc.builder().name("project_id").type(INT64).build(),
                                 ColumnSchemaDesc.builder().name("dataset_name").type(STRING).build(),

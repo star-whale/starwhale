@@ -201,7 +201,6 @@ public class JobRepo {
             res.add(Map.of(
                     "version_id", (String) BaseValue.encode(
                             new Int64Value(datasetVersion.getId()), false, false),
-                    "version_tag", datasetVersion.getVersionTag(),
                     "dataset_id", (String) BaseValue.encode(
                             new Int64Value(datasetVersion.getDatasetId()), false, false),
                     "project_id", (String) BaseValue.encode(
