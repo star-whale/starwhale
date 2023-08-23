@@ -696,7 +696,8 @@ public class RuntimeService {
             var user = userService.currentUserDetail();
             var image = new DockerImage(
                     dockerSetting.getRegistryForPull(),
-                    String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName())
+                    // repository can only contain the characters abcdefghijklmnopqrstuvwxyz0123456789_-./
+                    String.format("%s:%s", runtime.getName().toLowerCase(), runtimeVersion.getVersionName())
             );
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
@@ -751,7 +752,8 @@ public class RuntimeService {
                         "--verbosity=debug",
                         "--destination=" + new DockerImage(
                                 registry,
-                                String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName())
+                                // repository can only contain the characters abcdefghijklmnopqrstuvwxyz0123456789_-./
+                                String.format("%s:%s", runtime.getName().toLowerCase(), runtimeVersion.getVersionName())
                         )
                 ));
                 if (dockerSetting.isInsecure()) {
