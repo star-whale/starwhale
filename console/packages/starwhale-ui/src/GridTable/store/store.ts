@@ -1,10 +1,16 @@
 import create, { StateCreator, StoreApi, UseBoundStore } from 'zustand'
 import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
-import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
+
+// eslint-disable-next-line
+export function arrayOverride(objValue: any, srcValue: any) {
+    if (_.isArray(objValue)) {
+        return srcValue
+    }
+}
 
 // eslint-disable-next-line prefer-template
 const getId = (str: string) => str + '-' + uuid().substring(0, 8)
@@ -84,62 +90,38 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
         views: [],
         defaultView: {},
         setViews: (views) => {
-            update(
-                produce((state: ITableState) => {
-                    // eslint-disable-next-line no-param-reassign
-                    state.views = views
-                    // eslint-disable-next-line no-param-reassign
-                    state.currentView = views.find((view) => view.def) || {}
-                })
-            )
+            update({
+                views,
+                currentView: views.find((view) => view.def) || get().currentView,
+            })
         },
         onViewAdd: (view) => update({ views: [...get().views, view] }, 'onViewAdd'),
         onViewUpdate: (view) => {
-            // eslint-disable-next-line no-param-reassign
-            view.updated = false
-            // eslint-disable-next-line no-param-reassign
-            view.updateColumn = false
-            // eslint-disable-next-line no-param-reassign
-            view.version = 0
-            //
-            const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
+            const $view = { ...view, updated: false, updateColumn: false, version: 0 }
+            const $views = [...get().views]
+            const $oldViewIndex = $views?.findIndex((v) => v.id === $view.id)
 
-            // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
-            // create
             if ($oldViewIndex > -1) {
+                $views[$oldViewIndex] = $view
                 update(
-                    produce((state: ITableState) => {
-                        // eslint-disable-next-line no-param-reassign
-                        state.views[$oldViewIndex] = view
-
-                        // edit default view and default == current so replace it && view.def === true
-                        if (get().currentView?.id === view.id) {
-                            // eslint-disable-next-line no-param-reassign
-                            state.currentView = view
-                        }
-                    }),
+                    {
+                        views: $views,
+                        currentView: get().currentView?.id === $view.id ? $view : get().currentView,
+                    },
                     'onViewUpdate'
                 )
             } else {
-                const $views = get().views?.map((v) => ({
+                const $$views = $views?.map((v) => ({
                     ...v,
                     def: false,
                 }))
-                update(
-                    produce((state: ITableState) => {
-                        const newView = {
-                            ...view,
-                            def: true,
-                            isShow: true,
-                            id: getId('view'),
-                        }
-                        // eslint-disable-next-line no-param-reassign
-                        state.views = [...$views, newView]
-                        // eslint-disable-next-line no-param-reassign
-                        state.currentView = newView
-                    }),
-                    'onViewUpdate'
-                )
+                const $newView = {
+                    ...$view,
+                    def: true,
+                    isShow: true,
+                    id: getId('view'),
+                }
+                update({ views: [...$$views, $newView], currentView: $newView }, 'onViewUpdate')
             }
         },
         checkDuplicateViewName: (name: string, viewId: string) => {
@@ -233,14 +215,12 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
 const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, get, store) => ({
     viewEditing: {},
     viewModelShow: false,
-    onShowViewModel: (viewModelShow, viewEditing) =>
+    onShowViewModel: (viewModelShow, viewEditing: any) =>
         set(
-            produce((state) => {
-                // eslint-disable-next-line no-param-reassign
-                state.viewEditing = viewEditing
-                // eslint-disable-next-line no-param-reassign
-                state.viewModelShow = viewModelShow
-            }),
+            {
+                viewEditing,
+                viewModelShow,
+            },
             undefined,
             'onShowViewModel'
         ),

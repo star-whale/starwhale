@@ -42,6 +42,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
             records={data.records}
             storeKey={id}
             queryinline
+            columnleinline
             previewable
             fillable
             paginationable

@@ -55,19 +55,16 @@ export default function EvaluationListCard() {
     const { rowSelectedIds, currentView, initStore, onCurrentViewIdChange, getRawIfChangedConfigs } =
         useEvaluationStore(selector, shallow)
 
-    const { page, setPage, getQueryParams } = useDatastorePage({
+    const { page, setPage, params } = useDatastorePage({
         pageNum: 1,
         pageSize: 100,
         sortBy: currentView?.sortBy || 'sys/id',
         sortDirection: currentView?.sortBy ? (currentView?.sortDirection as any) : 'DESC',
         queries: currentView?.queries,
+        tableName: summaryTableName,
     })
 
-    const {
-        recordInfo: evaluationsInfo,
-        columnTypes,
-        records,
-    } = useFetchDatastoreByTable(getQueryParams(summaryTableName), true)
+    const { recordInfo: evaluationsInfo, columnTypes, records } = useFetchDatastoreByTable(params, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>('currentViewId', {})

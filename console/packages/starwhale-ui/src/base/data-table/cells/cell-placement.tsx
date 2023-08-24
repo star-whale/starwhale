@@ -116,6 +116,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                     ":hover [data-type='cell-fullscreen']": {
                         display: 'grid',
                     },
+                    'minWidth': columnIndex == 0 ? '120px' : 'auto',
                 })
             )}
             style={style}
@@ -159,9 +160,17 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             {columnIndex === 0 && (
                 <div className='flex gap-8px min-w-auto'>
                     {removable && (
-                        <ExtendButton negative icon='item-reduce' onClick={() => onRemove?.(getId(value.record))} />
+                        <ExtendButton
+                            // @ts-ignore
+                            style={{
+                                marginRight: '8px',
+                            }}
+                            negative
+                            icon='item-reduce'
+                            onClick={() => onRemove?.(getId(value.record))}
+                        />
                     )}
-                    {(columnleinline || queryinline) && !isSelectable && <p className='w-38px' />}
+                    {(columnleinline || queryinline) && !isSelectable && !removable && <p className='w-38px' />}
                 </div>
             )}
             <Cell

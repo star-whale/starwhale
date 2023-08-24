@@ -2,6 +2,7 @@ import { DatastorePageT, getTableShortNamePrefix } from '@starwhale/core/datasto
 import { getQuery, getScanQuery } from '@starwhale/core/datastore/hooks/useDatastoreQueryParams'
 import React from 'react'
 import _ from 'lodash'
+import { useEventCallback } from '@starwhale/core/utils'
 
 export type DatastorePagePropsT = {
     pageNum?: number
@@ -24,8 +25,8 @@ function useDatastorePage({
 }: DatastorePagePropsT) {
     const [page, setPage] = React.useState<DatastorePageT>({} as any)
 
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    const initPage = React.useCallback(({ sortBy, sortDirection, queries, pageNum, pageSize }) => {
+    // eslint-disable-next-line
+    const initPage = useEventCallback(({ sortBy, sortDirection, queries, pageNum, pageSize }) => {
         const sorts = sortBy
             ? [
                   {
@@ -43,7 +44,7 @@ function useDatastorePage({
             },
             filter: queries,
         }
-    }, [])
+    })
 
     const rawPage = React.useMemo(
         () =>

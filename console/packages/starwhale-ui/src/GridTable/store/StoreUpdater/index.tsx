@@ -46,6 +46,7 @@ const StoreUpdater = ({
     onColumnsChange,
     rows,
     queryinline,
+    columnleinline,
     fillable,
     onViewsChange,
     currentView,
@@ -85,6 +86,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('queryinline', queryinline, store.setState)
+    useDirectStoreUpdater('columnleinline', columnleinline, store.setState)
     useDirectStoreUpdater('getId', getId, store.setState)
     useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
     useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)

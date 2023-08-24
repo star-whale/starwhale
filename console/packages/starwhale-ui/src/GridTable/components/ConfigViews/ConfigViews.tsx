@@ -156,7 +156,7 @@ function ConfigViews() {
                             return false
                         }}
                     >
-                        Save
+                        {t('save')}
                     </Button>
                 </ModalFooter>
             </Modal>
@@ -189,7 +189,7 @@ function ConfigViews() {
                             setIsManageViewOpen(false)
                         }}
                     >
-                        Save
+                        {t('save')}
                     </Button>
                 </ModalFooter>
             </Modal>
