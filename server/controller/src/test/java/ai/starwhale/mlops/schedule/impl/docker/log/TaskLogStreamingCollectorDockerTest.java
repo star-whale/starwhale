@@ -64,7 +64,7 @@ public class TaskLogStreamingCollectorDockerTest {
         }
     }
 
-    private void doCollectLog(String containerName) throws IOException {
+    private void doCollectLog(String containerName) throws IOException, InterruptedException {
         ContainerTaskMapper containerTaskMapper = mock(ContainerTaskMapper.class);
         Task task = Task.builder().id(1L).step(new Step()).build();
         Container container = mock(Container.class);
@@ -73,6 +73,10 @@ public class TaskLogStreamingCollectorDockerTest {
         when(containerTaskMapper.containerOfTask(task)).thenReturn(container);
         when(containerTaskMapper.taskIfOfContainer(container)).thenReturn(1L);
         logStreamingCollector = new TaskLogStreamingCollectorDocker(task, dockerClientFinder, containerTaskMapper);
+
+        // sleep for a while to wait for the log collector done,
+        // and check if there is no bug in the log collector `close` signal
+        Thread.sleep(1000);
 
         String log = "";
         StringBuilder wholeLog = new StringBuilder();
