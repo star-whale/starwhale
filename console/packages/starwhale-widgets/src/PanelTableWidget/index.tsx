@@ -37,7 +37,9 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
         [optionConfig]
     )
 
-    const tables = _.isArray(fieldConfig?.data?.tableName) ? fieldConfig?.data?.tableName?.length : 0
+    const tables = _.isArray(fieldConfig?.data?.tableName)
+        ? fieldConfig?.data?.tableName?.length
+        : Number(Boolean(fieldConfig?.data?.tableName))
 
     return (
         <GridTable

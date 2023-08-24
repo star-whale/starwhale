@@ -26,6 +26,7 @@ export const useStyles = createUseStyles({
         },
         'overflowX': 'auto',
         'overflowY': 'hidden',
+        'backgroundColor': '#fff',
     },
     filters: {
         display: 'flex',

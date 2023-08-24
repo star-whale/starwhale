@@ -36,7 +36,7 @@ const TextWidget = ({
             onFocus={!readonly ? handleFocus : undefined}
             placeholder={placeholder}
             rows={options.rows || 4}
-            value={value}
+            value={value ?? ''}
         />
     )
 }

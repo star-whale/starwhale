@@ -8,9 +8,12 @@ import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
 import { WidgetConfig, WidgetStateT, WidgetStoreState, WidgetTreeNode } from '../types'
 
-function arrayOverride(objValue: any, srcValue: any) {
+function arrayOverride(objValue: any, srcValue: any, key, object) {
     if (_.isArray(objValue)) {
         return srcValue
+    }
+    if (srcValue == null || srcValue == undefined) {
+        _.unset(object, key)
     }
 }
 

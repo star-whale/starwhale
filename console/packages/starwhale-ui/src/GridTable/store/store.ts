@@ -6,9 +6,12 @@ import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
 
 // eslint-disable-next-line
-export function arrayOverride(objValue: any, srcValue: any) {
+export function arrayOverride(objValue: any, srcValue: any, key, object) {
     if (_.isArray(objValue)) {
         return srcValue
+    }
+    if (srcValue === null || srcValue === undefined) {
+        _.unset(object, key)
     }
 }
 

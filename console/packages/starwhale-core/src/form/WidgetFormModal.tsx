@@ -49,7 +49,7 @@ export default function WidgetFormModal({
     const prefixes = React.useMemo(() => getPrefixes(), [config, payload])
 
     const handleFormChange = (data: any) => {
-        setFormData(data)
+        setFormData({ ...data })
 
         if (!formData?.chartType || !data.chartType) return
 
@@ -72,11 +72,12 @@ export default function WidgetFormModal({
         }
     }
     const handleOptionChange = (data: any) => setOptionConfig({ ...data })
-    const handleFormSubmit = ({ formData: tmp }) =>
+    const handleFormSubmit = ({ formData: tmp }) => {
         onFormSubmit?.({
             formData: tmp,
             optionConfig,
         })
+    }
 
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
@@ -123,6 +124,7 @@ export default function WidgetFormModal({
         if (config) {
             const data = config.fieldConfig?.data || {}
             setFormData({
+                chartTitle: undefined,
                 ...data,
                 // FIXME for prev config, tableName should be array now
                 tableName: typeof data.tableName === 'string' ? [data.tableName] : data.tableName,
