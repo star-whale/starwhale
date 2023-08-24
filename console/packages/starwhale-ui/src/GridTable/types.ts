@@ -1,6 +1,5 @@
 import { RecordListVo } from '@starwhale/core'
-import { RowT } from '../base/data-table/types'
-import { Types } from '../base/data-table'
+import { RowT, BatchActionT, RowActionT } from '../base/data-table/types'
 import { IStore, ITableState } from './store/store'
 
 export type IGridState = ITableState & ITableProps
@@ -9,8 +8,8 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     records?: RecordListVo['records']
     columnTypes?: RecordListVo['columnTypes']
     rows?: RowT[]
-    batchActions?: Types.BatchActionT[]
-    rowActions?: Types.RowActionT[]
+    batchActions?: BatchActionT[]
+    rowActions?: RowActionT[]
     paginationProps?: IPaginationProps
     rowSelectedIds?: string[]
     filterable?: boolean

@@ -5,10 +5,10 @@ import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
-import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
-import { IGridState } from '@starwhale/ui/GridTable/types'
-import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
-import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
+import { useStore, useStoreApi } from '../../../GridTable/hooks/useStore'
+import { IGridState } from '../../../GridTable/types'
+import useGrid from '../../../GridTable/hooks/useGrid'
+import HeaderBar from './header-bar'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
@@ -175,6 +175,21 @@ export default function Headers({ width }: { width: number }) {
                 width,
             }}
         >
+            <div
+                className='table-headers-bar'
+                style={{
+                    position: 'absolute',
+                    left: '13px',
+                    zIndex: 51,
+                    borderLeftWidth: '0',
+                    overflow: 'visible',
+                    breakInside: 'avoid',
+                    display: 'flex',
+                    height: HEADER_ROW_HEIGHT,
+                }}
+            >
+                {!ctx.isSelectable && <HeaderBar wrapperWidth={width} />}
+            </div>
             <div
                 className='table-headers-pinned'
                 style={{

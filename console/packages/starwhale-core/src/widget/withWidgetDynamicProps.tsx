@@ -93,6 +93,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
         const {
+            lastKey,
             recordInfo,
             recordQuery: query,
             columnTypes,
@@ -100,6 +101,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             getTableRecordMap,
             getTableColumnTypeMap,
         } = useFetchDatastoreByTable(params, enableLoad)
+
         useEffect(() => {
             if (enableLoad) return
             if (inViewport) setEnableload(true)
@@ -160,6 +162,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
 
         const handleDataReload = useEventCallback(() => query && recordInfo.refetch())
         const handleDataDownload = useEventCallback(() => query && exportTable(query))
+        const handlePageChange = useEventCallback((tmp: any) => setPage(tmp, lastKey))
 
         return (
             <div
@@ -177,7 +180,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                         name={overrides?.name}
                         data={$data}
                         page={page}
-                        onPageChange={setPage}
+                        onPageChange={handlePageChange}
                         optionConfig={overrides?.optionConfig}
                         onOptionChange={handleOptionConfigChange}
                         fieldConfig={overrides?.fieldConfig}

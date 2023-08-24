@@ -101,6 +101,7 @@ function ConfigViews() {
                 closeable
                 animate
                 autoFocus
+                returnFocus={false}
                 overrides={{
                     DialogContainer: {
                         style: {

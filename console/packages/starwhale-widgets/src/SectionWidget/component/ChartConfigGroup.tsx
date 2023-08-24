@@ -12,7 +12,7 @@ const useStyles = createUseStyles({
         top: '16px',
         display: 'flex',
         gap: '6px',
-        zIndex: 10,
+        zIndex: 2,
     },
     icon: {
         alignItems: 'center',

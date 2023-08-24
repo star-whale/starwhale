@@ -11,13 +11,14 @@ export function useCombine(options: any, enabled: boolean) {
 
 export function useFetchDatastoreByTable(recordQuery: QueryTableRequest | ScanTableRequest, enabled = true) {
     const recordInfo = useCombine(recordQuery, enabled)
-    const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
+    const { records, columnTypes, lastKey } = useDatastoreMixedSchema(recordInfo?.data)
 
     // cache columnTypes, especially when query changed, record fetch again, columnTypes will be reset
     const columnTypesRef = useRef(columnTypes)
     if (recordInfo.isSuccess) columnTypesRef.current = columnTypes
 
     return {
+        lastKey,
         recordQuery,
         recordInfo,
         columnTypes: !recordInfo.isSuccess ? columnTypesRef.current : columnTypes,
