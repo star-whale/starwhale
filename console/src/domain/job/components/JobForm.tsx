@@ -22,9 +22,10 @@ const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 export interface IJobFormProps {
     job?: IJobSchema
     onSubmit: (data: ICreateJobSchema) => Promise<void>
+    autoFill?: boolean
 }
 
-export default function JobForm({ job, onSubmit }: IJobFormProps) {
+export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
@@ -123,7 +124,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [eventEmitter]
     )
 
-    const sharedFormProps = { form, FormItem, eventEmitter, forceUpdate }
+    const sharedFormProps = { form, FormItem, eventEmitter, forceUpdate, autoFill }
     const getModelProps = () => ({ setModelTree, fullStepSource, stepSource })
     const getResourcePoolProps = () => ({ resource, setResource })
     const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })

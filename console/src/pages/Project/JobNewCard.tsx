@@ -30,7 +30,7 @@ export default function JobNewCard() {
 
     return (
         <Card title={t('Run Model')}>
-            <JobForm onSubmit={handleSubmit} job={info.data} />
+            <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} />
         </Card>
     )
 }
