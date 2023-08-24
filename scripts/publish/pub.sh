@@ -6,6 +6,7 @@ if [[ -n ${DEBUG} ]]; then
     set -x
 fi
 
+
 --help() {
   echo "Usage: pub.sh [OPTIONS] OBJECT [ARGS]..."
   echo "Options:"
