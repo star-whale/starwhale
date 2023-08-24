@@ -105,7 +105,7 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
 
     @Override
     public String readLine(Long waitTimeSeconds) throws IOException {
-        if (this.closed) {
+        if (this.closed && logLines.isEmpty()) {
             return null;
         }
         try {
