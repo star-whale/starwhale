@@ -658,24 +658,27 @@ class StandaloneModelTestCase(TestCase):
         gen_yaml_mock: MagicMock,
         gen_job_mock: MagicMock,
     ):
-        gen_job_mock.return_value = [
-            Step(
-                name="ppl",
-                cls_name="",
-                resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                concurrency=1,
-                task_num=1,
-                needs=[],
-            ),
-            Step(
-                name="cmp",
-                cls_name="",
-                resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                concurrency=1,
-                task_num=1,
-                needs=["ppl"],
-            ),
-        ]
+        gen_job_mock.return_value = (
+            "cmp",
+            [
+                Step(
+                    name="ppl",
+                    cls_name="",
+                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                    concurrency=1,
+                    task_num=1,
+                    needs=[],
+                ),
+                Step(
+                    name="cmp",
+                    cls_name="",
+                    resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                    concurrency=1,
+                    task_num=1,
+                    needs=["ppl"],
+                ),
+            ],
+        )
         model_config = ModelConfig(name="test", run={"handlers": ["mock-module"]})
         project = "test"
         version = "qwertyuiop"

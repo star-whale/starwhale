@@ -149,9 +149,22 @@ class Evaluation(Logger):
         _storage_table_name = self._get_storage_table_name(table_name)
         super()._log(_storage_table_name, record)
 
-    def _get(self, table_name: str) -> Iterator[Dict[str, Any]]:
+    def _get(
+        self,
+        table_name: str,
+        start: Any = None,
+        end: Any = None,
+        keep_none: bool = False,
+        end_inclusive: bool = False,
+    ) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [data_store.TableDesc(self._get_storage_table_name(table=table_name))]
+            tables=[
+                data_store.TableDesc(self._get_storage_table_name(table=table_name))
+            ],
+            start=start,
+            end=end,
+            keep_none=keep_none,
+            end_inclusive=end_inclusive,
         )
 
     def _flush(self, table_name: str) -> str:
@@ -161,7 +174,7 @@ class Evaluation(Logger):
     def log_result(self, record: Dict) -> None:
         self._log(self._eval_table_name("results"), record)
 
-    def log_metrics(
+    def log_summary_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
         record = {self._ID_KEY: self.eval_id}
@@ -186,16 +199,32 @@ class Evaluation(Logger):
     def get_results(self) -> Iterator[Dict[str, Any]]:
         return self._get(self._eval_table_name("results"))
 
-    def get_metrics(self) -> Dict[str, Any]:
-        for metrics in self._get(self._eval_summary_table_name):
+    def get_summary_metrics(self) -> Dict[str, Any]:
+        # TODO: tune performance by queryTable api
+        for metrics in self._get(self._eval_summary_table_name, start=self.eval_id):
             if metrics[self._ID_KEY] == self.eval_id:
                 return metrics
         return {}
 
-    def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
-        return self._get(self._eval_table_name(table_name))
+    def get(
+        self,
+        table_name: str,
+        start: Any = None,
+        end: Any = None,
+        keep_none: bool = False,
+        end_inclusive: bool = False,
+    ) -> Iterator[Dict[str, Any]]:
+        return self._get(
+            table_name=self._eval_table_name(table_name),
+            start=start,
+            end=end,
+            keep_none=keep_none,
+            end_inclusive=end_inclusive,
+        )
 
-    def flush_result(self) -> None:
+    get_table_rows = get
+
+    def flush_results(self) -> None:
         self._flush(self._eval_table_name("results"))
 
     def flush_metrics(self) -> None:
@@ -203,6 +232,24 @@ class Evaluation(Logger):
 
     def flush(self, table_name: str) -> None:
         self._flush(self._eval_table_name(table_name))
+
+    def get_tables(self) -> List[str]:
+        prefix = _gen_storage_table_name(
+            project=self.project,
+            table=self._eval_table_name(""),
+            instance_uri=self.instance,
+        )
+        prefix = prefix.strip("/")
+
+        tables = []
+        for t in self._data_store.list_tables(prefixes=[prefix]):
+            if t.startswith(prefix):
+                t = t[len(prefix) + 1 :]
+
+            t = t.strip("/")
+            tables.append(t)
+
+        return tables
 
 
 @unique
@@ -255,9 +302,10 @@ class Dataset(Logger):
         end: Any,
         end_inclusive: bool = False,
         revision: str = "",
+        keep_none: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [
+            tables=[
                 data_store.TableDesc(
                     table_name=self._table_name,
                     revision=revision or self.dataset_scan_revision,
@@ -265,6 +313,7 @@ class Dataset(Logger):
             ],
             start=start,
             end=end,
+            keep_none=keep_none,
             end_inclusive=end_inclusive,
         )
 
@@ -274,9 +323,10 @@ class Dataset(Logger):
         end: Any,
         end_inclusive: bool = False,
         revision: str = "",
+        keep_none: bool = False,
     ) -> Iterator[Any]:
         return self._data_store.scan_tables(
-            [
+            tables=[
                 data_store.TableDesc(
                     table_name=self._table_name,
                     columns=["id"],
@@ -285,6 +335,7 @@ class Dataset(Logger):
             ],
             start=start,
             end=end,
+            keep_none=keep_none,
             end_inclusive=end_inclusive,
         )
 

@@ -168,7 +168,7 @@ class TestModelPipelineHandler(TestCase):
         assert not ObjectStore._stores
 
     @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp_with_plain_log_mode(
         self,
@@ -199,7 +199,7 @@ class TestModelPipelineHandler(TestCase):
             _handler._starwhale_internal_run_evaluate()
 
     @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_cmp(
         self,
@@ -724,7 +724,7 @@ class TestEvaluationLogStore(BaseTestCase):
         _els = EvaluationLogStore._get_instance()
         _els._datastore.flush_metrics()
 
-        rt = _els._datastore.get_metrics()
+        rt = _els._datastore.get_summary_metrics()
         assert rt == {
             "id": self.version,
             "loss": 0.99,

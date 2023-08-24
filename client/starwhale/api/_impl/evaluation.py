@@ -287,7 +287,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     )
 
         if self.predict_auto_log:
-            self.evaluation_store.flush_result()
+            self.evaluation_store.flush_results()
 
         console.info(
             f"{self.context.step}-{self.context.index} handled {cnt} data items for dataset {self.dataset_uris}"
@@ -476,7 +476,7 @@ class EvaluationLogStore:
         el._log_summary(metrics)
 
     def _log_summary(self, metrics: t.Dict) -> None:
-        self._datastore.log_metrics(metrics)
+        self._datastore.log_summary_metrics(metrics)
 
     @classmethod
     def iter(

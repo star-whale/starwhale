@@ -12,6 +12,7 @@ import requests
 from requests_mock import Mocker
 
 from starwhale.consts import HTTPMethod
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
     INT32,
@@ -1099,6 +1100,30 @@ class TestLocalDataStore(BaseTestCase):
             "length check",
         )
 
+    def test_list_tables(self) -> None:
+        ds = data_store.LocalDataStore(self.datastore_root)
+
+        prefix = "/project/self/eval/test-0/"
+
+        tables = ds.list_tables([prefix])
+        assert tables == []
+
+        root = Path(self.datastore_root) / prefix.strip("/")
+
+        ensure_file(root / "labels.sw-datastore.zip", "abc", parents=True)
+        ensure_file(root / "results.sw-datastore.zip", "abc", parents=True)
+        for i in range(0, 3):
+            ensure_file(root / "roc" / f"{i}.sw-datastore.zip", "abc", parents=True)
+
+        ensure_dir(root / "mock-dir.sw-datastore.zip")
+        ensure_file(root / "dummy.file", "abc", parents=True)
+
+        tables = ds.list_tables([prefix])
+        assert set(tables) == {
+            f"{prefix.strip('/')}/{k}"
+            for k in {"labels", "results", "roc/0", "roc/1", "roc/2"}
+        }
+
     def test_data_store_scan(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
         ds.update_table(
@@ -1551,7 +1576,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
         self.ds.update_table(
             "t1",
@@ -1582,7 +1607,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
         self.ds.update_table(
             "t1",
@@ -1877,7 +1902,36 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
+        )
+
+    @patch("starwhale.api._impl.data_store.requests.post")
+    def test_list_tables(self, mock_post: Mock) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            "data": {
+                "tables": [
+                    "/project1/table",
+                    "/project2/table",
+                ]
+            }
+        }
+
+        tables = self.ds.list_tables(["/project1", "/project2/"])
+        assert tables == ["/project1/table", "/project2/table"]
+        mock_post.assert_called_with(
+            "http://test/api/v1/datastore/listTables",
+            data=json.dumps(
+                {
+                    "prefixes": ["project1", "project2"],
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=90,
         )
 
     @pytest.mark.skip(
@@ -2077,7 +2131,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
         mock_post.return_value.json.side_effect = [
             {
@@ -2125,7 +2179,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -2147,7 +2201,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -2169,7 +2223,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=60,
+            timeout=90,
         )
 
 

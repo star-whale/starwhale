@@ -242,7 +242,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
     ]
 
 
-@patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
+@patch("starwhale.api._impl.wrapper.Evaluation.get_summary_metrics")
 def test_datastore_query_summary(mock_get_metrics: MagicMock):
     svr = Server.default()
     client = TestClient(svr)

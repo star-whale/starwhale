@@ -60,13 +60,17 @@ class Job(metaclass=ABCMeta):
     def _get_version(self) -> str:
         raise NotImplementedError
 
+    @abstractmethod
+    def _fetch_job_info(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
     def _get_report(self) -> t.Dict[str, t.Any]:
         evaluation = wrapper.Evaluation(
             eval_id=self._get_version(),
             project=self.uri.project.name,
             instance=self.uri.instance.url,
         )
-        summary = evaluation.get_metrics()
+        summary = evaluation.get_summary_metrics()
         kind = summary.get("kind", "")
 
         ret = {
@@ -134,9 +138,12 @@ class StandaloneJob(Job):
         _f(summary)
         return rt
 
+    def _fetch_job_info(self) -> t.Dict[str, t.Any]:
+        return self.store.manifest
+
     def info(self) -> t.Dict[str, t.Any]:
         return {
-            "manifest": self.store.manifest,
+            "manifest": self._fetch_job_info(),
             "report": self._get_report(),
         }
 
@@ -269,22 +276,25 @@ class CloudJob(Job, CloudRequestMixed):
             params={"pageNum": page, "pageSize": size},
             instance=project_uri.instance,
         ).json()
-        jobs = []
-        for j in r["data"]["list"]:
-            j.pop("owner", None)
-            j[CREATED_AT_KEY] = crm.fmt_timestamp(j["createdTime"])
-            j["finished_at"] = crm.fmt_timestamp(j["stopTime"])
-            j["duration_str"] = crm.fmt_duration(j["duration"])
-            jobs.append({"manifest": j})
 
+        jobs = [{"manifest": cls._fmt_job_info(j)} for j in r["data"]["list"]]
         return jobs, crm.parse_pager(r)
+
+    @classmethod
+    def _fmt_job_info(cls, info: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        info.pop("owner", None)
+        info[CREATED_AT_KEY] = cls.fmt_timestamp(info["createdTime"])
+        info["finished_at"] = cls.fmt_timestamp(info["stopTime"])
+        info["duration_str"] = cls.fmt_duration(info["duration"])
+        return info
 
     def _fetch_job_info(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}",
             instance=self.uri.instance,
         ).json()
-        return r["data"]  # type: ignore
+
+        return self._fmt_job_info(r["data"])  # type: ignore
 
     def _fetch_tasks(
         self,
