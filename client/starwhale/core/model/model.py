@@ -74,6 +74,7 @@ from starwhale.base.scheduler import Step, Scheduler
 from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
+from starwhale.base.models.job import JobManifest
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
@@ -348,13 +349,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         run_handler: str = "",
         dataset_uris: t.Optional[t.List[str]] = None,
         scheduler_run_args: t.Optional[t.Dict[str, t.Any]] = None,
-        external_info: t.Optional[t.Dict[str, t.Any]] = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
         force_generate_jobs_yaml: bool = False,
         handler_args: t.List[str] | None = None,
     ) -> None:
-        external_info = external_info or {}
         dataset_uris = dataset_uris or []
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
@@ -410,24 +409,23 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print_exception()
             raise
         finally:
-            _manifest: t.Dict[str, t.Any] = {
-                CREATED_AT_KEY: start,
-                "scheduler_run_args": scheduler_run_args,
-                "version": version,
-                "project": project,
-                "model_src_dir": str(snapshot_dir),
-                "datasets": dataset_uris,
-                "model": model_config.name,
-                "status": scheduler_status,
-                "handler_name": job_name,
-                "error_message": error_message,
-                "finished_at": now_str(),
-                **external_info,
-            }
+            _manifest = JobManifest(
+                created_at=start,
+                scheduler_run_args=scheduler_run_args,
+                version=version,
+                project=project,
+                model_src_dir=str(snapshot_dir),
+                datasets=dataset_uris,
+                model=model_config.name,
+                status=scheduler_status,
+                handler_name=job_name,
+                error_message=error_message,
+                finished_at=now_str(),
+            )
 
             ensure_file(
                 job_dir / DEFAULT_MANIFEST_NAME,
-                yaml.safe_dump(_manifest, default_flow_style=False),
+                yaml.safe_dump(_manifest.dict(), default_flow_style=False),
                 parents=True,
             )
 

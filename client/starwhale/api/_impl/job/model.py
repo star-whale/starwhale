@@ -10,10 +10,11 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     MINI_FMT_DATETIME,
     FMT_DATETIME_NO_TZ,
-    STANDALONE_INSTANCE,
 )
 from starwhale.api._impl import wrapper
 from starwhale.utils.error import NotFoundError
+from starwhale.core.job.model import LocalJobInfo
+from starwhale.base.models.job import JobManifest
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 
@@ -43,7 +44,7 @@ class Job:
         runtime: _BundleInfo | None = None,
         datasets: t.List[_BundleInfo] | None = None,
         resource_pool: str = "",
-        raw_manifest: t.Dict | None = None,
+        raw_manifest: JobManifest | t.Dict | None = None,
         created_at: str = "",
         finished_at: str = "",
     ) -> None:
@@ -127,35 +128,44 @@ class Job:
         )
         jobs: t.List[Job] = []
         for job in raw_jobs:
-            jobs.append(cls.create_by_manifest(project, job["manifest"]))
+            manifest = (
+                job.manifest if isinstance(job, LocalJobInfo) else job["manifest"]
+            )
+            jobs.append(cls.create_by_manifest(project, manifest))
 
         return jobs, page_info
 
     @classmethod
-    def create_by_manifest(cls, project: str | Project, manifest: t.Dict) -> Job:
+    def create_by_manifest(
+        cls, project: str | Project, manifest: JobManifest | t.Dict
+    ) -> Job:
         if not isinstance(project, Project):
             project = Project(project)
 
-        if project.instance.url == STANDALONE_INSTANCE:
-            name_or_id = manifest["version"]
-            status = manifest["status"]
-            handler_name = manifest.get("handler_name", "")
+        if isinstance(manifest, JobManifest):
+            name_or_id = manifest.version
+            status = manifest.status
+            handler_name = manifest.handler_name or ""
             resource_pool = ""
             # TODO: support runtime for standalone instance
             runtime = None
             # TODO: support version/tags for model and datasets
-            datasets = [_BundleInfo(name=u) for u in manifest.get("dataset_uris", [])]
-            if "model" in manifest:
-                model = _BundleInfo(name=manifest["model"])
+            datasets = [_BundleInfo(name=u) for u in manifest.datasets or []]
+            if manifest.model is not None:
+                model = _BundleInfo(name=manifest.model)
             else:
                 model = None
             datastore_uuid = name_or_id
+            created_at = manifest.created_at
+            finished_at = manifest.finished_at
         else:
             name_or_id = manifest["id"]
             status = manifest["jobStatus"]
             handler_name = manifest["jobName"]
             resource_pool = manifest["resourcePool"]
             datastore_uuid = manifest["uuid"]
+            created_at = manifest["created_at"]
+            finished_at = manifest["finished_at"]
 
             def _t(_info: t.Dict) -> t.List[str]:
                 tags = []
@@ -200,8 +210,8 @@ class Job:
             datasets=datasets,
             resource_pool=resource_pool,
             raw_manifest=manifest,
-            created_at=manifest["created_at"],
-            finished_at=manifest["finished_at"],
+            created_at=created_at,
+            finished_at=finished_at,
         )
 
     @classmethod
