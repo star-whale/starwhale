@@ -180,6 +180,7 @@ public class JobCreator {
             }
         }
 
+
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
                 .ownerId(creator.getId())
