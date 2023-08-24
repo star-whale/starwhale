@@ -28,6 +28,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -42,9 +43,9 @@ import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.runtime.bo.Runtime;
-import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -62,7 +63,7 @@ public class JobCreatorTest {
     private JobDao jobDao;
     private ModelService modelService;
     private DatasetDao datasetDao;
-    private RuntimeService runtimeService;
+    private RuntimeDao runtimeDao;
     private JobUpdateHelper jobUpdateHelper;
 
     private SystemSettingService systemSettingService;
@@ -88,7 +89,7 @@ public class JobCreatorTest {
         given(jobDao.getJobId("2"))
                 .willReturn(2L);
         modelService = mock(ModelService.class);
-        runtimeService = mock(RuntimeService.class);
+        runtimeDao = mock(RuntimeDao.class);
         systemSettingService = mock(SystemSettingService.class);
         datasetDao = mock(DatasetDao.class);
         jobUpdateHelper = mock(JobUpdateHelper.class);
@@ -101,7 +102,7 @@ public class JobCreatorTest {
                 jobDao,
                 modelService,
                 datasetDao,
-                runtimeService,
+                runtimeDao,
                 jobUpdateHelper,
                 systemSettingService,
                 jobSpecParser
@@ -171,10 +172,12 @@ public class JobCreatorTest {
                 + "      required: 'false'\n"
                 + "  ext_cmd_args: '--a 1'\n"
                 + "  replicas: 1";
-        given(runtimeService.findRuntimeVersion(same("2")))
-                .willReturn(RuntimeVersion.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
-        given(runtimeService.findRuntime(same(2L)))
-                .willReturn(Runtime.builder().id(2L).name("test-runtime").build());
+        given(runtimeDao.getRuntimeVersion(same("2")))
+                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
+        given(runtimeDao.findById(same(2L)))
+                .willReturn(RuntimeEntity.builder().id(2L).runtimeName("test-runtime").build());
+        given(runtimeDao.getRuntime(same(2L)))
+                .willReturn(RuntimeEntity.builder().id(2L).runtimeName("test-runtime").build());
         given(modelService.findModelVersion(same("3")))
                 .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").jobs(fullJobSpec).build());
         given(modelService.findModel(same(3L)))
@@ -231,13 +234,16 @@ public class JobCreatorTest {
                         .jobs(fullJobSpec)
                         .build()
         );
-        given(runtimeService.findBuiltInRuntimeVersion(10L, builtInRuntime))
-                .willReturn(RuntimeVersion.builder().id(2L).runtimeId(2L).build());
+
+        given(runtimeDao.getRuntimeByName(eq(Constants.SW_BUILT_IN_RUNTIME), any()))
+                .willReturn(RuntimeEntity.builder().id(2L).build());
+        given(runtimeDao.getRuntimeVersion(2L, builtInRuntime))
+                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).build());
         res = jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "",
                 "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "", 1L,
                 User.builder().id(1L).build());
         assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
-        verify(runtimeService).findBuiltInRuntimeVersion(eq(10L), eq(builtInRuntime));
+        verify(runtimeDao).getRuntimeByName(eq(Constants.SW_BUILT_IN_RUNTIME), any());
     }
 
 }

@@ -136,7 +136,8 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                     ContainerCommand containerCommand = containerSpecification.getCmd();
                     if (null != containerCommand.getEntrypoint()) {
                         createContainerCmd.withEntrypoint(containerCommand.getEntrypoint());
-                    } else if (null != containerCommand.getCmd()) {
+                    }
+                    if (null != containerCommand.getCmd()) {
                         createContainerCmd.withCmd(containerCommand.getCmd());
                     }
                     CreateContainerResponse createContainerResponse = createContainerCmd.exec();

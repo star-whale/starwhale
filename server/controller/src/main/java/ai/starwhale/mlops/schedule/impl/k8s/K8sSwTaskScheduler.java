@@ -122,7 +122,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
         log.debug("deploying task to k8s {} ", task.getId());
         ContainerSpecification containerSpecification = taskContainerSpecificationFinder.findCs(task);
         try {
-            V1Job k8sJob = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+            V1Job k8sJob = k8sJobTemplate.loadJobTemplate();
 
             // TODO: use task's resource needs
             Map<String, ContainerOverwriteSpec> containerSpecMap = new HashMap<>();

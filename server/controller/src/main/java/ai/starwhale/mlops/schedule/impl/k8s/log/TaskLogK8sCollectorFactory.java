@@ -46,7 +46,7 @@ public class TaskLogK8sCollectorFactory implements TaskLogCollectorFactory {
     @Override
     public TaskLogOfflineCollector offlineCollector(Task task) throws StarwhaleException {
         return new TaskLogOfflineCollectorK8s(k8sClient, k8sJobTemplate.getJobContainerNames(
-                k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL)), task);
+                k8sJobTemplate.loadJobTemplate()), task);
     }
 
     @Override

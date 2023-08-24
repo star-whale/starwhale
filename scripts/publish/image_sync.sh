@@ -42,7 +42,7 @@ function get_tags() {
 }
 
 # start to sync images
-declare -a starwhale_images=("server" "base" "cuda" "dataset_builder")
+declare -a starwhale_images=("server" "base" "cuda" "dataset_builder" "runtime-dockerizing")
 for image in "${starwhale_images[@]}"; do
     tags=$(get_tags "$image")
     # if the image has already synced, regctl would skip it.

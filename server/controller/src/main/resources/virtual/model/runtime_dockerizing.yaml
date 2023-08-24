@@ -1,0 +1,24 @@
+- job_name: runtime_dockerizing
+  name: runtime_dockerizing
+  show_name: runtime_dockerizing
+  require_dataset: false
+  container_spec:
+    image: "docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest"
+    cmds:
+      - |
+        set -x;
+        swcli instance login --token="$SW_TOKEN" --alias server $SW_INSTANCE_URI;
+        swcli runtime copy cloud://server/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION .;
+        swcli runtime extract --target-dir /tmp/extract/ $SW_RUNTIME_VERSION;
+        swcli runtime dockerize -t sw-runtime --push --dry-run --use-starwhale-builder --reset-qemu-static $SW_RUNTIME_VERSION;
+        _SNAPSHOT_DIR=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".basic.snapshot_workdir");
+        cp $_SNAPSHOT_DIR/export/docker/Dockerfile /tmp/extract || exit 1;
+        set +x;
+        echo $SW_DOCKER_REGISTRY_KEYS > /kaniko/.docker/config.json;
+        echo "kaniko registry keys configured";
+        set -x;
+        [ -n "$SW_DOCKER_REGISTRY_INSECURE" ] && /kaniko/executor --dockerfile=/tmp/extract/Dockerfile --context=dir:///tmp/extract --cache=true --cache-repo=$SW_CACHE_REPO --verbosity=debug --destination=$SW_DEST_IMAGE --insecure || /kaniko/executor --dockerfile=/tmp/extract/Dockerfile --context=dir:///tmp/extract --cache=true --cache-repo=$SW_CACHE_REPO --verbosity=debug --destination=$SW_DEST_IMAGE || exit 1;
+        curl -X 'PUT' "$SW_INSTANCE_URI/api/v1/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION/image?runtimeImage=$SW_TARGET_IMAGE" -H 'accept: application/json'  -H "Authorization: $SW_TOKEN"
+    entrypoint:
+      - sh
+      - -c

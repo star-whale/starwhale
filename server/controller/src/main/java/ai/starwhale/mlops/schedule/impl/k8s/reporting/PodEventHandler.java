@@ -19,7 +19,6 @@ package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.Util;
 import ai.starwhale.mlops.schedule.log.TaskLogSaver;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
@@ -58,26 +57,8 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     @Override
     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
-        var metaData = newObj.getMetadata();
-        if (metaData == null) {
-            return;
-        }
-        var labels = metaData.getLabels();
-        if (CollectionUtils.isEmpty(labels)) {
-            return;
-        }
-        var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
-        if (StringUtils.hasText(type)) {
-            log.debug("job({}) {} for {}.", type, "onUpdate", newObj.getMetadata().getLabels().get("job-name"));
-            switch (type) {
-                case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
-                    updateEvalTask(newObj);
-                    collectLog(newObj, type);
-                    break;
-                default:
-            }
-        }
-
+        updateEvalTask(newObj);
+        collectLog(newObj);
     }
 
     @Override
@@ -165,9 +146,8 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
      * finishes
      *
      * @param pod pod
-     * @param type type
      */
-    private void collectLog(V1Pod pod, String type) {
+    private void collectLog(V1Pod pod) {
         log.debug("collect log for pod {} status {}", pod.getMetadata().getName(), pod.getStatus());
         if (null == pod.getStatus()
                 || null == pod.getStatus().getContainerStatuses()
@@ -180,21 +160,15 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
             return;
         }
-        Long id;
-        switch (type) {
-            case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
-                id = getJobNameAsId(pod);
-                if (id != null) {
-                    Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(id));
-                    if (CollectionUtils.isEmpty(optionalTasks)) {
-                        log.warn("no tasks found for pod {}", pod.getMetadata().getName());
-                        return;
-                    }
-                    Task task = optionalTasks.stream().findAny().get();
-                    taskLogSaver.saveLog(task);
-                }
-                break;
-            default:
+        Long id = getJobNameAsId(pod);
+        if (id != null) {
+            Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(id));
+            if (CollectionUtils.isEmpty(optionalTasks)) {
+                log.warn("no tasks found for pod {}", pod.getMetadata().getName());
+                return;
+            }
+            Task task = optionalTasks.stream().findAny().get();
+            taskLogSaver.saveLog(task);
         }
 
 

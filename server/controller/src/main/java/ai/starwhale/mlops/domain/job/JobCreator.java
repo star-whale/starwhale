@@ -30,7 +30,8 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -64,18 +65,20 @@ public class JobCreator {
     private final JobDao jobDao;
     private final ModelService modelService;
     private final DatasetDao datasetDao;
-    private final RuntimeService runtimeService;
+    private final RuntimeDao runtimeDao;
     private final JobUpdateHelper jobUpdateHelper;
 
     private final SystemSettingService systemSettingService;
     private final JobSpecParser jobSpecParser;
 
-    public JobCreator(JobBoConverter jobBoConverter,
+    public JobCreator(
+            JobBoConverter jobBoConverter,
             JobSpliterator jobSpliterator, JobLoader jobLoader,
             StoragePathCoordinator storagePathCoordinator,
             JobDao jobDao, ModelService modelService,
-            DatasetDao datasetDao, RuntimeService runtimeService, JobUpdateHelper jobUpdateHelper,
-            SystemSettingService systemSettingService, JobSpecParser jobSpecParser) {
+            DatasetDao datasetDao, RuntimeDao runtimeDao, JobUpdateHelper jobUpdateHelper,
+            SystemSettingService systemSettingService, JobSpecParser jobSpecParser
+    ) {
         this.jobBoConverter = jobBoConverter;
         this.jobSpliterator = jobSpliterator;
         this.jobLoader = jobLoader;
@@ -83,7 +86,7 @@ public class JobCreator {
         this.jobDao = jobDao;
         this.modelService = modelService;
         this.datasetDao = datasetDao;
-        this.runtimeService = runtimeService;
+        this.runtimeDao = runtimeDao;
         this.jobUpdateHelper = jobUpdateHelper;
         this.systemSettingService = systemSettingService;
         this.jobSpecParser = jobSpecParser;
@@ -91,7 +94,8 @@ public class JobCreator {
 
 
     @Transactional
-    public Job createJob(Project project,
+    public Job createJob(
+            Project project,
             String modelVersionUrl,
             String datasetVersionUrls,
             String runtimeVersionUrl,
@@ -104,25 +108,31 @@ public class JobCreator {
             boolean devMode,
             String devPassword,
             Long ttlInSec,
-            User creator) {
+            User creator
+    ) {
         String jobUuid = IdUtil.simpleUUID();
         var modelVersion = StringUtils.hasText(modelVersionUrl) ? modelService.findModelVersion(modelVersionUrl) : null;
         var model = null == modelVersion ? null : modelService.findModel(modelVersion.getModelId());
 
         RuntimeVersion runtimeVersion;
         if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
         } else if (null != modelVersion) {
             log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
             runtimeVersionUrl = modelVersion.getBuiltInRuntime();
             if (!StringUtils.hasText(runtimeVersionUrl)) {
                 throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
             }
-            runtimeVersion = runtimeService.findBuiltInRuntimeVersion(model.getProjectId(), runtimeVersionUrl);
+            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
+                    runtime.getId(),
+                    runtimeVersionUrl
+            ));
         } else {
             runtimeVersion = null;
         }
-        var runtime = null == runtimeVersion ? null : runtimeService.findRuntime(runtimeVersion.getRuntimeId());
+        var runtime = null == runtimeVersion ? null :
+                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
 
         var datasetVersionIdMaps = StringUtils.hasText(datasetVersionUrls)
                 ? Arrays.stream(datasetVersionUrls.split("[,;]"))
@@ -134,7 +144,8 @@ public class JobCreator {
                 || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided only one"),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
         List<StepSpec> steps;
@@ -164,7 +175,8 @@ public class JobCreator {
             if (!pool.allowUser(creator.getId())) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.JOB, "creator is not allowed to use this resource pool"),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.BAD_REQUEST
+                );
             }
         }
 

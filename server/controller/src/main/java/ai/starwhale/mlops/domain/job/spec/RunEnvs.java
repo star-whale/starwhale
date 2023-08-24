@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RunConfig {
+public class RunEnvs {
 
     Map<String, String> envVars;
 

@@ -22,9 +22,6 @@ import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
-import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -40,14 +37,14 @@ import org.junit.jupiter.api.Test;
 
 public class K8sJobTemplateTest {
 
-    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "", "", "/path");
+    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "", "/path");
 
     public K8sJobTemplateTest() throws IOException {
     }
 
     @Test
     public void testInit() {
-        var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var job = k8sJobTemplate.loadJobTemplate();
 
         List<V1Container> containerTemplates = k8sJobTemplate.getContainersTemplates(job);
         List<String> cnames = containerTemplates.stream().map(V1Container::getName)
@@ -60,7 +57,7 @@ public class K8sJobTemplateTest {
     public void testRenderJob() {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         Map<String, String> nodeSelectors = Map.of("label.pool.bj01", "true");
-        var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var job = k8sJobTemplate.loadJobTemplate();
         var originalAnnotations = new HashMap<String, String>() {{
                 put("foo", "bar");
             }};
@@ -122,15 +119,15 @@ public class K8sJobTemplateTest {
     @Test
     public void testPipCache() throws IOException {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
-        var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var job = k8sJobTemplate.loadJobTemplate();
         k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         var volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
 
         // empty host path
-        var template = new K8sJobTemplate("", "", "", "");
-        job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var template = new K8sJobTemplate("", "", "");
+        job = k8sJobTemplate.loadJobTemplate();
         template.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
@@ -141,7 +138,7 @@ public class K8sJobTemplateTest {
     @Test
     public void testDevInfoLabel() {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
-        var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var job = k8sJobTemplate.loadJobTemplate();
         k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         var labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, hasEntry(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true"));
@@ -157,13 +154,12 @@ public class K8sJobTemplateTest {
         specs.put("bar", gpuSpec);
         specs.put("baz", cpuSpec);
 
-        job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        job = k8sJobTemplate.loadJobTemplate();
         k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), null, null);
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, is(Map.of(
                 K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
                 K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true",
-                "job-type", "eval",
                 "job-name", "foo",
                 "owner", "starwhale"
             )));

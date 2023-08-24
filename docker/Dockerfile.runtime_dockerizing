@@ -1,0 +1,24 @@
+ARG BASE_IMAGE=starwhaleai/base:latest
+FROM gcr.io/kaniko-project/executor:v1.14.0 AS kaniko
+FROM ${BASE_IMAGE}
+
+ARG PYTHON_VERSION
+ARG SW_VERSION
+
+ENV SW_RUNTIME_PYTHON_VERSION=${PYTHON_VERSION:-3.10}
+ENV SW_VERSION=${SW_VERSION:-0.5.8}
+COPY --from=kaniko /kaniko/executor /kaniko/executor
+COPY --from=kaniko /kaniko/docker-credential-gcr /kaniko/docker-credential-gcr
+COPY --from=kaniko /kaniko/docker-credential-ecr-login /kaniko/docker-credential-ecr-login
+COPY --from=kaniko /kaniko/docker-credential-acr-env /kaniko/docker-credential-acr-env
+COPY --from=kaniko /kaniko/.docker /kaniko/.docker
+COPY --from=kaniko /kaniko/ssl/certs/ /kaniko/ssl/certs/
+COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
+RUN /opt/starwhale.bin/base-entrypoint set_environment || true
+
+ENV SW_USER_RUNTIME_RESTORED=1
+ENV PATH $PATH:/usr/local/bin:/kaniko
+ENV SSL_CERT_DIR=/kaniko/ssl/certs
+ENV DOCKER_CONFIG /kaniko/.docker/
+ENV DOCKER_CREDENTIAL_GCR_CONFIG /kaniko/.config/gcloud/docker_credential_gcr_config.json
+ENTRYPOINT ["/kaniko/executor"]
