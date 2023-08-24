@@ -193,6 +193,7 @@ public class JobCreatorTest {
         given(datasetDao.getDatasetVersion(anyString()))
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
+        // handler and stepSpec could only have one
         assertThrows(StarwhaleApiException.class,
                 () -> jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
                         "", "1", "", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
@@ -204,10 +205,22 @@ public class JobCreatorTest {
                         User.builder().id(1L).build()));
 
         // use built-in runtime(but no built-in)
-        assertThrows(SwValidationException.class,
-                () -> jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "",
-                        "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
-                        User.builder().id(1L).build()));
+        assertThrows(SwValidationException.class, () -> jobCreator.createJob(
+                        Project.builder().name("1").build(),
+                        "3",
+                        "1",
+                        "",
+                        "",
+                        "1",
+                        "mnist.evaluator:MNISTInference.cmp",
+                        "",
+                        JobType.EVALUATION,
+                        DevWay.VS_CODE,
+                        false,
+                        "",
+                        1L,
+                        User.builder().id(1L).build()
+        ));
 
         var res = jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
                 "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
