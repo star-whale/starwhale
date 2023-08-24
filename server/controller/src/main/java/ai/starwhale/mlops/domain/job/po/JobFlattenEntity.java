@@ -29,7 +29,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -39,7 +41,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
@@ -84,6 +88,10 @@ public class JobFlattenEntity {
 
     private Project project;
 
+    @JsonProperty(ModelIdColumn)
+    private Long modelId;
+    @JsonProperty(ModelProjectIdColumn)
+    private Long modelProjectId;
     @JsonProperty(ModelVersionIdColumn)
     private Long modelVersionId;
 
@@ -118,6 +126,10 @@ public class JobFlattenEntity {
     @JsonProperty(JobStatusColumn)
     private JobStatus jobStatus;
 
+    @JsonProperty(RuntimeIdColumn)
+    private Long runtimeId;
+    @JsonProperty(RuntimeProjectIdColumn)
+    private Long runtimeProjectId;
     @JsonProperty(RuntimeVersionIdColumn)
     private Long runtimeVersionId;
 

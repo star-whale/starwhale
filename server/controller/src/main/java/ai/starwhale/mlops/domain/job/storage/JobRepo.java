@@ -30,7 +30,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -40,7 +42,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
@@ -162,16 +166,52 @@ public class JobRepo {
         record.put(IsDeletedColumn, "0");
         record.put(ProjectIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getProjectId()), false, false));
-        record.put(ModelVersionIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getModelVersionId()), false, false));
-        record.put(ModelNameColumn, jobEntity.getModelName());
-        record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
-        record.put(RuntimeVersionIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getRuntimeVersionId()), false, false));
-        record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
-        record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
-        record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
-        record.put(DataSetsColumn, convertDatasetToDatastoreValue(jobEntity.getDatasets()));
+
+        if (Objects.nonNull(jobEntity.getModelId())) {
+            record.put(ModelIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getModelId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getModelProjectId())) {
+            record.put(ModelProjectIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getModelProjectId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getModelVersionId())) {
+            record.put(ModelVersionIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getModelVersionId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getModelName())) {
+            record.put(ModelNameColumn, jobEntity.getModelName());
+        }
+        if (Objects.nonNull(jobEntity.getModelVersionValue())) {
+            record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
+        }
+
+        if (Objects.nonNull(jobEntity.getRuntimeId())) {
+            record.put(RuntimeIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getRuntimeProjectId())) {
+            record.put(RuntimeProjectIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeProjectId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getRuntimeVersionId())) {
+            record.put(RuntimeVersionIdColumn,
+                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeVersionId()), false, false));
+        }
+        if (Objects.nonNull(jobEntity.getRuntimeName())) {
+            record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
+        }
+        if (Objects.nonNull(jobEntity.getRuntimeVersionValue())) {
+            record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
+        }
+
+        if (Objects.nonNull(jobEntity.getDatasetIdVersionMap())) {
+            record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
+        }
+        if (Objects.nonNull(jobEntity.getDatasets())) {
+            record.put(DataSetsColumn, convertDatasetToDatastoreValue(jobEntity.getDatasets()));
+        }
+
         record.put(OwnerIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getOwnerId()), false, false));
         record.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
