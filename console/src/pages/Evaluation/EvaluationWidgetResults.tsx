@@ -151,7 +151,37 @@ function Summary({ fetch }: any) {
                                                 )
                                             }) ?? []
                                     }
+                                    if (
+                                        label === 'sys/model_version' &&
+                                        record['sys/model_project_id'] &&
+                                        record['sys/model_id'] &&
+                                        record['sys/model_version_id']
+                                    ) {
+                                        value = (
+                                            <TextLink
+                                                key={record[label]}
+                                                to={`/projects/${record['sys/model_project_id']}/models/${record['sys/model_id']}/versions/${record['sys/model_version_id']}/overview`}
+                                            >
+                                                ${record[label]}
+                                            </TextLink>
+                                        )
+                                    }
 
+                                    if (
+                                        label === 'sys/runtime_version' &&
+                                        record['sys/runtime_project_id'] &&
+                                        record['sys/runtime_id'] &&
+                                        record['sys/runtime_version_id']
+                                    ) {
+                                        value = (
+                                            <TextLink
+                                                key={record[label]}
+                                                to={`/projects/${record['sys/runtime_project_id']}/runtimes/${record['sys/runtime_id']}/versions/${record['sys/runtime_version_id']}/overview`}
+                                            >
+                                                ${record[label]}
+                                            </TextLink>
+                                        )
+                                    }
                                     return (
                                         <React.Fragment key={label}>
                                             <div
