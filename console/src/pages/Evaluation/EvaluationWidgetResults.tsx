@@ -134,18 +134,18 @@ function Summary({ fetch }: any) {
                                     if (a === 'id') return -1
                                     return a > b ? 1 : -1
                                 })
-                                .filter((label) => (label === 'sys/datasets' || typeof record[label] !== 'object'))
+                                .filter((label) => label === 'sys/datasets' || typeof record[label] !== 'object')
                                 .map((label) => {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
                                     if (label === 'sys/datasets') {
                                         value = record[label].map((ds, i) => {
-                                                return <TextLink
-                                                        key={ds.version_id}
-                                                        to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}>
-                                                            {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
-                                                    </TextLink>
-                                            }) ?? []
+                                            return <TextLink
+                                                key={ds.version_id}
+                                                to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}>
+                                                {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
+                                            </TextLink>
+                                        }) ?? []
                                     }
 
                                     return (
