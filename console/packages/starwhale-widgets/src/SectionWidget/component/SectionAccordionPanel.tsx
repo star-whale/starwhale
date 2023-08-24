@@ -75,7 +75,7 @@ const Header = React.forwardRef((props, ref) => {
                     actions[item.type]?.()
                 }}
             />
-            <Button kind='secondary' onClick={onPanelChartAdd}>
+            <Button kind='secondary' onClick={onPanelChartAdd} disabled={!!!onPanelChartAdd}>
                 {t('panel.chart.add')}
             </Button>
         </div>

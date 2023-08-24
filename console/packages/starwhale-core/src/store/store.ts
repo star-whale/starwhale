@@ -15,6 +15,9 @@ function arrayOverride(objValue: any, srcValue: any, key, object) {
     if (srcValue == null || srcValue == undefined) {
         _.unset(object, key)
     }
+    if (key === 'evalSelectData') {
+        return srcValue
+    }
 }
 
 export const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']

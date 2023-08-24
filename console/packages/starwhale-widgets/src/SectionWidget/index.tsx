@@ -366,6 +366,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     //     isEvaluationListShow,
     // })
 
+    const isChartAdd = isEvaluationList ? Object.keys(evalSelectData || {}).length > 0 : true
+
     return (
         <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
@@ -373,7 +375,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 title={title}
                 expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
-                onPanelChartAdd={handleSectionAddChart}
+                onPanelChartAdd={isChartAdd && handleSectionAddChart}
                 onSectionRename={handleSectionRename}
                 onSectionAddAbove={handleSectionAddAbove}
                 onSectionAddBelow={handleSectionAddBelow}
