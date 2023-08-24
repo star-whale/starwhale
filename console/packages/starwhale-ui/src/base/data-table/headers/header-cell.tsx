@@ -150,7 +150,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
-            {props.index === 0 && !props.isSelectable && <HeaderFirstMenu {...props} />}
+            {props.index === 0 && !props.isSelectable && <p className='w-38px' />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox
@@ -326,110 +326,3 @@ HeaderCell.defaultProps = {
 }
 
 export default HeaderCell
-
-function HeaderFirstMenu(props: HeaderCellPropsT) {
-    // @ts-ignore
-    const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
-    const { wrapperRef, queryinline, columnleinline } = useStore(selector)
-    const { renderConfigQueryInline, renderConfigColumns } = useGrid()
-    const [isShowQuery, setIsShowQuery] = React.useState(false)
-    const [isShowConfigColumns, setIsShowConfigColumns] = React.useState(false)
-
-    const COLUMN_OPTIONS = React.useMemo(
-        () =>
-            [
-                queryinline && {
-                    label: locale.datatable.columnQuery,
-                    type: 'query',
-                },
-                columnleinline && { label: locale.datatable.columnConfig, type: 'column' },
-            ].filter(Boolean),
-        [queryinline, locale]
-    )
-
-    const handleColumnOptionSelect = React.useCallback(
-        (option: any) => {
-            if (option.type === 'query') {
-                setIsShowQuery(true)
-            } else if (option.type === 'column') {
-                setIsShowConfigColumns(true)
-            }
-        },
-        [props]
-    )
-
-    if (!columnleinline && !queryinline) {
-        return <p className='w-30px' />
-    }
-
-    return (
-        <>
-            <div>
-                {renderConfigQueryInline({
-                    width: props.wrapperWidth,
-                    isOpen: isShowQuery,
-                    setIsOpen: setIsShowQuery as any,
-                    mountNode: wrapperRef?.current,
-                })}
-                {renderConfigColumns({
-                    isAction: false,
-                    isOpen: isShowConfigColumns,
-                    setIsOpen: setIsShowConfigColumns as any,
-                    mountNode: wrapperRef?.current,
-                })}
-            </div>
-            <StatefulPopover
-                focusLock
-                triggerType={TRIGGER_TYPE.hover}
-                placement={PLACEMENT.bottom}
-                content={({ close }) => (
-                    <StatefulMenu
-                        items={COLUMN_OPTIONS}
-                        onItemSelect={({ item }) => {
-                            handleColumnOptionSelect(item)
-                            close()
-                        }}
-                        overrides={{
-                            List: { style: { height: '130px', width: '150px' } },
-                            Option: {
-                                props: {
-                                    getItemLabel: (item: { label: string; type: string }) => {
-                                        const icon = {
-                                            query: <IconFont type='filter' />,
-                                            column: <IconFont type='setting' />,
-                                        }
-
-                                        return (
-                                            <div className='flex gap-10px items-center'>
-                                                {icon?.[item.type as keyof typeof icon]}
-                                                {item.label}
-                                            </div>
-                                        )
-                                    },
-                                },
-                            },
-                        }}
-                    />
-                )}
-            >
-                {/* usesd for popover postion ref  */}
-                <Button as='link'>
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            marginLeft: 'auto',
-                            right: 0,
-                            top: -6,
-                            display: 'flex',
-                            width: '30px',
-                            justifyContent: 'center',
-                            marginRight: '8px',
-                        }}
-                    >
-                        <IconFont type='more' />
-                    </div>
-                </Button>
-            </StatefulPopover>
-        </>
-    )
-}

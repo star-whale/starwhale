@@ -57,7 +57,7 @@ function ConfigQueryInline(props: ExtraPropsT & PropsT) {
                                 /* tricky here: to make sure popover to align with rows, if cell
                                  changes ,this should be reset */
                                 marginLeft: '-12px',
-                                marginBottom: '10px',
+                                marginBottom: '-5px',
                                 zIndex: '3 !important',
                             },
                         },
