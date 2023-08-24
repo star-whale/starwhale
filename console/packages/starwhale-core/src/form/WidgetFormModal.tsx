@@ -121,7 +121,12 @@ export default function WidgetFormModal({
 
     useEffect(() => {
         if (config) {
-            setFormData({ ...(config.fieldConfig?.data ?? {}) })
+            const data = config.fieldConfig?.data || {}
+            setFormData({
+                ...data,
+                // FIXME for prev config, tableName should be array now
+                tableName: typeof data.tableName === 'string' ? [data.tableName] : data.tableName,
+            })
             setOptionConfig({})
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
