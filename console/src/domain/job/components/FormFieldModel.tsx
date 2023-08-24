@@ -29,6 +29,7 @@ function FormFieldModel({
     setModelTree,
     fullStepSource,
     forceUpdate,
+    autoFill,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
@@ -37,6 +38,7 @@ function FormFieldModel({
     setModelTree: (obj: any) => void
     fullStepSource?: StepSpec[]
     forceUpdate: () => void
+    autoFill?: boolean
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
@@ -81,8 +83,18 @@ function FormFieldModel({
                 modelVersionHandler: fullStepSource.find((v) => v)?.job_name ?? '',
             })
         }
+
+        if (!autoFill) return
+
+        if (modelVersionHandler) {
+            form.setFieldsValue({
+                stepSpecOverWrites: yaml.dump(
+                    fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
+                ),
+            })
+        }
         forceUpdate()
-    }, [form, fullStepSource, modelVersionHandler, forceUpdate])
+    }, [form, autoFill, fullStepSource, modelVersionHandler, forceUpdate])
 
     return (
         <>
