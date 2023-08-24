@@ -162,7 +162,7 @@ function Summary({ fetch }: any) {
                                                 key={record[label]}
                                                 to={`/projects/${record['sys/model_project_id']}/models/${record['sys/model_id']}/versions/${record['sys/model_version_id']}/overview`}
                                             >
-                                                ${record[label]}
+                                                {record[label]}
                                             </TextLink>
                                         )
                                     }
@@ -178,7 +178,7 @@ function Summary({ fetch }: any) {
                                                 key={record[label]}
                                                 to={`/projects/${record['sys/runtime_project_id']}/runtimes/${record['sys/runtime_id']}/versions/${record['sys/runtime_version_id']}/overview`}
                                             >
-                                                ${record[label]}
+                                                {record[label]}
                                             </TextLink>
                                         )
                                     }
