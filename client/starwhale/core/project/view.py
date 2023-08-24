@@ -128,7 +128,6 @@ class ProjectTermView(BaseTermView):
 class ProjectTermViewRich(ProjectTermView):
     @classmethod
     @BaseTermView._pager  # type: ignore
-    @BaseTermView._header  # type: ignore
     def list(
         cls,
         instance_uri: str = "",

@@ -23,15 +23,14 @@ def job_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@job_cmd.command("list", aliases=["ls"], help="List all jobs in the specified project")
+@job_cmd.command("list", aliases=["ls"])
 @click.option(
     "-p",
     "--project",
     default="",
     help="Project URI, default is the current selected project.",
 )
-@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
-@click.option("--show-removed", is_flag=True, help="Show removed dataset")
+@click.option("--fullname", is_flag=True, help="Show fullname of job")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for job list"
 )
@@ -43,13 +42,23 @@ def _list(
     view: t.Type[JobTermView],
     project: str,
     fullname: bool,
-    show_removed: bool,
     page: int,
     size: int,
 ) -> None:
-    view.list(
-        project, fullname=fullname, show_removed=show_removed, page=page, size=size
-    )
+    """List jobs in the specified project.
+
+    Examples:
+
+        \b
+        - List jobs in the current project:
+        swcli job list
+
+        \b
+        - List jobs from the specified project in the server instance:
+        swcli job list --project cloud://server/project/1
+        swcli job list --project cloud://server/project/1 --page 1 --size 10
+    """
+    view.list(project, fullname=fullname, page=page, size=size)
 
 
 @job_cmd.command("remove", aliases=["rm"], help="Remove job")

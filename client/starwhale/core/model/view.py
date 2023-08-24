@@ -420,7 +420,7 @@ class ModelTermViewRich(ModelTermView):
             "runtime": cls.place_holder_for_empty(""),
         }
 
-        cls.print_header()
+        cls.print_header(project_uri)
         cls.print_table("Model List", _models, custom_column=custom_column)
         return _models, _pager
 

@@ -320,7 +320,7 @@ class DatasetTermViewRich(DatasetTermView):
             "rows": lambda x: str(x),
         }
 
-        cls.print_header()
+        cls.print_header(project_uri)
         cls.print_table("Dataset List", _datasets, custom_column=custom_column)
         return _datasets, _pager
 
