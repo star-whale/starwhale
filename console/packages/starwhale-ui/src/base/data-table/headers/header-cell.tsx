@@ -20,6 +20,7 @@ import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
 import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 import ConfigColumns from '@starwhale/ui/GridTable/components/ConfigColumns'
 import { useHover, useHoverDirty } from 'react-use'
+import shallow from 'zustand/shallow'
 
 type HeaderCellPropsT = {
     index: number
@@ -54,6 +55,7 @@ const selector = (s: IGridState) => ({
     columnleinline: s.columnleinline,
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
     wrapperRef: s.wrapperRef,
+    sortable: s.sortable,
 })
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -62,6 +64,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
+    const { sortable } = useStore(selector, shallow)
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {
@@ -76,11 +79,15 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     }
 
     const COLUMN_OPTIONS = React.useMemo(
-        () => [
-            { label: props.isPin ? locale.datatable.columnUnPinColumn : locale.datatable.columnPinColumn, type: 'pin' },
-            { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
-            { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
-        ],
+        () =>
+            [
+                {
+                    label: props.isPin ? locale.datatable.columnUnPinColumn : locale.datatable.columnPinColumn,
+                    type: 'pin',
+                },
+                sortable && { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
+                sortable && { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
+            ].filter(Boolean),
         [props.isPin, locale]
     )
 

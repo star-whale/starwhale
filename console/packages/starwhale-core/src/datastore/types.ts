@@ -19,4 +19,5 @@ export type DatastorePageT = IListQuerySchema & {
     filter?: any[]
     query?: QueryTableRequest
     revision?: string
+    lastKey?: string
 }

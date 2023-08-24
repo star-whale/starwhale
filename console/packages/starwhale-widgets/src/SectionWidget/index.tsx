@@ -33,6 +33,7 @@ const useStyles = createUseStyles({
         '& .react-resizable-handle': {
             visibility: 'hidden',
             backgroundSize: '12px',
+            padding: '3px',
         },
         '&:hover > .react-resizable-handle': {
             visibility: 'visible',
@@ -405,7 +406,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                     </div>
                 )}
             </SectionAccordionPanel>
-            <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
+            <Modal
+                isOpen={isModelOpen}
+                onClose={() => setIsModelOpen(false)}
+                closeable
+                animate
+                autoFocus
+                returnFocus={false}
+            >
                 <ModalHeader>{t('panel.name')}</ModalHeader>
                 <ModalBody>
                     <SectionForm onSubmit={handleSectionForm} formData={{ name: title }} />

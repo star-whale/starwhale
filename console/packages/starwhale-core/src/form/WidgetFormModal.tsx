@@ -139,6 +139,7 @@ export default function WidgetFormModal({
             closeable
             animate
             autoFocus
+            returnFocus={false}
             overrides={{
                 Dialog: {
                     style: {
