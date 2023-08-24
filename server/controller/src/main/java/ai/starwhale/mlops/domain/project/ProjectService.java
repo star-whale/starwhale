@@ -92,7 +92,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     private static final long storageInterval = 1000;
     private ApplicationContext applicationContext;
 
-    public ProjectService(ProjectMapper projectMapper,
+    public ProjectService(
+            ProjectMapper projectMapper,
             ProjectVisitedMapper projectVisitedMapper,
             ProjectDao projectDao,
             MemberService memberService,
@@ -325,14 +326,11 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     }
 
     @Transactional
-    public Boolean updateProject(String projectUrl, String projectName, String description, Long ownerId,
-                                 String privacy) {
+    public Boolean updateProject(String projectUrl, String projectName, String description, String privacy) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
-            if (ownerId == null) {
-                ownerId = project.getOwnerId();
-            }
+            var ownerId = project.getOwnerId();
             ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, ownerId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
                 throw new StarwhaleApiException(
@@ -354,7 +352,6 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
-                .ownerId(ownerId)
                 .privacy(privacyEnum.getValue())
                 .build();
         int res = projectMapper.update(entity);

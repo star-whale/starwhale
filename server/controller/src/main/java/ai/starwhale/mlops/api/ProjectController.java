@@ -79,11 +79,12 @@ public class ProjectController implements ProjectApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> createProject(
             CreateProjectRequest createProjectRequest) {
+        var user = userService.currentUserDetail().getId();
         Long projectId = projectService
                 .createProject(Project.builder()
                         .name(createProjectRequest.getProjectName())
                         .owner(User.builder()
-                                .id(idConvertor.revert(createProjectRequest.getOwnerId()))
+                                .id(user)
                                 .build())
                         .isDefault(false)
                         .privacy(Privacy.fromName(createProjectRequest.getPrivacy()))
@@ -123,7 +124,6 @@ public class ProjectController implements ProjectApi {
         Boolean res = projectService.updateProject(projectUrl,
                 updateProjectRequest.getProjectName(),
                 updateProjectRequest.getDescription(),
-                idConvertor.revert(updateProjectRequest.getOwnerId()),
                 updateProjectRequest.getPrivacy()
         );
         if (!res) {
