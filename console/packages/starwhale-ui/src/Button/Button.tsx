@@ -230,6 +230,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         props.noPadding ? STYLES.noPadding : {},
         props.transparent ? STYLES.transparent : {},
         props.negative ? STYLES.negative : {},
+        props.overrides ? props.overrides : {},
     ].reduce(mergeOverrides, {})
 
     return <ForwardButton {...props} overrides={overrides} ref={ref} />

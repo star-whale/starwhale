@@ -1,4 +1,4 @@
-import { Select as BaseSelect, SelectProps, SIZE } from 'baseui/select'
+import { Select as BaseSelect, SelectProps, SIZE } from '../base/select'
 import React from 'react'
 import IconFont from '../IconFont'
 import { mergeOverrides } from '../utils'

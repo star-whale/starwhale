@@ -32,6 +32,7 @@ const useStyles = createUseStyles({
         },
         '& .react-resizable-handle': {
             visibility: 'hidden',
+            backgroundSize: '12px',
         },
         '&:hover > .react-resizable-handle': {
             visibility: 'visible',
@@ -158,8 +159,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }
 
     const handleSectionAddChart = () => {
-        setIsPanelModalOpen(true)
         setEditWidget({ path: props.path, id: props.id, type: 'add' })
+        setIsPanelModalOpen(true)
     }
 
     const handleSectionRename = () => {

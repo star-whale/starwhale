@@ -134,6 +134,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     borderLeft: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                     borderTop: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                     maxWidth: '100%',
+                    minWidth: props.index == 0 ? '120px' : 'auto',
                 })
             )}
             title={props.title}
@@ -142,7 +143,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
-            {props.index === 0 && <HeaderFirstMenu {...props} />}
+            {props.index === 0 && !props.isSelectable && <HeaderFirstMenu {...props} />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox
@@ -334,7 +335,7 @@ function HeaderFirstMenu(props: HeaderCellPropsT) {
                     label: locale.datatable.columnQuery,
                     type: 'query',
                 },
-                { label: locale.datatable.columnConfig, type: 'column' },
+                columnleinline && { label: locale.datatable.columnConfig, type: 'column' },
             ].filter(Boolean),
         [queryinline, locale]
     )
@@ -350,33 +351,25 @@ function HeaderFirstMenu(props: HeaderCellPropsT) {
         [props]
     )
 
-    const ConfigQueryComponent = React.useMemo(() => {
-        return renderConfigQueryInline({
-            width: props.wrapperWidth,
-            isOpen: isShowQuery,
-            setIsOpen: setIsShowQuery as any,
-            mountNode: wrapperRef?.current,
-        })
-    }, [isShowQuery])
-
-    const ConfigColumnComponent = React.useMemo(() => {
-        return renderConfigColumns({
-            isAction: false,
-            isOpen: isShowConfigColumns,
-            setIsOpen: setIsShowConfigColumns as any,
-            mountNode: wrapperRef?.current,
-        })
-    }, [isShowConfigColumns])
-
     if (!columnleinline && !queryinline) {
-        return null
+        return <p className='w-30px' />
     }
 
     return (
         <>
             <div>
-                {ConfigQueryComponent}
-                {ConfigColumnComponent}
+                {renderConfigQueryInline({
+                    width: props.wrapperWidth,
+                    isOpen: isShowQuery,
+                    setIsOpen: setIsShowQuery as any,
+                    mountNode: wrapperRef?.current,
+                })}
+                {renderConfigColumns({
+                    isAction: false,
+                    isOpen: isShowConfigColumns,
+                    setIsOpen: setIsShowConfigColumns as any,
+                    mountNode: wrapperRef?.current,
+                })}
             </div>
             <StatefulPopover
                 focusLock
