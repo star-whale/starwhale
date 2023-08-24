@@ -27,7 +27,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.job.spec.RunConfig;
+import ai.starwhale.mlops.domain.job.spec.RunEnvs;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
@@ -305,9 +305,16 @@ public class RuntimeController implements RuntimeApi {
             String projectUrl,
             String runtimeUrl,
             String versionUrl,
-            RunConfig runConfig
+            RunEnvs runEnvs
     ) {
-        BuildImageResult res = runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl, runConfig);
+        BuildImageResult res = runtimeService.dockerize(projectUrl, runtimeUrl, versionUrl, runEnvs);
         return ResponseEntity.ok(Code.success.asResponse(res));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<?>> updateRuntime(String projectUrl, String runtimeUrl, String versionUrl,
+            String runtimeImage) {
+        runtimeService.updateImage(projectUrl, runtimeUrl, versionUrl, runtimeImage);
+        return ResponseEntity.ok(Code.success.asResponse(null));
     }
 }

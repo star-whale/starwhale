@@ -26,7 +26,6 @@ import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
 import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import java.util.HashMap;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -40,9 +39,11 @@ public class DatasetBuildContainerSpecification implements ContainerSpecificatio
 
     final Task task;
 
-    public DatasetBuildContainerSpecification(SystemSettingService systemSettingService,
-            @Value("${sw.instance-uri}") String instanceUri,
-            TaskTokenValidator taskTokenValidator, Task task) {
+    public DatasetBuildContainerSpecification(
+            SystemSettingService systemSettingService,
+            String instanceUri,
+            TaskTokenValidator taskTokenValidator, Task task
+    ) {
         this.systemSettingService = systemSettingService;
         this.taskTokenValidator = taskTokenValidator;
         this.instanceUri = instanceUri;

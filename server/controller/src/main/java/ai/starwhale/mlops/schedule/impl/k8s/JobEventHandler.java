@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
@@ -32,7 +31,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Slf4j
@@ -41,17 +39,14 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     private final TaskReportReceiver taskReportReceiver;
     private final TaskStatusMachine taskStatusMachine;
-    private final RuntimeService runtimeService;
     private final K8sClient k8sClient;
 
     public JobEventHandler(
             TaskReportReceiver taskReportReceiver,
             TaskStatusMachine taskStatusMachine,
-            RuntimeService runtimeService,
             K8sClient k8sClient) {
         this.taskReportReceiver = taskReportReceiver;
         this.taskStatusMachine = taskStatusMachine;
-        this.runtimeService = runtimeService;
         this.k8sClient = k8sClient;
     }
 
@@ -76,43 +71,8 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     }
 
     private void dispatch(V1Job job, String event) {
-        var metaData = job.getMetadata();
-        if (metaData == null) {
-            return;
-        }
-        var labels = metaData.getLabels();
-        if (CollectionUtils.isEmpty(labels)) {
-            return;
-        }
-        var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
-        if (StringUtils.hasText(type)) {
-            log.debug("job({}) {} for {} with status {}", type, event, jobName(job), job.getStatus());
-            switch (type) {
-                case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
-                    updateEvalTask(job, false);
-                    break;
-                case K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER:
-                    updateImageBuildTask(job);
-                    break;
-                default:
-            }
-        }
-    }
-
-    private void updateImageBuildTask(V1Job job) {
-        V1JobStatus status = job.getStatus();
-        if (status == null) {
-            return;
-        }
-        var version = jobName(job);
-        var image = job.getMetadata().getAnnotations().get("image");
-        if (!StringUtils.hasText(version) || !StringUtils.hasText(image)) {
-            return;
-        }
-        if (null != status.getSucceeded()) {
-            log.info("image:{} build success", image);
-            runtimeService.updateBuiltImage(version, image);
-        }
+        log.debug("job({}) {} with status {}", event, jobName(job), job.getStatus());
+        updateEvalTask(job, false);
     }
 
     private void updateEvalTask(V1Job job, boolean onDelete) {

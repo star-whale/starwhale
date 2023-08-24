@@ -27,7 +27,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.domain.job.spec.RunConfig;
+import ai.starwhale.mlops.domain.job.spec.RunEnvs;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -341,7 +341,24 @@ public interface RuntimeApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl") String versionUrl,
             @Parameter(description = "user defined running configurations such environment variables")
-            @RequestBody(required = false) RunConfig runConfig);
+            @RequestBody(required = false) RunEnvs runEnvs);
+
+    @Operation(summary = "update image for runtime", description = "update image for runtime")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/image",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.PUT)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<?>> updateRuntime(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("runtimeUrl") String runtimeUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl") String versionUrl,
+            @Parameter(description = "the image used for this runtime")
+            String runtimeImage);
 
 
 }

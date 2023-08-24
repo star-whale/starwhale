@@ -17,11 +17,13 @@
 package ai.starwhale.mlops.api.protocol.runtime;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.simpleframework.xml.core.Validate;
 
 @Data
+@AllArgsConstructor
 @Builder
 @Schema(description = "Build runtime image result", title = "Runtime")
 @Validate

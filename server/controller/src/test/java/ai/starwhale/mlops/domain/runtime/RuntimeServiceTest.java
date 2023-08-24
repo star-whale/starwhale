@@ -32,7 +32,6 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -54,7 +53,6 @@ import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -63,10 +61,14 @@ import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.spec.RunConfig;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.RunEnvs;
+import ai.starwhale.mlops.domain.job.step.VirtualJobLoader;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
@@ -81,7 +83,6 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -89,17 +90,8 @@ import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobSpec;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +101,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -130,13 +123,11 @@ public class RuntimeServiceTest {
     private UserService userService;
     private HotJobHolder jobHolder;
     private TrashService trashService;
-    private SystemSettingService systemSettingService;
-    private K8sClient k8sClient;
-    private K8sJobTemplate k8sJobTemplate;
-    private RuntimeTokenValidator runtimeTokenValidator;
     private BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
+
+    private JobCreator jobCreator;
 
     @SneakyThrows
     @BeforeEach
@@ -181,13 +172,10 @@ public class RuntimeServiceTest {
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
 
-        systemSettingService = mock(SystemSettingService.class);
         trashService = mock(TrashService.class);
-        k8sClient = mock(K8sClient.class);
-        k8sJobTemplate = mock(K8sJobTemplate.class);
-        runtimeTokenValidator = mock(RuntimeTokenValidator.class);
         bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
+        jobCreator = mock(JobCreator.class);
         service = new RuntimeService(
                 runtimeMapper,
                 runtimeVersionMapper,
@@ -204,16 +192,22 @@ public class RuntimeServiceTest {
                 new IdConverter(),
                 new VersionAliasConverter(),
                 trashService,
-                k8sClient,
-                k8sJobTemplate,
-                runtimeTokenValidator,
-                systemSettingService,
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
-                new RunTimeProperties("",
+                new RunTimeProperties(
+                        "",
                         new RunTimeProperties.RunConfig("rc", "", "", ""),
                         new RunTimeProperties.RunConfig("rc", "", "", ""),
-                        new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io", 1, 2), ""),
-                "http://mock-controller");
+                        new RunTimeProperties.Pypi(
+                                "https://pypi.io/simple",
+                                "https://edu.io/simple",
+                                "pypi.io",
+                                1,
+                                2
+                        ),
+                        ""
+                ),
+                jobCreator, new VirtualJobLoader(null), new JobSpecParser()
+        );
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -263,7 +257,7 @@ public class RuntimeServiceTest {
                                     .storagePath("path2")
                                     .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                                     .builtImage("build-image")
-                                .build();
+                                    .build();
 
                         case "v3":
                             return RuntimeVersionEntity.builder()
@@ -287,9 +281,9 @@ public class RuntimeServiceTest {
                         RuntimeEntity.builder().id(2L).build()
                 ));
         var res = service.listRuntime(RuntimeQuery.builder()
-                .projectUrl("1")
-                .namePrefix("")
-                .build(), new PageParams(1, 5));
+                                              .projectUrl("1")
+                                              .namePrefix("")
+                                              .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
@@ -393,8 +387,10 @@ public class RuntimeServiceTest {
         assertEquals("1", res.get(0).getId());
         assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.listRuntimeInfo("2", "r1"));
+        assertThrows(
+                SwNotFoundException.class,
+                () -> service.listRuntimeInfo("2", "r1")
+        );
     }
 
     @Test
@@ -405,8 +401,10 @@ public class RuntimeServiceTest {
         given(runtimeMapper.find(same(2L)))
                 .willReturn(RuntimeEntity.builder().id(2L).build());
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("r3").build()));
+        assertThrows(
+                SwNotFoundException.class,
+                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("r3").build())
+        );
 
         given(runtimeVersionMapper.find(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
@@ -415,10 +413,10 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         var res = service.getRuntimeInfo(RuntimeQuery.builder()
-                .projectUrl("p1")
-                .runtimeUrl("r1")
-                .runtimeVersionUrl("v1")
-                .build());
+                                                 .projectUrl("p1")
+                                                 .runtimeUrl("r1")
+                                                 .runtimeVersionUrl("v1")
+                                                 .build());
 
         assertEquals("1", res.getId());
         assertEquals("v2", res.getVersionInfo().getAlias());
@@ -427,15 +425,17 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         res = service.getRuntimeInfo(RuntimeQuery.builder()
-                .projectUrl("p1")
-                .runtimeUrl("r1")
-                .build());
+                                             .projectUrl("p1")
+                                             .runtimeUrl("r1")
+                                             .build());
 
         assertEquals("1", res.getId());
         assertEquals("v2", res.getVersionInfo().getAlias());
 
-        assertThrows(BundleException.class,
-                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build()));
+        assertThrows(
+                BundleException.class,
+                () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build())
+        );
     }
 
     @Test
@@ -473,13 +473,9 @@ public class RuntimeServiceTest {
                 new IdConverter(),
                 versionAliasConverter,
                 mock(TrashService.class),
-                mock(K8sClient.class),
-                mock(K8sJobTemplate.class),
-                mock(RuntimeTokenValidator.class),
-                mock(SystemSettingService.class),
                 mock(DockerSetting.class),
                 mock(RunTimeProperties.class),
-                "fake instance url"
+                mock(JobCreator.class), mock(VirtualJobLoader.class), mock(JobSpecParser.class)
         );
 
         // public project
@@ -543,9 +539,9 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeEntity.builder().id(1L).build());
         given(runtimeVersionMapper.findByNameAndRuntimeId(anyString(), same(1L)))
                 .willReturn(RuntimeVersionEntity.builder()
-                        .id(1L)
-                        .storagePath("path1")
-                        .build());
+                                    .id(1L)
+                                    .storagePath("path1")
+                                    .build());
         given(jobHolder.ofStatus(anySet()))
                 .willReturn(List.of(
                         Job.builder().jobRuntime(JobRuntime.builder().name("r1").version("v1").build()).build(),
@@ -586,16 +582,22 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().storagePath("path3").build());
 
         HttpServletResponse response = mock(HttpServletResponse.class);
-        assertThrows(BundleException.class,
-                () -> service.pull("1", "r1", "v4", response));
+        assertThrows(
+                BundleException.class,
+                () -> service.pull("1", "r1", "v4", response)
+        );
 
         given(storageAccessService.list(anyString())).willThrow(IOException.class);
         given(storageAccessService.list(same("path1"))).willReturn(Stream.of("path1/file1"));
         given(storageAccessService.list(same("path2"))).willReturn(Stream.of());
-        assertThrows(SwValidationException.class,
-                () -> service.pull("1", "r1", "v2", response));
-        assertThrows(SwProcessException.class,
-                () -> service.pull("1", "r1", "v3", response));
+        assertThrows(
+                SwValidationException.class,
+                () -> service.pull("1", "r1", "v2", response)
+        );
+        assertThrows(
+                SwProcessException.class,
+                () -> service.pull("1", "r1", "v3", response)
+        );
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
@@ -621,52 +623,116 @@ public class RuntimeServiceTest {
     }
 
     @Test
-    public void testBuildImage() throws ApiException {
+    public void testDockerize() {
+        Project project = Project.builder().id(1L).name("starwhale").build();
         given(projectService.findProject("project-1"))
-                .willReturn(Project.builder().id(1L).name("starwhale").build());
-        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).name("sw").build());
+                .willReturn(project);
+        User user = User.builder().id(1L).name("sw").build();
+        given(userService.currentUserDetail()).willReturn(user);
+        when(bundleManager.getBundleVersion(any())).thenReturn(RuntimeVersionEntity.builder()
+                                                                       .versionName("v1")
+                                                                       .builtImage(null)
+                                                                       .build());
+        when(bundleManager.getBundle(any())).thenReturn(RuntimeEntity.builder().runtimeName("rt").build());
+        when(jobCreator.createJob(
+                eq(project),
+                eq(null),
+                eq(null),
+                eq(null),
+                any(),
+                eq("rc"),
+                eq(null),
+                any(),
+                eq(JobType.BUILT_IN),
+                eq(null),
+                eq(false),
+                eq(null),
+                eq(null),
+                eq(user)
+        )).thenReturn(Job.builder().id(1L).build());
+        service.dockerize("project-1", "v1", "v1", new RunEnvs(Map.of("k", "v")));
+        verify(
+                jobCreator,
+                times(1)
+        ).createJob(
+                eq(project),
+                eq(null),
+                eq(null),
+                eq(null),
+                any(),
+                eq("rc"),
+                eq(null),
+                eq("---\n"
+                           + "- concurrency: 1\n"
+                           + "  env:\n"
+                           + "  - name: \"k\"\n"
+                           + "    value: \"v\"\n"
+                           + "  - name: \"SW_TARGET_IMAGE\"\n"
+                           + "    value: \"localhost:8083/rt:v1\"\n"
+                           + "  - name: \"SW_DEST_IMAGE\"\n"
+                           + "    value: \"localhost:8083/rt:v1\"\n"
+                           + "  - name: \"SW_RUNTIME_VERSION\"\n"
+                           + "    value: \"rt/version/v1\"\n"
+                           + "  replicas: 1\n"
+                           + "  job_name: \"runtime_dockerizing\"\n"
+                           + "  name: \"runtime_dockerizing\"\n"
+                           + "  show_name: \"runtime_dockerizing\"\n"
+                           + "  require_dataset: false\n"
+                           + "  container_spec:\n"
+                           + "    image: \"docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest\"\n"
+                           + "    cmds:\n"
+                           + "    - \"oho\"\n"
+                           + "    entrypoint:\n"
+                           + "    - \"sh\"\n"
+                           + "    - \"-c\"\n"),
+                eq(JobType.BUILT_IN),
+                eq(null),
+                eq(false),
+                eq(null),
+                eq(null),
+                eq(user)
+        );
 
-        var job = new V1Job()
-                .metadata(new V1ObjectMeta().name("n1").labels(
-                        Map.of(K8sJobTemplate.JOB_TYPE_LABEL, K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER)))
-                .spec(new V1JobSpec().template(new V1PodTemplateSpec().spec(new V1PodSpec()
-                        .initContainers(List.of(new V1Container().name("prepare-runtime")))
-                        .containers(List.of(new V1Container().name("image-builder"))))));
-        given(k8sJobTemplate.loadJob(anyString())).willReturn(job);
-        given(k8sJobTemplate.getInitContainerTemplates(any()))
-                .willReturn(job.getSpec().getTemplate().getSpec().getInitContainers());
-        given(k8sJobTemplate.getContainersTemplates(any()))
-                .willReturn(job.getSpec().getTemplate().getSpec().getContainers());
-        given(k8sClient.deployJob(any())).willReturn(job);
 
-        var res = service.buildImage("project-1", "r1", "v1", null);
-
-        verify(k8sJobTemplate, times(1)).loadJob(any());
-        verify(k8sJobTemplate, times(1)).updateAnnotations(any(), any());
-        verify(k8sJobTemplate, times(1)).renderJob(
-                any(), eq("n1"), eq("OnFailure"), eq(2), any(), any(), any(), isNull());
-        verify(k8sClient, times(1)).deployJob(any());
-        verify(k8sJobTemplate).renderJob(
-                any(), eq("n1"), eq("OnFailure"), eq(2),
-                argThat(containerOverwriteSpecMap -> {
-                    var prepareBuilder = containerOverwriteSpecMap.get("prepare-runtime");
-                    var imageBuilder = containerOverwriteSpecMap.get("image-builder");
-                    return prepareBuilder.getEnvs().size() == 12
-                        && imageBuilder.getEnvs().size() == 12
-                        && imageBuilder.getCmds().size() == 6;
-                }),
-                any(), any(), isNull());
-        verify(systemSettingService, times(1)).queryResourcePool(eq("rc"));
-        assertThat(res.getSuccess(), is(true));
-
-        res = service.buildImage("project-1", "r1", "v2", null);
-        assertThat(res.getSuccess(), is(false));
-
-        given(k8sClient.deployJob(any()))
-                .willThrow(new ApiException(HttpServletResponse.SC_CONFLICT, ""));
-        res = service.buildImage("project-1", "r1", "v1", new RunConfig(Map.of("a", "b")));
-        assertThat(res.getSuccess(), is(false));
     }
+
+    @Test
+    public void testDockerizeCheck() {
+        when(bundleManager.getBundleVersion(any())).thenReturn(null);
+        Assertions.assertThrows(SwNotFoundException.class, () -> service.dockerize("project-1", "rt", "v1", null));
+    }
+
+    @Test
+    public void testDockerizeNotFound() {
+        when(bundleManager.getBundleVersion(any())).thenReturn(null);
+        Assertions.assertThrows(SwNotFoundException.class, () -> service.dockerize("project-1", "rt", "v1", null));
+    }
+
+    @Test
+    public void testDockerizeWontDo() {
+        when(bundleManager.getBundleVersion(any())).thenReturn(RuntimeVersionEntity.builder().builtImage("x").build());
+        service.dockerize("project-1", "rt", "v1", null);
+        verify(
+                jobCreator,
+                times(0)
+        ).createJob(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(false),
+                any(),
+                any(),
+                any()
+        );
+    }
+
 
     @Test
     public void testListRuntimeVersionView() {

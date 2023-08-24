@@ -156,6 +156,7 @@ jobs:
         run: |
           make build-server
           make build-dataset-builder
+          make build-runtime-dockerizing-builder
 
   helm-charts-release:
     runs-on: ubuntu-latest
