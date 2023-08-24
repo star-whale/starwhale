@@ -31,9 +31,6 @@ public class UpdateProjectRequest {
     @Pattern(regexp = PROJECT_NAME_REGEX, message = "Project name is invalid.")
     private String projectName;
 
-    @JsonProperty("ownerId")
-    private String ownerId;
-
     @JsonProperty("privacy")
     private String privacy;
 

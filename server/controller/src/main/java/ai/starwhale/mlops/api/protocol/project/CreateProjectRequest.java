@@ -36,10 +36,6 @@ public class CreateProjectRequest implements Serializable {
     private String projectName;
 
     @NotNull
-    @JsonProperty("ownerId")
-    private String ownerId;
-
-    @NotNull
     @JsonProperty("privacy")
     private String privacy;
 
