@@ -139,13 +139,17 @@ function Summary({ fetch }: any) {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
                                     if (label === 'sys/datasets') {
-                                        value = record[label].map((ds, i) => {
-                                            return <TextLink
-                                                key={ds.version_id}
-                                                to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}>
-                                                {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
-                                            </TextLink>
-                                        }) ?? []
+                                        value =
+                                            record[label].map((ds, i) => {
+                                                return (
+                                                    <TextLink
+                                                        key={ds.version_id}
+                                                        to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}
+                                                    >
+                                                        {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
+                                                    </TextLink>
+                                                )
+                                            }) ?? []
                                     }
 
                                     return (
