@@ -84,7 +84,7 @@ export default function ReportEdit() {
             {/* eslint-disable-next-line */}
             <Breadcrumb
                 extra={
-                    <div className='flex gap-15px items-center'>
+                    <div className='flex gap-15px items-center fixed right-30px z-6 mt-[-10px]'>
                         {statusT[status]}
                         <Button onClick={() => setReadonly(!readonly)}>
                             {readonly ? t('report.mode.edit') : t('report.mode.preview')}
