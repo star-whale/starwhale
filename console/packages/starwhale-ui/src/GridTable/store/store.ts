@@ -245,7 +245,6 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
     isInit: false,
     key: 'table',
     initStore: (obj?: Record<string, any>) => {
-        console.log(_.isEmpty(obj), obj)
         set(
             {
                 ...(!_.isEmpty(obj) ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
