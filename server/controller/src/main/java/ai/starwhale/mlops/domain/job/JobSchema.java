@@ -82,7 +82,7 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(DataSetsColumn).type(LIST)
                 .elementType(ColumnSchemaDesc.builder()
                         .type(OBJECT)
-                        .pythonType("object")
+                        .pythonType("DatasetInfo")
                         .attributes(List.of(
                                 ColumnSchemaDesc.builder().name("version_id").type(INT64).build(),
                                 ColumnSchemaDesc.builder().name("dataset_id").type(INT64).build(),
