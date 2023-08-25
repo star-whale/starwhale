@@ -144,8 +144,8 @@ export default function WidgetFormModal({
                 Dialog: {
                     style: {
                         width: '90vw',
-                        maxWidth: '1200px',
-                        maxHeight: '640px',
+                        maxWidth: preview ? undefined : '1200px',
+                        maxHeight: preview ? undefined : '640px',
                         display: 'flex',
                         flexDirection: 'column',
                     },
@@ -160,7 +160,8 @@ export default function WidgetFormModal({
                         flexGrow: '1',
                         maxHeight: '70vh',
                         minHeight: '348px',
-                        height: 'auto',
+                        width: '90vw',
+                        height: '90vh',
                         overflow: 'auto',
                         backgroundColor: '#F7F8FA',
                         display: 'grid',
