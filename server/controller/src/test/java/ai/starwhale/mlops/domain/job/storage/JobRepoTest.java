@@ -110,11 +110,11 @@ public class JobRepoTest {
                 .datasetIdVersionMap(Map.of(1L, "qwerty", 2L, "asdfgh"))
                 .datasets(List.of(
                         DatasetVersion.builder()
-                                .id(1L)
+                                .datasetId(1L)
+                                .projectId(2L)
+                                .id(3L)
                                 .versionName("version")
                                 .datasetName("ds")
-                                .datasetId(2L)
-                                .projectId(3L)
                                 .indexTable("/p/1/ds/tt/asdf")
                                 .build()
                 ))
@@ -137,14 +137,30 @@ public class JobRepoTest {
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
         assertThat("convert",
-                jobRepo.convertToListMap(jobEntity.getDatasets()),
-                is(List.of(Map.of(
-                        "version_id", "1",
-                        "dataset_id", "2",
-                        "project_id", "3",
-                        "dataset_name", "ds",
-                        "dataset_version", "version",
-                        "index_table", "/p/1/ds/tt/asdf")))
+                jobRepo.convertDetailsToListMap(jobEntity),
+                is(Map.of(
+                        "model", Map.of(
+                                "id", "1",
+                                "project_id", "2",
+                                "version_id", "3",
+                                "name", "test-model",
+                                "version", "1z2x3c4v5b6n"
+                        ),
+                        "runtime", Map.of(
+                                "id", "1",
+                                "project_id", "2",
+                                "version_id", "3",
+                                "name", "test-rt",
+                                "version", "1a2s3d4f5g6h"
+                        ),
+                        "datasets", List.of(Map.of(
+                                "id", "1",
+                                "project_id", "2",
+                                "version_id", "3",
+                                "name", "ds",
+                                "version", "version",
+                                "index_table", "/p/1/ds/tt/asdf"))
+                ))
         );
     }
 

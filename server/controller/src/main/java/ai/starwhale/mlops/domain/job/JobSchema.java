@@ -33,18 +33,14 @@ public interface JobSchema {
     String LongIdColumn = "sys/id";
     String NameColumn = "sys/name";
     String ProjectIdColumn = "sys/project_id";
-    String ModelIdColumn = "sys/model_id";
-    String ModelProjectIdColumn = "sys/model_project_id";
     String ModelVersionIdColumn = "sys/model_version_id";
     String ModelNameColumn = "sys/model_name";
     String ModelVersionColumn = "sys/model_version";
-    String RuntimeIdColumn = "sys/runtime_id";
-    String RuntimeProjectIdColumn = "sys/runtime_project_id";
     String RuntimeVersionIdColumn = "sys/runtime_version_id";
     String RuntimeNameColumn = "sys/runtime_name";
     String RuntimeVersionColumn = "sys/runtime_version";
     String DataSetIdVersionMapColumn = "sys/_dataset_id_version_map";
-    String DataSetsColumn = "sys/datasets";
+    String DetailsColumn = "sys/details";
     String OwnerIdColumn = "sys/owner_id";
     String OwnerNameColumn = "sys/owner_name";
     String FinishTimeColumn = "sys/finished_time";
@@ -65,13 +61,9 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(NameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(LongIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ProjectIdColumn).type(INT64).build(),
-            ColumnSchemaDesc.builder().name(ModelIdColumn).type(INT64).build(),
-            ColumnSchemaDesc.builder().name(ModelProjectIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(ModelVersionColumn).type(STRING).build(),
-            ColumnSchemaDesc.builder().name(RuntimeIdColumn).type(INT64).build(),
-            ColumnSchemaDesc.builder().name(RuntimeProjectIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(RuntimeVersionIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(RuntimeNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(RuntimeVersionColumn).type(STRING).build(),
@@ -79,7 +71,7 @@ public interface JobSchema {
                 .keyType(ColumnSchemaDesc.builder().type(INT64).build())
                 .valueType(ColumnSchemaDesc.builder().type(STRING).build())
                 .build(),
-            ColumnSchemaDesc.builder().name(DataSetsColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(DetailsColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(OwnerIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(OwnerNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(CreatedTimeColumn).type(INT64).build(),

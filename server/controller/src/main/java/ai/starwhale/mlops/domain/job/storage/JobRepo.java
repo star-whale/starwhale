@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.job.storage;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DataSetsColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DetailsColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
@@ -30,9 +30,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -42,9 +40,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
@@ -168,14 +164,6 @@ public class JobRepo {
         record.put(ProjectIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getProjectId()), false, false));
 
-        if (Objects.nonNull(jobEntity.getModelId())) {
-            record.put(ModelIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getModelId()), false, false));
-        }
-        if (Objects.nonNull(jobEntity.getModelProjectId())) {
-            record.put(ModelProjectIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getModelProjectId()), false, false));
-        }
         if (Objects.nonNull(jobEntity.getModelVersionId())) {
             record.put(ModelVersionIdColumn,
                     BaseValue.encode(new Int64Value(jobEntity.getModelVersionId()), false, false));
@@ -187,14 +175,6 @@ public class JobRepo {
             record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
         }
 
-        if (Objects.nonNull(jobEntity.getRuntimeId())) {
-            record.put(RuntimeIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeId()), false, false));
-        }
-        if (Objects.nonNull(jobEntity.getRuntimeProjectId())) {
-            record.put(RuntimeProjectIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeProjectId()), false, false));
-        }
         if (Objects.nonNull(jobEntity.getRuntimeVersionId())) {
             record.put(RuntimeVersionIdColumn,
                     BaseValue.encode(new Int64Value(jobEntity.getRuntimeVersionId()), false, false));
@@ -209,9 +189,7 @@ public class JobRepo {
         if (Objects.nonNull(jobEntity.getDatasetIdVersionMap())) {
             record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
         }
-        if (Objects.nonNull(jobEntity.getDatasets()) && !jobEntity.getDatasets().isEmpty()) {
-            record.put(DataSetsColumn, JSONUtil.toJsonStr(convertToListMap(jobEntity.getDatasets())));
-        }
+        record.put(DetailsColumn, JSONUtil.toJsonStr(convertDetailsToListMap(jobEntity)));
 
         record.put(OwnerIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getOwnerId()), false, false));
@@ -233,22 +211,44 @@ public class JobRepo {
                         origin::get));
     }
 
-    public List<Map<String, String>> convertToListMap(List<DatasetVersion> origin) {
-        if (CollectionUtils.isEmpty(origin)) {
-            return List.of();
-        }
-        List<Map<String, String>> res = new ArrayList<>();
-        for (DatasetVersion datasetVersion : origin) {
-            res.add(Map.of(
-                    "version_id", String.valueOf(datasetVersion.getId()),
-                    "dataset_id", String.valueOf(datasetVersion.getDatasetId()),
-                    "project_id", String.valueOf(datasetVersion.getProjectId()),
-                    "dataset_name", datasetVersion.getDatasetName(),
-                    "dataset_version", datasetVersion.getVersionName(),
-                    "index_table", datasetVersion.getIndexTable()
+    public Map<String, Object> convertDetailsToListMap(JobFlattenEntity entity) {
+        Map<String, Object> result = new HashMap<>();
+        if (entity.getModelVersionId() != null) {
+            result.put("model", Map.of(
+                    "id", String.valueOf(entity.getModelId()),
+                    "version_id", String.valueOf(entity.getModelVersionId()),
+                    "project_id", String.valueOf(entity.getModelProjectId()),
+                    "name", entity.getModelName(),
+                    "version", entity.getModelVersionValue()
             ));
         }
-        return res;
+        // model
+        // runtime
+        if (entity.getRuntimeVersionId() != null) {
+            result.put("runtime", Map.of(
+                    "id", String.valueOf(entity.getRuntimeId()),
+                    "version_id", String.valueOf(entity.getRuntimeVersionId()),
+                    "project_id", String.valueOf(entity.getRuntimeProjectId()),
+                    "name", entity.getRuntimeName(),
+                    "version", entity.getRuntimeVersionValue()
+            ));
+        }
+        // datasets
+        if (entity.getDatasets() != null && !entity.getDatasets().isEmpty()) {
+            List<Map<String, String>> datasets = new ArrayList<>();
+            for (DatasetVersion datasetVersion : entity.getDatasets()) {
+                datasets.add(Map.of(
+                        "id", String.valueOf(datasetVersion.getDatasetId()),
+                        "version_id", String.valueOf(datasetVersion.getId()),
+                        "project_id", String.valueOf(datasetVersion.getProjectId()),
+                        "name", datasetVersion.getDatasetName(),
+                        "version", datasetVersion.getVersionName(),
+                        "index_table", datasetVersion.getIndexTable()
+                ));
+            }
+            result.put("datasets", datasets);
+        }
+        return result;
     }
 
     public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
