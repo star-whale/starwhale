@@ -106,7 +106,7 @@ class Job(metaclass=ABCMeta):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _cls = cls._get_job_cls(project_uri)
-        return _cls.list(project_uri)
+        return _cls.list(project_uri, page=page, size=size)
 
     @classmethod
     def get_job(cls, job_uri: Resource) -> Job:
@@ -262,7 +262,6 @@ class CloudJob(Job, CloudRequestMixed):
         )
 
     @classmethod
-    @ignore_error(([], {}))
     def list(
         cls,
         project_uri: Project,
@@ -278,7 +277,6 @@ class CloudJob(Job, CloudRequestMixed):
             params={"pageNum": page, "pageSize": size},
             instance=project_uri.instance,
         ).json()
-
         jobs = []
         for j in r["data"]["list"]:
             j.pop("owner", None)

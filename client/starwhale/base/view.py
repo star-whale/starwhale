@@ -19,7 +19,6 @@ from starwhale.utils import (
     gen_uniq_version,
 )
 from starwhale.consts import (
-    UserRoleType,
     CREATED_AT_KEY,
     SHORT_VERSION_CNT,
     STANDALONE_INSTANCE,
@@ -59,17 +58,21 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def print_header() -> None:
+    def print_header(project_uri: str = "") -> None:
         sw = SWCliConfigMixed()
         grid = Table.grid(expand=True)
         grid.add_column(justify="center", ratio=1)
-        grid.add_column(justify="right")
-        grid.add_row(
-            f":star: {sw.current_instance} ({sw._current_instance_obj['uri']}) :whale:",  # type: ignore
-            f":clown_face:{sw._current_instance_obj['user_name']}@{sw._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",
-            # type: ignore
-        )
-        p = Panel(grid, title="Starwhale Instance", title_align="left")
+
+        if project_uri:
+            title = "Starwhale Project"
+            project = Project(project_uri)
+            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({sw._config['instances'][project.instance.alias]['uri']})"
+        else:
+            title = "Starwhale Instance"
+            content = f"{sw.current_instance} ({sw._current_instance_obj['uri']})"
+
+        grid.add_row(f":star: {content} :whale:")  # type: ignore
+        p = Panel(grid, title=title, title_align="left")
         console.print(p)
 
     @staticmethod

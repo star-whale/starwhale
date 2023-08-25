@@ -415,6 +415,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "project": project,
                 "model_src_dir": str(snapshot_dir),
                 "datasets": dataset_uris,
+                "model": model_config.name,
                 "status": scheduler_status,
                 "error_message": error_message,
                 "finished_at": now_str(),
