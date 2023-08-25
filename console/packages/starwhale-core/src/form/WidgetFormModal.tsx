@@ -51,9 +51,7 @@ export default function WidgetFormModal({
     const handleFormChange = (data: any) => {
         setFormData({ ...data })
 
-        if (!formData?.chartType || !data.chartType) return
-
-        if (formData?.chartType !== data.chartType) {
+        if (formData?.chartType && data.chartType && formData?.chartType !== data.chartType) {
             setOptionConfig({})
             setFormData({
                 ...data,
@@ -61,13 +59,7 @@ export default function WidgetFormModal({
             })
         }
 
-        if (
-            _.isArray(formData.tableName) &&
-            _.isArray(data.tableName) &&
-            formData.tableName.length > 0 &&
-            data.tableName.length > 0 &&
-            formData.tableName.join(',') !== data.tableName.join(',')
-        ) {
+        if ((formData.tableName || []).join(',') !== (data.tableName || []).join(',')) {
             setOptionConfig({})
         }
     }
@@ -85,9 +77,7 @@ export default function WidgetFormModal({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
         tableName,
-        queries: _.isEmpty(optionConfig)
-            ? config?.optionConfig?.currentView?.queries
-            : optionConfig?.currentView?.queries,
+        queries: optionConfig?.currentView?.queries,
         prefixFn: React.useCallback(
             (tname: string) => {
                 const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
@@ -130,7 +120,11 @@ export default function WidgetFormModal({
         })
         setOptionConfig({})
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editWidgetId, config, preview])
+    }, [editWidgetId, config?.fieldConfig, preview])
+
+    useEffect(() => {
+        setOptionConfig({ ...(config?.optionConfig || {}) })
+    }, [config?.optionConfig])
 
     return (
         <Modal
@@ -145,7 +139,8 @@ export default function WidgetFormModal({
                     style: {
                         width: '90vw',
                         maxWidth: preview ? undefined : '1200px',
-                        maxHeight: preview ? undefined : '640px',
+                        maxHeight: preview ? '90vh' : '640px',
+                        height: preview ? '90vh' : 'auto',
                         display: 'flex',
                         flexDirection: 'column',
                     },
@@ -161,7 +156,6 @@ export default function WidgetFormModal({
                         maxHeight: '70vh',
                         minHeight: '348px',
                         width: '90vw',
-                        height: '90vh',
                         overflow: 'auto',
                         backgroundColor: '#F7F8FA',
                         display: 'grid',
@@ -176,7 +170,7 @@ export default function WidgetFormModal({
                             <WidgetRenderer
                                 type={type}
                                 data={$data}
-                                optionConfig={config?.optionConfig}
+                                optionConfig={optionConfig}
                                 fieldConfig={{
                                     data: formData,
                                 }}

@@ -5,10 +5,16 @@ import shallow from 'zustand/shallow'
 import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
 import { ITableState } from '../store'
-import useGrid from '../../hooks/useGrid'
 import { ConfigT } from '@starwhale/ui/base/data-table/types'
 
 type StoreUpdaterProps = ITableProps
+
+export function useStoreEmptyUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
+    useEffect(() => {
+        setStoreState(value as any)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value])
+}
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
     useEffect(() => {
@@ -39,6 +45,7 @@ const globalGetId = (record: any) => val(record.id)
 
 const selector = (s: ITableState) => ({
     reset: s.reset,
+    setCurrentView: s.setCurrentView,
 })
 
 const StoreUpdater = ({
@@ -64,9 +71,8 @@ const StoreUpdater = ({
     onPageChange,
     onRemove,
 }: StoreUpdaterProps) => {
-    const { reset } = useStore(selector, shallow)
+    const { reset, setCurrentView } = useStore(selector, shallow)
     const store = useStoreApi()
-    const { setCurrentView } = useGrid()
 
     useEffect(() => {
         return () => {
@@ -95,8 +101,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
     useDirectStoreUpdater('onRemove', onRemove, store.setState)
 
-    useStoreUpdater<ConfigT>(currentView, setCurrentView)
-    // useStoreUpdater(columns, store.setColumns)
+    useStoreEmptyUpdater<ConfigT>(currentView, setCurrentView)
     return null
 }
 

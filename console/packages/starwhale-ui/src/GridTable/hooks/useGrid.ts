@@ -19,7 +19,7 @@ const selector = (s: IGridState) => ({
 function useGrid() {
     const { initStore } = useStore(selector, shallow)
     const { rows, originalColumns } = useGirdData()
-    const { ids, isAllRuns, columns, currentView, setCurrentView } = useGridCurrentView(originalColumns)
+    const { ids, isAllRuns, columns, currentView } = useGridCurrentView(originalColumns)
     const { onSave, onSaveAs, changed } = useGridSave()
     const { sortIndex, sortDirection } = useGridSort()
     const { textQuery, setTextQuery } = useGridQueryText()
@@ -56,7 +56,6 @@ function useGrid() {
         ids,
         isAllRuns,
         currentView,
-        setCurrentView,
         // selection
         selectedRowIds,
         onSelectMany,
