@@ -19,14 +19,6 @@ swcli runtime activate llm-leaderboard
 python src/main.py build --model baichuan-13b
 ```
 
-### Get Starwhale LLM LeaderBoard
-
-Summarize evaluation results from [Starwhale Cloud](https://cloud.starwhale.cn) and generate a LLMs LeaderBoard in the terminal.
-
-```bash
-python src/main.py leaderboard
-```
-
 ### Submit evaluation tasks
 
 For batch submit for server or cloud instance.

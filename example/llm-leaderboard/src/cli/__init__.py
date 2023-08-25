@@ -43,12 +43,6 @@ def create_llm_cli() -> click.core.Group:
 
         build_starwhale_model(model, tags, skip_download)
 
-    @cli.command("leaderboard", help="Show the LLMs leaderboard from starwhale cloud.")
-    def _leaderboard() -> None:
-        from .leaderboard import leaderboard
-
-        leaderboard()
-
     @cli.command(
         "submit", help="Submit LLMs to the Starwhale Cloud for Model Evaluation."
     )

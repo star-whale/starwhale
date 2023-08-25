@@ -72,3 +72,43 @@ class Llama2_13B_Chat(LlamaBase):
     @classmethod
     def get_name(cls) -> str:
         return "llama2-13b-chat"
+
+
+@register()
+class LLama2_7B_Chinese(LlamaBase):
+    def get_hf_repo_id(self) -> str:
+        return "ziqingyang/chinese-llama-2-7b"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "llama2-7b-chinese"
+
+
+@register()
+class LLama2_7B_ChineseAlpaca(LlamaBase):
+    def get_hf_repo_id(self) -> str:
+        return "ziqingyang/chinese-alpaca-2-7b"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "llama2-7b-chinese-alpaca"
+
+
+@register()
+class LLama2_13B_Chinese(LlamaBase):
+    def get_hf_repo_id(self) -> str:
+        return "ziqingyang/chinese-llama-2-13b"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "llama2-13b-chinese"
+
+
+@register()
+class LLama2_13B_ChineseAlpaca(LlamaBase):
+    def get_hf_repo_id(self) -> str:
+        return "ziqingyang/chinese-alpaca-2-13b"
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "llama2-13b-chinese-alpaca"
