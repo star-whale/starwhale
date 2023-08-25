@@ -60,7 +60,6 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -69,6 +68,7 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.user.UserService;
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -208,8 +208,8 @@ public class JobRepo {
         if (Objects.nonNull(jobEntity.getDatasetIdVersionMap())) {
             record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
         }
-        if (Objects.nonNull(jobEntity.getDatasets())) {
-            record.put(DataSetsColumn, convertDatasetToDatastoreValue(jobEntity.getDatasets()));
+        if (Objects.nonNull(jobEntity.getDatasets()) && !jobEntity.getDatasets().isEmpty()) {
+            record.put(DataSetsColumn, JSONUtil.toJsonStr(jobEntity.getDatasets()));
         }
 
         record.put(OwnerIdColumn,
@@ -230,27 +230,6 @@ public class JobRepo {
                 .collect(Collectors.toMap(
                         k -> (String) BaseValue.encode(new Int64Value(k), false, false),
                         origin::get));
-    }
-
-    public List<Map<String, String>> convertDatasetToDatastoreValue(List<DatasetVersion> origin) {
-        if (CollectionUtils.isEmpty(origin)) {
-            return List.of();
-        }
-        List<Map<String, String>> res = new ArrayList<>();
-        for (DatasetVersion datasetVersion : origin) {
-            res.add(Map.of(
-                    "version_id", (String) BaseValue.encode(
-                            new Int64Value(datasetVersion.getId()), false, false),
-                    "dataset_id", (String) BaseValue.encode(
-                            new Int64Value(datasetVersion.getDatasetId()), false, false),
-                    "project_id", (String) BaseValue.encode(
-                            new Int64Value(datasetVersion.getProjectId()), false, false),
-                    "dataset_name", datasetVersion.getDatasetName(),
-                    "dataset_version", datasetVersion.getVersionName(),
-                    "index_table", datasetVersion.getIndexTable()
-            ));
-        }
-        return res;
     }
 
     public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
