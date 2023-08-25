@@ -14,6 +14,7 @@ from requests_mock import Mocker
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
+    Link,
     INT32,
     INT64,
     STRING,
@@ -22,6 +23,7 @@ from starwhale.api._impl.data_store import (
     SwListType,
     SwTupleType,
     ColumnSchema,
+    SwObjectType,
     TableWriterException,
 )
 
@@ -2429,6 +2431,35 @@ def test_decode_schema_from_type_encoded_values():
     assert schema == SwTupleType(STRING)
     decoded = schema.decode_from_type_encoded_value(value)
     assert decoded == ("foobar",)
+
+    # object(exist)
+    value = {
+        "type": "OBJECT",
+        "pythonType": "LINK",
+        "value": {
+            "uri": {"type": "STRING", "value": "a/b/c"},
+            "display_text": {"type": "STRING", "value": "test-link"},
+        },
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwObjectType(Link, {"uri": STRING, "display_text": STRING})
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded == Link("a/b/c", "test-link")
+
+    # object(not exist)
+    value = {
+        "type": "OBJECT",
+        "pythonType": "UnExistObject",
+        "value": {
+            "id": {"type": "INT64", "value": "0000000000000001"},
+            "name": {"type": "STRING", "value": "test-name"},
+        },
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwObjectType(Link, {"id": INT64, "name": STRING})
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded.id == 1
+    assert decoded.name == "test-name"
 
 
 if __name__ == "__main__":

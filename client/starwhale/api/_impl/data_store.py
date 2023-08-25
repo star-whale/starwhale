@@ -7,6 +7,7 @@ import sys
 import copy
 import json
 import time
+import types
 import atexit
 import base64
 import struct
@@ -235,9 +236,26 @@ class SwType(metaclass=ABCMeta):
                 raw_type = Link
             else:
                 parts = raw_type_name.split(".")
-                raw_type = getattr(
-                    importlib.import_module(".".join(parts[:-1])), parts[-1]
-                )
+                module_name = ".".join(parts[:-1])
+                class_name = parts[-1]
+                try:
+                    module = importlib.import_module(module_name)
+                except ValueError:
+                    # TODO Is it fit to do this
+                    console.warn(
+                        f"import module:{module_name} form {raw_type_name} error, try dynamic generation"
+                    )
+                    module = types.ModuleType(module_name)
+                    setattr(module, class_name, type(class_name, (), {}))
+                try:
+                    raw_type = getattr(module, class_name)
+                except AttributeError:
+                    # TODO Is it fit to do this
+                    console.warn(
+                        f"get attr from class:{class_name} error, try dynamic generation"
+                    )
+                    setattr(module, class_name, type(class_name, (), {}))
+                    raw_type = getattr(module, class_name)
             attrs = {}
             # try using values as attributes
             values = value.get("value", {})
@@ -1595,8 +1613,11 @@ class RemoteDataStore:
             post_data["endInclusive"] = True
         assert self.token is not None
         while True:
+            print("scan")
             resp_json = self._do_scan_table_request(post_data)
             records = resp_json.get("records", None)
+
+            print(f"scan res:{records}")
             if records is None or len(records) == 0:
                 break
             for record in records:
