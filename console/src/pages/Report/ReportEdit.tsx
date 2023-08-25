@@ -80,11 +80,11 @@ export default function ReportEdit() {
     // console.log(content)
 
     return (
-        <div className='flex flex-column flex-1'>
+        <div className='flex flex-column flex-1 relative overflow-hidden'>
             {/* eslint-disable-next-line */}
             <Breadcrumb
                 extra={
-                    <div className='flex gap-15px items-center fixed right-30px z-6 mt-[-10px]'>
+                    <div className='flex gap-15px items-center '>
                         {statusT[status]}
                         <Button onClick={() => setReadonly(!readonly)}>
                             {readonly ? t('report.mode.edit') : t('report.mode.preview')}
@@ -95,75 +95,78 @@ export default function ReportEdit() {
                     </div>
                 }
             />
-            <h1 className='mb-20px '>
-                <Input
-                    overrides={{
-                        Root: {
-                            style: {
-                                borderTopWidth: '0px',
-                                borderBottomWidth: '0px',
-                                borderLeftWidth: '0px',
-                                borderRightWidth: '0px',
+            <p className='h-42px' />
+            <div className='flex flex-column flex-1 relative overflow-auto px-20px'>
+                <h1 className='mb-20px '>
+                    <Input
+                        overrides={{
+                            Root: {
+                                style: {
+                                    borderTopWidth: '0px',
+                                    borderBottomWidth: '0px',
+                                    borderLeftWidth: '0px',
+                                    borderRightWidth: '0px',
+                                },
                             },
-                        },
-                        Input: {
-                            style: {
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                                fontSize: '34px',
-                                fontWeight: 600,
-                                color: '#02102B',
+                            Input: {
+                                style: {
+                                    paddingLeft: 0,
+                                    paddingRight: 0,
+                                    fontSize: '34px',
+                                    fontWeight: 600,
+                                    color: '#02102B',
+                                },
                             },
-                        },
-                    }}
-                    placeholder={t('report.title.placeholder')}
-                    value={title}
-                    onChange={(e) => setTitle(e.currentTarget.value)}
-                />
-            </h1>
-            <div className='flex gap-10px items-center font-14px'>
-                <div className='flex gap-5px'>
-                    <Avatar name={currentUser?.name} size={28} />
-                    <User user={!rid ? currentUser : info.data?.owner} />|{' '}
+                        }}
+                        placeholder={t('report.title.placeholder')}
+                        value={title}
+                        onChange={(e) => setTitle(e.currentTarget.value)}
+                    />
+                </h1>
+                <div className='flex gap-10px items-center font-14px'>
+                    <div className='flex gap-5px'>
+                        <Avatar name={currentUser?.name} size={28} />
+                        <User user={!rid ? currentUser : info.data?.owner} />|{' '}
+                    </div>
+                    <span style={{ color: 'rgba(2,16,43,0.60)' }}>
+                        <IconFont type='time' style={{ marginRight: '4px' }} />
+                        {formatTimestampDateTime(data?.createdTime || Date.now())}
+                    </span>
                 </div>
-                <span style={{ color: 'rgba(2,16,43,0.60)' }}>
-                    <IconFont type='time' style={{ marginRight: '4px' }} />
-                    {formatTimestampDateTime(data?.createdTime || Date.now())}
-                </span>
-            </div>
-            <p className='mt-20px'>
-                <Input
-                    overrides={{
-                        Root: {
-                            style: {
-                                borderTopWidth: '0px',
-                                borderBottomWidth: '0px',
-                                borderLeftWidth: '0px',
-                                borderRightWidth: '0px',
+                <p className='mt-20px'>
+                    <Input
+                        overrides={{
+                            Root: {
+                                style: {
+                                    borderTopWidth: '0px',
+                                    borderBottomWidth: '0px',
+                                    borderLeftWidth: '0px',
+                                    borderRightWidth: '0px',
+                                },
                             },
-                        },
-                        Input: {
-                            style: {
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                                fontSize: '16px',
-                                color: '#02102B',
+                            Input: {
+                                style: {
+                                    paddingLeft: 0,
+                                    paddingRight: 0,
+                                    fontSize: '16px',
+                                    color: '#02102B',
+                                },
                             },
-                        },
-                    }}
-                    placeholder={t('report.description.placeholder')}
-                    value={description}
-                    onChange={(e) => setDescription(e.currentTarget.value)}
-                />
-            </p>
-            <div className='mb-20px flex-1'>
-                <TiptapEditor
-                    id={reportId}
-                    initialContent={data?.content}
-                    onContentChange={(tmp: string) => setContent(tmp)}
-                    editable={!readonly}
-                    onSaveStatusChange={(tmp: SaveStatus) => setStatus(tmp)}
-                />
+                        }}
+                        placeholder={t('report.description.placeholder')}
+                        value={description}
+                        onChange={(e) => setDescription(e.currentTarget.value)}
+                    />
+                </p>
+                <div className='mb-20px flex-1'>
+                    <TiptapEditor
+                        id={reportId}
+                        initialContent={data?.content}
+                        onContentChange={(tmp: string) => setContent(tmp)}
+                        editable={!readonly}
+                        onSaveStatusChange={(tmp: SaveStatus) => setStatus(tmp)}
+                    />
+                </div>
             </div>
         </div>
     )
@@ -193,7 +196,19 @@ function Breadcrumb({ extra }: any) {
     }, [projectId, reportId, t])
 
     return (
-        <div style={{ marginBottom: 13, display: 'flex', alignItems: 'center' }}>
+        <div
+            style={{
+                marginBottom: 13,
+                display: 'flex',
+                alignItems: 'center',
+                position: 'absolute',
+                backgroundColor: '#fff',
+                zIndex: '20',
+                top: '12px',
+                left: '20px',
+                right: '20px',
+            }}
+        >
             {breadcrumbItems && (
                 <div style={{ flexShrink: 0 }}>
                     <Breadcrumbs
