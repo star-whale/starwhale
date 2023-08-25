@@ -203,10 +203,10 @@ function Breadcrumb({ extra }: any) {
                 alignItems: 'center',
                 position: 'absolute',
                 backgroundColor: '#fff',
-                zIndex: '20',
-                top: '12px',
+                zIndex: '9',
                 left: '20px',
                 right: '20px',
+                padding: '12px 0',
             }}
         >
             {breadcrumbItems && (
