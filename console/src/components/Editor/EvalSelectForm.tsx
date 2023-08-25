@@ -70,6 +70,7 @@ function EvalProjectList({
         queries: currentView?.queries,
         tableName: summaryTableName,
     })
+
     const { columnTypes, records } = useFetchDatastoreByTable(params, !!projectId)
 
     const recordById = React.useMemo(() => {

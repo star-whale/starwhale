@@ -111,7 +111,7 @@ function FilterToQuery(
             return item
         })
         .filter((item: any) => {
-            if (!_.isString(item.value) && _.isEmpty(item.value)) return false
+            if (!_.isNumber(item.value) && _.isEmpty(item.value)) return false
             return item.value && item.op && item.property
         })
         .map((item: any) => {
