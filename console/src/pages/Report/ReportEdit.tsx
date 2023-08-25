@@ -95,7 +95,7 @@ export default function ReportEdit() {
                     </div>
                 }
             />
-            <p className='h-42px' />
+            <p className='h-54px' />
             <div className='flex flex-column flex-1 relative overflow-auto px-20px'>
                 <h1 className='mb-20px '>
                     <Input
