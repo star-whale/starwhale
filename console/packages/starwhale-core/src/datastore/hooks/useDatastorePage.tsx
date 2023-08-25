@@ -106,9 +106,14 @@ function useDatastorePage({
                 })
                 setLastKeyMap((prev) => {
                     if (!lastKey || !tmp?.pageNum) return prev
+                    // if set same page, ignore, prevent lastKey set when click prev page
+                    if (prev[tmp?.pageNum]) return prev
+
                     return {
                         ...prev,
                         [tmp?.pageNum]: lastKey,
+                        // first page lastKey is empty
+                        1: '',
                     }
                 })
             },
