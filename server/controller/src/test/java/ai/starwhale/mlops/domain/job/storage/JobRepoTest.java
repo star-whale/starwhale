@@ -136,6 +136,16 @@ public class JobRepoTest {
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
+        assertThat("convert",
+                jobRepo.convertToListMap(jobEntity.getDatasets()),
+                is(List.of(Map.of(
+                        "version_id", "1",
+                        "dataset_id", "2",
+                        "project_id", "3",
+                        "dataset_name", "ds",
+                        "dataset_version", "version",
+                        "index_table", "/p/1/ds/tt/asdf")))
+        );
     }
 
     @Test

@@ -60,6 +60,7 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -209,7 +210,7 @@ public class JobRepo {
             record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
         }
         if (Objects.nonNull(jobEntity.getDatasets()) && !jobEntity.getDatasets().isEmpty()) {
-            record.put(DataSetsColumn, JSONUtil.toJsonStr(jobEntity.getDatasets()));
+            record.put(DataSetsColumn, JSONUtil.toJsonStr(convertToListMap(jobEntity.getDatasets())));
         }
 
         record.put(OwnerIdColumn,
@@ -230,6 +231,24 @@ public class JobRepo {
                 .collect(Collectors.toMap(
                         k -> (String) BaseValue.encode(new Int64Value(k), false, false),
                         origin::get));
+    }
+
+    public List<Map<String, String>> convertToListMap(List<DatasetVersion> origin) {
+        if (CollectionUtils.isEmpty(origin)) {
+            return List.of();
+        }
+        List<Map<String, String>> res = new ArrayList<>();
+        for (DatasetVersion datasetVersion : origin) {
+            res.add(Map.of(
+                    "version_id", String.valueOf(datasetVersion.getId()),
+                    "dataset_id", String.valueOf(datasetVersion.getDatasetId()),
+                    "project_id", String.valueOf(datasetVersion.getProjectId()),
+                    "dataset_name", datasetVersion.getDatasetName(),
+                    "dataset_version", datasetVersion.getVersionName(),
+                    "index_table", datasetVersion.getIndexTable()
+            ));
+        }
+        return res;
     }
 
     public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
