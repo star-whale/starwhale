@@ -134,13 +134,14 @@ function Summary({ fetch }: any) {
                                     if (a === 'id') return -1
                                     return a > b ? 1 : -1
                                 })
-                                .filter((label) => label === 'sys/datasets' || typeof record[label] !== 'object')
+                                .filter((label) => typeof record[label] !== 'object')
                                 .map((label) => {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
                                     if (label === 'sys/datasets') {
+                                        const datasets: Array<any> = JSON.parse(record[label])
                                         value =
-                                            record[label].map((ds, i) => {
+                                            datasets.map((ds, i) => {
                                                 return (
                                                     <TextLink
                                                         key={ds.version_id}
