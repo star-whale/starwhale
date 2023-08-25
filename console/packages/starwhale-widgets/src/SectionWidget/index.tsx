@@ -126,13 +126,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         evalSelectData,
         evalTableCurrentViewData,
         isEvaluationListShow,
-        title = t('panel.name'),
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
     const [isModelOpen, setIsModelOpen] = useState(false)
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
+
+    const title = optionConfig?.title || t('panel.name')
 
     const handleSectionForm = ({ name }: { name: string }) => {
         props.onOptionChange?.({
@@ -343,7 +344,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         form.current.initPanelSchema({
             panelGroup: api.panelGroup,
         })
-    }, [t, api.panelGroup])
+    }, [t, api.panelGroup, editWidget.id])
 
     // console.log(evalSelectData)
     useLayoutEffect(() => {
@@ -442,7 +443,11 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 id={editWidget.id}
                 payload={editWidget}
                 isShow={isPanelModalOpen}
-                setIsShow={setIsPanelModalOpen}
+                setIsShow={(bool) => {
+                    setIsPanelModalOpen(bool)
+                    if (bool) return
+                    setEditWidget({})
+                }}
                 store={store}
                 onFormSubmit={(data: any) => {
                     if (editWidget?.type === 'add') {
@@ -451,6 +456,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                         handleChartEditSave(data)
                     }
                     setIsPanelModalOpen(false)
+                    setEditWidget({})
                 }}
             />
         </PanelContextProvider>

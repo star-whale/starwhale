@@ -121,18 +121,16 @@ export default function WidgetFormModal({
     }
 
     useEffect(() => {
-        if (config) {
-            const data = config.fieldConfig?.data || {}
-            setFormData({
-                chartTitle: undefined,
-                ...data,
-                // FIXME for prev config, tableName should be array now
-                tableName: typeof data.tableName === 'string' ? [data.tableName] : data.tableName,
-            })
-            setOptionConfig({})
-        }
+        const data = config?.fieldConfig?.data || {}
+        setFormData({
+            chartTitle: undefined,
+            ...data,
+            // FIXME for prev config, tableName should be array now
+            tableName: typeof data.tableName === 'string' ? [data.tableName] : data.tableName,
+        })
+        setOptionConfig({})
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editWidgetId, config])
+    }, [editWidgetId, config, preview])
 
     return (
         <Modal
