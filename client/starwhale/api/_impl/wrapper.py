@@ -190,7 +190,6 @@ class Evaluation(Logger):
         for metrics in self._get(self._eval_summary_table_name):
             if metrics[self._ID_KEY] == self.eval_id:
                 return metrics
-
         return {}
 
     def get(self, table_name: str) -> Iterator[Dict[str, Any]]:

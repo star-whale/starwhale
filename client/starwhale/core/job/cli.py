@@ -113,14 +113,8 @@ def _cancel(job: str, force: bool) -> None:
     JobTermView(job).cancel(force)
 
 
-@job_cmd.command("info", help="Inspect job details")
+@job_cmd.command("info")
 @click.argument("job")
-@click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
-)
-@click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
-)
 @click.option(
     "--max-report-cols",
     type=int,
@@ -132,9 +126,22 @@ def _cancel(job: str, force: bool) -> None:
 def _info(
     view: t.Type[JobTermView],
     job: str,
-    page: int,
-    size: int,
     max_report_cols: int,
     web: bool,
 ) -> None:
-    view(job).info(page, size, max_report_cols, web)
+    """Inspect job details
+
+    Examples:
+
+        \b
+        - Get job info from the current selected project:
+        swcli job info xm5wnup
+
+        \b
+        - Get job info from the specified project
+        swcli job info local/project/self/job/xm5wnup
+        swcli job info cloud://cloud-cn/project/tianwei:llm-leaderboard/job/e0fa100599944951a20278b4062eb9fb
+        swcli job info cloud://cloud-cn/project/257/job/e0fa100599944951a20278b4062eb9fb
+    """
+    # TODO: add output filter option
+    view(job).info(max_report_cols, web)

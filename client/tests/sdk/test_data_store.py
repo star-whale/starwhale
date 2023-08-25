@@ -18,6 +18,7 @@ from starwhale.api._impl.data_store import (
     INT64,
     STRING,
     SwType,
+    UNKNOWN,
     SwMapType,
     SwListType,
     SwTupleType,
@@ -2405,6 +2406,15 @@ def test_decode_schema_from_type_encoded_values():
     assert schema == SwMapType(INT32, STRING)
     decoded = schema.decode_from_type_encoded_value(value)
     assert decoded == {1: "foobar"}
+
+    value = {
+        "type": "MAP",
+        "value": [],
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwMapType(UNKNOWN, UNKNOWN)
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded == {}
 
     # list
     value = {

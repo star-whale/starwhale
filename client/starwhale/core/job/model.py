@@ -15,7 +15,6 @@ from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.api._impl import wrapper
 from starwhale.base.type import JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
@@ -34,9 +33,7 @@ class Job(metaclass=ABCMeta):
         self.sw_config = SWCliConfigMixed()
 
     @abstractmethod
-    def info(
-        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
-    ) -> t.Dict[str, t.Any]:
+    def info(self) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -73,8 +70,8 @@ class Job(metaclass=ABCMeta):
         kind = summary.get("kind", "")
 
         ret = {
-            "kind": kind,
             "summary": summary,
+            "kind": kind,
         }
 
         if kind == MetricKind.MultiClassification.value:
@@ -137,9 +134,7 @@ class StandaloneJob(Job):
         _f(summary)
         return rt
 
-    def info(
-        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
-    ) -> t.Dict[str, t.Any]:
+    def info(self) -> t.Dict[str, t.Any]:
         return {
             "manifest": self.store.manifest,
             "report": self._get_report(),
@@ -221,16 +216,13 @@ class CloudJob(Job, CloudRequestMixed):
         # TODO:use full version id
         return self.uri.name
 
-    @ignore_error({})
-    def info(
-        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
-    ) -> t.Dict[str, t.Any]:
+    def info(self) -> t.Dict[str, t.Any]:
         if not self.uri.project:
             raise NotFoundError("no selected project")
         return {
-            "tasks": self._fetch_tasks(page, size),
-            "report": self._get_report(),
+            "tasks": self._fetch_tasks(),
             "manifest": self._fetch_job_info(),
+            "report": self._get_report(),
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -287,7 +279,6 @@ class CloudJob(Job, CloudRequestMixed):
 
         return jobs, crm.parse_pager(r)
 
-    @ignore_error({})
     def _fetch_job_info(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}",
@@ -295,21 +286,19 @@ class CloudJob(Job, CloudRequestMixed):
         ).json()
         return r["data"]  # type: ignore
 
-    @ignore_error(([], {}))
     def _fetch_tasks(
         self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}/task",
-            params={"pageNum": page, "pageSize": size},
+            # simplify to fetch all tasks
+            params={"pageNum": 1, "pageSize": 100000},
             instance=self.uri.instance,
         ).json()
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["createdTime"])  # type: ignore
+            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["startedTime"])  # type: ignore
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)
