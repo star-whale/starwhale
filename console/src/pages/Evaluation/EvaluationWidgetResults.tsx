@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 import Card from '@/components/Card'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
+import { isSearchColumns, showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import Table from '@/components/Table'
 import { Panel, StatelessAccordion } from 'baseui/accordion'
@@ -18,13 +18,12 @@ import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import useTranslation from '@/hooks/useTranslation'
-import TextLink from '@/components/Link/TextLink'
 
 const PAGE_TABLE_SIZE = 100
 
 function Summary({ fetch }: any) {
     const [t] = useTranslation()
-    const record: Record<string, any> = fetch?.data?.records?.[0]
+    const record: Record<string, string> = fetch?.data?.records?.[0]
     const [expanded, setExpanded] = React.useState<boolean>(false)
 
     return (
@@ -134,55 +133,10 @@ function Summary({ fetch }: any) {
                                     if (a === 'id') return -1
                                     return a > b ? 1 : -1
                                 })
-                                .filter((label) => typeof record[label] !== 'object')
+                                .filter((label) => isSearchColumns(label) && typeof record[label] !== 'object')
                                 .map((label) => {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
-                                    if (label === 'sys/datasets') {
-                                        const datasets: Array<any> = JSON.parse(record[label])
-                                        value =
-                                            datasets.map((ds, i) => {
-                                                return (
-                                                    <TextLink
-                                                        key={ds.version_id}
-                                                        to={`/projects/${ds.project_id}/datasets/${ds.dataset_id}/versions/${ds.version_id}/overview`}
-                                                    >
-                                                        {`(${i}).${ds.dataset_name}:${ds.dataset_version}; `}
-                                                    </TextLink>
-                                                )
-                                            }) ?? []
-                                    }
-                                    if (
-                                        label === 'sys/model_version' &&
-                                        record['sys/model_project_id'] &&
-                                        record['sys/model_id'] &&
-                                        record['sys/model_version_id']
-                                    ) {
-                                        value = (
-                                            <TextLink
-                                                key={record[label]}
-                                                to={`/projects/${record['sys/model_project_id']}/models/${record['sys/model_id']}/versions/${record['sys/model_version_id']}/overview`}
-                                            >
-                                                {record[label]}
-                                            </TextLink>
-                                        )
-                                    }
-
-                                    if (
-                                        label === 'sys/runtime_version' &&
-                                        record['sys/runtime_project_id'] &&
-                                        record['sys/runtime_id'] &&
-                                        record['sys/runtime_version_id']
-                                    ) {
-                                        value = (
-                                            <TextLink
-                                                key={record[label]}
-                                                to={`/projects/${record['sys/runtime_project_id']}/runtimes/${record['sys/runtime_id']}/versions/${record['sys/runtime_version_id']}/overview`}
-                                            >
-                                                {record[label]}
-                                            </TextLink>
-                                        )
-                                    }
                                     return (
                                         <React.Fragment key={label}>
                                             <div
