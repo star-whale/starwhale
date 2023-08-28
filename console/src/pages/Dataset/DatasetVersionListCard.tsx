@@ -20,7 +20,7 @@ import { toaster } from 'baseui/toast'
 import { TextLink } from '@/components/Link'
 import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
-import Button from '@starwhale/ui/Button'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { Shared } from '@/components/Shared'
 import useCliMate from '@/hooks/useCliMate'
 import { EditableAlias } from '@/components/Alias'
@@ -94,36 +94,33 @@ export default function DatasetVersionListCard() {
                                 <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
-                                <>
+                                <ButtonGroup key='action'>
                                     <CopyToClipboard
                                         content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
                                     />
-                                    &nbsp;&nbsp;
                                     {i ? (
                                         <WithCurrentAuth id='dataset.version.revert'>
-                                            <Button
-                                                kind='tertiary'
+                                            <ExtendButton
+                                                tooltip={t('Revert')}
+                                                icon='revert'
+                                                as='link'
                                                 key={datasetVersion.id}
                                                 onClick={() => handleAction(datasetVersion.id)}
-                                            >
-                                                {t('Revert')}
-                                            </Button>
+                                            />
                                         </WithCurrentAuth>
                                     ) : null}
-                                    &nbsp;&nbsp;
                                     {hasCliMate && (
-                                        <Button
-                                            size='mini'
-                                            kind='tertiary'
+                                        <ExtendButton
+                                            tooltip={t('Pull resource to local with cli mate')}
+                                            icon='a-Pushlocal'
+                                            as='link'
                                             onClick={() => {
                                                 const url = `projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`
                                                 doPull({ resourceUri: url })
                                             }}
-                                        >
-                                            {t('Pull resource to local with cli mate')}
-                                        </Button>
+                                        />
                                     )}
-                                </>,
+                                </ButtonGroup>,
                             ]
                         }) ?? []
                     }

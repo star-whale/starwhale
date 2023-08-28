@@ -123,6 +123,21 @@ export type IconTypesT =
     | 'a-onlineevaluation'
     | 'report'
     | 'link'
+    | 'a-runmodel'
+    | 'a-ImageBuilt'
+    | 'a-BuildImage'
+    | 'a-ViewTasks'
+    | 'Rerun'
+    | 'Disable'
+    | 'pause'
+    | 'Enable'
+    | 'Resume'
+    | 'report'
+    | 'blog'
+    | 'Cancel'
+    | 'Restore'
+    | 'a-Viewlog'
+    | 'a-Pushlocal'
 
 interface IIconFontProps {
     style?: React.CSSProperties

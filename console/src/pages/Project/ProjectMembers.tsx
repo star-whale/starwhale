@@ -150,17 +150,17 @@ export default function ProjectMembers() {
                         user.createdTime && formatTimestampDateTime(user.createdTime),
                         <WithCurrentAuth id='member.delete' key={id}>
                             <ConfirmButton
-                                as='negative'
-                                key={id}
+                                as='link'
+                                icon='delete'
+                                negative
+                                tooltip={t('Remove Project Member')}
                                 title={t('Remove Project Role Confirm')}
                                 onClick={async () => {
                                     await removeProjectRole(projectId, id)
                                     toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
                                     await members.refetch()
                                 }}
-                            >
-                                {t('Remove Project Member')}
-                            </ConfirmButton>
+                            />
                         </WithCurrentAuth>,
                     ]) ?? []
                 }

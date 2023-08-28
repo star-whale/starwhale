@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Button } from 'baseui/button'
 import { Block } from 'baseui/block'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
@@ -10,6 +9,7 @@ import { RadioGroup, Radio } from '@starwhale/ui/Radio'
 import { useStyletron } from 'baseui'
 import { checkUserPasswd } from '@user/services/user'
 import { passwordMinLength } from '@/consts'
+import Button from '@starwhale/ui/Button'
 
 export interface IPasswordFormProps {
     currentUser?: IUserSchema
@@ -48,7 +48,14 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
                 </Block>
             </FormItem>
             <FormItem label={admin ? t('Your Password') : t('Current Password')} name='originPwd' required>
-                <div className={css({ display: 'flex', marginTop: '10px' })}>
+                <div
+                    className={css({
+                        display: 'grid',
+                        marginTop: '10px',
+                        gap: '5px',
+                        gridTemplateColumns: '1fr 80px',
+                    })}
+                >
                     <Input type='password' size='compact' />
                     {admin && (
                         <Button

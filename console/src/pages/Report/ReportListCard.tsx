@@ -6,7 +6,7 @@ import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
 import { IReportSchema } from '@/domain/report/schemas/report'
 import { TextLink } from '@/components/Link'
-import { Button, IconFont, QueryInput, Toggle, useConfirmCtx } from '@starwhale/ui'
+import { Button, ButtonGroup, ExtendButton, IconFont, QueryInput, Toggle, useConfirmCtx } from '@starwhale/ui'
 import { toaster } from 'baseui/toast'
 import { removeReport, updateReportShared } from '@/domain/report/services/report'
 import Text from '@starwhale/ui/Text'
@@ -74,18 +74,22 @@ export default function ReportListCard() {
             report.owner.name,
             report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
-            <div key='action' style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <ButtonGroup key='action'>
                 {report.shared && (
                     <>
                         <Tooltip content={t('Preview')} showArrow placement='top'>
-                            <div>
-                                <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
-                                    <IconFont type='link' />
+                            <div style={{ lineHeight: 1 }}>
+                                <Link
+                                    target='_blank'
+                                    to={`/simple/report/preview/?rid=${report.uuid}`}
+                                    style={{ color: 'rgb(43, 101, 217)' }}
+                                >
+                                    <IconFont type='link' size={16} />
                                 </Link>
                             </div>
                         </Tooltip>
                         <Tooltip content={t('Copy Link')} showArrow placement='top'>
-                            <div>
+                            <div style={{ lineHeight: 1 }}>
                                 <Copy
                                     text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
                                     onCopy={() => {
@@ -98,12 +102,13 @@ export default function ReportListCard() {
                         </Tooltip>
                     </>
                 )}
-                <Tooltip content={t('Delete')} showArrow placement='top'>
-                    <div>
-                        <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
-                    </div>
-                </Tooltip>
-            </div>,
+                <ExtendButton
+                    as='link'
+                    tooltip={t('Delete')}
+                    icon='delete'
+                    onClick={() => handleDelete(report.id, report.title)}
+                />
+            </ButtonGroup>,
         ]
     }
 

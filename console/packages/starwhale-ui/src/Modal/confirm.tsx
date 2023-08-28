@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
-import { Button, IButtonProps } from '../Button'
+import { Button, ExtendButton, IExtendButtonProps } from '../Button'
 import IconFont from '../IconFont'
 import { expandMargin, expandPadding } from '../utils'
 import { LabelMedium } from 'baseui/typography'
@@ -130,12 +130,12 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
 
 const useConfirmCtx = () => useContext(ConfirmCtx)
 
-export interface IConfirmButtonProps extends IButtonProps, IShowProps {}
+export interface IConfirmButtonProps extends IExtendButtonProps, IShowProps {}
 
 const ConfirmButton = ({ children, onClick, title, content, ...props }: IConfirmButtonProps) => {
     const confirmCtx = useConfirmCtx()
     return (
-        <Button
+        <ExtendButton
             /* eslint-disable react/jsx-props-no-spreading */
             {...props}
             onClick={async (e) => {
@@ -146,7 +146,7 @@ const ConfirmButton = ({ children, onClick, title, content, ...props }: IConfirm
             }}
         >
             {children}
-        </Button>
+        </ExtendButton>
     )
 }
 

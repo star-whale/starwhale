@@ -1,5 +1,5 @@
 import React from 'react'
-import Button from '@starwhale/ui/Button'
+import { ExtendButton } from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import Copy from 'react-copy-to-clipboard'
 import { toaster } from 'baseui/toast'
@@ -24,7 +24,7 @@ function CopyToClipboard({
                 toaster.positive(successContent ?? t('Copied'), { autoHideDuration: showSuccessDelay })
             }}
         >
-            <Button kind='tertiary'>{t('Copy Link')} </Button>
+            <ExtendButton tooltip={t('Copy Link')} icon='a-copylink' as='link' />
         </Copy>
     )
 }

@@ -21,6 +21,7 @@ export enum JobStatusType {
     SUCCESS = 'SUCCESS',
     FAIL = 'FAIL',
     UNKNOWN = 'UNKNOWN',
+    PREPARING = 'PREPARING',
 }
 
 export enum ExposedLinkType {
