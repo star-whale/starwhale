@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom'
 import { ICreateJobFormSchema } from '../schemas/job'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { EventEmitter } from 'ahooks/lib/useEventEmitter'
-import Editor from '@monaco-editor/react'
+import MonacoEditor from '@starwhale/ui/MonacoEditor'
 import { createUseStyles } from 'react-jss'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
@@ -188,7 +188,7 @@ function FormFieldModel({
                     })}
                 <div style={{ display: rawType ? 'block' : 'none' }}>
                     <FormItem label='' required name='stepSpecOverWrites'>
-                        <Editor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
+                        <MonacoEditor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
                     </FormItem>
                 </div>
             </div>
