@@ -733,14 +733,14 @@ def _tag(
 
         \b
         - add tags for the mnist dataset
-        swcli dataset tag mnist -t t1 -t t2
-        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist/version/latest -t t1 --force-add
-        swcli dataset tag mnist -t t1 --quiet
+        swcli dataset tag mnist t1 t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist/version/latest t1 --force-add
+        swcli dataset tag mnist t1 --quiet
 
         \b
         - remove tags for the mnist dataset
-        swcli dataset tag mnist -r -t t1 -t t2
-        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist --remove -t t1
+        swcli dataset tag mnist -r t1 t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist --remove t1
     """
     view(dataset).tag(
         tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
