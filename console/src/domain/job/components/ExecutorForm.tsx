@@ -1,6 +1,6 @@
 import Card from '@/components/Card'
 import React, { useCallback } from 'react'
-import Editor from '@monaco-editor/react'
+import MonacoEditor from '@starwhale/ui/MonacoEditor'
 import Button from '@starwhale/ui/Button'
 import { executeInTask } from '@job/services/job'
 
@@ -25,12 +25,17 @@ export default function ExecutorForm({ project, job, task }: IExecutorFormProps)
 
     return (
         <Card>
-            <Editor height='10vh' language='shell' theme='vs-dark' onChange={(content) => setCmd(content ?? '')} />
+            <MonacoEditor
+                height='10vh'
+                language='shell'
+                theme='vs-dark'
+                onChange={(content) => setCmd(content ?? '')}
+            />
             <Button onClick={handleSubmit} isLoading={executing}>
                 Submit
             </Button>
             <br />
-            <Editor
+            <MonacoEditor
                 height='20vh'
                 language='shell'
                 theme='vs-dark'

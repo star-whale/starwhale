@@ -84,6 +84,7 @@
     "lucide-react": "^0.244.0",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.34",
+    "monaco-editor": "^0.41.0",
     "nanoid": "^4.0.0",
     "normalize.css": "^8.0.1",
     "plotly.js": "^2.11.1",

@@ -6,7 +6,6 @@ import { useModelVersion } from '@/domain/model/hooks/useModelVersion'
 import { TreeView, toggleIsExpanded, TreeLabelInteractable } from 'baseui/tree-view'
 import { FileNode } from '@/domain/base/schemas/file'
 import { useProject } from '@/domain/project/hooks/useProject'
-import Editor, { DiffEditor, EditorProps } from '@monaco-editor/react'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { AutoResizer, GridResizer } from '@starwhale/ui/AutoResizer'
 import Select from '@starwhale/ui/Select'
@@ -20,6 +19,7 @@ import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import { LabelSmall } from 'baseui/typography'
 import { useModelFiles } from '@/domain/model/hooks/useModelFiles'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
+import MonacoEditor, { EditorProps, MonacoDiffEditor } from '@starwhale/ui/MonacoEditor'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -382,7 +382,7 @@ function CodeViewer({
                             }}
                         >
                             {!isDiff && (
-                                <Editor
+                                <MonacoEditor
                                     options={{
                                         readOnly: true,
                                     }}
@@ -398,7 +398,7 @@ function CodeViewer({
                                 />
                             )}
                             {isDiff && (
-                                <DiffEditor
+                                <MonacoDiffEditor
                                     options={{
                                         readOnly: true,
                                     }}
@@ -408,6 +408,7 @@ function CodeViewer({
                                     language={language}
                                     original={value}
                                     modified={modified}
+                                    // @ts-ignore
                                     onMount={onMount}
                                 />
                             )}

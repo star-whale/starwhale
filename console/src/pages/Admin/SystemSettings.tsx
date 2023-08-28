@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE, KIND } from 'baseui/button'
-import Editor from '@monaco-editor/react'
+import MonacoEditor from '@starwhale/ui/MonacoEditor'
 import yaml from 'js-yaml'
 import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
@@ -86,7 +86,7 @@ export default function SystemSettings() {
             onValuesChange={handleValuesChange}
         >
             <FormItem label='' name='setting' required>
-                <Editor width='960px' defaultLanguage='yaml' theme='vs-dark' />
+                <MonacoEditor width='960px' defaultLanguage='yaml' theme='vs-dark' />
             </FormItem>
             <FormItem>
                 <div className={styles.buttonGroup}>
