@@ -70,10 +70,13 @@ def predict_question(data: dict, external: dict) -> None:
             len_tokens=_g_llm.calculate_tokens_length,
         )
         predict_result = _g_llm.do_predict(
-            prompt, benchmark_type=benchmark.get_type(), max_new_tokens=max_new_tokens
+            prompt,
+            benchmark_type=benchmark.get_type(),
+            max_new_tokens=max_new_tokens,
+            predict_choice_by_logits=True,
         )
         result[show_name] = benchmark.calculate_score(predict_result, data)
-        console.trace(f"prompt: {prompt}")
+        console.trace(f"prompt:\n {prompt}")
         console.trace(f"answer: {data['answer']}, predict: {result[show_name]}")
 
     evaluation.log(
