@@ -29,6 +29,7 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.project.ProjectDao;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.bo.Runtime;
@@ -57,12 +58,13 @@ import org.springframework.util.StringUtils;
 @Component
 @Slf4j
 public class JobCreator {
-
+    static final String FORMATTER_URI_ARTIFACT = "project/%s/%s/%s/version/%s";
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
     private final JobLoader jobLoader;
     private final StoragePathCoordinator storagePathCoordinator;
     private final JobDao jobDao;
+    private final ProjectDao projectDao;
     private final ModelService modelService;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
@@ -75,7 +77,7 @@ public class JobCreator {
             JobBoConverter jobBoConverter,
             JobSpliterator jobSpliterator, JobLoader jobLoader,
             StoragePathCoordinator storagePathCoordinator,
-            JobDao jobDao, ModelService modelService,
+            JobDao jobDao, ProjectDao projectDao, ModelService modelService,
             DatasetDao datasetDao, RuntimeDao runtimeDao, JobUpdateHelper jobUpdateHelper,
             SystemSettingService systemSettingService, JobSpecParser jobSpecParser
     ) {
@@ -84,6 +86,7 @@ public class JobCreator {
         this.jobLoader = jobLoader;
         this.storagePathCoordinator = storagePathCoordinator;
         this.jobDao = jobDao;
+        this.projectDao = projectDao;
         this.modelService = modelService;
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
@@ -181,26 +184,40 @@ public class JobCreator {
                 : List.of();
         var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
                 : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+        List<String> datasetUris = datasets.isEmpty() ? List.of()
+                : datasets.stream()
+                    .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                            projectDao.findById(version.getProjectId()).getProjectName(),
+                            "dataset",
+                            version.getDatasetName(),
+                            version.getVersionName()))
+                    .collect(Collectors.toList());
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
                 .ownerId(creator.getId())
                 .name(steps.get(0).getJobName())
                 .ownerName(creator.getName())
-                .runtimeId(null == runtime ? null : runtime.getId())
+                .runtimeUri(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        projectDao.findById(runtime.getProjectId()).getProjectName(),
+                        "runtime",
+                        runtime.getId(),
+                        runtimeVersion.getId()))
                 .runtimeName(null == runtime ? null : runtime.getName())
-                .runtimeProjectId(null == runtime ? null : runtime.getProjectId())
                 .runtimeVersionId(null == runtimeVersion ? null : runtimeVersion.getId())
                 .runtimeVersionValue(null == runtimeVersion ? null : runtimeVersion.getVersionName())
                 .projectId(project.getId())
                 .project(project)
                 .modelVersionId(null == modelVersion ? null : modelVersion.getId())
                 .modelVersionValue(null == modelVersion ? null : modelVersion.getName())
-                .modelId(null == model ? null : model.getId())
-                .modelProjectId(null == model ? null : model.getProjectId())
+                .modelUri(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        projectDao.findById(model.getProjectId()).getProjectName(),
+                        "model",
+                        model.getId(),
+                        modelVersion.getId()))
                 .modelName(null == model ? null : model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
-                .datasets(datasets)
+                .datasets(datasetUris)
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)

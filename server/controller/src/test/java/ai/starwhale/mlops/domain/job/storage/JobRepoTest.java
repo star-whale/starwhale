@@ -38,7 +38,6 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -95,29 +94,18 @@ public class JobRepoTest {
                 .name("mnist:eval")
                 .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
-                .runtimeId(1L)
-                .runtimeProjectId(2L)
+                .runtimeUri("p/p-1/runtime/rt/version/1a2s3d4f5g6h")
                 .runtimeVersionId(3L)
                 .runtimeVersionValue("1a2s3d4f5g6h")
                 .runtimeName("test-rt")
                 .projectId(1L)
                 .project(Project.builder().id(1L).name("test-project").build())
-                .modelId(1L)
-                .modelProjectId(2L)
+                .modelUri("p/p-1/model/m/version/1z2x3c4v5b6n")
                 .modelVersionId(3L)
                 .modelVersionValue("1z2x3c4v5b6n")
                 .modelName("test-model")
                 .datasetIdVersionMap(Map.of(1L, "qwerty", 2L, "asdfgh"))
-                .datasets(List.of(
-                        DatasetVersion.builder()
-                                .datasetId(1L)
-                                .projectId(2L)
-                                .id(3L)
-                                .versionName("version")
-                                .datasetName("ds")
-                                .indexTable("/p/1/ds/tt/asdf")
-                                .build()
-                ))
+                .datasets(List.of("p/p-1/dataset/ds/version/1q2w3e4r"))
                 .comment("")
                 .resultOutputPath("path/result/test")
                 .jobStatus(JobStatus.CREATED)
@@ -136,32 +124,7 @@ public class JobRepoTest {
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
-        assertThat("convert",
-                jobRepo.convertDetailsToListMap(jobEntity),
-                is(Map.of(
-                        "model", Map.of(
-                                "id", "1",
-                                "project_id", "2",
-                                "version_id", "3",
-                                "name", "test-model",
-                                "version", "1z2x3c4v5b6n"
-                        ),
-                        "runtime", Map.of(
-                                "id", "1",
-                                "project_id", "2",
-                                "version_id", "3",
-                                "name", "test-rt",
-                                "version", "1a2s3d4f5g6h"
-                        ),
-                        "datasets", List.of(Map.of(
-                                "id", "1",
-                                "project_id", "2",
-                                "version_id", "3",
-                                "name", "ds",
-                                "version", "version",
-                                "index_table", "/p/1/ds/tt/asdf"))
-                ))
-        );
+
     }
 
     @Test

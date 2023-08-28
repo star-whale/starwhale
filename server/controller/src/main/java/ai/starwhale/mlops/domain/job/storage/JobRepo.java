@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.job.storage;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DetailsColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
@@ -31,6 +31,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -41,6 +42,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
@@ -56,7 +58,6 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -65,7 +66,6 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.user.UserService;
-import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -85,7 +85,6 @@ import org.springframework.util.CollectionUtils;
 
 @Service
 public class JobRepo {
-
     private final DataStore store;
     private final ProjectService projectService;
     private final ModelService modelService;
@@ -132,72 +131,80 @@ public class JobRepo {
     }
 
     @NotNull
-    private Map<String, Object> convertToRecord(JobFlattenEntity jobEntity) {
+    private Map<String, Object> convertToRecord(JobFlattenEntity entity) {
         Map<String, Object> record = new HashMap<>();
-        record.put(LongIdColumn, BaseValue.encode(new Int64Value(jobEntity.getId()), false, false));
-        record.put(KeyColumn, jobEntity.getJobUuid());
-        record.put(NameColumn, jobEntity.getName());
-        if (Objects.nonNull(jobEntity.getComment())) {
-            record.put(CommentColumn, jobEntity.getComment());
+        record.put(LongIdColumn, BaseValue.encode(new Int64Value(entity.getId()), false, false));
+        record.put(KeyColumn, entity.getJobUuid());
+        record.put(NameColumn, entity.getName());
+        if (Objects.nonNull(entity.getComment())) {
+            record.put(CommentColumn, entity.getComment());
         }
-        if (Objects.nonNull(jobEntity.getCreatedTime())) {
+        if (Objects.nonNull(entity.getCreatedTime())) {
             record.put(CreatedTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getCreatedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getCreatedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getModifiedTime())) {
+        if (Objects.nonNull(entity.getModifiedTime())) {
             record.put(ModifiedTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getModifiedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getModifiedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getFinishedTime())) {
+        if (Objects.nonNull(entity.getFinishedTime())) {
             record.put(FinishTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getFinishedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getFinishedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getDurationMs())) {
+        if (Objects.nonNull(entity.getDurationMs())) {
             record.put(DurationColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getDurationMs()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getDurationMs()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getStepSpec())) {
-            record.put(StepSpecColumn, jobEntity.getStepSpec());
+        if (Objects.nonNull(entity.getStepSpec())) {
+            record.put(StepSpecColumn, entity.getStepSpec());
         }
-        record.put(DevModeColumn, jobEntity.isDevMode() ? "1" : "0");
+        record.put(DevModeColumn, entity.isDevMode() ? "1" : "0");
         record.put(IsDeletedColumn, "0");
         record.put(ProjectIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getProjectId()), false, false));
+                BaseValue.encode(new Int64Value(entity.getProjectId()), false, false));
 
-        if (Objects.nonNull(jobEntity.getModelVersionId())) {
+        if (Objects.nonNull(entity.getModelVersionId())) {
             record.put(ModelVersionIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getModelVersionId()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getModelVersionId()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getModelName())) {
-            record.put(ModelNameColumn, jobEntity.getModelName());
+        if (Objects.nonNull(entity.getModelUri())) {
+            record.put(ModelUriColumn, entity.getModelUri());
         }
-        if (Objects.nonNull(jobEntity.getModelVersionValue())) {
-            record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
+        if (Objects.nonNull(entity.getModelName())) {
+            record.put(ModelNameColumn, entity.getModelName());
+        }
+        if (Objects.nonNull(entity.getModelVersionValue())) {
+            record.put(ModelVersionColumn, entity.getModelVersionValue());
         }
 
-        if (Objects.nonNull(jobEntity.getRuntimeVersionId())) {
+        if (Objects.nonNull(entity.getRuntimeVersionId())) {
             record.put(RuntimeVersionIdColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getRuntimeVersionId()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getRuntimeVersionId()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getRuntimeName())) {
-            record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
+        if (Objects.nonNull(entity.getRuntimeUri())) {
+            record.put(RuntimeUriColumn, entity.getRuntimeUri());
         }
-        if (Objects.nonNull(jobEntity.getRuntimeVersionValue())) {
-            record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
+        if (Objects.nonNull(entity.getRuntimeName())) {
+            record.put(RuntimeNameColumn, entity.getRuntimeName());
+        }
+        if (Objects.nonNull(entity.getRuntimeVersionValue())) {
+            record.put(RuntimeVersionColumn, entity.getRuntimeVersionValue());
         }
 
-        if (Objects.nonNull(jobEntity.getDatasetIdVersionMap())) {
-            record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
+        if (Objects.nonNull(entity.getDatasetIdVersionMap())) {
+            record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(entity.getDatasetIdVersionMap()));
         }
-        record.put(DetailsColumn, JSONUtil.toJsonStr(convertDetailsToListMap(jobEntity)));
+        if (Objects.nonNull(entity.getDatasets()) && !entity.getDatasets().isEmpty()) {
+            record.put(DatasetUrisColumn, entity.getDatasets());
+        }
 
         record.put(OwnerIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getOwnerId()), false, false));
-        record.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
-        record.put(JobStatusColumn, jobEntity.getJobStatus().name());
-        record.put(JobTypeColumn, jobEntity.getType().name());
-        record.put(ResultOutputPathColumn, jobEntity.getResultOutputPath());
-        record.put(ResourcePoolColumn, jobEntity.getResourcePool());
+                BaseValue.encode(new Int64Value(entity.getOwnerId()), false, false));
+        record.put(OwnerNameColumn, String.valueOf(entity.getOwnerName()));
+        record.put(JobStatusColumn, entity.getJobStatus().name());
+        record.put(JobTypeColumn, entity.getType().name());
+        record.put(ResultOutputPathColumn, entity.getResultOutputPath());
+        record.put(ResourcePoolColumn, entity.getResourcePool());
         return record;
     }
 
@@ -209,46 +216,6 @@ public class JobRepo {
                 .collect(Collectors.toMap(
                         k -> (String) BaseValue.encode(new Int64Value(k), false, false),
                         origin::get));
-    }
-
-    public Map<String, Object> convertDetailsToListMap(JobFlattenEntity entity) {
-        Map<String, Object> result = new HashMap<>();
-        if (entity.getModelVersionId() != null) {
-            result.put("model", Map.of(
-                    "id", String.valueOf(entity.getModelId()),
-                    "version_id", String.valueOf(entity.getModelVersionId()),
-                    "project_id", String.valueOf(entity.getModelProjectId()),
-                    "name", entity.getModelName(),
-                    "version", entity.getModelVersionValue()
-            ));
-        }
-        // model
-        // runtime
-        if (entity.getRuntimeVersionId() != null) {
-            result.put("runtime", Map.of(
-                    "id", String.valueOf(entity.getRuntimeId()),
-                    "version_id", String.valueOf(entity.getRuntimeVersionId()),
-                    "project_id", String.valueOf(entity.getRuntimeProjectId()),
-                    "name", entity.getRuntimeName(),
-                    "version", entity.getRuntimeVersionValue()
-            ));
-        }
-        // datasets
-        if (entity.getDatasets() != null && !entity.getDatasets().isEmpty()) {
-            List<Map<String, String>> datasets = new ArrayList<>();
-            for (DatasetVersion datasetVersion : entity.getDatasets()) {
-                datasets.add(Map.of(
-                        "id", String.valueOf(datasetVersion.getDatasetId()),
-                        "version_id", String.valueOf(datasetVersion.getId()),
-                        "project_id", String.valueOf(datasetVersion.getProjectId()),
-                        "name", datasetVersion.getDatasetName(),
-                        "version", datasetVersion.getVersionName(),
-                        "index_table", datasetVersion.getIndexTable()
-                ));
-            }
-            result.put("datasets", datasets);
-        }
-        return result;
     }
 
     public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {

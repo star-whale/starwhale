@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.job.po;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DetailsColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevWayColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
@@ -30,6 +30,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -40,11 +41,11 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -84,16 +85,14 @@ public class JobFlattenEntity {
 
     private Project project;
 
-    private Long modelId;
-    private Long modelProjectId;
     @JsonProperty(ModelVersionIdColumn)
     private Long modelVersionId;
-
     @JsonProperty(ModelNameColumn)
     private String modelName;
-
     @JsonProperty(ModelVersionColumn)
     private String modelVersionValue;
+    @JsonProperty(ModelUriColumn)
+    private String modelUri;
 
     private ModelVersion modelVersion;
 
@@ -120,22 +119,20 @@ public class JobFlattenEntity {
     @JsonProperty(JobStatusColumn)
     private JobStatus jobStatus;
 
-    private Long runtimeId;
-    private Long runtimeProjectId;
     @JsonProperty(RuntimeVersionIdColumn)
     private Long runtimeVersionId;
-
     @JsonProperty(RuntimeNameColumn)
     private String runtimeName;
-
     @JsonProperty(RuntimeVersionColumn)
     private String runtimeVersionValue;
+    @JsonProperty(RuntimeUriColumn)
+    private String runtimeUri;
 
     @JsonProperty(DataSetIdVersionMapColumn)
     private Map<Long, String> datasetIdVersionMap;
 
-    @JsonProperty(DetailsColumn)
-    private List<DatasetVersion> datasets;
+    @JsonProperty(DatasetUrisColumn)
+    private List<String> datasets;
 
     @JsonProperty(ResultOutputPathColumn)
     private String resultOutputPath;
