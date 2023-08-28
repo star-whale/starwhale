@@ -2,8 +2,8 @@
 black==22.3.0
 jupyter-black==0.3.1
 flake8==4.0.1
-mypy~=0.981
-mypy-extensions==0.4.3
+mypy>=1.4.1
+mypy-extensions==1.0.0
 profimp==0.1.0
 types-PyYAML
 types-click
@@ -35,7 +35,7 @@ openapi-spec-validator
 # for jupyternotebook
 jupyter
 # for trio typing
-trio-typing[mypy] >= 0.7.0
+trio-typing[mypy] >= 0.9.0
 # trio>=0.22 has already removed async_generator dependency, but the trio_typing lib still hooks it.
 # So we need to install async_generator>=1.9 to workaround the warning.
 async_generator >= 1.9
