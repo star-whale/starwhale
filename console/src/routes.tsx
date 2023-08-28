@@ -42,7 +42,6 @@ import RuntimeVersionOverviewMeta from '@/pages/Runtime/RuntimeVersionOverviewMe
 import RuntimeVersionOverview from '@/pages/Runtime/RuntimeVersionOverview'
 import RuntimeOverviewLayout from '@/pages/Runtime/RuntimeOverviewLayout'
 import SystemSettings from '@/pages/Admin/SystemSettings'
-import Panel from '@/components/Editor/Editor'
 import EvaluationWidgetResults from '@/pages/Evaluation/EvaluationWidgetResults'
 import ModelVersionOverviewFiles from '@/pages/Model/ModelVersionOverviewFiles'
 import ModelVersionOverview from '@/pages/Model/ModelVersionOverview'
@@ -58,7 +57,6 @@ import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
 import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
-import TipTapEditor from '@starwhale/ui/TiptapEditor'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -365,8 +363,6 @@ const Routes = () => {
                                 <CenterLayout>
                                     <Switch>
                                         <Route path='/projects' component={ProjectListCard} />
-                                        <Route path='/panels' component={Panel} />
-                                        <Route path='/reports' component={TipTapEditor} />
                                         <Redirect path='/' to='/projects' />
                                     </Switch>
                                 </CenterLayout>

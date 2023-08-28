@@ -75,25 +75,29 @@ export default function ReportListCard() {
             report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
             <div key='action' style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <Tooltip content={t('Preview')} showArrow placement='top'>
-                    <div>
-                        <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
-                            <IconFont type='link' />
-                        </Link>
-                    </div>
-                </Tooltip>
-                <Tooltip content={t('Copy Link')} showArrow placement='top'>
-                    <div>
-                        <Copy
-                            text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
-                            onCopy={() => {
-                                toaster.positive(t('Copied'), { autoHideDuration: 1000 })
-                            }}
-                        >
-                            <Button as='link' icon='a-copylink' onClick={() => {}} />
-                        </Copy>
-                    </div>
-                </Tooltip>
+                {report.shared && (
+                    <>
+                        <Tooltip content={t('Preview')} showArrow placement='top'>
+                            <div>
+                                <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
+                                    <IconFont type='link' />
+                                </Link>
+                            </div>
+                        </Tooltip>
+                        <Tooltip content={t('Copy Link')} showArrow placement='top'>
+                            <div>
+                                <Copy
+                                    text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
+                                    onCopy={() => {
+                                        toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                                    }}
+                                >
+                                    <Button as='link' icon='a-copylink' onClick={() => {}} />
+                                </Copy>
+                            </div>
+                        </Tooltip>
+                    </>
+                )}
                 <Tooltip content={t('Delete')} showArrow placement='top'>
                     <div>
                         <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />

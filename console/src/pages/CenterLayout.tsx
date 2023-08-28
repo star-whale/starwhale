@@ -18,6 +18,7 @@ export default function CenterLayout({ children, style }: ILoginLayoutProps) {
                 maxWidth: '1400px',
                 width: '100%',
                 alignSelf: 'center',
+                overflow: 'initial',
             }}
             style={{
                 color: theme.colors.contentPrimary,
