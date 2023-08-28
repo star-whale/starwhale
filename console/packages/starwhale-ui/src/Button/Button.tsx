@@ -22,7 +22,7 @@ export interface IExtendButtonProps extends IButtonProps {
 }
 
 function Button(
-    { isFull = false, size = 'compact', kind = 'primary', as, icon, children, tooltip = '', ...props }: IButtonProps,
+    { isFull = false, size = 'compact', kind = 'primary', as, icon, children, ...props }: IButtonProps,
     ref: React.Ref<HTMLButtonElement>
 ) {
     const [, theme] = themedUseStyletron()

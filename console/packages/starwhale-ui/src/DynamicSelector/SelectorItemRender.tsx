@@ -123,15 +123,14 @@ export function SelectorItemRender(
     )
 
     const $selectedLabels = React.useMemo(() => {
-        return (
-            _.isArray(selectedIds) &&
-            selectedIds?.map((id) => {
-                const itemData = itemOption.getData(itemOption.info, id)
-                const labelView = itemOption.getDataToLabelView(itemData)
-                const lableTitle = itemOption.getDataToLabelTitle(itemData)
-                return getLabel(labelView, lableTitle, id)
-            })
-        )
+        return _.isArray(selectedIds)
+            ? selectedIds?.map((id) => {
+                  const itemData = itemOption.getData(itemOption.info, id)
+                  const labelView = itemOption.getDataToLabelView(itemData)
+                  const lableTitle = itemOption.getDataToLabelTitle(itemData)
+                  return getLabel(labelView, lableTitle, id)
+              })
+            : []
     }, [selectedIds, itemOption, getLabel])
 
     // const $valueLabels = React.useMemo(() => {
