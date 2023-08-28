@@ -184,14 +184,6 @@ public class JobCreator {
                 : List.of();
         var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
                 : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
-        List<String> datasetUris = datasets.isEmpty() ? List.of()
-                : datasets.stream()
-                    .map(version -> String.format(FORMATTER_URI_ARTIFACT,
-                            projectDao.findById(version.getProjectId()).getProjectName(),
-                            "dataset",
-                            version.getDatasetName(),
-                            version.getVersionName()))
-                    .collect(Collectors.toList());
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
@@ -199,6 +191,11 @@ public class JobCreator {
                 .name(steps.get(0).getJobName())
                 .ownerName(creator.getName())
                 .runtimeUri(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        runtime.getProjectId(),
+                        "runtime",
+                        runtime.getId(),
+                        runtimeVersion.getId()))
+                .runtimeUriForView(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
                         projectDao.findById(runtime.getProjectId()).getProjectName(),
                         "runtime",
                         runtime.getName(),
@@ -211,13 +208,33 @@ public class JobCreator {
                 .modelVersionId(null == modelVersion ? null : modelVersion.getId())
                 .modelVersionValue(null == modelVersion ? null : modelVersion.getName())
                 .modelUri(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        model.getProjectId(),
+                        "model",
+                        model.getId(),
+                        modelVersion.getId()))
+                .modelUriForView(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
                         projectDao.findById(model.getProjectId()).getProjectName(),
                         "model",
                         model.getName(),
                         modelVersion.getName()))
                 .modelName(null == model ? null : model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
-                .datasets(datasetUris)
+                .datasets(datasets.isEmpty() ? List.of()
+                        : datasets.stream()
+                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                version.getProjectId(),
+                                "dataset",
+                                version.getDatasetId(),
+                                version.getId()))
+                        .collect(Collectors.toList()))
+                .datasetsForView(datasets.isEmpty() ? null
+                        : datasets.stream()
+                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                projectDao.findById(version.getProjectId()).getProjectName(),
+                                "dataset",
+                                version.getDatasetName(),
+                                version.getVersionName()))
+                        .collect(Collectors.joining(",")))
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)

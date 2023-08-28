@@ -20,6 +20,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
@@ -32,6 +33,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -43,6 +45,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
@@ -170,6 +173,9 @@ public class JobRepo {
         if (Objects.nonNull(entity.getModelUri())) {
             record.put(ModelUriColumn, entity.getModelUri());
         }
+        if (Objects.nonNull(entity.getModelUriForView())) {
+            record.put(ModelUriViewColumn, entity.getModelUriForView());
+        }
         if (Objects.nonNull(entity.getModelName())) {
             record.put(ModelNameColumn, entity.getModelName());
         }
@@ -184,6 +190,9 @@ public class JobRepo {
         if (Objects.nonNull(entity.getRuntimeUri())) {
             record.put(RuntimeUriColumn, entity.getRuntimeUri());
         }
+        if (Objects.nonNull(entity.getRuntimeUriForView())) {
+            record.put(RuntimeUriViewColumn, entity.getRuntimeUriForView());
+        }
         if (Objects.nonNull(entity.getRuntimeName())) {
             record.put(RuntimeNameColumn, entity.getRuntimeName());
         }
@@ -196,6 +205,9 @@ public class JobRepo {
         }
         if (Objects.nonNull(entity.getDatasets()) && !entity.getDatasets().isEmpty()) {
             record.put(DatasetUrisColumn, entity.getDatasets());
+        }
+        if (Objects.nonNull(entity.getDatasetsForView())) {
+            record.put(DatasetUrisViewColumn, entity.getDatasetsForView());
         }
 
         record.put(OwnerIdColumn,

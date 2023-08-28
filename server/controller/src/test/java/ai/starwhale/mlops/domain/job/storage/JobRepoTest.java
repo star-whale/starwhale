@@ -94,7 +94,7 @@ public class JobRepoTest {
                 .name("mnist:eval")
                 .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
-                .runtimeUri("p/p-1/runtime/rt/version/1a2s3d4f5g6h")
+                .runtimeUriForView("p/p-1/runtime/rt/version/1a2s3d4f5g6h")
                 .runtimeVersionId(3L)
                 .runtimeVersionValue("1a2s3d4f5g6h")
                 .runtimeName("test-rt")
