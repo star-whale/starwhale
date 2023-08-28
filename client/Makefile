@@ -46,7 +46,7 @@ ci-lint:
 
 ci-mypy:
 	echo "run mypy"
-	mypy . ../example/mnist ../scripts/client_test
+	mypy . ../example/mnist ../scripts/client_test --show-traceback
 
 ci-isort:
 	echo "run isort"
