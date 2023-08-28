@@ -408,6 +408,7 @@ function CodeViewer({
                                     language={language}
                                     original={value}
                                     modified={modified}
+                                    // @ts-ignore
                                     onMount={onMount}
                                 />
                             )}
