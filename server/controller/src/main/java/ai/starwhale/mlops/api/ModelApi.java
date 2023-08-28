@@ -175,13 +175,13 @@ public interface ModelApi {
     ResponseEntity<ResponseMessage<CompleteUploadBlobResult>> completeUploadBlob(
             @PathVariable String blobId);
 
-    @PostMapping(value = "/project/{project}/model/{model}/version/{version}/completeUpload",
+    @PostMapping(value = "/project/{project}/model/{modelName}/version/{version}/completeUpload",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void createModelVersion(
             @PathVariable String project,
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.")
-            @PathVariable String model,
+            @PathVariable String modelName,
             @PathVariable String version,
             @Valid @RequestBody CreateModelVersionRequest createModelVersionRequest);
 
@@ -190,7 +190,7 @@ public interface ModelApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
             @PathVariable String project,
-            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @PathVariable String model,
             @PathVariable String version,
             @RequestParam(required = false, defaultValue = "") String blobId);
 
@@ -198,7 +198,7 @@ public interface ModelApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
             @PathVariable String project,
-            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @PathVariable String model,
             @RequestParam(required = false, defaultValue = "latest") String version,
             @RequestParam(required = false, defaultValue = "") String path);
 
@@ -207,7 +207,7 @@ public interface ModelApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<InputStreamResource> getFileData(
             @PathVariable String project,
-            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @PathVariable String model,
             @RequestParam(required = false, defaultValue = "latest") String version,
             @RequestParam String path);
 

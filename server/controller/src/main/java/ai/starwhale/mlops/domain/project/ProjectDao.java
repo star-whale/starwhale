@@ -70,8 +70,16 @@ public class ProjectDao implements ProjectAccessor {
                 }
             } else {
                 List<ProjectEntity> byName = projectMapper.findByName(projectUrl);
-                if (byName != null && byName.size() > 0) {
-                    projectEntity = byName.get(0);
+                if (byName != null) {
+                    if (byName.size() == 1) {
+                        projectEntity = byName.get(0);
+                    } else {
+                        throw new SwNotFoundException(ResourceType.PROJECT,
+                                String.format(
+                                        "Unable to find project %s, "
+                                                + "you may use OWNER:PROJECT or project id to access the project",
+                                        projectUrl));
+                    }
                 }
             }
         }
