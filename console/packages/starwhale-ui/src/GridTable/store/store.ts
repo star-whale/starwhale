@@ -38,6 +38,7 @@ export interface IViewState {
 }
 export interface ICurrentViewState {
     currentView: ConfigT
+    setCurrentView: (view: ConfigT) => void
     onCurrentViewSaved: () => void
     onCurrentViewIdChange: (viewId?: string) => void
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
@@ -136,7 +137,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
     }
 }
 
-const rawCurrentView = {
+const rawCurrentView: ConfigT = {
     filters: [],
     queries: [],
     ids: [],
@@ -171,6 +172,16 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
 
     return {
         currentView: rawCurrentView,
+        //  direct set should not trigger changed event
+        setCurrentView: (view) => {
+            set(
+                {
+                    currentView: _.isEmpty(view) ? rawCurrentView : view,
+                },
+                false,
+                'setCurrentView'
+            )
+        },
         onCurrentViewSaved: () => update({ updated: false }, 'onCurrentViewSaved'),
         onCurrentViewIdChange: (viewId) => {
             if (viewId === 'all') {
@@ -236,7 +247,7 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
     initStore: (obj?: Record<string, any>) => {
         set(
             {
-                ...(obj ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
+                ...(!_.isEmpty(obj) ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
                 isInit: true,
             },
             undefined,

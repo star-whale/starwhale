@@ -2,6 +2,7 @@ import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
 import { DatastorePageT } from '../types'
+import _ from 'lodash'
 
 export type TableQueryParamsT = {
     tableName?: string
@@ -110,6 +111,7 @@ function FilterToQuery(
             return item
         })
         .filter((item: any) => {
+            if (!_.isNumber(item.value) && _.isEmpty(item.value)) return false
             return item.value && item.op && item.property
         })
         .map((item: any) => {

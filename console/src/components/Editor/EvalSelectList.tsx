@@ -121,7 +121,7 @@ function EvalSelectList({
 
     const count = React.useMemo(() => {
         return values.reduce((acc, cur) => {
-            return acc + (cur.rowSelectedIds?.length ?? 0)
+            return acc + (cur.records?.length ?? 0)
         }, 0)
     }, [values])
 
@@ -222,19 +222,12 @@ function EvalSelectList({
                             const renew = (prev: EvalSelectDataT) => {
                                 const n = { ...prev }
                                 Object.entries(n).forEach(([key, item]) => {
-                                    const index = item.rowSelectedIds.indexOf(id)
-                                    const ids = [...item.rowSelectedIds]
-                                    if (index >= 0) {
-                                        ids.splice(index, 1)
-                                        const filter = item.records.filter((record) => record.id.value !== id) ?? []
-                                        if (filter.length === 0) {
-                                            // @ts-ignore
-                                            n[key] = undefined
-                                        } else {
-                                            n[key] = { ...n[key] }
-                                            n[key].rowSelectedIds = ids
-                                            n[key].records = filter
-                                        }
+                                    const filter = item.records.filter((record) => record.id.value !== id) ?? []
+                                    if (filter.length === 0) {
+                                        // @ts-ignore
+                                        n[key] = undefined
+                                    } else {
+                                        n[key].records = filter
                                     }
                                 })
                                 return _.pickBy(n, _.identity)
@@ -280,17 +273,19 @@ function EvalSelectList({
                                     size='compact'
                                     onClick={() => {
                                         const next = ref.current?.getData()
-                                        const renew = _.pickBy(
-                                            {
-                                                ...selectData,
-                                                ...next,
-                                            },
-                                            _.identity
-                                        )
+                                        // eslint-disable-next-line consistent-return
+                                        const renew = _.mergeWith({}, selectData, next, (objValue, srcValue, key) => {
+                                            if (_.isArray(objValue)) {
+                                                if (key === 'records') {
+                                                    return _.unionBy(objValue.concat(srcValue), 'id.value')
+                                                }
+                                                return _.union(objValue.concat(srcValue))
+                                            }
+                                        })
                                         onSelectDataChange?.(renew)
                                         setIsAddOpen(false)
                                         const num = Object.values(renew).reduce((acc, cur) => {
-                                            return acc + (cur.rowSelectedIds?.length ?? 0)
+                                            return acc + (cur.records?.length ?? 0)
                                         }, 0)
                                         toaster.positive(t('evalution.panel.add.desc', [num]))
                                     }}
