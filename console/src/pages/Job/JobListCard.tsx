@@ -15,7 +15,7 @@ import { toaster } from 'baseui/toast'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import JobStatus from '@/domain/job/components/JobStatus'
-import Button from '@starwhale/ui/Button'
+import Button, { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { useAuthPrivileged, WithCurrentAuth } from '@/api/WithAuth'
 import { IconTooltip } from '@starwhale/ui/Tooltip'
 import { useProjectRole } from '@project/hooks/useProjectRole'
@@ -67,12 +67,12 @@ export default function JobListCard() {
     const CancelButton = ({ jobId }: IActionButtonProps) => (
         <WithCurrentAuth id='job.cancel'>
             <ConfirmButton
-                kind='tertiary'
+                tooltip={t('Cancel')}
+                icon='Cancel'
+                as='link'
                 onClick={() => handleAction(jobId, JobActionType.CANCEL)}
                 title={t('Cancel.Confirm')}
-            >
-                {t('Cancel')}
-            </ConfirmButton>
+            />
         </WithCurrentAuth>
     )
 
@@ -80,12 +80,12 @@ export default function JobListCard() {
         <WithCurrentAuth id='job-pause'>
             <WithCurrentAuth id='job.pause'>
                 <ConfirmButton
-                    kind='tertiary'
+                    tooltip={t('Pause')}
+                    icon='pause'
+                    as='link'
                     onClick={() => handleAction(jobId, JobActionType.PAUSE)}
                     title={t('Pause.Confirm')}
-                >
-                    {t('Pause')}
-                </ConfirmButton>
+                />
             </WithCurrentAuth>
         </WithCurrentAuth>
     )
@@ -93,9 +93,13 @@ export default function JobListCard() {
     const ResumeButton = ({ jobId }: IActionButtonProps) => (
         <WithCurrentAuth id='job-resume'>
             <WithCurrentAuth id='job.resume'>
-                <Button kind='tertiary' onClick={() => handleAction(jobId, JobActionType.RESUME)}>
-                    {t('Resume')}
-                </Button>
+                <ExtendButton
+                    tooltip={t('Resume')}
+                    icon='Resume'
+                    as='link'
+                    kind='tertiary'
+                    onClick={() => handleAction(jobId, JobActionType.RESUME)}
+                />
             </WithCurrentAuth>
         </WithCurrentAuth>
     )
@@ -162,12 +166,12 @@ export default function JobListCard() {
                                 </>
                             ),
                             [JobStatusType.SUCCESS]: (
-                                <Button
-                                    kind='tertiary'
+                                <ExtendButton
+                                    tooltip={t('View Tasks')}
+                                    icon='a-ViewTasks'
+                                    as='link'
                                     onClick={() => history.push(`/projects/${projectId}/jobs/${job.id}/tasks`)}
-                                >
-                                    {t('View Tasks')}
-                                </Button>
+                                />
                             ),
                         }
 
@@ -188,8 +192,10 @@ export default function JobListCard() {
                         }
 
                         const rerun = (
-                            <Button
-                                kind='tertiary'
+                            <ExtendButton
+                                tooltip={t('job.rerun')}
+                                icon='Rerun'
+                                as='link'
                                 onClick={() =>
                                     history.push(
                                         `/projects/${projectId}/new_job?${qs.stringify({
@@ -197,9 +203,7 @@ export default function JobListCard() {
                                         })}`
                                     )
                                 }
-                            >
-                                {t('job.rerun')}
-                            </Button>
+                            />
                         )
 
                         return [
@@ -242,13 +246,13 @@ export default function JobListCard() {
                             typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
                             job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
                             <JobStatus key='jobStatus' status={job.jobStatus as any} />,
-                            <div key='action' style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <ButtonGroup key='action'>
                                 {actions[job.jobStatus] ?? ''}
                                 {rerun}
                                 {job.exposedLinks?.map((exposed) => (
                                     <ExposedLink key={exposed.link} data={exposed} />
                                 ))}
-                            </div>,
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

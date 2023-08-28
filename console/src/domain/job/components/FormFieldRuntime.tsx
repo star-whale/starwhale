@@ -28,6 +28,9 @@ function FormFieldRuntime({
             form.setFieldsValue({ runtimeVersionUrl: undefined })
         }
     })
+
+    // console.log(form.getFieldsValue())
+
     return (
         <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
             {!!builtInRuntime && (

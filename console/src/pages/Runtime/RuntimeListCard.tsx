@@ -8,9 +8,9 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
-import { Button } from '@starwhale/ui'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui'
+import { MonoText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
-import { MonoText } from '@/components/Text'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
@@ -52,19 +52,24 @@ export default function RuntimeListCard() {
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.version?.createdTime && formatTimestampDateTime(runtime.version?.createdTime),
-                            <>
-                                <Button
-                                    key='version-history'
-                                    kind='tertiary'
+                            <ButtonGroup key='action'>
+                                <ExtendButton
+                                    as='link'
+                                    icon='a-Versionhistory'
+                                    tooltip={t('Version History')}
                                     onClick={() => history.push(`/projects/${projectId}/runtimes/${runtime.id}`)}
-                                >
-                                    {t('Version History')}
-                                </Button>
-                                &nbsp;&nbsp;
+                                />
                                 <WithCurrentAuth id='runtime.image.build'>
-                                    <Button
-                                        kind='tertiary'
+                                    <ExtendButton
                                         disabled={!!runtime.version?.builtImage}
+                                        iconDisable={!!runtime.version?.builtImage}
+                                        as='link'
+                                        icon={runtime.version?.builtImage ? 'a-ImageBuilt' : 'a-BuildImage'}
+                                        tooltip={
+                                            runtime.version?.builtImage
+                                                ? t('runtime.image.built')
+                                                : t('runtime.image.build')
+                                        }
                                         onClick={async () => {
                                             const result = await buildImageForRuntimeVersion(
                                                 projectId,
@@ -81,13 +86,9 @@ export default function RuntimeListCard() {
                                                 })
                                             }
                                         }}
-                                    >
-                                        {runtime.version?.builtImage
-                                            ? t('runtime.image.built')
-                                            : t('runtime.image.build')}
-                                    </Button>
+                                    />
                                 </WithCurrentAuth>
-                            </>,
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

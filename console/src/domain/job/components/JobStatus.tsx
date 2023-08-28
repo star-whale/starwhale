@@ -21,6 +21,11 @@ function JobStatus({ status }: { status: Exclude<JobStatusType, 'TO_CANCEL' | 'U
     })
 
     const JOB_STATUS = {
+        [JobStatusType.PREPARING]: (
+            <p className={cls} style={{ color: '#00B368', backgroundColor: '#FFEDED' }}>
+                {t('job.status.preparing')}
+            </p>
+        ),
         [JobStatusType.CREATED]: (
             <p className={cls} style={{ color: '#2B65D9', backgroundColor: '#EBF1FF' }}>
                 {t('job.status.created')}

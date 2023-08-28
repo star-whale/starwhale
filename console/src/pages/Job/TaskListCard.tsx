@@ -6,15 +6,13 @@ import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
 import { useParams, useLocation } from 'react-router-dom'
 import { useFetchTasks } from '@job/hooks/useFetchTasks'
-import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
 import qs from 'qs'
 import moment from 'moment'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { IconFont } from '@starwhale/ui'
 import { TaskStatusType } from '@/domain/job/schemas/task'
-import Button from '@starwhale/ui/Button'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import ExecutorForm from '@job/components/ExecutorForm'
 import Text from '@starwhale/ui/Text'
@@ -74,9 +72,12 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 : '-',
                             <JobStatus key='status' status={task.taskStatus as any} />,
                             <Text key='statusDesc' tooltip={task.failedReason} content={task.failedReason} />,
-                            <p key='action' style={{ display: 'flex', gap: '10px' }}>
-                                <StyledLink
+                            <ButtonGroup key='action'>
+                                <ExtendButton
+                                    tooltip={t('View Log')}
                                     key={task.uuid}
+                                    as='link'
+                                    icon='a-Viewlog'
                                     onClick={(e: any) => {
                                         // eslint-disalbe-next-line no-unused-expressions
                                         const trDom = e.currentTarget.closest('tr')
@@ -90,9 +91,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                             ...task,
                                         })
                                     }}
-                                >
-                                    {t('View Log')}
-                                </StyledLink>
+                                />
                                 <WithCurrentAuth id='job-dev' key='exposed'>
                                     {task.exposedLinks?.map((exposed) => (
                                         <ExposedLink key={exposed.link} data={exposed} />
@@ -100,12 +99,16 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 </WithCurrentAuth>
                                 <WithCurrentAuth id='task.execute'>
                                     {task.taskStatus === TaskStatusType.RUNNING && (
-                                        <Button onClick={() => setCurrentTaskExecutor(task.id)} as='link'>
-                                            <IconFont type='docker' size={14} />
-                                        </Button>
+                                        <ExtendButton
+                                            tooltip={t('job.task.executor')}
+                                            key={task.uuid}
+                                            as='link'
+                                            icon='docker'
+                                            onClick={() => setCurrentTaskExecutor(task.id)}
+                                        />
                                     )}
                                 </WithCurrentAuth>
-                            </p>,
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

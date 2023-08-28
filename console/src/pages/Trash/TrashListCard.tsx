@@ -13,6 +13,7 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
+import { ButtonGroup } from '@starwhale/ui'
 
 export default function TrashListCard() {
     const [page] = usePage()
@@ -64,31 +65,32 @@ export default function TrashListCard() {
                             trash.trashedBy,
                             trash.lastUpdatedTime && formatTimestampDateTime(trash.lastUpdatedTime),
                             trash.retentionTime && formatTimestampDateTime(trash.retentionTime),
-                            <>
+                            <ButtonGroup key='action'>
                                 <ConfirmButton
-                                    as='negative'
+                                    kind='tertiary'
+                                    title={t('trash.restore.confirm')}
+                                    tooltip={t('trash.restore.button')}
+                                    icon='Restore'
+                                    as='link'
+                                    onClick={async () => {
+                                        await recoverTrash(projectId, trash.id)
+                                        toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
+                                        await info.refetch()
+                                    }}
+                                />
+                                <ConfirmButton
+                                    as='link'
+                                    icon='delete'
+                                    negative
+                                    tooltip={t('trash.remove.button')}
                                     title={t('trash.remove.confirm')}
                                     onClick={async () => {
                                         await removeTrash(projectId, trash.id)
                                         toaster.positive(t('trash.remove.success'), { autoHideDuration: 1000 })
                                         await info.refetch()
                                     }}
-                                >
-                                    {t('trash.remove.button')}
-                                </ConfirmButton>
-                                &nbsp;&nbsp;
-                                <ConfirmButton
-                                    kind='tertiary'
-                                    title={t('trash.restore.confirm')}
-                                    onClick={async () => {
-                                        await recoverTrash(projectId, trash.id)
-                                        toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
-                                        await info.refetch()
-                                    }}
-                                >
-                                    {t('trash.restore.button')}
-                                </ConfirmButton>
-                            </>,
+                                />
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

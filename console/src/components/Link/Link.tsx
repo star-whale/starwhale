@@ -12,7 +12,7 @@ const useLinkStyles = createUseStyles({
         'textDecoration': 'none',
         'color': 'gray',
         '&:hover': {
-            color: ' #5181E0',
+            color: '#5181E0 !important',
         },
     },
 })
@@ -31,7 +31,7 @@ export default function Link({ to, tooltip, className, style = {}, children, ...
     const { content, placement = 'top', ...tooltipRest } = tooltip || {}
 
     return (
-        <Tooltip content={content} placement={placement} {...tooltipRest}>
+        <Tooltip content={content} placement={placement} showArrow {...tooltipRest}>
             <BaseLink to={to} className={cn(className ?? styles.link)} style={style} {...rest}>
                 {children}
             </BaseLink>
