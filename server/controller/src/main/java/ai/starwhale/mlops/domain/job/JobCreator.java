@@ -201,8 +201,8 @@ public class JobCreator {
                 .runtimeUri(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
                         projectDao.findById(runtime.getProjectId()).getProjectName(),
                         "runtime",
-                        runtime.getId(),
-                        runtimeVersion.getId()))
+                        runtime.getName(),
+                        runtimeVersion.getVersionName()))
                 .runtimeName(null == runtime ? null : runtime.getName())
                 .runtimeVersionId(null == runtimeVersion ? null : runtimeVersion.getId())
                 .runtimeVersionValue(null == runtimeVersion ? null : runtimeVersion.getVersionName())
@@ -213,8 +213,8 @@ public class JobCreator {
                 .modelUri(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
                         projectDao.findById(model.getProjectId()).getProjectName(),
                         "model",
-                        model.getId(),
-                        modelVersion.getId()))
+                        model.getName(),
+                        modelVersion.getName()))
                 .modelName(null == model ? null : model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
                 .datasets(datasetUris)
