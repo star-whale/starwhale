@@ -61,15 +61,12 @@ class JobTermView(BaseTermView):
     def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         return self._action_run_map[action](force)
 
-    @BaseTermView._header
     def info(
         self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
         web: bool = False,
     ) -> None:
-        _rt = self.job.info(page, size)
+        _rt = self.job.info()
         if not _rt:
             console.print(":tea: not found info")
             return
@@ -155,7 +152,7 @@ class JobTermView(BaseTermView):
             )
 
         console.rule(
-            f"[bold green]Project({self.uri.project} Job({self.job.name}) Tasks List"
+            f"[bold green]Project({self.uri.project}) Job({self.job.name}) Tasks List"
         )
         console.print(table)
 
@@ -349,12 +346,10 @@ class JobTermViewJson(JobTermView):
 
     def info(
         self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
         web: bool = False,
     ) -> None:
-        _rt = self.job.info(page, size)
+        _rt = self.job.info()
         self.pretty_json(_rt)
 
 

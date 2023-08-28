@@ -18,7 +18,6 @@ from starwhale.base.uri.resource import Resource, ResourceType
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
 _job_list = open(f"{_job_data_dir}/job_list_resp.json").read()
-_task_list = open(f"{_job_data_dir}/task_list.json").read()
 _existed_config_contents = get_predefined_config_yaml()
 
 
@@ -242,19 +241,166 @@ class CloudJobTestCase(TestCase):
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}",
-            text=_job_manifest,
+            json={
+                "code": "success",
+                "data": {
+                    "comment": None,
+                    "createdTime": 1692705133000,
+                    "datasetList": [
+                        {
+                            "createdTime": 1692172104000,
+                            "id": "133",
+                            "name": "cmmlu",
+                            "owner": None,
+                            "version": {
+                                "alias": "v1",
+                                "createdTime": 1692172104000,
+                                "id": "190",
+                                "indexTable": "project/257/dataset/cmmlu/_current/meta",
+                                "latest": True,
+                                "name": "kiwtxaz7h3a4atp3rjhhymp3mgbxvjtuip7cklzc",
+                                "owner": None,
+                                "shared": 0,
+                                "tags": None,
+                            },
+                        }
+                    ],
+                    "datasets": ["kiwtxaz7h3a4atp3rjhhymp3mgbxvjtuip7cklzc"],
+                    "device": None,
+                    "deviceAmount": None,
+                    "duration": 19500177,
+                    "exposedLinks": [],
+                    "id": "707",
+                    "isBuiltinRuntime": False,
+                    "jobName": "src.evaluation:evaluation_results",
+                    "jobStatus": "SUCCESS",
+                    "model": {
+                        "createdTime": 1692625972000,
+                        "id": "157",
+                        "name": "qwen-7b",
+                        "owner": {
+                            "createdTime": 1663599091000,
+                            "id": "4",
+                            "isEnabled": True,
+                            "name": "tianwei",
+                            "projectRoles": None,
+                            "systemRole": None,
+                        },
+                        "version": {
+                            "alias": "v4",
+                            "builtInRuntime": None,
+                            "createdTime": 1692705070000,
+                            "id": "191",
+                            "latest": True,
+                            "name": "5svavcdslagoxphlrkhpba2depq5h2dvia2uabqq",
+                            "owner": None,
+                            "shared": 0,
+                            "size": 15445672416,
+                            "tags": None,
+                        },
+                    },
+                    "modelName": "qwen-7b",
+                    "modelVersion": "5svavcdslagoxphlrkhpba2depq5h2dvia2uabqq",
+                    "owner": {
+                        "createdTime": 1663599091000,
+                        "id": "4",
+                        "isEnabled": True,
+                        "name": "tianwei",
+                        "projectRoles": None,
+                        "systemRole": None,
+                    },
+                    "pinnedTime": None,
+                    "resourcePool": "A100 80G * 1",
+                    "runtime": {
+                        "createdTime": 1692174942000,
+                        "id": "56",
+                        "name": "llm-leaderboard",
+                        "owner": {
+                            "createdTime": 1663599091000,
+                            "id": "4",
+                            "isEnabled": True,
+                            "name": "tianwei",
+                            "projectRoles": None,
+                            "systemRole": None,
+                        },
+                        "version": {
+                            "alias": "v2",
+                            "builtImage": None,
+                            "createdTime": 1692671519000,
+                            "id": "170",
+                            "image": "docker-registry.starwhale.cn/star-whale/cuda:11.7-base0.3.4",
+                            "latest": True,
+                            "name": "ickinf6qkl5hnd5x346vcbwd75kgxf56soska3cv",
+                            "owner": None,
+                            "runtimeId": "56",
+                            "shared": 0,
+                            "tags": None,
+                        },
+                    },
+                    "stopTime": 1692724633000,
+                    "uuid": "e0fa100599944951a20278b4062eb9fb",
+                },
+                "message": "Success",
+            },
         )
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/task",
-            text=_task_list,
+            json={
+                "code": "success",
+                "data": {
+                    "endRow": 100000,
+                    "hasNextPage": False,
+                    "hasPreviousPage": False,
+                    "isFirstPage": True,
+                    "isLastPage": True,
+                    "list": [
+                        {
+                            "exposedLinks": None,
+                            "failedReason": None,
+                            "finishedTime": 1692724633000,
+                            "id": "1064",
+                            "resourcePool": "A100 80G * 1",
+                            "retryNum": 0,
+                            "startedTime": 1692724131000,
+                            "stepName": "src.evaluation:evaluation_results",
+                            "taskStatus": "SUCCESS",
+                            "uuid": "4004e06a-2359-487a-ae6f-b0c3ed456e60",
+                        },
+                        {
+                            "exposedLinks": None,
+                            "failedReason": None,
+                            "finishedTime": 1692724131000,
+                            "id": "1063",
+                            "resourcePool": "A100 80G * 1",
+                            "retryNum": 0,
+                            "startedTime": 1692705133000,
+                            "stepName": "src.evaluation:predict_question",
+                            "taskStatus": "SUCCESS",
+                            "uuid": "5b87fe22-a1c1-49fe-8d35-62717441a79f",
+                        },
+                    ],
+                    "navigateFirstPage": 1,
+                    "navigateLastPage": 1,
+                    "navigatePages": 8,
+                    "navigatepageNums": [1],
+                    "nextPage": 0,
+                    "pageNum": 1,
+                    "pageSize": 100000,
+                    "pages": 1,
+                    "prePage": 0,
+                    "size": 2,
+                    "startRow": 0,
+                    "total": 2,
+                },
+                "message": "Success",
+            },
         )
 
         info = CloudJob(Resource(self.job_uri, typ=ResourceType.job)).info()
-        print(f"info oo :{info}")
-        assert len(info["tasks"][0]) == 3
+        assert len(info["tasks"][0]) == 2
         assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
-        assert info["tasks"][0][0]["id"] == "40"
+        assert info["tasks"][0][0]["id"] == "1064"
         assert "created_at" in info["tasks"][0][0]
 
         assert info["report"]["kind"] == "multi_classification"
