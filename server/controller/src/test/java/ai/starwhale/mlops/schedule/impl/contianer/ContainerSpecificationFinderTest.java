@@ -69,6 +69,7 @@ public class ContainerSpecificationFinderTest {
             put("SW_RUNTIME_PYTHON_VERSION", "3.10");
             put("SW_VERSION", "0.5.1");
             put("SW_ENV", "test");
+            put("SW_POD_NAME", "1");
             put("SW_PROJECT", "project");
             put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             put("SW_DATASET_URI", "http://instanceUri/project/103/dataset/swdsN/version/swdsV");

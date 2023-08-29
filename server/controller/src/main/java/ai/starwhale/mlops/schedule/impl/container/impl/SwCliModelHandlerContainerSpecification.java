@@ -73,8 +73,8 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
         if (!CollectionUtils.isEmpty(taskEnv)) {
             taskEnv.forEach(env -> coreContainerEnvs.put(env.getName(), env.getValue()));
         }
-        coreContainerEnvs.put("SW_RUNTIME_PYTHON_VERSION", runtime.getManifest().getEnvironment().getPython());
-        coreContainerEnvs.put("SW_VERSION", runtime.getManifest().getEnvironment().getLock().getSwVersion());
+        coreContainerEnvs.put("SW_RUNTIME_PYTHON_VERSION", runtime.pythonVersion());
+        coreContainerEnvs.put("SW_VERSION", runtime.swVersion());
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         var stepSpecs = swJob.getStepSpecs();
         for (var stepSpec : stepSpecs) {
