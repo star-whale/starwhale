@@ -101,14 +101,29 @@ code {
 
 // for selected view log  in tasks
 .tr--selected {
-    background: #5181e0;
+    background: #f5f8ff;
     border-radius: 8px;
+    margin-bottom: 2px;
+    position: relative;
+    z-index: 2;
+    overflow: visible;
+    border-image-width: 0;
+
+    td:first-child {
+        border-left: 1px solid #5181e0;
+    }
+
+    td:last-child {
+        border-right: 1px solid #5181e0;
+    }
 
     td {
-        color: #ffffff !important;
+        // color: #ffffff !important;
+        border-top: 1px solid #5181e0;
+        border-bottom: 1px solid #5181e0;
     }
     a {
-        color: #ffffff !important;
+        // color: #ffffff !important;
     }
     td::first-child {
         border-top-left-radius: 8px;
