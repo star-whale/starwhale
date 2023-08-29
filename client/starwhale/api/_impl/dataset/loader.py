@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import os
 import queue
 import typing as t
 import threading
 from functools import total_ordering
 
 from starwhale.utils import console
-from starwhale.consts import HTTPMethod
-from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
 from starwhale.utils.dict_util import transform_dict
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.dataset.store import sign_dataset_uris
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
-    DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
 
@@ -175,27 +172,6 @@ class DataLoader:
             raise ValueError(f"cache_size({cache_size}) must be a positive int number")
         self._cache_size = cache_size
 
-    def _sign_uris(self, uris: t.List[str]) -> dict:
-        _batch_size = (
-            self.session_consumption.batch_size
-            if self.session_consumption
-            else DEFAULT_CONSUMPTION_BATCH_SIZE
-        )
-        r = CloudRequestMixed.do_http_request(
-            f"/project/{self.dataset_uri.project.name}/{self.dataset_uri.typ.value}/{self.dataset_uri.name}/uri/sign-links",
-            method=HTTPMethod.POST,
-            instance=self.dataset_uri.instance,
-            params={
-                "expTimeMillis": int(
-                    os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
-                )
-                * _batch_size,
-            },
-            json=uris,
-            use_raise=True,
-        ).json()
-        return r["data"]  # type: ignore
-
     def _iter_meta(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
             # TODO: refactor for batch-signed urls
@@ -220,7 +196,9 @@ class DataLoader:
                                 at.owner = self.dataset_uri
                                 if at.link:
                                     _links.append(at.link)
-                        uri_dict = self._sign_uris([lk.uri for lk in _links])
+                        uri_dict = sign_dataset_uris(
+                            self.dataset_uri, [lk.uri for lk in _links]
+                        )
                         for lk in _links:
                             lk.signed_uri = uri_dict.get(lk.uri, "")
 
