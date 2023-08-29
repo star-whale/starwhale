@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.custom.Quantity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -48,4 +47,21 @@ public class ResourceOverwriteSpecTest {
         Assertions.assertNull(resourceOverwriteSpec.getResourceSelector().getLimits().get("cpu"));
     }
 
+    @Test
+    public void testMemoryResource() {
+        ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(
+                List.of(new RuntimeResource("memory", 1.99f, 1.99f)));
+        Assertions.assertEquals(new Quantity("2"),
+                resourceOverwriteSpec.getResourceSelector().getRequests().get("memory"));
+        Assertions.assertEquals(new Quantity("2"),
+                resourceOverwriteSpec.getResourceSelector().getLimits().get("memory"));
+
+        // make sure the k8s client will not overflow
+        var q1 = new Quantity(Float.toString(137438953472.f));
+        // Note this is the bug of k8s client, it may overflow if we use a large float number
+        Assertions.assertEquals("8311744484033138688e-9", q1.toSuffixedString());
+
+        var q2 = new Quantity(Long.toString(137438953472L));
+        Assertions.assertEquals("137438953472", q2.toSuffixedString());
+    }
 }
