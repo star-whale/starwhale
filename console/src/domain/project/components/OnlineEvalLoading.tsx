@@ -1,6 +1,5 @@
 import React from 'react'
 import { IOnlineEvalStatusSchema } from '@project/schemas/OnlineEval'
-import { formatTimestampDateTime } from '@/utils/datetime'
 import { LabelSmall } from 'baseui/typography'
 
 export default function OnlineEvalLoading({ events }: IOnlineEvalStatusSchema) {
@@ -31,14 +30,7 @@ export default function OnlineEvalLoading({ events }: IOnlineEvalStatusSchema) {
                     <span>&nbsp;</span>
                 </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {events?.map((e, i) => (
-                    <p key={i} style={{ textAlign: 'left' }}>
-                        <LabelSmall>{formatTimestampDateTime(e.eventTimeInMs, 'YYYY-MM-DD HH:mm:ss')}:</LabelSmall>
-                        <LabelSmall style={{ color: ' rgba(2,16,43,0.60)', marginTop: '4px' }}>{e.message}</LabelSmall>
-                    </p>
-                ))}
-            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>{events}</div>
         </div>
     )
 }

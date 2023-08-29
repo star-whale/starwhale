@@ -63,6 +63,9 @@ public class WebServerInTask implements Service {
         }
         var task = tasks.stream().findFirst();
         var ip = task.get().getIp();
+        if (null == ip) {
+            return null;
+        }
 
         return "http://" + ip + ":" + port + "/" + path;
     }

@@ -137,17 +137,7 @@ public class JobConverter {
             return exposed;
         }
         // check if job has exposed port in step spec
-        var stepSpecStr = job.getStepSpec();
-        if (!StringUtils.hasText(stepSpecStr)) {
-            return exposed;
-        }
-
-        List<StepSpec> stepSpecs;
-        try {
-            stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecStr);
-        } catch (JsonProcessingException e) {
-            return exposed;
-        }
+        var stepSpecs = job.getStepSpecs();
         if (CollectionUtils.isEmpty(stepSpecs)) {
             return exposed;
         }

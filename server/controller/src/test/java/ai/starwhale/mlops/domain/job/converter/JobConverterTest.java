@@ -186,19 +186,19 @@ public class JobConverterTest {
                 .name("step")
                 .tasks(List.of(task))
                 .build();
-        var job = Job.builder()
-                .id(1L)
-                .uuid("job-uuid")
-                .status(JobStatus.SUCCESS)
-                .stepSpec("step spec")
-                .steps(List.of(step))
-                .build();
-
-        when(hotJobHolder.ofIds(List.of(1L))).thenReturn(List.of(job));
         var stepSpec = StepSpec.builder()
                 .name("step")
                 .expose(10)
                 .build();
+        var job = Job.builder()
+                .id(1L)
+                .uuid("job-uuid")
+                .status(JobStatus.SUCCESS)
+                .stepSpecs(List.of(stepSpec))
+                .steps(List.of(step))
+                .build();
+
+        when(hotJobHolder.ofIds(List.of(1L))).thenReturn(List.of(job));
         when(jobSpecParser.parseAndFlattenStepFromYaml(anyString())).thenReturn(List.of(stepSpec));
 
         // success job won't have exposed links

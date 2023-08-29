@@ -47,4 +47,12 @@ public class JobRuntime {
     String image;
 
     RuntimeService.RuntimeManifest manifest;
+
+    public String swVersion() {
+        return manifest.getEnvironment().getLock().getSwVersion();
+    }
+
+    public String pythonVersion() {
+        return manifest.getEnvironment().getPython();
+    }
 }

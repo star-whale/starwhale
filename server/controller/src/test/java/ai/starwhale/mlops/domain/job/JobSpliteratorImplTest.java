@@ -79,10 +79,10 @@ public class JobSpliteratorImplTest {
         JobSpliteratorImpl jobSpliteratorImpl = new JobSpliteratorImpl(
                 new StoragePathCoordinator("/test"), taskMapper, jobDao, stepMapper, jobParser);
 
-        mockJob.setStepSpec("");
+        mockJob.setStepSpecs(null);
         Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorImpl.split(mockJob));
 
-        mockJob.setStepSpec("123");
+        mockJob.setStepSpecs(steps);
         mockJob.setResourcePool(ResourcePool.builder().name("test").build());
         var stepEntities = jobSpliteratorImpl.split(mockJob);
         assertEquals(stepEntities.size(), 2);

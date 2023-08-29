@@ -82,6 +82,10 @@ public class ProxyServlet extends HttpServlet {
     public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         // https://stackoverflow.com/questions/4931323/whats-the-difference-between-getrequesturi-and-getpathinfo-methods-in-httpservl
         var target = getTarget(req.getPathInfo());
+        if (null == target) {
+            res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            return;
+        }
 
         URI uri;
         try {
