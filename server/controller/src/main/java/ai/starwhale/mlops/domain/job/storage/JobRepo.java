@@ -19,6 +19,8 @@ package ai.starwhale.mlops.domain.job.storage;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
@@ -30,6 +32,8 @@ import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
@@ -40,6 +44,8 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriViewColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
@@ -82,7 +88,6 @@ import org.springframework.util.CollectionUtils;
 
 @Service
 public class JobRepo {
-
     private final DataStore store;
     private final ProjectService projectService;
     private final ModelService modelService;
@@ -129,53 +134,89 @@ public class JobRepo {
     }
 
     @NotNull
-    private Map<String, Object> convertToRecord(JobFlattenEntity jobEntity) {
+    private Map<String, Object> convertToRecord(JobFlattenEntity entity) {
         Map<String, Object> record = new HashMap<>();
-        record.put(LongIdColumn, BaseValue.encode(new Int64Value(jobEntity.getId()), false, false));
-        record.put(KeyColumn, jobEntity.getJobUuid());
-        record.put(NameColumn, jobEntity.getName());
-        if (Objects.nonNull(jobEntity.getComment())) {
-            record.put(CommentColumn, jobEntity.getComment());
+        record.put(LongIdColumn, BaseValue.encode(new Int64Value(entity.getId()), false, false));
+        record.put(KeyColumn, entity.getJobUuid());
+        record.put(NameColumn, entity.getName());
+        if (Objects.nonNull(entity.getComment())) {
+            record.put(CommentColumn, entity.getComment());
         }
-        if (Objects.nonNull(jobEntity.getCreatedTime())) {
+        if (Objects.nonNull(entity.getCreatedTime())) {
             record.put(CreatedTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getCreatedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getCreatedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getModifiedTime())) {
+        if (Objects.nonNull(entity.getModifiedTime())) {
             record.put(ModifiedTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getModifiedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getModifiedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getFinishedTime())) {
+        if (Objects.nonNull(entity.getFinishedTime())) {
             record.put(FinishTimeColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getFinishedTime().getTime()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getFinishedTime().getTime()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getDurationMs())) {
+        if (Objects.nonNull(entity.getDurationMs())) {
             record.put(DurationColumn,
-                    BaseValue.encode(new Int64Value(jobEntity.getDurationMs()), false, false));
+                    BaseValue.encode(new Int64Value(entity.getDurationMs()), false, false));
         }
-        if (Objects.nonNull(jobEntity.getStepSpec())) {
-            record.put(StepSpecColumn, jobEntity.getStepSpec());
+        if (Objects.nonNull(entity.getStepSpec())) {
+            record.put(StepSpecColumn, entity.getStepSpec());
         }
-        record.put(DevModeColumn, jobEntity.isDevMode() ? "1" : "0");
+        record.put(DevModeColumn, entity.isDevMode() ? "1" : "0");
         record.put(IsDeletedColumn, "0");
         record.put(ProjectIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getProjectId()), false, false));
-        record.put(ModelVersionIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getModelVersionId()), false, false));
-        record.put(ModelNameColumn, jobEntity.getModelName());
-        record.put(ModelVersionColumn, jobEntity.getModelVersionValue());
-        record.put(RuntimeVersionIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getRuntimeVersionId()), false, false));
-        record.put(RuntimeNameColumn, jobEntity.getRuntimeName());
-        record.put(RuntimeVersionColumn, jobEntity.getRuntimeVersionValue());
-        record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()));
+                BaseValue.encode(new Int64Value(entity.getProjectId()), false, false));
+
+        if (Objects.nonNull(entity.getModelVersionId())) {
+            record.put(ModelVersionIdColumn,
+                    BaseValue.encode(new Int64Value(entity.getModelVersionId()), false, false));
+        }
+        if (Objects.nonNull(entity.getModelUri())) {
+            record.put(ModelUriColumn, entity.getModelUri());
+        }
+        if (Objects.nonNull(entity.getModelUriForView())) {
+            record.put(ModelUriViewColumn, entity.getModelUriForView());
+        }
+        if (Objects.nonNull(entity.getModelName())) {
+            record.put(ModelNameColumn, entity.getModelName());
+        }
+        if (Objects.nonNull(entity.getModelVersionValue())) {
+            record.put(ModelVersionColumn, entity.getModelVersionValue());
+        }
+
+        if (Objects.nonNull(entity.getRuntimeVersionId())) {
+            record.put(RuntimeVersionIdColumn,
+                    BaseValue.encode(new Int64Value(entity.getRuntimeVersionId()), false, false));
+        }
+        if (Objects.nonNull(entity.getRuntimeUri())) {
+            record.put(RuntimeUriColumn, entity.getRuntimeUri());
+        }
+        if (Objects.nonNull(entity.getRuntimeUriForView())) {
+            record.put(RuntimeUriViewColumn, entity.getRuntimeUriForView());
+        }
+        if (Objects.nonNull(entity.getRuntimeName())) {
+            record.put(RuntimeNameColumn, entity.getRuntimeName());
+        }
+        if (Objects.nonNull(entity.getRuntimeVersionValue())) {
+            record.put(RuntimeVersionColumn, entity.getRuntimeVersionValue());
+        }
+
+        if (Objects.nonNull(entity.getDatasetIdVersionMap())) {
+            record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(entity.getDatasetIdVersionMap()));
+        }
+        if (Objects.nonNull(entity.getDatasets()) && !entity.getDatasets().isEmpty()) {
+            record.put(DatasetUrisColumn, entity.getDatasets());
+        }
+        if (Objects.nonNull(entity.getDatasetsForView())) {
+            record.put(DatasetUrisViewColumn, entity.getDatasetsForView());
+        }
+
         record.put(OwnerIdColumn,
-                BaseValue.encode(new Int64Value(jobEntity.getOwnerId()), false, false));
-        record.put(OwnerNameColumn, String.valueOf(jobEntity.getOwnerName()));
-        record.put(JobStatusColumn, jobEntity.getJobStatus().name());
-        record.put(JobTypeColumn, jobEntity.getType().name());
-        record.put(ResultOutputPathColumn, jobEntity.getResultOutputPath());
-        record.put(ResourcePoolColumn, jobEntity.getResourcePool());
+                BaseValue.encode(new Int64Value(entity.getOwnerId()), false, false));
+        record.put(OwnerNameColumn, String.valueOf(entity.getOwnerName()));
+        record.put(JobStatusColumn, entity.getJobStatus().name());
+        record.put(JobTypeColumn, entity.getType().name());
+        record.put(ResultOutputPathColumn, entity.getResultOutputPath());
+        record.put(ResourcePoolColumn, entity.getResourcePool());
         return record;
     }
 
@@ -337,17 +378,17 @@ public class JobRepo {
         }
         this.updateByUuid(this.tableName(job.getProject().getId()),
                 job.getJobUuid(), List.of(
-                    ColumnRecord.builder()
-                        .property(FinishTimeColumn)
-                        .type(INT64)
-                        .value((String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false))
-                        .build(),
-                    ColumnRecord.builder()
-                        .property(DurationColumn)
-                        .type(INT64)
-                        .value((String) BaseValue.encode(new Int64Value(duration), false, false))
-                        .build()
-            ));
+                        ColumnRecord.builder()
+                                .property(FinishTimeColumn)
+                                .type(INT64)
+                                .value((String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false))
+                                .build(),
+                        ColumnRecord.builder()
+                                .property(DurationColumn)
+                                .type(INT64)
+                                .value((String) BaseValue.encode(new Int64Value(duration), false, false))
+                                .build()
+                ));
     }
 
     public int updateJobComment(Long jobId, String comment) {

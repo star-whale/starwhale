@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 import Card from '@/components/Card'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
+import { isSearchColumns, showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import Table from '@/components/Table'
 import { Panel, StatelessAccordion } from 'baseui/accordion'
@@ -133,11 +133,10 @@ function Summary({ fetch }: any) {
                                     if (a === 'id') return -1
                                     return a > b ? 1 : -1
                                 })
-                                .filter((label) => typeof record[label] !== 'object')
+                                .filter((label) => isSearchColumns(label) && typeof record[label] !== 'object')
                                 .map((label) => {
                                     let value: React.ReactNode = record[label]
                                     if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
-
                                     return (
                                         <React.Fragment key={label}>
                                             <div

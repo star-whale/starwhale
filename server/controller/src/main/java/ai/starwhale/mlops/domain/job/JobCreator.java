@@ -29,6 +29,7 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.project.ProjectDao;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.bo.Runtime;
@@ -57,12 +58,13 @@ import org.springframework.util.StringUtils;
 @Component
 @Slf4j
 public class JobCreator {
-
+    static final String FORMATTER_URI_ARTIFACT = "project/%s/%s/%s/version/%s";
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
     private final JobLoader jobLoader;
     private final StoragePathCoordinator storagePathCoordinator;
     private final JobDao jobDao;
+    private final ProjectDao projectDao;
     private final ModelService modelService;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
@@ -75,7 +77,7 @@ public class JobCreator {
             JobBoConverter jobBoConverter,
             JobSpliterator jobSpliterator, JobLoader jobLoader,
             StoragePathCoordinator storagePathCoordinator,
-            JobDao jobDao, ModelService modelService,
+            JobDao jobDao, ProjectDao projectDao, ModelService modelService,
             DatasetDao datasetDao, RuntimeDao runtimeDao, JobUpdateHelper jobUpdateHelper,
             SystemSettingService systemSettingService, JobSpecParser jobSpecParser
     ) {
@@ -84,6 +86,7 @@ public class JobCreator {
         this.jobLoader = jobLoader;
         this.storagePathCoordinator = storagePathCoordinator;
         this.jobDao = jobDao;
+        this.projectDao = projectDao;
         this.modelService = modelService;
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
@@ -113,32 +116,6 @@ public class JobCreator {
         String jobUuid = IdUtil.simpleUUID();
         var modelVersion = StringUtils.hasText(modelVersionUrl) ? modelService.findModelVersion(modelVersionUrl) : null;
         var model = null == modelVersion ? null : modelService.findModel(modelVersion.getModelId());
-
-        RuntimeVersion runtimeVersion;
-        if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
-        } else if (null != modelVersion) {
-            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
-            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
-            if (!StringUtils.hasText(runtimeVersionUrl)) {
-                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
-            }
-            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
-                    runtime.getId(),
-                    runtimeVersionUrl
-            ));
-        } else {
-            runtimeVersion = null;
-        }
-        var runtime = null == runtimeVersion ? null :
-                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
-
-        var datasetVersionIdMaps = StringUtils.hasText(datasetVersionUrls)
-                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetDao::getDatasetVersion)
-                .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName))
-                : new HashMap<Long, String>();
 
         if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
                 || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
@@ -180,20 +157,84 @@ public class JobCreator {
             }
         }
 
+        RuntimeVersion runtimeVersion;
+        if (StringUtils.hasText(runtimeVersionUrl)) {
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
+        } else if (null != modelVersion) {
+            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
+            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
+            if (!StringUtils.hasText(runtimeVersionUrl)) {
+                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
+            }
+            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
+            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
+                    runtime.getId(),
+                    runtimeVersionUrl
+            ));
+        } else {
+            runtimeVersion = null;
+        }
+        var runtime = null == runtimeVersion ? null :
+                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
+
+        List<DatasetVersion> datasets = StringUtils.hasText(datasetVersionUrls)
+                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
+                .map(datasetDao::getDatasetVersion)
+                .collect(Collectors.toList())
+                : List.of();
+        var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
+                : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .jobUuid(jobUuid)
                 .ownerId(creator.getId())
                 .name(steps.get(0).getJobName())
                 .ownerName(creator.getName())
+                .runtimeUri(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        runtime.getProjectId(),
+                        "runtime",
+                        runtime.getId(),
+                        runtimeVersion.getId()))
+                .runtimeUriForView(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        projectDao.findById(runtime.getProjectId()).getProjectName(),
+                        "runtime",
+                        runtime.getName(),
+                        runtimeVersion.getVersionName()))
+                .runtimeName(null == runtime ? null : runtime.getName())
                 .runtimeVersionId(null == runtimeVersion ? null : runtimeVersion.getId())
                 .runtimeVersionValue(null == runtimeVersion ? null : runtimeVersion.getVersionName())
-                .runtimeName(null == runtime ? null : runtime.getName())
                 .projectId(project.getId())
                 .project(project)
                 .modelVersionId(null == modelVersion ? null : modelVersion.getId())
                 .modelVersionValue(null == modelVersion ? null : modelVersion.getName())
+                .modelUri(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        model.getProjectId(),
+                        "model",
+                        model.getId(),
+                        modelVersion.getId()))
+                .modelUriForView(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
+                        projectDao.findById(model.getProjectId()).getProjectName(),
+                        "model",
+                        model.getName(),
+                        modelVersion.getName()))
                 .modelName(null == model ? null : model.getName())
                 .datasetIdVersionMap(datasetVersionIdMaps)
+                .datasets(datasets.isEmpty() ? List.of()
+                        : datasets.stream()
+                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                version.getProjectId(),
+                                "dataset",
+                                version.getDatasetId(),
+                                version.getId()))
+                        .collect(Collectors.toList()))
+                .datasetsForView(datasets.isEmpty() ? null
+                        : datasets.stream()
+                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                projectDao.findById(version.getProjectId()).getProjectName(),
+                                "dataset",
+                                version.getDatasetName(),
+                                version.getVersionName()))
+                        .collect(Collectors.joining(",")))
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
