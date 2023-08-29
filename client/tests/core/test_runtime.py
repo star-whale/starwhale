@@ -984,6 +984,26 @@ class StandaloneRuntimeTestCase(TestCase):
         assert "t1" not in tag_content["tags"]
         assert "t2" in tag_content["tags"]
 
+        # test builtin tags
+        for tag in ["latest", "v100"]:
+            with self.assertRaises(RuntimeError):
+                runtime_term_view(build_uri).tag([tag])
+
+        runtime_term_view(build_uri).tag(["v100"], ignore_errors=True)
+        tag_content = yaml.safe_load(tag_manifest_path.read_text())
+        assert "v100" not in tag_content["tags"]
+
+        for tag in ["latest", "v100"]:
+            with self.assertRaises(RuntimeError):
+                runtime_term_view(build_uri).tag([tag], remove=True)
+
+        # fake tag content with latest
+        tag_content["tags"] = {"latest": next(iter(tag_content["versions"]))}
+        tag_manifest_path.write_text(yaml.safe_dump(tag_content))
+        runtime_term_view(build_uri).tag(["latest"], remove=True, ignore_errors=True)
+        tag_content = yaml.safe_load(tag_manifest_path.read_text())
+        assert "latest" in tag_content["tags"]
+
         uri = f"{name}/version/{build_version}"
         for f in RuntimeInfoFilter:
             runtime_term_view(uri).info(output_filter=f)

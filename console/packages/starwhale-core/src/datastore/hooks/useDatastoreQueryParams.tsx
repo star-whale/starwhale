@@ -2,6 +2,7 @@ import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
 import { DatastorePageT } from '../types'
+import _ from 'lodash'
 
 export type TableQueryParamsT = {
     tableName?: string
@@ -110,6 +111,7 @@ function FilterToQuery(
             return item
         })
         .filter((item: any) => {
+            if (!_.isNumber(item.value) && _.isEmpty(item.value)) return false
             return item.value && item.op && item.property
         })
         .map((item: any) => {
@@ -156,20 +158,19 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
 }
 
 export function getScanQuery(tables: ScanTableRequest['tables'], options: DatastorePageT): ScanTableRequest {
-    const { pageNum = 1, pageSize = 10 } = options || {}
-    const { start, limit } = {
-        start: (pageNum - 1) * pageSize ?? 0,
+    const { pageSize = 10, lastKey } = options || {}
+    const { limit } = {
         limit: pageSize ?? 0,
     }
 
     const recordQuery = {
         ...(options?.query ?? {}),
         tables,
-        start,
         limit,
         rawResult: true,
         encodeWithType: true,
         ignoreNonExistingTable: true,
+        ...(lastKey ? { start: lastKey } : {}),
     }
 
     return recordQuery as any

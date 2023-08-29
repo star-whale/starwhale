@@ -157,6 +157,7 @@ export default function Preview({
             closeable
             animate
             autoFocus
+            returnFocus={false}
             overrides={{
                 Dialog: {
                     style: {

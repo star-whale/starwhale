@@ -12,7 +12,7 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
-import { Button } from '@starwhale/ui'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { MonoText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
@@ -60,53 +60,53 @@ export default function ModelListCard() {
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <div key='action' style={{ display: 'flex', gap: '5px' }}>
-                                <Button
-                                    kind='tertiary'
+                            <ButtonGroup key='action'>
+                                <ExtendButton
+                                    tooltip={t('Version History')}
+                                    icon='a-Versionhistory'
+                                    as='link'
                                     onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
-                                >
-                                    {t('Version History')}
-                                </Button>
+                                />
                                 <WithCurrentAuth id='model.run'>
-                                    <Button
-                                        kind='tertiary'
+                                    <ExtendButton
+                                        tooltip={t('model.run')}
+                                        icon='a-runmodel'
+                                        as='link'
                                         onClick={() =>
                                             history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)
                                         }
-                                    >
-                                        {t('model.run')}
-                                    </Button>
+                                    />
                                 </WithCurrentAuth>
                                 <WithCurrentAuth id='online-eval'>
                                     {(isPrivileged: boolean, isCommunity: boolean) => {
                                         if (!isPrivileged) return null
                                         if (!isCommunity)
                                             return (
-                                                <Button
-                                                    kind='tertiary'
+                                                <ExtendButton
+                                                    tooltip={t('online eval')}
+                                                    icon='a-onlineevaluation'
+                                                    as='link'
                                                     onClick={() =>
                                                         history.push(
                                                             `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
                                                         )
                                                     }
-                                                >
-                                                    {t('online eval')}
-                                                </Button>
+                                                />
                                             )
 
                                         return (
-                                            <Button
-                                                kind='tertiary'
+                                            <ExtendButton
+                                                tooltip={t('online eval')}
+                                                icon='a-onlineevaluation'
+                                                as='link'
                                                 onClick={() =>
                                                     history.push(`/projects/${projectId}/online_eval/${model.id}`)
                                                 }
-                                            >
-                                                {t('online eval')}
-                                            </Button>
+                                            />
                                         )
                                     }}
                                 </WithCurrentAuth>
-                            </div>,
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

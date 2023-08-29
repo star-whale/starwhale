@@ -205,7 +205,7 @@ class SwType(metaclass=ABCMeta):
             # }
             items = value.get("value", [])
             if len(items) == 0:
-                raise RuntimeError("no items in map")
+                return SwMapType(UNKNOWN, UNKNOWN)
             # TODO: support more than one item types
             k = items[0]["key"]
             v = items[0]["value"]

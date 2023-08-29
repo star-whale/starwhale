@@ -77,9 +77,18 @@ public class ResourceOverwriteSpec {
     }
 
     private Quantity convertToQuantity(String type, Float num) {
-        return new Quantity(
-            k8sResource(type) ? num.toString()
-                : normalizeNonK8sResources(num).toString());
+        String value;
+        if (type.equals(RESOURCE_CPU)) {
+            value = num.toString();
+        } else if (type.equals(RESOURCE_MEMORY)) {
+            // k8s client has a bug that it may overflow when parsing large float value
+            // https://github.com/kubernetes-client/java/blob/4821b168e3bb7c52feb1d06aa9b4ea485095f422/kubernetes/src/main/java/io/kubernetes/client/custom/QuantityFormatter.java#L77
+            var v = Math.ceil(num);
+            value = Long.toString((long) v);
+        } else {
+            value = normalizeNonK8sResources(num).toString();
+        }
+        return new Quantity(value);
     }
 
     boolean k8sResource(String resource) {

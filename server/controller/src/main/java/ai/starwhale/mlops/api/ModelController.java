@@ -285,10 +285,10 @@ public class ModelController implements ModelApi {
 
     @Override
     public void createModelVersion(
-            String project, String model, String version,
+            String project, String modelName, String version,
             CreateModelVersionRequest createModelVersionRequest
     ) {
-        this.modelService.createModelVersion(project, model, version, createModelVersionRequest);
+        this.modelService.createModelVersion(project, modelName, version, createModelVersionRequest);
     }
 
     @Override

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import typing as t
 
@@ -59,15 +61,12 @@ class JobTermView(BaseTermView):
     def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         return self._action_run_map[action](force)
 
-    @BaseTermView._header
     def info(
         self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
         web: bool = False,
     ) -> None:
-        _rt = self.job.info(page, size)
+        _rt = self.job.info()
         if not _rt:
             console.print(":tea: not found info")
             return
@@ -153,7 +152,7 @@ class JobTermView(BaseTermView):
             )
 
         console.rule(
-            f"[bold green]Project({self.uri.project} Job({self.job.name}) Tasks List"
+            f"[bold green]Project({self.uri.project}) Job({self.job.name}) Tasks List"
         )
         console.print(table)
 
@@ -230,13 +229,12 @@ class JobTermView(BaseTermView):
         cls,
         project_uri: str = "",
         fullname: bool = False,
-        show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
-        jobs, pager = Job.list(_uri, page, size)
+        jobs, pager = Job.list(_uri, page=page, size=size)
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
         return (jobs, pager)
 
@@ -248,13 +246,17 @@ class JobTermViewRich(JobTermView):
         cls,
         project_uri: str = "",
         fullname: bool = False,
-        show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        _jobs, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        _jobs, _pager = super().list(
+            project_uri=project_uri,
+            fullname=fullname,
+            page=page,
+            size=size,
+        )
         table = Table(title="Job List", box=box.SIMPLE, expand=True)
-        table.add_column("Name", justify="left", style="cyan", no_wrap=True)
+        table.add_column("ID", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", no_wrap=True)
         table.add_column("Datasets")
         table.add_column("Runtime")
@@ -263,7 +265,10 @@ class JobTermViewRich(JobTermView):
         table.add_column("Created At", style="magenta")
         table.add_column("Finished At", style="magenta")
 
-        def _s(x: str) -> str:
+        def _s(x: str | t.Dict) -> str:
+            if isinstance(x, dict):
+                x = f"{x['name']}:{x['version']['name']}"
+
             _end = -1 if fullname else SHORT_VERSION_CNT
             if ":" in x:
                 _n, _v = x.split(":")
@@ -272,28 +277,26 @@ class JobTermViewRich(JobTermView):
                 return x[:_end]
 
         for _job in _jobs:
-            if show_removed ^ _job.get("is_removed", False):
-                continue
-
             _m = _job["manifest"]
             _status, _style, _icon = cls.pretty_status(
                 _m.get("jobStatus") or _m.get("status")
             )
             _datasets = "--"
-            if _m.get("datasets"):
-                _datasets = "\n".join([_s(d) for d in _m["datasets"]])
+            _datasets_info = _m.get("datasetList") or _m.get("datasets")
+            if _datasets_info:
+                _datasets = "\n".join([_s(d) for d in _datasets_info])
 
             _model = "--"
-            if "model" in _m:
-                _model = _s(_m["model"])
-            elif "modelName" in _m:
+            if "modelName" in _m:
                 _model = f"{_m['modelName']}:{_s(_m['modelVersion'])}"
+            elif "model" in _m:
+                _model = _s(_m["model"])
 
             _name = "--"
             if "id" in _m:
                 _name = _m["id"]
             else:
-                _name = _m["version"] if show_removed else _s(_m["version"])
+                _name = _s(_m["version"])
 
             _runtime = "--"
             if "runtime" in _m:
@@ -301,7 +304,15 @@ class JobTermViewRich(JobTermView):
                     _runtime = _m["runtime"]
                 else:
                     _r = _m["runtime"]
-                    _runtime = f"[{_r['version']['id']}] {_r['name']}:{_r['version']['name'][:SHORT_VERSION_CNT]}"
+                    _runtime = (
+                        f"{_r['name']}:{_r['version']['name'][:SHORT_VERSION_CNT]}"
+                    )
+
+            _resource = "--"
+            if "resourcePool" in _m:
+                _resource = _m["resourcePool"]
+            elif "device" in _m:
+                _resource = f"{_m['device']}:{_m['deviceAmount']}"
 
             table.add_row(
                 _name,
@@ -309,12 +320,12 @@ class JobTermViewRich(JobTermView):
                 _datasets,
                 _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
-                f"{_m['device']}:{_m['deviceAmount']}" if "device" in _m else "--",
+                _resource,
                 _m[CREATED_AT_KEY],
                 _m["finished_at"],
             )
             # TODO: add duration
-        cls.print_header()
+        cls.print_header(project_uri)
         console.print(table)
         return _jobs, _pager
 
@@ -325,21 +336,20 @@ class JobTermViewJson(JobTermView):
         cls,
         project_uri: str = "",
         fullname: bool = False,
-        show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> None:
-        _data, _ = super().list(project_uri, fullname, show_removed, page, size)
+        _data, _ = super().list(
+            project_uri=project_uri, fullname=fullname, page=page, size=size
+        )
         cls.pretty_json(_data)
 
     def info(
         self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
         web: bool = False,
     ) -> None:
-        _rt = self.job.info(page, size)
+        _rt = self.job.info()
         self.pretty_json(_rt)
 
 

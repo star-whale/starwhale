@@ -24,6 +24,7 @@ function useDatastorePage({
     prefixFn = getTableShortNamePrefix,
 }: DatastorePagePropsT) {
     const [page, setPage] = React.useState<DatastorePageT>({} as any)
+    const [lastKeyMap, setLastKeyMap] = React.useState<Record<string, string>>({})
 
     // eslint-disable-next-line
     const initPage = useEventCallback(({ sortBy, sortDirection, queries, pageNum, pageSize }) => {
@@ -78,9 +79,10 @@ function useDatastorePage({
             return getScanQuery(normalizeTables, {
                 ...$page,
                 ...options,
+                lastKey: lastKeyMap?.[$page.pageNum],
             })
         },
-        [$page, prefixFn]
+        [$page, prefixFn, lastKeyMap]
     )
 
     const getQueryParams = React.useCallback(
@@ -98,8 +100,22 @@ function useDatastorePage({
     return {
         page: $page,
         setPage: React.useCallback(
-            (tmp: DatastorePageT) => {
-                setPage(tmp)
+            (tmp: DatastorePageT, lastKey?: string) => {
+                setPage({
+                    ...tmp,
+                })
+                setLastKeyMap((prev) => {
+                    if (!lastKey || !tmp?.pageNum) return prev
+                    // if set same page, ignore, prevent lastKey set when click prev page
+                    if (prev[tmp?.pageNum]) return prev
+
+                    return {
+                        ...prev,
+                        [tmp?.pageNum]: lastKey,
+                        // first page lastKey is empty
+                        1: '',
+                    }
+                })
             },
             [setPage]
         ),

@@ -1,6 +1,7 @@
 import React from 'react'
 import { ExposedLinkType, IExposedLinkSchema } from '@job/schemas/job'
 import IconFont, { IconTypesT } from '@starwhale/ui/IconFont'
+import Link from '@/components/Link/Link'
 
 export interface IExposedLinkProps {
     data: IExposedLinkSchema
@@ -17,9 +18,18 @@ function ExposedLink({ data: { type, name, link } }: IExposedLinkProps) {
     }
 
     return (
-        <a key={link} target='_blank' href={link} rel='noreferrer' title={title}>
+        <Link
+            rel='noreferrer'
+            content={title}
+            tooltip={{
+                content: title,
+            }}
+            target='_blank'
+            to={link}
+            style={{ color: 'rgb(43, 101, 217)' }}
+        >
             <IconFont type={font} size={16} />
-        </a>
+        </Link>
     )
 }
 

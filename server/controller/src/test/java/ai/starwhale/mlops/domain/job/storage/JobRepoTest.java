@@ -94,15 +94,18 @@ public class JobRepoTest {
                 .name("mnist:eval")
                 .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
-                .runtimeVersionId(1L)
+                .runtimeUriForView("p/p-1/runtime/rt/version/1a2s3d4f5g6h")
+                .runtimeVersionId(3L)
                 .runtimeVersionValue("1a2s3d4f5g6h")
                 .runtimeName("test-rt")
                 .projectId(1L)
                 .project(Project.builder().id(1L).name("test-project").build())
-                .modelVersionId(1L)
+                .modelUri("p/p-1/model/m/version/1z2x3c4v5b6n")
+                .modelVersionId(3L)
                 .modelVersionValue("1z2x3c4v5b6n")
                 .modelName("test-model")
                 .datasetIdVersionMap(Map.of(1L, "qwerty", 2L, "asdfgh"))
+                .datasets(List.of("p/p-1/dataset/ds/version/1q2w3e4r"))
                 .comment("")
                 .resultOutputPath("path/result/test")
                 .jobStatus(JobStatus.CREATED)
@@ -121,6 +124,7 @@ public class JobRepoTest {
                 jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
                 is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
+
     }
 
     @Test

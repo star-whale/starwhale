@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useStoreApi } from './useStore'
-import { ConfigT } from '@starwhale/ui/base/data-table/types'
+import { ConfigT } from '../../base/data-table/types'
 
 function useGridSave() {
     const store = useStoreApi().getState()

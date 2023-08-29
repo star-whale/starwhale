@@ -377,6 +377,10 @@ const job = {
         en: 'Ready',
         zh: '就绪',
     },
+    'job.status.preparing': {
+        en: 'Preparing',
+        zh: '准备中',
+    },
     'job.status.selector.placeholder': {
         en: 'Select Job Status',
         zh: '选择任务状态',

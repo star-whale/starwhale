@@ -29,7 +29,7 @@ const useStyles = createUseStyles({
             flex: 1,
             display: 'flex',
             overflow: 'hidden',
-            maxWidth: '314px',
+            maxWidth: '400px',
         },
         '& .transfer-list-content': {
             borderRadius: '4px',

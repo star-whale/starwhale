@@ -23,6 +23,7 @@ import java.util.List;
 public interface JobSchema {
     String STRING = "STRING";
     String LIST = "LIST";
+    String OBJECT = "OBJECT";
     String MAP = "MAP";
     String INT32 = "INT32";
     String INT64 = "INT64";
@@ -39,6 +40,12 @@ public interface JobSchema {
     String RuntimeNameColumn = "sys/runtime_name";
     String RuntimeVersionColumn = "sys/runtime_version";
     String DataSetIdVersionMapColumn = "sys/_dataset_id_version_map";
+    String DatasetUrisViewColumn = "sys/dataset_uris";
+    String DatasetUrisColumn = "sys/_dataset_uris";
+    String RuntimeUriViewColumn = "sys/runtime_uri";
+    String RuntimeUriColumn = "sys/_runtime_uri";
+    String ModelUriViewColumn = "sys/model_uri";
+    String ModelUriColumn = "sys/_model_uri";
     String OwnerIdColumn = "sys/owner_id";
     String OwnerNameColumn = "sys/owner_name";
     String FinishTimeColumn = "sys/finished_time";
@@ -69,6 +76,14 @@ public interface JobSchema {
                 .keyType(ColumnSchemaDesc.builder().type(INT64).build())
                 .valueType(ColumnSchemaDesc.builder().type(STRING).build())
                 .build(),
+            ColumnSchemaDesc.builder().name(ModelUriViewColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(ModelUriColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(RuntimeUriViewColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(RuntimeUriColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(DatasetUrisViewColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(DatasetUrisColumn).type(LIST).elementType(
+                    ColumnSchemaDesc.builder().type(STRING).build()
+            ).build(),
             ColumnSchemaDesc.builder().name(OwnerIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(OwnerNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(CreatedTimeColumn).type(INT64).build(),

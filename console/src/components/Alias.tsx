@@ -5,6 +5,7 @@ import { Input, useConfirmCtx } from '@starwhale/ui'
 import { mergeOverrides } from '@starwhale/ui/base/helpers/overrides'
 import { Delete, Plus } from 'baseui/icon'
 import useTranslation from '@/hooks/useTranslation'
+import { expandBorder, expandBorderRadius, expandPadding } from '@starwhale/ui/utils'
 
 export function Alias({ alias = '' }: { alias?: string }) {
     return (
@@ -19,7 +20,7 @@ export function Alias({ alias = '' }: { alias?: string }) {
                             borderRadius: '4px',
                             backgroundColor: '#F5F8FF',
                             border: '1px solid #CFD7E6 ',
-                            padding: '2px 8px',
+                            ...expandPadding('2px', '8px', '2px', '8px'),
                             color: '#02102B',
                             whiteSpace: 'nowrap',
                         }}
@@ -36,15 +37,14 @@ const tagOverrides = {
     Root: {
         style: {
             height: '20px',
-            borderRadius: '4px',
-            border: '1px #CFD7E6',
             backgroundColor: '#F5F8FF',
-            padding: '2px 8px',
+            ...expandPadding('2px', '8px', '2px', '8px'),
             color: '#02102B',
             fontWeight: 'inherit',
-            borderStyle: 'solid',
             marginLeft: '2px',
             marginRight: '2px',
+            ...expandBorder('1px', 'solid', '#CFD7E6'),
+            ...expandBorderRadius('4px'),
         },
     },
     Text: {
@@ -68,7 +68,10 @@ export function EditableAlias({ resource, onAddTag, onRemoveTag, readOnly }: IEd
     const newTagOverrides = mergeOverrides(tagOverrides, {
         Root: {
             style: {
-                borderStyle: 'dashed',
+                borderLeftStyle: 'dashed',
+                borderTopStyle: 'dashed',
+                borderBottomStyle: 'dashed',
+                borderRightStyle: 'dashed',
                 backgroundColor: 'inherit',
             },
         },

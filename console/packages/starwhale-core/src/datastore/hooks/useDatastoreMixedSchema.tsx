@@ -22,7 +22,7 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
 }
 
 export function useDatastoreMixedSchema(data?: RecordListVo) {
-    const { records, columnTypes, columnHints } = data ?? {}
+    const { records, columnTypes, columnHints, lastKey } = data ?? {}
 
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
@@ -73,6 +73,7 @@ export function useDatastoreMixedSchema(data?: RecordListVo) {
         records: $recordsWithSchema,
         columnTypes: $columnTypes,
         getSchema,
+        lastKey,
     }
 }
 

@@ -21,6 +21,7 @@ import EvalSelectList from '@/components/Editor/EvalSelectList'
 import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 import { WidgetFormModal, WidgetFormModel } from '@starwhale/core/form'
 import shallow from 'zustand/shallow'
+import _ from 'lodash'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -33,6 +34,7 @@ const useStyles = createUseStyles({
         '& .react-resizable-handle': {
             visibility: 'hidden',
             backgroundSize: '12px',
+            padding: '3px',
         },
         '&:hover > .react-resizable-handle': {
             visibility: 'visible',
@@ -50,6 +52,17 @@ const useStyles = createUseStyles({
     },
     chartGroup: {
         position: 'absolute',
+    },
+    contentTitle: {
+        position: 'absolute',
+        left: '20px',
+        top: '16px',
+        display: 'flex',
+        gap: '6px',
+        zIndex: 2,
+        fontWeight: '600',
+        fontSize: '14px',
+        color: ' rgba(2,16,43,0.60);',
     },
 })
 
@@ -86,6 +99,7 @@ const selector = (s: any) => ({
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
     panelGroup: s.panelGroup,
+    widgets: s.widgets,
 })
 
 // @ts-ignore
@@ -112,13 +126,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         evalSelectData,
         evalTableCurrentViewData,
         isEvaluationListShow,
-        title = t('panel.name'),
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
     const [isModelOpen, setIsModelOpen] = useState(false)
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
+
+    const title = optionConfig?.title || t('panel.name')
 
     const handleSectionForm = ({ name }: { name: string }) => {
         props.onOptionChange?.({
@@ -256,6 +271,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         return React.Children.map(children as any, (child: React.ReactElement) => {
             if (!child) return null
 
+            const chartTitle = _.get(api.widgets, [child.props.id, 'fieldConfig', 'data', 'chartTitle'], '')
+
             return (
                 <Resizable
                     width={rect.width}
@@ -307,6 +324,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 >
                     <div className={styles.panelWrapper} id={child.props.id}>
                         <div className={styles.contentWrapper}>{child}</div>
+                        <div className={styles.contentTitle}>{chartTitle}</div>
                         <ChartConfigGroup
                             onEdit={() => handleChartEdit(child.props.id)}
                             onDelete={() => handelChartDeletePanel(child.props?.id)}
@@ -319,14 +337,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
             )
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [children, rect, resizeRect, styles, boxHeight, boxWidth, padding])
+    }, [children, rect, resizeRect, styles, boxHeight, boxWidth, padding, api.widgets])
 
     const form = useRef(new WidgetFormModel())
     useEffect(() => {
         form.current.initPanelSchema({
             panelGroup: api.panelGroup,
         })
-    }, [t, api.panelGroup])
+    }, [t, api.panelGroup, editWidget.id])
 
     // console.log(evalSelectData)
     useLayoutEffect(() => {
@@ -349,6 +367,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     //     isEvaluationListShow,
     // })
 
+    const isChartAdd = isEvaluationList ? Object.keys(evalSelectData || {}).length > 0 : true
+
     return (
         <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
@@ -356,7 +376,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 title={title}
                 expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
-                onPanelChartAdd={handleSectionAddChart}
+                onPanelChartAdd={isChartAdd && handleSectionAddChart}
                 onSectionRename={handleSectionRename}
                 onSectionAddAbove={handleSectionAddAbove}
                 onSectionAddBelow={handleSectionAddBelow}
@@ -405,7 +425,14 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                     </div>
                 )}
             </SectionAccordionPanel>
-            <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
+            <Modal
+                isOpen={isModelOpen}
+                onClose={() => setIsModelOpen(false)}
+                closeable
+                animate
+                autoFocus
+                returnFocus={false}
+            >
                 <ModalHeader>{t('panel.name')}</ModalHeader>
                 <ModalBody>
                     <SectionForm onSubmit={handleSectionForm} formData={{ name: title }} />
@@ -416,7 +443,11 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 id={editWidget.id}
                 payload={editWidget}
                 isShow={isPanelModalOpen}
-                setIsShow={setIsPanelModalOpen}
+                setIsShow={(bool) => {
+                    setIsPanelModalOpen(bool)
+                    if (bool) return
+                    setEditWidget({})
+                }}
                 store={store}
                 onFormSubmit={(data: any) => {
                     if (editWidget?.type === 'add') {
@@ -425,6 +456,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                         handleChartEditSave(data)
                     }
                     setIsPanelModalOpen(false)
+                    setEditWidget({})
                 }}
             />
         </PanelContextProvider>

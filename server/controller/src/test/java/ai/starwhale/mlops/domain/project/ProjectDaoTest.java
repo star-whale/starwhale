@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
@@ -58,6 +59,7 @@ public class ProjectDaoTest {
         given(projectMapper.find(same(2L))).willReturn(project2);
         given(projectMapper.findByName(same("p1"))).willReturn(List.of(project1));
         given(projectMapper.findByName(same("p2"))).willReturn(List.of(project2));
+        given(projectMapper.findByName("p3")).willReturn(List.of(project1, project2));
         given(projectMapper.findByNameForUpdateAndOwner(same("p1"), any())).willReturn(project1);
         given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any())).willReturn(project2);
         given(projectMapper.findExistingByNameAndOwner(any(), any()))
@@ -106,6 +108,10 @@ public class ProjectDaoTest {
         assertThrows(SwNotFoundException.class,
                 () -> projectDao.getProject("not_exist"));
 
+        var exception = assertThrows(SwNotFoundException.class,
+                () -> projectDao.getProject("p3"));
+        assertTrue(exception.getMessage()
+                .contains("Unable to find project p3, you may use OWNER:PROJECT or project id to access the project"));
     }
 
     @Test

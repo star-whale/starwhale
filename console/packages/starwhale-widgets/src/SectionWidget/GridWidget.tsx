@@ -184,7 +184,14 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     ))}
                 </GridLayout>
             </SectionAccordionPanel>
-            <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
+            <Modal
+                isOpen={isModelOpen}
+                onClose={() => setIsModelOpen(false)}
+                closeable
+                animate
+                returnFocus={false}
+                autoFocus
+            >
                 <ModalHeader>Panel</ModalHeader>
                 <ModalBody>
                     <SectionForm onSubmit={handleSectionForm} formData={{ name: title }} />

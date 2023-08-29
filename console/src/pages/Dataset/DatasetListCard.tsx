@@ -7,7 +7,7 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
-import { Button, IconFont } from '@starwhale/ui'
+import { Button, ButtonGroup, ExtendButton, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
 import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
@@ -83,15 +83,17 @@ export default function DatasetListCard() {
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
-                                <div key='version-history' style={{ display: 'flex', gap: '5px' }}>
-                                    <Button
+                                <ButtonGroup key='action'>
+                                    <ExtendButton
+                                        tooltip={t('Version History')}
                                         as='link'
                                         icon='a-Versionhistory'
                                         onClick={() =>
                                             history.push(`/projects/${projectId}/datasets/${dataset.id}/versions`)
                                         }
                                     />
-                                    <Button
+                                    <ExtendButton
+                                        tooltip={t('Upload')}
                                         as='link'
                                         icon='upload'
                                         onClick={() =>
@@ -100,7 +102,7 @@ export default function DatasetListCard() {
                                             )
                                         }
                                     />
-                                </div>,
+                                </ButtonGroup>,
                             ]
                         }) ?? []
                     }

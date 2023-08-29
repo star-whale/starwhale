@@ -6,6 +6,34 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "37123168",
+      "name": "Disable",
+      "font_class": "Disable",
+      "unicode": "44",
+      "unicode_decimal": 68
+    },
+    {
+      "icon_id": "37122542",
+      "name": "pause",
+      "font_class": "pause",
+      "unicode": "70",
+      "unicode_decimal": 112
+    },
+    {
+      "icon_id": "37121764",
+      "name": "Enable",
+      "font_class": "Enable",
+      "unicode": "45",
+      "unicode_decimal": 69
+    },
+    {
+      "icon_id": "37121766",
+      "name": "Resume",
+      "font_class": "Resume",
+      "unicode": "52",
+      "unicode_decimal": 82
+    },
+    {
       "icon_id": "36867944",
       "name": "report",
       "font_class": "report",
@@ -396,13 +424,6 @@
       "font_class": "token",
       "unicode": "e64d",
       "unicode_decimal": 58957
-    },
-    {
-      "icon_id": "31315261",
-      "name": "pause",
-      "font_class": "pause",
-      "unicode": "e61e",
-      "unicode_decimal": 58910
     },
     {
       "icon_id": "31315264",

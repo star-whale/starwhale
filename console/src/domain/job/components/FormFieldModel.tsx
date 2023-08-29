@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { FormSelect, Toggle } from '@starwhale/ui/Select'
 import useTranslation from '@/hooks/useTranslation'
 import { FormInstance, FormItemProps } from '@/components/Form/form'
@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom'
 import { ICreateJobFormSchema } from '../schemas/job'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { EventEmitter } from 'ahooks/lib/useEventEmitter'
-import Editor from '@monaco-editor/react'
+import MonacoEditor from '@starwhale/ui/MonacoEditor'
 import { createUseStyles } from 'react-jss'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
@@ -28,7 +28,6 @@ function FormFieldModel({
     stepSource,
     setModelTree,
     fullStepSource,
-    forceUpdate,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
@@ -36,7 +35,6 @@ function FormFieldModel({
     stepSource?: StepSpec[]
     setModelTree: (obj: any) => void
     fullStepSource?: StepSpec[]
-    forceUpdate: () => void
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
@@ -69,20 +67,8 @@ function FormFieldModel({
         }
     })
 
-    const modelVersionHandler = form.getFieldValue('modelVersionHandler')
     const _modelVersionUrl = form.getFieldValue('modelVersionUrl')
     const rawType = form.getFieldValue('rawType')
-
-    useEffect(() => {
-        if (!fullStepSource) return
-
-        if (!modelVersionHandler) {
-            form.setFieldsValue({
-                modelVersionHandler: fullStepSource.find((v) => v)?.job_name ?? '',
-            })
-        }
-        forceUpdate()
-    }, [form, fullStepSource, modelVersionHandler, forceUpdate])
 
     return (
         <>
@@ -176,7 +162,7 @@ function FormFieldModel({
                     })}
                 <div style={{ display: rawType ? 'block' : 'none' }}>
                     <FormItem label='' required name='stepSpecOverWrites'>
-                        <Editor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
+                        <MonacoEditor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
                     </FormItem>
                 </div>
             </div>

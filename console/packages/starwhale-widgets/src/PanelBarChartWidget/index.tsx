@@ -13,9 +13,7 @@ export const CONFIG: WidgetConfig = {
     group: WidgetGroupType.PANEL,
     name: 'Bar Chart',
     fieldConfig: {
-        data: {
-            labels: ['sys/model_name'],
-        },
+        data: {},
         schema: {
             /**
              * framework define field
@@ -56,7 +54,7 @@ function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
     const { fieldConfig, data = {} } = props
     const { getTableRecordMap } = data
     const { data: formData } = fieldConfig ?? {}
-    const { chartTitle: title, labels: xattr = [], metrics: yattr = [] } = formData ?? {}
+    const { labels: xattr = [], metrics: yattr = [] } = formData ?? {}
     const m = getTableRecordMap()
     const barData: { x: any[]; y: any[]; type: string; name: string }[] = []
 
@@ -86,7 +84,7 @@ function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
             })
     })
 
-    const vizData = getBarChartConfig(title, undefined, barData as any)
+    const vizData = getBarChartConfig('', undefined, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>

@@ -81,7 +81,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }>((props: PropsT 
                 <div className={`${styles.transfer} inherit-height`}>{children}</div>
             ) : (
                 <Drawer
-                    size={`${314 * 2 + 52 + 20 * 2}px`}
+                    size={`${314 * 2 + 52 + 20 * 2 + 200}px`}
                     isOpen={isOpen}
                     autoFocus={false}
                     onClose={() => setIsOpen?.(false)}
@@ -94,7 +94,6 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }>((props: PropsT 
                                 zIndex: '102',
                                 margin: 0,
                                 position: 'absolute',
-                                // overflow: 'show',
                             },
                         },
                         DrawerContainer: {

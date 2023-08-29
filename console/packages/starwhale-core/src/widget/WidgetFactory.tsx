@@ -93,13 +93,14 @@ export { withDefaultWidgets, withReportWidgets }
 export default WidgetFactory
 
 // @ts-ignore
-// if (import.meta.hot) {
-//     // @ts-ignore
-//     import.meta.hot.accept(() => {
-//         // eslint-disable-next-line no-console
-//         console.log('hot reload widget modules')
-//         modules.forEach((w: WidgetPlugin<any>) => {
-//             WidgetFactory.register(w.getType(), w)
-//         })
-//     })
-// }
+if (import.meta.hot) {
+    // @ts-ignore
+    import.meta.hot.accept(() => {
+        // eslint-disable-next-line no-console
+        console.log('hot reload widget modules')
+        WIDGETS.forEach((w: WidgetPlugin<any>) => {
+            if (!w.getType()) return
+            WidgetFactory.register(w.getType(), w)
+        })
+    })
+}

@@ -57,7 +57,7 @@ export const CONFIG: WidgetConfig = {
 function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
     const { fieldConfig } = props
     const { data: formData } = fieldConfig ?? {}
-    const { chartTitle: title, labels: xattr = [], metrics: yattr = [] } = formData ?? {}
+    const { labels: xattr = [], metrics: yattr = [] } = formData ?? {}
     const { getTableRecordMap } = usePanelDatastore()
     const m = getTableRecordMap()
     const barData: { x: any[]; y: any[]; type: string; name: string; marker: any }[] = []
@@ -93,7 +93,7 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
         })
     })
 
-    const vizData = getBarChartConfig(title, undefined, barData as any)
+    const vizData = getBarChartConfig('', undefined, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>

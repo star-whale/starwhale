@@ -52,8 +52,6 @@ export type SectionEvalSelectDataPayload = Record<
         projectId: string
         records: any[]
         columnTypes: any[]
-        currentView: any
-        rowSelectedIds: string[]
         project: any
     }
 >

@@ -3,6 +3,7 @@ import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
 import { mergeOverrides } from '../utils'
 import { themedUseStyletron } from '../theme/styletron'
 import IconFont, { IconTypesT } from '../IconFont'
+import { Tooltip } from '../Tooltip'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'transparent' | 'negative'
@@ -15,7 +16,9 @@ export interface IButtonProps extends ButtonProps {
 export interface IExtendButtonProps extends IButtonProps {
     noPadding?: boolean
     negative?: boolean
+    tooltip?: string
     transparent?: boolean
+    iconDisable?: boolean
 }
 
 function Button(
@@ -39,7 +42,7 @@ function Button(
 
     if (icon && !props.startEnhancer) {
         // eslint-disable-next-line no-param-reassign
-        props.startEnhancer = () => <IconFont type={icon} size={13} />
+        props.startEnhancer = () => <IconFont type={icon} size={16} />
     }
 
     if (as === 'link') {
@@ -225,13 +228,39 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                 },
             },
         },
+        // btn & icon & disabled
+        iconDisable: {
+            BaseButton: {
+                style: {
+                    'color': 'rgba(2,16,43,0.40) !important',
+                    ':disabled': {
+                        backgroundColor: 'transparent',
+                    },
+                    ':hover': {
+                        color: 'rgba(2,16,43,0.40);',
+                        backgroundColor: 'transparent',
+                    },
+                },
+            },
+        },
     }
     const overrides = [
         props.noPadding ? STYLES.noPadding : {},
         props.transparent ? STYLES.transparent : {},
         props.negative ? STYLES.negative : {},
+        props.iconDisable ? STYLES.iconDisable : {},
         props.overrides ? props.overrides : {},
     ].reduce(mergeOverrides, {})
+
+    if (props.tooltip) {
+        return (
+            <Tooltip content={props.tooltip} showArrow placement='top'>
+                <div>
+                    <ForwardButton {...props} overrides={overrides} ref={ref} />
+                </div>
+            </Tooltip>
+        )
+    }
 
     return <ForwardButton {...props} overrides={overrides} ref={ref} />
 })
@@ -245,6 +274,8 @@ ExtendButton.defaultProps = {
     isFull: false,
     icon: undefined,
     className: undefined,
+    tooltip: '',
+    iconDisable: false,
 }
 
 export { ExtendButton }

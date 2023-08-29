@@ -12,6 +12,7 @@ export interface IBaseSubLayoutProps {
     navItems?: INavItem[]
     children: React.ReactNode
     sidebar?: React.ComponentType<IComposedSidebarProps>
+    contentStyle?: React.CSSProperties
 }
 
 export default function BaseSubLayout({
@@ -21,6 +22,7 @@ export default function BaseSubLayout({
     navItems,
     children,
     sidebar,
+    contentStyle,
 }: IBaseSubLayoutProps) {
     const { standaloneMode } = useAuth()
     return (
@@ -28,6 +30,7 @@ export default function BaseSubLayout({
             extra={extra}
             breadcrumbItems={breadcrumbItems}
             sidebar={standaloneMode ? undefined : sidebar ?? ProjectSidebar}
+            contentStyle={contentStyle}
         >
             {header}
             {navItems ? (

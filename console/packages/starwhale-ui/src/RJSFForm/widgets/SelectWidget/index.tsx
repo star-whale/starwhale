@@ -70,6 +70,7 @@ const SelectWidget = ({
             multi={multiple}
             closeOnSelect={!multiple}
             maxDropdownHeight='200px'
+            backspaceRemoves={false}
             overrides={{
                 ControlContainer: {
                     style: {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 import typing as t
@@ -19,7 +20,6 @@ from starwhale.utils import (
     gen_uniq_version,
 )
 from starwhale.consts import (
-    UserRoleType,
     CREATED_AT_KEY,
     SHORT_VERSION_CNT,
     STANDALONE_INSTANCE,
@@ -59,17 +59,21 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def print_header() -> None:
+    def print_header(project_uri: str = "") -> None:
         sw = SWCliConfigMixed()
         grid = Table.grid(expand=True)
         grid.add_column(justify="center", ratio=1)
-        grid.add_column(justify="right")
-        grid.add_row(
-            f":star: {sw.current_instance} ({sw._current_instance_obj['uri']}) :whale:",  # type: ignore
-            f":clown_face:{sw._current_instance_obj['user_name']}@{sw._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",
-            # type: ignore
-        )
-        p = Panel(grid, title="Starwhale Instance", title_align="left")
+
+        if project_uri:
+            title = "Starwhale Project"
+            project = Project(project_uri)
+            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({sw._config['instances'][project.instance.alias]['uri']})"
+        else:
+            title = "Starwhale Instance"
+            content = f"{sw.current_instance} ({sw._current_instance_obj['uri']})"
+
+        grid.add_row(f":star: {content} :whale:")  # type: ignore
+        p = Panel(grid, title=title, title_align="left")
         console.print(p)
 
     @staticmethod
@@ -334,6 +338,25 @@ class BaseTermView(SWCliConfigMixed):
 
 
 class TagViewMixin:
+    BUILTIN_TAG_RE = re.compile(r"^(latest|v\d+)$")
+
+    def _filter_builtin_tags(
+        self, tags: t.List[str], ignore_errors: bool
+    ) -> t.List[str]:
+        for _t in tags:
+            if not self.BUILTIN_TAG_RE.match(_t):
+                continue
+            if not ignore_errors:
+                raise RuntimeError(
+                    f"builtin tag {_t} is not allowed to be added or removed"
+                )
+            else:
+                console.print(
+                    f":see_no_evil: builtin tag {_t} is not allowed to be added or removed, ignore it"
+                )
+                tags.remove(_t)
+        return tags
+
     @BaseTermView._header
     def tag(
         self,
@@ -344,7 +367,6 @@ class TagViewMixin:
     ) -> None:
         uri = self.uri  # type: ignore
 
-        obj = None
         for attr in ("runtime", "model", "dataset"):
             obj = getattr(self, attr, None)
             if obj:
@@ -358,9 +380,11 @@ class TagViewMixin:
         if tags:
             if remove:
                 console.print(f":golfer: remove tags [red]{tags}[/] @ {uri}...")
+                tags = self._filter_builtin_tags(tags, ignore_errors)
                 obj.remove_tags(tags, ignore_errors)
             else:
                 console.print(f":surfer: add tags [red]{tags}[/] @ {uri}...")
+                tags = self._filter_builtin_tags(tags, ignore_errors)
                 obj.add_tags(tags, ignore_errors, force_add)
         else:
             console.print(f":compass: tags: {','.join(obj.list_tags())}")

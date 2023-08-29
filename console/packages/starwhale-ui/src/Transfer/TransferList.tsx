@@ -99,7 +99,15 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                             },
                         }}
                     >
-                        <LabelSmall $style={{ overflow: 'hidden', lineHeight: '1.2', textOverflow: 'ellipsis' }}>
+                        <LabelSmall
+                            dir='rtl'
+                            $style={{
+                                overflow: 'hidden',
+                                lineHeight: '1.2',
+                                // textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
                             {column.title}
                         </LabelSmall>
                     </Checkbox>
