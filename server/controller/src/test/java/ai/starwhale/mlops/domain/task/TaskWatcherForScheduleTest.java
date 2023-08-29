@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.task;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -32,9 +33,11 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.log.TaskLogSaver;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 /**
  * test for {@link TaskWatcherForSchedule}
@@ -99,16 +102,21 @@ public class TaskWatcherForScheduleTest {
                 .status(TaskStatus.FAIL)
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
                         .build()).build()).build())
-                .startTime(System.currentTimeMillis() - 1000 * 60L + 1000) // +1s prevent immediately deletion
                 .build();
-        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
-        task.updateStatus(TaskStatus.SUCCESS);
-        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
-        taskWatcherForSchedule.processTaskDeletion();
-        verify(swTaskScheduler, times(0)).stop(List.of(task));
-        Thread.sleep(2000);
-        taskWatcherForSchedule.processTaskDeletion();
-        verify(swTaskScheduler, times(1)).stop(List.of(task, task));
+        long current = System.currentTimeMillis() - 1000 * 60L + 1000; // +1s prevent immediately deletion
+
+        Instant instant = Instant.ofEpochMilli(current);
+        try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class)) {
+            mockedStatic.when(Instant::now).thenReturn(instant);
+            taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
+            task.updateStatus(TaskStatus.SUCCESS);
+            taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
+            taskWatcherForSchedule.processTaskDeletion();
+            verify(swTaskScheduler, times(0)).stop(List.of(task));
+            Thread.sleep(2000);
+            taskWatcherForSchedule.processTaskDeletion();
+            verify(swTaskScheduler, times(1)).stop(List.of(task, task));
+        }
     }
 
     @Test

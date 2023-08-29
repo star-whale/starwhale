@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.log.TaskLogSaver;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
@@ -93,7 +94,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     }
 
     private void addToDeleteQueue(Task task) {
-        var deleteTime = System.currentTimeMillis() + deletionDelayMilliseconds;
+        var deleteTime = Instant.now().toEpochMilli() + deletionDelayMilliseconds;
         taskToDeletes.put(new TaskToDelete(task, deleteTime));
         log.debug("add task {} to delete queue, delete time {}", task.getId(), deleteTime);
     }
