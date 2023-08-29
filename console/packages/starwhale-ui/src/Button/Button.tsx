@@ -211,18 +211,18 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         negative: {
             BaseButton: {
                 style: {
-                    'color': 'rgba(2,16,43,0.40)',
+                    'color': '#CC3D3D',
                     'backgroundColor': 'transparent',
                     ':hover': {
-                        color: ' #CC3D3D',
+                        color: '#D65E5E',
                         backgroundColor: 'transparent',
                     },
                     ':active': {
-                        color: ' #CC3D3D',
+                        color: ' #A32727',
                         backgroundColor: 'transparent',
                     },
                     ':focus': {
-                        color: ' #CC3D3D',
+                        color: ' #A32727',
                         backgroundColor: 'transparent',
                     },
                 },

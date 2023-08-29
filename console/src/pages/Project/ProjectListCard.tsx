@@ -364,7 +364,6 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                         <Tooltip content={t('delete sth', [t('Project')])} placement='top'>
                             <div className={styles.delete}>
                                 <Button
-                                    icon='delete'
                                     overrides={{
                                         BaseButton: {
                                             style: {
@@ -387,7 +386,9 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                         },
                                     }}
                                     onClick={() => setIsRemoveProjectOpen(true)}
-                                />
+                                >
+                                    <IconFont type='delete' size={10} />
+                                </Button>
                             </div>
                         </Tooltip>
                     </WithAuth>

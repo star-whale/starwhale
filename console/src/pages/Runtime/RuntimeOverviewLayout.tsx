@@ -16,6 +16,7 @@ import { toaster } from 'baseui/toast'
 import { Button } from '@starwhale/ui'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { MonoText } from '@/components/Text'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -108,17 +109,19 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
 
     const extra = useMemo(() => {
         return (
-            <ConfirmButton
-                as='negative'
-                title={t('runtime.remove.confirm')}
-                onClick={async () => {
-                    await removeRuntime(projectId, runtimeId)
-                    toaster.positive(t('runtime.remove.success'), { autoHideDuration: 1000 })
-                    history.push(`/projects/${projectId}/runtimes`)
-                }}
-            >
-                {t('runtime.remove.button')}
-            </ConfirmButton>
+            <WithCurrentAuth id='runtime.delete'>
+                <ConfirmButton
+                    as='negative'
+                    title={t('runtime.remove.confirm')}
+                    onClick={async () => {
+                        await removeRuntime(projectId, runtimeId)
+                        toaster.positive(t('runtime.remove.success'), { autoHideDuration: 1000 })
+                        history.push(`/projects/${projectId}/runtimes`)
+                    }}
+                >
+                    {t('runtime.remove.button')}
+                </ConfirmButton>
+            </WithCurrentAuth>
         )
     }, [projectId, runtimeId, history, t])
 
