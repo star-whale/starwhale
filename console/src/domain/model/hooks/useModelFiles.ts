@@ -7,14 +7,14 @@ type FileNodeWithPathT = FileNode & {
     path: string[]
 }
 
-export function useModelFiles(projectName?: string, modelName?: string, modelVersionId?: string, root = '') {
+export function useModelFiles(projectId?: string, modelId?: string, modelVersionId?: string, root = '') {
     const [loadedFiles, setLoadedFiles] = useState<Record<string, any>>({})
 
     const loadFiles = async (path: string) => {
-        if (!projectName || !modelName) return
+        if (!projectId || !modelId) return
 
         try {
-            const data = await listModelVersionFiles(projectName, modelName, {
+            const data = await listModelVersionFiles(projectId, modelId, {
                 version: modelVersionId,
                 path,
             })
@@ -44,25 +44,18 @@ export function useModelFiles(projectName?: string, modelName?: string, modelVer
 
     const loadFileData = async (source: FileNodeWithPathT, version = '') => {
         try {
-            const data = await fetchModelVersionFile(
-                projectName,
-                modelName,
-                version,
-                getToken(),
-                source.path?.join('/')
-            )
-            return data
+            return await fetchModelVersionFile(projectId, modelId, version, getToken(), source.path?.join('/'))
         } catch (e) {
             return ''
         }
     }
 
     useEffect(() => {
-        if (projectName && modelName && modelVersionId) {
+        if (projectId && modelId && modelVersionId) {
             loadFiles(root)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectName, modelName, modelVersionId, root])
+    }, [projectId, modelId, modelVersionId, root])
 
     return {
         loadedFiles,

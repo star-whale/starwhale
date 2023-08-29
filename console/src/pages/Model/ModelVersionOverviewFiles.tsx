@@ -74,7 +74,7 @@ export default function ModelVersionFiles() {
         modelVersionId: string
     }>()
 
-    const { loadedFiles, loadFileData, loadFiles } = useModelFiles(project?.name, modelVersion?.name, modelVersionId)
+    const { loadedFiles, loadFileData, loadFiles } = useModelFiles(project?.id, modelVersion?.id, modelVersionId)
     const compareVersionInfo = useFetchModelVersion(projectId, modelId, query.compare)
     const diffVersion = useFetchModelVersionDiff(projectId, modelId, modelVersionId, query.compare)
     const files = useMemo(() => {
