@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -126,6 +128,28 @@ public class TaskWatcherForScheduleTest {
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
         verify(swTaskScheduler, times(0)).schedule(List.of(task), taskReportReceiver);
+        verify(swTaskScheduler, times(0)).stop(List.of(task));
+    }
+
+    @Test
+    public void testFailBeforeStart() {
+        SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(swTaskScheduler,
+                taskStatusMachine, 10L, taskLogSaver, taskReportReceiver);
+        Task task = Task.builder()
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.FAIL)
+                .startTime(null)
+                .finishTime(null)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
+                .build();
+        assertFalse(taskWatcherForSchedule.hasTaskToDelete());
+        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
+        verify(swTaskScheduler, times(0)).schedule(List.of(task), taskReportReceiver);
+        // add to delay queue so the invoked times is 0
+        assertTrue(taskWatcherForSchedule.hasTaskToDelete());
         verify(swTaskScheduler, times(0)).stop(List.of(task));
     }
 
