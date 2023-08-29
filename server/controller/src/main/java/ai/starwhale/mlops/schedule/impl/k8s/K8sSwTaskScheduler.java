@@ -33,9 +33,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -131,7 +129,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
 
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-                containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(containerSpecification.getContainerEnvs()));
+                containerOverwriteSpec.setEnvs(mapToEnv(containerSpecification.getContainerEnvs()));
                 ContainerCommand containerCommand = containerSpecification.getCmd();
                 containerOverwriteSpec.setCmds(
                         containerCommand.getCmd() == null ? List.of() : Arrays.asList(containerCommand.getCmd()));
@@ -217,19 +215,6 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             runtimeResources = pool.patchResources(runtimeResources);
         }
         return runtimeResources;
-    }
-
-    @NotNull
-    private List<V1EnvVar> buildCoreContainerEnvs(Map<String, String> env) {
-        var envs = mapToEnv(env);
-        envs.add(
-                new V1EnvVar()
-                        .name("SW_POD_NAME")
-                        .valueFrom(
-                                new V1EnvVarSource().fieldRef(
-                                        new V1ObjectFieldSelector().fieldPath("metadata.name")))
-        );
-        return envs;
     }
 
     @NotNull

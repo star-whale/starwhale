@@ -150,6 +150,7 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
             coreContainerEnvs.put("SW_DEV_TOKEN", swJob.getDevPassword());
             coreContainerEnvs.put("SW_DEV_PORT", String.valueOf(devPort));
         }
+        coreContainerEnvs.put("SW_POD_NAME", task.getId().toString());
 
         return coreContainerEnvs;
     }
