@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 import typing as t
@@ -337,6 +338,25 @@ class BaseTermView(SWCliConfigMixed):
 
 
 class TagViewMixin:
+    BUILTIN_TAG_RE = re.compile(r"^(latest|v\d+)$")
+
+    def _filter_builtin_tags(
+        self, tags: t.List[str], ignore_errors: bool
+    ) -> t.List[str]:
+        for _t in tags:
+            if not self.BUILTIN_TAG_RE.match(_t):
+                continue
+            if not ignore_errors:
+                raise RuntimeError(
+                    f"builtin tag {_t} is not allowed to be added or removed"
+                )
+            else:
+                console.print(
+                    f":see_no_evil: builtin tag {_t} is not allowed to be added or removed, ignore it"
+                )
+                tags.remove(_t)
+        return tags
+
     @BaseTermView._header
     def tag(
         self,
@@ -347,7 +367,6 @@ class TagViewMixin:
     ) -> None:
         uri = self.uri  # type: ignore
 
-        obj = None
         for attr in ("runtime", "model", "dataset"):
             obj = getattr(self, attr, None)
             if obj:
@@ -361,9 +380,11 @@ class TagViewMixin:
         if tags:
             if remove:
                 console.print(f":golfer: remove tags [red]{tags}[/] @ {uri}...")
+                tags = self._filter_builtin_tags(tags, ignore_errors)
                 obj.remove_tags(tags, ignore_errors)
             else:
                 console.print(f":surfer: add tags [red]{tags}[/] @ {uri}...")
+                tags = self._filter_builtin_tags(tags, ignore_errors)
                 obj.add_tags(tags, ignore_errors, force_add)
         else:
             console.print(f":compass: tags: {','.join(obj.list_tags())}")
