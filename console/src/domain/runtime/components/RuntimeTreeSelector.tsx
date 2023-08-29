@@ -36,6 +36,18 @@ export function RuntimeTreeSelector(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [runtimeInfo?.data])
 
+    // check value if exists in runtimeInfo
+    useEffect(() => {
+        if (!runtimeInfo.isSuccess || !props.value) return
+        const r = runtimeInfo.data.find((runtime) => {
+            return runtime.versions?.find((item) => getId(item) === props.value)
+        })
+        if (!r) {
+            props?.onChange(undefined)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [runtimeInfo?.data, props.value])
+
     const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return []
 

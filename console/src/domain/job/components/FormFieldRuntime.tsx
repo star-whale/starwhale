@@ -29,8 +29,6 @@ function FormFieldRuntime({
         }
     })
 
-    // console.log(form.getFieldsValue())
-
     return (
         <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
             {!!builtInRuntime && (
@@ -51,7 +49,7 @@ function FormFieldRuntime({
                     />
                 </FormItem>
             )}
-            {type === RuntimeType.BUILTIN && (
+            {type === RuntimeType.BUILTIN && builtInRuntime && (
                 <>
                     <label
                         htmlFor='l-built-in'

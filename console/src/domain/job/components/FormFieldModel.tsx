@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { FormSelect, Toggle } from '@starwhale/ui/Select'
 import useTranslation from '@/hooks/useTranslation'
 import { FormInstance, FormItemProps } from '@/components/Form/form'
@@ -28,8 +28,6 @@ function FormFieldModel({
     stepSource,
     setModelTree,
     fullStepSource,
-    forceUpdate,
-    autoFill,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
@@ -37,8 +35,6 @@ function FormFieldModel({
     stepSource?: StepSpec[]
     setModelTree: (obj: any) => void
     fullStepSource?: StepSpec[]
-    forceUpdate: () => void
-    autoFill?: boolean
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
@@ -71,30 +67,8 @@ function FormFieldModel({
         }
     })
 
-    const modelVersionHandler = form.getFieldValue('modelVersionHandler')
     const _modelVersionUrl = form.getFieldValue('modelVersionUrl')
     const rawType = form.getFieldValue('rawType')
-
-    useEffect(() => {
-        if (!fullStepSource) return
-
-        if (!modelVersionHandler) {
-            form.setFieldsValue({
-                modelVersionHandler: fullStepSource.find((v) => v)?.job_name ?? '',
-            })
-        }
-
-        if (!autoFill) return
-
-        if (modelVersionHandler) {
-            form.setFieldsValue({
-                stepSpecOverWrites: yaml.dump(
-                    fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
-                ),
-            })
-        }
-        forceUpdate()
-    }, [form, autoFill, fullStepSource, modelVersionHandler, forceUpdate])
 
     return (
         <>

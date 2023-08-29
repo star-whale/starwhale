@@ -16,6 +16,8 @@ import FormFieldModel from './FormFieldModel'
 import FormFieldDataset from './FormFieldDataset'
 import FormFieldDevMode from './FormFieldDevMode'
 import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
+import { useMachine } from '@xstate/react'
+import { jobCreateMachine } from '../createJobMachine'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -36,6 +38,8 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     const [t] = useTranslation()
     const history = useHistory()
     const [form] = useForm()
+
+    const [, send, service] = useMachine(jobCreateMachine)
 
     const modelVersionHandler = form.getFieldValue('modelVersionHandler')
     const stepSpecOverWrites = form.getFieldValue('stepSpecOverWrites') as string
@@ -86,6 +90,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
+            send('USEREDITING')
             setLoading(true)
             const tmp = {
                 datasetVersionUrls: values_.datasetVersionUrls?.join(','),
@@ -108,7 +113,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                 setLoading(false)
             }
         },
-        [onSubmit, history, checkStepSource, resource]
+        [send, onSubmit, history, checkStepSource, resource]
     )
 
     const handleValuesChange = useCallback(
@@ -117,15 +122,27 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                 changes: _changes,
                 values: values_,
             })
+            if ('modelVersionUrl' in _changes) {
+                send('MODELCHANGED')
+            }
             setValues({
                 ...values_,
             })
         },
-        [eventEmitter]
+        [send, eventEmitter]
     )
 
     const sharedFormProps = { form, FormItem, eventEmitter, forceUpdate, autoFill }
-    const getModelProps = () => ({ setModelTree, fullStepSource, stepSource })
+    const getModelProps = () => ({
+        setModelTree: (v: any) => {
+            send('MODELTREEFETCHED', {
+                data: v,
+            })
+            setModelTree(v)
+        },
+        fullStepSource,
+        stepSource,
+    })
     const getResourcePoolProps = () => ({ resource, setResource })
     const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
 
@@ -134,53 +151,124 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     }, [stepSource])
 
     useEffect(() => {
-        // init by new model
-        if (modelVersion) {
-            const toUpdate: Partial<ICreateJobFormSchema> = {
-                runtimeType: modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
-            }
-            if (modelVersion?.builtInRuntime) {
-                toUpdate.runtimeVersionUrl = modelVersion?.builtInRuntime
-            }
-            form.setFieldsValue(toUpdate)
-        }
-        if (modelVersion) {
-            form.setFieldsValue({
-                modelVersionHandler: modelVersion.stepSpecs?.find((v) => v)?.job_name ?? '',
-            })
-        }
-        // init by online eval args, auto select the first version
-        if (modelTree && query.modelId) {
-            modelTree?.forEach((v) => {
-                if (v.modelId === query.modelId) {
-                    form.setFieldsValue({
-                        modelVersionUrl: v.versions?.[0]?.id,
-                    })
-                }
-            })
-        }
-        if (query.modelVersionHandler) {
-            form.setFieldsValue({
-                modelVersionHandler: query.modelVersionHandler,
-            })
-        }
-        forceUpdate()
-    }, [form, query, modelTree, modelVersion])
+        if (!job) return
+        send('APIRERUN', {
+            data: job,
+        })
+    }, [job, send])
 
     useEffect(() => {
-        // init by rerun job details
-        if (!job) return
-        form.setFieldsValue({
-            runtimeType: job.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
-            runtimeVersionUrl: job.runtime?.version?.id,
-            resourcePool: job.resourcePool,
-            datasetVersionUrls: job.datasetList?.map((v) => v.version?.id) as string[],
-            modelVersionUrl: job.model?.version?.id,
-            modelVersionHandler: job.jobName,
-            stepSpecOverWrites: job.stepSpec,
+        if (!query.modelId) return
+        send('QUERYMODELID', {
+            data: { modelId: query.modelId, modelVersionHandler: query.modelVersionHandler },
         })
-        forceUpdate()
-    }, [form, job])
+    }, [send, modelTree, query.modelId, query.modelVersionHandler])
+
+    useEffect(() => {
+        const subscription = service.subscribe((curr) => {
+            const ctx = curr.context
+            // console.log(curr.value, ctx)
+            // simple state logging
+            switch (curr.value) {
+                case 'rerunFilled': {
+                    const tmp = ctx.job
+                    if (!tmp) break
+                    // eslint-disable-next-line
+                    let modelVersion: IModelVersionSchema | undefined
+                    ctx.modelTree?.forEach((v) =>
+                        v.versions.forEach((versionTmp) => {
+                            if (versionTmp.id === tmp.model?.version?.id) {
+                                modelVersion = versionTmp
+                            }
+                        })
+                    )
+
+                    form.setFieldsValue({
+                        runtimeType: tmp.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+                        runtimeVersionUrl: tmp.runtime?.version?.id,
+                        resourcePool: tmp.resourcePool,
+                        datasetVersionUrls: tmp.datasetList?.map((v) => v.version?.id) as string[],
+                        modelVersionUrl: modelVersion ? tmp.model?.version?.id : undefined,
+                        modelVersionHandler: tmp.jobName,
+                        stepSpecOverWrites: tmp.stepSpec,
+                    })
+                    forceUpdate()
+                    send('USEREDITING')
+                    break
+                }
+                case 'editFilled':
+                case 'autoFilled': {
+                    // eslint-disable-next-line
+                    let modelVersion: IModelVersionSchema | undefined
+                    ctx.modelTree?.forEach((v) =>
+                        v.versions.forEach((versionTmp) => {
+                            if (versionTmp.id === form.getFieldValue('modelVersionUrl')) {
+                                modelVersion = versionTmp
+                            }
+                        })
+                    )
+                    if (!modelVersion) return
+
+                    const toUpdate: Partial<ICreateJobFormSchema> = {
+                        runtimeType: modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+                    }
+                    if (modelVersion?.builtInRuntime) {
+                        toUpdate.runtimeVersionUrl = modelVersion?.builtInRuntime
+                    } else {
+                        toUpdate.runtimeVersionUrl = ''
+                    }
+                    const handler = modelVersion.stepSpecs?.find((v) => v)?.job_name
+
+                    form.setFieldsValue({
+                        ...toUpdate,
+                        modelVersionHandler: handler,
+                        stepSpecOverWrites: yaml.dump(
+                            modelVersion.stepSpecs.filter((v: StepSpec) => v?.job_name === handler)
+                        ),
+                    })
+
+                    forceUpdate()
+                    if (curr.value === 'autoFilled') {
+                        send('USEREDITING')
+                    }
+                    break
+                }
+                case 'autoFilledByModelId': {
+                    if (!ctx.modelTree) return
+                    let tmp: IModelVersionSchema | undefined
+                    if (ctx.modelTree && ctx.modelId) {
+                        ctx.modelTree?.forEach((v) => {
+                            if (v.modelId === ctx.modelId) {
+                                tmp = v.versions?.[0]
+                            }
+                        })
+                    }
+                    const handler = ctx.modelVersionHandler || tmp?.stepSpecs?.find((v) => v)?.job_name
+                    if (tmp) {
+                        form.setFieldsValue({
+                            modelVersionUrl: tmp.id,
+                            modelVersionHandler: handler,
+                            stepSpecOverWrites: yaml.dump(
+                                tmp.stepSpecs.filter((v: StepSpec) => v?.job_name === handler)
+                            ),
+                        })
+                    }
+
+                    forceUpdate()
+                    send('USEREDITING')
+                    break
+                }
+                default:
+                    break
+            }
+        })
+
+        return () => {
+            send('RESET')
+            subscription.unsubscribe()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [service])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
