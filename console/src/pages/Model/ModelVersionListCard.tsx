@@ -16,7 +16,7 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
-import Button from '@starwhale/ui/Button'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
@@ -94,43 +94,61 @@ export default function ModelVersionListCard() {
                             <Shared key='shared' shared={model.shared} isTextShow />,
                             model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <>
+                            <ButtonGroup key='action'>
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
-                                &nbsp;&nbsp;
                                 <WithCurrentAuth id='online-eval'>
-                                    <Button
-                                        kind='tertiary'
-                                        onClick={() =>
-                                            history.push(`/projects/${projectId}/online_eval/${modelId}/${model.id}`)
-                                        }
-                                    >
-                                        {t('online eval')}
-                                    </Button>
+                                    {(isPrivileged: boolean, isCommunity: boolean) => {
+                                        if (!isPrivileged) return null
+                                        if (!isCommunity)
+                                            return (
+                                                <ExtendButton
+                                                    tooltip={t('online eval')}
+                                                    icon='a-onlineevaluation'
+                                                    as='link'
+                                                    onClick={() =>
+                                                        history.push(
+                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
+                                                        )
+                                                    }
+                                                />
+                                            )
+
+                                        return (
+                                            <ExtendButton
+                                                tooltip={t('online eval')}
+                                                icon='a-onlineevaluation'
+                                                as='link'
+                                                onClick={() =>
+                                                    history.push(`/projects/${projectId}/online_eval/${model.id}`)
+                                                }
+                                            />
+                                        )
+                                    }}
                                 </WithCurrentAuth>
-                                &nbsp;&nbsp;
                                 {i ? (
                                     <WithCurrentAuth id='model.version.revert'>
-                                        <Button kind='tertiary' key={model.id} onClick={() => handleAction(model.id)}>
-                                            {t('Revert')}
-                                        </Button>
+                                        <ExtendButton
+                                            tooltip={t('Revert')}
+                                            icon='revert'
+                                            as='link'
+                                            onClick={() => handleAction(model.id)}
+                                        />
                                     </WithCurrentAuth>
                                 ) : null}
-                                &nbsp;&nbsp;
                                 {hasCliMate && (
-                                    <Button
-                                        size='mini'
-                                        kind='tertiary'
+                                    <ExtendButton
+                                        tooltip={t('Pull resource to local with cli mate')}
+                                        icon='a-Pushlocal'
+                                        as='link'
                                         onClick={() => {
                                             const url = `projects/${projectId}/models/${modelId}/versions/${model.id}/`
                                             doPull({ resourceUri: url })
                                         }}
-                                    >
-                                        {t('Pull resource to local with cli mate')}
-                                    </Button>
+                                    />
                                 )}
-                            </>,
+                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }
