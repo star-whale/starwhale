@@ -298,7 +298,7 @@ class CloudJob(Job, CloudRequestMixed):
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["startedTime"])  # type: ignore
+            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["startedTime"]) if _t["startedTime"] else None  # type: ignore
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)
