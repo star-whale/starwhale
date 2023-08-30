@@ -255,7 +255,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
     if (props.tooltip) {
         return (
             <Tooltip content={props.tooltip} showArrow placement='top'>
-                <div>
+                <div style={{ lineHeight: 1 }}>
                     <ForwardButton {...props} overrides={overrides} ref={ref} />
                 </div>
             </Tooltip>
