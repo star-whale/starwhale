@@ -130,10 +130,7 @@ test.describe('Evaluation Results', () => {
         //     await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
         // })
         test('should show success task log', async () => {
-            await page
-                .getByText(/View Logs/)
-                .last()
-                .click()
+            await page.locator('.icon-a-Viewlog').last().click()
             await expect(page.locator('.tr--selected')).toBeDefined()
         })
         test('should log count be greater than 10', async () => {

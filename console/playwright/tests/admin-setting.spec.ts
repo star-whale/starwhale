@@ -81,10 +81,11 @@ test.describe('Admin Users', () => {
     })
 
     test('disable new user, user should login fail', async ({ request }) => {
-        const user = await page.$$(`tr:has-text("${CONST.newUserName}") button:has-text("Enable")`)
+        const user = await page.$$(`tr:has-text("${CONST.newUserName}")  .icon-Enable`)
         test.skip(user.length > 0, 'user disabled, skip')
 
-        page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Disable' }).click()
+        page.locator(`tr:has-text("${CONST.newUserName}") .icon-Disable`).click()
+
         await page.waitForSelector(SELECTOR.userDisableConfirm)
         await page.locator(SELECTOR.userDisableConfirm).click()
 
@@ -99,10 +100,10 @@ test.describe('Admin Users', () => {
     })
 
     test('enable new user, user should login success', async ({ request }) => {
-        const user = await page.$$(`tr:has-text("${CONST.newUserName}") button:has-text("Disable")`)
+        const user = await page.$$(`tr:has-text("${CONST.newUserName}") .icon-Disable`)
         test.skip(user.length > 0, 'user enabled, skip')
 
-        page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Enable' }).click()
+        page.locator(`tr:has-text("${CONST.newUserName}")  .icon-Enable`).click()
         await page.waitForSelector(SELECTOR.userDisableConfirm)
         await page.locator(SELECTOR.userDisableConfirm).click()
         page.waitForResponse((response) => response.status() === 200)
