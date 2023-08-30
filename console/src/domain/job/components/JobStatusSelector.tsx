@@ -38,14 +38,6 @@ export default function JobStatusSelector({
             marginRight: '4px',
         },
     })
-    // const JOB_STATUS_COLOR = {
-    //     [JobStatusType.CREATED]: '#EBF1FF',
-    //     [JobStatusType.PAUSED]: '#F3EDFF',
-    //     [JobStatusType.RUNNING]: '#FFF3E8',
-    //     [JobStatusType.CANCELED]: '#EBF1FF',
-    //     [JobStatusType.FAIL]: '#FFEDED',
-    //     [JobStatusType.SUCCESS]: '#E6FFF4',
-    // }
 
     const JOB_STATUS = {
         [JobStatusType.CREATED]: (
@@ -80,7 +72,25 @@ export default function JobStatusSelector({
         ),
     }
 
-    const defaultOverrides = {}
+    const defaultOverrides = {
+        Tag: {
+            props: {
+                overrides: {
+                    Root: {
+                        style: {
+                            cursor: 'pointer',
+                            color: 'rgba(2, 16, 43, 0.2)',
+                            backgroundColor: 'rgba(2, 16, 43, 0)',
+                            marginTop: '2px',
+                            marginBottom: '2px',
+                            marginRight: '2px',
+                            marginLeft: '2px',
+                        },
+                    },
+                },
+            },
+        },
+    }
 
     const [options, setOptions] = useState<{ id: string }[]>(
         Object.entries(JOB_STATUS).map(([id, label]) => ({ id, label }))

@@ -27,12 +27,12 @@ import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
 import shallow from 'zustand/shallow'
-import ModelSelector from '@/domain/model/components/ModelSelector'
 import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
+import ModelMultiSelector from '@/domain/model/components/ModelMultiSelector'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -126,7 +126,7 @@ export default function EvaluationListCard() {
                     ...column,
                     filterable: true,
                     renderFilter: function RenderFilter() {
-                        return <ModelSelector projectId={projectId} clearable getId={(v) => v.name} />
+                        return <ModelMultiSelector projectId={projectId} clearable getId={(v) => v.name} />
                     },
                 }
             }

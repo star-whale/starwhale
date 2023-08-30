@@ -77,19 +77,6 @@ const SelectWidget = ({
                         ...SELECT_STYLE,
                     },
                 },
-                Tag: {
-                    props: {
-                        overrides: {
-                            Root: {
-                                style: {
-                                    color: 'rgba(2, 16, 43)',
-                                    backgroundColor: 'rgb(238, 241, 246)',
-                                },
-                            },
-                            ActionIcon: () => <IconFont type='close' size={12} kind='gray' />,
-                        },
-                    },
-                },
             }}
             size={SIZE.compact}
             autoFocus={autofocus}

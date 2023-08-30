@@ -59,7 +59,10 @@ export default function WidgetFormModal({
             })
         }
 
-        if ((formData.tableName || []).join(',') !== (data.tableName || []).join(',')) {
+        const prev = _.isArray(formData.tableName) ? formData.tableName : [formData.tableName]
+        const next = _.isArray(data.tableName) ? data.tableName : [data.tableName]
+
+        if (prev.join(',') !== next.join(',')) {
             setOptionConfig({})
         }
     }

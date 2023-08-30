@@ -55,15 +55,11 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
                     overrides: {
                         Root: {
                             style: {
-                                cursor: 'pointer',
-                                color: 'rgba(2, 16, 43, 0.2)',
-                                backgroundColor: 'rgba(2, 16, 43, 0)',
-                                marginTop: '2px',
-                                marginBottom: '2px',
-                                marginRight: '2px',
-                                marginLeft: '2px',
+                                color: 'rgba(2, 16, 43)',
+                                backgroundColor: 'rgb(238, 241, 246)',
                             },
                         },
+                        ActionIcon: () => <IconFont type='clear2' size={12} style={{ color: 'rgba(2,16,43,0.20)' }} />,
                     },
                 },
             },
