@@ -1,7 +1,6 @@
 import React from 'react'
 import { WidgetProps } from '@rjsf/utils'
 import Select, { SIZE } from '../../../Select'
-import IconFont from '@starwhale/ui/IconFont'
 
 const SELECT_STYLE = {
     width: '100%',
