@@ -170,6 +170,7 @@ public class DataStoreController implements DataStoreApi {
             httpResponse.addHeader("Content-Disposition",
                     "attachment; filename=\"" + request.getTableName() + ".csv\"");
             httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
+            httpResponse.addHeader("Content-Type", "text/csv;charset=utf-8"); // the current impl is csv
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             outputStream.write(bytes);
             outputStream.flush();
@@ -191,6 +192,7 @@ public class DataStoreController implements DataStoreApi {
                             request.getTables().stream().map(TableDesc::getTableName).collect(
                                     Collectors.toList())) + ".csv\"");
             httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
+            httpResponse.addHeader("Content-Type", "text/csv;charset=utf-8"); // the current impl is csv
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             outputStream.write(bytes);
             outputStream.flush();
