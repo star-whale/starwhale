@@ -198,9 +198,13 @@ export function DataTable({
         if (index !== null && index !== undefined && index !== -1 && columns[index]) {
             const { sortFn } = columns[index]
             // @ts-ignore
-            const getValue = (row) => columns[index].mapDataToValue(row.data)
+            const getValue = (row) =>
+                columns[index].mapDataToValue(row.data).value || columns[index].mapDataToValue(row.data)
+
             if (sortDirection === SORT_DIRECTIONS.ASC) {
-                toSort.sort((a, b) => sortFn(getValue(a[0]), getValue(b[0])))
+                toSort.sort((a, b) => {
+                    return sortFn(getValue(a[0]), getValue(b[0]))
+                })
             } else if (sortDirection === SORT_DIRECTIONS.DESC) {
                 toSort.sort((a, b) => sortFn(getValue(b[0]), getValue(a[0])))
             }

@@ -213,6 +213,7 @@ function EvalSelectList({
                         compareable={false}
                         paginationable={false}
                         queryinline={false}
+                        sortable
                         columnleinline
                         // @ts-ignore
                         records={uniconRecords}

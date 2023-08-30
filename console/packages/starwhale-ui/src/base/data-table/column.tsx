@@ -9,6 +9,27 @@ import { themedUseStyletron } from '../../theme/styletron'
 const MIN_WIDTH = 100
 const MAX_WIDTH = 400
 
+const sortFn = function (a, b) {
+    console.log(a, b)
+    if (isNaN(a)) {
+        if (isNaN(b)) {
+            // a and b are strings
+            return a.localeCompare(b)
+        } else {
+            // a string and b number
+            return 1 // a > b
+        }
+    } else {
+        if (isNaN(b)) {
+            // a number and b string
+            return -1 // a < b
+        } else {
+            // a and b are numbers
+            return parseFloat(a) - parseFloat(b)
+        }
+    }
+}
+
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     const RenderCell = React.forwardRef<
         HTMLDivElement,
@@ -82,7 +103,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         renderCell: RenderCell,
         renderFilter: options.renderFilter || (() => null),
         sortable: Boolean(options.sortable) && Boolean(options.sortFn),
-        sortFn: options.sortFn || (() => 0),
+        sortFn: options.sortFn || sortFn,
         title: options.title,
         onAsyncChange: options?.onAsyncChange,
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),

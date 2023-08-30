@@ -63,7 +63,7 @@ const StoreUpdater = ({
     records,
     getId = globalGetId,
     queryable,
-    sortable,
+    sortable = true,
     onIncludedRowsChange,
     onRowHighlightChange,
     onRowSelectedChange,
