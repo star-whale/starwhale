@@ -29,11 +29,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
     private final long eventTtlSec;
     // map.of(nameOfRelatedResource, map.of(nameOfEvent, Event))
@@ -47,7 +49,7 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
      * We will hold the events may be deleted in the k8s api server
      */
     public ResourceEventHolder(
-            @Value("${sw.infra.k8s.event-holder-ttl-in-seconds}") long eventTtlSec
+            @Value("${sw.scheduler.k8s.event-holder-ttl-in-seconds}") long eventTtlSec
     ) {
         this.eventTtlSec = eventTtlSec;
         events = new ConcurrentHashMap<>();

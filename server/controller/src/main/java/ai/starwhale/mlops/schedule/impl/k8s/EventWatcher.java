@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class EventWatcher {
     final K8sClient k8sClient;
     final ResourceEventHandler<V1Job> eventHandlerJob;

@@ -29,12 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @Order(2)
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class UpdateK8sImage extends UpgradeStepBase {
 
     private final K8sClient k8sClient;

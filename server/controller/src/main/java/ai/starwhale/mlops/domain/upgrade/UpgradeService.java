@@ -42,7 +42,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class UpgradeService {
 
     public static final String LABEL_CONTROLLER = "starwhale.ai/role=controller";
@@ -72,7 +75,7 @@ public class UpgradeService {
             ControllerLock controllerLock,
             JobServiceForWeb jobServiceForWeb,
             DataStore dataStore,
-            K8sClient k8sClient,
+            @Qualifier("k8sClientForUpgrade") K8sClient k8sClient,
             UpgradeStepManager upgradeStepManager,
             RestTemplate restTemplate,
             @Value("${sw.version}") String starwhaleVersion,
