@@ -23,6 +23,8 @@ from starwhale.consts import (
     SWDSBackendType,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
+    ENV_SIGNED_URL_EXPIRE_TIME,
+    DEFAULT_SIGNED_URL_EXPIRE_TIME,
 )
 from starwhale.utils.fs import (
     ensure_dir,
@@ -529,19 +531,26 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         )
 
     def sign_uri(self, uri: str) -> str:
-        r = self.do_http_request(
-            f"/project/{self.dataset_uri.project.name}/{self.dataset_uri.typ.name}/{self.dataset_uri.name}/uri/sign-links",
-            method=HTTPMethod.POST,
-            instance=self.dataset_uri.instance,
-            params={
-                "expTimeMillis": int(
-                    os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
-                ),
-            },
-            json=[uri],
-            use_raise=True,
-        ).json()
-        return r["data"].get(uri, "")  # type: ignore
+        r = sign_dataset_uris(self.dataset_uri, [uri])
+        return r.get(uri, "")
+
+
+def sign_dataset_uris(dataset_uri: Resource, uris: t.List[str]) -> t.Dict[str, str]:
+    r = CloudRequestMixed.do_http_request(
+        f"/project/{dataset_uri.project.name}/{dataset_uri.typ.name}/{dataset_uri.name}/uri/sign-links",
+        method=HTTPMethod.POST,
+        instance=dataset_uri.instance,
+        params={
+            "expTimeMillis": int(
+                os.environ.get(
+                    ENV_SIGNED_URL_EXPIRE_TIME, DEFAULT_SIGNED_URL_EXPIRE_TIME
+                )
+            ),
+        },
+        json=uris,
+        use_raise=True,
+    ).json()
+    return r["data"]  # type: ignore
 
 
 class HttpBackend(StorageBackend, CloudRequestMixed):
