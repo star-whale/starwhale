@@ -48,8 +48,14 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
+                title: t('Overview'),
+                path: `/projects/${projectId}/jobs/${jobId}/overview`,
+                pattern: '/\\/overview\\/?',
+            },
+            {
                 title: t('Results'),
                 path: `/projects/${projectId}/jobs/${jobId}/results`,
+                pattern: '/\\/results\\/?',
             },
             {
                 title: t('Tasks'),

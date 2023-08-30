@@ -131,7 +131,7 @@ export default function JobListCard() {
                     </div>,
                     t('Resource Pool'),
                     t('sth name', [t('Model')]),
-                    t('Version'),
+                    t('Model Version'),
                     t('Owner'),
                     t('Created'),
                     t('Elapsed Time'),
