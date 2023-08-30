@@ -6,6 +6,7 @@ import typing as t
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
+from dataclasses import dataclass
 
 import numpy
 import torch
@@ -25,6 +26,16 @@ except ImportError:
 logging.getLogger("transformers.generation.utils").setLevel(logging.ERROR)
 
 
+@dataclass
+class LLMModelDesc:
+    params: str
+    intro: str
+    license: str = ""
+    author: str = ""
+    github: str = ""
+    type: str = "pretrained"
+
+
 class LLMBase(ABC):
     def __init__(self, rootdir: Path | None = None) -> None:
         self.rootdir = rootdir if rootdir is not None else Path.cwd()
@@ -32,6 +43,11 @@ class LLMBase(ABC):
     @classmethod
     @abstractmethod
     def get_name(cls) -> str:
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def get_description(cls) -> LLMModelDesc:
         raise NotImplementedError
 
     @abstractmethod
@@ -67,11 +83,62 @@ class LLMBase(ABC):
         input_prompt: str,
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-    ) -> str:
+        predict_choice_by_logits: bool = False,
+    ) -> t.Dict | str:
         raise NotImplementedError
 
     def calculate_tokens_length(self, input_prompt: str) -> int:
         return len(input_prompt)
+
+    def ensure_readme(self) -> None:
+        readme_path = self.rootdir / "README.md"
+        desc = self.get_description()
+        name = self.get_name()
+        content = f"""
+# {name} meets Starwhale 🐋
+
+## Model
+
+- 🍬 Parameters: {desc.params}
+- 🔆 Github: {desc.github}
+- 🥦 Author: {desc.author}
+- 📝 License: {desc.license}
+- 📚 Type: {desc.type}
+- 🐱 Starwhale Example: https://github.com/star-whale/starwhale/tree/main/example/llm-leaderboard
+- 🌽 Introduction: {desc.intro}
+
+## Commands
+
+### Build Starwhale Runtime
+
+```bash
+swcli runtime build --yaml runtime.yaml
+
+# Activate the runtime in the current shell
+swcli runtime activate llm-leaderboard
+```
+
+### Build Starwhale Model
+
+```bash
+python src/main.py -vvv build --model {name}
+```
+
+### Build CMMLU Starwhale Dataset
+
+```bash
+swcli dataset build -hf haonan-li/cmmlu --name cmmlu
+```
+
+### Run Starwhale Model in the Standalone Instance
+
+```bash
+swcli -vvvv model run --model {name} --dataset cmmlu --handler src.evaluation:evaluation_results --runtime llm-leaderboard
+```
+
+Enjoy! 🎉
+"""
+        ensure_file(readme_path, content)
 
 
 class HuggingfaceLLMBase(LLMBase):
@@ -173,25 +240,44 @@ class HuggingfaceLLMBase(LLMBase):
     def get_generate_kwargs(self) -> t.Dict[str, t.Any]:
         # TODO: support custom kwargs
         return dict(
+            do_sample=True,
             temperature=float(os.environ.get("TEMPERATURE", 0.7)),
             top_p=float(os.environ.get("TOP_P", 0.9)),
             top_k=int(os.environ.get("TOP_K", 30)),
             repetition_penalty=float(os.environ.get("REPETITION_PENALTY", 1.3)),
         )
 
+    def _simplify_content(self, content: str) -> str:
+        content = content.strip()
+
+        for token in ("###", "[UNK]", "</s>", "]", ")", "）", "】"):
+            if content.endswith(token):
+                content = content[: -len(token)].strip()
+
+        for prefix in (":", "：", "(", "（", "[", "【"):
+            if content.startswith(prefix):
+                content = content[len(prefix) :].strip()
+
+        return content
+
     def do_predict(
         self,
         input_prompt: str,
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-    ) -> str:
+        predict_choice_by_logits: bool = False,
+    ) -> t.Dict | str:
         # TODO: add self prompt wrapper
+        content = self._do_predict_with_generate(input_prompt, max_new_tokens)
+        ret = {"content": self._simplify_content(content)}
+        if predict_choice_by_logits:
+            if benchmark_type != BenchmarkType.MultipleChoice:
+                raise ValueError(
+                    "predict_choice_by_logits only support BenchmarkType.MultipleChoice"
+                )
+            ret["choice"] = self._do_predict_with_logits(input_prompt)
 
-        if benchmark_type == BenchmarkType.MultipleChoice:
-            out = self._do_predict_with_logits(input_prompt)
-        else:
-            out = self._do_predict_with_generate(input_prompt, max_new_tokens)
-        return out
+        return ret
 
     def _get_choices_info(self) -> t.Dict:
         if self._choices_info is not None:
@@ -246,7 +332,9 @@ class HuggingfaceLLMBase(LLMBase):
             max_new_tokens=max_new_tokens,
             **self.get_generate_kwargs(),
         )
-        return tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return tokenizer.decode(
+            outputs[0][len(inputs["input_ids"][0]) :], skip_special_tokens=True
+        )
 
 
 _SUPPORTED_LLM: t.Dict[str, t.Type[LLMBase]] = {}

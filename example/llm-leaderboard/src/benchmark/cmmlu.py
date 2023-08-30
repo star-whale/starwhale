@@ -123,16 +123,25 @@ class Cmmlu(BenchmarkBase):
 
         raise ValueError(f"cannot ingest ABCD choice from {content}")
 
-    def calculate_score(self, predict_result: str, input_features: t.Dict) -> t.Dict:
-        try:
-            choice = self._ingest_choice(predict_result)
-        except ValueError:
-            console.error(f"cannot ingest choice from {predict_result}")
-            choice = "N/A"
+    def calculate_score(
+        self, predict_result: t.Dict | str, input_features: t.Dict
+    ) -> t.Dict:
+        if isinstance(predict_result, str):
+            try:
+                choice = self._ingest_choice(predict_result)
+            except ValueError:
+                console.error(f"cannot ingest choice from {predict_result}")
+                choice = "N/A"
+            explanation = predict_result
+        elif isinstance(predict_result, dict):
+            explanation = predict_result["content"]
+            choice = predict_result["choice"]
+        else:
+            raise TypeError(f"invalid predict_result type: {type(predict_result)}")
 
         score = 1 if input_features["answer"].upper() == choice else 0
         return {
-            "predict": predict_result,
+            "explanation": explanation,
             "choice": choice,
             "score": score,
         }

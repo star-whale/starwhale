@@ -24,7 +24,14 @@ def create_llm_cli() -> click.core.Group:
     random.seed(time.time_ns())
 
     @cli.command("build", help="Build LLM as the Starwhale Model.")
-    @click.option("-m", "--model", required=True, help="supported llm name")
+    @click.option(
+        "models",
+        "-m",
+        "--model",
+        required=True,
+        multiple=True,
+        help="supported llm name",
+    )
     @click.option(
         "tags",
         "-t",
@@ -38,10 +45,22 @@ def create_llm_cli() -> click.core.Group:
         default=False,
         help="Skip downloading the model weights.",
     )
-    def _build(model: str, tags: t.List[str], skip_download: bool) -> None:
-        from .build import build_starwhale_model
+    @click.option(
+        "--push",
+        default="",
+        show_default=True,
+        help="Copy model into the remote instance.",
+    )
+    def _build(
+        models: t.List[str], tags: t.List[str], skip_download: bool, push: str
+    ) -> None:
+        from .build import build_starwhale_model, build_all_starwhale_models
 
-        build_starwhale_model(model, tags, skip_download)
+        if models == ["all"]:
+            build_all_starwhale_models(tags, skip_download, push)
+        else:
+            for model in models:
+                build_starwhale_model(model, tags, skip_download, push)
 
     @cli.command(
         "submit", help="Submit LLMs to the Starwhale Cloud for Model Evaluation."

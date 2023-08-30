@@ -8,7 +8,7 @@ from transformers import AutoModel
 
 from starwhale.utils.debug import console
 
-from .base import register, HuggingfaceLLMBase
+from .base import register, LLMModelDesc, HuggingfaceLLMBase
 
 
 class ChatGLMBase(HuggingfaceLLMBase):
@@ -55,6 +55,22 @@ class ChatGLM_6B(ChatGLMBase):
     def get_name(cls) -> str:
         return "chatglm-6b"
 
+    @classmethod
+    def get_description(cls) -> LLMModelDesc:
+        return LLMModelDesc(
+            params="6b",
+            intro=(
+                "ChatGLM-6B is an open bilingual language model based on General Language Model (GLM) framework, with 6.2 billion parameters."
+                "ChatGLM-6B uses technology similar to ChatGPT, optimized for Chinese QA and dialogue. "
+                "The model is trained for about 1T tokens of Chinese and English corpus, supplemented by supervised fine-tuning, feedback bootstrap, and reinforcement learning wit human feedback. "
+                "With only about 6.2 billion parameters, the model is able to generate answers that are in line with human preference."
+            ),
+            license="chatglm",
+            author="THUDM",
+            github="https://github.com/THUDM/ChatGLM-6B",
+            type="pretrained",
+        )
+
 
 @register()
 class ChatGLM2_6B(ChatGLMBase):
@@ -64,3 +80,18 @@ class ChatGLM2_6B(ChatGLMBase):
     @classmethod
     def get_name(cls) -> str:
         return "chatglm2-6b"
+
+    @classmethod
+    def get_description(cls) -> LLMModelDesc:
+        return LLMModelDesc(
+            params="6b",
+            intro=(
+                "ChatGLM2-6B is the second-generation version of the open-source bilingual (Chinese-English) chat model ChatGLM-6B. "
+                "It retains the smooth conversation flow and low deployment threshold of the first-generation model, while introducing the following new features:"
+                "Stronger Performance, Longer Context, More Efficient Inference."
+            ),
+            license="chatglm2",
+            author="THUDM",
+            github="https://github.com/THUDM/ChatGLM2-6B",
+            type="pretrained",
+        )

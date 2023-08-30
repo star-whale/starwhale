@@ -4,7 +4,7 @@ import typing as t
 
 import torch
 
-from .base import register, HuggingfaceLLMBase
+from .base import register, LLMModelDesc, HuggingfaceLLMBase
 
 
 class QwenBase(HuggingfaceLLMBase):
@@ -27,9 +27,19 @@ class Qwen7b(QwenBase):
     def get_name(cls) -> str:
         return "qwen-7b"
 
-    @property
-    def enable_load_generation_config(self) -> bool:
-        return True
+    @classmethod
+    def get_description(cls) -> LLMModelDesc:
+        return LLMModelDesc(
+            params="7b",
+            intro=(
+                "Qwen-7B is the 7B-parameter version of the large language model series, Qwen (abbr. Tongyi Qianwen), proposed by Alibaba Cloud."
+                "Qwen-7B is a Transformer-based large language model, which is pretrained on a large volume of data, including web texts, books, codes, etc."
+            ),
+            license="qwen",
+            author="Alibaba Cloud",
+            github="https://github.com/QwenLM/Qwen-7B",
+            type="pretrained",
+        )
 
 
 @register()
@@ -56,3 +66,17 @@ class Qwen7bChat(QwenBase):
             **self.get_generate_kwargs(),
         )
         return pred
+
+    @classmethod
+    def get_description(cls) -> LLMModelDesc:
+        return LLMModelDesc(
+            params="7b",
+            intro=(
+                "Qwen-7b-chat is based on the pretrained Qwen-7B with alignment techniques."
+                "Qwen-7b-chat is a large-model-based AI assistant."
+            ),
+            license="qwen",
+            author="Alibaba Cloud",
+            github="https://github.com/QwenLM/Qwen-7B",
+            type="fine-tuned",
+        )

@@ -33,7 +33,9 @@ class BenchmarkBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def calculate_score(self, predict_result: str, input_features: t.Dict) -> t.Dict:
+    def calculate_score(
+        self, predict_result: t.Dict | str, input_features: t.Dict
+    ) -> t.Dict:
         raise NotImplementedError
 
     @classmethod
