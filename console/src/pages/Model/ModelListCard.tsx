@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createModel } from '@model/services/model'
+import { createModel, removeModel } from '@model/services/model'
 import { usePage } from '@/hooks/usePage'
 import { ICreateModelSchema } from '@model/schemas/model'
 import ModelForm from '@model/components/ModelForm'
@@ -12,11 +12,13 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
-import { ButtonGroup, ExtendButton } from '@starwhale/ui'
+import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { MonoText } from '@starwhale/ui/Text'
+import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
+import { toaster } from 'baseui/toast'
+import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -43,7 +45,9 @@ export default function ModelListCard() {
                     t('sth name', [t('Model')]),
                     t('Model Version'),
                     t('Alias'),
+                    t('Size'),
                     t('Owner'),
+
                     t('Created'),
                     t('Action'),
                 ]}
@@ -56,8 +60,9 @@ export default function ModelListCard() {
                             >
                                 {model.name}
                             </TextLink>,
-                            <MonoText key='name'>{model.version?.name ?? '-'}</MonoText>,
+                            <VersionText key='name' version={model.version?.name ?? '-'} />,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
+                            model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             <ButtonGroup key='action'>
@@ -105,6 +110,20 @@ export default function ModelListCard() {
                                             />
                                         )
                                     }}
+                                </WithCurrentAuth>
+                                <WithCurrentAuth id='model.delete'>
+                                    <ConfirmButton
+                                        title={t('model.remove.confirm')}
+                                        tooltip={t('model.remove.button')}
+                                        as='link'
+                                        negative
+                                        icon='delete'
+                                        onClick={async () => {
+                                            await removeModel(projectId, model.id)
+                                            toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
+                                            history.push(`/projects/${projectId}/models`)
+                                        }}
+                                    />
                                 </WithCurrentAuth>
                             </ButtonGroup>,
                         ]

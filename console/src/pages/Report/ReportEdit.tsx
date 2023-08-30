@@ -86,10 +86,10 @@ export default function ReportEdit() {
                 extra={
                     <div className='flex gap-15px items-center '>
                         {statusT[status]}
-                        <Button onClick={() => setReadonly(!readonly)}>
+                        <Button size='compact' kind='secondary' onClick={() => setReadonly(!readonly)}>
                             {readonly ? t('report.mode.edit') : t('report.mode.preview')}
                         </Button>
-                        <Button onClick={handleSave} disabled={status !== SaveStatus.SAVED}>
+                        <Button size='compact' onClick={handleSave} disabled={status !== SaveStatus.SAVED}>
                             {t('report.publish')}
                         </Button>
                     </div>
@@ -237,6 +237,9 @@ function Breadcrumb({ extra }: any) {
                                         fontSize: '14px',
                                         display: 'flex',
                                         alignItems: 'center',
+                                        // fontWeight: 600,
+                                        // fontSize: '18px',
+                                        lineHeight: 1,
                                         gap: 6,
                                         cursor: idx !== breadcrumbItems.length - 1 ? 'pointer' : undefined,
                                     }}

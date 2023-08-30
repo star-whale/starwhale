@@ -7,17 +7,18 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
-import { Button, ButtonGroup, ExtendButton, IconFont } from '@starwhale/ui'
+import { Button, ButtonGroup, ConfirmButton, ExtendButton, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
-import { MonoText } from '@/components/Text'
 import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
 import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
-import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
+import { fetchDatasetBuildList, removeDataset } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
-import Text from '@starwhale/ui/Text'
+import Text, { VersionText } from '@starwhale/ui/Text'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { getAliasStr } from '@base/utils/alias'
+import { toaster } from 'baseui/toast'
+import yaml from 'js-yaml'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -66,12 +67,20 @@ export default function DatasetListCard() {
                         t('sth name', [t('Dataset')]),
                         t('Version'),
                         t('Alias'),
+                        t('dataset.file.count'),
                         t('Owner'),
                         t('Created'),
                         t('Action'),
                     ]}
                     data={
                         datasetsInfo.data?.list.map((dataset) => {
+                            let counts
+                            try {
+                                const meta = yaml.load(dataset.version?.meta || '') as any
+                                counts = meta?.dataset_summary?.rows
+                                // eslint-disable-next-line no-empty
+                            } catch (e) {}
+
                             return [
                                 <TextLink
                                     key={dataset.id}
@@ -79,8 +88,9 @@ export default function DatasetListCard() {
                                 >
                                     {dataset.name}
                                 </TextLink>,
-                                <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
+                                <VersionText key='name' version={dataset.version?.name ?? '-'} />,
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
+                                counts,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                                 <ButtonGroup key='action'>
@@ -92,16 +102,34 @@ export default function DatasetListCard() {
                                             history.push(`/projects/${projectId}/datasets/${dataset.id}/versions`)
                                         }
                                     />
-                                    <ExtendButton
-                                        tooltip={t('Upload')}
-                                        as='link'
-                                        icon='upload'
-                                        onClick={() =>
-                                            history.push(
-                                                `/projects/${projectId}/new_dataset/${dataset.id}?datasetName=${dataset.name}`
-                                            )
-                                        }
-                                    />
+                                    <WithCurrentAuth id='dataset.upload'>
+                                        <ExtendButton
+                                            tooltip={t('Upload')}
+                                            as='link'
+                                            icon='upload'
+                                            onClick={() =>
+                                                history.push(
+                                                    `/projects/${projectId}/new_dataset/${dataset.id}?datasetName=${dataset.name}`
+                                                )
+                                            }
+                                        />
+                                    </WithCurrentAuth>
+                                    <WithCurrentAuth id='dataset.delete'>
+                                        <ConfirmButton
+                                            title={t('dataset.remove.confirm')}
+                                            tooltip={t('dataset.remove.button')}
+                                            as='link'
+                                            negative
+                                            icon='delete'
+                                            onClick={async () => {
+                                                await removeDataset(projectId, dataset.id)
+                                                toaster.positive(t('dataset.remove.success'), {
+                                                    autoHideDuration: 1000,
+                                                })
+                                                history.push(`/projects/${projectId}/datasets`)
+                                            }}
+                                        />
+                                    </WithCurrentAuth>
                                 </ButtonGroup>,
                             ]
                         }) ?? []

@@ -9,7 +9,6 @@ export type JobCreateEvent =
     | { type: 'APIRERUN' }
     | { type: 'USEREDITING' }
     | { type: 'MODELTREEFETCHED' }
-    | { type: 'APIRERUN' }
     | { type: 'RESET' }
     | { type: 'MODELCHANGED' }
     | { type: 'QUERYMODELID' }

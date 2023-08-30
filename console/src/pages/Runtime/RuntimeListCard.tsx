@@ -8,13 +8,14 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
-import { ButtonGroup, ExtendButton } from '@starwhale/ui'
-import { MonoText } from '@starwhale/ui/Text'
+import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
+import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { getAliasStr } from '@base/utils/alias'
+import { removeRuntime } from '@/domain/runtime/services/runtime'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -47,7 +48,7 @@ export default function RuntimeListCard() {
                             >
                                 {runtime.name}
                             </TextLink>,
-                            <MonoText key='name'>{runtime.version?.name ?? '-'}</MonoText>,
+                            <VersionText key='name' version={runtime.version?.name ?? '-'} />,
                             runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
@@ -85,6 +86,20 @@ export default function RuntimeListCard() {
                                                     autoHideDuration: 2000,
                                                 })
                                             }
+                                        }}
+                                    />
+                                </WithCurrentAuth>
+                                <WithCurrentAuth id='runtime.delete'>
+                                    <ConfirmButton
+                                        tooltip={t('runtime.remove.button')}
+                                        title={t('runtime.remove.confirm')}
+                                        as='link'
+                                        negative
+                                        icon='delete'
+                                        onClick={async () => {
+                                            await removeRuntime(projectId, runtime.id)
+                                            toaster.positive(t('runtime.remove.success'), { autoHideDuration: 1000 })
+                                            history.push(`/projects/${projectId}/runtimes`)
                                         }}
                                     />
                                 </WithCurrentAuth>

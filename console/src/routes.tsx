@@ -57,6 +57,7 @@ import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
 import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
+import JobOverview from './pages/Job/JobOverview'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -163,6 +164,11 @@ const Routes = () => {
                             <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
                                 <JobOverviewLayout>
                                     <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/jobs/:jobId/overview'
+                                            component={JobOverview}
+                                        />
                                         <Route
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/tasks'

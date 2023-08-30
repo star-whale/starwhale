@@ -211,18 +211,18 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         negative: {
             BaseButton: {
                 style: {
-                    'color': 'rgba(2,16,43,0.40)',
+                    'color': '#CC3D3D',
                     'backgroundColor': 'transparent',
                     ':hover': {
-                        color: ' #CC3D3D',
+                        color: '#D65E5E',
                         backgroundColor: 'transparent',
                     },
                     ':active': {
-                        color: ' #CC3D3D',
+                        color: ' #A32727',
                         backgroundColor: 'transparent',
                     },
                     ':focus': {
-                        color: ' #CC3D3D',
+                        color: ' #A32727',
                         backgroundColor: 'transparent',
                     },
                 },
@@ -255,7 +255,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
     if (props.tooltip) {
         return (
             <Tooltip content={props.tooltip} showArrow placement='top'>
-                <div>
+                <div style={{ lineHeight: 1 }}>
                     <ForwardButton {...props} overrides={overrides} ref={ref} />
                 </div>
             </Tooltip>

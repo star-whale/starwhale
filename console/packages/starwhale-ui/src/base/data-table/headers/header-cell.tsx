@@ -16,10 +16,6 @@ import { themedUseStyletron } from '../../../theme/styletron'
 import { DataTableLocaleT } from '../locale'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
-import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
-import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
-import ConfigColumns from '@starwhale/ui/GridTable/components/ConfigColumns'
-import { useHover, useHoverDirty } from 'react-use'
 import shallow from 'zustand/shallow'
 
 type HeaderCellPropsT = {
@@ -56,6 +52,7 @@ const selector = (s: IGridState) => ({
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
     wrapperRef: s.wrapperRef,
     sortable: s.sortable,
+    rowSelectedIds: s.rowSelectedIds,
 })
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -64,7 +61,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
-    const { sortable } = useStore(selector, shallow)
+    const { sortable, rowSelectedIds } = useStore(selector, shallow)
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {
@@ -176,10 +173,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 })}
             >
                 {props.title}{' '}
-                {props.selectedRowIds &&
-                    props.selectedRowIds.size > 0 &&
-                    props.index === 0 &&
-                    `(${props.selectedRowIds.size})`}
+                {rowSelectedIds && rowSelectedIds.length > 0 && props.index === 0 && `(${rowSelectedIds.length})`}
             </span>
             {props.compareable && ((props.isHovered && props.index !== 0) || props.isFocus) && (
                 <Button

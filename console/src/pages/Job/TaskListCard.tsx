@@ -47,6 +47,14 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
         <Card>
             {header}
             <Table
+                overrides={{
+                    Table: {
+                        style: {
+                            borderSpacing: '0',
+                            borderCollapse: 'separate',
+                        },
+                    },
+                }}
                 isLoading={tasksInfo.isLoading}
                 columns={[
                     t('Task ID'),

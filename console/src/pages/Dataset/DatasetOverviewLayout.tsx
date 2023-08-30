@@ -21,6 +21,7 @@ import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -114,17 +115,19 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
 
     const extra = useMemo(() => {
         return (
-            <ConfirmButton
-                as='negative'
-                title={t('dataset.remove.confirm')}
-                onClick={async () => {
-                    await removeDataset(projectId, datasetId)
-                    toaster.positive(t('dataset.remove.success'), { autoHideDuration: 1000 })
-                    history.push(`/projects/${projectId}/datasets`)
-                }}
-            >
-                {t('dataset.remove.button')}
-            </ConfirmButton>
+            <WithCurrentAuth id='dataset.delete'>
+                <ConfirmButton
+                    as='negative'
+                    title={t('dataset.remove.confirm')}
+                    onClick={async () => {
+                        await removeDataset(projectId, datasetId)
+                        toaster.positive(t('dataset.remove.success'), { autoHideDuration: 1000 })
+                        history.push(`/projects/${projectId}/datasets`)
+                    }}
+                >
+                    {t('dataset.remove.button')}
+                </ConfirmButton>
+            </WithCurrentAuth>
         )
     }, [projectId, datasetId, history, t])
 

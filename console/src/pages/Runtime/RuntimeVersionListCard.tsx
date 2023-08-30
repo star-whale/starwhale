@@ -6,7 +6,7 @@ import User from '@/domain/user/components/User'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
-import Button from '@starwhale/ui/Button'
+import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import {
     addRuntimeVersionTag,
     buildImageForRuntimeVersion,
@@ -19,9 +19,9 @@ import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
-import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
 import { IRuntimeVersionSchema } from '@runtime/schemas/runtimeVersion'
+import { VersionText } from '@starwhale/ui/Text'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -65,7 +65,7 @@ export default function RuntimeVersionListCard() {
                             key={runtime.id}
                             to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
                         >
-                            <MonoText>{runtime.name}</MonoText>
+                            <VersionText key='modelVersion' version={runtime.name} />,
                         </TextLink>,
                         <EditableAlias
                             key='alias'
@@ -77,33 +77,31 @@ export default function RuntimeVersionListCard() {
                         <Shared key='shared' shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,
-                        <>
+                        <ButtonGroup key='action'>
                             <CopyToClipboard
                                 content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
                             />
-                            &nbsp;&nbsp;
                             {i ? (
                                 <WithCurrentAuth id='runtime.version.revert'>
-                                    <Button
-                                        size='mini'
-                                        kind='tertiary'
-                                        key={runtime.id}
+                                    <ExtendButton
+                                        tooltip={t('Revert')}
+                                        icon='revert'
+                                        as='link'
                                         onClick={() => handleRevert(runtime)}
-                                    >
-                                        {t('Revert')}
-                                    </Button>
+                                    />
                                 </WithCurrentAuth>
                             ) : null}
-                            &nbsp;&nbsp;
                             <WithCurrentAuth id='runtime.image.build'>
-                                <Button
-                                    size='mini'
-                                    kind='tertiary'
+                                <ExtendButton
                                     disabled={!!runtime.builtImage}
+                                    iconDisable={!!runtime.builtImage}
+                                    as='link'
+                                    icon={runtime.builtImage ? 'a-ImageBuilt' : 'a-BuildImage'}
+                                    tooltip={runtime.builtImage ? t('runtime.image.built') : t('runtime.image.build')}
                                     onClick={async () => {
                                         const result = await buildImageForRuntimeVersion(
                                             projectId,
-                                            runtime.runtimeId,
+                                            runtimeId,
                                             runtime.id
                                         )
                                         if (result.success) {
@@ -116,24 +114,20 @@ export default function RuntimeVersionListCard() {
                                             })
                                         }
                                     }}
-                                >
-                                    {runtime.builtImage ? t('runtime.image.built') : t('runtime.image.build')}
-                                </Button>
+                                />
                             </WithCurrentAuth>
-                            &nbsp;&nbsp;
                             {hasCliMate && (
-                                <Button
-                                    size='mini'
-                                    kind='tertiary'
+                                <ExtendButton
+                                    tooltip={t('Pull resource to local with cli mate')}
+                                    icon='a-Pushlocal'
+                                    as='link'
                                     onClick={() => {
                                         const url = `projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`
                                         doPull({ resourceUri: url })
                                     }}
-                                >
-                                    {t('Pull resource to local with cli mate')}
-                                </Button>
+                                />
                             )}
-                        </>,
+                        </ButtonGroup>,
                     ]
                 }) ?? []
             }

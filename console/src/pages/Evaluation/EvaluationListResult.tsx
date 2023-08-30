@@ -11,8 +11,9 @@ import { ITableProps } from '@starwhale/ui/GridTable/types'
 import { useEvaluationDetailStore } from '@starwhale/ui/GridTable/store'
 import useTranslation from '@/hooks/useTranslation'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
+import { useEventCallback } from '@starwhale/core/utils'
 
-function prefixColumn(row: any) {
+function getPrefixFromRecord(row: any) {
     return `${[row?.['sys/model_name']?.value, row?.['sys/id']?.value].filter((v) => v !== undefined).join('-')}@`
 }
 
@@ -32,7 +33,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
             rows?.map((row) => {
                 return {
                     tableName: tableNameOfResult(projectId, val(row.id)),
-                    columnPrefix: prefixColumn(row),
+                    columnPrefix: getPrefixFromRecord(row),
                 }
             }) ?? [],
         [rows, projectId]
@@ -40,16 +41,17 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
 
     const getId = useCallback(
         (row) => {
-            return rows?.map((v, i) => getPrefixId(row, prefixColumn(rows[i]))).filter((v) => !!v)[0]
+            return rows?.map((v, i) => getPrefixId(row, getPrefixFromRecord(rows[i]))).filter(Boolean)?.[0]
         },
         [rows]
     )
     const { page, setPage, getScanParams } = useDatastorePage({
         pageNum: 1,
-        pageSize: 20,
+        pageSize: 100,
     })
 
-    const { records, columnTypes, recordInfo } = useFetchDatastoreByTables(getScanParams(tables))
+    const { lastKey, records, columnTypes, recordInfo } = useFetchDatastoreByTables(getScanParams(tables))
+    const handlePageChange = useEventCallback((tmp: any) => setPage(tmp, lastKey))
 
     return (
         <Card
@@ -75,7 +77,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 previewable
                 paginationable
                 page={page}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
             />
         </Card>
     )
