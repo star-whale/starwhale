@@ -24,6 +24,7 @@ import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { Shared } from '@/components/Shared'
 import useCliMate from '@/hooks/useCliMate'
 import { EditableAlias } from '@/components/Alias'
+import yaml from 'js-yaml'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -74,9 +75,24 @@ export default function DatasetVersionListCard() {
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Alias'), t('Shared'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[
+                        t('sth name'),
+                        t('Alias'),
+                        t('Shared'),
+                        t('dataset.file.count'),
+                        t('Created'),
+                        t('Owner'),
+                        t('Action'),
+                    ]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
+                            let counts
+                            try {
+                                const meta = yaml.load(datasetVersion.meta || '') as any
+                                counts = meta?.dataset_summary?.rows
+                                // eslint-disable-next-line no-empty
+                            } catch (e) {}
+
                             return [
                                 <TextLink
                                     key={datasetId}
@@ -93,6 +109,7 @@ export default function DatasetVersionListCard() {
                                 />,
                                 <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
+                                counts,
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <ButtonGroup key='action'>
                                     <CopyToClipboard

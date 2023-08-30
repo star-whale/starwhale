@@ -18,6 +18,7 @@ import { MonoText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
+import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -44,7 +45,9 @@ export default function ModelListCard() {
                     t('sth name', [t('Model')]),
                     t('Model Version'),
                     t('Alias'),
+                    t('Size'),
                     t('Owner'),
+
                     t('Created'),
                     t('Action'),
                 ]}
@@ -59,6 +62,7 @@ export default function ModelListCard() {
                             </TextLink>,
                             <MonoText key='name'>{model.version?.name ?? '-'}</MonoText>,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
+                            model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             <ButtonGroup key='action'>

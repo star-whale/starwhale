@@ -19,6 +19,7 @@ import Text from '@starwhale/ui/Text'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
+import yaml from 'js-yaml'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -67,12 +68,20 @@ export default function DatasetListCard() {
                         t('sth name', [t('Dataset')]),
                         t('Version'),
                         t('Alias'),
+                        t('dataset.file.count'),
                         t('Owner'),
                         t('Created'),
                         t('Action'),
                     ]}
                     data={
                         datasetsInfo.data?.list.map((dataset) => {
+                            let counts
+                            try {
+                                const meta = yaml.load(dataset.version?.meta || '') as any
+                                counts = meta?.dataset_summary?.rows
+                                // eslint-disable-next-line no-empty
+                            } catch (e) {}
+
                             return [
                                 <TextLink
                                     key={dataset.id}
@@ -82,6 +91,7 @@ export default function DatasetListCard() {
                                 </TextLink>,
                                 <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
+                                counts,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                                 <ButtonGroup key='action'>

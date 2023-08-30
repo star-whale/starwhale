@@ -155,6 +155,10 @@ const dataset = {
         en: "Drag 'n' drop some files here, or click to select files",
         zh: '拖拽文件到此处，或点击选择文件',
     },
+    'dataset.file.count': {
+        en: 'Files count',
+        zh: '数量',
+    },
 }
 
 const runtime = {
