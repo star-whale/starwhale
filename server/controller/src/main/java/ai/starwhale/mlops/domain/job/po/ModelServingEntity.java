@@ -33,6 +33,7 @@ import lombok.experimental.SuperBuilder;
 public class ModelServingEntity extends BaseEntity {
     private Long id;
     private Long projectId;
+    private Long jobId;
     private Long modelVersionId;
     private Long ownerId;
     @Deprecated

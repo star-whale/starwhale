@@ -20,6 +20,7 @@ import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
@@ -29,10 +30,13 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -49,7 +53,7 @@ public class Job extends TimeConcern {
 
     Project project;
 
-    String stepSpec;
+    List<StepSpec> stepSpecs;
 
     Step currentStep;
 
@@ -99,6 +103,13 @@ public class Job extends TimeConcern {
     Date pinnedTime;
 
     String virtualJobName;
+
+    public Optional<StepSpec> specOfStep(String stepName) {
+        if (CollectionUtils.isEmpty(stepSpecs) || !StringUtils.hasText(stepName)) {
+            return Optional.empty();
+        }
+        return stepSpecs.stream().filter(stepSpec -> stepName.equals(stepSpec.getName())).findFirst();
+    }
 
     @Override
     public boolean equals(Object o) {

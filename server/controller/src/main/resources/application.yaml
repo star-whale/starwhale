@@ -52,6 +52,7 @@ sw:
     virtual-specs: ${SW_JOB_VIRTUAL_SPECS_PATH:}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
+    max-time-to-wait-in-seconds: ${SW_ONLINE_EVAL_MAX_WAIT_SECS:10} # 10s
     min-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MIN_TTL_SECS:1800} # 30min
   instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   infra:

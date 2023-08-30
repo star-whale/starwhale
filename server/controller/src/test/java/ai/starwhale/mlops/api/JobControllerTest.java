@@ -267,7 +267,7 @@ public class JobControllerTest {
     @Test
     public void testGetModelServingStatus() {
         var event = ResourceEventHolder.Event.builder().name("foo").build();
-        var vo = ModelServingStatusVo.builder().progress(100).events(List.of(event)).build();
+        var vo = ModelServingStatusVo.builder().progress(100).events("events").build();
         given(modelServingService.getStatus(2L)).willReturn(vo);
         var resp = controller.getModelServingStatus(1L, 2L);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

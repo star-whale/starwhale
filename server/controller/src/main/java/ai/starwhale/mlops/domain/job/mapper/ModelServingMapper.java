@@ -17,9 +17,11 @@
 package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.text.CaseUtils;
 import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
@@ -35,25 +37,35 @@ public interface ModelServingMapper {
     String[] COLUMNS = {
             "project_id",
             "model_version_id",
+            "job_id",
             "owner_id",
             "created_time",
             "finished_time",
-            "job_status",
             "runtime_version_id",
             "resource_pool",
             "last_visit_time",
             "spec",
     };
-    String TABLE = "model_serving_info";
+    String TABLE_WRITE = "model_serving_info";
+    String TABLE_SELECT = "model_serving_info t left outer join job_info as j on t.job_id=j.id";
+    String COLUMNS_SELECT = "t.*, j.job_status";
 
     @InsertProvider(value = SqlProviderAdapter.class, method = "insert")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(ModelServingEntity entity);
 
-    @Select("select * from " + TABLE + " where id=#{id}")
+    @Select("select " + COLUMNS_SELECT + " from " + TABLE_SELECT + " where t.id=#{id}")
     ModelServingEntity find(long id);
 
-    @Update("update " + TABLE + " set last_visit_time=#{date} where id=#{id}")
+    @Select("<script>"
+            + " select " + COLUMNS_SELECT + " from " + TABLE_SELECT + " where j.job_status in"
+            + " <foreach item='item' index='index' collection='status' open='(' separator=',' close=')'>"
+            + "   #{item}"
+            + " </foreach>"
+            + "</script>")
+    List<ModelServingEntity> findByStatusIn(JobStatus... status);
+
+    @Update("update " + TABLE_WRITE + " set last_visit_time=#{date} where id=#{id}")
     void updateLastVisitTime(long id, Date date);
 
     @SelectProvider(value = SqlProviderAdapter.class, method = "listByConditions")
@@ -71,7 +83,7 @@ public interface ModelServingMapper {
                     .toArray(String[]::new);
             return new SQL() {
                 {
-                    INSERT_INTO(TABLE);
+                    INSERT_INTO(TABLE_WRITE);
                     INTO_COLUMNS(COLUMNS);
                     INTO_VALUES(values);
                 }
@@ -86,20 +98,25 @@ public interface ModelServingMapper {
         ) {
             return new SQL() {
                 {
-                    SELECT("id");
-                    SELECT(COLUMNS);
-                    FROM(TABLE);
+                    SELECT("model_serving_info.id");
+                    SELECT(Arrays.stream(COLUMNS)
+                                   .map(s -> "model_serving_info." + s)
+                                   .collect(Collectors.toList())
+                                   .toArray(new String[]{}));
+                    SELECT("job_info.job_status");
+                    FROM(TABLE_WRITE);
+                    LEFT_OUTER_JOIN("job_info on job_id=job_info.id");
                     if (projectId != null) {
-                        WHERE("project_id=#{projectId}");
+                        WHERE("model_serving_info.project_id=#{projectId}");
                     }
                     if (modelVersionId != null) {
-                        WHERE("model_version_id=#{modelVersionId}");
+                        WHERE("model_serving_info.model_version_id=#{modelVersionId}");
                     }
                     if (runtimeVersionId != null) {
-                        WHERE("runtime_version_id=#{runtimeVersionId}");
+                        WHERE("model_serving_info.runtime_version_id=#{runtimeVersionId}");
                     }
                     if (resourcePool != null) {
-                        WHERE("resource_pool=#{resourcePool}");
+                        WHERE("model_serving_info.resource_pool=#{resourcePool}");
                     }
                 }
             }.toString();

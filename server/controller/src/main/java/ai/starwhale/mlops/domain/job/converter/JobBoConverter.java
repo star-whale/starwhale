@@ -95,7 +95,8 @@ public class JobBoConverter {
             JobSpecParser jobSpecParser,
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
-            TaskBoConverter taskBoConverter) {
+            TaskBoConverter taskBoConverter
+    ) {
         this.datasetDao = datasetDao;
         this.modelMapper = modelMapper;
         this.runtimeMapper = runtimeMapper;
@@ -115,26 +116,33 @@ public class JobBoConverter {
                 .collect(Collectors.toList());
         Model model = modelFromJob(jobEntity);
         JobRuntime jobRuntime = runtimeFromJob(jobEntity);
+        List<StepSpec> stepSpecs;
+        try {
+            stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(jobEntity.getStepSpec());
+        } catch (JsonProcessingException e) {
+            log.error("error while parsing job stepSpec, controller version not compile with database data??", e);
+            throw new SwValidationException(ValidSubject.JOB, e.getMessage());
+        }
         Job job = Job.builder()
                 .id(jobEntity.getId())
                 .uuid(jobEntity.getJobUuid())
                 .project(Project.builder()
-                        .id(jobEntity.getProjectId())
-                        .name(jobEntity.getProject().getProjectName())
-                        .build())
+                                 .id(jobEntity.getProjectId())
+                                 .name(jobEntity.getProject().getProjectName())
+                                 .build())
                 .jobRuntime(jobRuntime)
                 .status(jobEntity.getJobStatus())
                 .type(jobEntity.getType())
                 .model(model)
-                .stepSpec(jobEntity.getStepSpec())
+                .stepSpecs(stepSpecs)
                 .dataSets(dataSets)
                 .outputDir(jobEntity.getResultOutputPath())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()))
                 .owner(User.builder()
-                        .id(jobEntity.getOwner().getId())
-                        .name(jobEntity.getOwner().getUserName())
-                        .createdTime(jobEntity.getOwner().getCreatedTime())
-                        .build())
+                               .id(jobEntity.getOwner().getId())
+                               .name(jobEntity.getOwner().getUserName())
+                               .createdTime(jobEntity.getOwner().getCreatedTime())
+                               .build())
                 .createdTime(jobEntity.getCreatedTime())
                 .finishedTime(jobEntity.getFinishedTime())
                 .durationMs(jobEntity.getDurationMs())
@@ -221,7 +229,11 @@ public class JobBoConverter {
                     // backward compatibility
                     step.setResourcePool(job.getResourcePool());
                 }
-                step.setSpec(job.getModel().specOfStep(step.getName()).orElseThrow());
+                step.setSpec(job.specOfStep(step.getName())
+                                     .orElseThrow(() -> new SwValidationException(
+                                             ValidSubject.JOB,
+                                             "a step for job has no spec in job request!"
+                                     )));
                 return step;
             } catch (IOException e) {
                 log.error("can not convert step entity to step", e);

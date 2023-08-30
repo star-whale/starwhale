@@ -56,6 +56,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -171,7 +172,7 @@ public class K8sSwTaskSchedulerTest {
                         List.of(DataSet.builder()
                                 .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).projectId(103L).build()))
-                .stepSpec("")
+                .stepSpecs(new ArrayList<>())
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").id(100L).build())
                 .build();

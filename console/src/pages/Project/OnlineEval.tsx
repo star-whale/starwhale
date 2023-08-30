@@ -152,7 +152,7 @@ export default function OnlineEval() {
             fetch(
                 `${api}?${qs.stringify({
                     Authorization: getToken(),
-                    path: 'svc.json',
+                    path: 'src/.starwhale/svc.json',
                     version: versionName,
                     silent: true,
                 })}`

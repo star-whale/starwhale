@@ -16,20 +16,42 @@
 
 package ai.starwhale.mlops.schedule.impl.container.impl;
 
+import ai.starwhale.mlops.configuration.RunTimeProperties;
+import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
-
+@Component
 @Order(2)
 public class OnlineEvaluationTaskSpecificationFactory implements TaskContainerSpecificationFactory {
 
-    public static final String NAME = "online_evaluation";
+    public static final String NAME = "online_eval";
+
+    final TaskTokenValidator taskTokenValidator;
+
+    final String instanceUri;
+
+    final RunTimeProperties runTimeProperties;
+
+    public OnlineEvaluationTaskSpecificationFactory(
+            TaskTokenValidator taskTokenValidator,
+            @Value("${sw.instance-uri}") String instanceUri,
+            RunTimeProperties runTimeProperties
+    ) {
+        this.taskTokenValidator = taskTokenValidator;
+        this.instanceUri = instanceUri;
+        this.runTimeProperties = runTimeProperties;
+    }
 
     @Override
     public ContainerSpecification containerSpecificationOf(Task task) {
-        return new OnlineEvaluationContainerSpecification(task);
+        return new OnlineEvaluationContainerSpecification(task, taskTokenValidator, instanceUri,
+                                                          runTimeProperties
+        );
     }
 
     @Override

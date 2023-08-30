@@ -14,24 +14,5 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.job;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import lombok.Builder;
-import lombok.Data;
-import org.springframework.validation.annotation.Validated;
-
-@Data
-@Builder
-@Validated
-@Schema(description = "Model Serving Status object", title = "Model Serving Status")
-public class ModelServingStatusVo implements Serializable {
-    // 0-100, nullable
-    @JsonProperty("progress")
-    private Integer progress;
-
-    @JsonProperty("events")
-    private String events;
-}
+alter table model_serving_info add column job_id bigint;
+alter table model_serving_info drop column job_status;

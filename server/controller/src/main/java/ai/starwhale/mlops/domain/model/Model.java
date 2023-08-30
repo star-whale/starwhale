@@ -19,13 +19,10 @@ package ai.starwhale.mlops.domain.model;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import java.util.List;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * Starwhale Model Package
@@ -54,11 +51,5 @@ public class Model {
                 .build();
     }
 
-    public Optional<StepSpec> specOfStep(String stepName) {
-        if (CollectionUtils.isEmpty(stepSpecs) || !StringUtils.hasText(stepName)) {
-            return Optional.empty();
-        }
-        return stepSpecs.stream().filter(stepSpec -> stepName.equals(stepSpec.getName())).findFirst();
-    }
 
 }

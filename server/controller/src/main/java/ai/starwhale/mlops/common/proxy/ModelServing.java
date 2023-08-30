@@ -16,10 +16,18 @@
 
 package ai.starwhale.mlops.common.proxy;
 
-import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
+import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import java.util.Date;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * This class is used to proxy the model serving service.
@@ -27,14 +35,21 @@ import org.springframework.stereotype.Component;
  * The proxy will find the target host by the id.
  * The proxy will update the last visit time of the model serving entry which is used to do the garbage collection.
  */
+@Slf4j
 @Component
 public class ModelServing implements Service {
     private final ModelServingMapper modelServingMapper;
 
+    private final TaskMapper taskMapper;
+
+    private final StepMapper stepMapper;
+
     public static final String MODEL_SERVICE_PREFIX = "model-serving";
 
-    public ModelServing(ModelServingMapper modelServingMapper) {
+    public ModelServing(ModelServingMapper modelServingMapper, TaskMapper taskMapper, StepMapper stepMapper) {
         this.modelServingMapper = modelServingMapper;
+        this.taskMapper = taskMapper;
+        this.stepMapper = stepMapper;
     }
 
     @Override
@@ -48,16 +63,33 @@ public class ModelServing implements Service {
 
         var id = Long.parseLong(parts[0]);
 
-        if (modelServingMapper.find(id) == null) {
+        ModelServingEntity modelServingEntity = modelServingMapper.find(id);
+        if (modelServingEntity == null) {
             throw new IllegalArgumentException("can not find model serving entry " + parts[1]);
         }
         modelServingMapper.updateLastVisitTime(id, new Date());
+        List<StepEntity> steps = stepMapper.findByJobId(modelServingEntity.getJobId());
+        if (CollectionUtils.isEmpty(steps)) {
+            log.info("steps for job haven't been created yet {}", modelServingEntity.getJobId());
+            return null;
+        }
+        StepEntity stepEntity = steps.get(0);
+        List<TaskEntity> tasks = taskMapper.findByStepId(stepEntity.getId());
+        if (CollectionUtils.isEmpty(tasks)) {
+            log.info("tasks for job haven't been created yet {}", modelServingEntity.getJobId());
+            return null;
+        }
+        TaskEntity taskEntity = tasks.get(0);
+        String ip = taskEntity.getIp();
+        if (!StringUtils.hasText(ip)) {
+            log.info("tasks {} hasn't been assigned to a node yet", taskEntity.getId());
+            return null;
+        }
 
-        var svc = ModelServingService.getServiceName(id);
         var handler = "";
         if (parts.length == 2) {
             handler = parts[1];
         }
-        return String.format("http://%s/%s", svc, handler);
+        return String.format("http://%s:%d/%s", ip, 8080, handler);
     }
 }

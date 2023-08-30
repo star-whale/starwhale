@@ -33,8 +33,8 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import cn.hutool.json.JSONUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vavr.Tuple2;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -46,7 +46,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 /**
  * split job by swds index
@@ -65,10 +64,12 @@ public class JobSpliteratorImpl implements JobSpliterator {
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
 
-    public JobSpliteratorImpl(StoragePathCoordinator storagePathCoordinator,
-                              TaskMapper taskMapper,
-                              JobDao jobDao,
-                              StepMapper stepMapper, JobSpecParser jobSpecParser) {
+    public JobSpliteratorImpl(
+            StoragePathCoordinator storagePathCoordinator,
+            TaskMapper taskMapper,
+            JobDao jobDao,
+            StepMapper stepMapper, JobSpecParser jobSpecParser
+    ) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
         this.jobDao = jobDao;
@@ -87,19 +88,6 @@ public class JobSpliteratorImpl implements JobSpliterator {
         if (JobStatus.CREATED != job.getStatus()) {
             throw new SwValidationException(ValidSubject.JOB, "job has been split already!");
         }
-        List<StepSpec> stepSpecs;
-        try {
-            if (!StringUtils.hasText(job.getStepSpec())) {
-                log.error("job:{} don't have step specification", job.getId());
-                throw new SwValidationException(ValidSubject.JOB);
-            } else {
-                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(job.getStepSpec());
-            }
-        } catch (JsonProcessingException e) {
-            log.error("parsing step specification error", e);
-            throw new SwValidationException(ValidSubject.MODEL);
-        }
-
         var poolInfo = "";
         try {
             poolInfo = job.getResourcePool().toJson();
@@ -112,6 +100,14 @@ public class JobSpliteratorImpl implements JobSpliterator {
         Map<String, List<String>> allDependencies = new HashMap<>();
         Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();
 
+        List<StepSpec> stepSpecs = job.getStepSpecs();
+        if (CollectionUtils.isEmpty(stepSpecs)) {
+            log.error("job:{} don't have step specification", job.getId());
+            throw new SwValidationException(
+                    ValidSubject.JOB,
+                    MessageFormat.format("job:{0} don't have step specification", job.getId())
+            );
+        }
         for (StepSpec stepSpec : stepSpecs) {
             boolean firstStep = CollectionUtils.isEmpty(stepSpec.getNeeds());
 
@@ -143,30 +139,36 @@ public class JobSpliteratorImpl implements JobSpliterator {
             for (int i = 0; i < stepEntity.getTaskNum(); i++) {
                 final String taskUuid = UUID.randomUUID().toString();
                 taskEntities.add(TaskEntity.builder()
-                        .stepId(stepEntity.getId())
-                        .outputPath(
-                                storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
-                        .taskRequest(JSONUtil.toJsonStr(
-                                TaskRequest.builder()
-                                        .total(stepEntity.getTaskNum())
-                                        .index(i)
-                                        .env(nameMapping.get(stepEntity.getName())._2().getEnv())
-                                        .jobName(nameMapping.get(stepEntity.getName())._2().getJobName())
-                                        .runtimeResources(
-                                                nameMapping.get(stepEntity.getName())._2().getResources())
-                                        .build()))
-                        .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
-                        .taskUuid(taskUuid)
-                        .devWay(job.getDevWay())
-                        .devPassword(job.getDevPassword())
-                        .build());
+                                         .stepId(stepEntity.getId())
+                                         .outputPath(
+                                                 storagePathCoordinator.allocateTaskResultPath(job.getUuid(), taskUuid))
+                                         .taskRequest(JSONUtil.toJsonStr(
+                                                 TaskRequest.builder()
+                                                         .total(stepEntity.getTaskNum())
+                                                         .index(i)
+                                                         .env(nameMapping.get(stepEntity.getName())._2().getEnv())
+                                                         .jobName(nameMapping.get(stepEntity.getName())
+                                                                          ._2()
+                                                                          .getJobName())
+                                                         .runtimeResources(
+                                                                 nameMapping.get(stepEntity.getName())
+                                                                         ._2()
+                                                                         .getResources())
+                                                         .build()))
+                                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
+                                         .taskUuid(taskUuid)
+                                         .devWay(job.getDevWay())
+                                         .devPassword(job.getDevPassword())
+                                         .build());
             }
 
             // update step's lastStepId and save tasks
             stepMapper.updateLastStep(stepEntity.getId(), stepEntity.getLastStepId());
-            BatchOperateHelper.doBatch(taskEntities,
+            BatchOperateHelper.doBatch(
+                    taskEntities,
                     ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),
-                    MAX_MYSQL_INSERTION_SIZE);
+                    MAX_MYSQL_INSERTION_SIZE
+            );
         }
         // update job status
         job.setStatus(JobStatus.READY);
