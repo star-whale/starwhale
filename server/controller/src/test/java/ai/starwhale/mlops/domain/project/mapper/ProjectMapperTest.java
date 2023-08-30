@@ -141,6 +141,10 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project.getId())
                         .ownerId(user.getId()).build());
+        ModelEntity removed = ModelEntity.builder().modelName("swmp2").projectId(project.getId())
+                .ownerId(user.getId()).build();
+        modelMapper.insert(removed);
+        modelMapper.remove(removed.getId());
         modelMapper.insert(
                 ModelEntity.builder().modelName("swmp").projectId(project2.getId())
                         .ownerId(user.getId()).build());
@@ -164,6 +168,10 @@ public class ProjectMapperTest extends MySqlContainerHolder {
                 DatasetEntity.builder().datasetName("dsn3").projectId(project.getId()).ownerId(1L).build());
         datasetMapper.insert(
                 DatasetEntity.builder().datasetName("dsn3").projectId(project2.getId()).ownerId(1L).build());
+        DatasetEntity removedDs =
+                DatasetEntity.builder().datasetName("dsn4").projectId(project2.getId()).ownerId(1L).build();
+        datasetMapper.insert(removedDs);
+        datasetMapper.remove(removedDs.getId());
 
         List<ObjectCountEntity> counts = projectMapper.countModel(String.valueOf(project.getId()));
         Assertions.assertEquals(1, counts.size());
