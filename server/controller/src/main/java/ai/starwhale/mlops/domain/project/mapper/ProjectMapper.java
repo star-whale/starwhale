@@ -99,15 +99,15 @@ public interface ProjectMapper {
             @Param("ownerId") Long ownerId);
 
     @Select("select count(*) as count, project_id from model_info"
-            + " where project_id in (${projectIds}) group by project_id")
+            + " where project_id in (${projectIds}) and deleted_time = 0 group by project_id")
     List<ObjectCountEntity> countModel(@Param("projectIds") String projectIds);
 
     @Select("select count(*) as count, project_id from dataset_info"
-            + " where project_id in (${projectIds}) group by project_id")
+            + " where project_id in (${projectIds}) and deleted_time = 0 group by project_id")
     List<ObjectCountEntity> countDataset(@Param("projectIds") String projectIds);
 
     @Select("select count(*) as count, project_id from runtime_info"
-            + " where project_id in (${projectIds}) group by project_id")
+            + " where project_id in (${projectIds}) and deleted_time = 0 group by project_id")
     List<ObjectCountEntity> countRuntime(@Param("projectIds") String projectIds);
 
     @Select("select count(*) as count, project_id from job_info"
