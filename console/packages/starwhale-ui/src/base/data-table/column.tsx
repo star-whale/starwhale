@@ -10,7 +10,6 @@ const MIN_WIDTH = 100
 const MAX_WIDTH = 400
 
 const sortFn = function (a, b) {
-    console.log(a, b)
     if (isNaN(a)) {
         if (isNaN(b)) {
             // a and b are strings

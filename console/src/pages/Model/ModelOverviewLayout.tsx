@@ -19,7 +19,6 @@ import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVers
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 import ModelVersionSelector from '../../domain/model/components/ModelVersionSelector'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
-import { MonoText } from '@/components/Text'
 
 const useStyles = createUseStyles({
     tagWrapper: {
