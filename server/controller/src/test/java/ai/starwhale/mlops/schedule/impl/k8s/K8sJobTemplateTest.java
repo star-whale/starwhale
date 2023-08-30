@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 public class K8sJobTemplateTest {
 
-    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("", "", "/path");
+    K8sJobTemplate k8sJobTemplate = new K8sJobTemplate("",  "/path");
 
     public K8sJobTemplateTest() throws IOException {
     }
@@ -126,7 +126,7 @@ public class K8sJobTemplateTest {
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
 
         // empty host path
-        var template = new K8sJobTemplate("", "", "");
+        var template = new K8sJobTemplate("", "");
         job = k8sJobTemplate.loadJobTemplate();
         template.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
@@ -165,23 +165,4 @@ public class K8sJobTemplateTest {
             )));
     }
 
-    @Test
-    public void testRenderModelServingOrch() {
-        var name = "stateful-set-name";
-        var envs = Map.of("foo", "bar");
-        var rr = RuntimeResource.builder().type("CPU").request(7f).limit(8f).build();
-        var resourceOverwriteSpec = new ResourceOverwriteSpec(List.of(rr));
-        var ss = k8sJobTemplate.renderModelServingOrch(name, "img", envs, resourceOverwriteSpec, Map.of("foo", "bar"));
-        assertThat(ss.getMetadata().getName(), is(name));
-        assertThat(ss.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("foo", "bar")));
-        var mainContainer = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertThat(mainContainer.getImage(), is("img"));
-        assertThat(mainContainer.getEnv(), is(List.of(new V1EnvVar().name("foo").value("bar"))));
-        var containerResources = mainContainer.getResources();
-        assertThat(containerResources.getRequests(), is(Map.of("CPU", new Quantity("7.0"))));
-        assertThat(containerResources.getLimits(), is(Map.of("CPU", new Quantity("8.0"))));
-
-        // no exception is ok
-        k8sJobTemplate.renderModelServingOrch(name, "img", envs, null, null);
-    }
 }

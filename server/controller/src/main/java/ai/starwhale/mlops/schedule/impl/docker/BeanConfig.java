@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration("dockerSchedulerBeanConfiguration")
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "docker")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "docker")
 public class BeanConfig {
 
     @Bean

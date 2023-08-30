@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
 
 
 @Configuration
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "docker")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "docker")
 public class SwSchedulerFactoryDocker implements SwSchedulerAbstractFactory {
 
     final DockerClientFinder dockerClientFinder;
@@ -47,8 +47,8 @@ public class SwSchedulerFactoryDocker implements SwSchedulerAbstractFactory {
     public SwSchedulerFactoryDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
             DockerTaskReporter dockerTaskReporter,
             TaskContainerSpecificationFinder taskContainerSpecificationFinder,
-            @Value("${sw.infra.docker.network}") String network,
-            @Value("${sw.infra.docker.node-ip}") String nodeIp
+            @Value("${sw.scheduler.docker.network}") String network,
+            @Value("${sw.scheduler.docker.node-ip}") String nodeIp
     ) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;

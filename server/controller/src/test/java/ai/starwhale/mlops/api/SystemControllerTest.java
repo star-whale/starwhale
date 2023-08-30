@@ -23,15 +23,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.Code;
-import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
-import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.SystemService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -95,26 +92,6 @@ public class SystemControllerTest {
         ));
     }
 
-    @Test
-    public void testGetLatestVersion() {
-        given(systemService.getLatestVersion())
-                .willReturn(LatestVersionVo.builder().build());
-        var resp = controller.getLatestVersion();
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                isA(LatestVersionVo.class)
-        ));
-    }
-
-    @Test
-    public void testGetUpgradeProgress() {
-        var resp = controller.getUpgradeProgress();
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue()
-        ));
-    }
 
     @Test
     public void testUpdateSetting() {
@@ -126,17 +103,6 @@ public class SystemControllerTest {
     public void testQuerySetting() {
         when(systemSettingService.querySetting()).thenReturn("dss");
         Assertions.assertEquals(ResponseEntity.ok(Code.success.asResponse("dss")), controller.querySetting());
-    }
-
-    @Test
-    public void testUpgrade() {
-        when(systemService.upgrade(same("0.4.0"), same("server:0.4.0")))
-                .thenReturn("pid");
-        UpgradeRequest upgradeRequest = new UpgradeRequest();
-        upgradeRequest.setImage("server:0.4.0");
-        upgradeRequest.setVersion("0.4.0");
-        var resp = controller.upgradeVersion(upgradeRequest);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 
 }

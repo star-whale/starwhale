@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
 
     final K8sClient k8sClient;
@@ -47,8 +47,8 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
             K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
             TaskContainerSpecificationFinder taskContainerSpecificationFinder,
-            @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
-            @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
+            @Value("${sw.scheduler.k8s.job.restart-policy}") String restartPolicy,
+            @Value("${sw.scheduler.k8s.job.backoff-limit}") Integer backoffLimit,
             StorageAccessService storageAccessService,
             ThreadPoolTaskScheduler cmdExecThreadPool
     ) {

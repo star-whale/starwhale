@@ -25,12 +25,12 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration("k8sSchedulerBeanConfiguration")
-//TODO add this line when ds building/ model serving/ runtime building are decoupled from k8s
-//@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class BeanConfig {
 
     @Bean
@@ -39,7 +39,7 @@ public class BeanConfig {
             CoreV1Api coreV1Api,
             BatchV1Api batchV1Api,
             AppsV1Api appsV1Api,
-            @Value("${sw.infra.k8s.name-space}") String ns,
+            @Value("${sw.scheduler.k8s.name-space}") String ns,
             SharedInformerFactory informerFactory
     ) throws ApiException {
         return new K8sClient(

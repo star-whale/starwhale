@@ -19,13 +19,10 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.system.FeaturesVo;
-import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
-import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.SystemService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,36 +54,12 @@ public class SystemController implements SystemApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> upgradeVersion(UpgradeRequest upgradeRequest) {
-        systemService.upgrade(upgradeRequest.getVersion(), upgradeRequest.getImage());
-        return ResponseEntity.ok(Code.success.asResponse("Preparing for upgrade."));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<String>> cancelUpgrading() {
-        systemService.cancelUpgrading();
-        return ResponseEntity.ok(Code.success.asResponse("Upgrading has been cancelled."));
-    }
-
-    @Override
     public ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion() {
         SystemVersionVo version = SystemVersionVo.builder()
                 .version(systemService.controllerVersion())
                 .id("")
                 .build();
         return ResponseEntity.ok(Code.success.asResponse(version));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<LatestVersionVo>> getLatestVersion() {
-        LatestVersionVo version = systemService.getLatestVersion();
-        return ResponseEntity.ok(Code.success.asResponse(version));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<List<UpgradeLog>>> getUpgradeProgress() {
-        List<UpgradeLog> upgradeLog = systemService.getUpgradeLog();
-        return ResponseEntity.ok(Code.success.asResponse(upgradeLog));
     }
 
     @Override

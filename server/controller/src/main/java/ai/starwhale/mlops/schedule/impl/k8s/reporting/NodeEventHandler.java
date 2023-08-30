@@ -28,7 +28,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     final AgentCache agentCache;

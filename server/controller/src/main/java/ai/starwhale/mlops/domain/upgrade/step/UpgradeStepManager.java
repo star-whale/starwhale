@@ -20,12 +20,14 @@ import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class UpgradeStepManager {
 
     private final List<UpgradeStep> steps;

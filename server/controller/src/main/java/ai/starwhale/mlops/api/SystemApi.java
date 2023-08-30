@@ -18,11 +18,8 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.system.FeaturesVo;
-import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
-import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -59,24 +56,6 @@ public interface SystemApi {
             @Valid @RequestBody List<ResourcePool> resourcePools
     );
 
-    @Operation(summary = "Upgrade system version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-            value = "/system/version/upgrade",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
-    ResponseEntity<ResponseMessage<String>> upgradeVersion(
-            @Valid @RequestBody UpgradeRequest upgradeRequest
-    );
-
-    @Operation(summary = "Cancel upgrading")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/system/version/cancel",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
-    ResponseEntity<ResponseMessage<String>> cancelUpgrading();
-
     @Operation(summary = "Get current version of the system")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
@@ -84,25 +63,6 @@ public interface SystemApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion();
-
-    @Operation(summary = "Get latest version of the system")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/system/version/latest",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<LatestVersionVo>> getLatestVersion();
-
-    @Operation(
-            summary = "Get the current upgrade progress",
-            description =
-                    "Get the current server upgrade process. If downloading, return the download progress")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/system/version/progress",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER')")
-    ResponseEntity<ResponseMessage<List<UpgradeLog>>> getUpgradeProgress();
 
     @Operation(
             summary = "Update system settings",

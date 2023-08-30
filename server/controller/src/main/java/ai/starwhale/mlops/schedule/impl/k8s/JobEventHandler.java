@@ -30,11 +30,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     private final TaskReportReceiver taskReportReceiver;
