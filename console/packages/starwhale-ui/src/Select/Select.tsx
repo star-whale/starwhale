@@ -41,6 +41,7 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
                         style={{
                             transform: $isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                             transition: 'transform 0.2s ease',
+                            cursor: 'pointer',
                         }}
                     />
                 )
@@ -55,15 +56,15 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
                     overrides: {
                         Root: {
                             style: {
-                                cursor: 'pointer',
-                                color: 'rgba(2, 16, 43, 0.2)',
-                                backgroundColor: 'rgba(2, 16, 43, 0)',
+                                color: 'rgba(2, 16, 43)',
+                                backgroundColor: 'rgb(238, 241, 246)',
                                 marginTop: '2px',
                                 marginBottom: '2px',
                                 marginRight: '2px',
                                 marginLeft: '2px',
                             },
                         },
+                        ActionIcon: () => <IconFont type='clear2' size={12} style={{ color: 'rgba(2,16,43,0.20)' }} />,
                     },
                 },
             },
