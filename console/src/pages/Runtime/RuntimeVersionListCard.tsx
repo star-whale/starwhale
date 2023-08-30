@@ -19,9 +19,9 @@ import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
-import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
 import { IRuntimeVersionSchema } from '@runtime/schemas/runtimeVersion'
+import { VersionText } from '@starwhale/ui/Text'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -65,7 +65,7 @@ export default function RuntimeVersionListCard() {
                             key={runtime.id}
                             to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
                         >
-                            <MonoText>{runtime.name}</MonoText>
+                            <VersionText key='modelVersion' version={runtime.name} />,
                         </TextLink>,
                         <EditableAlias
                             key='alias'

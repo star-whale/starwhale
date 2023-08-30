@@ -63,5 +63,17 @@ function MonoText({ children, style, ...props }: ITextProps) {
     )
 }
 
-export { MonoText, Text }
+function VersionText({ version, style, ...props }: ITextProps & { version?: string }) {
+    if (!version) return null
+    if (typeof version !== 'string') return null
+
+    const content = version.substring(0, 12)
+    return (
+        <MonoText {...props} style={{ ...style, fontFamily: 'Roboto Mono' }} tooltip={version}>
+            {content}
+        </MonoText>
+    )
+}
+
+export { MonoText, Text, VersionText }
 export default Text

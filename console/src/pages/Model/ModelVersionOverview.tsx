@@ -29,7 +29,7 @@ export default function ModelVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{modelVersion?.versionInfo.name ?? '-'} </MonoText>,
+            value: <MonoText maxWidth='400px'>{modelVersion?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),

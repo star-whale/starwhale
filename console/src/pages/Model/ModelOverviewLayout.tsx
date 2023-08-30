@@ -84,7 +84,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                 path: `/projects/${projectId}/models`,
             },
             {
-                title: <MonoText>{modelName || '-'}</MonoText>,
+                title: modelName || '-',
                 path: `/projects/${projectId}/models/${modelId}`,
             },
         ]

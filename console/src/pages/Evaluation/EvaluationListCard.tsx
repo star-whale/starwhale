@@ -278,6 +278,7 @@ export default function EvaluationListCard() {
                         viewable
                         queryable
                         selectable
+                        sortable
                         paginationable
                         page={page}
                         onPageChange={setPage}

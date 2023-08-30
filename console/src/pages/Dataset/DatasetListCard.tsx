@@ -9,13 +9,12 @@ import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
 import { Button, ButtonGroup, ConfirmButton, ExtendButton, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
-import { MonoText } from '@/components/Text'
 import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
 import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
 import { fetchDatasetBuildList, removeDataset } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
-import Text from '@starwhale/ui/Text'
+import Text, { VersionText } from '@starwhale/ui/Text'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
@@ -89,7 +88,7 @@ export default function DatasetListCard() {
                                 >
                                     {dataset.name}
                                 </TextLink>,
-                                <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
+                                <VersionText key='name' version={dataset.version?.name ?? '-'} />,
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
                                 counts,
                                 dataset.owner && <User user={dataset.owner} />,

@@ -30,7 +30,7 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{dataset?.versionInfo.name ?? '-'} </MonoText>,
+            value: <MonoText maxWidth='400px'>{dataset?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),

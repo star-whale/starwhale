@@ -25,6 +25,7 @@ import { Shared } from '@/components/Shared'
 import useCliMate from '@/hooks/useCliMate'
 import { EditableAlias } from '@/components/Alias'
 import yaml from 'js-yaml'
+import { VersionText } from '@starwhale/ui'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -98,7 +99,7 @@ export default function DatasetVersionListCard() {
                                     key={datasetId}
                                     to={`/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/overview`}
                                 >
-                                    {datasetVersion.name}
+                                    <VersionText key='modelVersion' version={datasetVersion.name} />,
                                 </TextLink>,
                                 <EditableAlias
                                     key='alias'

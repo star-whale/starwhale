@@ -9,7 +9,7 @@ import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
 import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
-import { MonoText } from '@starwhale/ui/Text'
+import { MonoText, VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
@@ -48,7 +48,7 @@ export default function RuntimeListCard() {
                             >
                                 {runtime.name}
                             </TextLink>,
-                            <MonoText key='name'>{runtime.version?.name ?? '-'}</MonoText>,
+                            <VersionText key='name' version={runtime.version?.name ?? '-'} />,
                             runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,

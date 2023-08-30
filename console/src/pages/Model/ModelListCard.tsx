@@ -14,7 +14,7 @@ import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
 import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { MonoText } from '@starwhale/ui/Text'
+import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
@@ -60,7 +60,7 @@ export default function ModelListCard() {
                             >
                                 {model.name}
                             </TextLink>,
-                            <MonoText key='name'>{model.version?.name ?? '-'}</MonoText>,
+                            <VersionText key='name' version={model.version?.name ?? '-'} />,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
                             model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,

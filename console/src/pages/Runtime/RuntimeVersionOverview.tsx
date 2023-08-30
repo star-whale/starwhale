@@ -30,7 +30,7 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{runtimeVersion?.versionInfo.name ?? '-'} </MonoText>,
+            value: <MonoText maxWidth='400px'>{runtimeVersion?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),

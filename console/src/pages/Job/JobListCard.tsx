@@ -20,7 +20,7 @@ import { useAuthPrivileged, WithCurrentAuth } from '@/api/WithAuth'
 import { IconTooltip } from '@starwhale/ui/Tooltip'
 import { useProjectRole } from '@project/hooks/useProjectRole'
 import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
-import { ConfirmButton } from '@starwhale/ui'
+import { ConfirmButton, VersionText } from '@starwhale/ui'
 import ExposedLink from '@job/components/ExposedLink'
 import qs from 'qs'
 
@@ -240,7 +240,7 @@ export default function JobListCard() {
                             </div>,
                             job.resourcePool,
                             job.modelName,
-                            <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
+                            <VersionText key='modelVersion' version={job.modelVersion} />,
                             job.owner && <User user={job.owner} />,
                             job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
                             typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
