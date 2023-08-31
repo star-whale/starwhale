@@ -58,6 +58,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -340,12 +341,14 @@ public class MemoryTableImpl implements MemoryTable {
                 }
             } else {
                 var old = this.getRecordMap(key, versions, timestamp);
-                for (var it = newRecord.entrySet().iterator(); it.hasNext(); ) {
-                    var entry = it.next();
-                    if (old.containsKey(entry.getKey())) {
-                        var oldValue = old.get(entry.getKey());
-                        if (BaseValue.compare(oldValue, entry.getValue()) == 0) {
-                            it.remove();
+                if (old != null) {
+                    for (var it = newRecord.entrySet().iterator(); it.hasNext(); ) {
+                        var entry = it.next();
+                        if (old.containsKey(entry.getKey())) {
+                            var oldValue = old.get(entry.getKey());
+                            if (BaseValue.compare(oldValue, entry.getValue()) == 0) {
+                                it.remove();
+                            }
                         }
                     }
                 }
@@ -380,12 +383,12 @@ public class MemoryTableImpl implements MemoryTable {
                 }
             }
         }
+        if (!hasVersion) {
+            return null;
+        }
+        ret.put(this.schema.getKeyColumn(), key);
         if (deleted) {
             ret.put(DELETED_FLAG_COLUMN_NAME, BoolValue.TRUE);
-        }
-
-        if (hasVersion) {
-            ret.put(this.schema.getKeyColumn(), key);
         }
         return ret;
     }
@@ -419,7 +422,7 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var stream = this.recordMap.entrySet().stream()
                 .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
-                .filter(record -> filter == null || this.match(filter, record));
+                .filter(record -> record != null && (filter == null || this.match(filter, record)));
         if (orderBy != null) {
             stream = stream.sorted((a, b) -> {
                 for (var col : orderBy) {
@@ -508,7 +511,7 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).entrySet().stream()
                 .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
-                .filter(record -> !record.isEmpty())
+                .filter(Objects::nonNull)
                 .iterator();
         return new Iterator<>() {
 
