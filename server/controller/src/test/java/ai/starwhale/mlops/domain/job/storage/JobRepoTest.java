@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -215,6 +216,7 @@ public class JobRepoTest {
         var job = JobEntity.builder()
                 .id(jobId)
                 .jobUuid(uuid)
+                .type(JobType.EVALUATION)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .build();
         Mockito.when(jobMapper.findJobById(jobId)).thenReturn(job);
@@ -246,6 +248,18 @@ public class JobRepoTest {
 
         jobRepo.updateJobCommentByUuid("1q2w3e4r5t6y", "test2");
         verify(dataStore, times(7))
+                .update(eq("project/1/eval/summary"), any(), anyList());
+
+        reset(dataStore);
+        job.setType(JobType.BUILT_IN);
+        jobRepo.updateJobCommentByUuid(uuid, "test2");
+        jobRepo.updateJobComment(jobId, "any");
+        jobRepo.removeJobByUuid(uuid);
+        jobRepo.recoverJob(jobId);
+        jobRepo.recoverJobByUuid(uuid);
+        jobRepo.updateJobFinishedTime(jobId, new Date(), 100L);
+        jobRepo.updateJobStatus(jobId, JobStatus.RUNNING);
+        verify(dataStore, times(0))
                 .update(eq("project/1/eval/summary"), any(), anyList());
     }
 }
