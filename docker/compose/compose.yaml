@@ -24,31 +24,17 @@ services:
       - oss_data:/data
     network_mode: "host"
 
-  minikube:
-    image: docker-registry.starwhale.cn/star-whale/minikube-starter:latest
-    restart: always
-    privileged: true
-    healthcheck:
-      test: ["CMD","minikube", "kubectl", "--", "get", "pods", "-A"]
-    volumes:
-      - minikube_data:/root/.minikube
-      - kube_data:/root/.kube
-      - /var/run/docker.sock:/var/run/docker.sock
-    network_mode: "host"
-
   controller:
     image: docker-registry.starwhale.cn/starwhaleai/server:latest
     restart: always
     depends_on:
       - db
       - oss
-      - minikube
     environment:
       - JAR=controller
-      - KUBECONFIG=/root/.kube/config
-      - SW_IMAGE_BUILD_IMAGE=docker-registry.starwhale.cn/kaniko-cloud:v0.3
       - SW_JWT_TOKEN_EXPIRE_MINUTES=144000
       - SW_UPLOAD_MAX_FILE_SIZE=20480MB
+      - SW_SCHEDULER=docker
       # the ${GLOBAL_IP} should be the ip of the host machine that is accessible by all swcli clients including swcli in a user shell and swcli in pods
       - SW_METADATA_STORAGE_IP=${GLOBAL_IP}
       - SW_METADATA_STORAGE_PORT=3306
@@ -60,12 +46,10 @@ services:
       - SW_STORAGE_ENDPOINT=http://${GLOBAL_IP}:9000
       - SW_INSTANCE_URI=http://${GLOBAL_IP}:8082
     volumes:
-      - minikube_data:/root/.minikube
-      - kube_data:/root/.kube
+      - /var/run/docker.sock:/var/run/docker.sock
     network_mode: "host"
 
 volumes:
   db_data:
   oss_data:
-  minikube_data:
   kube_data:
