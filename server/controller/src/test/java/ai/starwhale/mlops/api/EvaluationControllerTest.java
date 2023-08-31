@@ -36,6 +36,7 @@ import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.evaluation.EvaluationFileStorage;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -50,12 +51,13 @@ public class EvaluationControllerTest {
 
     private EvaluationController controller;
     private EvaluationService evaluationService;
+    private EvaluationFileStorage evaluationFileStorage;
 
     @BeforeEach
     public void setUp() {
         controller = new EvaluationController(
-                evaluationService = mock(EvaluationService.class)
-        );
+                evaluationService = mock(EvaluationService.class),
+                evaluationFileStorage = mock(EvaluationFileStorage.class));
     }
 
     @Test

@@ -64,8 +64,7 @@ public class UriAccessor {
         return sizeLong > 0 && offsetLong >= 0;
     }
 
-    //TODO(ryd) remove unused params
-    public byte[] dataOf(Long projectId, String datasetName, String uri, Long offset,
+    public byte[] dataOf(String uri, Long offset,
             Long size) {
         StorageUri storageUri = getStorageUri(uri);
         if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
@@ -92,7 +91,7 @@ public class UriAccessor {
         }
     }
 
-    public String linkOf(Long projectId, String datasetName, String uri, Long expTimeMillis) {
+    public String linkOf(String uri, Long expTimeMillis) {
         StorageUri storageUri = getStorageUri(uri);
         if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
             return uri;
