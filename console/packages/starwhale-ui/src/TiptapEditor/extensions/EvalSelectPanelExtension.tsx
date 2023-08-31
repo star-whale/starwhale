@@ -16,7 +16,6 @@ const Component = (props: NodeViewProps) => {
     const { node, selected } = props
 
     const onStateChange = useEventCallback((state: any) => {
-        // console.log('onStateChange', state)
         props.updateAttributes({
             state,
         })

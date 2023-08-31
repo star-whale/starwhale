@@ -5,6 +5,7 @@ import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { createUseStyles } from 'react-jss'
 import clsx from 'clsx'
 import { headerHeight } from '@/consts'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 const useMainStyles = createUseStyles({
     mainWrapper: {
@@ -56,6 +57,7 @@ export default function BaseLayout({
 }: IBaseLayoutProps) {
     const history = useHistory()
     const styles = useMainStyles()
+    const [css] = themedUseStyletron()
 
     return (
         <main
@@ -98,14 +100,28 @@ export default function BaseLayout({
                                                 <div
                                                     role='button'
                                                     tabIndex={0}
-                                                    style={{
-                                                        fontSize: '14px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        cursor:
-                                                            idx !== breadcrumbItems.length - 1 ? 'pointer' : undefined,
-                                                    }}
+                                                    className={css({
+                                                        'fontSize': '14px',
+                                                        'display': 'flex',
+                                                        'alignItems': 'center',
+                                                        'gap': '6px',
+                                                        'cursor':
+                                                            idx !== breadcrumbItems.length - 1 ? 'pointer' : 'auto',
+                                                        'color':
+                                                            idx !== breadcrumbItems.length - 1
+                                                                ? 'rgba(2,16,43,0.60)'
+                                                                : 'auto',
+                                                        ':hover': {
+                                                            color:
+                                                                idx !== breadcrumbItems.length - 1 ? '#5181E0' : 'auto',
+                                                        },
+                                                        ':active': {
+                                                            color:
+                                                                idx !== breadcrumbItems.length - 1
+                                                                    ? '#1C4CAD;'
+                                                                    : 'auto',
+                                                        },
+                                                    })}
                                                     key={item.path}
                                                     onClick={
                                                         item.path && idx !== breadcrumbItems.length - 1

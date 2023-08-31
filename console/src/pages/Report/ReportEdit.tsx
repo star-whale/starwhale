@@ -13,6 +13,8 @@ import { INavItem } from '@/components/BaseSidebar'
 import Avatar from '@/components/Avatar'
 import { createReport, updateReport } from '@/domain/report/services/report'
 import { toaster } from 'baseui/toast'
+import _ from 'lodash'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export default function ReportEdit() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -38,7 +40,9 @@ export default function ReportEdit() {
         [SaveStatus.UNSAVED]: t('report.save.unsaved'),
     }
     const handleSave = React.useCallback(() => {
-        const contentString = JSON.stringify(content)
+        // async load content will be string, if direct save will cause double stringify in cases
+        const contentString = _.isString(content) ? content : JSON.stringify(content)
+
         async function save() {
             await createReport(projectId, {
                 title,
@@ -72,7 +76,7 @@ export default function ReportEdit() {
     useEffect(() => {
         if (data) {
             setTitle(data.title)
-            setDescription(data.description ?? '')
+            setDescription(data.description || '')
             setContent(data.content)
         }
     }, [data])
@@ -174,6 +178,7 @@ export default function ReportEdit() {
 
 function Breadcrumb({ extra }: any) {
     const [t] = useTranslation()
+    const [css] = themedUseStyletron()
 
     const { projectId, reportId } = useParams<{
         projectId: string
@@ -233,16 +238,20 @@ function Breadcrumb({ extra }: any) {
                                 <div
                                     role='button'
                                     tabIndex={0}
-                                    style={{
-                                        fontSize: '14px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        // fontWeight: 600,
-                                        // fontSize: '18px',
-                                        lineHeight: 1,
-                                        gap: 6,
-                                        cursor: idx !== breadcrumbItems.length - 1 ? 'pointer' : undefined,
-                                    }}
+                                    className={css({
+                                        'fontSize': '14px',
+                                        'display': 'flex',
+                                        'alignItems': 'center',
+                                        'gap': '6px',
+                                        'cursor': idx !== breadcrumbItems.length - 1 ? 'pointer' : 'auto',
+                                        'color': idx !== breadcrumbItems.length - 1 ? 'rgba(2,16,43,0.60)' : 'auto',
+                                        ':hover': {
+                                            color: idx !== breadcrumbItems.length - 1 ? '#5181E0' : 'auto',
+                                        },
+                                        ':active': {
+                                            color: idx !== breadcrumbItems.length - 1 ? '#1C4CAD;' : 'auto',
+                                        },
+                                    })}
                                     key={item.path}
                                     onClick={
                                         item.path && idx !== breadcrumbItems.length - 1
