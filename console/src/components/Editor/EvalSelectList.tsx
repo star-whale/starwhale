@@ -149,7 +149,10 @@ function EvalSelectList({
                             const { value: id, record } = props.value || {}
                             if (!id) return <></>
                             return (
-                                <TextLink to={`/projects/${record?.projectId}/evaluations/${id}/results`}>
+                                <TextLink
+                                    target='_blank'
+                                    to={`/projects/${record?.projectId}/evaluations/${id}/results`}
+                                >
                                     {id}
                                 </TextLink>
                             )

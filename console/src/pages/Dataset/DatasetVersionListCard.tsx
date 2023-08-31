@@ -99,7 +99,7 @@ export default function DatasetVersionListCard() {
                                     key={datasetId}
                                     to={`/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/overview`}
                                 >
-                                    <VersionText key='modelVersion' version={datasetVersion.name} />,
+                                    <VersionText version={datasetVersion.name} />
                                 </TextLink>,
                                 <EditableAlias
                                     key='alias'

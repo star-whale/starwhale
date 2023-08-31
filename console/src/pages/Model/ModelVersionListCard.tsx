@@ -20,11 +20,11 @@ import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
-import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
+import { VersionText } from '@starwhale/ui'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -82,7 +82,7 @@ export default function ModelVersionListCard() {
                                 key={modelId}
                                 to={`/projects/${projectId}/models/${modelId}/versions/${model.id}/overview`}
                             >
-                                <MonoText>{model.name}</MonoText>
+                                <VersionText version={model.name} />
                             </TextLink>,
                             <EditableAlias
                                 key='alias'
