@@ -91,7 +91,17 @@ public class DockerTaskReporter {
         TaskStatus status = containerStatusExplainer.statusOf(c);
         Long stopMilli = taskStatusMachine.isFinal(status) ? System.currentTimeMillis() : null;
         String failReason = TaskStatus.FAIL == status ? c.getStatus() : null;
-        return new ReportedTask(containerTaskMapper.taskIfOfContainer(c), status, 0, null, null, stopMilli, failReason);
+        return ReportedTask.builder()
+                .id(containerTaskMapper.taskIfOfContainer(c))
+                .status(status)
+                .retryCount(0)
+                .ip(null)
+                .startTimeMillis(null)
+                .stopTimeMillis(stopMilli)
+                .failedReason(failReason)
+                // use the current time as generation, make sure that the receiver will deal with it
+                .generation(System.currentTimeMillis())
+                .build();
     }
 
 }

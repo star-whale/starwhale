@@ -95,7 +95,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (null != conditions) {
             List<V1JobCondition> collect = conditions.stream().filter(c -> "True".equalsIgnoreCase(c.getStatus()))
                     .collect(Collectors.toList());
-            if (collect.size() == 0) {
+            if (collect.isEmpty()) {
                 log.warn("no True status conditions for job {}", conditionsLogString(conditions));
             } else {
                 if (collect.size() > 1) {
@@ -157,6 +157,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 .startTimeMillis(startTime)
                 .stopTimeMillis(stopTime)
                 .retryCount(retryNum)
+                .generation(Util.getTaskGeneration(job.getMetadata()))
                 .failedReason(StringUtils.hasText(failedReason) ? failedReason : null)
                 .build();
         taskReportReceiver.receive(List.of(report));
@@ -182,7 +183,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 .map(p -> Util.k8sTimeToMs(p.getStatus().getStartTime()))
                 .filter(Objects::nonNull).collect(Collectors.toList());
 
-        if (startTimes.size() == 0) {
+        if (startTimes.isEmpty()) {
             return null;
         }
         return startTimes.stream().min(Long::compareTo).get();
@@ -196,7 +197,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 .map(p -> joinReasons(p.getStatus().getReason(), p.getStatus().getMessage()))
                 .filter(Objects::nonNull).collect(Collectors.toList());
 
-        if (failedReasons.size() == 0) {
+        if (failedReasons.isEmpty()) {
             return null;
         }
         // join all failed reasons

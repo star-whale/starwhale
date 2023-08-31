@@ -16,13 +16,46 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import java.time.OffsetDateTime;
+import static ai.starwhale.mlops.schedule.impl.k8s.K8sSwTaskScheduler.ANNOTATION_KEY_TASK_GENERATION;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import java.time.OffsetDateTime;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
+
+@Slf4j
 public class Util {
     public static Long k8sTimeToMs(OffsetDateTime time) {
         if (time == null) {
             return null;
         }
         return time.toInstant().toEpochMilli();
+    }
+
+    /**
+     * Retrieves the task generation from the given V1ObjectMeta.
+     *
+     * @param meta the V1ObjectMeta from which to retrieve the task generation
+     * @return the task generation as a Long, or null if it cannot be retrieved
+     */
+    public static Long getTaskGeneration(V1ObjectMeta meta) {
+        if (meta == null) {
+            return null;
+        }
+        var annotations = meta.getAnnotations();
+        if (annotations == null) {
+            return null;
+        }
+        var str = annotations.get(ANNOTATION_KEY_TASK_GENERATION);
+        if (!StringUtils.hasText(str)) {
+            return null;
+        }
+
+        try {
+            return Long.parseLong(str);
+        } catch (Exception e) {
+            log.warn("task generation is not a number {}", str);
+            return null;
+        }
     }
 }

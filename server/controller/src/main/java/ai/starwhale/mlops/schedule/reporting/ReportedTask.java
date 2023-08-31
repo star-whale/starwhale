@@ -38,4 +38,5 @@ public class ReportedTask {
     final Long startTimeMillis;
     final Long stopTimeMillis;
     final String failedReason;
+    final Long generation;
 }

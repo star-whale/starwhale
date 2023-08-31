@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -88,5 +89,8 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, true);
         verify(failedTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
         verify(jobHolder).adopt(mockJob);
+        mockJob.getSteps().get(0).getTasks().forEach(t -> {
+            assertNotNull(t.getGeneration());
+        });
     }
 }

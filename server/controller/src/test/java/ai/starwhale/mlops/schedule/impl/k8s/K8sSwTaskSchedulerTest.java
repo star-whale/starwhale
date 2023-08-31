@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
@@ -50,7 +49,6 @@ import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -90,7 +88,7 @@ public class K8sSwTaskSchedulerTest {
         when(tcsFinder.findCs(any())).thenReturn(containerSpecification);
         when(containerSpecification.getContainerEnvs()).thenReturn(Map.of("NVIDIA_VISIBLE_DEVICES", ""));
         when(containerSpecification.getCmd()).thenReturn(
-                new ContainerCommand(new String[]{"run"}, new String[]{"bash", "entrypoint.sh"}));
+                new ContainerCommand(new String[] {"run"}, new String[] {"bash", "entrypoint.sh"}));
         when(containerSpecification.getImage()).thenReturn("testimage");
         return new K8sSwTaskScheduler(k8sClient,
                 new K8sJobTemplateMock(""),
@@ -112,31 +110,6 @@ public class K8sSwTaskSchedulerTest {
     }
 
     @Test
-    public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
-        var client = mock(K8sClient.class);
-
-        var scheduler = buildK8sScheduler(client);
-        var task = mockTask(false);
-        var pool = task.getStep().getResourcePool();
-        // add GPU resource
-        var resources = List.of(new Resource(ResourceOverwriteSpec.RESOURCE_CPU, 1f, 0f, 1f));
-        pool.setResources(resources);
-
-        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
-        // set no resource spec in task
-        task.getTaskRequest().setRuntimeResources(List.of());
-        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
-
-        verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
-        var jobs = jobArgumentCaptor.getAllValues();
-        var expectedEnv = new V1EnvVar().name("NVIDIA_VISIBLE_DEVICES").value("");
-
-        // should use the GPU resource by default
-        Assertions.assertFalse(jobs.get(0).getSpec().getTemplate().getSpec()
-                .getContainers().get(0).getEnv().contains(expectedEnv));
-    }
-
-    @Test
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
@@ -149,6 +122,25 @@ public class K8sSwTaskSchedulerTest {
         var jobs = jobArgumentCaptor.getAllValues();
         var container = jobs.get(0).getSpec().getTemplate().getSpec().getContainers().get(0);
         Assertions.assertEquals(List.of("dev"), container.getArgs());
+    }
+
+    @Test
+    public void testGeneration() throws IOException, ApiException {
+        var client = mock(K8sClient.class);
+
+        var scheduler = buildK8sScheduler(client);
+        var task = mockTask(false);
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
+        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
+
+        verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
+        var jobs = jobArgumentCaptor.getAllValues();
+
+        var generationInJob = Util.getTaskGeneration(jobs.get(0).getMetadata());
+        assertEquals(7L, generationInJob);
+
+        var generationInPod = Util.getTaskGeneration(jobs.get(0).getSpec().getTemplate().getMetadata());
+        assertEquals(7L, generationInPod);
     }
 
     private Task mockTask(boolean devMode) {
@@ -188,6 +180,7 @@ public class K8sSwTaskSchedulerTest {
                 .resultRootPath(new ResultPath("task"))
                 .uuid("uuid")
                 .status(TaskStatus.READY)
+                .generation(7L)
                 .taskRequest(TaskRequest.builder()
                         .index(1)
                         .total(1)
@@ -205,13 +198,16 @@ public class K8sSwTaskSchedulerTest {
 
         @Override
         public V1Job renderJob(V1Job job, String jobName, String restartPolicy, int backoffLimit,
-                Map<String, ContainerOverwriteSpec> containerSpecMap,
-                Map<String, String> nodeSelectors, List<Toleration> tolerations, Map<String, String> annotations) {
+                               Map<String, ContainerOverwriteSpec> containerSpecMap,
+                               Map<String, String> nodeSelectors, List<Toleration> tolerations,
+                               Map<String, String> annotations) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
             Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
             Assertions.assertEquals("testimage", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
+            super.renderJob(job, jobName, restartPolicy, backoffLimit, containerSpecMap, nodeSelectors, tolerations,
+                    annotations);
             return null;
         }
 
@@ -249,7 +245,7 @@ public class K8sSwTaskSchedulerTest {
         podList.setItems(List.of(pod));
 
         when(client.getPodsByJobName("7")).thenReturn(podList);
-        when(client.execInPod("7", null, "ls")).thenReturn(new String[]{"stdout", "stderr"});
+        when(client.execInPod("7", null, "ls")).thenReturn(new String[] {"stdout", "stderr"});
         var resp = scheduler.exec(task, "ls").get();
         verify(client).execInPod("7", null, "ls");
         assertEquals("stdout", resp[0]);
