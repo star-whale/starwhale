@@ -215,6 +215,7 @@ public class JobRepoTest {
         var job = JobEntity.builder()
                 .id(jobId)
                 .jobUuid(uuid)
+                .type(JobType.EVALUATION)
                 .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
                 .build();
         Mockito.when(jobMapper.findJobById(jobId)).thenReturn(job);
