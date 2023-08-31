@@ -89,7 +89,7 @@ public interface ReportMapper {
                     if (StrUtil.isNotEmpty(update.getTitle())) {
                         SET("title = #{title}");
                     }
-                    if (StrUtil.isNotEmpty(update.getDescription())) {
+                    if (null != update.getDescription()) {
                         SET("description = #{description}");
                     }
                     if (StrUtil.isNotEmpty(update.getContent())) {
