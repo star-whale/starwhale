@@ -96,6 +96,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                             .startTimeMillis(System.currentTimeMillis())
                             .retryCount(0)
                             .ip(nodeIp)
+                            .generation(task.getGeneration())
                             .build();
                     taskReportReceiver.receive(List.of(rt));
                 }
@@ -115,6 +116,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                             .retryCount(0)
                             .failedReason(throwable.getMessage())
                             .ip(nodeIp)
+                            .generation(task.getGeneration())
                             .build();
                     taskReportReceiver.receive(List.of(rt));
 
@@ -122,8 +124,11 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 @Override
                 public void onComplete() {
-                    Map labels = new HashMap();
+                    var labels = new HashMap<String, String>();
                     labels.put(ContainerTaskMapper.CONTAINER_LABEL_TASK_ID, task.getId().toString());
+                    if (task.getGeneration() != null) {
+                        labels.put(ContainerTaskMapper.CONTAINER_LABEL_GENERATION, task.getGeneration().toString());
+                    }
                     labels.putAll(CONTAINER_LABELS);
 
                     CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
@@ -148,6 +153,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                             .startTimeMillis(System.currentTimeMillis())
                             .retryCount(0)
                             .ip(nodeIp)
+                            .generation(task.getGeneration())
                             .build();
                     taskReportReceiver.receive(List.of(rt));
                 }
@@ -164,10 +170,9 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     @NotNull
     private List<String> buildEnvs(Map<String, String> env) {
-        List<String> envs = env.entrySet().stream().map(
+        return env.entrySet().stream().map(
                 es -> String.format("%s=%s", es.getKey(), es.getValue())
         ).collect(Collectors.toList());
-        return envs;
     }
 
     @Override
