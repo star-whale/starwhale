@@ -33,6 +33,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
@@ -43,6 +44,7 @@ public class EvaluationFileStorageTest {
     private UriAccessor uriAccessor;
     private EvaluationFileStorage fileStorage;
 
+    @BeforeEach
     public void setup() {
         uriAccessor = mock(UriAccessor.class);
         storageAccessService = mock(StorageAccessService.class);
