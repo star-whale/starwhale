@@ -39,5 +39,7 @@ public class StoragePathCoordinatorTest {
                 is("/foo/controller/project/1/runtime/mnist/version/v1"));
         assertThat(ins.allocateCommonModelPoolPath(1L, "123456"),
                 is("/foo/controller/project/1/common-model/123456"));
+        assertThat(ins.allocateEvalStoragePath(1L, "eval123456"),
+                is("/foo/controller/project/1/common-eval/eval123456"));
     }
 }

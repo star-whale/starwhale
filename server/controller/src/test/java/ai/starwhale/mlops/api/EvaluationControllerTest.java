@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
@@ -39,10 +40,23 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.EvaluationFileStorage;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import com.github.pagehelper.Page;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -127,5 +141,72 @@ public class EvaluationControllerTest {
                 is(hasProperty("pageNum", is(1))),
                 is(hasProperty("pageSize", is(5)))
         ));
+    }
+
+    @Test
+    public void testSignLinks() {
+        String pj = "pj";
+        String version = "eval-version";
+        String uri = "uri";
+        String signUrl = "sign-url";
+        when(evaluationFileStorage.signLinks(Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
+        Assertions.assertEquals(
+                Map.of(uri, signUrl),
+                controller.signLinks(pj, version, Set.of(uri), 100L).getBody().getData()
+        );
+    }
+
+    @Test
+    public void testHeadHashedBlob() throws IOException {
+        String project = "project-id";
+        String evalVersion = "eval-version";
+        HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
+        when(evaluationFileStorage.hashObjectStore(project, evalVersion)).thenReturn(hashNamedObjectStore);
+        when(hashNamedObjectStore.head("h1")).thenReturn("a");
+        when(hashNamedObjectStore.head("h2")).thenReturn(null);
+        when(hashNamedObjectStore.head("h3")).thenThrow(IOException.class);
+        Assertions.assertTrue(controller.headHashedBlob(project, evalVersion, "h1").getStatusCode().is2xxSuccessful());
+        Assertions.assertTrue(controller.headHashedBlob(project, evalVersion, "h2").getStatusCode().is4xxClientError());
+        Assertions.assertThrows(
+                SwProcessException.class,
+                () -> controller.headHashedBlob(project, evalVersion, "h3").getStatusCode().is4xxClientError()
+        );
+
+    }
+
+    @Test
+    public void testGetHashedBlob() throws IOException {
+        String project = "project-id";
+        String evalVersion = "eval-version";
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        given(response.getOutputStream())
+                .willReturn(new ServletOutputStream() {
+                    @Override
+                    public boolean isReady() {
+                        return true;
+                    }
+
+                    @Override
+                    public void setWriteListener(WriteListener listener) {
+                    }
+
+                    @Override
+                    public void write(int b) {
+                        output.write(b);
+                    }
+                });
+        HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
+        when(evaluationFileStorage.hashObjectStore(project, evalVersion)).thenReturn(hashNamedObjectStore);
+        when(hashNamedObjectStore.get("h1")).thenReturn(
+                new LengthAbleInputStream(new ByteArrayInputStream("hi content".getBytes(StandardCharsets.UTF_8)), 10));
+        when(hashNamedObjectStore.get("h2")).thenThrow(IOException.class);
+        controller.getHashedBlob(project, evalVersion, "h1", response);
+        assertThat(new String(output.toByteArray()), is("hi content"));
+        Assertions.assertThrows(
+                SwProcessException.class,
+                () -> controller.getHashedBlob(project, evalVersion, "h2", mock(HttpServletResponse.class))
+        );
+
     }
 }

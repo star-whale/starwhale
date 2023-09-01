@@ -73,17 +73,14 @@ public class EvaluationFileStorage {
         return uriAccessor.dataOf(uri, offset, size);
     }
 
-    public String signLink(String uri, Long expTimeMillis) {
-        return uriAccessor.linkOf(uri, expTimeMillis);
-    }
-
     public Map<String, String> signLinks(Set<String> uris, Long expTimeMillis) {
-        return uris.stream().collect(Collectors.toMap(u -> u, u -> {
-            try {
-                return signLink(u, expTimeMillis);
-            } catch (Exception e) {
-                return "";
-            }
-        }));
+        return uris.stream()
+                .collect(Collectors.toMap(u -> u, u -> {
+                    try {
+                        return uriAccessor.linkOf(u, expTimeMillis);
+                    } catch (Exception e) {
+                        return "";
+                    }
+                }));
     }
 }

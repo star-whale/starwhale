@@ -48,14 +48,14 @@ public class UriAccessor {
     @NotNull
     private static StorageUri getStorageUri(String uri) {
         if (!StringUtils.hasText(uri)) {
-            throw new SwValidationException(ValidSubject.DATASET, "uri is empty");
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "uri is empty");
         }
         StorageUri storageUri;
         try {
             storageUri = new StorageUri(uri);
         } catch (URISyntaxException e) {
-            log.error("malformed uri", e);
-            throw new SwValidationException(ValidSubject.DATASET, "malformed uri");
+            log.error("malformated uri {}", uri, e);
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "malformated uri");
         }
         return storageUri;
     }
@@ -71,8 +71,8 @@ public class UriAccessor {
             try (InputStream is = new URL(uri).openStream()) {
                 return is.readAllBytes();
             } catch (MalformedURLException e) {
-                log.error("malformated url {}", uri, e);
-                throw new SwValidationException(ValidSubject.DATASET, "malformated url", e);
+                log.error("malformated uri {}", uri, e);
+                throw new SwValidationException(ValidSubject.OBJECT_STORE, "malformated uri", e);
             } catch (IOException e) {
                 log.error("connection to uri failed {}", uri, e);
                 throw new SwProcessException(ErrorType.NETWORK, "connection to uri failed", e);
