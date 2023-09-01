@@ -16,7 +16,7 @@ export function arrayOverride(objValue: any, srcValue: any, key, object) {
 }
 
 // eslint-disable-next-line prefer-template
-const getId = (str: string) => str + '-' + uuid().substring(0, 8)
+const genViewId = (str: string) => str + '-' + uuid().substring(0, 8)
 
 export interface ITableStateInitState {
     isInit: boolean
@@ -123,7 +123,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
                     ...$view,
                     def: true,
                     isShow: true,
-                    id: getId('view'),
+                    id: genViewId('view'),
                 }
                 update({ views: [...$$views, $newView], currentView: $newView }, 'onViewUpdate')
             }
@@ -280,10 +280,12 @@ export interface IRowState {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
     const update = (updateAttrs: Partial<IRowState>, name?: string) => {
-        set(updateAttrs, undefined, name)
-        // @FIXME state type for onViewsChange
+        // FIXME missing types
         // @ts-ignore
-        store.getState().onRowSelectedChange?.(updateAttrs.rowSelectedIds)
+        const { onRowSelectedChange } = store.getState()
+
+        set(updateAttrs, undefined, name)
+        onRowSelectedChange?.(updateAttrs.rowSelectedIds)
     }
 
     return {
@@ -306,13 +308,17 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
                 'onSelectNone'
             ),
         onNoSelect: (id: any) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
             const selectedRecords = [...get().rowSelectedRecords]
             const selectedRowIds = new Set(get().rowSelectedIds)
             selectedRowIds.delete(id)
-            const index = selectedRecords.findIndex((r) => r.id === id)
+            const index = selectedRecords.findIndex((r) => getId?.(r) === id)
             if (index > -1) {
                 selectedRecords.splice(index, 1)
             }
+
             update(
                 {
                     rowSelectedIds: Array.from(selectedRowIds),
@@ -322,6 +328,10 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
             )
         },
         onSelectOne: (id: any, record: any) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
+
             const selectedRecords = [...get().rowSelectedRecords]
             const selectedRowIds = new Set(get().rowSelectedIds)
             if (selectedRowIds.has(id)) {
@@ -329,9 +339,7 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
             } else {
                 selectedRowIds.add(id)
             }
-            // FIXME missing types
-            // @ts-ignore
-            const index = selectedRecords.findIndex((r) => get()?.getId(r) === id)
+            const index = selectedRecords.findIndex((r) => getId?.(r) === id)
             if (index > -1) {
                 selectedRecords.splice(index, 1)
             } else {
@@ -346,13 +354,20 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
                 'onSelectOne'
             )
         },
-        setRowSelectedIds: (rowSelectedIds: any[]) =>
+        setRowSelectedIds: (rowSelectedIds: any[]) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
+            const selectedRecords = [...get().rowSelectedRecords]
+
             update(
                 {
                     rowSelectedIds,
+                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId(r))),
                 },
                 'setRowSelectedIds'
-            ),
+            )
+        },
     }
 }
 
