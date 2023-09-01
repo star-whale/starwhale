@@ -28,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 public class ContainerTaskMapper {
 
     static final String CONTAINER_LABEL_TASK_ID = "starwhale-task-id";
+    public static final String CONTAINER_LABEL_GENERATION = "starwhale-generation";
 
     final DockerClientFinder dockerClientFinder;
 

@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -52,8 +53,12 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
             }
 
             Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
+            Task inMemoryTask = null;
+            if (!CollectionUtils.isEmpty(optionalTasks)) {
+                inMemoryTask = optionalTasks.iterator().next();
+            }
 
-            if (null == optionalTasks || optionalTasks.isEmpty()) {
+            if (inMemoryTask == null) {
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
@@ -75,26 +80,37 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
                 }
                 return;
             }
+            // prevent all the task status update before the task resume
+            if (inMemoryTask.getGeneration() != null) {
+                if (reportedTask.getGeneration() == null) {
+                    log.debug("no generation from report {}, ignore", reportedTask.getId());
+                    return;
+                }
+                if (reportedTask.getGeneration() < inMemoryTask.getGeneration()) {
+                    log.debug("generation from report {} {} is less than cached generation {}, ignore",
+                            reportedTask.getId(), reportedTask.getGeneration(), inMemoryTask.getGeneration());
+                    return;
+                }
+            }
+
             if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
-                optionalTasks.forEach(task -> task.setRetryNum(reportedTask.getRetryCount()));
+                inMemoryTask.setRetryNum(reportedTask.getRetryCount());
                 taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
             }
             if (StringUtils.hasText(reportedTask.getIp())) {
-                optionalTasks.forEach(task -> task.setIp(reportedTask.getIp()));
+                inMemoryTask.setIp(reportedTask.getIp());
                 taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
             }
             if (reportedTask.status != TaskStatus.UNKNOWN) {
-                optionalTasks.forEach(task -> {
-                    // update time before status because only the updateStatus will trigger the watcher
-                    // TODO optimize the update time logic
-                    if (task.getStartTime() == null) {
-                        task.setStartTime(reportedTask.getStartTimeMillis());
-                    }
-                    if (task.getFinishTime() == null) {
-                        task.setFinishTime(reportedTask.getStopTimeMillis());
-                    }
-                    task.updateStatus(reportedTask.getStatus());
-                });
+                // update time before status because only the updateStatus will trigger the watcher
+                // TODO optimize the update time logic
+                if (inMemoryTask.getStartTime() == null) {
+                    inMemoryTask.setStartTime(reportedTask.getStartTimeMillis());
+                }
+                if (inMemoryTask.getFinishTime() == null) {
+                    inMemoryTask.setFinishTime(reportedTask.getStopTimeMillis());
+                }
+                inMemoryTask.updateStatus(reportedTask.getStatus());
             }
         });
 

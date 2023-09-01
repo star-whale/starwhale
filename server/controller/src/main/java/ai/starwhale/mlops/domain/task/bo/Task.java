@@ -67,6 +67,10 @@ public class Task extends TimeConcern {
     String ip;
     DevWay devWay;
 
+    // use for task status change checking
+    // must be bigger than before when updating
+    Long generation;
+
     public void updateStatus(TaskStatus status) {
         this.status = status;
     }
@@ -85,6 +89,10 @@ public class Task extends TimeConcern {
 
     public void setIp(String ip) {
         this.ip = ip;
+    }
+
+    public void setGeneration(Long generation) {
+        this.generation = generation;
     }
 
     @Override

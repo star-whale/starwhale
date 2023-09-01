@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.schedule.impl.docker.reporting;
 
+import static ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper.CONTAINER_LABEL_GENERATION;
+
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -31,10 +33,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 public class DockerTaskReporter {
@@ -76,7 +79,7 @@ public class DockerTaskReporter {
         distinctDockerClients.forEach(dockerClient -> {
             List<Container> containers = dockerClient.listContainersCmd()
                     .withLabelFilter(SwTaskSchedulerDocker.CONTAINER_LABELS).withShowAll(true).exec();
-            taskReportReceiver.receive(containers.stream().map(c -> containerToTaskReport(c)).filter(Objects::nonNull)
+            taskReportReceiver.receive(containers.stream().map(this::containerToTaskReport).filter(Objects::nonNull)
                     .collect(Collectors.toList()));
         });
 
@@ -86,12 +89,33 @@ public class DockerTaskReporter {
         taskReportReceiver.receive(List.of(containerToTaskReport(c)));
     }
 
-    @Nullable
+    @NotNull
     private ReportedTask containerToTaskReport(Container c) {
         TaskStatus status = containerStatusExplainer.statusOf(c);
         Long stopMilli = taskStatusMachine.isFinal(status) ? System.currentTimeMillis() : null;
         String failReason = TaskStatus.FAIL == status ? c.getStatus() : null;
-        return new ReportedTask(containerTaskMapper.taskIfOfContainer(c), status, 0, null, null, stopMilli, failReason);
+        var labels = c.getLabels();
+        Long generation = null;
+        if (!CollectionUtils.isEmpty(labels)) {
+            var str = labels.get(CONTAINER_LABEL_GENERATION);
+            if (StringUtils.hasText(str)) {
+                try {
+                    generation = Long.parseLong(str);
+                } catch (Exception e) {
+                    log.warn("failed to parse generation label {}", str, e);
+                }
+            }
+        }
+        return ReportedTask.builder()
+                .id(containerTaskMapper.taskIfOfContainer(c))
+                .status(status)
+                .retryCount(0)
+                .ip(null)
+                .startTimeMillis(null)
+                .stopTimeMillis(stopMilli)
+                .failedReason(failReason)
+                .generation(generation)
+                .build();
     }
 
 }
