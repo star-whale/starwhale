@@ -16,7 +16,7 @@ export function arrayOverride(objValue: any, srcValue: any, key, object) {
 }
 
 // eslint-disable-next-line prefer-template
-const getId = (str: string) => str + '-' + uuid().substring(0, 8)
+const genViewId = (str: string) => str + '-' + uuid().substring(0, 8)
 
 export interface ITableStateInitState {
     isInit: boolean
@@ -123,7 +123,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
                     ...$view,
                     def: true,
                     isShow: true,
-                    id: getId('view'),
+                    id: genViewId('view'),
                 }
                 update({ views: [...$$views, $newView], currentView: $newView }, 'onViewUpdate')
             }
@@ -269,9 +269,10 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
 
 export interface IRowState {
     rowSelectedIds: Array<any>
-    onSelectMany: (args: any[]) => void
+    rowSelectedRecords: Array<any>
+    onSelectMany: (args: any[], records: any[]) => void
     onSelectNone: () => void
-    onSelectOne: (id: any) => void
+    onSelectOne: (id: any, record: any) => void
     onNoSelect: (id: any) => void
     setRowSelectedIds: (ids: any[]) => void
 }
@@ -279,18 +280,22 @@ export interface IRowState {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
     const update = (updateAttrs: Partial<IRowState>, name?: string) => {
-        set(updateAttrs, undefined, name)
-        // @FIXME state type for onViewsChange
+        // FIXME missing types
         // @ts-ignore
-        store.getState().onRowSelectedChange?.(updateAttrs.rowSelectedIds)
+        const { onRowSelectedChange } = store.getState()
+
+        set(updateAttrs, undefined, name)
+        onRowSelectedChange?.(updateAttrs.rowSelectedIds)
     }
 
     return {
         rowSelectedIds: [],
-        onSelectMany: (incomingRows: any[]) =>
+        rowSelectedRecords: [],
+        onSelectMany: (incomingRows: any[], records: any[]) =>
             update(
                 {
                     rowSelectedIds: [...incomingRows],
+                    rowSelectedRecords: [...records],
                 },
                 'onSelectMany'
             ),
@@ -298,40 +303,71 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
             update(
                 {
                     rowSelectedIds: [],
+                    rowSelectedRecords: [],
                 },
                 'onSelectNone'
             ),
         onNoSelect: (id: any) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
+            const selectedRecords = [...get().rowSelectedRecords]
             const selectedRowIds = new Set(get().rowSelectedIds)
             selectedRowIds.delete(id)
+            const index = selectedRecords.findIndex((r) => getId?.(r) === id)
+            if (index > -1) {
+                selectedRecords.splice(index, 1)
+            }
+
             update(
                 {
                     rowSelectedIds: Array.from(selectedRowIds),
+                    rowSelectedRecords: selectedRecords,
                 },
                 'onNoSelect'
             )
         },
-        onSelectOne: (id: any) => {
+        onSelectOne: (id: any, record: any) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
+
+            const selectedRecords = [...get().rowSelectedRecords]
             const selectedRowIds = new Set(get().rowSelectedIds)
             if (selectedRowIds.has(id)) {
                 selectedRowIds.delete(id)
             } else {
                 selectedRowIds.add(id)
             }
+            const index = selectedRecords.findIndex((r) => getId?.(r) === id)
+            if (index > -1) {
+                selectedRecords.splice(index, 1)
+            } else {
+                selectedRecords.push(record)
+            }
+
             update(
                 {
                     rowSelectedIds: Array.from(selectedRowIds),
+                    rowSelectedRecords: selectedRecords,
                 },
                 'onSelectOne'
             )
         },
-        setRowSelectedIds: (rowSelectedIds: any[]) =>
+        setRowSelectedIds: (rowSelectedIds: any[]) => {
+            // FIXME missing types
+            // @ts-ignore
+            const { getId } = store.getState()
+            const selectedRecords = [...get().rowSelectedRecords]
+
             update(
                 {
                     rowSelectedIds,
+                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId(r))),
                 },
                 'setRowSelectedIds'
-            ),
+            )
+        },
     }
 }
 
@@ -381,7 +417,34 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
     if (isPersist) {
         return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any, { name }))))
     }
-    const useStore = create<ITableState>()(actions)
+    const useStore = create<ITableState>()(
+        subscribeWithSelector(
+            devtools(actions as any, {
+                serialize: {
+                    options: {
+                        undefined: true,
+                        // function: function (fn) {
+                        //     // return fn.toString()
+                        //     return 'function'
+                        // },
+                        // @
+                        function: undefined,
+                        symbol: undefined,
+                    },
+                },
+                stateSanitizer: (state) => {
+                    return {
+                        ...state,
+                        // rowSelectedRecords: '<<LONG_BLOB>>',
+                        // columnTypes: '<<LONG_BLOB>>',
+                        // records: '<<LONG_BLOB>>',
+                        rows: '<<LONG_BLOB>>',
+                        wrapperRef: '<<LONG_BLOB>>',
+                    }
+                },
+            })
+        )
+    )
     return useStore as UseBoundStore<StoreApi<ITableState>>
 }
 export type IStore = ReturnType<typeof createCustomStore>

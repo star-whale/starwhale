@@ -35,7 +35,8 @@ export function useDirectStoreUpdater(
         if (typeof value !== 'undefined') {
             // eslint-disable-next-line no-console
             // console.log('set state', key)
-            setState({ [key]: value }, false)
+            // @ts-ignore
+            setState({ [key]: value }, false, `[updater] ${key}`)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value])
@@ -80,26 +81,29 @@ const StoreUpdater = ({
         }
     }, [reset])
 
-    useDirectStoreUpdater('queryable', queryable, store.setState)
+    // config
     useDirectStoreUpdater('sortable', sortable, store.setState)
     useDirectStoreUpdater('fillable', fillable, store.setState)
-    useDirectStoreUpdater('onViewsChange', onViewsChange, store.setState)
-    useDirectStoreUpdater('onCurrentViewChange', onCurrentViewChange, store.setState)
-    useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
-    useDirectStoreUpdater('onSave', onSave, store.setState)
-    useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
-    useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
-    useDirectStoreUpdater('records', records, store.setState)
-    useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('queryable', queryable, store.setState)
     useDirectStoreUpdater('queryinline', queryinline, store.setState)
     useDirectStoreUpdater('columnleinline', columnleinline, store.setState)
+    // fn
     useDirectStoreUpdater('getId', getId, store.setState)
+    useDirectStoreUpdater('onSave', onSave, store.setState)
+    useDirectStoreUpdater('onRemove', onRemove, store.setState)
+    useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
+    useDirectStoreUpdater('onViewsChange', onViewsChange, store.setState)
+    useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
+    useDirectStoreUpdater('onCurrentViewChange', onCurrentViewChange, store.setState)
     useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
     useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
     useDirectStoreUpdater('onRowSelectedChange', onRowSelectedChange, store.setState)
+    // data
     useDirectStoreUpdater('page', page, store.setState)
-    useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
-    useDirectStoreUpdater('onRemove', onRemove, store.setState)
+    useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('records', records, store.setState)
+    useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
+    useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
 
     useStoreEmptyUpdater<ConfigT>(currentView, setCurrentView)
     return null
