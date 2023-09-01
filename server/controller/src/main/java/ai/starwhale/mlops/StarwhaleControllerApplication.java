@@ -23,6 +23,7 @@ import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.mybatis.spring.annotation.MapperScan;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
@@ -52,6 +53,8 @@ public class StarwhaleControllerApplication {
 
         @Override
         public void onApplicationEvent(ApplicationFailedEvent event) {
+            var logger = LoggerFactory.getLogger(StarwhaleControllerApplication.class);
+            logger.error("system error, exit", event.getException());
             System.exit(1);
         }
     }
