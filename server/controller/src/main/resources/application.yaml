@@ -157,6 +157,9 @@ mybatis:
 server:
   port: ${SW_CONTROLLER_PORT:8082}
   shutdown: graceful
+  compression:
+    enabled: true
+    min-response-size: 512KB # default is 2KB
 logging:
   level:
     root: ${SW_ROOT_LOG_LEVEL:warn}
