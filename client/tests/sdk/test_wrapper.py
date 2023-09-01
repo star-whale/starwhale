@@ -14,9 +14,6 @@ from .. import BaseTestCase
 
 @patch.dict(os.environ, {"SW_TOKEN": "sw_token"})
 class TestEvaluation(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
     def tearDown(self) -> None:
         super().tearDown()
         os.environ.pop(SWEnv.instance_uri, None)
@@ -51,33 +48,33 @@ class TestEvaluation(BaseTestCase):
         assert table_name_1 == "project/1/table-1"
 
     def test_log_results_and_scan(self) -> None:
-        eval = wrapper.Evaluation("tt", "test")
-        eval.log_result(dict(id="0", output=3))
-        eval.log_result(dict(id="1", output=4, _mode=PredictLogMode.PICKLE.value))
-        eval.log_result(
+        e = wrapper.Evaluation("tt", "test")
+        e.log_result(dict(id="0", output=3))
+        e.log_result(dict(id="1", output=4, _mode=PredictLogMode.PICKLE.value))
+        e.log_result(
             dict(id="2", output=5, a="0", b="1", _mode=PredictLogMode.PLAIN.value)
         )
-        eval.log_result(dict(id="3", output=6, c=None, _mode="plain"))
-        eval.close()
-        self.assertEqual(
-            [
-                {"id": "0", "output": 3},
-                {
-                    "id": "1",
-                    "output": 4,
-                    "_mode": "pickle",
-                },
-                {"id": "2", "output": 5, "a": "0", "b": "1", "_mode": "plain"},
-                {"id": "3", "output": 6, "_mode": "plain"},
-            ],
-            list(eval.get_results()),
-        )
+        e.log_result(dict(id="3", output=6, c=None, _mode="plain"))
+        e.close()
 
-    def test_log_metrics(self) -> None:
-        eval = wrapper.Evaluation("tt", "test")
-        eval.log_metrics(a=0, B=1, c=None)
-        eval.log_metrics({"a/b": 2})
-        eval.close()
+        expect_result = [
+            {"id": "0", "output": 3},
+            {
+                "id": "1",
+                "output": 4,
+                "_mode": "pickle",
+            },
+            {"id": "2", "output": 5, "a": "0", "b": "1", "_mode": "plain"},
+            {"id": "3", "output": 6, "_mode": "plain"},
+        ]
+        self.assertEqual(expect_result, list(e.get_results()))
+        self.assertEqual(expect_result, list(e.get("results")))
+
+    def test_log_summary_metrics(self) -> None:
+        e = wrapper.Evaluation("tt", "test")
+        e.log_summary_metrics(a=0, B=1, c=None)
+        e.log_summary_metrics({"a/b": 2})
+        e.close()
         self.assertEqual(
             [{"id": "tt", "a": 0, "b": 1, "a/b": 2}],
             list(
@@ -86,6 +83,9 @@ class TestEvaluation(BaseTestCase):
                 )
             ),
         )
+
+        e = wrapper.Evaluation("tt", "test")
+        assert e.get_summary_metrics() == {"a": 0, "b": 1, "a/b": 2, "id": "tt"}
 
     @Mocker()
     def test_exception_close(self, request_mock: Mocker) -> None:
@@ -105,7 +105,7 @@ class TestEvaluation(BaseTestCase):
         os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
         eval = wrapper.Evaluation("tt", "test")
         eval.log_result(dict(id="0", mode=PredictLogMode.PICKLE.value, output=3))
-        eval.log_metrics({"a/b": 2})
+        eval.log_summary_metrics({"a/b": 2})
 
         assert len(eval._writers) == 2
         with self.assertRaises(Exception) as twe:
@@ -120,6 +120,42 @@ class TestEvaluation(BaseTestCase):
             assert not _writer.is_alive()
             assert _writer._stopped
             assert len(_writer._queue_run_exceptions) == 0
+
+    def test_get_tables_from_standalone(self) -> None:
+        e = wrapper.Evaluation("tt", "test")
+        e.log("table/1", id=1, a=1)
+        e.log("table/2", id=2, a=2)
+        e.close()
+
+        e = wrapper.Evaluation("tt", "test")
+        tables = e.get_tables()
+        assert set(tables) == {"table/1", "table/2"}
+
+    @Mocker()
+    def test_get_tables_from_server(self, request_mock: Mocker) -> None:
+        eval_id = "123456"
+        project_name = "project-test"
+
+        request_mock.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/project-test",
+            json={"data": {"id": 1, "name": "project-test"}},
+        )
+
+        table_prefix = f"project/1/eval/{eval_id[:2]}/{eval_id}/"
+        request_mock.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1/api/v1/datastore/listTables",
+            json={
+                "data": {
+                    "tables": [f"{table_prefix}/table/1", f"{table_prefix}/table/2"]
+                }
+            },
+        )
+
+        e = wrapper.Evaluation(eval_id, project_name, instance="http://1.1.1.1")
+        tables = e.get_tables()
+        assert set(tables) == {"table/1", "table/2"}
 
 
 class TestDataset(BaseTestCase):

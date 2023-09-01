@@ -382,12 +382,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         console.print(
             f":hourglass_not_done: start to run model, handler:{run_handler} ..."
         )
+
+        job_name, steps = Step.get_steps_from_yaml(run_handler, job_yaml_path)
         scheduler = Scheduler(
             project=project,
             version=version,
             workdir=snapshot_dir,
             dataset_uris=dataset_uris,
-            steps=Step.get_steps_from_yaml(run_handler, job_yaml_path),
+            steps=steps,
             handler_args=handler_args or [],
         )
         scheduler_status = RunStatus.START
@@ -417,6 +419,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "datasets": dataset_uris,
                 "model": model_config.name,
                 "status": scheduler_status,
+                "handler_name": job_name,
                 "error_message": error_message,
                 "finished_at": now_str(),
                 **external_info,

@@ -21,7 +21,7 @@ class TestMultiClassificationMetric(TestCase):
     @pytest.mark.filterwarnings(
         "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
     )
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
     def test_multi_classification_metric(self, log_metric_mock: MagicMock) -> None:
         def _cmp(handler, data):
             return (
@@ -47,7 +47,7 @@ class TestMultiClassificationMetric(TestCase):
     @pytest.mark.filterwarnings(
         "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
     )
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
     @patch("starwhale.api._impl.wrapper.Evaluation.log")
     def test_multi_classification_metric_with_pa(
         self, log_mock: MagicMock, log_metric_mock: MagicMock

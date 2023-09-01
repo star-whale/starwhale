@@ -232,6 +232,7 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
         jobs, pager = Job.list(_uri, page=page, size=size)

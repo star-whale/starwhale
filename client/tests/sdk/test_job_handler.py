@@ -388,26 +388,33 @@ def evaluate_handler(*args, **kwargs): ...
                 }
             ],
         }
-        steps = Step.get_steps_from_yaml("mock_user_module:evaluate_handler", yaml_path)
+        _, steps = Step.get_steps_from_yaml(
+            "mock_user_module:evaluate_handler", yaml_path
+        )
         assert len(steps) == 2
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
         assert steps[1].name == "mock_user_module:evaluate_handler"
         assert steps[1].show_name == "evaluate"
 
-        steps = Step.get_steps_from_yaml("mock_user_module:predict_handler", yaml_path)
+        _, steps = Step.get_steps_from_yaml(
+            "mock_user_module:predict_handler", yaml_path
+        )
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
         assert steps[0].require_dataset is True
 
-        steps = Step.get_steps_from_yaml("", yaml_path)
+        job_name, steps = Step.get_steps_from_yaml("", yaml_path)
+        assert job_name == "mock_user_module:evaluate_handler"
         assert len(steps) == 2
 
-        steps = Step.get_steps_from_yaml("0", yaml_path)
+        job_name, steps = Step.get_steps_from_yaml("0", yaml_path)
+        assert job_name == "mock_user_module:evaluate_handler"
         assert len(steps) == 2
 
-        steps = Step.get_steps_from_yaml(1, yaml_path)
+        job_name, steps = Step.get_steps_from_yaml(1, yaml_path)
+        assert job_name == "mock_user_module:predict_handler"
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
@@ -539,7 +546,7 @@ class MockHandler(PipelineHandler):
                 "ext_cmd_args": "",
             }
         ]
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockHandler.evaluate", yaml_path
         )
         context = Context(
@@ -657,7 +664,7 @@ class MockHandler:
             },
         ]
 
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockHandler.evaluate_handler", yaml_path
         )
         assert len(steps) == 2
@@ -1036,7 +1043,7 @@ class MockReport:
             }
         ]
 
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockReport.report_handler", yaml_path
         )
         scheduler = Scheduler(
@@ -1362,7 +1369,7 @@ def f_no_args():
                 "ext_cmd_args": "",
             },
         ]
-        steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -1377,7 +1384,7 @@ def f_no_args():
         )
         result = task.execute()
         assert result.status == "success"
-        steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -1393,7 +1400,7 @@ def f_no_args():
         result = task.execute()
         assert result.status == "success"
 
-        steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",

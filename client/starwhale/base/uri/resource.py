@@ -328,17 +328,30 @@ class Resource:
 
     @property
     def full_uri(self) -> str:
-        return "/".join(
-            [
-                self.instance.url,
-                "project",
-                self.project.name,
-                self.typ.value,
-                self.name,
-                "version",
-                self.version or "latest",
-            ]
-        )
+        parts = [
+            self.instance.url,
+            "project",
+            self.project.name,
+            self.typ.value,
+        ]
+
+        if self.typ == ResourceType.job:
+            if self.name:
+                parts.append(self.name)
+            elif self.version:
+                parts.append(self.version)
+            else:
+                raise RuntimeError("job uri must have version or name")
+        else:
+            parts.extend(
+                [
+                    self.name,
+                    "version",
+                    self.version or "latest",
+                ]
+            )
+
+        return "/".join(parts)
 
     def __str__(self) -> str:
         return self.full_uri

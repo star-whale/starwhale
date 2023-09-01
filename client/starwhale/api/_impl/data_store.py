@@ -1347,6 +1347,25 @@ class LocalDataStore:
         self.tables: Dict[str, MemoryTable] = {}
         self.lock = threading.Lock()
 
+    def list_tables(
+        self,
+        prefixes: List[str],
+    ) -> List[str]:
+        table_names = []
+
+        for prefix in prefixes:
+            prefix_path = Path(self.root_path) / prefix.strip("/")
+            for fpath in prefix_path.rglob(f"*{datastore_table_file_ext}*"):
+                if not fpath.is_file():
+                    continue
+
+                table_name = str(fpath.relative_to(self.root_path)).split(
+                    datastore_table_file_ext
+                )[0]
+                table_names.append(table_name)
+
+        return table_names
+
     def update_table(
         self,
         table_name: str,
@@ -1501,14 +1520,6 @@ class RemoteDataStore:
 
     __repr__ = __str__
 
-    @http_retry(
-        attempts=5,
-        wait=tenacity.wait_fixed(1),
-        retry=(
-            tenacity.retry_if_exception_type(Exception)
-            | retry_if_http_exception(_RETRY_HTTP_STATUS_CODES)
-        ),
-    )
     def update_table(
         self,
         table_name: str,
@@ -1540,36 +1551,37 @@ class RemoteDataStore:
         if self.token is None:
             raise MissingFieldError("no authorization token")
 
-        resp = requests.post(
-            urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/updateTable"),
-            data=json.dumps(data, separators=(",", ":")),
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": self.token,
-            },
-            timeout=60,
-        )
+        return self._do_request(data, "/api/v1/datastore/updateTable")  # type: ignore
 
-        if resp.status_code != HTTPStatus.OK:
-            console.error(
-                f"[update-table]Table:{table_name}, resp code:{resp.status_code}, \n resp text: {resp.text}, \n records: {records}"
-            )
-        resp.raise_for_status()
-        return resp.json()["data"]  # type: ignore
+    def list_tables(self, prefixes: List[str]) -> List[str]:
+        prefixes = [prefix.strip("/") for prefix in prefixes]
+        resp = self._do_request({"prefixes": prefixes}, "/api/v1/datastore/listTables")
+        return resp["tables"]  # type: ignore
 
-    @http_retry
-    def _do_scan_table_request(self, post_data: Dict[str, Any]) -> Dict[str, Any]:
+    @http_retry(
+        attempts=10,
+        wait=tenacity.wait_fixed(1),
+        retry=(
+            tenacity.retry_if_exception_type(Exception)
+            | retry_if_http_exception(_RETRY_HTTP_STATUS_CODES)
+        ),
+    )
+    def _do_request(self, post_data: Dict[str, Any], path: str) -> Any:
         resp = requests.post(
-            urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
+            urllib.parse.urljoin(self.instance_uri, path),
             data=json.dumps(post_data, separators=(",", ":")),
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": self.token,  # type: ignore
             },
-            timeout=60,
+            timeout=90,
         )
+        if resp.status_code != HTTPStatus.OK:
+            console.error(
+                f"path:{path} resp code:{resp.status_code}, \n resp text: {resp.text}, \n post_data: {post_data}"
+            )
         resp.raise_for_status()
-        return resp.json()["data"]  # type: ignore
+        return resp.json()["data"]
 
     def scan_tables(
         self,
@@ -1595,7 +1607,7 @@ class RemoteDataStore:
             post_data["endInclusive"] = True
         assert self.token is not None
         while True:
-            resp_json = self._do_scan_table_request(post_data)
+            resp_json = self._do_request(post_data, "/api/v1/datastore/scanTable")
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break
@@ -1636,6 +1648,18 @@ class DataStore(Protocol):
         keep_none: bool = False,
         end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
+        """
+        Scan tables with the given tables, and return the iterator of the records.
+        """
+        ...
+
+    def list_tables(
+        self,
+        prefixes: List[str],
+    ) -> List[str]:
+        """
+        List table names with the given prefixes.
+        """
         ...
 
 

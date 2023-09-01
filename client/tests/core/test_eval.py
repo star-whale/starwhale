@@ -73,7 +73,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
 
     @patch("starwhale.api._impl.data_store.atexit")
     @patch("starwhale.api._impl.wrapper.Evaluation.get")
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_summary_metrics")
     def test_info(
         self, m_get_metrics: MagicMock, m_get: MagicMock, m_atexit: MagicMock
     ):
@@ -220,7 +220,7 @@ class CloudJobTestCase(TestCase):
 
     @Mocker()
     @patch("starwhale.api._impl.wrapper.Evaluation.get")
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_summary_metrics")
     @patch("starwhale.core.job.view.console.print")
     def test_info(
         self,
