@@ -76,7 +76,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
 
         const { page, setPage, params } = useDatastorePage({
             pageNum: 1,
-            pageSize: 1000,
+            pageSize: 50,
             sortBy: tableConfig?.sortBy || 'id',
             sortDirection: tableConfig?.sortDirection || 'DESC',
             queries: tableConfig?.queries,

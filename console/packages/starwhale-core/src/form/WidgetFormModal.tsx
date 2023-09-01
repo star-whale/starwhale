@@ -14,7 +14,7 @@ import { useFetchDatastoreByTable } from '../datastore'
 import { usePanelDatastore } from '../context'
 import _ from 'lodash'
 
-const PAGE_TABLE_SIZE = 200
+const PAGE_TABLE_SIZE = 50
 
 export default function WidgetFormModal({
     store,

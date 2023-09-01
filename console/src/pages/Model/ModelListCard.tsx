@@ -47,7 +47,6 @@ export default function ModelListCard() {
                     t('Alias'),
                     t('Size'),
                     t('Owner'),
-
                     t('Created'),
                     t('Action'),
                 ]}
@@ -64,7 +63,7 @@ export default function ModelListCard() {
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
                             model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
-                            model.createdTime && formatTimestampDateTime(model.createdTime),
+                            model.version?.createdTime && formatTimestampDateTime(model.version?.createdTime),
                             <ButtonGroup key='action'>
                                 <ExtendButton
                                     tooltip={t('Version History')}
