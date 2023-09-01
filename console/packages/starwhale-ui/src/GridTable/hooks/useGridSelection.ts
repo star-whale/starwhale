@@ -45,21 +45,21 @@ function useGridSelection() {
         },
         [selectedRowIds]
     )
+
     const handleSelectMany = React.useCallback(() => {
-        if (onSelectMany) {
-            onSelectMany(rows.map((row) => row.id))
-        }
+        onSelectMany?.(
+            rows.map((row) => row.id),
+            rows.map((row) => row.data)
+        )
     }, [rows, onSelectMany])
+
     const handleSelectNone = React.useCallback(() => {
-        if (onSelectNone) {
-            onSelectNone()
-        }
+        onSelectNone?.()
     }, [onSelectNone])
+
     const handleSelectOne = React.useCallback(
         (row) => {
-            if (onSelectOne) {
-                onSelectOne(row.id)
-            }
+            onSelectOne?.(row.id, row.data)
         },
         [onSelectOne]
     )

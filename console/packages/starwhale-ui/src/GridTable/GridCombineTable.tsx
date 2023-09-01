@@ -32,6 +32,7 @@ const useStyles = createUseStyles({
 
 const selector = (state: IGridState) => ({
     rowSelectedIds: state.rowSelectedIds,
+    rowSelectedRecords: state.rowSelectedRecords,
     setRowSelectedIds: state.setRowSelectedIds,
 })
 
@@ -62,10 +63,12 @@ function BaseGridCombineTable({
     getId = (record: any) => val(record.id),
 }: ITableProps) {
     const styles = useStyles()
-    const { rowSelectedIds, setRowSelectedIds } = useStore(selector)
+    const { rowSelectedIds, setRowSelectedIds, rowSelectedRecords } = useStore(selector)
     const $compareRows = React.useMemo(() => {
+        if (rowSelectedIds.length === 0) return []
+        if (rowSelectedRecords.length > 0) return rowSelectedRecords
         return records?.filter((r) => rowSelectedIds.includes(getId(r))) ?? []
-    }, [rowSelectedIds, records, getId])
+    }, [rowSelectedIds, rowSelectedRecords, records, getId])
 
     return (
         <div data-type='grid-combine-table' className={styles.gridComineTable}>
