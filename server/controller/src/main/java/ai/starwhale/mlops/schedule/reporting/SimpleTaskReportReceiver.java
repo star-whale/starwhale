@@ -83,11 +83,12 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
             // prevent all the task status update before the task resume
             if (inMemoryTask.getGeneration() != null) {
                 if (reportedTask.getGeneration() == null) {
-                    // no generation, must be the task before resume
+                    log.debug("no generation from report {}, ignore", reportedTask.getId());
                     return;
                 }
                 if (reportedTask.getGeneration() < inMemoryTask.getGeneration()) {
-                    // generation is smaller, must be the task before resume
+                    log.debug("generation from report {} {} is less than cached generation {}, ignore",
+                            reportedTask.getId(), reportedTask.getGeneration(), inMemoryTask.getGeneration());
                     return;
                 }
             }

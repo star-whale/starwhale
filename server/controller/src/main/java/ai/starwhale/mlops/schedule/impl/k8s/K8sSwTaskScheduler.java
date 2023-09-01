@@ -154,7 +154,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             }
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
-            var annotations = getStringStringMap(task, job);
+            var annotations = generateAnnotations(task, job);
             if (pool != null && !CollectionUtils.isEmpty(pool.getMetadata())) {
                 annotations.putAll(pool.getMetadata());
             }
@@ -197,8 +197,8 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
     }
 
     @NotNull
-    private static Map<String, String> getStringStringMap(Task task, Job job) {
-        Map<String, String> annotations = new HashMap<>();
+    private static Map<String, String> generateAnnotations(Task task, Job job) {
+        var annotations = new HashMap<String, String>();
 
         var userId = job.getOwner() == null ? "" : job.getOwner().getId().toString();
         annotations.put(ANNOTATION_KEY_JOB_ID, job.getId().toString());
