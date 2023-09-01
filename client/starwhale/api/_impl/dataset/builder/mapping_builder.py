@@ -340,10 +340,12 @@ class MappingDatasetBuilder:
             while True:
                 row = self._rows_put_queue.get(block=True, timeout=None)
                 if row is None:
+                    self._rows_put_queue.task_done()
                     break
                 elif isinstance(
                     row, Exception
                 ):  # receive exception from ArtifactsBinSyncThread
+                    self._rows_put_queue.task_done()
                     raise row
                 else:
                     try:
@@ -362,6 +364,7 @@ class MappingDatasetBuilder:
             while True:
                 bin_path = self._abs_queue.get(block=True, timeout=None)
                 if bin_path is None:
+                    self._abs_queue.task_done()
                     break
                 else:
                     try:
