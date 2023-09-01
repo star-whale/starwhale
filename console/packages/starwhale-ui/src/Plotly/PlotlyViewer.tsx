@@ -24,6 +24,7 @@ function Plotly({ data, isLoading }: any) {
                             overflow: 'auto',
                             display: 'flex',
                             justifyContent: 'center',
+                            minWidth: '500px',
                         }}
                     >
                         <Plot

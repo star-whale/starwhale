@@ -47,7 +47,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
     )
     const { page, setPage, getScanParams } = useDatastorePage({
         pageNum: 1,
-        pageSize: 100,
+        pageSize: 50,
     })
 
     const { lastKey, records, columnTypes, recordInfo } = useFetchDatastoreByTables(getScanParams(tables))
