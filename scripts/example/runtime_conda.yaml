@@ -4,7 +4,7 @@ dependencies:
       - numpy
       - requests
   - pip:
-      - git+https://github.com/star-whale/starwhale.git@94eeff7863b61480ffb83d055d79eeb6ceb1bd21#subdirectory=example/runtime/pytorch/dummy
+      - git+https://github.com/star-whale/ci-helper.git@9ece0c94648c2504f3f1bdcd2a49c64aa0b4f2a3#subdirectory=examples/dummy
   - wheels:
       - starwhale-0.0.0.dev0-py3-none-any.whl # generate by make build-wheel in the cli_test.sh script
   - commands:
