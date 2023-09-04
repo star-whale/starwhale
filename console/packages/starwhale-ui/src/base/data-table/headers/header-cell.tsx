@@ -61,7 +61,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
-    const { sortable, rowSelectedIds } = useStore(selector, shallow)
+    const { sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {
@@ -147,7 +147,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
-            {props.index === 0 && !props.isSelectable && <p className='w-38px' />}
+            {props.index === 0 && !props.isSelectable && (queryinline || columnleinline) && <p className='w-38px' />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox

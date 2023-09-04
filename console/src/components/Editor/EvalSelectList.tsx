@@ -211,13 +211,13 @@ function EvalSelectList({
                 >
                     <GridTable
                         queryable={false}
-                        columnable
+                        columnable={editable}
                         removable={editable}
                         compareable={false}
                         paginationable={false}
                         queryinline={false}
                         sortable
-                        columnleinline
+                        columnleinline={false}
                         // @ts-ignore
                         records={uniconRecords}
                         columnTypes={unionColumnTypes}
@@ -243,7 +243,7 @@ function EvalSelectList({
                         onCurrentViewChange={(s) => onCurrentViewChange?.(s.currentView)}
                     >
                         <div className='flex gap-20px justify-end'>
-                            <ToolBar columnable viewable={false} queryable={false} />
+                            <ToolBar columnable={editable} viewable={false} queryable={false} />
                             {AddButton}
                         </div>
                     </GridTable>

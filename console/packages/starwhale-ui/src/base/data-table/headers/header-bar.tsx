@@ -15,12 +15,14 @@ const selector = (s: IGridState) => ({
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
     wrapperRef: s.wrapperRef,
     sortable: s.sortable,
+    removable: s.removable,
+    selectable: s.selectable,
 })
 
 function HeaderBar(props: { wrapperWidth: any }) {
     // @ts-ignore
     const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
-    const { wrapperRef, queryinline, columnleinline } = useStore(selector)
+    const { wrapperRef, queryinline, columnleinline, removable, selectable } = useStore(selector)
     const { renderConfigQueryInline, renderConfigColumns } = useGrid()
     const [isShowQuery, setIsShowQuery] = React.useState(false)
     const [isShowConfigColumns, setIsShowConfigColumns] = React.useState(false)
@@ -49,7 +51,10 @@ function HeaderBar(props: { wrapperWidth: any }) {
     )
 
     if (!columnleinline && !queryinline) {
-        return <p className='w-30px' />
+        if (!removable && !selectable) {
+            return null
+        }
+        return <p className='w-38px' />
     }
 
     return (
