@@ -1,11 +1,11 @@
 import React from 'react'
 import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
-import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { BusyPlaceholder } from '@starwhale/ui'
+import { Pagination } from '@starwhale/ui/Pagination'
 
 export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     paginationProps?: IPaginationProps
@@ -92,42 +92,8 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     </div>
                 }
             />
-            {paginationProps && (
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginTop: 5,
-                    }}
-                >
-                    <div
-                        style={{
-                            flexGrow: 1,
-                        }}
-                    />
-                    <Pagination
-                        size={PaginationSize.mini}
-                        numPages={
-                            paginationProps.total && paginationProps.count
-                                ? Math.ceil(paginationProps.total / Math.max(paginationProps.count, 1))
-                                : 0
-                        }
-                        currentPage={paginationProps.start ?? 1}
-                        onPageChange={({ nextPage }) => {
-                            if (paginationProps.onPageChange) {
-                                paginationProps.onPageChange(nextPage)
-                            }
-                            if (paginationProps.afterPageChange) {
-                                setPage({
-                                    ...page,
-                                    pageNum: nextPage,
-                                })
-                                paginationProps.afterPageChange(nextPage)
-                            }
-                        }}
-                    />
-                </div>
-            )}
+            {/* @ts-ignore */}
+            {paginationProps && <Pagination {...paginationProps} page={page} setPage={setPage} />}
         </>
     )
 }

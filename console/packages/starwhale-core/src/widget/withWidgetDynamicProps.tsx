@@ -114,7 +114,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 eventBus.getStream(PanelChartDownloadEvent).subscribe({
                     next: (evt) => {
                         if (evt.payload?.id === id && query) {
-                            exportTable(query as any)
+                            exportTable({ ...query, encodeWithType: false, limit: -1 })
                         }
                     },
                 })
@@ -161,7 +161,9 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // })
 
         const handleDataReload = useEventCallback(() => query && recordInfo.refetch())
-        const handleDataDownload = useEventCallback(() => query && exportTable(query))
+        const handleDataDownload = useEventCallback(
+            () => query && exportTable({ ...query, encodeWithType: false, limit: -1 })
+        )
         const handlePageChange = useEventCallback((tmp: any) => setPage(tmp, lastKey))
 
         return (
