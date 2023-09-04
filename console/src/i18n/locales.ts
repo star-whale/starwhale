@@ -56,6 +56,14 @@ const basic = {
         en: '{{0}} must be at least 3 characters',
         zh: '{{0}} 至少需要3个字符',
     },
+    'pagination.total.counts': {
+        en: 'Total {{0}}',
+        zh: '共 {{0}} 条',
+    },
+    'pagination.count.per.page': {
+        en: '{{0}} per page',
+        zh: '{{0}}条/页',
+    },
 }
 
 const dataset = {
