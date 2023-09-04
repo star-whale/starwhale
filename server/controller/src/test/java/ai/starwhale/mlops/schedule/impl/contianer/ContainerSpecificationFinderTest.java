@@ -64,7 +64,7 @@ public class ContainerSpecificationFinderTest {
             + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
             + "ssl_verify: false\n"
             + "default_threads: 10";
-    Map<String, String> expectedEnvs = new HashMap<String, String>() {
+    Map<String, String> expectedEnvs = new HashMap<>() {
         {
             put("SW_RUNTIME_PYTHON_VERSION", "3.10");
             put("SW_VERSION", "0.5.1");
@@ -121,7 +121,7 @@ public class ContainerSpecificationFinderTest {
                 50,
                 runTimeProperties,
                 taskTokenValidator,
-                mockTask(true)
+                mockTask()
         );
         assertMapEquals(expectedEnvs, builder.getContainerEnvs());
     }
@@ -131,7 +131,7 @@ public class ContainerSpecificationFinderTest {
         expectedEnvs.forEach((k, v) -> Assertions.assertEquals(v, actualEnv.get(k)));
     }
 
-    private Task mockTask(boolean devMode) throws JsonProcessingException {
+    private Task mockTask() throws JsonProcessingException {
         List<StepSpec> stepSpecs = Constants.yamlMapper.readValue(
                 "- concurrency: 1\n"
                         + "  needs: []\n"
@@ -146,11 +146,11 @@ public class ContainerSpecificationFinderTest {
                         + "  require_dataset: false\n"
                         + "  parameters_sig:\n"
                         + "    - name: a\n"
-                        + "      required: 'true'\n"
+                        + "      required: true\n"
                         + "    - name: b\n"
-                        + "      required: 'false'\n"
+                        + "      required: false\n"
                         + "    - name: c\n"
-                        + "      required: 'false'\n"
+                        + "      required: false\n"
                         + "  ext_cmd_args: '--a 11'",
                 new TypeReference<>() {
                 }
@@ -159,25 +159,25 @@ public class ContainerSpecificationFinderTest {
                 .id(1L)
                 .model(Model.builder().name("swmpN").version("swmpV").projectId(101L).build())
                 .jobRuntime(JobRuntime.builder()
-                                    .name("swrtN")
-                                    .version("swrtV")
-                                    .image("imageRT")
-                                    .projectId(102L)
-                                    .manifest(new RuntimeService.RuntimeManifest(
-                                            "",
-                                            new RuntimeService.RuntimeManifest.Environment(
-                                                    "3.10",
-                                                    new RuntimeService.RuntimeManifest.Lock("0.5.1")
-                                            ), null
-                                    ))
-                                    .build())
+                        .name("swrtN")
+                        .version("swrtV")
+                        .image("imageRT")
+                        .projectId(102L)
+                        .manifest(new RuntimeService.RuntimeManifest(
+                                "",
+                                new RuntimeService.RuntimeManifest.Environment(
+                                        "3.10",
+                                        new RuntimeService.RuntimeManifest.Lock("0.5.1")
+                                ), null
+                        ))
+                        .build())
                 .type(JobType.EVALUATION)
-                .devMode(devMode)
+                .devMode(true)
                 .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder()
-                                        .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
-                                        .size(300L).projectId(103L).build()))
+                                .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
+                                .size(300L).projectId(103L).build()))
                 .stepSpecs(stepSpecs)
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").id(100L).build())
@@ -195,11 +195,11 @@ public class ContainerSpecificationFinderTest {
                 .uuid("uuid")
                 .status(TaskStatus.READY)
                 .taskRequest(TaskRequest.builder()
-                                     .index(1)
-                                     .total(1)
-                                     .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f)))
-                                     .env(List.of(Env.builder().name("SW_ENV").value("test").build()))
-                                     .build())
+                        .index(1)
+                        .total(1)
+                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f)))
+                        .env(List.of(Env.builder().name("SW_ENV").value("test").build()))
+                        .build())
                 .build();
     }
 

@@ -70,21 +70,21 @@ public class ModelServingServiceTest {
     @BeforeEach
     public void setUp() {
         systemSettingService.updateSetting("---\n"
-                                                   + "dockerSetting:\n"
-                                                   + "  registryForPull: \"\"\n"
-                                                   + "  registryForPush: \"\"\n"
-                                                   + "  userName: \"\"\n"
-                                                   + "  password: \"\"\n"
-                                                   + "  insecure: true\n"
-                                                   + "resourcePoolSetting:\n"
-                                                   + "- name: \"default\"\n"
-                                                   + "  nodeSelector: \n"
-                                                   + "    foo: \"bar\"\n"
-                                                   + "  resources:\n"
-                                                   + "  - name: \"cpu\"\n"
-                                                   + "    max: null\n"
-                                                   + "    min: null\n"
-                                                   + "    defaults: 5.0");
+                + "dockerSetting:\n"
+                + "  registryForPull: \"\"\n"
+                + "  registryForPush: \"\"\n"
+                + "  userName: \"\"\n"
+                + "  password: \"\"\n"
+                + "  insecure: true\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: \n"
+                + "    foo: \"bar\"\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: 5.0");
         virtualJobLoader = new VirtualJobLoader(null);
         jobSpecParser = new JobSpecParser();
         jobService = mock(JobServiceForWeb.class);
@@ -161,20 +161,20 @@ public class ModelServingServiceTest {
                 eq("rp"),
                 eq(null),
                 eq("---\n"
-                           + "- concurrency: 1\n"
-                           + "  resources:\n"
-                           + "  - type: \"cpu\"\n"
-                           + "    request: 7.0\n"
-                           + "    limit: 8.0\n"
-                           + "  env:\n"
-                           + "  - name: \"a\"\n"
-                           + "    value: \"b\"\n"
-                           + "  replicas: 1\n"
-                           + "  expose: 8080\n"
-                           + "  job_name: \"online_eval\"\n"
-                           + "  name: \"online_eval\"\n"
-                           + "  show_name: \"online_eval\"\n"
-                           + "  require_dataset: false\n"),
+                        + "- name: \"online_eval\"\n"
+                        + "  concurrency: 1\n"
+                        + "  replicas: 1\n"
+                        + "  resources:\n"
+                        + "  - type: \"cpu\"\n"
+                        + "    request: 7.0\n"
+                        + "    limit: 8.0\n"
+                        + "  env:\n"
+                        + "  - name: \"a\"\n"
+                        + "    value: \"b\"\n"
+                        + "  expose: 8080\n"
+                        + "  job_name: \"online_eval\"\n"
+                        + "  show_name: \"online_eval\"\n"
+                        + "  require_dataset: false\n"),
                 eq(JobType.BUILT_IN),
                 eq(null),
                 eq(false),
