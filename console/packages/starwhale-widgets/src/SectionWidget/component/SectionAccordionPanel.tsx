@@ -12,7 +12,7 @@ import useTranslation from '@/hooks/useTranslation'
 // @FIXME type define
 const Header = React.forwardRef((props, ref) => {
     // console.log('Header', props)
-    const { $expanded, children, onClick, onPanelChartAdd } = props as any
+    const { $expanded, children, onClick, onPanelChartAdd, editable } = props as any
     const [t] = useTranslation()
 
     const actions = {
@@ -67,17 +67,21 @@ const Header = React.forwardRef((props, ref) => {
                 {children}
             </Button>
             <div style={{ flex: 1 }} />
-            <SectionPopover
-                actions={actions}
-                // // @ts-ignore
-                onOptionSelect={(item: any) => {
-                    // @ts-ignore
-                    actions[item.type]?.()
-                }}
-            />
-            <Button kind='secondary' onClick={onPanelChartAdd} disabled={!!!onPanelChartAdd}>
-                {t('panel.chart.add')}
-            </Button>
+            {editable && (
+                <SectionPopover
+                    actions={actions}
+                    // // @ts-ignore
+                    onOptionSelect={(item: any) => {
+                        // @ts-ignore
+                        actions[item.type]?.()
+                    }}
+                />
+            )}
+            {editable && (
+                <Button kind='secondary' onClick={onPanelChartAdd} disabled={!!!onPanelChartAdd}>
+                    {t('panel.chart.add')}
+                </Button>
+            )}
         </div>
     )
 })
@@ -98,26 +102,28 @@ export default function SectionAccordionPanel(props: any) {
         <Panel
             {...rest}
             overrides={{
-                Header: (headerProps: any) => (
-                    <Header {...rest} {...headerProps}>
-                        {title}
-                        {childNums ? (
-                            <span
-                                style={{
-                                    backgroundColor: '#F0F5FF',
-                                    color: 'rgba(2,16,43,0.60)',
-                                    fontWeight: 'normal',
-                                    borderRadius: '12px',
-                                    padding: '3px 10px',
-                                    marginLeft: '8px',
-                                    fontSize: '12px ',
-                                }}
-                            >
-                                {childNums}
-                            </span>
-                        ) : null}
-                    </Header>
-                ),
+                Header: (headerProps: any) => {
+                    return (
+                        <Header {...rest} {...headerProps}>
+                            {title}
+                            {childNums ? (
+                                <span
+                                    style={{
+                                        backgroundColor: '#F0F5FF',
+                                        color: 'rgba(2,16,43,0.60)',
+                                        fontWeight: 'normal',
+                                        borderRadius: '12px',
+                                        padding: '3px 10px',
+                                        marginLeft: '8px',
+                                        fontSize: '12px ',
+                                    }}
+                                >
+                                    {childNums}
+                                </span>
+                            ) : null}
+                        </Header>
+                    )
+                },
                 PanelContainer: {
                     style: {
                         backgroundColor: '#FAFBFC;',

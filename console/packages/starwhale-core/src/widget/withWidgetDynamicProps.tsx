@@ -26,6 +26,7 @@ const selector = (s: WidgetStoreState) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onLayoutOrderChange: s.onLayoutOrderChange,
     onConfigChange: s.onConfigChange,
+    isEditable: s.isEditable,
 })
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
@@ -179,6 +180,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 ) : (
                     <WrappedWidgetRender
                         {...props}
+                        readonly={!api.isEditable()}
                         name={overrides?.name}
                         data={$data}
                         page={page}

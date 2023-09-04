@@ -61,6 +61,8 @@ export type IGridExtenalState = Pick<
     | 'sortable'
     | 'fillable'
     | 'queryable'
+    | 'selectable'
+    | 'removable'
     | 'queryinline'
     | 'columnleinline'
     | 'getId'

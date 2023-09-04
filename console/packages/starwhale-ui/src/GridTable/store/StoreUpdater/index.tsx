@@ -71,6 +71,8 @@ const StoreUpdater = ({
     page,
     onPageChange,
     onRemove,
+    removable,
+    selectable,
 }: StoreUpdaterProps) => {
     const { reset, setCurrentView } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -85,6 +87,8 @@ const StoreUpdater = ({
     useDirectStoreUpdater('sortable', sortable, store.setState)
     useDirectStoreUpdater('fillable', fillable, store.setState)
     useDirectStoreUpdater('queryable', queryable, store.setState)
+    useDirectStoreUpdater('removable', removable, store.setState)
+    useDirectStoreUpdater('selectable', selectable, store.setState)
     useDirectStoreUpdater('queryinline', queryinline, store.setState)
     useDirectStoreUpdater('columnleinline', columnleinline, store.setState)
     // fn

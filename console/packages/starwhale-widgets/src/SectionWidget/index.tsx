@@ -2,7 +2,7 @@ import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
+import { WidgetRendererProps, WidgetConfig, WidgetGroupType, WidgetStoreState } from '@starwhale/core/types'
 import { PanelChartDownloadEvent, PanelChartReloadEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { PanelContextProvider, useEditorContext } from '@starwhale/core/context'
@@ -94,18 +94,20 @@ export const CONFIG: WidgetConfig = {
 
 type OptionConfig = (typeof CONFIG)['optionConfig']
 
-const selector = (s: any) => ({
+const selector = (s: WidgetStoreState) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
     panelGroup: s.panelGroup,
     widgets: s.widgets,
+    editable: s.editable,
 })
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     const { store } = useEditorContext()
     const api = store(selector, shallow)
+    const { editable } = api
     const [editWidget, setEditWidget] = useState<{
         type?: string
         path?: any[]
@@ -325,13 +327,15 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                     <div className={styles.panelWrapper} id={child.props.id}>
                         <div className={styles.contentWrapper}>{child}</div>
                         <div className={styles.contentTitle}>{chartTitle}</div>
-                        <ChartConfigGroup
-                            onEdit={() => handleChartEdit(child.props.id)}
-                            onDelete={() => handelChartDeletePanel(child.props?.id)}
-                            onPreview={() => handleChartPreview(child.props?.id)}
-                            onDownload={() => handleDownloadPanel(child.props?.id)}
-                            onReload={() => handleReloadPanel(child.props?.id)}
-                        />
+                        {editable && (
+                            <ChartConfigGroup
+                                onEdit={() => handleChartEdit(child.props.id)}
+                                onDelete={() => handelChartDeletePanel(child.props?.id)}
+                                onPreview={() => handleChartPreview(child.props?.id)}
+                                onDownload={() => handleDownloadPanel(child.props?.id)}
+                                onReload={() => handleReloadPanel(child.props?.id)}
+                            />
+                        )}
                     </div>
                 </Resizable>
             )
@@ -372,6 +376,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     return (
         <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
+                editable={editable}
                 childNums={len}
                 title={title}
                 expanded={isDragging ? false : isExpaned}
