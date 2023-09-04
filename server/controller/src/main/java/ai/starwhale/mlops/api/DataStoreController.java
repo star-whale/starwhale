@@ -24,7 +24,6 @@ import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
-import ai.starwhale.mlops.api.protocol.datastore.TableDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
@@ -36,7 +35,7 @@ import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
-import ai.starwhale.mlops.datastore.exporter.RecordsExporter;
+import ai.starwhale.mlops.datastore.exporter.RecordsStreamingExporter;
 import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -54,6 +53,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,7 +72,7 @@ public class DataStoreController implements DataStoreApi {
 
     @Resource
     @Setter
-    private RecordsExporter recordsExporter;
+    private RecordsStreamingExporter recordsExporter;
 
     public ResponseEntity<ResponseMessage<TableNameListVo>> listTables(ListTablesRequest request) {
         return ResponseEntity.ok(
@@ -165,14 +165,32 @@ public class DataStoreController implements DataStoreApi {
     @Override
     public void queryAndExport(QueryTableRequest request, HttpServletResponse httpResponse) {
         try {
-            RecordList recordList = queryRecordList(request);
-            byte[] bytes = recordsExporter.asBytes(recordList);
-            httpResponse.addHeader("Content-Disposition",
-                    "attachment; filename=\"" + request.getTableName() + ".csv\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
-            httpResponse.addHeader("Content-Type", "text/csv;charset=utf-8"); // the current impl is csv
+            int remaining = request.getLimit();
+            int totalRecords = 0;
+            httpResponse.addHeader("Content-Type", recordsExporter.getWebMediaType());
+            httpResponse.addHeader(
+                    "Content-Disposition",
+                    "attachment; filename=\"" + extractRealTablename(request.getTableName()) + "."
+                            + recordsExporter.getFileSuffix() + "\""
+            );
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(bytes);
+            do {
+                RecordList recordList = queryRecordList(request);
+                int resultSize = recordList.getRecords().size();
+                if (resultSize == 0) {
+                    break;
+                }
+                recordsExporter.exportTo(recordList, outputStream);
+                totalRecords += resultSize;
+                request.setStart(totalRecords);
+                if (remaining != -1) {
+                    remaining = remaining - resultSize;
+                    if (remaining <= 0) {
+                        break;
+                    }
+                }
+                request.setLimit(remaining);
+            } while (true);
             outputStream.flush();
         } catch (SwValidationException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
@@ -182,19 +200,45 @@ public class DataStoreController implements DataStoreApi {
         }
     }
 
+    @NotNull
+    private static String extractRealTablename(String tableName) {
+        String[] splits = tableName.split("/");
+        return splits[splits.length - 1];
+    }
+
     @Override
     public void scanAndExport(ScanTableRequest request, HttpServletResponse httpResponse) {
         try {
-            RecordList recordList = scanRecordList(request);
-            byte[] bytes = recordsExporter.asBytes(recordList);
-            httpResponse.addHeader("Content-Disposition",
-                    "attachment; filename=\"" + String.join("-",
-                            request.getTables().stream().map(TableDesc::getTableName).collect(
-                                    Collectors.toList())) + ".csv\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
-            httpResponse.addHeader("Content-Type", "text/csv;charset=utf-8"); // the current impl is csv
+            int remaining = request.getLimit();
+            httpResponse.addHeader(
+                    "Content-Disposition",
+                    "attachment; filename=\"" + String.join(
+                            "-",
+                            request.getTables()
+                                    .stream()
+                                    .map(tableDesc -> extractRealTablename(tableDesc.getTableName()))
+                                    .collect(
+                                            Collectors.toList())
+                    ) + "." + recordsExporter.getFileSuffix() + "\""
+            );
+            httpResponse.addHeader("Content-Type", recordsExporter.getWebMediaType());
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(bytes);
+            do {
+                RecordList recordList = scanRecordList(request);
+                int resultSize = recordList.getRecords().size();
+                if (resultSize == 0) {
+                    break;
+                }
+                recordsExporter.exportTo(recordList, outputStream);
+                request.setStart(recordList.getLastKey());
+                if (remaining != -1) {
+                    remaining = remaining - resultSize;
+                    if (remaining <= 0) {
+                        break;
+                    }
+                }
+                request.setLimit(remaining);
+            } while (true);
             outputStream.flush();
         } catch (SwValidationException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);

@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,22 +48,27 @@ import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
-import ai.starwhale.mlops.datastore.exporter.RecordsExporter;
+import ai.starwhale.mlops.datastore.exporter.RecordsStreamingExporter;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import brave.internal.collect.Lists;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 public class DataStoreControllerTest {
@@ -1604,26 +1610,45 @@ public class DataStoreControllerTest {
         }
     }
 
-    @Test
-    public void testExport() throws IOException {
+    public static Stream<Arguments> provideMultiParams() {
+        return Stream.of(
+                Arguments.of(-1, 2),
+                Arguments.of(3, 2),
+                Arguments.of(1, 1)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideMultiParams")
+    public void testExportTable(int limit, int expectedCall) throws IOException {
         DataStoreController controller = new DataStoreController();
-        RecordsExporter exporter = mock(RecordsExporter.class);
+        RecordsStreamingExporter exporter = mock(RecordsStreamingExporter.class);
         controller.setRecordsExporter(exporter);
         DataStore dataStore = mock(DataStore.class);
         controller.setDataStore(dataStore);
-        byte[] content = "hello".getBytes();
-        when(exporter.asBytes(any())).thenReturn(content);
-        when(dataStore.query(any())).thenReturn(new RecordList(null, null, null, null, null));
-        when(dataStore.scan(any())).thenReturn(new RecordList(null, null, null, null, null));
+        given(exporter.exportTo(any(), any())).willAnswer(invocationOnMock -> {
+            OutputStream outstream = (OutputStream) invocationOnMock.getArgument(1);
+            outstream.write("hello".getBytes());
+            return null;
+        });
+        when(dataStore.query(any()))
+                .thenReturn(new RecordList(null, null, List.of(Map.of("r", "v")), null, null))
+                .thenReturn(new RecordList(null, null, List.of(Map.of("r", "v")), null, null))
+                .thenReturn(new RecordList(null, null, List.of(), null, null));
+        when(dataStore.scan(any()))
+                .thenReturn(new RecordList(null, null, List.of(Map.of("r", "v")), null, null))
+                .thenReturn(new RecordList(null, null, List.of(Map.of("r", "v")), null, null))
+                .thenReturn(new RecordList(null, null, List.of(), null, null));
         HttpServletResponse response = mock(HttpServletResponse.class);
         ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);
         controller.queryAndExport(new QueryTableRequest() {
             {
                 setTableName("t1");
+                setLimit(limit);
             }
         }, response);
-        verify(outputStream).write(content);
+        verify(outputStream, times(expectedCall)).write("hello".getBytes());
 
         response = mock(HttpServletResponse.class);
         outputStream = mock(ServletOutputStream.class);
@@ -1631,8 +1656,10 @@ public class DataStoreControllerTest {
         controller.scanAndExport(new ScanTableRequest() {
             {
                 setTables(List.of());
+                setLimit(limit);
             }
         }, response);
-        verify(outputStream).write(content);
+        verify(outputStream, times(expectedCall)).write("hello".getBytes());
     }
+
 }
