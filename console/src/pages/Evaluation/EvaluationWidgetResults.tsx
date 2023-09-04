@@ -228,7 +228,7 @@ function EvaluationWidgetResults() {
     const { project } = useProject()
     const projectId = project?.id ?? projectFromUri
     const { job } = useJob()
-    const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : ''
+    const storeKey = job?.modelName ? ['evaluation-model', job?.modelName, job?.modelVersion].join('-') : ''
     const [currentLayout, setCurrentLayout] = React.useState<Layout | undefined>(undefined)
     const [layouts, setLayouts] = React.useState<Layout[]>([])
     const onStateChange = async (data: any) => {
