@@ -7,6 +7,7 @@ import numbers
 import threading
 from abc import ABC, abstractmethod
 from pathlib import Path
+from functools import partial
 from collections import defaultdict
 
 import yaml
@@ -367,18 +368,51 @@ class Handler(ASDictMixin):
                     and issubclass(v, PipelineHandler)
                     and v != PipelineHandler
                 ):
+                    _cls = v
                     # compatible with old version: ppl and cmp function are renamed to predict and evaluate
                     predict_func = getattr(v, "predict", None) or getattr(v, "ppl")
                     evaluate_func = getattr(v, "evaluate", None) or getattr(v, "cmp")
-                    Handler.register(
-                        replicas=1, name="predict", require_dataset=True, built_in=True
-                    )(predict_func)
-                    Handler.register(
-                        replicas=1,
+
+                    predict_register = partial(
+                        Handler.register,
+                        name="predict",
+                        require_dataset=True,
+                        built_in=True,
+                    )
+
+                    evaluate_register = partial(
+                        Handler.register,
                         needs=[predict_func],
                         name="evaluate",
                         built_in=True,
-                    )(evaluate_func)
+                        replicas=1,
+                    )
+
+                    run_info = getattr(_cls, "_registered_run_info", None)
+                    if run_info:
+                        predict_run_kw: t.Dict = {"replicas": 1}
+                        evaluate_run_kw: t.Dict = {"replicas": 1}
+
+                        for k, v in run_info.items():
+                            _cls_name, _, _func_name = k.rpartition(".")
+                            if _cls_name != _cls.__name__:
+                                continue
+
+                            if _func_name == "predict":
+                                predict_run_kw.update(v)
+                            elif _func_name == "evaluate":
+                                evaluate_run_kw.update(v)
+
+                        predict_register(
+                            replicas=predict_run_kw.get("replicas", 1),
+                            resources=predict_run_kw.get("resources"),
+                        )(predict_func)
+                        evaluate_register(resources=evaluate_run_kw.get("resources"))(
+                            evaluate_func
+                        )
+                    else:
+                        predict_register(replicas=1)(predict_func)
+                        evaluate_register()(evaluate_func)
 
     @classmethod
     def _register(cls, handler: Handler, func: t.Callable) -> None:

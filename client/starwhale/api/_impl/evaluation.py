@@ -33,6 +33,8 @@ _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
 
 class PipelineHandler(metaclass=ABCMeta):
     _INPUT_PREFIX = "input/"
+    _registered_run_info: t.Dict[str, t.Dict] = {}
+    _registering_lock = threading.Lock()
 
     def __init__(
         self,
@@ -89,6 +91,77 @@ class PipelineHandler(metaclass=ABCMeta):
             console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self._timeline_writer.close()
+
+    @classmethod
+    def run(
+        cls, resources: t.Optional[t.Dict[str, t.Any]] = None, replicas: int = 1
+    ) -> t.Callable:
+        """The decorator can be used to define the resources and replicas for the predict and evaluate function of the PipelineHandler.
+
+        Arguments:
+            resources: [Dict, optional] Resources for the predict/evaluation task, such as cpu, memory, nvidia.com/gpu etc. Current only supports
+                the Server instance.
+            replicas: [int, optional] The number of the predict tasks. Default is 1.
+                For the evaluate function, the replicas option is not supported that the replicas is always 1.
+
+        Returns:
+            [Callable] The decorator function.
+
+        Examples:
+        ```python
+        from starwhale import PipelineHandler
+
+        class MyPipeline(PipelineHandler):
+
+        @PipelineHandler.run(resources={"memory": 200 * 1024, "nvidia.com/gpu": 1}, replicas=4)
+        def predict(self, data):
+            ...
+
+        @PipelineHandler.run(resources={"memory": 200 * 1024})
+        def evaluate(self, ppl_result: t.Iterator):
+            ...
+        ```
+        """
+
+        def decorator(func: t.Callable) -> t.Callable:
+            if not inspect.isfunction(func):
+                raise ParameterError(
+                    f"{func} is not a function, @PipelineHandler.run decorator can only be used on predict/evaluate function"
+                )
+
+            class_name, _, name = func.__qualname__.rpartition(".")
+            if not class_name or "." in class_name:
+                raise ParameterError(
+                    f"{func} is not a class method or is an inner class method"
+                )
+
+            # TODO: add class check: is subclass of PipelineHandler
+
+            # compatible with the old version
+            if name == "ppl":
+                name = "predict"
+            elif name == "cmp":
+                name = "evaluate"
+
+            if name not in ("predict", "evaluate"):
+                raise ParameterError(
+                    f"{name} is not a valid function name, @PipelineHandler.run decorator can only be used on predict/evaluate function"
+                )
+
+            if name == "evaluate" and replicas != 1:
+                raise ParameterError(
+                    "evaluate function does not support replicas option, replicas always is 1"
+                )
+
+            with cls._registering_lock:
+                cls._registered_run_info[f"{class_name}.{name}"] = {
+                    "resources": resources,
+                    "replicas": replicas,
+                }
+
+            return func
+
+        return decorator
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
