@@ -87,7 +87,7 @@ export default Node.create({
             state: {
                 default: null,
                 renderHTML: (attributes) => {
-                    //console.log(attributes.state)
+                    // console.log(attributes.state)
                     return {
                         'data-state': isString(attributes.state) ? attributes.state : JSON.stringify(attributes.state),
                     }

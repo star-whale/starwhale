@@ -277,8 +277,8 @@ function EvalSelectList({
                                     size='compact'
                                     onClick={() => {
                                         const next = ref.current?.getData()
-                                        // eslint-disable-next-line consistent-return
                                         // notice: unqiue records & columnTypes
+                                        // eslint-disable-next-line consistent-return
                                         const renew = _.mergeWith({}, selectData, next, (objValue, srcValue, key) => {
                                             if (_.isArray(objValue)) {
                                                 if (key === 'columnTypes') {
