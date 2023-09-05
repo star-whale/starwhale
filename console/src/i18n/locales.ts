@@ -76,6 +76,14 @@ const basic = {
         en: 'Collapse details',
         zh: '收起视图',
     },
+    'yes': {
+        en: 'Yes',
+        zh: '是',
+    },
+    'no': {
+        en: 'No',
+        zh: '否',
+    },
 }
 
 const dataset = {

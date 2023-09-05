@@ -373,8 +373,6 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
 
     const isChartAdd = isEvaluationList ? Object.keys(evalSelectData || {}).length > 0 : true
 
-    console.log(editable)
-
     return (
         <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
