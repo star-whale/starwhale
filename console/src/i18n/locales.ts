@@ -716,6 +716,22 @@ const widget = {
         en: 'Chart Type',
         zh: '图表类型',
     },
+    'panel.chart.reload': {
+        en: 'Reload',
+        zh: '刷新',
+    },
+    'panel.chart.download': {
+        en: 'Download',
+        zh: '下载',
+    },
+    'panel.chart.preview': {
+        en: 'Preview',
+        zh: '预览',
+    },
+    'panel.chart.settings': {
+        en: 'Setting',
+        zh: '设置',
+    },
     'panel.chart.table.name': {
         en: 'Table Name',
         zh: '数据表',

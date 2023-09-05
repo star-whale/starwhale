@@ -3,7 +3,8 @@ import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
 import classnames from 'classnames'
 import ChartConfigPopover from './ChartConfigPopover'
-import Button from '@starwhale/ui/Button'
+import { ExtendButton } from '@starwhale/ui/Button'
+import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
     chartGroup: {
@@ -44,6 +45,7 @@ export default function ChartConfigGroup({
         edit: onEdit,
         delete: onDelete,
     }
+    const [t] = useTranslation()
 
     return (
         <div className={classnames('panel-operator', styles.chartGroup)}>
@@ -53,10 +55,11 @@ export default function ChartConfigGroup({
                     actions?.[item?.type]()
                 }}
             />
-            <Button
+            <ExtendButton
                 kind='tertiary'
                 className={styles.icon}
                 onClick={() => onReload()}
+                tooltip={t('panel.chart.reload')}
                 overrides={{
                     BaseButton: {
                         style: {
@@ -76,11 +79,12 @@ export default function ChartConfigGroup({
                 }}
             >
                 <IconFont type='reset' size={12} />
-            </Button>
-            <Button
+            </ExtendButton>
+            <ExtendButton
                 kind='tertiary'
                 className={styles.icon}
                 onClick={() => onDownload()}
+                tooltip={t('panel.chart.download')}
                 overrides={{
                     BaseButton: {
                         style: {
@@ -100,11 +104,12 @@ export default function ChartConfigGroup({
                 }}
             >
                 <IconFont type='download' size={12} />
-            </Button>
-            <Button
+            </ExtendButton>
+            <ExtendButton
                 kind='tertiary'
                 className={styles.icon}
                 onClick={() => onPreview()}
+                tooltip={t('panel.chart.preview')}
                 overrides={{
                     BaseButton: {
                         style: {
@@ -124,7 +129,7 @@ export default function ChartConfigGroup({
                 }}
             >
                 <IconFont type='fullscreen' size={12} />
-            </Button>
+            </ExtendButton>
         </div>
     )
 }
