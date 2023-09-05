@@ -1,0 +1,11 @@
+name: llm-leaderboard-analysis
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  python: "3.10"
+dependencies:
+  - pip:
+      - git+https://github.com/star-whale/starwhale.git@main#subdirectory=client
+      - numpy
+      - scipy
