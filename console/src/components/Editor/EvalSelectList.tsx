@@ -278,8 +278,12 @@ function EvalSelectList({
                                     onClick={() => {
                                         const next = ref.current?.getData()
                                         // eslint-disable-next-line consistent-return
+                                        // notice: unqiue records & columnTypes
                                         const renew = _.mergeWith({}, selectData, next, (objValue, srcValue, key) => {
                                             if (_.isArray(objValue)) {
+                                                if (key === 'columnTypes') {
+                                                    return _.unionBy(objValue.concat(srcValue), 'name')
+                                                }
                                                 if (key === 'records') {
                                                     return _.unionBy(objValue.concat(srcValue), 'id.value')
                                                 }
