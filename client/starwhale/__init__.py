@@ -1,5 +1,6 @@
 from starwhale.api import model, track, evaluation
 from starwhale.api.job import (
+    Job,
     Handler,
     IntInput,
     BoolInput,
@@ -40,13 +41,18 @@ from starwhale.api.instance import login, logout
 from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import PipelineHandler
 from starwhale.api.experiment import fine_tune
+from starwhale.base.uri.resource import Resource
 
 dataset = Dataset.dataset
 handler = Handler.register
+job = Job.job
 
 __all__ = [
     "__version__",
     "model",
+    "Job",
+    "job",
+    "Resource",
     "PipelineHandler",
     "multi_classification",
     "Dataset",

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.report;
 
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -25,9 +26,13 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class CreateReportRequest {
     @Size(min = 1, max = 255, message = "Title length should between 1-255")
+    @NotNull
     private String title;
+
     @Size(max = 255, message = "Description length is too long")
     private String description;
+
     @Size(min = 1, message = "Content can't be null")
+    @NotNull
     private String content;
 }

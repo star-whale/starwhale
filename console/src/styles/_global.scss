@@ -6,7 +6,9 @@
     font-style: normal;
     font-weight: 400;
     font-size: 16px;
-    src: local(''), url('../assets/fonts/RobotoMono-Regular.ttf') format('truetype');
+    src: local(''),
+        url('https://starwhale-examples.oss-cn-beijing.aliyuncs.com/ui/iconfont/RobotoMono-Regular.ttf')
+            format('truetype');
 }
 
 #root {

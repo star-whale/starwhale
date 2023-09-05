@@ -5,6 +5,7 @@ import uuid
 import base64
 import random
 import string
+import typing
 import typing as t
 import platform
 from pathlib import Path
@@ -146,9 +147,12 @@ def get_downloadable_sw_version() -> str:
     return "" if _v == SW_DEV_DUMMY_VERSION else _v
 
 
-def get_field(item: t.Dict, field: str):  # type:ignore
+def get_field(item: t.Any, field: str) -> t.Any:
     for k in field.split("."):
-        item = item.get(k)  # type:ignore
+        if hasattr(item, k):
+            item = getattr(item, k)
+        else:
+            item = item.get(k)
     return item
 
 
@@ -163,22 +167,26 @@ class Order:
         self.reverse = reverse
 
 
-def sort_obj_list(
-    data: t.Sequence, orders: t.List[Order]
-) -> t.List[t.Dict[str, t.Any]]:
+SortableType = t.TypeVar("SortableType", bound=typing.Sequence)
+
+
+def sort_obj_list(data: SortableType, orders: t.List[Order]) -> SortableType:
     def cmp(a: t.Any, b: t.Any) -> t.Any:
         return (a > b) - (a < b)
 
-    def compare(lhs: t.Dict, rhs: t.Dict) -> int:
+    def compare(lhs: t.Any, rhs: t.Any) -> int:
         m = 0
         for o in orders:
-            m = cmp(get_field(lhs, o.field), get_field(rhs, o.field))
+            m = cmp(
+                get_field(lhs, o.field),  # type:ignore[arg-type]
+                get_field(rhs, o.field),  # type:ignore[arg-type]
+            )
             m = o.reverse and -m or m
             if m != 0:
                 return m
         return m
 
-    return sorted(data, key=cmp_to_key(compare))
+    return sorted(data, key=cmp_to_key(compare))  # type: ignore
 
 
 def load_yaml(path: t.Union[str, Path]) -> t.Any:

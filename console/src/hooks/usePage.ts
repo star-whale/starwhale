@@ -30,7 +30,7 @@ export function usePage(opt?: {
     let pageSize = parseInt(pageSizeStr, 10)
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(pageSize) || pageSize <= 0) {
-        pageSize = 10
+        pageSize = 20
     }
 
     return [

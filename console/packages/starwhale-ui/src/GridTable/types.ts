@@ -2,7 +2,7 @@ import { RecordListVo } from '@starwhale/core'
 import { RowT, BatchActionT, RowActionT } from '../base/data-table/types'
 import { IStore, ITableState } from './store/store'
 
-export type IGridState = ITableState & ITableProps
+export type IGridState = ITableState & IGridExtenalState
 
 export interface ITableProps extends IToolBarProps, IPaginationProps {
     records?: RecordListVo['records']
@@ -55,6 +55,36 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     paginationable?: boolean
     wrapperRef?: React.MutableRefObject<HTMLElement | undefined>
 }
+
+export type IGridExtenalState = Pick<
+    ITableProps,
+    | 'sortable'
+    | 'fillable'
+    | 'queryable'
+    | 'selectable'
+    | 'removable'
+    | 'queryinline'
+    | 'columnleinline'
+    | 'getId'
+    | 'onSave'
+    | 'onRemove'
+    | 'onPageChange'
+    | 'onViewsChange'
+    | 'onColumnsChange'
+    | 'onCurrentViewChange'
+    | 'onIncludedRowsChange'
+    | 'onRowHighlightChange'
+    | 'onRowSelectedChange'
+    | 'page'
+    | 'records'
+    | 'columnTypes'
+    | 'rowSelectedIds'
+    | 'currentView'
+    // inline set
+    | 'getColumns'
+    | 'wrapperRef'
+    | 'rows'
+>
 
 export interface IToolBarProps {
     columnable?: boolean

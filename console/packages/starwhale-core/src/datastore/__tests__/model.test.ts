@@ -64,8 +64,24 @@ describe('SwType class', () => {
         })
 
         it("should return a new schema with value 'TUPLE' for input schema.type 'TUPLE'", () => {
-            const schema = { type: 'TUPLE', value: 'test value' }
-            const expectedSchema = { type: 'TUPLE', value: 'TUPLE' }
+            const schema = {
+                type: 'TUPLE',
+                value: [
+                    {
+                        type: 'INT64',
+                        value: '28',
+                    },
+                    {
+                        type: 'INT64',
+                        value: '28',
+                    },
+                    {
+                        type: 'INT64',
+                        value: '1',
+                    },
+                ],
+            }
+            const expectedSchema = { type: 'TUPLE', value: ['28', '28', '1'] }
             expect(SwType.decode_schema(schema)).toEqual(expectedSchema)
         })
 

@@ -61,7 +61,9 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
@@ -364,7 +366,7 @@ public class JobRepo {
 
     public void updateJobStatus(Long jobId, JobStatus jobStatus) {
         var job = mainStore.findJobById(jobId);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return;
         }
         this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
@@ -373,7 +375,7 @@ public class JobRepo {
 
     public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
         var job = mainStore.findJobById(jobId);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return;
         }
         this.updateByUuid(this.tableName(job.getProject().getId()),
@@ -393,7 +395,7 @@ public class JobRepo {
 
     public int updateJobComment(Long jobId, String comment) {
         var job = mainStore.findJobById(jobId);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return 0;
         }
         return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
@@ -402,7 +404,7 @@ public class JobRepo {
 
     public int updateJobCommentByUuid(String uuid, String comment) {
         var job = mainStore.findJobByUuid(uuid);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return 0;
         }
         return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
@@ -418,9 +420,13 @@ public class JobRepo {
                 List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("1").build()));
     }
 
+    private static boolean evaluationJob(JobEntity job) {
+        return !Objects.isNull(job) && job.getType() == JobType.EVALUATION;
+    }
+
     public int removeJobByUuid(String uuid) {
         var job = mainStore.findJobByUuid(uuid);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return 0;
         }
         return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
@@ -429,7 +435,7 @@ public class JobRepo {
 
     public int recoverJob(Long jobId) {
         var job = mainStore.findJobById(jobId);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return 0;
         }
         return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
@@ -438,7 +444,7 @@ public class JobRepo {
 
     public int recoverJobByUuid(String uuid) {
         var job = mainStore.findJobByUuid(uuid);
-        if (Objects.isNull(job)) {
+        if (!evaluationJob(job)) {
             return 0;
         }
         return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,

@@ -65,7 +65,7 @@ export default function RuntimeVersionListCard() {
                             key={runtime.id}
                             to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
                         >
-                            <VersionText key='modelVersion' version={runtime.name} />,
+                            <VersionText key='modelVersion' version={runtime.name} />
                         </TextLink>,
                         <EditableAlias
                             key='alias'

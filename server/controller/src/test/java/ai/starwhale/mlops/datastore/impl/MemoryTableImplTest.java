@@ -474,11 +474,11 @@ public class MemoryTableImplTest {
                                     })));
             // the type of j column changes from list to int and then list again, and with the same element type
             this.memoryTable.update(
-                new TableSchemaDesc("key", List.of(
-                    ColumnSchemaDesc.builder().name("key").type("INT32").build(),
-                    ColumnSchemaDesc.builder().name("j").type("LIST")
-                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
-                        .build())),
+                    new TableSchemaDesc("key", List.of(
+                            ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                            ColumnSchemaDesc.builder().name("j").type("LIST")
+                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .build())),
                     List.of(new HashMap<>() {
                         {
                             put("key", "2");
@@ -487,9 +487,9 @@ public class MemoryTableImplTest {
                     }));
             var all = scanAll(this.memoryTable, List.of("j"), false);
             assertThat(all, contains(
-                new RecordResult(BaseValue.valueOf(1), false, Map.of("j", BaseValue.valueOf(7))),
-                new RecordResult(BaseValue.valueOf(2), false, Map.of("j", BaseValue.valueOf(List.of(11)))),
-                new RecordResult(BaseValue.valueOf("x"), false, Map.of("j", BaseValue.valueOf(List.of(10))))
+                    new RecordResult(BaseValue.valueOf(1), false, Map.of("j", BaseValue.valueOf(7))),
+                    new RecordResult(BaseValue.valueOf(2), false, Map.of("j", BaseValue.valueOf(List.of(11)))),
+                    new RecordResult(BaseValue.valueOf("x"), false, Map.of("j", BaseValue.valueOf(List.of(10))))
             ));
         }
 
@@ -3093,6 +3093,10 @@ public class MemoryTableImplTest {
             this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
                     List.of(Map.of("key", "0", "d", "9"),
                             Map.of("key", "9", "d", "8")));
+            var t4 = System.currentTimeMillis();
+            Thread.sleep(100);
+            this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
+                    List.of(Map.of("key", "a", "d", "7")));
             var columns = Map.of("d", "d", "e", "e", "h", "h");
             var expected = List.of(
                     new RecordResult(BaseValue.valueOf(0),
@@ -3153,6 +3157,16 @@ public class MemoryTableImplTest {
             expected.get(0).getValues().put("d", BaseValue.valueOf(9));
             expected.get(9).setDeleted(false);
             expected.get(9).setValues(Map.of("d", BaseValue.valueOf(8)));
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(t4, columns, null, null, false, false)),
+                    is(expected));
+            assertThat(ImmutableList.copyOf(
+                            this.memoryTable.scan(t4, columns,
+                                    null, null, false, null, null, false, false)),
+                    is(expected));
+            expected = new ArrayList<>(expected);
+            expected.add(new RecordResult(BaseValue.valueOf(10),
+                    false,
+                    Map.of("d", BaseValue.valueOf(7))));
             assertThat(ImmutableList.copyOf(this.memoryTable.query(Long.MAX_VALUE, columns, null, null, false, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(

@@ -1,5 +1,5 @@
-from ._impl.job import (
-    Handler,
+from ._impl.job import Job, Handler
+from ._impl.job.handler import (
     IntInput,
     BoolInput,
     ListInput,
@@ -11,6 +11,7 @@ from ._impl.job import (
 
 __all__ = [
     "Handler",
+    "Job",
     "DatasetInput",
     "HandlerInput",
     "ListInput",

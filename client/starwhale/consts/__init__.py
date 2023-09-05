@@ -96,6 +96,7 @@ class SupportOS:
 
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
+FMT_DATETIME_NO_TZ = "%Y-%m-%d %H:%M:%S"
 MINI_FMT_DATETIME = "%H:%M:%S"
 
 # TODO: use better DEFAULT words?

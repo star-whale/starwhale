@@ -43,10 +43,18 @@ _urllib3.disable_warnings(_urllib3.exceptions.InsecureRequestWarning)
 
 class CloudRequestMixed:
     @classmethod
-    def fmt_timestamp(cls, ts: t.Union[float, str]) -> str:
-        return datetime.fromtimestamp(float(ts) / 1000.0).strftime(FMT_DATETIME).strip()
+    def fmt_timestamp(cls, ts: float | str | None) -> str:
+        if ts is None or ts == "":
+            return ""
+        else:
+            return (
+                datetime.fromtimestamp(float(ts) / 1000.0)
+                .strftime(FMT_DATETIME)
+                .strip()
+            )
 
-    def fmt_duration(self, ts: t.Union[float, str]) -> str:
+    @classmethod
+    def fmt_duration(cls, ts: t.Union[float, str]) -> str:
         return str(timedelta(milliseconds=float(ts)))
 
     def do_download_file(

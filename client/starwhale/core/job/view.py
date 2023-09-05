@@ -25,7 +25,7 @@ from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .model import Job
+from .model import Job, JobListType, LocalJobInfo
 
 
 class JobTermView(BaseTermView):
@@ -71,58 +71,61 @@ class JobTermView(BaseTermView):
             console.print(":tea: not found info")
             return
 
-        manifest = _rt.get("manifest", {})
+        job_id: str = ""
+        version: str = ""
+
+        if isinstance(_rt, LocalJobInfo):
+            version = _rt.manifest.version
+
         if web:
             from starwhale.web.server import Server
 
-            ver = manifest.get("id")
-
             # if id is numeric, it's a remote eval
-            if ver and ver.isnumeric():
+            if job_id and job_id.isnumeric():
                 svr = Server.proxy(Instance())
+                version = job_id
             else:
                 # local eval
-                if not manifest.get("version"):
+                if not version:
                     console.print(":tea: eval id not found")
                     sys.exit(1)
-                ver = manifest.get("version")
                 svr = Server.default()
 
             # TODO support changing host and port
             host = "127.0.0.1"
             port = 8000
-            url = f"http://{host}:{port}/projects/{self.uri.project.name}/evaluations/{ver}/results?token=local"
+            url = f"http://{host}:{port}/projects/{self.uri.project.name}/evaluations/{version}/results?token=local"
             console.print(f":tea: open {url} in browser")
             import uvicorn
 
             uvicorn.run(svr, host=host, port=port, log_level="error")
             return
 
-        if manifest:
-            console.rule(
-                f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}"
-            )
-            console.print(Pretty(_rt["manifest"], expand_all=True))
-
-        if "location" in _rt:
-            console.rule("Process dirs")
-            console.print(f":cactus: predict: {_rt['location']['predict']}")
-            console.print(f":camel: evaluate: {_rt['location']['evaluate']}")
-
-        if "tasks" in _rt:
-            self._print_tasks(_rt["tasks"][0])
-
-        if "report" in _rt:
-            _report = _rt["report"]
-            _kind = _rt["report"].get("kind", "")
-
-            if "summary" in _report:
-                self._render_summary_report(_report["summary"], _kind)
-
-            if _kind == MetricKind.MultiClassification.value:
-                self._render_multi_classification_job_report(
-                    _rt["report"], max_report_cols
+        if isinstance(_rt, LocalJobInfo):
+            console.print(_rt.manifest)
+        else:
+            manifest = _rt.get("manifest", {})
+            if manifest:
+                console.rule(
+                    f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}"
                 )
+                console.print(Pretty(_rt["manifest"], expand_all=True))
+
+        if not isinstance(_rt, LocalJobInfo):
+            # remote job
+            if "tasks" in _rt:
+                self._print_tasks(_rt["tasks"][0])
+
+        _report = (
+            _rt.report or {} if isinstance(_rt, LocalJobInfo) else _rt.get("report", {})
+        )
+        _kind = _report.get("kind", "")
+
+        if "summary" in _report:
+            self._render_summary_report(_report["summary"], _kind)
+
+        if _kind == MetricKind.MultiClassification.value:
+            self._render_multi_classification_job_report(_report, max_report_cols)
 
     def _render_summary_report(self, summary: t.Dict[str, t.Any], kind: str) -> None:
         console.rule(f"[bold green]{kind.upper()} Summary")
@@ -231,12 +234,12 @@ class JobTermView(BaseTermView):
         fullname: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[JobListType, t.Dict[str, t.Any]]:
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
         jobs, pager = Job.list(_uri, page=page, size=size)
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
-        return (jobs, pager)
+        return jobs, pager
 
 
 class JobTermViewRich(JobTermView):
@@ -248,7 +251,7 @@ class JobTermViewRich(JobTermView):
         fullname: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[JobListType, t.Dict[str, t.Any]]:
         _jobs, _pager = super().list(
             project_uri=project_uri,
             fullname=fullname,
@@ -277,42 +280,20 @@ class JobTermViewRich(JobTermView):
                 return x[:_end]
 
         for _job in _jobs:
-            _m = _job["manifest"]
-            _status, _style, _icon = cls.pretty_status(
-                _m.get("jobStatus") or _m.get("status")
-            )
+            # TODO support remote job info in next PR
+            if not isinstance(_job, LocalJobInfo):
+                continue
+
+            _m = _job.manifest
+            _status, _style, _icon = cls.pretty_status(_m.status)
             _datasets = "--"
-            _datasets_info = _m.get("datasetList") or _m.get("datasets")
-            if _datasets_info:
-                _datasets = "\n".join([_s(d) for d in _datasets_info])
+            if _m.datasets:
+                _datasets = "\n".join([_s(d) for d in _m.datasets])
 
-            _model = "--"
-            if "modelName" in _m:
-                _model = f"{_m['modelName']}:{_s(_m['modelVersion'])}"
-            elif "model" in _m:
-                _model = _s(_m["model"])
-
-            _name = "--"
-            if "id" in _m:
-                _name = _m["id"]
-            else:
-                _name = _s(_m["version"])
-
-            _runtime = "--"
-            if "runtime" in _m:
-                if isinstance(_m["runtime"], str):
-                    _runtime = _m["runtime"]
-                else:
-                    _r = _m["runtime"]
-                    _runtime = (
-                        f"{_r['name']}:{_r['version']['name'][:SHORT_VERSION_CNT]}"
-                    )
-
+            _model = _m.model or "--"
+            _name = _m.version
+            _runtime = "--"  # TODO get runtime info
             _resource = "--"
-            if "resourcePool" in _m:
-                _resource = _m["resourcePool"]
-            elif "device" in _m:
-                _resource = f"{_m['device']}:{_m['deviceAmount']}"
 
             table.add_row(
                 _name,
@@ -321,8 +302,8 @@ class JobTermViewRich(JobTermView):
                 _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
                 _resource,
-                _m[CREATED_AT_KEY],
-                _m["finished_at"],
+                _m.created_at,
+                _m.finished_at,
             )
             # TODO: add duration
         cls.print_header(project_uri)

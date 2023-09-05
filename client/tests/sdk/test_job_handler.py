@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils.error import NoSupportError
+from starwhale.utils.error import NoSupportError, ParameterError
 from starwhale.base.context import Context, pass_context
 from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
@@ -388,26 +388,33 @@ def evaluate_handler(*args, **kwargs): ...
                 }
             ],
         }
-        steps = Step.get_steps_from_yaml("mock_user_module:evaluate_handler", yaml_path)
+        _, steps = Step.get_steps_from_yaml(
+            "mock_user_module:evaluate_handler", yaml_path
+        )
         assert len(steps) == 2
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
         assert steps[1].name == "mock_user_module:evaluate_handler"
         assert steps[1].show_name == "evaluate"
 
-        steps = Step.get_steps_from_yaml("mock_user_module:predict_handler", yaml_path)
+        _, steps = Step.get_steps_from_yaml(
+            "mock_user_module:predict_handler", yaml_path
+        )
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
         assert steps[0].require_dataset is True
 
-        steps = Step.get_steps_from_yaml("", yaml_path)
+        job_name, steps = Step.get_steps_from_yaml("", yaml_path)
+        assert job_name == "mock_user_module:evaluate_handler"
         assert len(steps) == 2
 
-        steps = Step.get_steps_from_yaml("0", yaml_path)
+        job_name, steps = Step.get_steps_from_yaml("0", yaml_path)
+        assert job_name == "mock_user_module:evaluate_handler"
         assert len(steps) == 2
 
-        steps = Step.get_steps_from_yaml(1, yaml_path)
+        job_name, steps = Step.get_steps_from_yaml(1, yaml_path)
+        assert job_name == "mock_user_module:predict_handler"
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
@@ -446,6 +453,8 @@ def evaluate_handler(*args, **kwargs): ...
 from starwhale import PipelineHandler
 
 class MockPPLHandler(PipelineHandler):
+
+    @PipelineHandler.run(replicas=2)
     def ppl(self, data, **kw): ...
     def cmp(self, *args, **kwargs): ...
         """
@@ -460,16 +469,21 @@ class MockPPLHandler(PipelineHandler):
         assert jobs_info["mock_user_module:MockPPLHandler.cmp"][1]["needs"] == [
             "mock_user_module:MockPPLHandler.ppl"
         ]
+        assert jobs_info["mock_user_module:MockPPLHandler.ppl"][0]["replicas"] == 2
 
     @patch(
         "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
     )
     def test_pipeline_handler(self, mock_cmp: MagicMock) -> None:
         content = """
-from starwhale import PipelineHandler
+from starwhale import PipelineHandler, multi_classification
 
 class MockHandler(PipelineHandler):
+    @PipelineHandler.run(replicas=4, resources={"memory": 200 * 1024})
     def predict(self, *args): ...
+
+    @multi_classification()
+    @PipelineHandler.run(resources={"memory": 200 * 1024, "nvidia.com/gpu": 1})
     def evaluate(self, *args, **kwargs): ...
         """
 
@@ -491,8 +505,8 @@ class MockHandler(PipelineHandler):
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
-                "replicas": 1,
-                "resources": [],
+                "replicas": 4,
+                "resources": [{"limit": 204800, "request": 204800, "type": "memory"}],
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
@@ -510,7 +524,10 @@ class MockHandler(PipelineHandler):
                 "name": "mock_user_module:MockHandler.evaluate",
                 "needs": ["mock_user_module:MockHandler.predict"],
                 "replicas": 1,
-                "resources": [],
+                "resources": [
+                    {"limit": 204800, "request": 204800, "type": "memory"},
+                    {"limit": 1, "request": 1, "type": "nvidia.com/gpu"},
+                ],
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
@@ -529,8 +546,8 @@ class MockHandler(PipelineHandler):
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
-                "replicas": 1,
-                "resources": [],
+                "replicas": 4,
+                "resources": [{"limit": 204800, "request": 204800, "type": "memory"}],
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
@@ -539,7 +556,7 @@ class MockHandler(PipelineHandler):
                 "ext_cmd_args": "",
             }
         ]
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockHandler.evaluate", yaml_path
         )
         context = Context(
@@ -657,7 +674,7 @@ class MockHandler:
             },
         ]
 
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockHandler.evaluate_handler", yaml_path
         )
         assert len(steps) == 2
@@ -1036,7 +1053,7 @@ class MockReport:
             }
         ]
 
-        steps = Step.get_steps_from_yaml(
+        _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockReport.report_handler", yaml_path
         )
         scheduler = Scheduler(
@@ -1146,6 +1163,54 @@ class MockCls: ...
                 [f"{self.module_name}:mock_func"], self.workdir, "not_found.yaml"
             )
 
+    def test_no_specified_function_run_deco(self) -> None:
+        content = """
+from starwhale import PipelineHandler
+
+class MockHandler(PipelineHandler):
+    def predict(self, *args): ...
+
+    def evaluate(self, *args, **kwargs): ...
+
+    @PipelineHandler.run(replicas=2)
+    def other(self, *args, **kwargs): ...
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        with self.assertRaisesRegex(ParameterError, "is not a valid function name"):
+            generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
+
+    def test_none_classmethod_run_deco(self) -> None:
+        content = """
+from starwhale import PipelineHandler
+
+@PipelineHandler.run(replicas=2)
+def other(*args, **kwargs): ...
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        with self.assertRaisesRegex(
+            ParameterError, "is not a class method or is an inner class method"
+        ):
+            generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
+
+    def test_no_support_evaluate_replicas(self) -> None:
+        content = """
+from starwhale import PipelineHandler
+
+class MockHandler(PipelineHandler):
+    def predict(self, *args): ...
+
+    @PipelineHandler.run(replicas=2)
+    def evaluate(self, *args, **kwargs): ...
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        with self.assertRaisesRegex(
+            ParameterError, "evaluate function does not support replicas option"
+        ):
+            generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
+
     def test_step_no_support_on_cls(self) -> None:
         content = """
 from starwhale import handler
@@ -1220,9 +1285,9 @@ class X:
     def f(
         self, x=ListInput(IntInput), y=2, mi=MyInput(), ds=DatasetInput(required=True), ctx=ContextInput()
     ):
-        assert self.a + x[0] is 3
-        assert self.a + x[1] is 2
-        assert y is 2
+        assert self.a + x[0] == 3
+        assert self.a + x[1] == 2
+        assert y == 2
         assert mi == "MyInput blab-la"
         assert isinstance(ds, Dataset)
         assert isinstance(ctx, Context)
@@ -1230,9 +1295,9 @@ class X:
 
 @handler()
 def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True), ctx=ContextInput()):
-    assert x[0] is 2
-    assert x[1] is 1
-    assert y is 2
+    assert x[0] == 2
+    assert x[1] == 1
+    assert y == 2
     assert mi == "MyInput blab-la"
 
     assert isinstance(ds, Dataset)
@@ -1362,7 +1427,7 @@ def f_no_args():
                 "ext_cmd_args": "",
             },
         ]
-        steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -1377,7 +1442,7 @@ def f_no_args():
         )
         result = task.execute()
         assert result.status == "success"
-        steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -1393,7 +1458,7 @@ def f_no_args():
         result = task.execute()
         assert result.status == "success"
 
-        steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
+        _, steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",

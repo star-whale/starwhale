@@ -59,7 +59,7 @@ public class DataStore {
 
     private static final String PATH_SEPARATOR = "_._";
 
-    private static final Integer QUERY_LIMIT = 1000;
+    public static final Integer QUERY_LIMIT = 1000;
 
     private final WalManager walManager;
     private final StorageAccessService storageAccessService;

@@ -111,7 +111,7 @@ function GridTable({
     const styles = useStyles({ theme })
     const { onRemove, onIncludedRowsChange, onRowHighlightChange, getId } = useStore(selector)
     const store = useStoreApi()
-    // @FIXME
+    // @FIXME inline set move to  store updater ?
     useDirectStoreUpdater(
         'getColumns',
         useCallback(() => columns, [columns]),

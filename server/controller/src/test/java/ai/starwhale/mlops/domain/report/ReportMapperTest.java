@@ -70,6 +70,13 @@ public class ReportMapperTest extends MySqlContainerHolder {
         selectRes = mapper.selectById(entity.getId());
         assertEntity(entity, selectRes);
 
+        entity.setTitle("new title");
+        entity.setDescription("");
+        res = mapper.update(entity);
+        assertTrue(res > 0);
+        selectRes = mapper.selectById(entity.getId());
+        assertEntity(entity, selectRes);
+
         entity.setContent("new content");
         res = mapper.update(entity);
         assertTrue(res > 0);

@@ -26,6 +26,7 @@ const selector = (s: WidgetStoreState) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onLayoutOrderChange: s.onLayoutOrderChange,
     onConfigChange: s.onConfigChange,
+    isEditable: s.isEditable,
 })
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
@@ -76,7 +77,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
 
         const { page, setPage, params } = useDatastorePage({
             pageNum: 1,
-            pageSize: 1000,
+            pageSize: 50,
             sortBy: tableConfig?.sortBy || 'id',
             sortDirection: tableConfig?.sortDirection || 'DESC',
             queries: tableConfig?.queries,
@@ -114,7 +115,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 eventBus.getStream(PanelChartDownloadEvent).subscribe({
                     next: (evt) => {
                         if (evt.payload?.id === id && query) {
-                            exportTable(query as any)
+                            exportTable({ ...query, encodeWithType: false, limit: -1 })
                         }
                     },
                 })
@@ -161,7 +162,9 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // })
 
         const handleDataReload = useEventCallback(() => query && recordInfo.refetch())
-        const handleDataDownload = useEventCallback(() => query && exportTable(query))
+        const handleDataDownload = useEventCallback(
+            () => query && exportTable({ ...query, encodeWithType: false, limit: -1 })
+        )
         const handlePageChange = useEventCallback((tmp: any) => setPage(tmp, lastKey))
 
         return (
@@ -177,6 +180,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 ) : (
                     <WrappedWidgetRender
                         {...props}
+                        readonly={!api.isEditable()}
                         name={overrides?.name}
                         data={$data}
                         page={page}

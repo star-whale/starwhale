@@ -107,7 +107,7 @@ def _eval_summary(eval_id: str) -> SuccessResp:
         project="self",
         instance="local",
     )
-    summary = evaluation.get_metrics()
+    summary = evaluation.get_summary_metrics()
     col, rows = _rows_to_type_and_records(summary)
     return success(
         {

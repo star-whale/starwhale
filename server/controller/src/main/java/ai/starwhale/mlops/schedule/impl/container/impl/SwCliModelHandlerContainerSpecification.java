@@ -79,8 +79,8 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
         var stepSpecs = swJob.getStepSpecs();
         for (var stepSpec : stepSpecs) {
             if (task.getStep().getName().equals(stepSpec.getName())) {
-                if (StringUtils.hasText(stepSpec.getExtraCmdArgs())) {
-                    coreContainerEnvs.put("SW_TASK_EXTRA_CMD_ARGS", stepSpec.getExtraCmdArgs());
+                if (StringUtils.hasText(stepSpec.getExtCmdArgs())) {
+                    coreContainerEnvs.put("SW_TASK_EXTRA_CMD_ARGS", stepSpec.getExtCmdArgs());
                 }
             }
         }

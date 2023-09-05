@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -89,7 +90,11 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             try {
                 k8sClient.deleteJob(task.getId().toString());
             } catch (ApiException e) {
-                log.warn("delete k8s job failed {}, {}", task.getId(), e.getResponseBody(), e);
+                if (e.getCode() == 404) {
+                    log.debug("delete k8s task {} not found", task.getId());
+                } else {
+                    log.warn("delete k8s job failed {}, {}", task.getId(), e.getResponseBody(), e);
+                }
             }
         });
     }
@@ -115,6 +120,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
     static final String ANNOTATION_KEY_TASK_ID = "starwhale.ai/task-id";
     static final String ANNOTATION_KEY_USER_ID = "starwhale.ai/user-id";
     static final String ANNOTATION_KEY_PROJECT_ID = "starwhale.ai/project-id";
+    static final String ANNOTATION_KEY_TASK_GENERATION = "starwhale.ai/task-generation";
 
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
@@ -148,13 +154,7 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             }
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
-            Map<String, String> annotations = new HashMap<>();
-
-            var userId = job.getOwner() == null ? "" : job.getOwner().getId().toString();
-            annotations.put(ANNOTATION_KEY_JOB_ID, job.getId().toString());
-            annotations.put(ANNOTATION_KEY_TASK_ID, task.getId().toString());
-            annotations.put(ANNOTATION_KEY_USER_ID, userId);
-            annotations.put(ANNOTATION_KEY_PROJECT_ID, job.getProject().getId().toString());
+            var annotations = generateAnnotations(task, job);
             if (pool != null && !CollectionUtils.isEmpty(pool.getMetadata())) {
                 annotations.putAll(pool.getMetadata());
             }
@@ -194,6 +194,21 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             log.error(" schedule task failed ", e);
             taskFailed(task);
         }
+    }
+
+    @NotNull
+    private static Map<String, String> generateAnnotations(Task task, Job job) {
+        var annotations = new HashMap<String, String>();
+
+        var userId = job.getOwner() == null ? "" : job.getOwner().getId().toString();
+        annotations.put(ANNOTATION_KEY_JOB_ID, job.getId().toString());
+        annotations.put(ANNOTATION_KEY_TASK_ID, task.getId().toString());
+        annotations.put(ANNOTATION_KEY_USER_ID, userId);
+        annotations.put(ANNOTATION_KEY_PROJECT_ID, job.getProject().getId().toString());
+        if (task.getGeneration() != null) {
+            annotations.put(ANNOTATION_KEY_TASK_GENERATION, task.getGeneration().toString());
+        }
+        return annotations;
     }
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {

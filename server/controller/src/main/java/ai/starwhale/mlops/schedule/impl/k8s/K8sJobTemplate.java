@@ -129,6 +129,7 @@ public class K8sJobTemplate {
         if (jobSpec.getTemplate().getMetadata() == null) {
             jobSpec.getTemplate().metadata(new V1ObjectMeta());
         }
+        updateAnnotations(job.getMetadata(), annotations);
         updateAnnotations(jobSpec.getTemplate().getMetadata(), annotations);
         updateLabels(job, starwhaleJobLabel);
         updateLabels(job, Map.of(JOB_IDENTITY_LABEL, jobName));

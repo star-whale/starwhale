@@ -29,7 +29,6 @@ exclude = [
     "dist/",
     "__pycache__/",
     "tests/",
-    "dummy/setup.py",
     "example/LLM/belle-bloom/BELLE/",
     "starwhale/proto_gen/",
 ]

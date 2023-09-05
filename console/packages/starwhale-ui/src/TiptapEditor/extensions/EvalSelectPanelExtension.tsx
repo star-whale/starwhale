@@ -16,7 +16,6 @@ const Component = (props: NodeViewProps) => {
     const { node, selected } = props
 
     const onStateChange = useEventCallback((state: any) => {
-        // console.log('onStateChange', state)
         props.updateAttributes({
             state,
         })
@@ -130,10 +129,11 @@ export default Node.create({
         return ReactNodeViewRenderer(Component, {
             // https://discuss.prosemirror.net/t/make-only-part-of-a-nodeview-draggable/1145/7
             // stopEvent({ event: e }) {
-            //     console.log(e.type, this)
+            //     console.log(e.type, e, /mousedown|drag|drop/.test(e.type))
+            //     // return true
+            //     // if (/dragstart|dragover|drangend|drop/.test(e.type)) return false
             //     return true
-            //     if (/dragstart|dragover|drangend|drop/.test(e.type)) return false
-            //     return /mousedown|drag|drop/.test(e.type)
+            //     // return /mousedown|drag|drop/.test(e.type)
             // },
         })
     },

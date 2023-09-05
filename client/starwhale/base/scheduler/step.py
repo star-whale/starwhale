@@ -73,10 +73,10 @@ class Step(ASDictMixin):
 
     @classmethod
     def get_steps_from_yaml(
-        cls, job_name: str | int, yaml_path: t.Union[str, Path]
-    ) -> t.List[Step]:
+        cls, job_name_or_idx: str | int, yaml_path: t.Union[str, Path]
+    ) -> t.Tuple[str, t.List[Step]]:
         # default run index 0 handler
-        job_name = job_name or "0"
+        job_name = str(job_name_or_idx or "0")
         jobs = load_yaml(yaml_path)
         sorted_jobs = sorted(jobs.items())
 
@@ -86,7 +86,7 @@ class Step(ASDictMixin):
                 job = jobs[job_name]
             else:
                 job_index = int(job_name)
-                job = sorted_jobs[job_index][1]
+                job_name, job = sorted_jobs[job_index]
         finally:
             console.print(":bank: runnable handlers:")
             for i, j in enumerate(sorted_jobs):
@@ -108,6 +108,9 @@ class Step(ASDictMixin):
           expose: 0
           virtual: false
         """
+        if not isinstance(job, list):
+            raise TypeError(f"job must be a list, but got {job}")
+
         steps = []
         for v in job:
             step = Step(
@@ -127,7 +130,7 @@ class Step(ASDictMixin):
                 require_dataset=v.get("require_dataset"),
             )
             steps.append(step)
-        return steps
+        return job_name, steps
 
     @staticmethod
     def generate_dag(steps: t.List[Step]) -> DAG:

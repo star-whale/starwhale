@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,26 +49,30 @@ import org.springframework.util.StringUtils;
 public class StepSpec {
 
     /**
-     * the name of job which would be executed at job yaml during running time
+     * the name of job which would be executed at job yaml during running time.
+     * server side only.
      */
     @JsonProperty("job_name")
     private String jobName;
 
-    @JsonProperty("name")
+    @NotNull
     private String name;
 
+    @NotNull
     @JsonProperty("show_name")
     private String showName;
 
+    @NotNull
     private Integer concurrency = 1;
+
+    @NotNull
+    private Integer replicas = 1;
 
     private List<String> needs;
 
     private List<RuntimeResource> resources;
 
     private List<Env> env;
-
-    private Integer replicas = 1;
 
     // https://github.com/star-whale/starwhale/pull/2350
     private Integer expose;
@@ -80,33 +84,30 @@ public class StepSpec {
     @JsonProperty("container_spec")
     ContainerSpec containerSpec;
 
+    @JsonProperty("ext_cmd_args")
+    private String extCmdArgs;
 
     @JsonProperty("parameters_sig")
-    private List<Map<String, String>> parametersSig;
-
-    @JsonProperty("ext_cmd_args")
-    private String extraCmdArgs;
+    private List<ParameterSignature> parametersSig;
 
     public void verifyStepSpecArgs() {
         if (CollectionUtils.isEmpty(this.getParametersSig())) {
             return;
         }
         Options options = new Options();
-        for (Map<String, String> map : this.getParametersSig()) {
+        for (var sig : this.getParametersSig()) {
             Option option = Option.builder()
-                    .option(map.get("name"))
-                    .longOpt(map.get("name"))
+                    .option(sig.getName())
+                    .longOpt(sig.getName())
                     .hasArg()
-                    .required("true".equalsIgnoreCase(map.get("required")))
+                    .required(sig.getRequired())
                     .build();
             options.addOption(option);
         }
         try {
-            new DefaultParser().parse(options, this.getExtraCmdArgs().split(" "));
-        } catch (ParseException e) {
+            new DefaultParser().parse(options, this.getExtCmdArgs().split(" "));
+        } catch (ParseException | IllegalArgumentException e) {
             throw new SwValidationException(ValidSubject.JOB, e.getMessage(), e);
-        } catch (IllegalArgumentException ie) {
-            throw new SwValidationException(ValidSubject.JOB, ie.getMessage(), ie);
         }
     }
 

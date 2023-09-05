@@ -135,6 +135,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 .ip(pod.getStatus().getPodIP())
                 .startTimeMillis(startTime)
                 .stopTimeMillis(null)
+                .generation(Util.getTaskGeneration(pod.getMetadata()))
                 .build();
         taskReportReceiver.receive(List.of(report));
     }

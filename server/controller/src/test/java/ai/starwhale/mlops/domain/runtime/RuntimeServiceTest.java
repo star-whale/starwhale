@@ -281,9 +281,9 @@ public class RuntimeServiceTest {
                         RuntimeEntity.builder().id(2L).build()
                 ));
         var res = service.listRuntime(RuntimeQuery.builder()
-                                              .projectUrl("1")
-                                              .namePrefix("")
-                                              .build(), new PageParams(1, 5));
+                .projectUrl("1")
+                .namePrefix("")
+                .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
@@ -413,10 +413,10 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         var res = service.getRuntimeInfo(RuntimeQuery.builder()
-                                                 .projectUrl("p1")
-                                                 .runtimeUrl("r1")
-                                                 .runtimeVersionUrl("v1")
-                                                 .build());
+                .projectUrl("p1")
+                .runtimeUrl("r1")
+                .runtimeVersionUrl("v1")
+                .build());
 
         assertEquals("1", res.getId());
         assertEquals("v2", res.getVersionInfo().getAlias());
@@ -425,9 +425,9 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         res = service.getRuntimeInfo(RuntimeQuery.builder()
-                                             .projectUrl("p1")
-                                             .runtimeUrl("r1")
-                                             .build());
+                .projectUrl("p1")
+                .runtimeUrl("r1")
+                .build());
 
         assertEquals("1", res.getId());
         assertEquals("v2", res.getVersionInfo().getAlias());
@@ -539,9 +539,9 @@ public class RuntimeServiceTest {
                 .willReturn(RuntimeEntity.builder().id(1L).build());
         given(runtimeVersionMapper.findByNameAndRuntimeId(anyString(), same(1L)))
                 .willReturn(RuntimeVersionEntity.builder()
-                                    .id(1L)
-                                    .storagePath("path1")
-                                    .build());
+                        .id(1L)
+                        .storagePath("path1")
+                        .build());
         given(jobHolder.ofStatus(anySet()))
                 .willReturn(List.of(
                         Job.builder().jobRuntime(JobRuntime.builder().name("r1").version("v1").build()).build(),
@@ -552,7 +552,7 @@ public class RuntimeServiceTest {
 
         try (var mock = mockStatic(TarFileUtil.class)) {
             mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                    .thenReturn(new byte[]{1});
+                    .thenReturn(new byte[] {1});
 
             ClientRuntimeRequest request = new ClientRuntimeRequest();
             request.setProject("1");
@@ -600,7 +600,7 @@ public class RuntimeServiceTest {
         );
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
-                ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
+                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
             given(storageAccessService.get(anyString())).willReturn(fileInputStream);
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
@@ -630,9 +630,9 @@ public class RuntimeServiceTest {
         User user = User.builder().id(1L).name("sw").build();
         given(userService.currentUserDetail()).willReturn(user);
         when(bundleManager.getBundleVersion(any())).thenReturn(RuntimeVersionEntity.builder()
-                                                                       .versionName("v1")
-                                                                       .builtImage(null)
-                                                                       .build());
+                .versionName("v1")
+                .builtImage(null)
+                .build());
         when(bundleManager.getBundle(any())).thenReturn(RuntimeEntity.builder().runtimeName("rt").build());
         when(jobCreator.createJob(
                 eq(project),
@@ -663,28 +663,28 @@ public class RuntimeServiceTest {
                 eq("rc"),
                 eq(null),
                 eq("---\n"
-                           + "- concurrency: 1\n"
-                           + "  env:\n"
-                           + "  - name: \"k\"\n"
-                           + "    value: \"v\"\n"
-                           + "  - name: \"SW_TARGET_IMAGE\"\n"
-                           + "    value: \"localhost:8083/rt:v1\"\n"
-                           + "  - name: \"SW_DEST_IMAGE\"\n"
-                           + "    value: \"localhost:8083/rt:v1\"\n"
-                           + "  - name: \"SW_RUNTIME_VERSION\"\n"
-                           + "    value: \"rt/version/v1\"\n"
-                           + "  replicas: 1\n"
-                           + "  job_name: \"runtime_dockerizing\"\n"
-                           + "  name: \"runtime_dockerizing\"\n"
-                           + "  show_name: \"runtime_dockerizing\"\n"
-                           + "  require_dataset: false\n"
-                           + "  container_spec:\n"
-                           + "    image: \"docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest\"\n"
-                           + "    cmds:\n"
-                           + "    - \"oho\"\n"
-                           + "    entrypoint:\n"
-                           + "    - \"sh\"\n"
-                           + "    - \"-c\"\n"),
+                        + "- name: \"runtime_dockerizing\"\n"
+                        + "  concurrency: 1\n"
+                        + "  replicas: 1\n"
+                        + "  env:\n"
+                        + "  - name: \"k\"\n"
+                        + "    value: \"v\"\n"
+                        + "  - name: \"SW_TARGET_IMAGE\"\n"
+                        + "    value: \"localhost:8083/rt:v1\"\n"
+                        + "  - name: \"SW_DEST_IMAGE\"\n"
+                        + "    value: \"localhost:8083/rt:v1\"\n"
+                        + "  - name: \"SW_RUNTIME_VERSION\"\n"
+                        + "    value: \"rt/version/v1\"\n"
+                        + "  job_name: \"runtime_dockerizing\"\n"
+                        + "  show_name: \"runtime_dockerizing\"\n"
+                        + "  require_dataset: false\n"
+                        + "  container_spec:\n"
+                        + "    image: \"docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest\"\n"
+                        + "    cmds:\n"
+                        + "    - \"oho\"\n"
+                        + "    entrypoint:\n"
+                        + "    - \"sh\"\n"
+                        + "    - \"-c\"\n"),
                 eq(JobType.BUILT_IN),
                 eq(null),
                 eq(false),

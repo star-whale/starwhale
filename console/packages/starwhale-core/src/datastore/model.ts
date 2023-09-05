@@ -45,9 +45,10 @@ export class SwType implements ISwType {
             }
         }
         if (schema.type === 'TUPLE') {
+            const t = new SwListType(schema.value)
             return {
                 ...schema,
-                value: 'TUPLE',
+                value: onlyValue ? t.value : t,
             }
         }
         if (schema.type === 'OBJECT') {
