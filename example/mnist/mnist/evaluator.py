@@ -16,6 +16,7 @@ except ImportError:
     from model import Net  # type: ignore
 
 ROOTDIR = Path(__file__).parent.parent
+MEMORY_LIMIT = 200 * 1024 * 1024  # 200MB
 
 
 class MNISTInference(PipelineHandler):
@@ -24,7 +25,7 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    @PipelineHandler.run(replicas=1, resources={"memory": 200 * 1024})
+    @PipelineHandler.run(replicas=1, resources={"memory": MEMORY_LIMIT})
     def predict(self, data: t.Dict[str, t.Any]) -> t.Tuple[float, t.List[float]]:  # type: ignore
         data_tensor = self._pre(data["img"])
         output = self.model(data_tensor)
@@ -44,7 +45,7 @@ class MNISTInference(PipelineHandler):
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
-    @PipelineHandler.run(resources={"memory": 200 * 1024})
+    @PipelineHandler.run(resources={"memory": MEMORY_LIMIT})
     def evaluate(
         self, ppl_result: t.Iterator
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
