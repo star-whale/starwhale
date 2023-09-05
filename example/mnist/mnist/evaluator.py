@@ -16,7 +16,7 @@ except ImportError:
     from model import Net  # type: ignore
 
 ROOTDIR = Path(__file__).parent.parent
-MEMORY_LIMIT = 200 * 1024 * 1024  # 200MB
+MEMORY_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
 
 
 class MNISTInference(PipelineHandler):
