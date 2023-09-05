@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import shutil
 import typing as t
@@ -48,7 +49,7 @@ _DUMMY_FIELD = -1
 
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
 _PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
-_PipReqT = t.Union[str, Path, PosixPath]
+_PipReqT = t.Union[str, t.List[str], Path, PosixPath]
 
 
 class EnvTarType:
@@ -189,7 +190,6 @@ def venv_install_req(
         return
 
     venvdir = str(venvdir)
-    req = str(req)
     prefix_cmd = [os.path.join(venvdir, "bin", "pip")]
     _do_pip_install_req(prefix_cmd, req, enable_pre, pip_config)
 
@@ -875,19 +875,19 @@ def install_starwhale(
     force: bool = False,
     configs: _ConfigsT = None,
 ) -> None:
-    if version == "" or version == SW_DEV_DUMMY_VERSION:
-        version = get_downloadable_sw_version()
-
-    req = SW_PYPI_PKG_NAME
-    if version:
-        req = f"{req}=={version}"
-
     _existed = check_user_python_pkg_exists(
         str(prefix_path / "bin" / "python3"), SW_PYPI_PKG_NAME
     )
     if _existed and not force:
         console.info(f"{SW_PYPI_PKG_NAME} has already be installed at {prefix_path}")
         return
+
+    if version == "" or version == SW_DEV_DUMMY_VERSION:
+        version = get_downloadable_sw_version()
+
+    req = [SW_PYPI_PKG_NAME]
+    if version:
+        req = [version] if re.match(r"^git", version) else [f"{req}=={version}"]
 
     configs = configs or {}
     if mode == PythonRunEnv.CONDA:

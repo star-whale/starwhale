@@ -182,6 +182,7 @@ class Environment(ASDictMixin):
         self.cuda = str(cuda).strip()
         self.cudnn = str(cudnn).strip()
         self.docker = DockerEnv(**kw.get("docker", {}))
+        self.starwhale_version = str(kw.get("starwhale_version", "")).strip()
 
         self._do_validate()
 
@@ -1357,7 +1358,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["environment"].update(
             {
                 "lock": {
-                    "starwhale_version": self._detected_sw_version or STARWHALE_VERSION,
+                    "starwhale_version": swrt_config.environment.starwhale_version
+                    or self._detected_sw_version
+                    or STARWHALE_VERSION,
                     "system": platform.system(),
                     "shell": {
                         "python_env": sh_py_env,

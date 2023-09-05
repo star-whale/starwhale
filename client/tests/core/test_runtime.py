@@ -816,6 +816,9 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_config = self.get_runtime_config()
         runtime_config["environment"]["cuda"] = "11.5"
         runtime_config["environment"]["cudnn"] = "8"
+        runtime_config["environment"][
+            "starwhale_version"
+        ] = "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale"
         runtime_config["dependencies"].extend(
             [
                 {
@@ -903,6 +906,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["version"] == sr.uri.version
         assert _manifest["environment"]["mode"] == "venv"
         assert _manifest["environment"]["lock"]["shell"]["use_venv"]
+        assert (
+            _manifest["environment"]["lock"]["starwhale_version"]
+            == "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale"
+        )
         assert _manifest["artifacts"]["wheels"] == ["wheels/dummy.whl"]
         assert _manifest["artifacts"]["files"][0] == {
             "dest": "bin/../bin/prepare.sh",
