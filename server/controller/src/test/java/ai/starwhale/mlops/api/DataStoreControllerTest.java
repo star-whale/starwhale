@@ -1613,7 +1613,7 @@ public class DataStoreControllerTest {
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
                 Arguments.of(-1, 2),
-                Arguments.of(3, 2),
+                Arguments.of(3, 1),
                 Arguments.of(1, 1)
         );
     }

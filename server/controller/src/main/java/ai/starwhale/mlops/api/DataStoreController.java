@@ -55,6 +55,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -165,31 +166,36 @@ public class DataStoreController implements DataStoreApi {
     @Override
     public void queryAndExport(QueryTableRequest request, HttpServletResponse httpResponse) {
         try {
-            int remaining = request.getLimit();
-            int totalRecords = 0;
             httpResponse.addHeader("Content-Type", recordsExporter.getWebMediaType());
             httpResponse.addHeader(
                     "Content-Disposition",
-                    "attachment; filename=\"" + extractRealTablename(request.getTableName()) + "."
+                    "attachment; filename=\"" + extractRealTableName(request.getTableName()) + "."
                             + recordsExporter.getFileSuffix() + "\""
             );
+            int remaining = request.getLimit();
+            int requestNum = Math.min(remaining, DataStore.QUERY_LIMIT);
+            int totalRecords = 0;
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             do {
+                request.setLimit(requestNum);
                 RecordList recordList = queryRecordList(request);
-                int resultSize = recordList.getRecords().size();
-                if (resultSize == 0) {
+                if (CollectionUtils.isEmpty(recordList.getRecords())) {
                     break;
                 }
                 recordsExporter.exportTo(recordList, outputStream);
+                int resultSize = recordList.getRecords().size();
                 totalRecords += resultSize;
+                if (resultSize < requestNum) {
+                    break;
+                }
                 request.setStart(totalRecords);
-                if (remaining != -1) {
+                if (remaining > 0) {
                     remaining = remaining - resultSize;
                     if (remaining <= 0) {
                         break;
                     }
                 }
-                request.setLimit(remaining);
+                requestNum = Math.min(remaining, DataStore.QUERY_LIMIT);
             } while (true);
             outputStream.flush();
         } catch (SwValidationException e) {
@@ -201,7 +207,7 @@ public class DataStoreController implements DataStoreApi {
     }
 
     @NotNull
-    private static String extractRealTablename(String tableName) {
+    private static String extractRealTableName(String tableName) {
         String[] splits = tableName.split("/");
         return splits[splits.length - 1];
     }
@@ -209,35 +215,39 @@ public class DataStoreController implements DataStoreApi {
     @Override
     public void scanAndExport(ScanTableRequest request, HttpServletResponse httpResponse) {
         try {
-            int remaining = request.getLimit();
             httpResponse.addHeader(
                     "Content-Disposition",
                     "attachment; filename=\"" + String.join(
                             "-",
                             request.getTables()
                                     .stream()
-                                    .map(tableDesc -> extractRealTablename(tableDesc.getTableName()))
-                                    .collect(
-                                            Collectors.toList())
+                                    .map(tableDesc -> extractRealTableName(tableDesc.getTableName()))
+                                    .collect(Collectors.toList())
                     ) + "." + recordsExporter.getFileSuffix() + "\""
             );
             httpResponse.addHeader("Content-Type", recordsExporter.getWebMediaType());
+            int remaining = request.getLimit();
+            int requestNum = Math.min(remaining, DataStore.QUERY_LIMIT);
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             do {
+                request.setLimit(requestNum);
                 RecordList recordList = scanRecordList(request);
-                int resultSize = recordList.getRecords().size();
-                if (resultSize == 0) {
+                if (CollectionUtils.isEmpty(recordList.getRecords())) {
                     break;
                 }
                 recordsExporter.exportTo(recordList, outputStream);
+                int resultSize = recordList.getRecords().size();
+                if (resultSize < requestNum) {
+                    break;
+                }
                 request.setStart(recordList.getLastKey());
-                if (remaining != -1) {
+                if (remaining > 0) {
                     remaining = remaining - resultSize;
                     if (remaining <= 0) {
                         break;
                     }
                 }
-                request.setLimit(remaining);
+                requestNum = Math.min(remaining, DataStore.QUERY_LIMIT);
             } while (true);
             outputStream.flush();
         } catch (SwValidationException e) {
