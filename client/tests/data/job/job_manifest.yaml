@@ -5,10 +5,9 @@ datasets:
 - mnist:mm2gimjvheztqnrsga4dkmlbnyyxs2a
 desc: null
 finished_at: 2022-09-01 15:08:15 CST
-model: mnist:meydczbrmi2g
-name: null
-phase: all
+model_src_dir: /path/to/.starwhale/self/job/xx/xxyy/snapshot
+scheduler_run_args: []
+project: self
+error_message: ''
 status: success
-step: ''
-task_index: 0
 version: mjrtonlfmi3gkmzxme4gkzldnz3ws4a

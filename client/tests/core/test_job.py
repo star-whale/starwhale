@@ -13,6 +13,7 @@ from starwhale.core.job.cli import _list as list_cli
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.job.view import JobTermView, JobTermViewJson, JobTermViewRich
 from starwhale.base.scheduler import Step, Scheduler, StepResult, TaskResult
+from starwhale.core.job.model import LocalJobInfo
 from starwhale.core.instance.view import InstanceTermView
 
 
@@ -194,7 +195,8 @@ class JobTestCase(TestCase):
 
         jobs, pages_info = JobTermView.list()
         assert len(jobs) == 2
-        assert jobs[0]["manifest"]["project"] == "self"
+        assert isinstance(jobs[0], LocalJobInfo)
+        assert jobs[0].manifest.project == "self"
         assert pages_info == {}
 
         JobTermViewRich.list(project_uri="self", fullname=True)

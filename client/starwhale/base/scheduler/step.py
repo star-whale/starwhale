@@ -74,7 +74,7 @@ class Step(ASDictMixin):
     @classmethod
     def get_steps_from_yaml(
         cls, job_name_or_idx: str | int, yaml_path: t.Union[str, Path]
-    ) -> t.Tuple[str | int, t.List[Step]]:
+    ) -> t.Tuple[str, t.List[Step]]:
         # default run index 0 handler
         job_name = str(job_name_or_idx or "0")
         jobs = load_yaml(yaml_path)

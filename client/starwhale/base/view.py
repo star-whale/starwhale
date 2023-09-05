@@ -8,6 +8,7 @@ import typing as t
 from functools import wraps
 
 from rich import box
+from pydantic import BaseModel
 from rich.panel import Panel
 from rich.table import Table
 
@@ -218,7 +219,15 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def pretty_json(data: t.Any) -> None:
-        print(json.dumps(data, indent=4, sort_keys=True))
+        class _Encoder(json.JSONEncoder):
+            def default(self, o: t.Any) -> t.Any:
+                if isinstance(o, bytes):
+                    return o.decode("utf-8")
+                if isinstance(o, BaseModel):
+                    return o.dict()
+                return super().default(o)
+
+        print(json.dumps(data, indent=4, sort_keys=True, cls=_Encoder))
 
     @staticmethod
     def list_data(

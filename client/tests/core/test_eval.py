@@ -10,7 +10,7 @@ from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.job.view import JobTermView, JobTermViewRich
-from starwhale.core.job.model import CloudJob, StandaloneJob
+from starwhale.core.job.model import CloudJob, LocalJobInfo, StandaloneJob
 from starwhale.core.job.store import JobStorage
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -57,7 +57,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
         )
 
         assert store.manifest["version"] == self.job_name
-        assert "model" in store.manifest
+        assert "model_src_dir" in store.manifest
 
         all_jobs = [job for job in store.iter_all_jobs(uri.project)]
         assert len(all_jobs) == 1
@@ -67,9 +67,12 @@ class StandaloneEvaluationJobTestCase(TestCase):
     def test_list(self):
         jobs, _ = StandaloneJob.list(Project(""))
         assert len(jobs) == 1
-        assert jobs[0]["location"] == os.path.join(self.job_dir, DEFAULT_MANIFEST_NAME)
-        assert jobs[0]["manifest"]["version"] == self.job_name
-        assert jobs[0]["manifest"]["model"] == "mnist:meydczbrmi2g"
+        job = jobs[0]
+        assert job.manifest.version == self.job_name
+        assert (
+            job.manifest.model_src_dir
+            == "/path/to/.starwhale/self/job/xx/xxyy/snapshot"
+        )
 
     @patch("starwhale.api._impl.data_store.atexit")
     @patch("starwhale.api._impl.wrapper.Evaluation.get")
@@ -87,9 +90,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
         job = StandaloneJob(uri)
         info = job.info()
 
-        assert info["manifest"]["version"] == self.job_name
-        assert info["manifest"]["model"] == "mnist:meydczbrmi2g"
-        assert info["report"]["kind"] == "multi_classification"
+        assert isinstance(info, LocalJobInfo)
+        assert info.manifest.version == self.job_name
+        assert info.report.get("kind") == "multi_classification"
 
     @patch("starwhale.core.job.view.console.print")
     @patch("starwhale.core.job.view.Table.add_column")
