@@ -64,6 +64,18 @@ const basic = {
         en: '{{0}} per page',
         zh: '{{0}}条/页',
     },
+    'grid.view.expand': {
+        en: 'Expand details',
+        zh: '全屏视图',
+    },
+    'grid.view.half': {
+        en: 'Split in half',
+        zh: '分屏视图',
+    },
+    'grid.view.collapse': {
+        en: 'Collapse details',
+        zh: '收起视图',
+    },
 }
 
 const dataset = {
