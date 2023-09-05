@@ -4,6 +4,7 @@ import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Link as BaseLink, LinkProps } from 'react-router-dom'
 import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
+import { StyledLink } from 'baseui/link'
 
 const useLinkStyles = createUseStyles({
     link: {
@@ -29,6 +30,14 @@ export default function Link({ to, tooltip, className, style = {}, children, ...
     const styles = useLinkStyles()
 
     const { content, placement = 'top', ...tooltipRest } = tooltip || {}
+
+    if (to.startsWith('http') || to.startsWith('https') || to.startsWith('//')) {
+        return (
+            <StyledLink href={to} className={cn(className ?? styles.link)} style={style} {...rest}>
+                {children}
+            </StyledLink>
+        )
+    }
 
     return (
         <Tooltip content={content} placement={placement} showArrow {...tooltipRest}>
