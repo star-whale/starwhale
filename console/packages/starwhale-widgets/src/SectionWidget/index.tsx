@@ -107,7 +107,7 @@ const selector = (s: WidgetStoreState) => ({
 function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     const { store } = useEditorContext()
     const api = store(selector, shallow)
-    const { editable } = api
+    const { editable = true } = api
     const [editWidget, setEditWidget] = useState<{
         type?: string
         path?: any[]
@@ -372,6 +372,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     // })
 
     const isChartAdd = isEvaluationList ? Object.keys(evalSelectData || {}).length > 0 : true
+
+    console.log(editable)
 
     return (
         <PanelContextProvider value={{ evalSelectData }}>
