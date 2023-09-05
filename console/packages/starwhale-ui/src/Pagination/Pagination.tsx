@@ -87,7 +87,7 @@ function Pagination(paginationProps: IPaginationProps) {
     const currentPage = start ?? 1
 
     return (
-        <div className='pagination flex items-center mt-20px gap-20px lh-20px' data-pm-draggable='false'>
+        <div className='pagination flex items-center mt-20px gap-20px lh-20px'>
             <div className='flex-1' />
             {Boolean(total) && (
                 <div className='pagination-counts color-[rgba(2,16,43,0.60)] py-3px'>

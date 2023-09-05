@@ -96,6 +96,11 @@ export default function EvaluationListCard() {
                     ...column,
                     renderCell: ({ value }) => <p title={value.toString()}>{durationToStr(value.value)}</p>,
                 })
+            if (column.key === 'sys/dev_mode')
+                return CustomColumn<RecordAttr, any>({
+                    ...column,
+                    renderCell: ({ value }) => <p title={value.toString()}>{value.value ? t('yes') : t('no')}</p>,
+                })
             if (column.key === 'sys/job_status')
                 return CustomColumn<RecordAttr, any>({
                     ...column,
@@ -115,7 +120,7 @@ export default function EvaluationListCard() {
                     renderCell: ({ value }) => {
                         return (
                             <span className='line-clamp line-clamp-2' title={value.toString()}>
-                                {formatTimestampDateTime(value.value)}
+                                {Number(value.value) > 0 ? formatTimestampDateTime(value.value) : '-'}
                             </span>
                         )
                     },

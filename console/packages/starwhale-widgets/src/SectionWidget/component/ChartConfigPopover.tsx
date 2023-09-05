@@ -6,7 +6,7 @@ import { ConfirmButton } from '@starwhale/ui/Modal'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import useTranslation from '@/hooks/useTranslation'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
-import { Button } from '@starwhale/ui/Button'
+import { ExtendButton } from '@starwhale/ui/Button'
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles({
@@ -102,9 +102,10 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 />
             )}
         >
-            <Button
+            <ExtendButton
                 kind='tertiary'
                 className={styles.icon}
+                tooltip={t('panel.chart.settings')}
                 overrides={{
                     BaseButton: {
                         style: {
@@ -124,7 +125,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 }}
             >
                 <IconFont type='setting' size={12} />
-            </Button>
+            </ExtendButton>
         </StatefulPopover>
     )
 }

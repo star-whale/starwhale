@@ -40,6 +40,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                         isInit: false,
                         ...(initState as any),
                         key: name,
+                        editable: true,
                         isEditable: () => get().editable,
                         getRawConfigs: () => _.pick(get(), SYNCKESY),
                         setRawConfigs: (configs: any) => {

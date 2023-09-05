@@ -21,13 +21,13 @@ export const setToken = (token: string | undefined) => {
     store.setItem(key, token)
 }
 
-export function apiInit() {
+export function apiInit(simple = false) {
     axios.interceptors.request.use((config) => {
-        config.headers.Authorization = getToken()
+        config.headers.Authorization = simple ? '' : getToken()
         return config
     })
     axios.interceptors.response.use((response) => {
-        if (response.headers?.authorization) setToken(response.headers.authorization)
+        if (response.headers?.authorization && !simple) setToken(response.headers.authorization)
         return typeof response.data === 'object' && 'data' in response.data ? response.data : response
     })
 }
