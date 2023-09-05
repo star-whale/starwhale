@@ -552,8 +552,8 @@ const report = {
         zh: '标题',
     },
     'report.save.saved': {
-        en: 'Saved',
-        zh: '已保存',
+        en: 'Local saved',
+        zh: '已保存到本地',
     },
     'report.save.unsaved': {
         en: 'Unsaved',
