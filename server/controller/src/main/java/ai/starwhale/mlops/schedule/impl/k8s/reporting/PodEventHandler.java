@@ -35,7 +35,7 @@ import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     final TaskLogSaver taskLogSaver;

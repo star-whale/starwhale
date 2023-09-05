@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.configuration;
+package ai.starwhale.mlops.domain.upgrade;
 
 import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.lock.RequestLockFilter;
 import javax.annotation.Resource;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 @Configuration
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class FilterConfiguration {
 
     @Resource

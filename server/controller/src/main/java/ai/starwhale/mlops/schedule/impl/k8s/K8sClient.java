@@ -83,7 +83,7 @@ public class K8sClient {
             CoreV1Api coreV1Api,
             BatchV1Api batchV1Api,
             AppsV1Api appsV1Api,
-            @Value("${sw.infra.k8s.name-space}") String ns,
+            @Value("${sw.scheduler.k8s.name-space}") String ns,
             SharedInformerFactory informerFactory
     ) throws ApiException {
         this.client = client;
@@ -92,7 +92,7 @@ public class K8sClient {
         this.appsV1Api = appsV1Api;
         this.ns = ns;
         this.informerFactory = informerFactory;
-        //detect if the k8s config is proper TODO: don't initialize this bean when k8s is not a need
+        //detect if the k8s config is proper
         coreV1Api.listNode(null, null, null, null, null, 1, null, null, 10, false);
     }
 

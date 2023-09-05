@@ -16,11 +16,24 @@
 
 package ai.starwhale.mlops.domain.upgrade;
 
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import io.kubernetes.client.informer.SharedInformerFactory;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.util.Config;
+import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class UpgradeConfiguration {
 
     @Bean
@@ -30,6 +43,57 @@ public class UpgradeConfiguration {
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
         scheduler.setAwaitTerminationSeconds(10);
         return scheduler;
+    }
+
+    @Bean(name = "k8sClientForUpgrade")
+    public K8sClient k8sClient(
+            ApiClient client,
+            CoreV1Api coreV1Api,
+            BatchV1Api batchV1Api,
+            AppsV1Api appsV1Api,
+            @Value("${sw.upgrade.k8s.name-space}") String ns,
+            SharedInformerFactory informerFactory
+    ) throws ApiException {
+        return new K8sClient(
+                client,
+                coreV1Api,
+                batchV1Api,
+                appsV1Api,
+                ns,
+                informerFactory
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ApiClient.class)
+    public ApiClient apiClient() throws IOException {
+        ApiClient apiClient = Config.defaultClient();
+        io.kubernetes.client.openapi.Configuration.setDefaultApiClient(apiClient);
+        return apiClient;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CoreV1Api.class)
+    public CoreV1Api coreV1Api(ApiClient apiClient) {
+        return new CoreV1Api();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(BatchV1Api.class)
+    public BatchV1Api batchV1Api(ApiClient apiClient) {
+        return new BatchV1Api();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AppsV1Api.class)
+    public AppsV1Api appsV1Api(ApiClient apiClient) {
+        return new AppsV1Api();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(SharedInformerFactory.class)
+    public SharedInformerFactory sharedInformerFactory(ApiClient apiClient) {
+        return new SharedInformerFactory(apiClient);
     }
 
 }

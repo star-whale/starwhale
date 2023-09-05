@@ -18,18 +18,14 @@ package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.common.util.FileResourceUtil;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
-import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1Probe;
-import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
@@ -42,13 +38,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Component
-// TODO add this line when ds building/ model serving/ runtime building are decoupled from k8s
-//@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+@ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "k8s")
 public class K8sJobTemplate {
 
     public static final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
@@ -60,22 +56,15 @@ public class K8sJobTemplate {
     private final String pipCacheHostPath;
 
     public static final String DEVICE_LABEL_NAME_PREFIX = "device.starwhale.ai-";
-    public static final String LABEL_APP = "app";
-    public static final String LABEL_WORKLOAD_TYPE = "starwhale-workload-type";
-    public static final String WORKLOAD_TYPE_ONLINE_EVAL = "online-eval";
-    public static final int ONLINE_EVAL_PORT_IN_POD = 8080;
 
     final String evalJobTemplate;
-    final String modelServingJobTemplate;
 
     public K8sJobTemplate(
-            @Value("${sw.infra.k8s.job.template-path}") String evalJobTemplatePath,
-            @Value("${sw.infra.k8s.model-serving-template-path}") String msPath,
-            @Value("${sw.infra.k8s.host-path-for-cache}") String pipCacheHostPath
+            @Value("${sw.scheduler.k8s.job.template-path}") String evalJobTemplatePath,
+            @Value("${sw.scheduler.k8s.host-path-for-cache}") String pipCacheHostPath
     )
             throws IOException {
         this.evalJobTemplate = FileResourceUtil.getFileContent(evalJobTemplatePath, "template/job.yaml");
-        this.modelServingJobTemplate = FileResourceUtil.getFileContent(msPath, "template/model-serving.yaml");
         this.pipCacheHostPath = pipCacheHostPath;
     }
 
@@ -173,62 +162,6 @@ public class K8sJobTemplate {
         meta.annotations(origin);
     }
 
-    public V1StatefulSet renderModelServingOrch(
-            String name,
-            String image,
-            Map<String, String> envs,
-            ResourceOverwriteSpec resource,
-            Map<String, String> nodeSelectors
-    ) {
-        var ss = Yaml.loadAs(this.modelServingJobTemplate, V1StatefulSet.class);
-        Objects.requireNonNull(ss.getMetadata());
-
-        // set name and labels
-        ss.getMetadata().name(name);
-
-        var labels = new HashMap<String, String>();
-        labels.putAll(Map.of(LABEL_APP, name, LABEL_WORKLOAD_TYPE, WORKLOAD_TYPE_ONLINE_EVAL));
-        labels.putAll(starwhaleJobLabel);
-
-        ss.getMetadata().labels(labels);
-
-        var spec = ss.getSpec();
-        Objects.requireNonNull(spec);
-        spec.getSelector().matchLabels(labels);
-        Objects.requireNonNull(spec.getTemplate().getMetadata());
-        spec.getTemplate().getMetadata().labels(labels);
-
-        // set container spec
-        final String containerName = "worker";
-        var cos = new ContainerOverwriteSpec();
-        cos.setName(containerName);
-        cos.setImage(image);
-        cos.setEnvs(envs.entrySet().stream().map(K8sJobTemplate::toEnvVar).collect(Collectors.toList()));
-        // add readiness probe
-        var readiness = new V1Probe();
-        cos.setReadinessProbe(readiness);
-        cos.setResourceOverwriteSpec(resource);
-        readiness.failureThreshold(60);
-        var httpGet = new V1HTTPGetAction();
-        readiness.httpGet(httpGet);
-        readiness.initialDelaySeconds(5);
-        readiness.periodSeconds(1);
-        httpGet.path("/");
-        httpGet.port(new IntOrString(ONLINE_EVAL_PORT_IN_POD));
-        httpGet.scheme("HTTP");
-
-        var containerSpecMap = new HashMap<String, ContainerOverwriteSpec>();
-        containerSpecMap.put(containerName, cos);
-
-        var podSpec = spec.getTemplate().getSpec();
-        Objects.requireNonNull(podSpec);
-        patchPodSpec("Always", containerSpecMap, nodeSelectors, podSpec);
-        patchPipCacheVolume(ss.getSpec().getTemplate().getSpec().getVolumes());
-        addDeviceInfoLabel(spec.getTemplate(), containerSpecMap);
-
-        return ss;
-    }
-
     private static void patchPodSpec(
             String restartPolicy,
             Map<String, ContainerOverwriteSpec> containerSpecMap,
@@ -295,7 +228,8 @@ public class K8sJobTemplate {
     /**
      * add device info to the spec, mainly used for ali ask eci-profile
      * <a
-     * href="https://www.alibabacloud.com/help/en/elastic-container-instance/latest/configure-elastic-container-instance-profile">more</a>
+     * href="https://www.alibabacloud.com/help/en/elastic-container-instance/latest/configure-elastic-container
+     * -instance-profile">more</a>
      *
      * @param podTemplateSpec which device info labels will be patched to
      * @param specs           which contains the device info

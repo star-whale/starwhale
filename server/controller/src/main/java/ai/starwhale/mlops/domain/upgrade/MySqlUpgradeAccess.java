@@ -25,10 +25,12 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 
 @Component
+@ConditionalOnProperty("sw.upgrade.enabled")
 public class MySqlUpgradeAccess implements UpgradeAccess {
 
     private static final String STATUS_NORMAL = "NORMAL";
