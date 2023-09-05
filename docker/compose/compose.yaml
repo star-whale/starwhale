@@ -52,4 +52,4 @@ services:
 volumes:
   db_data:
   oss_data:
-  kube_data:
+  
