@@ -1,6 +1,7 @@
 import React from 'react'
 import _ from 'lodash'
-import './fonts/iconfont.css'
+// use cdn
+// import './fonts/iconfont.css'
 
 import projectSvg from './svg/project.svg'
 import settingSvg from './svg/setting.svg'
