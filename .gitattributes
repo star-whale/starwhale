@@ -1,4 +1,1 @@
 * text=auto eol=lf
-*.ttf filter=lfs diff=lfs merge=lfs -text
-*.woff filter=lfs diff=lfs merge=lfs -text
-*.woff2 filter=lfs diff=lfs merge=lfs -text
