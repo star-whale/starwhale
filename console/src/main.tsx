@@ -11,6 +11,7 @@ import { registerLocales } from './i18n/locales'
 // for uno or tailwind
 import '@unocss/reset/tailwind.css'
 import 'virtual:uno.css'
+import { apiInit } from '@/api'
 
 // eslint-disable-next-line
 // @ts-ignore
@@ -53,6 +54,8 @@ async function init() {
     const simple = window.location.pathname.startsWith('/simple')
 
     const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
+
+    apiInit(simple)
 
     root.render(<App simple={simple} />)
 }
