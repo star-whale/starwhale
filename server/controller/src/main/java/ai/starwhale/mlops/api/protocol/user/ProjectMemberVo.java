@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api.protocol.user;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -29,12 +30,16 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ProjectMemberVo {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private UserVo user;
 
+    @NotNull
     private ProjectVo project;
 
+    @NotNull
     private RoleVo role;
 
     public static ProjectMemberVo empty() {

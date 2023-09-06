@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api.protocol.system;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -27,5 +28,6 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "System features", title = "Features")
 @Validated
 public class FeaturesVo {
+    @NotNull
     List<String> disabled;
 }

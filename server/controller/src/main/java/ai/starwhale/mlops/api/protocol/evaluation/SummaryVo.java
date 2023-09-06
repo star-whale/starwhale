@@ -20,6 +20,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -30,27 +31,34 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SummaryVo {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("uuid")
     private String uuid;
 
+    @NotNull
     @JsonProperty("projectId")
     private String projectId;
 
+    @NotNull
     @JsonProperty("projectName")
     private String projectName;
 
+    @NotNull
     @JsonProperty("modelName")
     private String modelName;
 
+    @NotNull
     @JsonProperty("modelVersion")
     private String modelVersion;
 
     @JsonProperty("datasets")
     private String datasets;
 
+    @NotNull
     @JsonProperty("runtime")
     private String runtime;
 
@@ -60,18 +68,21 @@ public class SummaryVo {
     @JsonProperty("deviceAmount")
     private Integer deviceAmount;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
     @JsonProperty("stopTime")
     private Long stopTime;
 
+    @NotNull
     @JsonProperty("owner")
     private String owner;
 
     @JsonProperty("duration")
     public Long duration;
 
+    @NotNull
     @JsonProperty("jobStatus")
     private JobStatus jobStatus;
 

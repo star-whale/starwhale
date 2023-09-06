@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api.protocol.dataset.upload;
 
 import ai.starwhale.mlops.api.protocol.upload.UploadRequest;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +26,7 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class DatasetUploadRequest extends UploadRequest {
+    @NotNull
     String swds;
 
     public String name() {

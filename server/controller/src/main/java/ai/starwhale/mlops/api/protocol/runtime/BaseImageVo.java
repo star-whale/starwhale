@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api.protocol.runtime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -29,9 +30,11 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Base image", title = "BaseImage")
 public class BaseImageVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 

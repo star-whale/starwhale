@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -30,18 +31,22 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Dataset object", title = "Dataset")
 public class DatasetVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
     @JsonProperty("owner")
     private UserVo owner;
 
+    @NotNull
     @JsonProperty("version")
     private DatasetVersionVo version;
 }

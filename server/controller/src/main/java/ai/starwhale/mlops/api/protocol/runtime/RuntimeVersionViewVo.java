@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api.protocol.runtime;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -28,15 +29,21 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Runtime Version View object", title = "Runtime")
 public class RuntimeVersionViewVo {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String versionName;
 
+    @NotNull
     private String alias;
 
+    @NotNull
     private Boolean latest;
 
+    @NotNull
     private Integer shared;
 
+    @NotNull
     private Long createdTime;
 }
