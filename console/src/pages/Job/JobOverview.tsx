@@ -222,7 +222,7 @@ export default function JobOverview() {
         },
         {
             key: 'sys/project_id',
-            value: job?.owner?.name,
+            value: projectId,
         },
         {
             key: 'sys/dataset_uris',
