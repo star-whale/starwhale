@@ -887,7 +887,9 @@ def install_starwhale(
 
     req = [SW_PYPI_PKG_NAME]
     if version:
-        req = [version] if re.match(r"^git", version) else [f"{req}=={version}"]
+        req = [
+            version if re.match(r"^git", version) else f"{SW_PYPI_PKG_NAME}=={version}"
+        ]
 
     configs = configs or {}
     if mode == PythonRunEnv.CONDA:

@@ -797,6 +797,86 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_from_runtime_yaml_with_custom_version(
+        self, m_output: MagicMock, m_py_bin: MagicMock, *args: t.Any
+    ) -> None:
+        sw = SWCliConfigMixed()
+        workdir = "/home/starwhale/myproject"
+
+        m_output.return_value = b"3.7"
+        name = "rttest"
+
+        venv_dir = os.path.join(workdir, ".starwhale", "venv")
+        ensure_dir(venv_dir)
+        self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
+        venv_path = os.path.join(venv_dir, "bin/python3")
+        os.environ[ENV_VENV] = venv_dir
+        m_py_bin.return_value = venv_path
+
+        self.fs.create_file(
+            os.path.join(workdir, "requirements.txt"), contents="requests==2.0.0"
+        )
+        self.fs.create_file(os.path.join(workdir, "dummy.whl"), contents="")
+
+        versions = [
+            {
+                "version": "",
+                "expect": "0.0.0.dev0",
+            },
+            {
+                "version": "0.5.6",
+                "expect": "0.5.6",
+            },
+            {
+                "version": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+                "expect": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+            },
+        ]
+        for i, ver in enumerate(versions):
+            runtime_config = self.get_runtime_config()
+            runtime_config["environment"]["cuda"] = "11.5"
+            runtime_config["environment"]["cudnn"] = "8"
+            runtime_config["environment"]["starwhale_version"] = ver["version"]
+
+            runtime_yaml_name = f"non-runtime-{i}.yaml"
+            self.fs.create_file(
+                os.path.join(workdir, runtime_yaml_name),
+                contents=yaml.safe_dump(runtime_config),
+            )
+
+            uri = Resource(name, typ=ResourceType.runtime)
+            sr = StandaloneRuntime(uri)
+            sr.build_from_runtime_yaml(
+                workdir=workdir,
+                yaml_path=os.path.join(workdir, runtime_yaml_name),
+                tags=["from-venv-v0"],
+            )
+
+            runtime_workdir = os.path.join(
+                sw.rootdir,
+                "self",
+                "workdir",
+                "runtime",
+                name,
+                sr._version[:VERSION_PREFIX_CNT],
+                sr._version,
+            )
+
+            assert os.path.exists(runtime_workdir)
+            assert os.path.exists(
+                os.path.join(runtime_workdir, DefaultYAMLName.RUNTIME)
+            )
+            _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+
+            assert (
+                _manifest["environment"]["lock"]["starwhale_version"] == ver["expect"]
+            )
+
+    @patch("os.environ", {})
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_from_runtime_yaml_in_venv_mode(
         self, m_output: MagicMock, m_py_bin: MagicMock, m_call: MagicMock, *args: t.Any
     ) -> None:
@@ -816,9 +896,6 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_config = self.get_runtime_config()
         runtime_config["environment"]["cuda"] = "11.5"
         runtime_config["environment"]["cudnn"] = "8"
-        runtime_config["environment"][
-            "starwhale_version"
-        ] = "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale"
         runtime_config["dependencies"].extend(
             [
                 {
@@ -906,10 +983,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["version"] == sr.uri.version
         assert _manifest["environment"]["mode"] == "venv"
         assert _manifest["environment"]["lock"]["shell"]["use_venv"]
-        assert (
-            _manifest["environment"]["lock"]["starwhale_version"]
-            == "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale"
-        )
+        assert _manifest["environment"]["lock"]["starwhale_version"] == "0.0.0.dev0"
         assert _manifest["artifacts"]["wheels"] == ["wheels/dummy.whl"]
         assert _manifest["artifacts"]["files"][0] == {
             "dest": "bin/../bin/prepare.sh",
