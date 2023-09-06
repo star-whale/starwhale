@@ -127,6 +127,11 @@ export default function JobOverview() {
         />
     )
 
+    const datasetUris =
+        job?.datasetList
+            ?.map((v) => `project/${project?.name}/dataset/${v?.name}/version/${v?.version?.name}`)
+            .join(',') || '-'
+
     const items = [
         {
             key: 'id',
@@ -226,10 +231,7 @@ export default function JobOverview() {
         },
         {
             key: 'sys/dataset_uris',
-            value:
-                job?.datasetList
-                    ?.map((v) => `project/${project?.name}/dataset/${v?.name}/version/${v?.version?.name}`)
-                    .join(',') || '-',
+            value: <Text tooltip={<pre>{datasetUris}</pre>}>{datasetUris}</Text>,
         },
         {
             key: 'action',
@@ -251,11 +253,11 @@ export default function JobOverview() {
         <div
             className='flex-column '
             style={{
-                lineHeight: '44px',
                 fontSize: '14px',
                 gridTemplateColumns: 'minmax(160px, max-content) 1fr',
                 display: 'grid',
                 overflow: 'auto',
+                gridTemplateRows: 'repeat(100,44px)',
             }}
         >
             {items.map((v) => (
@@ -264,13 +266,15 @@ export default function JobOverview() {
                         style={{
                             color: 'rgba(2,16,43,0.60)',
                             borderBottom: '1px solid #EEF1F6',
+                            display: 'flex',
+                            alignItems: 'center',
                         }}
                     >
                         {v?.key}
                     </div>
 
                     <div
-                        className='highlight'
+                        className='line-clamp'
                         style={{
                             borderBottom: '1px solid #EEF1F6',
                             paddingLeft: '20px',
@@ -278,15 +282,7 @@ export default function JobOverview() {
                             alignItems: 'center',
                         }}
                     >
-                        <pre
-                            style={{
-                                fontFamily: 'inherit',
-                                lineHeight: 1.5,
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {v?.value}
-                        </pre>
+                        {v?.value}
                     </div>
                 </React.Fragment>
             ))}

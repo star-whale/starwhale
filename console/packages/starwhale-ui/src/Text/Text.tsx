@@ -28,10 +28,11 @@ function Text({ children, style, size = 'medium', tooltip = '', content = '', ma
             className={css({
                 fontSize: fontSizeMap[size],
                 WebkitLineClamp: 1,
-                display: 'inline-block',
+                display: '-webkit-box',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 verticalAlign: 'middle',
+                WebkitBoxOrient: 'vertical',
                 maxWidth,
             })}
         >
