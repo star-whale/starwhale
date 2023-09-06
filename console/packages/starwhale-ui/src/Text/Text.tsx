@@ -33,6 +33,7 @@ function Text({ children, style, size = 'medium', tooltip = '', content = '', ma
                 textOverflow: 'ellipsis',
                 verticalAlign: 'middle',
                 WebkitBoxOrient: 'vertical',
+                whiteSpace: 'normal',
                 maxWidth,
             })}
         >
@@ -49,10 +50,10 @@ function Text({ children, style, size = 'medium', tooltip = '', content = '', ma
     }
 
     return (
-        <>
+        <div className='flex items-center'>
             {Component}
             {content && <IconCopy content={content} />}
-        </>
+        </div>
     )
 }
 
