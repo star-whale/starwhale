@@ -131,7 +131,7 @@ function Summary({ fetch }: any) {
                             Object.keys(record)
                                 .sort((a, b) => {
                                     if (a === 'id') return -1
-                                    return a > b ? 1 : -1
+                                    return a.localeCompare(b)
                                 })
                                 .filter((label) => isSearchColumns(label) && typeof record[label] !== 'object')
                                 .map((label) => {
@@ -158,6 +158,7 @@ function Summary({ fetch }: any) {
                                                 <pre
                                                     style={{
                                                         fontFamily: 'inherit',
+                                                        lineHeight: 1.5,
                                                     }}
                                                 >
                                                     {value}
