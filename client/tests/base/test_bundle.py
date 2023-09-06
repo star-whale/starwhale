@@ -4,26 +4,19 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.base.store import BundleField
 from starwhale.base.bundle import BaseBundle
+from starwhale.base.models.base import ListFilter
 
 
 class TestBaseBundle(TestCase):
     def test_get_filter_dict(self):
         _cls = BaseBundle
-        _fields = ["name", "owner", "latest"]
-        _filter = ["name=mnist", "owner=starwhale", "latest", "other"]
-        f_dict = _cls.get_filter_dict(filters=_filter, fields=_fields)
-        print(f_dict)
-        assert f_dict.get("name") == "mnist"
-        assert f_dict.get("owner") == "starwhale"
-        assert f_dict.get("latest") is not None
-        assert not f_dict.get("other")
+        raw = ["name=mnist", "owner=starwhale", "latest", "other"]
+        _filter = _cls.get_list_filter(filters=raw)
+        assert _filter.name == "mnist"
+        assert _filter.owner == "starwhale"
+        assert _filter.latest
 
-        _filter = {"name": "nmt", "latest": True, "other": True}
-        f_dict = _cls.get_filter_dict(filters=_filter, fields=_fields)
-        assert f_dict.get("name") == "nmt"
-        assert f_dict.get("latest") is not None
-        assert not f_dict.get("owner")
-        assert not f_dict.get("other")
+        assert _cls.get_list_filter(filters=None) is None
 
     def test_do_bundle_filter(self):
         _cls = BaseBundle
@@ -34,13 +27,13 @@ class TestBaseBundle(TestCase):
             path=Path(),
             is_removed=False,
         )
-        _filter = {"name": "nmt", "latest": True}
+        _filter = ListFilter(name="nmt", latest=True)
         assert not _cls.do_bundle_filter(_bf, _filter)
 
-        _filter = {"name": "mnist", "latest": True}
+        _filter = ListFilter(name="mnist", latest=True)
         assert _cls.do_bundle_filter(_bf, _filter)
 
-        _filter = {"name": "mn", "latest": True}
+        _filter = ListFilter(name="mn", latest=True)
         assert _cls.do_bundle_filter(_bf, _filter)
 
         _bf = BundleField(
@@ -51,8 +44,8 @@ class TestBaseBundle(TestCase):
             is_removed=False,
         )
 
-        _filter = {"name": "mnist", "latest": True}
+        _filter = ListFilter(name="mnist", latest=True)
         assert not _cls.do_bundle_filter(_bf, _filter)
 
-        _filter = {"name": "mnist"}
+        _filter = ListFilter(name="mnist")
         assert _cls.do_bundle_filter(_bf, _filter)

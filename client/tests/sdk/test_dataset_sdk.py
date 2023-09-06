@@ -20,7 +20,8 @@ import torch.utils.data as tdata
 from PIL import Image as PILImage
 from requests_mock import Mocker
 
-from starwhale import dataset, Dataset
+from tests import ROOT_DIR, BaseTestCase
+from starwhale import Dataset, dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
@@ -40,10 +41,9 @@ from starwhale.core.dataset.type import (
     D_ALIGNMENT_SIZE,
     COCOObjectAnnotation,
 )
+from starwhale.base.models.dataset import LocalDatasetInfoBase
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
-
-from .. import ROOT_DIR, BaseTestCase
 
 
 class _DatasetSDKTestBase(BaseTestCase):
@@ -1392,9 +1392,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds = dataset(existed_ds_uri)
         list_info, _ = ds.list(ds.uri.project, fullname=True)
         assert isinstance(list_info, list)
-        assert list_info[0]["name"] == ds.uri.name
-        assert list_info[0]["version"] == ds.loading_version
-        assert list_info[0]["tags"] == ["latest", "v0"]
+        item = list_info[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert item.name == ds.uri.name
+        assert item.version == ds.loading_version
+        assert item.tags == ["latest", "v0"]
 
         ds.remove()
         with self.assertRaisesRegex(RuntimeError, "failed to remove dataset"):
@@ -1408,7 +1410,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.recover()
 
         list_info, _ = ds.list(ds.uri.project, fullname=True)
-        assert list_info[0]["version"] == ds.loading_version
+        item = list_info[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert item.version == ds.loading_version
 
     def test_history(self) -> None:
         # TODO: add more test cases after the dataset versioning refactor

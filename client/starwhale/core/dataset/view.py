@@ -14,9 +14,9 @@ from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Text, DatasetConfig
+from starwhale.core.dataset.model import Dataset
+from starwhale.base.models.dataset import DatasetListType, LocalDatasetInfoBase
 from starwhale.core.runtime.process import Process as RuntimeProcess
-
-from .model import Dataset
 
 
 class DatasetTermView(BaseTermView, TagViewMixin):
@@ -145,18 +145,22 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.List[str]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        filters = filters or []
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
         if isinstance(project_uri, str):
             _uri = Project(project_uri)
         else:
             _uri = project_uri
 
         cls.must_have_project(_uri)
-        fullname = fullname or _uri.instance.is_cloud
-        _datasets, _pager = Dataset.list(_uri, page, size, filters)
-        _data = BaseTermView.list_data(_datasets, show_removed, fullname)
-        return _data, _pager
+        dataset = Dataset.get_cls(_uri.instance)
+        _datasets, _pager = dataset.list(_uri, page, size, filters)
+
+        _list: t.List[LocalDatasetInfoBase] = [
+            _d for _d in _datasets if isinstance(_d, LocalDatasetInfoBase)
+        ]
+        if not show_removed:
+            _list = [_d for _d in _list if not _d.is_removed]
+        return _list, _pager
 
     @classmethod
     @BaseTermView._only_standalone
@@ -308,7 +312,7 @@ class DatasetTermViewRich(DatasetTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.List[str]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
         filters = filters or []
         _datasets, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters

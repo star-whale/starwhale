@@ -52,6 +52,7 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.base.models.dataset import DatasetListType
 from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
     TabularDataset,
@@ -1110,7 +1111,7 @@ class Dataset:
         show_removed: bool = False,
         page_index: int = DEFAULT_PAGE_IDX,
         page_size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
         from starwhale.core.dataset.view import DatasetTermView
 
         return DatasetTermView.list(

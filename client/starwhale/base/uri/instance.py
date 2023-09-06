@@ -1,5 +1,4 @@
 from typing import Any, Dict, Tuple, Optional
-from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from starwhale.utils import config
@@ -53,7 +52,6 @@ def _check_alias_exists(alias: str) -> None:
         raise NoMatchException(alias)
 
 
-@dataclass(unsafe_hash=True)
 class Instance:
     """
     Data structure for Instance info

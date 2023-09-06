@@ -41,6 +41,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.base.models.dataset import LocalDatasetInfoBase
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
@@ -411,7 +412,9 @@ class StandaloneDatasetTestCase(TestCase):
 
         _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list) == 1
-        assert not _list[name][0]["is_removed"]
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert not item.is_removed
 
         dataset_uri = Resource(
             f"mnist/version/{build_version}", typ=ResourceType.dataset
@@ -421,11 +424,17 @@ class StandaloneDatasetTestCase(TestCase):
         assert _ok
 
         _list, _ = StandaloneDataset.list(Project(""))
-        assert _list[name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert item.is_removed
 
         _ok, _ = sd.recover(True)
         _list, _ = StandaloneDataset.list(Project(""))
-        assert not _list[name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert not item.is_removed
 
         DatasetTermView(name).info()
         DatasetTermViewJson(dataset_uri).info()
@@ -440,7 +449,7 @@ class StandaloneDatasetTestCase(TestCase):
 
         sd.remove(True)
         _list, _ = StandaloneDataset.list(Project(""))
-        assert len(_list[name]) == 0
+        assert len(_list) == 0
 
         config.project_uri = "self"
         DatasetTermView.build(workdir, config)

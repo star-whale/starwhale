@@ -818,7 +818,7 @@ class RuntimeInfoVo(BaseModel):
     version_alias: str = Field(..., alias='versionAlias')
     version_tag: Optional[str] = Field(None, alias='versionTag')
     version_meta: Optional[str] = Field(None, alias='versionMeta')
-    manifest: str
+    manifest: Optional[str]
     shared: int
     created_time: int = Field(..., alias='createdTime')
     files: Optional[List[FlattenFileVo]] = None
