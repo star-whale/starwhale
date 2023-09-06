@@ -790,7 +790,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
     @Test
     public void testListModelVersionView() {
-        var res = modelService.listModelVersionView("1");
+        var res = modelService.listModelVersionView("1", true, true);
         assertEquals(2, res.size());
         assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
                 hasProperty("modelName", is("m"))));

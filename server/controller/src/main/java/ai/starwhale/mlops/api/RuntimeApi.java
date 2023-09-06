@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.bundle.DataRange;
 import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -270,7 +271,10 @@ public interface RuntimeApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl);
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "all") DataRange range
+    );
 
     @Operation(summary = "Create a new runtime version",
             description = "Create a new version of the runtime. "

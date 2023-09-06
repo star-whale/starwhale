@@ -547,7 +547,12 @@ public class DatasetServiceTest {
         given(datasetVersionMapper.findByLatest(same(4L)))
                 .willReturn(DatasetVersionEntity.builder().id(6L).build());
 
-        var res = service.listDatasetVersionView("1");
+        var res = service.listDatasetVersionView("1", true, false);
+        assertEquals(2, res.size());
+        res = service.listDatasetVersionView("1", false, true);
+        assertEquals(2, res.size());
+
+        res = service.listDatasetVersionView("1", true, true);
         assertEquals(4, res.size());
         assertEquals("ds1", res.get(0).getDatasetName());
         assertEquals("ds3", res.get(1).getDatasetName());
