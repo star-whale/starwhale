@@ -591,6 +591,10 @@ const report = {
         en: 'Published',
         zh: '已发布',
     },
+    'report.mobile.notice': {
+        zh: '使用PC可获得更好的体验',
+        en: 'Better experience on PC',
+    },
 }
 
 const table = {
