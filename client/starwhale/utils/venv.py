@@ -885,11 +885,11 @@ def install_starwhale(
     if version == "" or version == SW_DEV_DUMMY_VERSION:
         version = get_downloadable_sw_version()
 
-    req = [SW_PYPI_PKG_NAME]
+    req = SW_PYPI_PKG_NAME
     if version:
-        req = [
+        req = (
             version if re.match(r"^git", version) else f"{SW_PYPI_PKG_NAME}=={version}"
-        ]
+        )
 
     configs = configs or {}
     if mode == PythonRunEnv.CONDA:
