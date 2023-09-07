@@ -4,17 +4,15 @@ from unittest.mock import patch, MagicMock
 
 import yaml
 from click.testing import CliRunner
-from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.consts import RunStatus, HTTPMethod
+from starwhale.consts import RunStatus
 from starwhale.utils.fs import ensure_file
 from starwhale.core.job.cli import _list as list_cli
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.job.view import JobTermView, JobTermViewJson, JobTermViewRich
 from starwhale.base.scheduler import Step, Scheduler, StepResult, TaskResult
-from starwhale.core.job.model import LocalJobInfo
-from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.models.job import LocalJobInfo
 
 
 class JobTestCase(TestCase):
@@ -216,141 +214,6 @@ class JobTestCase(TestCase):
         assert result.exit_code == 0
         assert mock_obj.list.call_count == 1
         assert mock_obj.list.call_args[0][0] == "self"
-        assert mock_obj.list.call_args[1] == {
-            "fullname": True,
-            "page": 1,
-            "size": 20,
-        }
-
-    @Mocker()
-    def test_list_for_server(self, rm: Mocker) -> None:
-        base_url = "http://1.1.0.0:8182/api/v1"
-
-        rm.request(
-            HTTPMethod.POST,
-            f"{base_url}/login",
-            json={"data": {"name": "foo", "role": {"roleName": "admin"}}},
-            headers={"Authorization": "token"},
-        )
-
-        rm.request(
-            HTTPMethod.GET,
-            f"{base_url}/project/1/job",
-            json={
-                "code": "success",
-                "data": {
-                    "endRow": 1,
-                    "hasNextPage": True,
-                    "hasPreviousPage": False,
-                    "isFirstPage": True,
-                    "isLastPage": False,
-                    "list": [
-                        {
-                            "comment": None,
-                            "createdTime": 1692790991000,
-                            "datasetList": [
-                                {
-                                    "createdTime": 1692172104000,
-                                    "id": "133",
-                                    "name": "cmmlu",
-                                    "owner": None,
-                                    "version": {
-                                        "alias": "v1",
-                                        "createdTime": 1692172104000,
-                                        "id": "190",
-                                        "indexTable": "project/257/dataset/cmmlu/_current/meta",
-                                        "latest": True,
-                                        "name": "kiwtxaz7h3a4atp3rjhhymp3mgbxvjtuip7cklzc",
-                                        "owner": None,
-                                        "shared": 0,
-                                        "tags": None,
-                                    },
-                                }
-                            ],
-                            "duration": 20290782,
-                            "exposedLinks": [],
-                            "id": "722",
-                            "jobName": "src.evaluation:evaluation_results",
-                            "jobStatus": "SUCCESS",
-                            "runtime": {
-                                "name": "test",
-                                "version": {
-                                    "name": "123",
-                                },
-                            },
-                            "model": {
-                                "createdTime": 1692777636000,
-                                "id": "162",
-                                "name": "llama2-13b-chinese",
-                                "version": {
-                                    "alias": "v2",
-                                    "builtInRuntime": None,
-                                    "createdTime": 1692790804000,
-                                    "id": "196",
-                                    "latest": True,
-                                    "name": "2pcj3y7hnpqdmqzsl3atcsedupwedp726yrd7bec",
-                                    "owner": None,
-                                    "shared": 0,
-                                    "size": 26509991838,
-                                },
-                            },
-                            "modelName": "llama2-13b-chinese",
-                            "modelVersion": "2pcj3y7hnpqdmqzsl3atcsedupwedp726yrd7bec",
-                            "resourcePool": "A100 80G * 1",
-                            "stopTime": 1692811282000,
-                            "uuid": "5c6dc44d410349829a7c6c1916a20651",
-                        }
-                    ],
-                    "nextPage": 2,
-                    "pageNum": 1,
-                    "pageSize": 1,
-                    "pages": 55,
-                    "prePage": 0,
-                    "size": 1,
-                    "startRow": 0,
-                    "total": 55,
-                },
-                "message": "Success",
-            },
-        )
-
-        InstanceTermView().login(
-            "http://1.1.0.0:8182",
-            alias="remote",
-            username="foo",
-            password="bar",
-        )
-
-        jobs, pages_info = JobTermView.list(
-            project_uri="cloud://remote/project/1",
-            fullname=True,
-            page=2,
-            size=10,
-        )
-        assert len(jobs) == 1
-        assert pages_info["current"] == 1
-        assert pages_info["total"] == 55
-        assert pages_info["remain"] == 54
-        assert pages_info["page"]["page_num"] == 1
-        assert jobs[0]["manifest"]["id"] == "722"
-
-        JobTermViewRich.list(project_uri="cloud://remote/project/1", fullname=False)
-        JobTermViewJson.list(project_uri="cloud://remote/project/1")
-
-        mock_obj = MagicMock()
-        runner = CliRunner()
-        result = runner.invoke(
-            list_cli,
-            [
-                "--project",
-                "cloud://remote/project/1",
-                "--fullname",
-            ],
-            obj=mock_obj,
-        )
-        assert result.exit_code == 0
-        assert mock_obj.list.call_count == 1
-        assert mock_obj.list.call_args[0][0] == "cloud://remote/project/1"
         assert mock_obj.list.call_args[1] == {
             "fullname": True,
             "page": 1,

@@ -6,12 +6,10 @@ import typing as t
 from rich import box
 from rich.panel import Panel
 from rich.table import Table
-from rich.pretty import Pretty
 from rich.columns import Columns
 
 from starwhale.utils import Order, console, sort_obj_list
 from starwhale.consts import (
-    CREATED_AT_KEY,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -25,7 +23,10 @@ from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .model import Job, JobListType, LocalJobInfo
+from .model import Job, JobListType
+from ...base.cloud import CloudRequestMixed
+from ...base.models.job import LocalJobInfo, RemoteJobInfo
+from ...base.client.models.models import JobVo, TaskVo
 
 
 class JobTermView(BaseTermView):
@@ -101,24 +102,17 @@ class JobTermView(BaseTermView):
             uvicorn.run(svr, host=host, port=port, log_level="error")
             return
 
+        console.rule(f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}")
         if isinstance(_rt, LocalJobInfo):
             console.print(_rt.manifest)
         else:
-            manifest = _rt.get("manifest", {})
-            if manifest:
-                console.rule(
-                    f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}"
-                )
-                console.print(Pretty(_rt["manifest"], expand_all=True))
+            console.print(_rt.job)
 
-        if not isinstance(_rt, LocalJobInfo):
-            # remote job
-            if "tasks" in _rt:
-                self._print_tasks(_rt["tasks"][0])
+        if isinstance(_rt, RemoteJobInfo):
+            if _rt.tasks is not None:
+                self._print_tasks(_rt.tasks)
 
-        _report = (
-            _rt.report or {} if isinstance(_rt, LocalJobInfo) else _rt.get("report", {})
-        )
+        _report = _rt.report or {}
         _kind = _report.get("kind", "")
 
         if "summary" in _report:
@@ -134,7 +128,7 @@ class JobTermView(BaseTermView):
         ]
         console.print(Columns(contents))
 
-    def _print_tasks(self, tasks: t.List[t.Dict[str, t.Any]]) -> None:
+    def _print_tasks(self, tasks: t.List[TaskVo]) -> None:
         table = Table(box=box.SIMPLE)
         table.add_column("ID", justify="left", style="cyan", no_wrap=True)
         table.add_column("UUID")
@@ -144,14 +138,14 @@ class JobTermView(BaseTermView):
         table.add_column("Finished")
 
         for _t in tasks:
-            status, style, icon = self.pretty_status(_t["taskStatus"])
+            status, style, icon = self.pretty_status(_t.task_status.name)
             table.add_row(
-                _t["id"],
-                _t["uuid"],
+                _t.id,
+                _t.uuid,
                 f"[{style}]{icon}{status}[/]",
                 "",
-                _t[CREATED_AT_KEY],
-                "",
+                CloudRequestMixed.fmt_timestamp(_t.started_time),
+                CloudRequestMixed.fmt_timestamp(_t.finished_time),
             )
 
         console.rule(
@@ -238,7 +232,12 @@ class JobTermView(BaseTermView):
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
         jobs, pager = Job.list(_uri, page=page, size=size)
-        jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
+
+        if all(isinstance(i, LocalJobInfo) for i in jobs):
+            jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
+        else:
+            # remote jobs are sorted
+            ...
         return jobs, pager
 
 
@@ -268,32 +267,43 @@ class JobTermViewRich(JobTermView):
         table.add_column("Created At", style="magenta")
         table.add_column("Finished At", style="magenta")
 
-        def _s(x: str | t.Dict) -> str:
-            if isinstance(x, dict):
-                x = f"{x['name']}:{x['version']['name']}"
-
-            _end = -1 if fullname else SHORT_VERSION_CNT
-            if ":" in x:
-                _n, _v = x.split(":")
-                return f"{_n}:{_v[:_end]}"
-            else:
-                return x[:_end]
+        def fmt_rc_name(name: str, version: str) -> str:
+            version_end = -1 if fullname else SHORT_VERSION_CNT
+            return "/".join(filter(bool, [name, version[:version_end]]))
 
         for _job in _jobs:
-            # TODO support remote job info in next PR
-            if not isinstance(_job, LocalJobInfo):
-                continue
+            if isinstance(_job, LocalJobInfo):
+                _m = _job.manifest
+                _status, _style, _icon = cls.pretty_status(_m.status)
+                _datasets = "--"
+                if _m.datasets:
+                    _datasets = "\n".join([fmt_rc_name(d, "") for d in _m.datasets])
 
-            _m = _job.manifest
-            _status, _style, _icon = cls.pretty_status(_m.status)
-            _datasets = "--"
-            if _m.datasets:
-                _datasets = "\n".join([_s(d) for d in _m.datasets])
-
-            _model = _m.model or "--"
-            _name = _m.version
-            _runtime = "--"  # TODO get runtime info
-            _resource = "--"
+                _model = _m.model or "--"
+                _name = _m.version
+                _runtime = "--"  # TODO get runtime info
+                _resource = "--"
+                _created_at = _m.created_at
+                _finished_at = _m.finished_at
+            elif isinstance(_job, JobVo):
+                _model = fmt_rc_name(_job.model.name, _job.model.version.name)
+                _name = _job.id
+                _runtime = fmt_rc_name(_job.runtime.name, _job.runtime.version.name)
+                _resource = _job.resource_pool
+                _datasets = (
+                    "\n".join(
+                        [
+                            fmt_rc_name(d.name, d.version.name)
+                            for d in _job.dataset_list or []
+                        ]
+                    )
+                    or "--"
+                )
+                _created_at = CloudRequestMixed.fmt_timestamp(_job.created_time)
+                _finished_at = CloudRequestMixed.fmt_timestamp(_job.stop_time)
+                _status, _style, _icon = cls.pretty_status(_job.job_status.name)
+            else:
+                raise TypeError
 
             table.add_row(
                 _name,
@@ -302,8 +312,8 @@ class JobTermViewRich(JobTermView):
                 _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
                 _resource,
-                _m.created_at,
-                _m.finished_at,
+                _created_at,
+                _finished_at,
             )
             # TODO: add duration
         cls.print_header(project_uri)

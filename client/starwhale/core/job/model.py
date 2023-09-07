@@ -5,15 +5,8 @@ import subprocess
 from abc import ABCMeta, abstractmethod
 from typing import Union
 
-from pydantic import BaseModel
-
 from starwhale.utils import load_yaml
-from starwhale.consts import (
-    HTTPMethod,
-    CREATED_AT_KEY,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-)
+from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.api._impl import wrapper
 from starwhale.base.type import JobOperationType
@@ -22,19 +15,14 @@ from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.core.job.store import JobStorage
-from starwhale.base.models.job import JobManifest
+from starwhale.base.models.job import JobManifest, LocalJobInfo, RemoteJobInfo
 from starwhale.api._impl.metric import MetricKind
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource
+from starwhale.base.client.api.job import JobApi
+from starwhale.base.client.models.models import JobVo, TaskVo
 
-
-class LocalJobInfo(BaseModel):
-    manifest: JobManifest
-    report: t.Optional[t.Dict[str, t.Any]] = None
-
-
-# TODO: change the dict for remote job to the open api model
-JobListType = Union[t.List[LocalJobInfo], t.List[t.Dict[str, t.Any]]]
+JobListType = Union[t.List[LocalJobInfo], t.List[JobVo]]
 
 
 class Job(metaclass=ABCMeta):
@@ -45,7 +33,7 @@ class Job(metaclass=ABCMeta):
         self.sw_config = SWCliConfigMixed()
 
     @abstractmethod
-    def info(self) -> LocalJobInfo | t.Dict[str, t.Any]:
+    def info(self) -> LocalJobInfo | RemoteJobInfo:
         raise NotImplementedError
 
     @abstractmethod
@@ -73,7 +61,7 @@ class Job(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _fetch_job_info(self) -> JobManifest | t.Dict[str, t.Any] | None:
+    def _fetch_job_info(self) -> JobManifest | JobVo | None:
         raise NotImplementedError
 
     def _get_report(self) -> t.Dict[str, t.Any]:
@@ -150,12 +138,12 @@ class StandaloneJob(Job):
         _f(summary)
         return rt
 
-    def _fetch_job_info(self) -> JobManifest | t.Dict[str, t.Any] | None:
+    def _fetch_job_info(self) -> JobManifest | JobVo | None:
         if not self.store.manifest:
             return None
         return JobManifest(**self.store.manifest)
 
-    def info(self) -> LocalJobInfo | t.Dict[str, t.Any]:
+    def info(self) -> LocalJobInfo | RemoteJobInfo:
         m = self._fetch_job_info()
         if m is None:
             raise NotFoundError
@@ -236,14 +224,17 @@ class CloudJob(Job, CloudRequestMixed):
         # TODO:use full version id
         return self.uri.name
 
-    def info(self) -> t.Dict[str, t.Any]:
+    def info(self) -> LocalJobInfo | RemoteJobInfo:
         if not self.uri.project:
             raise NotFoundError("no selected project")
-        return {
-            "tasks": self._fetch_tasks(),
-            "manifest": self._fetch_job_info(),
-            "report": self._get_report(),
-        }
+        job = self._fetch_job_info()
+        if not isinstance(job, JobVo):
+            raise TypeError  # this can not happen
+        return RemoteJobInfo(
+            tasks=self._fetch_tasks(),
+            job=job,
+            report=self._get_report(),
+        )
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support force remove
@@ -283,45 +274,30 @@ class CloudJob(Job, CloudRequestMixed):
         if not project_uri:
             raise NotFoundError("no selected project")
         crm = CloudRequestMixed()
+        r = (
+            JobApi(project_uri.instance)
+            .list(project_uri.name, page, size)
+            .raise_on_error()
+            .data()
+        )
+        # make mypy happy
+        ret: t.List[JobVo] = r.data.list or []
+        return ret, crm.parse_pager(r.dict())
 
-        r = crm.do_http_request(
-            f"/project/{project_uri.name}/job",
-            params={"pageNum": page, "pageSize": size},
-            instance=project_uri.instance,
-        ).json()
+    def _fetch_job_info(self) -> JobManifest | JobVo | None:
+        return (
+            JobApi(self.uri.instance)
+            .info(self.uri.project.name, self.uri.name)
+            .raise_on_error()
+            .data()
+            .data
+        )
 
-        jobs = [{"manifest": cls._fmt_job_info(j)} for j in r["data"]["list"]]
-        return jobs, crm.parse_pager(r)
-
-    @classmethod
-    def _fmt_job_info(cls, info: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        info.pop("owner", None)
-        info[CREATED_AT_KEY] = cls.fmt_timestamp(info["createdTime"])
-        info["finished_at"] = cls.fmt_timestamp(info["stopTime"])
-        info["duration_str"] = cls.fmt_duration(info["duration"])
-        return info
-
-    def _fetch_job_info(self) -> JobManifest | t.Dict[str, t.Any] | None:
-        r = self.do_http_request(
-            f"/project/{self.project_name}/job/{self.name}",
-            instance=self.uri.instance,
-        ).json()
-
-        return self._fmt_job_info(r["data"])  # type: ignore
-
-    def _fetch_tasks(
-        self,
-    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        r = self.do_http_request(
-            f"/project/{self.project_name}/job/{self.name}/task",
-            # simplify to fetch all tasks
-            params={"pageNum": 1, "pageSize": 100000},
-            instance=self.uri.instance,
-        ).json()
-
-        tasks = []
-        for _t in r["data"]["list"]:
-            _t[CREATED_AT_KEY] = self.fmt_timestamp(_t["startedTime"]) if _t["startedTime"] else None  # type: ignore
-            tasks.append(_t)
-
-        return tasks, self.parse_pager(r)
+    def _fetch_tasks(self) -> t.List[TaskVo] | None:
+        return (
+            JobApi(self.uri.instance)
+            .tasks(self.uri.project.name, self.uri.name)
+            .raise_on_error()
+            .data()
+            .data.list
+        )

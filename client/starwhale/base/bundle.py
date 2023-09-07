@@ -42,10 +42,6 @@ class BaseBundle(metaclass=ABCMeta):
         self.yaml_name = ""
 
     @abstractmethod
-    def info(self) -> t.Dict[str, t.Any]:
-        raise NotImplementedError
-
-    @abstractmethod
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         raise NotImplementedError
 

@@ -18,6 +18,7 @@ exclude = '''
     | example/LLM/belle-bloom/BELLE
     | example/LLM/llama2/llama
     | starwhale/proto_gen
+    | starwhale/base/client/models
   )/
 )
 '''
@@ -31,6 +32,7 @@ exclude = [
     "tests/",
     "example/LLM/belle-bloom/BELLE/",
     "starwhale/proto_gen/",
+    "starwhale/base/client/models/models.py",
 ]
 show_column_numbers = true
 ignore_missing_imports = true
@@ -45,7 +47,12 @@ disallow_subclassing_any = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 strict_optional = true
-plugins = [ "trio_typing.plugin" ]
+plugins = [ "trio_typing.plugin", "pydantic.mypy" ]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.isort]
 profile = "black"

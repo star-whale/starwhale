@@ -2,317 +2,162 @@
   "code": "success",
   "message": "Success",
   "data": {
-    "total": 15,
+    "total": 1,
     "list": [
       {
-        "id": "15",
-        "uuid": "6797733effd047eb8354877398c268fd",
+        "exposedLinks": [],
+        "id": "44",
+        "uuid": "335ed4850c6d4f599879f29c03a14dd4",
         "modelName": "mnist",
-        "modelVersion": "my2dgzbumfsgcnrtmftdgyjzgf4wizi",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
+        "modelVersion": "hronsexbc2chadhuz5ze3zzqsszabbbliojk6nnk",
+        "model": {
+          "id": "2",
+          "name": "mnist",
+          "createdTime": 1685085857000,
+          "owner": {
             "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
+            "name": "starwhale",
+            "createdTime": 1683533957000,
+            "isEnabled": true,
+            "systemRole": null,
+            "projectRoles": null
           },
-          "isEnabled": true
+          "version": {
+            "latest": false,
+            "tags": [
+              "def",
+              "bbb"
+            ],
+            "stepSpecs": [
+              {
+                "concurrency": 1,
+                "needs": [],
+                "resources": [],
+                "replicas": 1,
+                "job_name": "mnist.evaluator:MNISTInference.evaluate",
+                "name": "mnist.evaluator:MNISTInference.predict",
+                "show_name": "predict"
+              },
+              {
+                "concurrency": 1,
+                "needs": [
+                  "mnist.evaluator:MNISTInference.predict"
+                ],
+                "resources": [],
+                "replicas": 1,
+                "job_name": "mnist.evaluator:MNISTInference.evaluate",
+                "name": "mnist.evaluator:MNISTInference.evaluate",
+                "show_name": "evaluate"
+              },
+              {
+                "concurrency": 1,
+                "needs": [],
+                "resources": [],
+                "replicas": 1,
+                "job_name": "mnist.evaluator:MNISTInference.predict",
+                "name": "mnist.evaluator:MNISTInference.predict",
+                "show_name": "predict"
+              }
+            ],
+            "id": "3",
+            "name": "hronsexbc2chadhuz5ze3zzqsszabbbliojk6nnk",
+            "alias": "v2",
+            "size": null,
+            "createdTime": 1685593961000,
+            "owner": null,
+            "shared": 0,
+            "builtInRuntime": null
+          }
         },
-        "createdTime": 1653213195000,
-        "stopTime": 1653213314000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 119000
-      },
-      {
-        "id": "14",
-        "uuid": "867152f57cd440a093ffa2da14efdd3c",
-        "modelName": "mnist",
-        "modelVersion": "mu4wintfgzqtanrtmftdgyjznz4homi",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "GPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
+        "jobName": "mnist.evaluator:MNISTInference.evaluate",
+        "datasets": [
+          "anuhp3d3ag2uwi6sk7vt2gxjvlvpnhhhtvmldvrg"
+        ],
+        "datasetList": [
+          {
             "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653041602000,
-        "stopTime": 1653041747000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 145000
-      },
-      {
-        "id": "13",
-        "uuid": "0268eb32f32247fabc947ac1696cf306",
-        "modelName": "mnist",
-        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
+            "name": "mnist",
+            "createdTime": 1683535028000,
+            "owner": null,
+            "version": {
+              "tags": null,
+              "latest": true,
+              "indexTable": "project/1/dataset/mnist/_current/meta",
+              "id": "17",
+              "name": "anuhp3d3ag2uwi6sk7vt2gxjvlvpnhhhtvmldvrg",
+              "alias": "v2",
+              "meta": "build:\n  os: Linux\n  starwhale: 0.0.0.dev0\ncreated_at: 2023-06-05 16:35:15 CST\ndata_datastore_revision: '1685954115484'\ndataset_summary:\n  blobs_byte_size: 10240000\n  deleted_rows: 0\n  increased_blobs_byte_size: 10240000\n  rows: 10000\n  updated_rows: 10000\ninfo_datastore_revision: ''\nmessage: ''\nversion: anuhp3d3ag2uwi6sk7vt2gxjvlvpnhhhtvmldvrg",
+              "createdTime": 1685954115000,
+              "owner": null,
+              "shared": 0
+            }
+          }
+        ],
+        "runtime": {
+          "id": "2",
+          "name": "pytorch-cn-mirror",
+          "createdTime": 1690339285000,
+          "owner": {
             "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
+            "name": "starwhale",
+            "createdTime": 1683533957000,
+            "isEnabled": true,
+            "systemRole": null,
+            "projectRoles": null
           },
-          "isEnabled": true
+          "version": {
+            "tags": null,
+            "latest": false,
+            "id": "2",
+            "runtimeId": "2",
+            "name": "wld6l2qqb6cjua3l223tyix5rackw7vxpccbh7vv",
+            "alias": "v2",
+            "meta": "artifacts:\n  dependencies:\n  - dependencies/requirements.txt\n  files: []\n  runtime_yaml: runtime.yaml\n  wheels: []\nbase_image: docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4\nbuild:\n  os: Linux\n  sw_version: 0.0.0.dev0\nconfigs:\n  conda:\n    channels:\n    - conda-forge\n    condarc: {}\n  docker:\n    image: ghcr.io/star-whale/runtime/pytorch\n  pip:\n    extra_index_url:\n    - https://mirrors.bfsu.edu.cn/pypi/web/simple\n    index_url: https://pypi.tuna.tsinghua.edu.cn/simple\n    trusted_host:\n    - pypi.tuna.tsinghua.edu.cn\n    - mirrors.bfsu.edu.cn\ncreated_at: 2023-06-05 18:06:53 CST\ndependencies:\n  conda_files: []\n  conda_pkgs: []\n  local_packaged_env: false\n  pip_files:\n  - requirements.txt\n  pip_pkgs:\n  - Pillow\n  raw_deps:\n  - deps:\n    - Pillow\n    kind: pip_pkg\n  - deps: requirements.txt\n    kind: pip_req_file\ndocker:\n  builtin_run_image:\n    fullname: docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4\n    name: starwhale\n    repo: docker-registry.starwhale.cn/star-whale\n    tag: latest-cuda11.4\n  custom_run_image: ''\nenvironment:\n  arch:\n  - noarch\n  auto_lock_dependencies: false\n  lock:\n    env_name: ''\n    env_prefix_path: ''\n    env_use_shell: false\n    files: []\n    shell:\n      python_env: conda\n      python_version: 3.7.16\n      use_conda: true\n      use_venv: false\n    starwhale_version: 0.0.0.dev0\n    system: Linux\n  mode: venv\n  python: '3.7'\nversion: wld6l2qqb6cjua3l223tyix5rackw7vxpccbh7vv\n",
+            "image": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4",
+            "builtImage": null,
+            "createdTime": 1685959627000,
+            "owner": null,
+            "shared": 0
+          }
         },
-        "createdTime": 1653041535000,
-        "stopTime": 1653041804000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 269000
-      },
-      {
-        "id": "12",
-        "uuid": "78cafaa3610344aa90fcadf0a714f61e",
-        "modelName": "mnist",
-        "modelVersion": "grtgeyzugi4danrtmftdgyjzoq2xc2q",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "GPU",
-        "deviceAmount": 1,
+        "isBuiltinRuntime": false,
+        "device": null,
+        "deviceAmount": null,
         "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
+          "id": "2",
+          "name": "test",
+          "createdTime": 1683533957000,
+          "isEnabled": true,
+          "systemRole": null,
+          "projectRoles": null
         },
-        "createdTime": 1653035171000,
-        "stopTime": 1653035293000,
+        "createdTime": 1688452724000,
+        "stopTime": 1688455190000,
         "jobStatus": "FAIL",
         "comment": null,
-        "duration": 122000
-      },
-      {
-        "id": "11",
-        "uuid": "22c37a803513436a877fc3d5d7b43b1e",
-        "modelName": "mnist",
-        "modelVersion": "gnqtczrzge3wcnrtmftdgyjznjqtg4a",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "GPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653034093000,
-        "stopTime": 1653034833000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 740000
-      },
-      {
-        "id": "10",
-        "uuid": "4bf0b6e539e94ca8acbf2153b47acbd4",
-        "modelName": "mnist",
-        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "GPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653033370000,
-        "stopTime": 1653040297000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 6927000
-      },
-      {
-        "id": "9",
-        "uuid": "b00678c0045d4beca64b0fb0af0c0b5d",
-        "modelName": "mnist",
-        "modelVersion": "grtgeyzugi4danrtmftdgyjzoq2xc2q",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653033362000,
-        "stopTime": 1653033457000,
-        "jobStatus": "FAIL",
-        "comment": null,
-        "duration": 95000
-      },
-      {
-        "id": "8",
-        "uuid": "32c6a2bb226446409c094c69d0461fd2",
-        "modelName": "mnist",
-        "modelVersion": "gq4taolcmjtdenrtmftdgyjzni3xs4i",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653033046000,
-        "stopTime": 1653033265000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 219000
-      },
-      {
-        "id": "7",
-        "uuid": "d140d29b51084ad8a4a41ce11ff225fc",
-        "modelName": "mnist",
-        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653032985000,
-        "stopTime": 1653040278000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 7293000
-      },
-      {
-        "id": "6",
-        "uuid": "7345a36f6259478abc06b7e23655e914",
-        "modelName": "mnist",
-        "modelVersion": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
-        "datasets": null,
-        "baseImage": {
-          "id": "9",
-          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
-        },
-        "device": "CPU",
-        "deviceAmount": 1,
-        "owner": {
-          "id": "1",
-          "name": "starwhale",
-          "createdTime": 1650970583000,
-          "role": {
-            "id": "1",
-            "roleName": "admin",
-            "roleNameEn": "admin"
-          },
-          "isEnabled": true
-        },
-        "createdTime": 1653032849000,
-        "stopTime": 1653033046000,
-        "jobStatus": "SUCCESS",
-        "comment": null,
-        "duration": 197000
+        "stepSpec": "---\n- concurrency: 1\n  needs: []\n  resources: []\n  env: null\n  replicas: 1\n  expose: null\n  virtual: null\n  job_name: \"mnist.evaluator:MNISTInference.evaluate\"\n  name: \"mnist.evaluator:MNISTInference.predict\"\n  show_name: \"predict\"\n- concurrency: 1\n  needs:\n  - \"mnist.evaluator:MNISTInference.predict\"\n  resources: []\n  env: null\n  replicas: 1\n  expose: null\n  virtual: null\n  job_name: \"mnist.evaluator:MNISTInference.evaluate\"\n  name: \"mnist.evaluator:MNISTInference.evaluate\"\n  show_name: \"evaluate\"\n",
+        "resourcePool": "default",
+        "duration": 2465929,
+        "pinnedTime": null
       }
     ],
     "pageNum": 1,
     "pageSize": 10,
-    "size": 10,
+    "size": 1,
     "startRow": 0,
     "endRow": 10,
-    "pages": 2,
+    "pages": 1,
     "prePage": 0,
-    "nextPage": 2,
+    "nextPage": 0,
     "isFirstPage": true,
-    "isLastPage": false,
+    "isLastPage": true,
     "hasPreviousPage": false,
-    "hasNextPage": true,
+    "hasNextPage": false,
     "navigatePages": 8,
     "navigatepageNums": [
-      1,
-      2
+      1
     ],
     "navigateFirstPage": 1,
-    "navigateLastPage": 2
+    "navigateLastPage": 1
   }
 }

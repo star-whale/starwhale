@@ -29,6 +29,7 @@ from starwhale.utils.retry import http_retry
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.client.api.tag import TagApi
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -196,11 +197,18 @@ class CloudRequestMixed:
 
     def parse_pager(self, resp: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         _d = resp["data"]
-        return dict(
-            total=_d["total"],
-            current=_d["size"],
-            remain=_d["total"] - _d["size"],
-            page={
+        if "page_num" in _d:
+            page = {
+                "page_num": _d["page_num"],
+                "page_size": _d["page_size"],
+                "pages": _d["pages"],
+                "pre_page": _d["pre_page"],
+                "next_page": _d["next_page"],
+                "has_pre_page": _d["has_previous_page"],
+                "has_next_page": _d["has_next_page"],
+            }
+        else:
+            page = {
                 "page_num": _d["pageNum"],
                 "page_size": _d["pageSize"],
                 "pages": _d["pages"],
@@ -208,7 +216,13 @@ class CloudRequestMixed:
                 "next_page": _d["nextPage"],
                 "has_pre_page": _d["hasPreviousPage"],
                 "has_next_page": _d["hasNextPage"],
-            },
+            }
+
+        return dict(
+            total=_d["total"],
+            current=_d["size"],
+            remain=_d["total"] - _d["size"],
+            page=page,
         )
 
     def _fetch_bundle_info(
@@ -393,34 +407,18 @@ class CloudBundleModelMixin(CloudRequestMixed):
         )
 
     def list_tags(self) -> t.List[str]:
-        r = self.do_http_request(
-            path=self._get_tag_path_by_rc(self.uri),  # type: ignore
-            method=HTTPMethod.GET,
-            instance=self.uri.instance,  # type: ignore
-        )
-        wrap_sw_error_resp(r, "failed to get tags")
-        return r.json()["data"]  # type: ignore
+        uri: Resource = self.uri  # type: ignore
+        return TagApi(uri.instance).list(uri).data().data
 
     def add_tags(
         self, tags: t.List[str], ignore_errors: bool = False, force: bool = False
     ) -> None:
+        uri: Resource = self.uri  # type: ignore
+        api = TagApi(uri.instance)
         for tag in tags:
-            ok, msg = self.do_http_request_simple_ret(
-                path=self._get_tag_path_by_rc(self.uri),  # type: ignore
-                method=HTTPMethod.POST,
-                instance=self.uri.instance,  # type: ignore
-                json={
-                    "force": force,
-                    "tag": tag,
-                },
-            )
-
-            if not ok:
-                msg = f"failed to add tag {tag}: {msg}"
-                if ignore_errors:
-                    console.warn(msg)
-                else:
-                    raise RuntimeError(msg)
+            resp = api.add(uri, tag, force)
+            if not ignore_errors:
+                resp.raise_on_error()
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         for tag in tags:

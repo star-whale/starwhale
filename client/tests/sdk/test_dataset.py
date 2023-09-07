@@ -69,6 +69,7 @@ from starwhale.core.dataset.tabular import (
     get_dataset_consumption,
 )
 from starwhale.api._impl.dataset.loader import DataRow
+from starwhale.base.client.models.models import ResponseMessageListString
 from starwhale.api._impl.dataset.builder.mapping_builder import (
     RotatedBinWriter,
     MappingDatasetBuilder,
@@ -313,7 +314,11 @@ class TestDatasetCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/tag",
-            json={"data": ["t1", "t2"]},
+            json=ResponseMessageListString(
+                code="success",
+                message="success",
+                data=["t1", "t2"],
+            ).dict(),
         )
 
         rm.request(

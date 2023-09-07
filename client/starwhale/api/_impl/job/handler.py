@@ -15,63 +15,29 @@ import yaml
 from starwhale.utils import console
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.utils.fs import ensure_file
-from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
+from starwhale.base.models.model import StepSpecClient
 from starwhale.api._impl.evaluation import PipelineHandler
+from starwhale.base.client.models.models import RuntimeResource, ParameterSignature
 
 
-class Handler(ASDictMixin):
+class Handler(StepSpecClient):
     _registered_functions: t.Dict[str, t.Callable] = {}
     _registered_handlers: t.Dict[str, Handler] = {}
     _registering_lock = threading.Lock()
-
-    def __init__(
-        self,
-        name: str,
-        show_name: str,
-        func_name: str,
-        module_name: str,
-        cls_name: str = "",
-        resources: t.Optional[t.Dict] = None,
-        needs: t.Optional[t.List[str]] = None,
-        concurrency: int = 1,
-        replicas: int = 1,
-        extra_args: t.Optional[t.List] = None,
-        extra_kwargs: t.Optional[t.Dict] = None,
-        expose: int = 0,
-        virtual: bool = False,
-        require_dataset: bool = False,
-        parameters_sig: t.List[t.Dict[str, object]] | None = None,
-        ext_cmd_args: str = "",
-        **kw: t.Any,
-    ) -> None:
-        self.name = name
-        self.show_name = show_name
-        self.func_name = func_name
-        self.module_name = module_name
-        self.cls_name = cls_name
-        self.resources = self._transform_resource(resources)
-        self.needs = needs or []
-        self.concurrency = concurrency
-        self.replicas = replicas
-        self.extra_args = extra_args or []
-        self.extra_kwargs = extra_kwargs or {}
-        self.expose = expose
-        # virtual marks that the handler is not a real user handler and can not find in the user's code
-        self.virtual = virtual
-        self.require_dataset = require_dataset
-        self.parameters_sig = parameters_sig or []
-        self.ext_cmd_args = ext_cmd_args
 
     def __str__(self) -> str:
         return f"Handler[{self.name}]: name-{self.show_name}"
 
     __repr__ = __str__
 
+    @staticmethod
     def _transform_resource(
-        self, resources: t.Optional[t.Dict[str, t.Any]]
-    ) -> t.List[t.Dict]:
+        resources: t.Optional[t.Dict[str, t.Any]]
+    ) -> t.List[RuntimeResource]:
+        if not resources:
+            return []
         resources = resources or {}
         attribute_names = ["request", "limit"]
         resource_names: t.Dict[str, t.List] = {
@@ -108,13 +74,12 @@ class Handler(ASDictMixin):
                     raise RuntimeError(
                         f"{_k} only supports non-negative number, but now is {_v}"
                     )
-            results.append(
-                {
-                    "type": _name,
-                    "request": resources[_name]["request"],
-                    "limit": resources[_name]["limit"],
-                }
+            rc = RuntimeResource(
+                type=_name,
+                request=resources[_name]["request"],
+                limit=resources[_name]["limit"],
             )
+            results.append(rc)
         return results
 
     @classmethod
@@ -126,12 +91,12 @@ class Handler(ASDictMixin):
     @classmethod
     def register(
         cls,
-        resources: t.Optional[t.Dict[str, t.Any]] = None,
+        resources: t.Dict[str, t.Any] | None = None,
         concurrency: int = 1,
         replicas: int = 1,
-        needs: t.Optional[t.List[t.Callable]] = None,
-        extra_args: t.Optional[t.List] = None,
-        extra_kwargs: t.Optional[t.Dict] = None,
+        needs: t.List[t.Callable] | None = None,
+        extra_args: t.List | None = None,
+        extra_kwargs: t.Dict | None = None,
         name: str = "",
         expose: int = 0,
         require_dataset: bool = False,
@@ -202,19 +167,19 @@ class Handler(ASDictMixin):
             if not built_in:
                 sig = inspect.signature(func)
                 parameters_sig = [
-                    {
-                        "name": p_name,
-                        "required": _p.default is inspect._empty
+                    ParameterSignature(
+                        name=p_name,
+                        required=_p.default is inspect._empty
                         or (
                             isinstance(_p.default, HandlerInput) and _p.default.required
                         ),
-                        "multiple": isinstance(_p.default, ListInput),
-                    }
+                        multiple=isinstance(_p.default, ListInput),
+                    )
                     for idx, (p_name, _p) in enumerate(sig.parameters.items())
                     if idx != 0 or not cls_name
                 ]
                 ext_cmd_args = " ".join(
-                    [f'--{p.get("name")}' for p in parameters_sig if p.get("required")]
+                    [f"--{p.name}" for p in parameters_sig if p.required]
                 )
             _handler = cls(
                 name=key_name,
@@ -225,7 +190,7 @@ class Handler(ASDictMixin):
                 concurrency=concurrency,
                 replicas=replicas,
                 needs=key_name_needs,
-                resources=resources,
+                resources=cls._transform_resource(resources),
                 extra_args=extra_args,
                 extra_kwargs=extra_kwargs,
                 expose=expose,
@@ -315,7 +280,7 @@ class Handler(ASDictMixin):
                 if name not in expanded_names:
                     expanded_names[name] = set()
 
-                queue = {n for n in handler.needs}
+                queue = {n for n in handler.needs or []}
 
                 while queue:
                     need_name = queue.pop()
@@ -332,9 +297,8 @@ class Handler(ASDictMixin):
                         raise RuntimeError(f"dependency not found: {need_name}")
 
                     expanded_names[name].add(need_name)
-                    parent_need_names = (
-                        expanded_names[need_name]
-                        or cls._registered_handlers[need_name].needs
+                    parent_need_names = expanded_names[need_name] or set(
+                        cls._registered_handlers[need_name].needs or []
                     )
                     queue.update(parent_need_names)
 
@@ -439,7 +403,7 @@ def generate_jobs_yaml(
         yaml_path,
         yaml.safe_dump(
             {
-                name: [h.asdict() for h in handlers]
+                name: [h.dict() for h in handlers]
                 for name, handlers in expanded_handlers.items()
             },
             default_flow_style=False,

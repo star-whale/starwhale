@@ -45,7 +45,7 @@ from starwhale.base.uri.resource import Resource
 
 dataset = Dataset.dataset
 handler = Handler.register
-job = Job.job
+job = Job.get
 
 __all__ = [
     "__version__",
