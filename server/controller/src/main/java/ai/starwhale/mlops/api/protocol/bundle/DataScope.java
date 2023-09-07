@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.api.protocol.bundle;
 
-public enum DataRange {
+public enum DataScope {
     all("all"), project("only in current project"), shared("shared but exclude current project");
     private final String desc;
-    DataRange(String desc) {
+    DataScope(String desc) {
         this.desc = desc;
     }
 }

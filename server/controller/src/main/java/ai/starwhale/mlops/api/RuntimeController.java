@@ -18,7 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -80,9 +80,9 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(String projectUrl, DataRange range) {
+    public ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(String projectUrl, DataScope scope) {
         List<RuntimeViewVo> list;
-        switch (range) {
+        switch (scope) {
             case all:
                 list = runtimeService.listRuntimeVersionView(projectUrl, true, true);
                 break;

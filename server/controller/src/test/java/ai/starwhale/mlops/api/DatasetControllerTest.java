@@ -39,7 +39,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -371,7 +371,7 @@ public class DatasetControllerTest {
 
     @ParameterizedTest
     @CsvSource({"all, 2", "project, 1", "shared, 1"})
-    public void testListDatasetTree(DataRange range, int listCount) {
+    public void testListDatasetTree(DataScope scope, int listCount) {
         given(datasetService.listDatasetVersionView(anyString(), eq(true), eq(true)))
                 .willReturn(List.of(DatasetViewVo.builder().build(), DatasetViewVo.builder().build()));
         given(datasetService.listDatasetVersionView(anyString(), eq(false), eq(true)))
@@ -379,7 +379,7 @@ public class DatasetControllerTest {
         given(datasetService.listDatasetVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(DatasetViewVo.builder().build()));
 
-        var resp = controller.listDatasetTree("1", range);
+        var resp = controller.listDatasetTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(

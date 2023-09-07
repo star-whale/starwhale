@@ -18,7 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.model.CompleteUploadBlobResult;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
@@ -196,9 +196,9 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(String projectUrl, DataRange range) {
+    public ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(String projectUrl, DataScope scope) {
         List<ModelViewVo> list;
-        switch (range) {
+        switch (scope) {
             case all:
                 list = modelService.listModelVersionView(projectUrl, true, true);
                 break;

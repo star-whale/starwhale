@@ -35,7 +35,7 @@ import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
@@ -189,7 +189,7 @@ public class ModelControllerTest {
 
     @ParameterizedTest
     @CsvSource({"all, 2", "project, 1", "shared, 1"})
-    public void testListModelTree(DataRange range, int listCount) {
+    public void testListModelTree(DataScope scope, int listCount) {
         given(modelService.listModelVersionView(anyString(), eq(true), eq(true)))
                 .willReturn(List.of(ModelViewVo.builder().build(), ModelViewVo.builder().build()));
         given(modelService.listModelVersionView(anyString(), eq(false), eq(true)))
@@ -197,7 +197,7 @@ public class ModelControllerTest {
         given(modelService.listModelVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(ModelViewVo.builder().build()));
 
-        var resp = controller.listModelTree("1", range);
+        var resp = controller.listModelTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(

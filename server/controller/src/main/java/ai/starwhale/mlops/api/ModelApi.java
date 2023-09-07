@@ -19,7 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.model.CompleteUploadBlobResult;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
@@ -129,7 +129,7 @@ public interface ModelApi {
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable String projectUrl,
             @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
-            @RequestParam(required = false, defaultValue = "all") DataRange range
+            @RequestParam(required = false, defaultValue = "all") DataScope scope
     );
 
     @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",

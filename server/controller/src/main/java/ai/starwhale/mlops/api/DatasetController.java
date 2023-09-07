@@ -18,7 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -433,9 +433,9 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(String projectUrl, DataRange range) {
+    public ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(String projectUrl, DataScope scope) {
         List<DatasetViewVo> list;
-        switch (range) {
+        switch (scope) {
             case all:
                 list = datasetService.listDatasetVersionView(projectUrl, true, true);
                 break;

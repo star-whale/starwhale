@@ -34,7 +34,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.bundle.DataRange;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
@@ -183,7 +183,7 @@ public class RuntimeControllerTest {
 
     @ParameterizedTest
     @CsvSource({"all, 2", "project, 1", "shared, 1"})
-    public void testListRuntimeTree(DataRange range, int listCount) {
+    public void testListRuntimeTree(DataScope scope, int listCount) {
         given(runtimeService.listRuntimeVersionView(anyString(), eq(true), eq(true)))
                 .willReturn(List.of(RuntimeViewVo.builder().build(), RuntimeViewVo.builder().build()));
         given(runtimeService.listRuntimeVersionView(anyString(), eq(false), eq(true)))
@@ -191,7 +191,7 @@ public class RuntimeControllerTest {
         given(runtimeService.listRuntimeVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(RuntimeViewVo.builder().build()));
 
-        var resp = controller.listRuntimeTree("1", range);
+        var resp = controller.listRuntimeTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(
