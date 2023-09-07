@@ -23,6 +23,8 @@ import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.ListValue;
 import ai.starwhale.mlops.datastore.type.MapValue;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
+import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
+import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -40,7 +42,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,7 +57,7 @@ import org.springframework.util.unit.DataSize;
 
 @Slf4j
 @Component
-public class DataStore {
+public class DataStore implements RollingUpdateStatusListener {
 
     private static final Pattern COLUMN_NAME_PATTERN = Pattern.compile("^[\\p{Alnum}-_/: ]*$");
 
@@ -61,7 +65,7 @@ public class DataStore {
 
     public static final Integer QUERY_LIMIT = 1000;
 
-    private final WalManager walManager;
+    private WalManager walManager;
     private final StorageAccessService storageAccessService;
 
     private final Map<String, SoftReference<MemoryTable>> tables = new ConcurrentHashMap<>();
@@ -70,7 +74,14 @@ public class DataStore {
     private final ParquetConfig parquetConfig;
 
     private final Set<String> loadingTables = new HashSet<>();
+
+    private final BlockingQueue<Object> updateHandle = new LinkedBlockingQueue<>();
     private final DumpThread dumpThread;
+
+    private final String dataRootPath;
+    private final int walFileSize;
+    private final int walMaxFileSize;
+    private final int ossMaxAttempts;
 
     public DataStore(StorageAccessService storageAccessService,
             @Value("${sw.datastore.wal-file-size}") int walFileSize,
@@ -87,33 +98,18 @@ public class DataStore {
         if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
             dataRootPath += "/";
         }
+        this.dataRootPath = dataRootPath;
         this.snapshotRootPath = dataRootPath + "snapshot/";
-        this.walManager = new WalManager(this.storageAccessService,
-                walFileSize,
-                walMaxFileSize,
-                dataRootPath + "wal/",
-                ossMaxAttempts);
+        this.walFileSize = walFileSize;
+        this.walMaxFileSize = walMaxFileSize;
+        this.ossMaxAttempts = ossMaxAttempts;
         this.parquetConfig = new ParquetConfig();
         this.parquetConfig.setCompressionCodec(CompressionCodec.valueOf(compressionCodec));
         this.parquetConfig.setRowGroupSize(DataSize.parse(rowGroupSize).toBytes());
         this.parquetConfig.setPageSize((int) DataSize.parse(pageSize).toBytes());
         this.parquetConfig.setPageRowCountLimit(pageRowCountLimit);
-        var it = this.walManager.readAll();
-        log.info("Start to load wal log...");
-        while (it.hasNext()) {
-            var entry = it.next();
-            var table = this.getTable(entry.getTableName(), true, true);
-            log.info("Loading wal log for table:{}.", entry.getTableName());
-            //noinspection ConstantConditions
-            table.updateFromWal(entry);
-            if (table.getFirstWalLogId() >= 0) {
-                this.dirtyTables.put(table, "");
-            }
-        }
-        log.info("Finished load wal log...");
         this.dumpThread = new DumpThread(DurationStyle.detectAndParse(dumpInterval).toMillis(),
                 DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis());
-        this.dumpThread.start();
     }
 
     public void terminate() {
@@ -147,6 +143,7 @@ public class DataStore {
                 .collect(Collectors.toList());
     }
 
+    @WriteOperation
     public String update(String tableName,
             TableSchemaDesc schema,
             List<Map<String, Object>> records) {
@@ -160,6 +157,8 @@ public class DataStore {
                 }
             }
         }
+        // this would cause bugs when updateHandler has Integer.MAX_VALUE elements, just assume that would never happen
+        this.updateHandle.offer(new Object());
         var table = this.getTable(tableName, true, true);
         //noinspection ConstantConditions
         table.lock();
@@ -168,8 +167,13 @@ public class DataStore {
             this.dirtyTables.put(table, "");
             return Long.toString(ts);
         } finally {
+            this.updateHandle.poll();
+            synchronized (updateHandle) {
+                updateHandle.notifyAll();
+            }
             table.unlock();
         }
+
     }
 
     public void flush() {
@@ -596,6 +600,50 @@ public class DataStore {
         }
     }
 
+    @Override
+    public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
+        if (status == ServerInstanceStatus.READY_UP) {
+            while (updateHandle.size() > 0) {
+                log.debug("currently {} updating process", updateHandle.size());
+                synchronized (updateHandle) {
+                    updateHandle.wait(); // wait for all in process update operations done
+                }
+            }
+            try {
+                this.dumpThread.doDumpTables();
+            } catch (IOException e) {
+                log.error("failed to save table", e);
+            }
+        }
+    }
+
+    @Override
+    public void onOldInstanceStatus(ServerInstanceStatus status) {
+        if (status == ServerInstanceStatus.READY_DOWN) {
+            this.walManager = new WalManager(
+                    this.storageAccessService,
+                    walFileSize,
+                    walMaxFileSize,
+                    dataRootPath + "wal/",
+                    ossMaxAttempts
+            );
+            var it = this.walManager.readAll();
+            log.info("Start to load wal log...");
+            while (it.hasNext()) {
+                var entry = it.next();
+                var table = this.getTable(entry.getTableName(), true, true);
+                log.info("Loading wal log for table:{}.", entry.getTableName());
+                //noinspection ConstantConditions
+                table.updateFromWal(entry);
+                if (table.getFirstWalLogId() >= 0) {
+                    this.dirtyTables.put(table, "");
+                }
+            }
+            log.info("Finished load wal log...");
+            this.dumpThread.start();
+        }
+    }
+
     private class DumpThread extends Thread {
 
         private final long dumpIntervalMillis;
@@ -610,12 +658,9 @@ public class DataStore {
         public void run() {
             while (!this.terminated) {
                 try {
-                    while (saveOneTable(minNoUpdatePeriodMillis)) {
-                        if (this.terminated) {
-                            return;
-                        }
+                    if (doDumpTables()) {
+                        return;
                     }
-                    clearWalLogFiles();
                 } catch (Throwable t) {
                     log.error("failed to save table", t);
                 }
@@ -630,6 +675,16 @@ public class DataStore {
                     break;
                 }
             }
+        }
+
+        private synchronized boolean doDumpTables() throws IOException {
+            while (saveOneTable(minNoUpdatePeriodMillis)) {
+                if (this.terminated) {
+                    return true;
+                }
+            }
+            clearWalLogFiles();
+            return false;
         }
 
         public void terminate() {

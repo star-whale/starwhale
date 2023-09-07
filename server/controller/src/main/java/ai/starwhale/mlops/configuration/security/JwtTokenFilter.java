@@ -55,7 +55,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final List<JwtClaimValidator> jwtClaimValidators;
 
-    private static final String AUTH_HEADER = "Authorization";
+    public static final String AUTH_HEADER = "Authorization";
 
     public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService, ProjectService projectService,
             List<JwtClaimValidator> jwtClaimValidators) {

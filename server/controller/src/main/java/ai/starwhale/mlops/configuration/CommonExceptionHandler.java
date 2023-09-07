@@ -23,6 +23,7 @@ import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwUnavailableException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.stream.Collectors;
@@ -128,6 +129,8 @@ public class CommonExceptionHandler {
             httpStatus = HttpStatus.NOT_FOUND;
         } else if (ex instanceof SwProcessException) {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        } else if (ex instanceof SwUnavailableException) {
+            httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
         } else {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         }

@@ -36,6 +36,7 @@ import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -97,6 +98,7 @@ public class JobCreator {
 
 
     @Transactional
+    @WriteOperation
     public Job createJob(
             Project project,
             String modelVersionUrl,
@@ -255,7 +257,7 @@ public class JobCreator {
 
         var job = jobDao.findJobById(jobId);
         jobSpliterator.split(job);
-        jobBoConverter.fillStepsAndTasks(job);
+        job = jobDao.findJobById(jobId); // fill steps and tasks
         jobLoader.load(job, false);
         jobUpdateHelper.updateJob(job);
 

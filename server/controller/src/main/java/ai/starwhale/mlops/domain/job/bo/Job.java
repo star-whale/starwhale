@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Date;
 import java.util.List;
@@ -109,6 +110,17 @@ public class Job extends TimeConcern {
             return Optional.empty();
         }
         return stepSpecs.stream().filter(stepSpec -> stepName.equals(stepSpec.getName())).findFirst();
+    }
+
+    public Task getTask(Long taskId) {
+        for (Step step : steps) {
+            for (Task t : step.getTasks()) {
+                if (taskId.equals(t.getId())) {
+                    return t;
+                }
+            }
+        }
+        return null;
     }
 
     @Override

@@ -112,6 +112,7 @@ public class AgentCache implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        log.info("agent cache service starting ...");
         initCache();
     }
 

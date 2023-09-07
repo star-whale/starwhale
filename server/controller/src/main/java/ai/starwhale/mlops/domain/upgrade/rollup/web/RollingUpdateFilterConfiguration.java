@@ -14,30 +14,26 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.upgrade;
+package ai.starwhale.mlops.domain.upgrade.rollup.web;
 
-import ai.starwhale.mlops.domain.lock.ControllerLock;
-import ai.starwhale.mlops.domain.lock.RequestLockFilter;
 import javax.annotation.Resource;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 @Configuration
-@ConditionalOnProperty("sw.upgrade.enabled")
-public class FilterConfiguration {
+public class RollingUpdateFilterConfiguration {
 
     @Resource
-    private ControllerLock lock;
+    private RollingUpdateFilter rollingUpdateFilter;
 
     @Bean
     @Order(-1)
-    public FilterRegistrationBean<RequestLockFilter> filterRegister() {
-        FilterRegistrationBean<RequestLockFilter> bean = new FilterRegistrationBean<>();
-        bean.setFilter(new RequestLockFilter(lock));
-        bean.addUrlPatterns("/*");
+    public FilterRegistrationBean<RollingUpdateFilter> filterRegister() {
+        FilterRegistrationBean<RollingUpdateFilter> bean = new FilterRegistrationBean<>();
+        bean.setFilter(rollingUpdateFilter);
+        bean.addUrlPatterns("/api/*");
         return bean;
     }
 
