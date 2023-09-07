@@ -797,6 +797,86 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_build_from_runtime_yaml_with_custom_version(
+        self, m_output: MagicMock, m_py_bin: MagicMock, *args: t.Any
+    ) -> None:
+        sw = SWCliConfigMixed()
+        workdir = "/home/starwhale/myproject"
+
+        m_output.return_value = b"3.7"
+        name = "rttest"
+
+        venv_dir = os.path.join(workdir, ".starwhale", "venv")
+        ensure_dir(venv_dir)
+        self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
+        venv_path = os.path.join(venv_dir, "bin/python3")
+        os.environ[ENV_VENV] = venv_dir
+        m_py_bin.return_value = venv_path
+
+        self.fs.create_file(
+            os.path.join(workdir, "requirements.txt"), contents="requests==2.0.0"
+        )
+        self.fs.create_file(os.path.join(workdir, "dummy.whl"), contents="")
+
+        versions = [
+            {
+                "version": "",
+                "expect": "0.0.0.dev0",
+            },
+            {
+                "version": "0.5.6",
+                "expect": "0.5.6",
+            },
+            {
+                "version": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+                "expect": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+            },
+        ]
+        for i, ver in enumerate(versions):
+            runtime_config = self.get_runtime_config()
+            runtime_config["environment"]["cuda"] = "11.5"
+            runtime_config["environment"]["cudnn"] = "8"
+            runtime_config["environment"]["starwhale_version"] = ver["version"]
+
+            runtime_yaml_name = f"non-runtime-{i}.yaml"
+            self.fs.create_file(
+                os.path.join(workdir, runtime_yaml_name),
+                contents=yaml.safe_dump(runtime_config),
+            )
+
+            uri = Resource(name, typ=ResourceType.runtime)
+            sr = StandaloneRuntime(uri)
+            sr.build_from_runtime_yaml(
+                workdir=workdir,
+                yaml_path=os.path.join(workdir, runtime_yaml_name),
+                tags=["from-venv-v0"],
+            )
+
+            runtime_workdir = os.path.join(
+                sw.rootdir,
+                "self",
+                "workdir",
+                "runtime",
+                name,
+                sr._version[:VERSION_PREFIX_CNT],
+                sr._version,
+            )
+
+            assert os.path.exists(runtime_workdir)
+            assert os.path.exists(
+                os.path.join(runtime_workdir, DefaultYAMLName.RUNTIME)
+            )
+            _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+
+            assert (
+                _manifest["environment"]["lock"]["starwhale_version"] == ver["expect"]
+            )
+
+    @patch("os.environ", {})
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_from_runtime_yaml_in_venv_mode(
         self, m_output: MagicMock, m_py_bin: MagicMock, m_call: MagicMock, *args: t.Any
     ) -> None:
@@ -903,6 +983,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["version"] == sr.uri.version
         assert _manifest["environment"]["mode"] == "venv"
         assert _manifest["environment"]["lock"]["shell"]["use_venv"]
+        assert _manifest["environment"]["lock"]["starwhale_version"] == "0.0.0.dev0"
         assert _manifest["artifacts"]["wheels"] == ["wheels/dummy.whl"]
         assert _manifest["artifacts"]["files"][0] == {
             "dest": "bin/../bin/prepare.sh",
@@ -1493,6 +1574,56 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
     @patch("starwhale.utils.venv.check_call")
+    def test_restore_venv_with_custom_version(
+        self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
+    ):
+        custom_cases = [
+            {"version": "", "expect_cmd": "starwhale"},
+            {"version": "0.5.6", "expect_cmd": "starwhale==0.5.6"},
+            {
+                "version": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+                "expect_cmd": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+            },
+        ]
+        for i, case in enumerate(custom_cases):
+            workdir = f"/home/starwhale/myproject-{i}"
+            export_dir = os.path.join(workdir, "export")
+            ensure_dir(workdir)
+
+            self.fs.create_file(
+                os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+                contents=yaml.safe_dump(
+                    {
+                        "environment": {
+                            "mode": "venv",
+                            "python": "3.7",
+                            "arch": [SupportArch.AMD64],
+                            "lock": {"starwhale_version": case["version"]},
+                        },
+                        "dependencies": {
+                            "local_packaged_env": False,
+                            "raw_deps": [
+                                {
+                                    "kind": "pip_pkg",
+                                    "deps": ["a", "b"],
+                                },
+                            ],
+                        },
+                    }
+                ),
+            )
+            ensure_dir(export_dir)
+
+            m_exists.return_value = False
+            Runtime.restore(Path(workdir))
+
+            pip_cmds = [mc[0][0][6:] for mc in m_call.call_args_list]
+            assert pip_cmds == [["a"], ["b"], [case["expect_cmd"]]]
+            m_call.call_args_list.clear()
+
+    @patch("starwhale.utils.venv.check_user_python_pkg_exists")
+    @patch("starwhale.utils.venv.virtualenv.cli_run")
+    @patch("starwhale.utils.venv.check_call")
     def test_restore_venv_with_auto_lock(
         self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
     ):
@@ -1764,6 +1895,127 @@ class StandaloneRuntimeTestCase(TestCase):
         assert (Path(workdir) / "export/venv/bin/prepare.sh").exists()
 
         RuntimeTermView.restore(workdir)
+
+    @patch("starwhale.utils.venv.check_user_python_pkg_exists")
+    @patch("starwhale.core.runtime.model.platform.machine")
+    @patch("starwhale.utils.fs.tarfile.open")
+    @patch("starwhale.utils.venv.check_call")
+    def test_restore_conda_with_custom_version(
+        self,
+        m_call: MagicMock,
+        m_tar: MagicMock,
+        m_machine: MagicMock,
+        m_exists: MagicMock,
+    ):
+        custom_cases = [
+            {"version": "", "expect_cmd": "starwhale"},
+            {"version": "0.5.6", "expect_cmd": "starwhale==0.5.6"},
+            {
+                "version": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+                "expect_cmd": "git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale",
+            },
+        ]
+        for i, case in enumerate(custom_cases):
+            name = f"rttest-{i}"
+            version = "1234"
+            sw = SWCliConfigMixed()
+            workdir = str(
+                sw.rootdir
+                / "self"
+                / "workdir"
+                / "runtime"
+                / name
+                / version[:VERSION_PREFIX_CNT]
+                / version
+            )
+            ensure_dir(workdir)
+
+            self.fs.create_dir(os.path.join(workdir, "configs"))
+            condarc_path = os.path.join(workdir, "configs", "condarc")
+            self.fs.create_file(
+                condarc_path,
+                contents=yaml.safe_dump({"verbosity": 3}, default_flow_style=False),
+            )
+
+            self.fs.create_file(
+                os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+                contents=yaml.safe_dump(
+                    {
+                        "environment": {
+                            "python": "3.7",
+                            "mode": "conda",
+                            "arch": [SupportArch.ARM64],
+                            "lock": {"starwhale_version": case["version"]},
+                        },
+                        "dependencies": {
+                            "local_packaged_env": False,
+                            "raw_deps": [
+                                {
+                                    "kind": "pip_pkg",
+                                    "deps": ["a"],
+                                },
+                            ],
+                        },
+                    }
+                ),
+            )
+
+            export_dir = os.path.join(workdir, "export")
+            ensure_dir(export_dir)
+            dep_dir = os.path.join(workdir, "dependencies")
+            lock_dir = os.path.join(dep_dir, ".starwhale", "lock")
+            ensure_dir(lock_dir)
+
+            m_machine.return_value = "arm64"
+            m_exists.return_value = False
+            Runtime.restore(Path(workdir))
+
+            conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
+            conda_prefix_dir = os.path.join(export_dir, "conda")
+            assert conda_cmds == [
+                [
+                    "conda",
+                    "create",
+                    "--yes",
+                    "--quiet",
+                    "--prefix",
+                    conda_prefix_dir,
+                    "python=3.7",
+                ],
+                [
+                    "conda",
+                    "run",
+                    "--live-stream",
+                    "--prefix",
+                    conda_prefix_dir,
+                    "python3",
+                    "-m",
+                    "pip",
+                    "install",
+                    "--exists-action",
+                    "w",
+                    "--timeout=90",
+                    "--retries=10",
+                    "a",
+                ],
+                [
+                    "conda",
+                    "run",
+                    "--live-stream",
+                    "--prefix",
+                    conda_prefix_dir,
+                    "python3",
+                    "-m",
+                    "pip",
+                    "install",
+                    "--exists-action",
+                    "w",
+                    "--timeout=90",
+                    "--retries=10",
+                    case["expect_cmd"],
+                ],
+            ]
+            m_call.call_args_list.clear()
 
     @patch("starwhale.core.runtime.model.platform.machine")
     @patch("starwhale.utils.fs.tarfile.open")
