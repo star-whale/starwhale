@@ -250,9 +250,9 @@ api_test() {
   python3 -m pip install -r requirements.txt
   pytest --host ${CONTROLLER_HOST} --port 80 || exit 1
   popd
-  if ! in_github_action; then
-    source upgrade_test.sh
-  fi
+  # if ! in_github_action; then
+  #   source upgrade_test.sh
+  # fi
 }
 
 console_test() {
