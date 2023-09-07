@@ -1,4 +1,6 @@
+import json
 import datetime
+from unittest.mock import patch, MagicMock
 
 import yaml
 
@@ -8,7 +10,18 @@ from starwhale.api._impl import wrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.job import LocalJobInfo
+from starwhale.base.client.client import TypeWrapper
 from starwhale.api._impl.job.model import Job
+from starwhale.base.client.models.models import (
+    JobVo,
+    UserVo,
+    ModelVo,
+    JobStatus,
+    RuntimeVo,
+    ModelVersionVo,
+    RuntimeVersionVo,
+    ResponseMessagePageInfoJobVo,
+)
 
 
 class TestJob(BaseTestCase):
@@ -108,3 +121,88 @@ class TestJob(BaseTestCase):
 
         with self.assertRaises(NotFoundError):
             Job.get("not-exist")
+
+    @patch("starwhale.core.job.model.CloudJob.info")
+    @patch("starwhale.utils.config.load_swcli_config")
+    @patch("starwhale.base.client.api.job.JobApi.list")
+    def test_list_jobs_from_server(
+        self, mock_list: MagicMock, load_conf: MagicMock, info: MagicMock
+    ) -> None:
+        load_conf.return_value = {"instances": {"foo": {"uri": "http://1.1.0.0:8182"}}}
+
+        user = UserVo(id="1", name="foo", created_time=123, is_enabled=True)
+        mock_list.return_value = TypeWrapper(
+            ResponseMessagePageInfoJobVo,
+            {
+                "code": "success",
+                "message": "",
+                "data": {
+                    "total": 55,
+                    "page_num": 1,
+                    "page_size": 10,
+                    "size": 10,
+                    "list": [
+                        json.loads(
+                            JobVo(
+                                exposed_links=[],
+                                id="722",
+                                uuid="5c6dc44d410349829a7c6c1916a20651",
+                                model_name="",
+                                model_version="",
+                                model=ModelVo(
+                                    id="2",
+                                    name="model",
+                                    created_time=456,
+                                    owner=user,
+                                    version=ModelVersionVo(
+                                        latest=True,
+                                        step_specs=[],
+                                        id="7",
+                                        name="model",
+                                        alias="v2",
+                                        created_time=789,
+                                        shared=False,
+                                    ),
+                                ),
+                                runtime=RuntimeVo(
+                                    id="8",
+                                    name="runtime",
+                                    created_time=10,
+                                    owner=user,
+                                    version=RuntimeVersionVo(
+                                        latest=True,
+                                        id="9",
+                                        runtime_id="8",
+                                        name="runtime",
+                                        alias="v3",
+                                        image="image:foo",
+                                        created_time=11,
+                                        shared=True,
+                                    ),
+                                ),
+                                datasets=["cmmlu"],
+                                owner=user,
+                                created_time=123,
+                                job_status=JobStatus.success,
+                                resource_pool="pool",
+                            ).json()
+                        )
+                    ],
+                },
+            },
+        )
+
+        jobs, pages = Job.list(project="http://1.1.0.0:8182/project/1")
+        assert pages["total"] == 55
+        assert pages["page"]["page_num"] == 1
+        assert len(jobs) == 1
+        job = jobs[0]
+        info = job.basic_info
+        assert isinstance(info, JobVo)
+        assert info.id == "722"
+        assert info.job_status.name == "success"
+        assert info.uuid == "5c6dc44d410349829a7c6c1916a20651"
+        assert info.created_time == 123
+        assert info.datasets is not None
+        assert info.datasets[0] == "cmmlu"
+        assert info.runtime.name == "runtime"

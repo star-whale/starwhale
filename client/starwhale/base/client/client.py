@@ -4,6 +4,7 @@ import typing
 
 import requests
 from pydantic import BaseModel
+from tenacity import retry, retry_if_exception_type, wait_random_exponential
 from pydantic.tools import parse_obj_as
 
 from starwhale.utils import console
@@ -48,6 +49,10 @@ class TypeWrapper(typing.Generic[T]):
         return self
 
 
+class RetryableException(Exception):
+    ...
+
+
 class Client:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url
@@ -55,6 +60,11 @@ class Client:
         self.session = requests.Session()
         self.session.headers.update({"Authorization": token})
 
+    @retry(
+        retry=retry_if_exception_type(RetryableException),
+        # retry for every 1s, 2s, 4s, 8s, 16s, 32s, 60s, 60s, ...
+        wait=wait_random_exponential(multiplier=1, max=60),
+    )
     def http_request(
         self,
         method: str,
@@ -67,8 +77,18 @@ class Client:
             # convert to dict with proper alias
             json = json.dict(by_alias=True)
         resp = self.session.request(
-            method, f"{self.base_url}{uri}", json=json, params=params, data=data
+            method,
+            f"{self.base_url}{uri}",
+            json=json,
+            params=params,
+            data=data,
+            timeout=90,
         )
+        code_to_retry = {408, 429, 502, 503, 504}
+        if resp.status_code in code_to_retry:
+            raise RetryableException(f"status code: {resp.status_code}")
+
+        # The server will respond 500 if error happens, dead retry will not help
         return resp.json()
 
     def http_get(self, uri: str, params: dict | None = None) -> typing.Any:

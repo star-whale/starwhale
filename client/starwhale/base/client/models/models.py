@@ -128,14 +128,6 @@ class UserCheckPasswordRequest(BaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
 
 
-class UpgradeRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    version: str
-    image: str
-
-
 class Resource(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -655,36 +647,6 @@ class SystemVersionVo(BaseModel):
 
     id: Optional[str] = None
     version: Optional[str] = None
-
-
-class UpgradeLog(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    progress_uuid: Optional[str] = Field(None, alias='progressUuid')
-    step_total: Optional[int] = Field(None, alias='stepTotal')
-    step_current: Optional[int] = Field(None, alias='stepCurrent')
-    title: Optional[str] = None
-    content: Optional[str] = None
-    status: Optional[str] = None
-    created_time: Optional[int] = Field(None, alias='createdTime')
-
-
-class LatestVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    version: Optional[str] = None
-    image: Optional[str] = None
-
-
-class ResponseMessageLatestVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: LatestVersionVo
 
 
 class FeaturesVo(BaseModel):
@@ -1633,15 +1595,6 @@ class ResponseMessageSystemVersionVo(BaseModel):
     code: str
     message: str
     data: SystemVersionVo
-
-
-class ResponseMessageListUpgradeLog(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: List[UpgradeLog]
 
 
 class ResponseMessageListResourcePool(BaseModel):

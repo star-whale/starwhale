@@ -16,6 +16,7 @@ from starwhale.api._impl import wrapper
 from starwhale.base.models.job import LocalJobInfo, RemoteJobInfo
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.client.api.job import JobApi
 from starwhale.base.client.models.models import JobVo
 
 
@@ -33,18 +34,48 @@ class _BundleInfo:
 
 
 class Job:
-    def __init__(self, uri: Resource) -> None:
+    def __init__(
+        self, uri: Resource, basic_info: LocalJobInfo | JobVo | None = None
+    ) -> None:
         self.uri = uri
-        info = self.info()
-        if isinstance(info, LocalJobInfo):
-            eval_id = info.manifest.version
+        self._basic_info: LocalJobInfo | JobVo = basic_info or self._get_basic_info()
+        self._evaluation_store: wrapper.Evaluation | None = None
+
+    @property
+    def evaluation_store(self) -> wrapper.Evaluation:
+        if self._evaluation_store is None:
+            info = self.info()
+            if isinstance(info, LocalJobInfo):
+                eval_id = info.manifest.version
+            else:
+                eval_id = info.job.uuid
+            self._evaluation_store = wrapper.Evaluation(
+                eval_id=eval_id,
+                project=self.uri.project.name,
+                instance=self.uri.instance.url,
+            )
+        return self._evaluation_store
+
+    @property
+    def basic_info(self) -> LocalJobInfo | JobVo:
+        return self._basic_info
+
+    def _get_basic_info(self) -> LocalJobInfo | JobVo:
+        if self.uri.instance.is_local:
+            info = self.info()
+            if isinstance(info, LocalJobInfo):
+                return info
+            else:
+                # this can not happen, make mypy happy
+                raise NoSupportError
         else:
-            eval_id = info.job.uuid
-        self._evaluation_store = wrapper.Evaluation(
-            eval_id=eval_id,
-            project=self.uri.project.name,
-            instance=self.uri.instance.url,
-        )
+            return (
+                JobApi(self.uri.instance)
+                .info(self.uri.project.name, self.uri.name)
+                .raise_on_error()
+                .data()
+                .data
+            )
 
     def __str__(self) -> str:
         return f"Job[{self.uri}]"
@@ -111,7 +142,7 @@ class Job:
                 uri = Resource(i.uuid, typ=ResourceType.job, project=Project(project))
             else:
                 raise NoSupportError
-            jobs.append(cls(uri))
+            jobs.append(cls(uri, basic_info=i))
 
         return jobs, page
 
@@ -150,12 +181,12 @@ class Job:
     @property
     def tables(self) -> t.List[str]:
         """Get datastore table names of job."""
-        return self._evaluation_store.get_tables()
+        return self.evaluation_store.get_tables()
 
     @property
     def summary(self) -> t.Dict[str, t.Any]:
         """Get job summary row of datastore."""
-        return self._evaluation_store.get_summary_metrics()
+        return self.evaluation_store.get_summary_metrics()
 
     def get_table_rows(
         self,
@@ -189,7 +220,7 @@ class Job:
         rows = list(j.get_table_rows(table_name, start=0, end=100))
         ```
         """
-        return self._evaluation_store.get(
+        return self.evaluation_store.get(
             table_name=name,
             start=start,
             end=end,
