@@ -225,6 +225,18 @@ public class RuntimeService {
             var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
             list.addAll(viewEntityToVo(shared, true));
         }
+        if (!list.isEmpty()) {
+            var userId = userService.currentUserDetail().getId();
+            var recentlyUsed = runtimeVersionMapper.listRuntimeVersionsByUserRecentlyUsed(projectId, userId, 5)
+                    .stream().map(version -> String.valueOf(version.getId())).collect(Collectors.toList());
+            for (var vo : list) {
+                for (var version : vo.getVersions()) {
+                    if (recentlyUsed.contains(version.getId())) {
+                        version.setRecentlyUsed(true);
+                    }
+                }
+            }
+        }
         return list;
     }
 

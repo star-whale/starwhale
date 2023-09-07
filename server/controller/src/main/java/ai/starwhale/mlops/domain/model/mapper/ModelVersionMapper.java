@@ -64,18 +64,47 @@ public interface ModelVersionMapper {
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
             + " and m.project_id = p.id"
-            + " and p.owner_id = u.id"
+            + " and m.owner_id = u.id"
             + " and m.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by m.id desc, v.version_order desc")
     List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
 
+    @Select({"<script>",
+            "SET @old_sql_mode = @@sql_mode;",
+            "SET sql_mode = '';", // default is only_full_group_by
+            "select ",
+            "   (@i:=@i+1) as row_num, id, user_name, project_name, model_name, model_id,",
+            "   version_order, version_name, shared, created_time, modified_time",
+            "from(",
+            "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
+            "   from model_version as v",
+            "   inner join model_info as m on m.id = v.model_id",
+            "   inner join job_info as j on j.model_version_id = v.id",
+            "   inner join project_info as p on p.id = m.project_id",
+            "   inner join user_info as u on u.id = m.owner_id",
+            "   where",
+            // models in current project or other project but is shared
+            "       (m.project_id = #{projectId} or (m.project_id != #{projectId} and v.shared = 1))",
+            "       and m.deleted_time = 0",
+            "       and j.owner_id = #{userId}", // jobs in current user
+            "       and j.project_id = #{projectId}", // jobs in current project
+            "   order by j.id desc",
+            ") as tmp, (select @i:=0) as n", // generate an increased row num, so that the group result is the front row
+            "group by id",
+            "limit #{limit};",
+            "SET sql_mode = @old_sql_mode;",
+            "</script>"
+    })
+    List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsed(
+            @Param("projectId") Long projectId, @Param("userId") Long userId, @Param("limit") Integer limit);
+
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
             + " and m.project_id = p.id"
-            + " and p.owner_id = u.id"
+            + " and m.owner_id = u.id"
             + " and p.is_deleted = 0"
             + " and m.deleted_time = 0"
             + " and p.privacy = 1"

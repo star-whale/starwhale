@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -542,6 +543,13 @@ public class DatasetServiceTest {
                         DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).datasetName("ds4").build()
                 ));
+
+        given(datasetVersionMapper.listDatasetVersionsByUserRecentlyUsed(same(1L), same(1L), same(5)))
+                .willReturn(List.of(
+                        DatasetVersionViewEntity.builder().id(1L).datasetId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(false).datasetName("ds3").build()
+                ));
+
         given(datasetVersionMapper.findByLatest(same(2L)))
                 .willReturn(DatasetVersionEntity.builder().id(8L).build());
         given(datasetVersionMapper.findByLatest(same(4L)))
@@ -564,8 +572,11 @@ public class DatasetServiceTest {
         assertEquals(1, res.get(3).getVersions().size());
         assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
         assertTrue(res.get(0).getVersions().get(0).getLatest());
+        assertFalse(res.get(0).getVersions().get(0).getRecentlyUsed());
         assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
         assertTrue(res.get(1).getVersions().get(0).getLatest());
+        assertFalse(res.get(1).getVersions().get(0).getRecentlyUsed());
+        assertTrue(res.get(1).getVersions().get(1).getRecentlyUsed());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }

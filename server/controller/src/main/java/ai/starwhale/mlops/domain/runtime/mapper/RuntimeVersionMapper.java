@@ -108,19 +108,48 @@ public interface RuntimeVersionMapper {
             + " where v.runtime_id = b.id"
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
-            + " and p.owner_id = u.id"
+            + " and b.owner_id = u.id"
             + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by b.id desc, v.version_order desc")
     List<RuntimeVersionViewEntity> listRuntimeVersionViewByProject(@Param("projectId") Long projectId);
 
+    @Select({"<script>",
+            "SET @old_sql_mode = @@sql_mode;",
+            "SET sql_mode = '';", // default is only_full_group_by
+            "select ",
+            "   id, user_name, project_name, runtime_name, runtime_id,",
+            "   version_order, version_name, shared, created_time, modified_time",
+            "from(",
+            "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
+            "   from runtime_version as v",
+            "   inner join runtime_info as b on b.id = v.runtime_id",
+            "   inner join job_info as j on v.id = j.runtime_version_id",
+            "   inner join project_info as p on p.id = b.project_id",
+            "   inner join user_info as u on u.id = b.owner_id",
+            "   where v.runtime_id = b.id",
+            "       and (b.project_id = #{projectId} or (b.project_id != #{projectId} and v.shared = 1))",
+            "       and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'",
+            "       and b.deleted_time = 0",
+            "       and j.owner_id = #{userId}", // jobs in current user
+            "       and j.project_id = #{projectId}", // jobs in current project
+            "   order by j.id desc",
+            ") as tmp, (select @i:=0) as n",
+            "group by id",
+            " limit #{limit};",
+            "SET sql_mode = @old_sql_mode;",
+            "</script>"
+    })
+    List<RuntimeVersionViewEntity> listRuntimeVersionsByUserRecentlyUsed(
+            @Param("projectId") Long projectId, @Param("userId") Long userId, @Param("limit") Integer limit);
+
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from runtime_version as v, runtime_info as b, project_info as p, user_info as u"
             + " where v.runtime_id = b.id"
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
-            + " and p.owner_id = u.id"
+            + " and b.owner_id = u.id"
             + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.privacy = 1"

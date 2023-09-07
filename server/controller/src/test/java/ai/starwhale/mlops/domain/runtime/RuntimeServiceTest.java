@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -763,6 +764,13 @@ public class RuntimeServiceTest {
                         RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).runtimeName("rt4").build()
                 ));
+
+        given(runtimeVersionMapper.listRuntimeVersionsByUserRecentlyUsed(same(1L), same(1L), same(5)))
+                .willReturn(List.of(
+                        RuntimeVersionViewEntity.builder().id(1L).runtimeId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(false).runtimeName("rt3").build()
+                ));
+
         given(runtimeVersionMapper.findByLatest(same(2L)))
                 .willReturn(RuntimeVersionEntity.builder().id(8L).build());
         given(runtimeVersionMapper.findByLatest(same(4L)))
@@ -785,8 +793,11 @@ public class RuntimeServiceTest {
         assertEquals(1, res.get(3).getVersions().size());
         assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
         assertTrue(res.get(0).getVersions().get(0).getLatest());
+        assertFalse(res.get(0).getVersions().get(0).getRecentlyUsed());
         assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
         assertTrue(res.get(1).getVersions().get(0).getLatest());
+        assertFalse(res.get(1).getVersions().get(0).getRecentlyUsed());
+        assertTrue(res.get(1).getVersions().get(1).getRecentlyUsed());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }
