@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -212,7 +213,10 @@ public interface DatasetApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl);
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "all") DataScope scope
+    );
 
     /**
      * use #uploadHashedBlob instead

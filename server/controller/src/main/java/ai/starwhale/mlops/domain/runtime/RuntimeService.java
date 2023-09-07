@@ -213,12 +213,18 @@ public class RuntimeService {
         });
     }
 
-    public List<RuntimeViewVo> listRuntimeVersionView(String projectUrl) {
+    public List<RuntimeViewVo> listRuntimeVersionView(
+            String projectUrl, boolean includeShared, boolean includeCurrentProject) {
         Long projectId = projectService.getProjectId(projectUrl);
-        var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(projectId);
-        var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
-        var list = new ArrayList<>(viewEntityToVo(versions, false));
-        list.addAll(viewEntityToVo(shared, true));
+        var list = new ArrayList<RuntimeViewVo>();
+        if (includeCurrentProject) {
+            var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(projectId);
+            list.addAll(viewEntityToVo(versions, false));
+        }
+        if (includeShared) {
+            var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
+            list.addAll(viewEntityToVo(shared, true));
+        }
         return list;
     }
 

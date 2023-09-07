@@ -367,12 +367,18 @@ public class ModelService {
         modelVersionMapper.updateShared(versionId, shared);
     }
 
-    public List<ModelViewVo> listModelVersionView(String projectUrl) {
+    public List<ModelViewVo> listModelVersionView(
+            String projectUrl, boolean includeShared, boolean includeCurrentProject) {
         Long projectId = projectService.getProjectId(projectUrl);
-        var versions = modelVersionMapper.listModelVersionViewByProject(projectId);
-        var shared = modelVersionMapper.listModelVersionViewByShared(projectId);
-        var list = new ArrayList<>(viewEntityToVo(versions, false));
-        list.addAll(viewEntityToVo(shared, true));
+        var list = new ArrayList<ModelViewVo>();
+        if (includeCurrentProject) {
+            var versions = modelVersionMapper.listModelVersionViewByProject(projectId);
+            list.addAll(viewEntityToVo(versions, false));
+        }
+        if (includeShared) {
+            var shared = modelVersionMapper.listModelVersionViewByShared(projectId);
+            list.addAll(viewEntityToVo(shared, true));
+        }
         return list;
     }
 
