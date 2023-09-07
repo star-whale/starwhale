@@ -5,7 +5,6 @@ set -x
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_PATH=$( cd -- "$SCRIPT_DIR/../.." &> /dev/null && pwd )
 export WORK_DIR=`mktemp -d`
- deletes the temp directory
 function cleanup {
   rm -rf "$WORK_DIR"
   echo "Deleted temp working directory $WORK_DIR"
