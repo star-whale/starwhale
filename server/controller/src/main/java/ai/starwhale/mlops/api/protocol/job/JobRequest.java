@@ -35,7 +35,6 @@ public class JobRequest implements Serializable {
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
-    @NotNull
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
 
@@ -46,7 +45,6 @@ public class JobRequest implements Serializable {
     @JsonProperty("resourcePool")
     private String resourcePool;
 
-    @NotNull
     @JsonProperty("handler")
     private String handler;
 
