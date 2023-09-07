@@ -888,7 +888,7 @@ class CloudModel(CloudBundleModelMixin, Model):
 
     def info(self) -> ModelInfoVo | LocalModelInfo | None:  # type: ignore
         uri = self.uri
-        return ModelApi(uri.instance).info(uri).raise_on_error().data().data
+        return ModelApi(uri.instance).info(uri).raise_on_error().response().data
 
     @classmethod
     @ignore_error(({}, {}))
@@ -954,4 +954,4 @@ class CloudModel(CloudBundleModelMixin, Model):
             handler=run_handler,
         )
         resp = JobApi(project_uri.instance).create(project_uri.name, req)
-        return resp.is_success(), resp.data().data
+        return resp.is_success(), resp.response().data
