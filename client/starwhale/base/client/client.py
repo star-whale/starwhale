@@ -6,6 +6,7 @@ import requests
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, wait_random_exponential
 from pydantic.tools import parse_obj_as
+from fastapi.encoders import jsonable_encoder
 
 from starwhale.utils import console
 from starwhale.base.client.models.base import ResponseCode
@@ -73,13 +74,14 @@ class Client:
         params: dict | None = None,
         data: typing.Any = None,
     ) -> typing.Any:
+        _json: typing.Any = json
         if isinstance(json, BaseModel):
             # convert to dict with proper alias
-            json = json.dict(by_alias=True)
+            _json = jsonable_encoder(json.dict(by_alias=True, exclude_none=True))
         resp = self.session.request(
             method,
             f"{self.base_url}{uri}",
-            json=json,
+            json=_json,
             params=params,
             data=data,
             timeout=90,

@@ -224,7 +224,7 @@ class BaseTermView(SWCliConfigMixed):
                 if isinstance(o, bytes):
                     return o.decode("utf-8")
                 if isinstance(o, BaseModel):
-                    return o.dict()
+                    return json.loads(o.json())
                 return super().default(o)
 
         print(json.dumps(data, indent=4, sort_keys=True, cls=_Encoder))

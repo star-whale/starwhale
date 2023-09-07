@@ -285,7 +285,7 @@ class TestCli:
                 f"{self.server_url}/projects/{self.server_project}/jobs/{job_id}"
             )
             _job_status = (
-                _remote_job["manifest"]["jobStatus"]
+                _remote_job["job"]["job_status"]
                 if _remote_job
                 else next(iter(STATUS_FAIL))
             )

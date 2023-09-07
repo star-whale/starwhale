@@ -954,4 +954,4 @@ class CloudModel(CloudBundleModelMixin, Model):
             handler=run_handler,
         )
         resp = JobApi(project_uri.instance).create(project_uri.name, req)
-        return resp.is_success(), resp.data().message
+        return resp.is_success(), resp.data().data
