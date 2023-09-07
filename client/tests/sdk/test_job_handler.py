@@ -3,14 +3,15 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from tests import BaseTestCase
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import NoSupportError, ParameterError
 from starwhale.base.context import Context, pass_context
 from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
-
-from .. import BaseTestCase
+from starwhale.base.models.model import JobHandlers, StepSpecClient
+from starwhale.base.client.models.models import RuntimeResource, ParameterSignature
 
 
 class JobTestCase(unittest.TestCase):
@@ -77,7 +78,12 @@ class JobTestCase(unittest.TestCase):
             ),
         ]
 
-        mock_handler = Handler("", "", "", "")
+        mock_handler = Handler(
+            name="test",
+            show_name="show name",
+            func_name="func name",
+            module_name="module name",
+        )
         for resource, exception_str in exception_cases:
             with self.assertRaisesRegex(RuntimeError, exception_str):
                 mock_handler._transform_resource(resource)
@@ -191,7 +197,7 @@ def video_evaluate_handler(*args, **kwargs): ...
         generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
 
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
 
         assert {
             "mock_user_module:img_evaluate_handler",
@@ -200,11 +206,10 @@ def video_evaluate_handler(*args, **kwargs): ...
             "mock_user_module:video_predict_handler",
         } == set(jobs_info.keys())
         assert jobs_info["mock_user_module:img_evaluate_handler"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
                     "predict_auto_log": True,
@@ -212,45 +217,41 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "predict_log_mode": "pickle",
                     "predict_log_dataset_features": None,
                 },
-                "func_name": "img_predict_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:img_predict_handler",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {"predict_auto_log": True},
-                "func_name": "img_evaluate_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:img_evaluate_handler",
-                "needs": ["mock_user_module:img_predict_handler"],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "evaluate",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+                func_name="img_predict_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:img_predict_handler",
+                needs=[],
+                replicas=1,
+                resources=[],
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                extra_kwargs={"predict_auto_log": True},
+                func_name="img_evaluate_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:img_evaluate_handler",
+                needs=["mock_user_module:img_predict_handler"],
+                replicas=1,
+                resources=[],
+                show_name="evaluate",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
 
         assert jobs_info["mock_user_module:video_evaluate_handler"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
                     "predict_auto_log": True,
@@ -258,37 +259,34 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "predict_log_mode": "pickle",
                     "predict_log_dataset_features": None,
                 },
-                "func_name": "video_predict_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:video_predict_handler",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {"predict_auto_log": True},
-                "func_name": "video_evaluate_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:video_evaluate_handler",
-                "needs": ["mock_user_module:video_predict_handler"],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "evaluate",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+                func_name="video_predict_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:video_predict_handler",
+                needs=[],
+                replicas=1,
+                resources=[],
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                extra_kwargs={"predict_auto_log": True},
+                func_name="video_evaluate_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:video_evaluate_handler",
+                needs=["mock_user_module:video_predict_handler"],
+                replicas=1,
+                resources=[],
+                show_name="evaluate",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
 
     @patch(
@@ -313,14 +311,13 @@ def evaluate_handler(*args, **kwargs): ...
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info == {
             "mock_user_module:evaluate_handler": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {
+                StepSpecClient(
+                    cls_name="",
+                    concurrency=1,
+                    extra_kwargs={
                         "dataset_uris": None,
                         "ignore_error": False,
                         "predict_auto_log": True,
@@ -328,44 +325,40 @@ def evaluate_handler(*args, **kwargs): ...
                         "predict_log_mode": "pickle",
                         "predict_log_dataset_features": None,
                     },
-                    "func_name": "predict_handler",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:predict_handler",
-                    "needs": [],
-                    "replicas": 2,
-                    "resources": [],
-                    "show_name": "predict",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": True,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {"predict_auto_log": True},
-                    "func_name": "evaluate_handler",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:evaluate_handler",
-                    "needs": ["mock_user_module:predict_handler"],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "evaluate",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
+                    func_name="predict_handler",
+                    module_name="mock_user_module",
+                    name="mock_user_module:predict_handler",
+                    needs=[],
+                    replicas=2,
+                    resources=[],
+                    show_name="predict",
+                    expose=0,
+                    require_dataset=True,
+                    parameters_sig=[],
+                    ext_cmd_args="",
+                ),
+                StepSpecClient(
+                    cls_name="",
+                    concurrency=1,
+                    extra_kwargs={"predict_auto_log": True},
+                    func_name="evaluate_handler",
+                    module_name="mock_user_module",
+                    name="mock_user_module:evaluate_handler",
+                    needs=["mock_user_module:predict_handler"],
+                    replicas=1,
+                    resources=[],
+                    show_name="evaluate",
+                    expose=0,
+                    require_dataset=False,
+                    parameters_sig=[],
+                    ext_cmd_args="",
+                ),
             ],
             "mock_user_module:predict_handler": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {
+                StepSpecClient(
+                    cls_name="",
+                    concurrency=1,
+                    extra_kwargs={
                         "dataset_uris": None,
                         "ignore_error": False,
                         "predict_auto_log": True,
@@ -373,19 +366,18 @@ def evaluate_handler(*args, **kwargs): ...
                         "predict_log_mode": "pickle",
                         "predict_log_dataset_features": None,
                     },
-                    "func_name": "predict_handler",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:predict_handler",
-                    "needs": [],
-                    "replicas": 2,
-                    "resources": [],
-                    "show_name": "predict",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": True,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                }
+                    func_name="predict_handler",
+                    module_name="mock_user_module",
+                    name="mock_user_module:predict_handler",
+                    needs=[],
+                    replicas=2,
+                    resources=[],
+                    show_name="predict",
+                    expose=0,
+                    require_dataset=True,
+                    parameters_sig=[],
+                    ext_cmd_args="",
+                )
             ],
         }
         _, steps = Step.get_steps_from_yaml(
@@ -463,13 +455,13 @@ class MockPPLHandler(PipelineHandler):
         generate_jobs_yaml(
             [f"{self.module_name}:MockPPLHandler"], self.workdir, yaml_path
         )
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert "mock_user_module:MockPPLHandler.cmp" in jobs_info
         assert "mock_user_module:MockPPLHandler.ppl" in jobs_info
-        assert jobs_info["mock_user_module:MockPPLHandler.cmp"][1]["needs"] == [
+        assert jobs_info["mock_user_module:MockPPLHandler.cmp"][1].needs == [
             "mock_user_module:MockPPLHandler.ppl"
         ]
-        assert jobs_info["mock_user_module:MockPPLHandler.ppl"][0]["replicas"] == 2
+        assert jobs_info["mock_user_module:MockPPLHandler.ppl"][0].replicas == 2
 
     @patch(
         "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
@@ -494,67 +486,62 @@ class MockHandler(PipelineHandler):
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info["mock_user_module:MockHandler.evaluate"] == [
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "predict",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.predict",
-                "needs": [],
-                "replicas": 4,
-                "resources": [{"limit": 204800, "request": 204800, "type": "memory"}],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "evaluate",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.evaluate",
-                "needs": ["mock_user_module:MockHandler.predict"],
-                "replicas": 1,
-                "resources": [
-                    {"limit": 204800, "request": 204800, "type": "memory"},
-                    {"limit": 1, "request": 1, "type": "nvidia.com/gpu"},
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                func_name="predict",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.predict",
+                needs=[],
+                replicas=4,
+                resources=[
+                    RuntimeResource(type="memory", request=204800, limit=204800)
                 ],
-                "show_name": "evaluate",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                func_name="evaluate",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.evaluate",
+                needs=["mock_user_module:MockHandler.predict"],
+                replicas=1,
+                resources=[
+                    RuntimeResource(type="memory", request=204800.0, limit=204800.0),
+                    RuntimeResource(type="nvidia.com/gpu", request=1.0, limit=1.0),
+                ],
+                show_name="evaluate",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "predict",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.predict",
-                "needs": [],
-                "replicas": 4,
-                "resources": [{"limit": 204800, "request": 204800, "type": "memory"}],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            }
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                func_name="predict",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.predict",
+                needs=[],
+                replicas=4,
+                resources=[
+                    RuntimeResource(type="memory", request=204800.0, limit=204800.0)
+                ],
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            )
         ]
         _, steps = Step.get_steps_from_yaml(
             "mock_user_module:MockHandler.evaluate", yaml_path
@@ -598,14 +585,13 @@ class MockHandler:
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert len(jobs_info) == 2
         assert jobs_info["mock_user_module:MockHandler.predict_handler"] == [
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
                     "predict_auto_log": True,
@@ -613,27 +599,25 @@ class MockHandler:
                     "predict_log_mode": "plain",
                     "predict_log_dataset_features": None,
                 },
-                "func_name": "predict_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.predict_handler",
-                "needs": [],
-                "replicas": 4,
-                "resources": [],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            }
+                func_name="predict_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.predict_handler",
+                needs=[],
+                replicas=4,
+                resources=[],
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            )
         ]
 
         assert jobs_info["mock_user_module:MockHandler.evaluate_handler"] == [
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
                     "predict_auto_log": True,
@@ -641,37 +625,34 @@ class MockHandler:
                     "predict_log_mode": "plain",
                     "predict_log_dataset_features": None,
                 },
-                "func_name": "predict_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.predict_handler",
-                "needs": [],
-                "replicas": 4,
-                "resources": [],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": True,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "MockHandler",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {"predict_auto_log": True},
-                "func_name": "evaluate_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.evaluate_handler",
-                "needs": ["mock_user_module:MockHandler.predict_handler"],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "evaluate",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+                func_name="predict_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.predict_handler",
+                needs=[],
+                replicas=4,
+                resources=[],
+                show_name="predict",
+                expose=0,
+                require_dataset=True,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="MockHandler",
+                concurrency=1,
+                extra_kwargs={"predict_auto_log": True},
+                func_name="evaluate_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:MockHandler.evaluate_handler",
+                needs=["mock_user_module:MockHandler.predict_handler"],
+                replicas=1,
+                resources=[],
+                show_name="evaluate",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
 
         _, steps = Step.get_steps_from_yaml(
@@ -707,27 +688,24 @@ def run(): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info == {
             "mock_user_module:run": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "run",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:run",
-                    "needs": [],
-                    "replicas": 10,
-                    "resources": [],
-                    "show_name": "run",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                }
+                StepSpecClient(
+                    cls_name="",
+                    concurrency=1,
+                    func_name="run",
+                    module_name="mock_user_module",
+                    name="mock_user_module:run",
+                    needs=[],
+                    replicas=10,
+                    resources=[],
+                    show_name="run",
+                    expose=0,
+                    require_dataset=False,
+                    parameters_sig=[],
+                    ext_cmd_args="",
+                )
             ]
         }
 
@@ -743,33 +721,30 @@ def handle(context): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info == {
             "mock_user_module:handle": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "handle",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:handle",
-                    "needs": [],
-                    "replicas": 2,
-                    "resources": [],
-                    "show_name": "handle",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": False,
-                    "parameters_sig": [
-                        {
-                            "name": "context",
-                            "required": True,
-                            "multiple": False,
-                        }
+                StepSpecClient(
+                    cls_name="",
+                    concurrency=1,
+                    func_name="handle",
+                    module_name="mock_user_module",
+                    name="mock_user_module:handle",
+                    needs=[],
+                    replicas=2,
+                    resources=[],
+                    show_name="handle",
+                    expose=0,
+                    require_dataset=False,
+                    parameters_sig=[
+                        ParameterSignature(
+                            name="context",
+                            required=True,
+                            multiple=False,
+                        )
                     ],
-                    "ext_cmd_args": "--context",
-                }
+                    ext_cmd_args="--context",
+                )
             ]
         }
 
@@ -787,66 +762,56 @@ def ft2(): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info == {
             "mock_user_module:ft1": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "ft1",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:ft1",
-                    "needs": [],
-                    "replicas": 1,
-                    "resources": [],
-                    "show_name": "fine_tune",
-                    "expose": 0,
-                    "virtual": False,
-                    "require_dataset": True,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                }
+                StepSpecClient(
+                    name="mock_user_module:ft1",
+                    show_name="fine_tune",
+                    func_name="ft1",
+                    module_name="mock_user_module",
+                    require_dataset=True,
+                    needs=[],
+                    expose=0,
+                    resources=[],
+                    parameters_sig=[],
+                    cls_name="",
+                    ext_cmd_args="",
+                ),
             ],
             "mock_user_module:ft2": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "expose": 0,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "ft1",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:ft1",
-                    "needs": [],
-                    "replicas": 1,
-                    "require_dataset": True,
-                    "resources": [],
-                    "show_name": "fine_tune",
-                    "virtual": False,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "expose": 0,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "ft2",
-                    "module_name": "mock_user_module",
-                    "name": "mock_user_module:ft2",
-                    "needs": ["mock_user_module:ft1"],
-                    "replicas": 1,
-                    "require_dataset": True,
-                    "resources": [{"limit": 1, "request": 1, "type": "nvidia.com/gpu"}],
-                    "show_name": "fine_tune",
-                    "virtual": False,
-                    "require_dataset": True,
-                    "parameters_sig": [],
-                    "ext_cmd_args": "",
-                },
+                StepSpecClient(
+                    name="mock_user_module:ft1",
+                    show_name="fine_tune",
+                    func_name="ft1",
+                    module_name="mock_user_module",
+                    require_dataset=True,
+                    needs=[],
+                    expose=0,
+                    resources=[],
+                    parameters_sig=[],
+                    cls_name="",
+                    ext_cmd_args="",
+                ),
+                StepSpecClient(
+                    name="mock_user_module:ft2",
+                    show_name="fine_tune",
+                    func_name="ft2",
+                    module_name="mock_user_module",
+                    require_dataset=True,
+                    resources=[
+                        RuntimeResource(
+                            limit=1,
+                            request=1,
+                            type="nvidia.com/gpu",
+                        )
+                    ],
+                    needs=["mock_user_module:ft1"],
+                    expose=0,
+                    parameters_sig=[],
+                    cls_name="",
+                    ext_cmd_args="",
+                ),
             ],
         }
 
@@ -873,184 +838,179 @@ class MockReport:
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
         assert yaml_path.exists()
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
 
         report_handler = jobs_info["mock_user_module:MockReport.report_handler"]
         assert len(report_handler) == 4
-        assert {
-            "cls_name": "",
-            "concurrency": 1,
-            "extra_args": [],
-            "extra_kwargs": {},
-            "func_name": "prepare_handler",
-            "module_name": "mock_user_module",
-            "name": "mock_user_module:prepare_handler",
-            "needs": [],
-            "replicas": 1,
-            "resources": [],
-            "show_name": "prepare",
-            "expose": 0,
-            "virtual": False,
-            "require_dataset": False,
-            "parameters_sig": [],
-            "ext_cmd_args": "",
-        } in report_handler
+        assert (
+            StepSpecClient(
+                name="mock_user_module:prepare_handler",
+                show_name="prepare",
+                func_name="prepare_handler",
+                module_name="mock_user_module",
+                require_dataset=False,
+                needs=[],
+                expose=0,
+                resources=[],
+                parameters_sig=[],
+                cls_name="",
+                ext_cmd_args="",
+            )
+            in report_handler
+        )
 
-        assert {
-            "cls_name": "",
-            "concurrency": 1,
-            "extra_args": [],
-            "extra_kwargs": {},
-            "func_name": "evaluate_handler",
-            "module_name": "mock_user_module",
-            "name": "mock_user_module:evaluate_handler",
-            "needs": ["mock_user_module:prepare_handler"],
-            "replicas": 1,
-            "resources": [],
-            "show_name": "evaluate",
-            "expose": 0,
-            "virtual": False,
-            "require_dataset": False,
-            "parameters_sig": [],
-            "ext_cmd_args": "",
-        } in report_handler
+        assert (
+            StepSpecClient(
+                name="mock_user_module:evaluate_handler",
+                show_name="evaluate",
+                func_name="evaluate_handler",
+                module_name="mock_user_module",
+                require_dataset=False,
+                needs=["mock_user_module:prepare_handler"],
+                expose=0,
+                resources=[],
+                parameters_sig=[],
+                cls_name="",
+                ext_cmd_args="",
+            )
+            in report_handler
+        )
 
-        assert {
-            "cls_name": "MockReport",
-            "concurrency": 1,
-            "extra_args": [],
-            "extra_kwargs": {},
-            "func_name": "report_handler",
-            "module_name": "mock_user_module",
-            "name": "mock_user_module:MockReport.report_handler",
-            "needs": [
-                "mock_user_module:evaluate_handler",
-                "mock_user_module:predict_handler",
-            ],
-            "replicas": 1,
-            "resources": [],
-            "show_name": "report",
-            "expose": 0,
-            "virtual": False,
-            "require_dataset": False,
-            "parameters_sig": [],
-            "ext_cmd_args": "",
-        } in report_handler
+        assert (
+            StepSpecClient(
+                func_name="evaluate_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:evaluate_handler",
+                needs=["mock_user_module:prepare_handler"],
+                require_dataset=False,
+                resources=[],
+                show_name="evaluate",
+                expose=0,
+                parameters_sig=[],
+                cls_name="",
+                ext_cmd_args="",
+            )
+            in report_handler
+        )
 
-        assert {
-            "cls_name": "",
-            "concurrency": 1,
-            "extra_args": [],
-            "extra_kwargs": {},
-            "func_name": "predict_handler",
-            "module_name": "mock_user_module",
-            "name": "mock_user_module:predict_handler",
-            "needs": ["mock_user_module:prepare_handler"],
-            "replicas": 10,
-            "resources": [],
-            "show_name": "predict",
-            "expose": 0,
-            "virtual": False,
-            "require_dataset": False,
-            "parameters_sig": [],
-            "ext_cmd_args": "",
-        } in report_handler
+        assert (
+            StepSpecClient(
+                cls_name="MockReport",
+                concurrency=1,
+                func_name="report_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:MockReport.report_handler",
+                needs=[
+                    "mock_user_module:evaluate_handler",
+                    "mock_user_module:predict_handler",
+                ],
+                replicas=1,
+                resources=[],
+                show_name="report",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            )
+            in report_handler
+        )
+
+        assert StepSpecClient(
+            cls_name="",
+            concurrency=1,
+            func_name="predict_handler",
+            module_name="mock_user_module",
+            name="mock_user_module:predict_handler",
+            needs=["mock_user_module:prepare_handler"],
+            replicas=10,
+            resources=[],
+            show_name="predict",
+            expose=0,
+            require_dataset=False,
+            parameters_sig=[],
+            ext_cmd_args="",
+        )
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "prepare_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:prepare_handler",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "prepare",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "evaluate_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:evaluate_handler",
-                "needs": ["mock_user_module:prepare_handler"],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "evaluate",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                func_name="prepare_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:prepare_handler",
+                needs=[],
+                replicas=1,
+                resources=[],
+                show_name="prepare",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                func_name="evaluate_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:evaluate_handler",
+                needs=["mock_user_module:prepare_handler"],
+                replicas=1,
+                resources=[],
+                show_name="evaluate",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "prepare_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:prepare_handler",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "prepare",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "predict_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:predict_handler",
-                "needs": ["mock_user_module:prepare_handler"],
-                "replicas": 10,
-                "resources": [],
-                "show_name": "predict",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                func_name="prepare_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:prepare_handler",
+                needs=[],
+                replicas=1,
+                resources=[],
+                show_name="prepare",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                func_name="predict_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:predict_handler",
+                needs=["mock_user_module:prepare_handler"],
+                replicas=10,
+                resources=[],
+                show_name="predict",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            ),
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "prepare_handler",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:prepare_handler",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "prepare",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            }
+            StepSpecClient(
+                cls_name="",
+                concurrency=1,
+                func_name="prepare_handler",
+                module_name="mock_user_module",
+                name="mock_user_module:prepare_handler",
+                needs=[],
+                replicas=1,
+                resources=[],
+                show_name="prepare",
+                expose=0,
+                require_dataset=False,
+                parameters_sig=[],
+                ext_cmd_args="",
+            )
         ]
 
         _, steps = Step.get_steps_from_yaml(
@@ -1314,118 +1274,103 @@ def f_no_args():
         generate_jobs_yaml(
             [f"{self.module_name}:X", self.module_name], self.workdir, yaml_path
         )
-        jobs_info = load_yaml(yaml_path)
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
         assert jobs_info["mock_user_module:X.f"] == [
-            {
-                "cls_name": "X",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "f",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:X.f",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "f",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [
-                    {
-                        "name": "x",
-                        "required": False,
-                        "multiple": True,
-                    },
-                    {
-                        "name": "y",
-                        "required": False,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "mi",
-                        "required": False,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "ds",
-                        "required": True,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "ctx",
-                        "required": False,
-                        "multiple": False,
-                    },
+            StepSpecClient(
+                name="mock_user_module:X.f",
+                cls_name="X",
+                func_name="f",
+                module_name="mock_user_module",
+                show_name="f",
+                parameters_sig=[
+                    ParameterSignature(
+                        name="x",
+                        required=False,
+                        multiple=True,
+                    ),
+                    ParameterSignature(
+                        name="y",
+                        required=False,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="mi",
+                        required=False,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="ds",
+                        required=True,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="ctx",
+                        required=False,
+                        multiple=False,
+                    ),
                 ],
-                "ext_cmd_args": "--ds",
-            },
+                ext_cmd_args="--ds",
+                needs=[],
+                resources=[],
+                expose=0,
+                require_dataset=False,
+            ),
         ]
         assert jobs_info["mock_user_module:f"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "f",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:f",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "f",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [
-                    {
-                        "name": "x",
-                        "required": False,
-                        "multiple": True,
-                    },
-                    {
-                        "name": "y",
-                        "required": False,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "mi",
-                        "required": False,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "ds",
-                        "required": True,
-                        "multiple": False,
-                    },
-                    {
-                        "name": "ctx",
-                        "required": False,
-                        "multiple": False,
-                    },
+            StepSpecClient(
+                name="mock_user_module:f",
+                cls_name="",
+                func_name="f",
+                module_name="mock_user_module",
+                show_name="f",
+                parameters_sig=[
+                    ParameterSignature(
+                        name="x",
+                        required=False,
+                        multiple=True,
+                    ),
+                    ParameterSignature(
+                        name="y",
+                        required=False,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="mi",
+                        required=False,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="ds",
+                        required=True,
+                        multiple=False,
+                    ),
+                    ParameterSignature(
+                        name="ctx",
+                        required=False,
+                        multiple=False,
+                    ),
                 ],
-                "ext_cmd_args": "--ds",
-            },
+                ext_cmd_args="--ds",
+                needs=[],
+                resources=[],
+                expose=0,
+                require_dataset=False,
+            ),
         ]
         assert jobs_info["mock_user_module:f_no_args"] == [
-            {
-                "cls_name": "",
-                "concurrency": 1,
-                "extra_args": [],
-                "extra_kwargs": {},
-                "func_name": "f_no_args",
-                "module_name": "mock_user_module",
-                "name": "mock_user_module:f_no_args",
-                "needs": [],
-                "replicas": 1,
-                "resources": [],
-                "show_name": "f_no_args",
-                "expose": 0,
-                "virtual": False,
-                "require_dataset": False,
-                "parameters_sig": [],
-                "ext_cmd_args": "",
-            },
+            StepSpecClient(
+                name="mock_user_module:f_no_args",
+                cls_name="",
+                func_name="f_no_args",
+                module_name="mock_user_module",
+                show_name="f_no_args",
+                parameters_sig=[],
+                ext_cmd_args="",
+                needs=[],
+                resources=[],
+                expose=0,
+                require_dataset=False,
+            ),
         ]
         _, steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
         context = Context(

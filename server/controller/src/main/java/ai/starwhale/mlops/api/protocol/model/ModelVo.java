@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api.protocol.model;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -29,14 +30,19 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ModelVo implements Serializable {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String name;
 
+    @NotNull
     private Long createdTime;
 
+    @NotNull
     private UserVo owner;
 
+    @NotNull
     private ModelVersionVo version;
 
     public static ModelVo empty() {

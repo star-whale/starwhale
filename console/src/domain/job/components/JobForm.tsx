@@ -172,7 +172,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             switch (curr.value) {
                 case 'rerunFilled': {
                     const tmp = ctx.job
-                    if (!tmp) break
+                    if (!ctx.job || !ctx.modelTree) break
                     // eslint-disable-next-line
                     let modelVersion: IModelVersionSchema | undefined
                     ctx.modelTree?.forEach((v) =>

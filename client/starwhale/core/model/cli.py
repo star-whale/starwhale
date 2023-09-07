@@ -593,6 +593,9 @@ def _run(
         if not handler:
             raise ValueError("handler is required in server mode")
 
+        if isinstance(handler, int):
+            raise ValueError("handler name is required in server mode")
+
         if not uri:
             raise ValueError("uri is required in server mode")
 

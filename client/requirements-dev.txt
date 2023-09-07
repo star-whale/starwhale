@@ -40,3 +40,5 @@ trio-typing[mypy] >= 0.9.0
 # So we need to install async_generator>=1.9 to workaround the warning.
 async_generator >= 1.9
 types-protobuf
+# generate pydantic model from the open api spec
+datamodel-code-generator

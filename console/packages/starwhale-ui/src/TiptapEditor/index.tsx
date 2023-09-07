@@ -88,16 +88,15 @@ export default function TiptapEditor({ id = '', initialContent, editable, onSave
 
     return (
         <div
-            onClick={() => {
-                // editor?.chain().focus().run()
-            }}
-            role='button'
-            tabIndex={0}
+            // notice 1: role=button will cause selector component interactive disabled
+            // notice 2: onclick focus will cause page jitter
+            // onClick={() => {
+            //     editor?.chain().focus().run()
+            // }}
+            // role='button'
+            // tabIndex={0}
             className='relative self-center min-h-[500px] w-full h-full bg-white sm:mb-[calc(10px)] sm:rounded-lg'
         >
-            {/* <div className='absolute right-5 top-5 mb-5 rounded-lg bg-stone-100 px-2 py-1 text-sm text-stone-400'>
-                {saveStatus}
-            </div> */}
             {editor && <EditorBubbleMenu editor={editor} />}
             <EditorContent editor={editor} />
         </div>

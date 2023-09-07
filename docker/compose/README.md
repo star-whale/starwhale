@@ -6,7 +6,7 @@ title: Docker Compose for Starwhale server
 
 - Docker >= 19.03
 - [Docker Compose Plugin](https://docs.docker.com/compose/install/compose-plugin/) >= 2.3
-- x86-64 System(Linux, Windows and macOS)
+- x86-64 System(Linux)
 
 ## Usage
 

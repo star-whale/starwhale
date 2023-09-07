@@ -64,6 +64,26 @@ const basic = {
         en: '{{0}} per page',
         zh: '{{0}}条/页',
     },
+    'grid.view.expand': {
+        en: 'Expand details',
+        zh: '全屏视图',
+    },
+    'grid.view.half': {
+        en: 'Split in half',
+        zh: '分屏视图',
+    },
+    'grid.view.collapse': {
+        en: 'Collapse details',
+        zh: '收起视图',
+    },
+    'yes': {
+        en: 'Yes',
+        zh: '是',
+    },
+    'no': {
+        en: 'No',
+        zh: '否',
+    },
 }
 
 const dataset = {
@@ -532,8 +552,8 @@ const report = {
         zh: '标题',
     },
     'report.save.saved': {
-        en: 'Saved',
-        zh: '已保存',
+        en: 'Local saved',
+        zh: '已保存到本地',
     },
     'report.save.unsaved': {
         en: 'Unsaved',
@@ -570,6 +590,10 @@ const report = {
     'report.publist.publised': {
         en: 'Published',
         zh: '已发布',
+    },
+    'report.mobile.notice': {
+        zh: '使用PC可获得更好的体验',
+        en: 'Better experience on PC',
     },
 }
 
@@ -715,6 +739,22 @@ const widget = {
     'panel.chart.type': {
         en: 'Chart Type',
         zh: '图表类型',
+    },
+    'panel.chart.reload': {
+        en: 'Reload',
+        zh: '刷新',
+    },
+    'panel.chart.download': {
+        en: 'Download',
+        zh: '下载',
+    },
+    'panel.chart.preview': {
+        en: 'Preview',
+        zh: '预览',
+    },
+    'panel.chart.settings': {
+        en: 'Setting',
+        zh: '设置',
     },
     'panel.chart.table.name': {
         en: 'Table Name',

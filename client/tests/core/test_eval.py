@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -10,14 +11,18 @@ from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.job.view import JobTermView, JobTermViewRich
-from starwhale.core.job.model import CloudJob, LocalJobInfo, StandaloneJob
+from starwhale.core.job.model import CloudJob, StandaloneJob
 from starwhale.core.job.store import JobStorage
+from starwhale.base.models.job import LocalJobInfo
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.client.models.models import JobVo, ResponseMessagePageInfoJobVo
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
-_job_list = open(f"{_job_data_dir}/job_list_resp.json").read()
+_job_list = ResponseMessagePageInfoJobVo(
+    **json.load(open(f"{_job_data_dir}/job_list_resp.json"))
+)
 _existed_config_contents = get_predefined_config_yaml()
 
 
@@ -197,219 +202,26 @@ class CloudJobTestCase(TestCase):
         rm.request(
             HTTPMethod.GET,
             f"{self.instance_uri}/api/v1/project/self/job",
-            text=_job_list,
+            text=_job_list.json(by_alias=True),
         )
 
         jobs, pager = CloudJob.list(
             project_uri=Project(self.project_uri),
         )
 
-        assert len(jobs) == 10
-        assert pager["total"] == 15
-        assert pager["remain"] == 5
+        assert len(jobs) == 1
+        assert pager["total"] == 1
+        assert pager["remain"] == 0
 
-        _manifest = jobs[0]["manifest"]
-        assert "owner" not in _manifest
-        assert _manifest["modelVersion"] == "my2dgzbumfsgcnrtmftdgyjzgf4wizi"
-        assert _manifest["id"] == "15"
-        assert "created_at" in _manifest
-        assert "finished_at" in _manifest
+        job = jobs[0]
+        assert isinstance(job, JobVo)
+        assert job.id == "44"
 
         JobTermViewRich.list(
             self.project_uri,
             fullname=True,
         )
         assert m_console.called
-
-    @Mocker()
-    @patch("starwhale.api._impl.wrapper.Evaluation.get")
-    @patch("starwhale.api._impl.wrapper.Evaluation.get_summary_metrics")
-    @patch("starwhale.core.job.view.console.print")
-    def test_info(
-        self,
-        rm: Mocker,
-        m_console: MagicMock,
-        m_get_metrics: MagicMock,
-        m_get: MagicMock,
-    ):
-        m_get.return_value = {}
-        m_get_metrics.return_value = {
-            "kind": "multi_classification",
-            "accuracy": 0.9893989398939894,
-        }
-        rm.get(
-            f"{self.instance_uri}/api/v1/project/self",
-            json={"data": {"id": 1, "name": "self"}},
-        )
-        rm.request(
-            HTTPMethod.GET,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}",
-            json={
-                "code": "success",
-                "data": {
-                    "comment": None,
-                    "createdTime": 1692705133000,
-                    "datasetList": [
-                        {
-                            "createdTime": 1692172104000,
-                            "id": "133",
-                            "name": "cmmlu",
-                            "owner": None,
-                            "version": {
-                                "alias": "v1",
-                                "createdTime": 1692172104000,
-                                "id": "190",
-                                "indexTable": "project/257/dataset/cmmlu/_current/meta",
-                                "latest": True,
-                                "name": "kiwtxaz7h3a4atp3rjhhymp3mgbxvjtuip7cklzc",
-                                "owner": None,
-                                "shared": 0,
-                                "tags": None,
-                            },
-                        }
-                    ],
-                    "datasets": ["kiwtxaz7h3a4atp3rjhhymp3mgbxvjtuip7cklzc"],
-                    "device": None,
-                    "deviceAmount": None,
-                    "duration": 19500177,
-                    "exposedLinks": [],
-                    "id": "707",
-                    "isBuiltinRuntime": False,
-                    "jobName": "src.evaluation:evaluation_results",
-                    "jobStatus": "SUCCESS",
-                    "model": {
-                        "createdTime": 1692625972000,
-                        "id": "157",
-                        "name": "qwen-7b",
-                        "owner": {
-                            "createdTime": 1663599091000,
-                            "id": "4",
-                            "isEnabled": True,
-                            "name": "tianwei",
-                            "projectRoles": None,
-                            "systemRole": None,
-                        },
-                        "version": {
-                            "alias": "v4",
-                            "builtInRuntime": None,
-                            "createdTime": 1692705070000,
-                            "id": "191",
-                            "latest": True,
-                            "name": "5svavcdslagoxphlrkhpba2depq5h2dvia2uabqq",
-                            "owner": None,
-                            "shared": 0,
-                            "size": 15445672416,
-                            "tags": None,
-                        },
-                    },
-                    "modelName": "qwen-7b",
-                    "modelVersion": "5svavcdslagoxphlrkhpba2depq5h2dvia2uabqq",
-                    "owner": {
-                        "createdTime": 1663599091000,
-                        "id": "4",
-                        "isEnabled": True,
-                        "name": "tianwei",
-                        "projectRoles": None,
-                        "systemRole": None,
-                    },
-                    "pinnedTime": None,
-                    "resourcePool": "A100 80G * 1",
-                    "runtime": {
-                        "createdTime": 1692174942000,
-                        "id": "56",
-                        "name": "llm-leaderboard",
-                        "owner": {
-                            "createdTime": 1663599091000,
-                            "id": "4",
-                            "isEnabled": True,
-                            "name": "tianwei",
-                            "projectRoles": None,
-                            "systemRole": None,
-                        },
-                        "version": {
-                            "alias": "v2",
-                            "builtImage": None,
-                            "createdTime": 1692671519000,
-                            "id": "170",
-                            "image": "docker-registry.starwhale.cn/star-whale/cuda:11.7-base0.3.4",
-                            "latest": True,
-                            "name": "ickinf6qkl5hnd5x346vcbwd75kgxf56soska3cv",
-                            "owner": None,
-                            "runtimeId": "56",
-                            "shared": 0,
-                            "tags": None,
-                        },
-                    },
-                    "stopTime": 1692724633000,
-                    "uuid": "e0fa100599944951a20278b4062eb9fb",
-                },
-                "message": "Success",
-            },
-        )
-        rm.request(
-            HTTPMethod.GET,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/task",
-            json={
-                "code": "success",
-                "data": {
-                    "endRow": 100000,
-                    "hasNextPage": False,
-                    "hasPreviousPage": False,
-                    "isFirstPage": True,
-                    "isLastPage": True,
-                    "list": [
-                        {
-                            "exposedLinks": None,
-                            "failedReason": None,
-                            "finishedTime": 1692724633000,
-                            "id": "1064",
-                            "resourcePool": "A100 80G * 1",
-                            "retryNum": 0,
-                            "startedTime": 1692724131000,
-                            "stepName": "src.evaluation:evaluation_results",
-                            "taskStatus": "SUCCESS",
-                            "uuid": "4004e06a-2359-487a-ae6f-b0c3ed456e60",
-                        },
-                        {
-                            "exposedLinks": None,
-                            "failedReason": None,
-                            "finishedTime": 1692724131000,
-                            "id": "1063",
-                            "resourcePool": "A100 80G * 1",
-                            "retryNum": 0,
-                            "startedTime": 1692705133000,
-                            "stepName": "src.evaluation:predict_question",
-                            "taskStatus": "SUCCESS",
-                            "uuid": "5b87fe22-a1c1-49fe-8d35-62717441a79f",
-                        },
-                    ],
-                    "navigateFirstPage": 1,
-                    "navigateLastPage": 1,
-                    "navigatePages": 8,
-                    "navigatepageNums": [1],
-                    "nextPage": 0,
-                    "pageNum": 1,
-                    "pageSize": 100000,
-                    "pages": 1,
-                    "prePage": 0,
-                    "size": 2,
-                    "startRow": 0,
-                    "total": 2,
-                },
-                "message": "Success",
-            },
-        )
-
-        info = CloudJob(Resource(self.job_uri, typ=ResourceType.job)).info()
-        assert len(info["tasks"][0]) == 2
-        assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
-        assert info["tasks"][0][0]["id"] == "1064"
-        assert "created_at" in info["tasks"][0][0]
-
-        assert info["report"]["kind"] == "multi_classification"
-        assert info["report"]["summary"]["accuracy"] == 0.9893989398939894
-
-        JobTermView(self.job_uri).info()
 
     @Mocker()
     @patch("starwhale.core.job.view.console.print")

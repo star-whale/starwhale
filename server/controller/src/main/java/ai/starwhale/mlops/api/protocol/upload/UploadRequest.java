@@ -27,6 +27,7 @@ public abstract class UploadRequest {
 
     protected static final String SEPARATOR = ":";
 
+    @NotNull
     Long uploadId;
     String partName;
     String signature;
@@ -36,16 +37,14 @@ public abstract class UploadRequest {
     @NotNull
     UploadPhase phase;
     String force;
+
+    @NotNull
     String project;
 
     static final String FORCE = "1";
 
     public boolean force() {
         return FORCE.equals(force);
-    }
-
-    public String getProject() {
-        return null == project ? "" : project;
     }
 
     public abstract String name();

@@ -285,7 +285,7 @@ class TestCli:
                 f"{self.server_url}/projects/{self.server_project}/jobs/{job_id}"
             )
             _job_status = (
-                _remote_job["manifest"]["jobStatus"]
+                _remote_job["job"]["job_status"]
                 if _remote_job
                 else next(iter(STATUS_FAIL))
             )
@@ -530,7 +530,7 @@ class TestCli:
         self.select_local_instance()
         ctx_handle_info = self.model_api.info("ctx_handle")
 
-        assert set(ctx_handle_info["basic"]["handlers"]) == {
+        assert set(ctx_handle_info["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
             "src.evaluator:f",
@@ -540,14 +540,14 @@ class TestCli:
         }, ctx_handle_info["basic"]["handlers"]
 
         ctx_handle_no_modules_info = self.model_api.info("ctx_handle_no_modules")
-        assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == {
+        assert set(ctx_handle_no_modules_info["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
             "src.evaluator:f",
             "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
-        }, ctx_handle_no_modules_info["basic"]["handlers"]
+        }, ctx_handle_no_modules_info["handlers"]
 
 
 def start(

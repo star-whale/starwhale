@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -74,6 +76,8 @@ import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
@@ -365,17 +369,22 @@ public class DatasetControllerTest {
 
     }
 
-    @Test
-    public void testListDatasetTree() {
-        given(datasetService.listDatasetVersionView(anyString()))
+    @ParameterizedTest
+    @CsvSource({"all, 2", "project, 1", "shared, 1"})
+    public void testListDatasetTree(DataScope scope, int listCount) {
+        given(datasetService.listDatasetVersionView(anyString(), eq(true), eq(true)))
+                .willReturn(List.of(DatasetViewVo.builder().build(), DatasetViewVo.builder().build()));
+        given(datasetService.listDatasetVersionView(anyString(), eq(false), eq(true)))
+                .willReturn(List.of(DatasetViewVo.builder().build()));
+        given(datasetService.listDatasetVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(DatasetViewVo.builder().build()));
 
-        var resp = controller.listDatasetTree("1");
+        var resp = controller.listDatasetTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(
                 notNullValue(),
-                is(iterableWithSize(1))
+                is(iterableWithSize(listCount))
         ));
     }
 

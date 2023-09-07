@@ -3,13 +3,13 @@ import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from tests import BaseTestCase
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.load import import_object
 from starwhale.api._impl.job import Handler
 from starwhale.api._impl.model import build, _called_build_functions
-
-from .. import BaseTestCase
+from starwhale.base.models.model import JobHandlers, StepSpecClient
 
 
 class ModelBuildTestCase(BaseTestCase):
@@ -153,13 +153,13 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
         )
         assert len(_called_build_functions) == 2
 
-        def _get_jobs_yaml(model_name: str) -> t.Dict[str, t.Any]:
+        def _get_jobs_yaml(model_name: str) -> t.Dict[str, StepSpecClient]:
             path = list(
                 (Path(self.local_storage) / "self" / "model" / model_name).glob(
                     "**/*.swmp/src/.starwhale/jobs.yaml"
                 )
             )[0]
-            return load_yaml(path)
+            return JobHandlers.parse_obj(load_yaml(path)).__root__
 
         inner_jobs = _get_jobs_yaml("inner")
         outer_jobs = _get_jobs_yaml("outer")
@@ -169,24 +169,21 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
             == outer_jobs
             == {
                 "cycle_evaluator:handle": [
-                    {
-                        "cls_name": "",
-                        "concurrency": 1,
-                        "extra_args": [],
-                        "extra_kwargs": {},
-                        "func_name": "handle",
-                        "module_name": "cycle_evaluator",
-                        "name": "cycle_evaluator:handle",
-                        "needs": [],
-                        "replicas": 1,
-                        "resources": [],
-                        "show_name": "handle",
-                        "expose": 0,
-                        "virtual": False,
-                        "require_dataset": False,
-                        "parameters_sig": [],
-                        "ext_cmd_args": "",
-                    }
+                    StepSpecClient(
+                        cls_name="",
+                        concurrency=1,
+                        func_name="handle",
+                        module_name="cycle_evaluator",
+                        name="cycle_evaluator:handle",
+                        needs=[],
+                        replicas=1,
+                        resources=[],
+                        show_name="handle",
+                        expose=0,
+                        require_dataset=False,
+                        parameters_sig=[],
+                        ext_cmd_args="",
+                    )
                 ]
             }
         )

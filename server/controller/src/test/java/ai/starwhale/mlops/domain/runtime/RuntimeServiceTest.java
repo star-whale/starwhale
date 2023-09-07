@@ -768,7 +768,12 @@ public class RuntimeServiceTest {
         given(runtimeVersionMapper.findByLatest(same(4L)))
                 .willReturn(RuntimeVersionEntity.builder().id(6L).build());
 
-        var res = service.listRuntimeVersionView("1");
+        var res = service.listRuntimeVersionView("1", false, true);
+        assertEquals(2, res.size());
+        res = service.listRuntimeVersionView("1", true, false);
+        assertEquals(2, res.size());
+
+        res = service.listRuntimeVersionView("1", true, true);
         assertEquals(4, res.size());
         assertEquals("rt1", res.get(0).getRuntimeName());
         assertEquals("rt3", res.get(1).getRuntimeName());

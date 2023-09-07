@@ -27,13 +27,13 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.model.copy import upload_model, download_model
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.client.api.tag import TagApi
 
 TMP_FILE_BUFSIZE = 8192
 
@@ -103,8 +103,7 @@ class BundleCopy(CloudRequestMixed):
         else:
             raise Exception("invalid dest_uri")  # this can not happen
 
-        if not self.dest_uri.version or self.dest_uri.version == "latest":
-            self.dest_uri.version = self.src_uri.version
+        self.dest_uri.version = self.src_uri.version
         if self.dest_uri.version == "latest":
             self.dest_uri.version = ""
 
@@ -240,7 +239,6 @@ class BundleCopy(CloudRequestMixed):
         self.do_copy_tags()
 
     def do_copy_tags(self) -> None:
-        candidate_tags = []
         if self.src_uri.instance.is_local:
             candidate_tags = StandaloneTag(self.src_uri).list()
         else:
@@ -314,30 +312,15 @@ class BundleCopy(CloudRequestMixed):
         if not rc.instance.is_cloud:
             raise RuntimeError("Only accept remote resource to fetch tags")
 
-        r = self.do_http_request(
-            path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{self.src_uri.version}/tag",
-            method=HTTPMethod.GET,
-            instance=rc.instance,
-        )
-        wrap_sw_error_resp(r, "failed to fetch tags")
-        return r.json()["data"]  # type: ignore[no-any-return]
+        return TagApi(rc.instance).list(rc).data().data
 
     def _do_upload_tags_to_server(self, rc: Resource, tags: t.List[str]) -> None:
         if not rc.instance.is_cloud:
             raise RuntimeError("Only accept remote resource to upload tags")
 
+        api = TagApi(rc.instance)
         for tag in tags:
-            ok, msg = self.do_http_request_simple_ret(
-                path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{self.src_uri.version}/tag",
-                method=HTTPMethod.POST,
-                instance=rc.instance,
-                json={
-                    "force": self.force,
-                    "tag": tag,
-                },
-            )
-            if not ok:
-                raise RuntimeError(f"failed to upload tag:{tag}, error: {msg}")
+            api.add(rc, tag, force=self.force)
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         workdir = self._get_versioned_resource_path(self.dest_uri)

@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api.protocol.report;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,10 +27,13 @@ import lombok.Data;
 @Schema(description = "Report object", title = "Report")
 public class ReportVo {
 
+    @NotNull
     private Long id;
 
+    @NotNull
     private String uuid;
 
+    @NotNull
     private String title;
 
     private String content;
@@ -38,9 +42,13 @@ public class ReportVo {
 
     private Boolean shared;
 
+    @NotNull
     private UserVo owner;
 
+    @NotNull
     private Long createdTime;
+
+    @NotNull
     private Long modifiedTime;
 
     public static ReportVo empty() {

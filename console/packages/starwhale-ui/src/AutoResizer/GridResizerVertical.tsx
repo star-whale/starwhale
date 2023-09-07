@@ -2,6 +2,9 @@ import IconFont from '../IconFont'
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { themedUseStyletron } from '../theme/styletron'
+import { ExtendButton } from '../Button'
+import useTranslation from '@/hooks/useTranslation'
+import { expandBorderRadius } from '../utils'
 
 const RESIZEBAR_WIDTH = 60
 
@@ -134,6 +137,7 @@ export type ResizeBarPropsT = {
 
 function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resizeRef }: ResizeBarPropsT) {
     const [css] = themedUseStyletron()
+    const [t] = useTranslation()
 
     return (
         <div
@@ -175,15 +179,19 @@ function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resize
                     borderRadius: '4px',
                     alignSelf: 'flex-end',
                     padding: '6px 0 ',
+                    display: 'flex',
                 })}
             >
                 {['layout-1', 'layout-2', 'layout-3'].map((icon, index) => {
+                    const trans = [t('grid.view.collapse'), t('grid.view.half'), t('grid.view.expand')]
                     return (
-                        <i
+                        <ExtendButton
                             key={icon}
-                            role='button'
-                            tabIndex={index}
+                            kind='tertiary'
+                            tooltip={trans[index]}
+                            as='link'
                             onClick={() => onModeChange(index)}
+                            // @ts-ignore
                             style={{
                                 display: 'inline-flex',
                                 width: '40px',
@@ -192,6 +200,7 @@ function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resize
                                 alignItems: 'center',
                                 borderLeft: index === 1 ? '1px solid #CFD7E6' : 'none',
                                 borderRight: index === 1 ? '1px solid #CFD7E6' : 'none',
+                                ...expandBorderRadius('0px'),
                             }}
                         >
                             <IconFont
@@ -202,7 +211,7 @@ function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resize
                                     marginBottom: '2px',
                                 }}
                             />
-                        </i>
+                        </ExtendButton>
                     )
                 })}
             </div>

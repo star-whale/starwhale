@@ -184,8 +184,9 @@ public class DatasetUploaderTest {
         Long dsVersionId = 1L;
         uploadRequest.setUploadId(dsVersionId);
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
+        uploadRequest.setProject("project");
         datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest);
-        //        datasetUploader.uploadHashedBlob(
+        //datasetUploader.uploadHashedBlob(
         //        dsVersionId,
         //        new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
         //        "abc/index.jsonl");

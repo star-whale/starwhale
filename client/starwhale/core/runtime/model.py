@@ -7,7 +7,7 @@ import typing as t
 import platform
 import tempfile
 import subprocess
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
@@ -182,6 +182,7 @@ class Environment(ASDictMixin):
         self.cuda = str(cuda).strip()
         self.cudnn = str(cudnn).strip()
         self.docker = DockerEnv(**kw.get("docker", {}))
+        self.starwhale_version = str(kw.get("starwhale_version", "")).strip()
 
         self._do_validate()
 
@@ -701,6 +702,10 @@ class RuntimeConfig(ASDictMixin):
 
 
 class Runtime(BaseBundle, metaclass=ABCMeta):
+    @abstractmethod
+    def info(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
     @classmethod
     def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
         StandaloneRuntime.restore(workdir, isolated_env_dir)
@@ -1357,7 +1362,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["environment"].update(
             {
                 "lock": {
-                    "starwhale_version": self._detected_sw_version or STARWHALE_VERSION,
+                    "starwhale_version": swrt_config.environment.starwhale_version
+                    or self._detected_sw_version
+                    or STARWHALE_VERSION,
                     "system": platform.system(),
                     "shell": {
                         "python_env": sh_py_env,

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -34,6 +35,7 @@ import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
@@ -54,6 +56,8 @@ import java.util.Objects;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.HttpStatus;
 
 public class ModelControllerTest {
@@ -183,17 +187,22 @@ public class ModelControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 
-    @Test
-    public void testListModelTree() {
-        given(modelService.listModelVersionView(anyString()))
+    @ParameterizedTest
+    @CsvSource({"all, 2", "project, 1", "shared, 1"})
+    public void testListModelTree(DataScope scope, int listCount) {
+        given(modelService.listModelVersionView(anyString(), eq(true), eq(true)))
+                .willReturn(List.of(ModelViewVo.builder().build(), ModelViewVo.builder().build()));
+        given(modelService.listModelVersionView(anyString(), eq(false), eq(true)))
+                .willReturn(List.of(ModelViewVo.builder().build()));
+        given(modelService.listModelVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(ModelViewVo.builder().build()));
 
-        var resp = controller.listModelTree("1");
+        var resp = controller.listModelTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(
                 notNullValue(),
-                is(iterableWithSize(1))
+                is(iterableWithSize(listCount))
         ));
     }
 

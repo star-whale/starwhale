@@ -38,10 +38,13 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.base.client.models.base import ResponseCode
+from starwhale.base.client.models.models import ResponseMessageListString
 
 from .. import BaseTestCase
 
 _existed_config_contents = get_predefined_config_yaml()
+_success = ResponseCode(code="success", message="success")
 
 
 class _ModelServer:
@@ -142,7 +145,11 @@ class TestBundleCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}/tag",
-            json={"data": ["t1", "t2", "t3"]},
+            json=ResponseMessageListString(
+                code=_success.code,
+                message=_success.message,
+                data=["t1", "t2", "t3"],
+            ).dict(),
         )
         rm.request(
             HTTPMethod.GET,
@@ -362,7 +369,11 @@ class TestBundleCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/tag",
-            json={"data": ""},
+            json=ResponseMessageListString(
+                code=_success.code,
+                message=_success.message,
+                data=[""],
+            ).dict(),
         )
 
         rm.request(
@@ -734,13 +745,13 @@ class TestBundleCopy(BaseTestCase):
             expect_upload_count = 0 if case["dest_builtin_exist"] else 1
             assert rt_upload_request.call_count == expect_upload_count
 
-        head_request = rm.request(
+        rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
-        rt_upload_request = rm.request(
+        rm.request(
             HTTPMethod.POST,
             f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
             headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
@@ -815,7 +826,11 @@ class TestBundleCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/tag",
-            json={"data": ["t1", "t2", "t3"]},
+            json=ResponseMessageListString(
+                code=_success.code,
+                message=_success.message,
+                data=["t1", "t2", "t3"],
+            ).dict(),
         )
         BundleCopy(
             src_uri="cloud://pre-bare/project/mnist/model/mnist-alias/version/v1",
@@ -823,7 +838,10 @@ class TestBundleCopy(BaseTestCase):
             typ=ResourceType.model,
         ).do()
         dest_path = (
-            self._sw_config.rootdir / "self/model/mnist" / version[:2] / "v2.swmp"
+            self._sw_config.rootdir
+            / "self/model/mnist"
+            / version[:2]
+            / f"{version}.swmp"
         )
 
         def compare(dir1: Path, dir2: Path) -> None:
@@ -948,7 +966,11 @@ class TestBundleCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/tag",
-            json={"data": ["t1", "t2", "t3"]},
+            json=ResponseMessageListString(
+                code=_success.code,
+                message=_success.message,
+                data=["t1", "t2", "t3"],
+            ).dict(),
         )
 
         cloud_uri = Resource(
@@ -1048,6 +1070,7 @@ class TestBundleCopy(BaseTestCase):
         tag_request = rm.request(
             HTTPMethod.POST,
             f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist/version/{version}/tag",
+            json=_success.dict(),
         )
 
         head_request = rm.request(
@@ -1209,6 +1232,7 @@ class TestBundleCopy(BaseTestCase):
             tag_request = rm.request(
                 HTTPMethod.POST,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/tag",
+                json=_success.dict(),
             )
             try:
                 DatasetCopy(
@@ -1278,7 +1302,11 @@ class TestBundleCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version_name}/tag",
-            json={"data": ["t1", "t2", "t3", "t4"]},
+            json=ResponseMessageListString(
+                code=_success.code,
+                message=_success.message,
+                data=["t1", "t2", "t3", "t4"],
+            ).dict(),
         )
         rm.request(
             HTTPMethod.GET,

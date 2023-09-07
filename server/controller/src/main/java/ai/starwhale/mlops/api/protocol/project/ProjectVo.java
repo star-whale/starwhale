@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -34,16 +35,21 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ProjectVo implements Serializable {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String name;
 
     private String description;
 
+    @NotNull
     private String privacy;
 
+    @NotNull
     private Long createdTime;
 
+    @NotNull
     private UserVo owner;
 
     private StatisticsVo statistics;

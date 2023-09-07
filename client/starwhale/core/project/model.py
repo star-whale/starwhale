@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-import json
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
-import yaml
-
 from starwhale.utils import validate_obj_name
 from starwhale.consts import (
-    HTTPMethod,
     CREATED_AT_KEY,
     DEFAULT_PROJECT,
     RECOVER_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    SHORT_VERSION_CNT,
 )
 from starwhale.utils.fs import move_dir, ensure_dir, get_path_created_time
 from starwhale.base.cloud import CloudRequestMixed
@@ -24,6 +19,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project as ProjectURI
 from starwhale.base.uri.instance import Instance
+from starwhale.base.client.api.project import ProjectApi
 
 _SHOW_ALL = 100
 
@@ -155,30 +151,18 @@ class StandaloneProject(Project):
 
 class CloudProject(Project, CloudRequestMixed):
     def create(self) -> t.Tuple[bool, str]:
-        return self.do_http_request_simple_ret(
-            "/project",
-            method=HTTPMethod.POST,
-            instance=self.uri.instance,
-            data=json.dumps({"projectName": self.name}),
-        )
+        resp = ProjectApi(self.uri.instance).create(self.name)
+        return resp.is_success(), resp.data().message
 
     def recover(self) -> t.Tuple[bool, str]:
-        return self.do_http_request_simple_ret(
-            f"/project/{self.name}/action/recover",
-            method=HTTPMethod.POST,
-            instance=self.uri.instance,
-        )
+        resp = ProjectApi(self.uri.instance).recover(self.name)
+        return resp.is_success(), resp.data().message
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        return self.do_http_request_simple_ret(
-            f"/project/{self.name}",
-            method=HTTPMethod.DELETE,
-            instance=self.uri.instance,
-            data=json.dumps({"force": int(force)}),
-        )
+        resp = ProjectApi(self.uri.instance).delete(self.name)
+        return resp.is_success(), resp.data().message
 
     @classmethod
-    @ignore_error(([], {}))
     def list(
         cls,
         instance_uri: str = "",
@@ -187,81 +171,44 @@ class CloudProject(Project, CloudRequestMixed):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
         uri = Instance(instance_uri)
-        r = crm.do_http_request(
-            "/project",
-            params={"pageNum": page, "pageSize": size, "ownerName": uri.username},
-            instance=uri,
-        ).json()
+        from starwhale.base.client.api.project import ProjectApi
+
+        resp = (
+            ProjectApi(uri).list(page_num=page, page_size=size).raise_on_error().data()
+        )
 
         projects = []
-        for _p in r["data"]["list"]:
-            owner = _p["owner"]["name"]
+        for _p in resp.data.list or []:
+            owner = _p.owner.name
             projects.append(
                 dict(
-                    id=_p["id"],
-                    name=_p["name"],
-                    created_at=crm.fmt_timestamp(_p["createdTime"]),  # type: ignore
-                    is_default=_p.get("isDefault", 0),
+                    id=_p.id,
+                    name=_p.name,
+                    created_at=crm.fmt_timestamp(_p.created_time),  # type: ignore
+                    is_default=0,
                     owner=owner,
                 )
             )
-        return projects, crm.parse_pager(r)
+        return projects, crm.parse_pager(resp.dict())
 
     @ignore_error({})
     def info(self) -> t.Dict[str, t.Any]:
-        r = self.do_http_request(
-            f"/project/{self.name}",
-            method=HTTPMethod.GET,
-            instance=self.uri.instance,
-        )
+        r = ProjectApi(self.uri.instance).get(self.name).data().data
         # TODO: add more project details
-        return {
+        base: t.Dict[str, t.Any] = {
             "name": self.name,
-            CREATED_AT_KEY: self.fmt_timestamp(r.json()["data"]["createdTime"]),
-            "location": r.url,
-            "models": self._fetch_project_objects(ProjectObjType.MODEL),
-            "datasets": self._fetch_project_objects(ProjectObjType.DATASET),
+            CREATED_AT_KEY: self.fmt_timestamp(r.created_time),
+            "location": f"{self.uri.instance.url}/projects/{r.id}",
         }
 
-    @ignore_error([])
-    def _fetch_model_files(self, mid: int) -> t.List:
-        r = self.do_http_request(
-            f"/project/{self.name}/model/{mid}", instance=self.uri.instance
-        )
-        return r.json()["data"]["files"]  # type: ignore
-
-    @ignore_error([])
-    def _fetch_project_objects(
-        self, typ: str, versions_size: int = 10
-    ) -> t.List[t.Dict[str, t.Any]]:
-        r = self.do_http_request(
-            f"/project/{self.name}/{typ}",
-            params={"pageSize": _SHOW_ALL},
-            instance=self.uri.instance,
-        )
-
-        ret = []
-        for _m in r.json()["data"]["list"]:
-            _m[CREATED_AT_KEY] = self.fmt_timestamp(_m.pop("createdTime"))
-            _m.pop("owner", None)
-
-            mvr = self.do_http_request(
-                f"/project/{self.name}/{typ}/{_m['id']}/version",
-                params={"pageSize": versions_size},
-                instance=self.uri.instance,
+        if r.statistics is not None:
+            base.update(
+                {
+                    "models": r.statistics.model_counts,
+                    "datasets": r.statistics.dataset_counts,
+                    "runtimes": r.statistics.runtime_counts,
+                    "evaluations": r.statistics.evaluation_counts,
+                }
             )
-            versions = []
-            for _v in mvr.json()["data"]["list"]:
-                _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
-                _v[CREATED_AT_KEY] = self.fmt_timestamp(_v.pop("createdTime"))
-                _v.pop("owner", None)
-                if typ == ProjectObjType.DATASET:
-                    _v["meta"] = yaml.safe_load(_v["meta"])
-                versions.append(_v)
 
-            _m["latest_versions"] = versions
-            if typ == ProjectObjType.MODEL:
-                _m["files"] = self._fetch_model_files(_m["id"])
-            ret.append(_m)
-
-        return ret
+        return base

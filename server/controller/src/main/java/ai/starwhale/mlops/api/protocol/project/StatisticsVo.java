@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.project;
 
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,14 +24,19 @@ import lombok.Data;
 @Builder
 public class StatisticsVo {
 
+    @NotNull
     private Integer modelCounts;
 
+    @NotNull
     private Integer datasetCounts;
 
+    @NotNull
     private Integer runtimeCounts;
 
+    @NotNull
     private Integer memberCounts;
 
+    @NotNull
     private Integer evaluationCounts;
 
     public static StatisticsVo empty() {

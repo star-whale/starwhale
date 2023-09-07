@@ -203,12 +203,18 @@ public class DatasetService {
         });
     }
 
-    public List<DatasetViewVo> listDatasetVersionView(String projectUrl) {
+    public List<DatasetViewVo> listDatasetVersionView(
+            String projectUrl, boolean includeShared, boolean includeCurrentProject) {
         Long projectId = projectService.getProjectId(projectUrl);
-        var versions = datasetVersionMapper.listDatasetVersionViewByProject(projectId);
-        var shared = datasetVersionMapper.listDatasetVersionViewByShared(projectId);
-        var list = new ArrayList<>(viewEntityToVo(versions, false));
-        list.addAll(viewEntityToVo(shared, true));
+        var list = new ArrayList<DatasetViewVo>();
+        if (includeCurrentProject) {
+            var versions = datasetVersionMapper.listDatasetVersionViewByProject(projectId);
+            list.addAll(viewEntityToVo(versions, false));
+        }
+        if (includeShared) {
+            var shared = datasetVersionMapper.listDatasetVersionViewByShared(projectId);
+            list.addAll(viewEntityToVo(shared, true));
+        }
         return list;
     }
 

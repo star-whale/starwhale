@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -31,37 +32,45 @@ import org.springframework.validation.annotation.Validated;
 @Schema(description = "Runtime version object", title = "RuntimeVersion")
 public class RuntimeVersionVo implements Serializable {
 
+    @NotNull
     @JsonProperty("id")
     private String id;
 
+    @NotNull
     @JsonProperty("runtimeId")
     private String runtimeId;
 
+    @NotNull
     @JsonProperty("name")
     private String name;
 
     private List<String> tags;
 
+    @NotNull
     @JsonProperty("alias")
     private String alias;
 
+    @NotNull
     private Boolean latest;
 
     @JsonProperty("meta")
-    private Object meta;
+    private String meta;
 
+    @NotNull
     @JsonProperty("image")
     private String image;
 
     @JsonProperty("builtImage")
     private String builtImage;
 
+    @NotNull
     @JsonProperty("createdTime")
     private Long createdTime;
 
     @JsonProperty("owner")
     private UserVo owner;
 
+    @NotNull
     @JsonProperty("shared")
     private Integer shared;
 }

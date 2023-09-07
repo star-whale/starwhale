@@ -10,6 +10,7 @@ import { cn } from '../lib/utils'
 import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 import { useEventCallback } from '@starwhale/core'
 import React, { useEffect } from 'react'
+import { isString } from 'lodash'
 
 const Component = (props: NodeViewProps) => {
     const [, setEditing] = React.useState(true)
@@ -70,7 +71,7 @@ declare module '@tiptap/core' {
 export default Node.create({
     name: 'eval-select-panel',
     group: 'block',
-    draggable: false,
+    draggable: true,
     atom: true,
 
     addOptions() {
@@ -85,12 +86,13 @@ export default Node.create({
         return {
             state: {
                 default: null,
-                // renderHTML: (attributes) => {
-                //     return {
-                //         'data-state': JSON.stringify(attributes.state),
-                //     }
-                // },
-                // parseHTML: (element) => element.getAttribute('data-state'),
+                renderHTML: (attributes) => {
+                    // console.log(attributes.state)
+                    return {
+                        'data-state': isString(attributes.state) ? attributes.state : JSON.stringify(attributes.state),
+                    }
+                },
+                parseHTML: (element) => element.getAttribute('data-state'),
             },
         }
     },

@@ -20,20 +20,24 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "User object", title = "User")
+@Schema(description = "Role object", title = "Role")
 @Validated
 public class RoleVo {
 
+    @NotNull
     private String id;
 
+    @NotNull
     private String name;
 
+    @NotNull
     private String code;
 
     private String description;

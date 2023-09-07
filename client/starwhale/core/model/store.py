@@ -11,6 +11,7 @@ from starwhale.consts import (
 )
 from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
+from starwhale.base.models.model import File, Files
 from starwhale.base.uri.resource import ResourceType
 
 
@@ -47,11 +48,12 @@ class ModelStorage(BaseStorage):
         return self.hidden_sw_dir / RESOURCE_FILES_NAME
 
     @property
-    def resource_files(self) -> t.List[t.Dict[str, t.Any]]:
+    def resource_files(self) -> t.List[File]:
         if not self.resource_files_path.exists():
             return self.manifest.get("resources", [])
         else:
-            return load_yaml(self.resource_files_path)  # type: ignore
+            data = load_yaml(self.resource_files_path)
+            return Files.parse_obj(data).__root__
 
     @property
     def digest_path(self) -> Path:

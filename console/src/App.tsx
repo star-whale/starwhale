@@ -12,10 +12,7 @@ import { AuthProvider } from './api/Auth'
 import i18n from './i18n'
 import locales from '@starwhale/ui/i18n'
 import { NoneBackgroundPending } from '@/pages/Home/Pending'
-import { apiInit } from '@/api'
 import useGlobalState from './hooks/global'
-
-apiInit()
 
 const Routes = React.lazy(() => import('./routes'))
 const RoutesSimple = React.lazy(() => import('./routesSimple'))
@@ -39,7 +36,7 @@ export default function App({ simple = false }): any {
             <StyletronProvider value={engine}>
                 <BaseProvider theme={DeepTheme}>
                     <LocaleProvider locale={overrideLanguage}>
-                        <AuthProvider>
+                        <AuthProvider simple={simple}>
                             <ToasterContainer autoHideDuration={3000} />
                             <ConfirmCtxProvider>
                                 <SidebarContext.Provider value={sidebarData}>

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol;
 
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,8 +28,11 @@ public class ResponseMessage<T> {
     // todo
     // private String requestId = null;
 
+    @NotNull
     private String code;
+    @NotNull
     private String message;
+    @NotNull
     private T data;
 
     public ResponseMessage(String code, String message, T data) {

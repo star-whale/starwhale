@@ -113,11 +113,11 @@ class PipelineHandler(metaclass=ABCMeta):
 
         class MyPipeline(PipelineHandler):
 
-        @PipelineHandler.run(resources={"memory": 200 * 1024, "nvidia.com/gpu": 1}, replicas=4)
+        @PipelineHandler.run(resources={"memory": 200 * 1024 * 1024, "nvidia.com/gpu": 1}, replicas=4)
         def predict(self, data):
             ...
 
-        @PipelineHandler.run(resources={"memory": 200 * 1024})
+        @PipelineHandler.run(resources={"memory": 200 * 1024 * 1024})
         def evaluate(self, ppl_result: t.Iterator):
             ...
         ```
@@ -617,7 +617,7 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
     @evaluation.predict(
         resources={"nvidia.com/gpu": 1,
                 "cpu": {"request": 1, "limit": 2},
-                "mem": 200 * 1024},  # 200MB
+                "mem": 200 * 1024 * 1024},  # 200MB
         log_mode="plain",
     )
     def predict_with_resources(data):
