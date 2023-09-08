@@ -408,7 +408,7 @@ class CloudBundleModelMixin(CloudRequestMixed):
 
     def list_tags(self) -> t.List[str]:
         uri: Resource = self.uri  # type: ignore
-        return TagApi(uri.instance).list(uri).data().data
+        return TagApi(uri.instance).list(uri).response().data
 
     def add_tags(
         self, tags: t.List[str], ignore_errors: bool = False, force: bool = False

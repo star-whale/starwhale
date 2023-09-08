@@ -73,7 +73,7 @@ class Job:
                 JobApi(self.uri.instance)
                 .info(self.uri.project.name, self.uri.name)
                 .raise_on_error()
-                .data()
+                .response()
                 .data
             )
 
