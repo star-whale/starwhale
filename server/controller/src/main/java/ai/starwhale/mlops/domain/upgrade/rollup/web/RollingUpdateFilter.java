@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.upgrade.rollup.web;
 
+import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateController;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,10 @@ public class RollingUpdateFilter extends OncePerRequestFilter implements Rolling
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        if (request.getServletPath().contains(RollingUpdateController.STATUS_NOTIFY_PATH)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (!readyToServe) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             String message = "server is upgrading, web api are not ready now";

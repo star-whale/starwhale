@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("${sw.controller.api-prefix}")
 public class RollingUpdateController {
 
-    public static final String STATUS_NOTIFY_PATH = "/system/upgrade/instance/new/status";
+    public static final String STATUS_NOTIFY_PATH = "/system/upgrade/instance/status";
 
     private final List<RollingUpdateStatusListener> rollingUpdateStatusListeners;
 
@@ -45,16 +45,24 @@ public class RollingUpdateController {
         this.rollingUpdateStatusListeners = rollingUpdateStatusListeners;
     }
 
-    @Operation(summary = "Upgrade system version")
+    @Operation(summary = "instance status notify")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
             value = STATUS_NOTIFY_PATH,
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
-    public ResponseEntity<ResponseMessage<String>> newInstanceStatus(ServerInstanceStatus status) {
+    public ResponseEntity<ResponseMessage<String>> newInstanceStatus(ServerInstanceStatus status, InstanceType instanceType) {
         try {
-            for (var l : rollingUpdateStatusListeners) {
-                l.onNewInstanceStatus(status);
+            if (instanceType == InstanceType.NEW) {
+                for (var l : rollingUpdateStatusListeners) {
+                    l.onNewInstanceStatus(status);
+                }
+            } else if (instanceType == InstanceType.OLD) {
+                for (var l : rollingUpdateStatusListeners) {
+                    l.onOldInstanceStatus(status);
+                }
+            } else {
+                throw new IllegalArgumentException("unknown instance type");
             }
             return ResponseEntity.ok(Code.success.asResponse("old instance is ready to go down"));
         } catch (Exception e) {
@@ -62,5 +70,9 @@ public class RollingUpdateController {
             return ResponseEntity.ok(Code.internalServerError.asResponse("old instance is not ready to go down"));
         }
 
+    }
+
+    public enum InstanceType{
+        NEW, OLD
     }
 }

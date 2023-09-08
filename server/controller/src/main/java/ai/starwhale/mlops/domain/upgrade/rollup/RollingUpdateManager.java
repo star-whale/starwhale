@@ -114,7 +114,7 @@ public class RollingUpdateManager implements CommandLineRunner {
             } catch (Throwable e) {
                 log.error(
                         "the new instance failed to do staff related to rolling upgrade ,please do upgrade manually"
-                        );
+                );
                 restTemplate.postForEntity(
                         rollupNotifyAddress(),
                         null,
@@ -128,7 +128,7 @@ public class RollingUpdateManager implements CommandLineRunner {
                 );
                 System.exit(1);
             }
-            try{
+            try {
                 restTemplate.postForEntity(
                         rollupNotifyAddress(),
                         null,
@@ -140,7 +140,7 @@ public class RollingUpdateManager implements CommandLineRunner {
                                 String.format("Bearer %s", superToken)
                         )
                 );
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.warn("there is something wrong with old server instance, but the new server still goes up");
             }
             for (var l : rollingUpdateStatusListeners) {
@@ -152,6 +152,7 @@ public class RollingUpdateManager implements CommandLineRunner {
 
     @NotNull
     private String rollupNotifyAddress() {
-        return oldInstanceAddress + apiPrefix + RollingUpdateController.STATUS_NOTIFY_PATH+ "?status={status}&Authorization={Authorization}";
+        return oldInstanceAddress + apiPrefix + RollingUpdateController.STATUS_NOTIFY_PATH
+                + "?status={status}&Authorization={Authorization}";
     }
 }
