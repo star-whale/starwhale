@@ -32,7 +32,7 @@ public abstract class MySqlContainerHolder {
                 .withUrlParam("useUnicode", "true")
                 .withUrlParam("characterEncoding", "UTF-8")
                 .withUrlParam("createDatabaseIfNotExist", "true")
-                //.withUrlParam("allowMultiQueries", "true")
+                .withUrlParam("allowMultiQueries", "true")
                 .withUrlParam("useJDBCCompliantTimezoneShift", "true")
                 .withUrlParam("serverTimezone", "UTC")
                 .withUrlParam("useLegacyDatetimeCode", "false")

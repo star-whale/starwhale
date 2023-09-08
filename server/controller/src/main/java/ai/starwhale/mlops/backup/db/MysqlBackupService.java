@@ -311,7 +311,7 @@ public class MysqlBackupService {
                 int endIndex = sql.indexOf(SQL_END_PATTERN);
                 String executable = sql.substring(startIndex, endIndex).trim();
                 log.debug("adding executable SQL chunk to batch:{}", executable);
-                statement.addBatch(executable);
+                statement.addBatch(simplifySql(executable));
                 sql = sql.substring(endIndex + 1);
             }
             statement.addBatch("SET FOREIGN_KEY_CHECKS = 1");
@@ -320,5 +320,20 @@ public class MysqlBackupService {
                     results.length, Arrays.toString(results));
             return true;
         }
+    }
+
+    public static String simplifySql(String sql) {
+        String[] lines = sql.split("\n");
+        StringBuilder sb = new StringBuilder();
+
+        for (String line : lines) {
+            // remove the comment lines
+            if (!line.startsWith("--")) {
+                // remove the semicolon(;) at the end of the line
+                sb.append(line.endsWith(";") ? line.substring(0, line.lastIndexOf(";")) : line).append("\n");
+            }
+        }
+
+        return sb.toString();
     }
 }
