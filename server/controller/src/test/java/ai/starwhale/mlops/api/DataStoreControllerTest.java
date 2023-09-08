@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -275,9 +276,26 @@ public class DataStoreControllerTest {
                 }));
             }
         };
-        assertThrows(SwValidationException.class, () -> this.controller.scanTable(req));
-        req.setEncodeWithType(true);
+        req.setEncodeWithType(false);
         var resp = this.controller.scanTable(req);
+        assertThat("t1", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat("t1", Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(), notNullValue());
+        assertThat("t1",
+                Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                is(List.of(Map.of("k", "00000000", "b", "1"), Map.of("k", "00000001", "b", "00000002"))));
+        assertThat("test",
+                Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("0", "1", "4"))
+                                .build(),
+                        "b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32", "STRING"))
+                                .columnValueHints(List.of("1", "2"))
+                                .build())));
+
+        req.setEncodeWithType(true);
+        resp = this.controller.scanTable(req);
         assertThat("t1", resp.getStatusCode().is2xxSuccessful(), is(true));
         assertThat("t1",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
