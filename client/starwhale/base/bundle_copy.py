@@ -312,7 +312,7 @@ class BundleCopy(CloudRequestMixed):
         if not rc.instance.is_cloud:
             raise RuntimeError("Only accept remote resource to fetch tags")
 
-        return TagApi(rc.instance).list(rc).data().data
+        return TagApi(rc.instance).list(rc).response().data
 
     def _do_upload_tags_to_server(self, rc: Resource, tags: t.List[str]) -> None:
         if not rc.instance.is_cloud:

@@ -278,7 +278,7 @@ class CloudJob(Job, CloudRequestMixed):
             JobApi(project_uri.instance)
             .list(project_uri.name, page, size)
             .raise_on_error()
-            .data()
+            .response()
         )
         # make mypy happy
         ret: t.List[JobVo] = r.data.list or []
@@ -289,7 +289,7 @@ class CloudJob(Job, CloudRequestMixed):
             JobApi(self.uri.instance)
             .info(self.uri.project.name, self.uri.name)
             .raise_on_error()
-            .data()
+            .response()
             .data
         )
 
@@ -298,6 +298,6 @@ class CloudJob(Job, CloudRequestMixed):
             JobApi(self.uri.instance)
             .tasks(self.uri.project.name, self.uri.name)
             .raise_on_error()
-            .data()
+            .response()
             .data.list
         )

@@ -15,38 +15,36 @@ T = typing.TypeVar("T")
 RespType = typing.TypeVar("RespType", bound=BaseModel)
 
 
+class ClientException(Exception):
+    ...
+
+
 class TypeWrapper(typing.Generic[T]):
     def __init__(self, type_: typing.Type[RespType], data: typing.Any) -> None:
         self._type = type_
         self._data = data
         self._raise_on_error = False
+        self._base = parse_obj_as(ResponseCode, data)
+        self._response: T | None = None
+        if self.is_success():
+            self._response = parse_obj_as(self._type, self._data)  # type: ignore
+        else:
+            console.debug(f"request failed, response msg: {self._base.message}")
 
-    def data(self) -> T:
-        base = self._parse_base()
-        if not self._raise_on_error and not self._is_success(base):
-            console.debug(base.message)
-            return base  # type: ignore[return-value]
-
-        return parse_obj_as(self._type, self._data)  # type: ignore[return-value]
+    def response(self) -> T:
+        if self._response is None:
+            raise ClientException(self._base.message)
+        return self._response
 
     def raw(self) -> typing.Any:
         return self._data
 
-    def _parse_base(self) -> ResponseCode:
-        return parse_obj_as(ResponseCode, self.raw())
-
     def is_success(self) -> bool:
-        return self._is_success(self._parse_base())
-
-    @staticmethod
-    def _is_success(base: ResponseCode) -> bool:
-        return base.code == "success"
+        return self._base.code == "success"
 
     def raise_on_error(self) -> TypeWrapper[T]:
-        self._raise_on_error = True
-        parsed = self._parse_base()
-        if not self._is_success(parsed):
-            raise Exception(parsed.message)
+        if not self.is_success():
+            raise ClientException(self._base.message)
         return self
 
 

@@ -152,15 +152,15 @@ class StandaloneProject(Project):
 class CloudProject(Project, CloudRequestMixed):
     def create(self) -> t.Tuple[bool, str]:
         resp = ProjectApi(self.uri.instance).create(self.name)
-        return resp.is_success(), resp.data().message
+        return resp.is_success(), resp.response().message
 
     def recover(self) -> t.Tuple[bool, str]:
         resp = ProjectApi(self.uri.instance).recover(self.name)
-        return resp.is_success(), resp.data().message
+        return resp.is_success(), resp.response().message
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         resp = ProjectApi(self.uri.instance).delete(self.name)
-        return resp.is_success(), resp.data().message
+        return resp.is_success(), resp.response().message
 
     @classmethod
     def list(
@@ -174,7 +174,10 @@ class CloudProject(Project, CloudRequestMixed):
         from starwhale.base.client.api.project import ProjectApi
 
         resp = (
-            ProjectApi(uri).list(page_num=page, page_size=size).raise_on_error().data()
+            ProjectApi(uri)
+            .list(page_num=page, page_size=size)
+            .raise_on_error()
+            .response()
         )
 
         projects = []
@@ -193,7 +196,7 @@ class CloudProject(Project, CloudRequestMixed):
 
     @ignore_error({})
     def info(self) -> t.Dict[str, t.Any]:
-        r = ProjectApi(self.uri.instance).get(self.name).data().data
+        r = ProjectApi(self.uri.instance).get(self.name).response().data
         # TODO: add more project details
         base: t.Dict[str, t.Any] = {
             "name": self.name,
