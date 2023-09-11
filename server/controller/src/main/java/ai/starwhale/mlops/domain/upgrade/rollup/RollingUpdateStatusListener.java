@@ -37,6 +37,7 @@ public interface RollingUpdateStatusListener {
      * when this method is called, the current instance is considered to be an old instance
      * which needs to be replaced
      * The old instance shall do the corresponding things to make sure service works as expected
+     * The implementation for this method shall be idempotent
      *
      * @param status the status for the new instance
      */
@@ -45,6 +46,7 @@ public interface RollingUpdateStatusListener {
     /**
      * when this method is called, the current instance is considered to be a new instance
      * which is ready to take over the old one
+     * The implementation for this method shall be idempotent
      *
      * @param status the status for the old instace
      */

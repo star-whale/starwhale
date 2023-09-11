@@ -18,14 +18,14 @@
 # This script is used to roll up the controller server
 
 set -x
-CONTROLLER_SERVER_ADDRESS_NEW="http://localhost:8082"
-CONTROLLER_SERVER_ADDRESS_OLD="http://localhost:8083"
-echo "Please Confirm the server address:\n the new Instance is $CONTROLLER_SERVER_ADDRESS_NEW, \n the old Instance is: $CONTROLLER_SERVER_ADDRESS_OLD"
+CONTROLLER_SERVER_ADDRESS_NEW="http://localhost:8083"
+CONTROLLER_SERVER_ADDRESS_OLD="http://localhost:8082"
+printf "Please Confirm the server address:\n The new Instance is %s, \n The old Instance is: %s \n" $CONTROLLER_SERVER_ADDRESS_NEW $CONTROLLER_SERVER_ADDRESS_OLD
 read -p "Please confirm the server address y/n: " CONFIRM_SERVER_ADDRESS
 # equals ignore case
 CONFIRM_SERVER_ADDRESS=$(echo "$CONFIRM_SERVER_ADDRESS" | tr '[:upper:]' '[:lower:]')
 if [ "$CONFIRM_SERVER_ADDRESS" != "y" ]; then
-  echo "Please confirm the server address"
+  echo "Please edit this script to confirm the server addresses"
   exit 1
 fi
 echo "Please copy the token from the console of the new server"
@@ -36,10 +36,11 @@ status_notify() {
   if [ "$1" = "$CONTROLLER_SERVER_ADDRESS_NEW" ]; then
     INSTANCE_TYPE="OLD"
   fi
-  response_code=$(curl -X GET "$1/api/v1/system/upgrade/instance/status" \
+  response_code=$(curl -X POST "$1/api/v1/system/upgrade/instance/status" \
                        -H "Authorization: $AUTH_TOKE" \
-                       -F "status=$2&instanceType=$INSTANCE_TYPE" | jq -r '.data.code')
-  if [ "$response_code" = "Success" ]; then
+                       -F "status=$2" \
+                       -F "instanceType=$INSTANCE_TYPE"| jq -r '.code')
+  if [ "$response_code" = "success" ]; then
     echo "status_notify success"
   else
     echo "status_notify failed, please check it manually"
@@ -65,7 +66,7 @@ old_down() {
 }
 
 # start the new server automatically
-if -z "$1"; then
+if [ -z "$1" ] ; then
   new_ready_up && old_ready_down && new_up && old_down
 else
 # start the new server manually

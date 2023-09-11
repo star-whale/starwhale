@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.upgrade.rollup.web;
 
+import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateController;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
 import java.io.IOException;
@@ -34,10 +35,21 @@ public class RollingUpdateFilter extends OncePerRequestFilter implements Rolling
 
     private volatile boolean readyToServe;
 
+    private final ControllerProperties controllerProperties;
+
+    public RollingUpdateFilter(ControllerProperties controllerProperties) {
+        this.controllerProperties = controllerProperties;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        if (request.getServletPath().contains(RollingUpdateController.STATUS_NOTIFY_PATH)) {
+        String apiPrefix = controllerProperties.getApiPrefix();
+        if (request.getServletPath().contains(apiPrefix + RollingUpdateController.STATUS_NOTIFY_PATH)
+                || request.getServletPath().contains(apiPrefix + "/login")
+                || request.getServletPath().contains(apiPrefix + "/logout")
+                || request.getServletPath().contains(apiPrefix + "/user/current")
+        ) {
             filterChain.doFilter(request, response);
             return;
         }

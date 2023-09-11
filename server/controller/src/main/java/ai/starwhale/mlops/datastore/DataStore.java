@@ -157,7 +157,8 @@ public class DataStore implements RollingUpdateStatusListener {
                 }
             }
         }
-        // this would cause bugs when updateHandler has Integer.MAX_VALUE elements, just assume that would never happen
+        // this line would fail and cause bugs when updateHandler has Integer.MAX_VALUE elements,
+        // but let's assume that would never happen
         this.updateHandle.offer(new Object());
         var table = this.getTable(tableName, true, true);
         //noinspection ConstantConditions
@@ -609,38 +610,36 @@ public class DataStore implements RollingUpdateStatusListener {
                     updateHandle.wait(); // wait for all in process update operations done
                 }
             }
-            try {
-                this.dumpThread.doDumpTables();
-            } catch (IOException e) {
-                log.error("failed to save table", e);
-            }
+            this.flush();
         }
     }
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
-        if (status == ServerInstanceStatus.READY_DOWN) {
-            this.walManager = new WalManager(
-                    this.storageAccessService,
-                    walFileSize,
-                    walMaxFileSize,
-                    dataRootPath + "wal/",
-                    ossMaxAttempts
-            );
-            var it = this.walManager.readAll();
-            log.info("Start to load wal log...");
-            while (it.hasNext()) {
-                var entry = it.next();
-                var table = this.getTable(entry.getTableName(), true, true);
-                log.info("Loading wal log for table:{}.", entry.getTableName());
-                //noinspection ConstantConditions
-                table.updateFromWal(entry);
-                if (table.getFirstWalLogId() >= 0) {
-                    this.dirtyTables.put(table, "");
+        synchronized (dumpThread){
+            if (status == ServerInstanceStatus.READY_DOWN && null == this.walManager) {
+                this.walManager = new WalManager(
+                        this.storageAccessService,
+                        walFileSize,
+                        walMaxFileSize,
+                        dataRootPath + "wal/",
+                        ossMaxAttempts
+                );
+                var it = this.walManager.readAll();
+                log.info("Start to load wal log...");
+                while (it.hasNext()) {
+                    var entry = it.next();
+                    var table = this.getTable(entry.getTableName(), true, true);
+                    log.info("Loading wal log for table:{}.", entry.getTableName());
+                    //noinspection ConstantConditions
+                    table.updateFromWal(entry);
+                    if (table.getFirstWalLogId() >= 0) {
+                        this.dirtyTables.put(table, "");
+                    }
                 }
+                log.info("Finished load wal log...");
+                this.dumpThread.start();
             }
-            log.info("Finished load wal log...");
-            this.dumpThread.start();
         }
     }
 
@@ -658,9 +657,12 @@ public class DataStore implements RollingUpdateStatusListener {
         public void run() {
             while (!this.terminated) {
                 try {
-                    if (doDumpTables()) {
-                        return;
+                    while (saveOneTable(minNoUpdatePeriodMillis)) {
+                        if (this.terminated) {
+                            return;
+                        }
                     }
+                    clearWalLogFiles();
                 } catch (Throwable t) {
                     log.error("failed to save table", t);
                 }
@@ -675,16 +677,6 @@ public class DataStore implements RollingUpdateStatusListener {
                     break;
                 }
             }
-        }
-
-        private synchronized boolean doDumpTables() throws IOException {
-            while (saveOneTable(minNoUpdatePeriodMillis)) {
-                if (this.terminated) {
-                    return true;
-                }
-            }
-            clearWalLogFiles();
-            return false;
         }
 
         public void terminate() {
