@@ -85,7 +85,7 @@ public interface ModelVersionMapper {
             "   and j.owner_id = #{userId}", // jobs in current user
             "   and j.project_id = #{projectId}", // jobs in current project
             "group by v.id",
-            "order by j.id desc",
+            "order by job_id desc",
             "limit #{limit}", // recently
             "</script>"
     })
