@@ -422,6 +422,14 @@ const project = {
         en: 'Oldest',
         zh: '最老的',
     },
+    'project.filter.only': {
+        zh: '只看“我的项目”',
+        en: 'Only show "My Projects"',
+    },
+    'project.filter.only.tooltip': {
+        zh: '我的项目：您作为项目成员参与的项目',
+        en: 'My Projects: Projects you are involved in as a member',
+    },
 }
 
 const job = {
