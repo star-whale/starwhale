@@ -189,7 +189,7 @@ public class DatasetService {
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<DatasetEntity> entities = datasetMapper.list(projectId, query.getNamePrefix(), userId, null);
+        List<DatasetEntity> entities = datasetMapper.list(projectId, query.getName(), userId, null);
 
         return PageUtil.toPageInfo(entities, ds -> {
             DatasetVo vo = datasetVoConverter.convert(ds);
