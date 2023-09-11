@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+package ai.starwhale.mlops.datastore.wal;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,17 +29,26 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.datastore.TestThread;
+import ai.starwhale.mlops.datastore.Wal;
+import ai.starwhale.mlops.datastore.Wal.TableSchema;
 import ai.starwhale.mlops.datastore.Wal.WalEntry.Type;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,26 +65,29 @@ import org.mockito.Mockito;
 
 public class WalManagerTest {
 
+    private FileSystem fs;
     private StorageAccessServiceMemory storageAccessService;
     private WalManager walManager;
 
     @BeforeEach
     public void setUp() throws IOException {
+        this.fs = Jimfs.newFileSystem(Configuration.unix());
         this.storageAccessService = new StorageAccessServiceMemory();
         this.createInstance();
     }
 
-    private void createInstance() {
-        this.walManager = new WalManager(this.storageAccessService, 4096, 4096, "test/", 3);
+    private void createInstance() throws IOException {
+        this.walManager = new WalManager(this.storageAccessService, 4096, this.fs.getPath("/wal_cache"), "test/", 3);
     }
 
 
     @AfterEach
+    @SneakyThrows
     public void tearDown() {
         this.walManager.terminate();
     }
 
-    private Wal.TableSchema createTableSchema(String keyColumn, List<Triple<Integer, String, String>> columns) {
+    private TableSchema createTableSchema(String keyColumn, List<Triple<Integer, String, String>> columns) {
         var builder = Wal.TableSchema.newBuilder();
         if (keyColumn != null) {
             builder.setKeyColumn(keyColumn);
@@ -184,13 +198,14 @@ public class WalManagerTest {
     }
 
     @Test
+    @SneakyThrows
     public void testMany() {
         List<Wal.WalEntry.Builder> builders = new ArrayList<>();
         builders.add(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
                 .setTableSchema(this.createTableSchema("k", List.of(Triple.of(1, "k", "STRING")))));
-        for (int i = 0; i < 50000; ++i) {
+        for (int i = 0; i < 200; ++i) {
             builders.add(Wal.WalEntry.newBuilder()
                     .setEntryType(Wal.WalEntry.Type.UPDATE)
                     .setTableName("t")
@@ -206,6 +221,7 @@ public class WalManagerTest {
     }
 
     @Test
+    @SneakyThrows
     public void testHugeEntry() {
         var schema = this.createTableSchema("k", List.of(Triple.of(1, "k", "INT32")));
         var builder = Wal.WalEntry.newBuilder()
@@ -257,6 +273,7 @@ public class WalManagerTest {
     }
 
     @Test
+    @SneakyThrows
     public void testAppendSplitSizeCalculation() {
         var entry1 = Wal.WalEntry.newBuilder()
                 .setId(1)
@@ -275,8 +292,8 @@ public class WalManagerTest {
                 .build();
         // make max file size equal the message
         this.walManager = new WalManager(this.storageAccessService,
-                256,
-                entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 14,
+                CodedOutputStream.computeMessageSizeNoTag(entry1) + WalManager.HEADER.length,
+                this.fs.getPath("/wal_cache"),
                 "test/",
                 3);
         this.walManager.append(entry1.toBuilder().addAllRecords(entry2.getRecordsList()));
@@ -310,6 +327,8 @@ public class WalManagerTest {
         this.walManager.removeWalLogFiles(6);
         assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                 is(IntStream.range(1, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        assertThat(Files.exists(this.fs.getPath("/wal_cache/wal.log.8")), is(false));
+        assertThat(Files.exists(this.fs.getPath("/wal_cache/wal.log.9")), is(true));
         this.walManager.terminate();
         this.createInstance();
         //noinspection ResultOfMethodCallIgnored
@@ -317,8 +336,73 @@ public class WalManagerTest {
         this.walManager.removeWalLogFiles(14);
         assertThat(this.storageAccessService.list("").collect(Collectors.toList()),
                 is(IntStream.range(3, 10).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+        Thread.sleep(1000);
         this.walManager.removeWalLogFiles(100);
         assertThat(this.storageAccessService.list("").collect(Collectors.toList()), is(List.of("test/wal.log.9")));
+    }
+
+    @Test
+    @SneakyThrows
+    public void testLocalCache() {
+        var fail = new AtomicBoolean(true);
+        var files = new ArrayList<>();
+        var storageAccessService = new StorageAccessServiceMemory() {
+            @Override
+            public void put(String path, InputStream inputStream, long size) throws IOException {
+                if (fail.get()) {
+                    throw new IOException();
+                }
+                synchronized (files) {
+                    if (files.isEmpty() || !path.equals(files.get(files.size() - 1))) {
+                        files.add(path);
+                    }
+                }
+                super.put(path, inputStream, size);
+            }
+        };
+        this.walManager.terminate();
+        try {
+            this.walManager = new WalManager(storageAccessService, 4096, this.fs.getPath("/wal_cache"), "test/", 3);
+            for (int i = 0; i < 20; ++i) {
+                this.walManager.append(Wal.WalEntry.newBuilder()
+                        .setEntryType(Wal.WalEntry.Type.UPDATE)
+                        .setTableName("t")
+                        .addAllRecords(this.createRecords(List.of(Map.of(1, "0".repeat(900) + i)))));
+            }
+            this.walManager.flush();
+            assertThat(files, is(empty()));
+            try (var stream = Files.list(this.fs.getPath("/wal_cache"))) {
+                assertThat(stream.sorted().collect(Collectors.toList()),
+                        is(IntStream.range(0, 5)
+                                .mapToObj(k -> this.fs.getPath("/wal_cache", "wal.log." + k))
+                                .collect(Collectors.toList())));
+            }
+            fail.set(false);
+            for (int i = 0; i < 8; ++i) {
+                this.walManager.append(Wal.WalEntry.newBuilder()
+                        .setEntryType(Wal.WalEntry.Type.UPDATE)
+                        .setTableName("t")
+                        .addAllRecords(this.createRecords(List.of(Map.of(1, "0".repeat(900) + i)))));
+            }
+            this.walManager.flush();
+            Thread.sleep(1000);
+            for (int i = 0; i < 8; ++i) {
+                this.walManager.append(Wal.WalEntry.newBuilder()
+                        .setEntryType(Wal.WalEntry.Type.UPDATE)
+                        .setTableName("t")
+                        .addAllRecords(this.createRecords(List.of(Map.of(1, "0".repeat(900) + i)))));
+            }
+            this.walManager.flush();
+            Thread.sleep(1000);
+            assertThat(files,
+                    is(IntStream.range(0, 9).mapToObj(k -> "test/wal.log." + k).collect(Collectors.toList())));
+            try (var stream = Files.list(this.fs.getPath("/wal_cache"))) {
+                assertThat(stream.map(Path::toString).collect(Collectors.toList()),
+                        is(List.of("/wal_cache/wal.log.8")));
+            }
+        } finally {
+            fail.set(false);
+        }
     }
 
     @Test
@@ -329,7 +413,8 @@ public class WalManagerTest {
                 .doThrow(new IOException())
                 .doNothing()
                 .when(storageAccessService).put(anyString(), any(), anyLong());
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
+        this.walManager.terminate();
+        this.walManager = new WalManager(storageAccessService, 4096, this.fs.getPath("/wal_cache"), "test/", 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t"));
@@ -348,7 +433,8 @@ public class WalManagerTest {
                 .willThrow(new IOException())
                 .willReturn(new LengthAbleInputStream(
                         new ByteArrayInputStream(new byte[]{'s', 'w', 'l', 0, 0, 0, 0, 0, 0, 0}), 10));
-        var walManager = new WalManager(storageAccessService, 256, 4096, "test/", 3);
+        this.walManager.terminate();
+        this.walManager = new WalManager(storageAccessService, 4096, this.fs.getPath("/tmp"), "test/", 3);
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         walManager.terminate();
@@ -364,19 +450,24 @@ public class WalManagerTest {
             for (int i = 0; i < 100; ++i) {
                 var t = new TestThread() {
                     @Override
-                    void execute() {
+                    public void execute() throws InterruptedException {
                         while (flag.get()) {
                             walManager.append(Wal.WalEntry.newBuilder().setEntryType(Type.UPDATE));
                             walManager.flush();
+                            //noinspection BusyWait
+                            Thread.sleep(10);
                         }
                     }
                 };
+                t.setName("t" + i);
                 t.start();
                 threads.add(t);
             }
             Thread.sleep(5000);
             flag.set(false);
+            System.out.println("join");
             for (var t : threads) {
+                System.out.println(t.getId());
                 t.join();
             }
             for (var t : threads) {

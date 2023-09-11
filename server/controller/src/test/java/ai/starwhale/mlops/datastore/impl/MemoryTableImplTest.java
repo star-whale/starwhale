@@ -33,17 +33,20 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
-import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
 import ai.starwhale.mlops.datastore.type.TupleValue;
+import ai.starwhale.mlops.datastore.wal.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -53,6 +56,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -75,18 +79,22 @@ public class MemoryTableImplTest {
                         keepNone));
     }
 
+    private FileSystem fs;
     private WalManager walManager;
     private StorageAccessService storageAccessService;
 
     @BeforeEach
     public void setUp() throws IOException {
+        this.fs = Jimfs.newFileSystem(Configuration.unix());
         this.storageAccessService = new StorageAccessServiceMemory();
-        this.walManager = new WalManager(this.storageAccessService, 256, 4096, "wal/", 3);
+        this.walManager = new WalManager(this.storageAccessService, 4096, this.fs.getPath("/wal_cache"), "wal/", 3);
     }
 
     @AfterEach
+    @SneakyThrows
     public void tearDown() {
-        walManager.terminate();
+        this.walManager.terminate();
+        this.fs.close();
     }
 
     public MemoryTableImpl createInstance(String name) {
@@ -771,8 +779,8 @@ public class MemoryTableImplTest {
             this.memoryTable.update(desc, records);
             MemoryTableImplTest.this.walManager.terminate();
             MemoryTableImplTest.this.walManager = new WalManager(MemoryTableImplTest.this.storageAccessService,
-                    256,
                     4096,
+                    MemoryTableImplTest.this.fs.getPath("/wal_cache"),
                     "wal/",
                     3);
             this.memoryTable = createInstance("test");

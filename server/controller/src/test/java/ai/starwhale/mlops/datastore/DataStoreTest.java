@@ -34,9 +34,12 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -54,6 +57,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Builder.Default;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,15 +65,14 @@ import org.slf4j.LoggerFactory;
 
 public class DataStoreTest {
 
-    private DataStore dataStore;
+    private FileSystem fs;
+    private transient DataStore dataStore;
 
     private StorageAccessService storageAccessService;
 
     @Builder
     private static class DataStoreParams {
 
-        @Default
-        int walFileSize = 256;
         @Default
         int walMaxFileSize = 4096;
         @Default
@@ -92,16 +95,18 @@ public class DataStoreTest {
 
     @BeforeEach
     public void setUp() throws IOException {
+        this.fs = Jimfs.newFileSystem(Configuration.unix());
         ((Logger) LoggerFactory.getLogger("org.apache.parquet")).setLevel(Level.ERROR);
         ((Logger) LoggerFactory.getLogger("org.apache.hadoop")).setLevel(Level.ERROR);
         this.storageAccessService = new StorageAccessServiceMemory();
         this.createDateStore(DataStoreParams.builder().build());
     }
 
+    @SneakyThrows
     private void createDateStore(DataStoreParams params) {
         this.dataStore = new DataStore(this.storageAccessService,
-                params.walFileSize,
                 params.walMaxFileSize,
+                this.fs.getPath("/wal_cache"),
                 params.ossMaxAttempts,
                 params.dataRootPath,
                 params.dumpInterval,
@@ -114,8 +119,10 @@ public class DataStoreTest {
     }
 
     @AfterEach
+    @SneakyThrows
     public void tearDown() {
         this.dataStore.terminate();
+        this.fs.close();
     }
 
     @Test
@@ -361,7 +368,6 @@ public class DataStoreTest {
         assertThat("typed", recordList.getColumnSchemaMap(), notNullValue());
         assertThat("typed", recordList.getRecords(), is(List.of(Map.of("k", "00000000"), Map.of("k", "0"))));
 
-
         recordList = this.dataStore.query(req.encodeWithType(true).build());
         assertThat("mixed", recordList.getColumnSchemaMap(), nullValue());
         assertThat("test",
@@ -394,7 +400,7 @@ public class DataStoreTest {
         }
 
         var encodeString = new EncodeString();
-        var testParams = new boolean[] {true, false, true, false, true, false};
+        var testParams = new boolean[]{true, false, true, false, true, false};
         for (boolean rawResult : testParams) {
             var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                     .tableName("t1")
@@ -806,7 +812,6 @@ public class DataStoreTest {
     public void testSoftReferences() throws Exception {
         this.dataStore.terminate();
         this.createDateStore(DataStoreParams.builder()
-                .walFileSize(65536)
                 .walMaxFileSize(65536)
                 .dumpInterval("1s")
                 .minNoUpdatePeriod("1ms")
@@ -856,7 +861,6 @@ public class DataStoreTest {
         // restart the datastore
         this.dataStore.terminate();
         this.createDateStore(DataStoreParams.builder()
-                .walFileSize(65536)
                 .walMaxFileSize(65536)
                 .build());
         assertThat(this.dataStore.hasDirtyTables(), is(true));
@@ -891,7 +895,6 @@ public class DataStoreTest {
     public void testMultiThreads() throws Throwable {
         this.dataStore.terminate();
         this.createDateStore(DataStoreParams.builder()
-                .walFileSize(65536)
                 .walMaxFileSize(65536 * 1024)
                 .build());
 
@@ -1067,6 +1070,7 @@ public class DataStoreTest {
         }
         stopRestart.set(true);
         restartThread.join();
+        restartThread.checkException();
         for (int i = 0; i < 20; ++i) {
             var result = new ArrayList<String>();
             String key = "";

@@ -48,13 +48,16 @@ import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
-import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.datastore.exporter.RecordsStreamingExporter;
+import ai.starwhale.mlops.datastore.wal.WalManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import brave.internal.collect.Lists;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,6 +67,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -74,17 +79,21 @@ import org.mockito.Mockito;
 
 public class DataStoreControllerTest {
 
+    private FileSystem fs;
+
     private DataStoreController controller;
 
     @BeforeEach
+    @SneakyThrows
     public void setUp() {
+        this.fs = Jimfs.newFileSystem(Configuration.unix());
         this.controller = new DataStoreController();
         var walManager = Mockito.mock(WalManager.class);
         given(walManager.readAll()).willReturn(Collections.emptyIterator());
         this.controller.setDataStore(
                 new DataStore(new StorageAccessServiceMemory(),
                         65536,
-                        65536,
+                        this.fs.getPath("/wal_cache"),
                         3,
                         "",
                         "1h",
@@ -95,6 +104,12 @@ public class DataStoreControllerTest {
                         1000)
                         .start()
         );
+    }
+
+    @AfterEach
+    @SneakyThrows
+    public void tearDown() {
+        this.fs.close();
     }
 
     @Test
