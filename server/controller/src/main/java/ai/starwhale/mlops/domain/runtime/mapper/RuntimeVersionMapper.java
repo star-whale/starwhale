@@ -116,28 +116,21 @@ public interface RuntimeVersionMapper {
     List<RuntimeVersionViewEntity> listRuntimeVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select({"<script>",
-            "select ",
-            "   id, MAX(job_id) as job_id, user_name, project_name, runtime_name, runtime_id,",
-            "   version_order, version_name, shared, created_time, modified_time",
-            "from(",
-            "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
-            "   from runtime_version as v",
-            "   inner join runtime_info as b on b.id = v.runtime_id",
-            "   inner join job_info as j on v.id = j.runtime_version_id",
-            "   inner join project_info as p on p.id = b.project_id",
-            "   inner join user_info as u on u.id = b.owner_id",
-            "   where v.runtime_id = b.id",
-            "       and (b.project_id = #{projectId} or (b.project_id != #{projectId} and v.shared = 1))",
-            "       and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'",
-            "       and b.deleted_time = 0",
-            "       and j.owner_id = #{userId}", // jobs in current user
-            "       and j.project_id = #{projectId}", // jobs in current project
-            "   order by j.id desc",
-            "   limit 100", // recently jobs
-            ") as tmp",
+            "select " + VERSION_VIEW_COLUMNS + ", MAX(j.id) as job_id",
+            "from runtime_version as v",
+            "inner join runtime_info as b on b.id = v.runtime_id",
+            "inner join job_info as j on v.id = j.runtime_version_id",
+            "inner join project_info as p on p.id = b.project_id",
+            "inner join user_info as u on u.id = b.owner_id",
+            "where",
+            "   (b.project_id = #{projectId} or (b.project_id != #{projectId} and v.shared = 1))",
+            "   and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'",
+            "   and b.deleted_time = 0",
+            "   and j.owner_id = #{userId}", // jobs in current user
+            "   and j.project_id = #{projectId}", // jobs in current project
             "group by id",
             "order by job_id desc",
-            " limit #{limit};",
+            "limit #{limit}", // recently
             "</script>"
     })
     List<RuntimeVersionViewEntity> listRuntimeVersionsByUserRecentlyUsed(

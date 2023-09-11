@@ -72,28 +72,21 @@ public interface ModelVersionMapper {
     List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select({"<script>",
-            "select ",
-            "   id, MAX(job_id) as job_id, user_name, project_name, model_name, model_id,",
-            "   version_order, version_name, shared, created_time, modified_time",
-            "from(",
-            "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
-            "   from model_version as v",
-            "   inner join model_info as m on m.id = v.model_id",
-            "   inner join job_info as j on j.model_version_id = v.id",
-            "   inner join project_info as p on p.id = m.project_id",
-            "   inner join user_info as u on u.id = m.owner_id",
-            "   where",
+            "select " + VERSION_VIEW_COLUMNS + ", MAX(j.id) as job_id",
+            "from model_version as v",
+            "inner join model_info as m on m.id = v.model_id",
+            "inner join job_info as j on j.model_version_id = v.id",
+            "inner join project_info as p on p.id = m.project_id",
+            "inner join user_info as u on u.id = m.owner_id",
+            "where",
             // models in current project or other project but is shared
-            "       (m.project_id = #{projectId} or (m.project_id != #{projectId} and v.shared = 1))",
-            "       and m.deleted_time = 0",
-            "       and j.owner_id = #{userId}", // jobs in current user
-            "       and j.project_id = #{projectId}", // jobs in current project
-            "   order by j.id desc",
-            "   limit 100", // recently jobs
-            ") as tmp",
-            "group by id",
-            "order by job_id desc",
-            "limit #{limit};",
+            "   (m.project_id = #{projectId} or (m.project_id != #{projectId} and v.shared = 1))",
+            "   and m.deleted_time = 0",
+            "   and j.owner_id = #{userId}", // jobs in current user
+            "   and j.project_id = #{projectId}", // jobs in current project
+            "group by v.id",
+            "order by j.id desc",
+            "limit #{limit}", // recently
             "</script>"
     })
     List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsed(

@@ -122,28 +122,21 @@ public interface DatasetVersionMapper {
     List<DatasetVersionViewEntity> listDatasetVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select({"<script>",
-            "select ",
-            "   id, MAX(job_id) as job_id, user_name, project_name, dataset_name, dataset_id,",
-            "   version_order, version_name, shared, created_time, modified_time",
-            "from(",
-            "   select ", VERSION_VIEW_COLUMNS, ", j.id as job_id",
-            "   from dataset_version as v",
-            "   inner join dataset_info as b on b.id = v.dataset_id ",
-            "   inner join project_info as p on p.id = b.project_id",
-            "   inner join user_info as u on u.id = b.owner_id",
-            "   inner join job_dataset_version_rel rel on rel.dataset_version_id = v.id",
-            "   inner join job_info as j on j.id = rel.job_id",
-            "   where",
-            "       (b.project_id = #{projectId} or (b.project_id != #{projectId} and v.shared = 1))",
-            "       and b.deleted_time = 0",
-            "       and j.owner_id = #{userId}",
-            "       and j.project_id = #{projectId}",
-            "   order by j.id desc",
-            "   limit 100", // recently jobs
-            ") as tmp",
-            "group by id",
+            "select ", VERSION_VIEW_COLUMNS, ", MAX(j.id) as job_id",
+            "from dataset_version as v",
+            "inner join dataset_info as b on b.id = v.dataset_id ",
+            "inner join project_info as p on p.id = b.project_id",
+            "inner join user_info as u on u.id = b.owner_id",
+            "inner join job_dataset_version_rel rel on rel.dataset_version_id = v.id",
+            "inner join job_info as j on j.id = rel.job_id",
+            "where",
+            "   (b.project_id = #{projectId} or (b.project_id != #{projectId} and v.shared = 1))",
+            "   and b.deleted_time = 0",
+            "   and j.owner_id = #{userId}",
+            "   and j.project_id = #{projectId}",
+            "group by v.id",
             "order by job_id desc",
-            "limit #{limit};",
+            "limit #{limit}", // recently
             "</script>"
     })
     List<DatasetVersionViewEntity> listDatasetVersionsByUserRecentlyUsed(
