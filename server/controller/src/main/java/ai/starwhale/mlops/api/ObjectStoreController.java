@@ -21,6 +21,8 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,14 +31,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
+@Validated
 @RestController
+@Tag(name = "Object Store")
 @RequestMapping("/")
 @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
-public class ObjectStoreController implements ObjectStoreApi {
+public class ObjectStoreController {
 
     private final StorageAccessService storageAccessService;
 
@@ -44,9 +52,16 @@ public class ObjectStoreController implements ObjectStoreApi {
         this.storageAccessService = storageAccessService;
     }
 
-    @Override
-    public void getObjectContent(String range, HttpServletRequest request, HttpServletResponse httpResponse) {
-        Tuple2<Long, String> info = extractInfoFromUri(request);
+    public static final String URI_PREFIX = "obj-store";
+
+    @Operation(summary = "Get the content of an object or a file")
+    @GetMapping(value = "/" + URI_PREFIX + "/**", produces = MediaType.APPLICATION_JSON_VALUE)
+    void getObjectContent(
+            @RequestHeader(name = "Range", required = false) String range,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpResponse
+    ) {
+        Tuple2<Long, String> info = extractInfoFromUri(httpServletRequest);
         Long expTimeMillis = info._1();
         String path = info._2();
         if (expTimeMillis < System.currentTimeMillis()) {
@@ -68,8 +83,8 @@ public class ObjectStoreController implements ObjectStoreApi {
             withRange = false;
         }
 
-        try (InputStream fileInputStream = withRange ? storageAccessService.get(path, start, end - start + 1)
-                : storageAccessService.get(path);
+        try (InputStream fileInputStream = withRange ? storageAccessService.get(path, start, end - start + 1) :
+                storageAccessService.get(path);
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             long length = fileInputStream.transferTo(outputStream);
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"content\"");
@@ -84,7 +99,7 @@ public class ObjectStoreController implements ObjectStoreApi {
 
     private Tuple2<Long, String> extractInfoFromUri(HttpServletRequest request) {
         String subpath = request.getRequestURI()
-                .split(request.getContextPath() + "/" + ObjectStoreApi.URI_PREFIX + "/")[1];
+                .split(request.getContextPath() + "/" + URI_PREFIX + "/")[1];
         if (!subpath.contains("/")) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
         }

@@ -22,15 +22,24 @@ import ai.starwhale.mlops.api.protocol.filestorage.ApplySignedUrlRequest;
 import ai.starwhale.mlops.api.protocol.filestorage.FileDeleteRequest;
 import ai.starwhale.mlops.api.protocol.filestorage.SignedUrlResponse;
 import ai.starwhale.mlops.domain.filestorage.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
+@Validated
 @RestController
+@Tag(name = "File storage", description = "File storage operations")
 @RequestMapping("${sw.controller.api-prefix}")
-public class FileStorageController implements FileStorageApi {
+public class FileStorageController {
 
     private final FileStorageService service;
 
@@ -38,28 +47,33 @@ public class FileStorageController implements FileStorageApi {
         this.service = service;
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> applyPathPrefix(String flag) {
+    @Operation(summary = "Apply pathPrefix", description = "Apply pathPrefix")
+    @GetMapping("/filestorage/path/apply")
+    ResponseEntity<ResponseMessage<String>> applyPathPrefix(String flag) {
         return ResponseEntity.ok(Code.success.asResponse(service.generatePathPrefix(flag)));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedPutUrls(
-                ApplySignedUrlRequest applySignedUrlRequest) {
+    @Operation(summary = "Apply signedUrls for put", description = "Apply signedUrls for put")
+    @PutMapping("/filestorage/signedurl")
+    ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedPutUrls(
+            @RequestBody ApplySignedUrlRequest applySignedUrlRequest
+    ) {
         var path = applySignedUrlRequest.getPathPrefix();
         var signedUrls = service.generateSignedPutUrls(path, applySignedUrlRequest.getFiles());
 
         return ResponseEntity.ok(Code.success.asResponse(new SignedUrlResponse(path, signedUrls)));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedGetUrls(String pathPrefix) {
+    @Operation(summary = "Apply signedUrls for get", description = "Apply signedUrls for get")
+    @GetMapping("/filestorage/signedurl")
+    ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedGetUrls(String pathPrefix) {
         return ResponseEntity.ok(Code.success.asResponse(
                 new SignedUrlResponse(pathPrefix, service.generateSignedGetUrls(pathPrefix))));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deletePath(FileDeleteRequest request) {
+    @Operation(summary = "Delete path", description = "Delete path")
+    @DeleteMapping("/filestorage/file")
+    ResponseEntity<ResponseMessage<String>> deletePath(@RequestBody FileDeleteRequest request) {
         service.deleteFiles(request.getPathPrefix(), request.getFiles());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }

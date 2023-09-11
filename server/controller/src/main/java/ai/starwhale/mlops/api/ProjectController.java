@@ -36,15 +36,33 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
+@Tag(name = "Project")
 @RequestMapping("${sw.controller.api-prefix}")
-public class ProjectController implements ProjectApi {
+public class ProjectController {
 
     private final ProjectService projectService;
 
@@ -54,31 +72,47 @@ public class ProjectController implements ProjectApi {
 
     private final IdConverter idConvertor;
 
-    public ProjectController(ProjectService projectService, UserService userService,
-            MemberService memberService, IdConverter idConvertor) {
+    public ProjectController(
+            ProjectService projectService, UserService userService,
+            MemberService memberService, IdConverter idConvertor
+    ) {
         this.projectService = projectService;
         this.userService = userService;
         this.memberService = memberService;
         this.idConvertor = idConvertor;
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ProjectVo>>> listProject(String projectName,
-            Integer pageNum, Integer pageSize, String sort) {
+    @Operation(summary = "Get the list of projects")
+    @GetMapping(value = "/project", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<ProjectVo>>> listProject(
+            @RequestParam(required = false) String projectName,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "The sort type of project list. (Default=visited)",
+                    schema = @Schema(allowableValues = {"visited", "latest", "oldest"}))
+            @RequestParam(required = false) String sort
+    ) {
         User user = userService.currentUserDetail();
         PageInfo<ProjectVo> projects = projectService.listProject(
                 projectName,
                 OrderParams.builder()
                         .sort(sort)
                         .build(),
-                user);
+                user
+        );
 
         return ResponseEntity.ok(Code.success.asResponse(projects));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> createProject(
-            CreateProjectRequest createProjectRequest) {
+    @Operation(summary = "Create or Recover a new project")
+    @PostMapping(value = "/project", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> createProject(
+            @Valid @RequestBody CreateProjectRequest createProjectRequest
+    ) {
         var user = userService.currentUserDetail().getId();
         Long projectId = projectService
                 .createProject(Project.builder()
@@ -95,84 +129,129 @@ public class ProjectController implements ProjectApi {
 
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(String projectUrl) {
+    @Operation(summary = "Delete a project by Url")
+    @DeleteMapping(value = "/project/{projectUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(
+            @PathVariable String projectUrl
+    ) {
         Boolean res = projectService.deleteProject(projectUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete project failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Delete project failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> recoverProject(String projectId) {
+    @Operation(summary = "Recover a project")
+    @PutMapping(value = "/project/{projectId}/recover", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> recoverProject(
+            @PathVariable String projectId
+    ) {
         projectService.recoverProject(projectId);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<ProjectVo>> getProjectByUrl(String projectUrl) {
+    @Operation(summary = "Get a project by Url", description = "Returns a single project object.")
+    @GetMapping(value = "/project/{projectUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ProjectVo>> getProjectByUrl(
+            @PathVariable String projectUrl
+    ) {
         projectService.visit(projectUrl);
         ProjectVo vo = projectService.getProjectVo(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse(vo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> updateProject(String projectUrl,
-            UpdateProjectRequest updateProjectRequest) {
-        Boolean res = projectService.updateProject(projectUrl,
+    @Operation(summary = "Modify project information")
+    @PutMapping(value = "/project/{projectUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> updateProject(
+            @PathVariable String projectUrl,
+            @Valid @RequestBody UpdateProjectRequest updateProjectRequest
+    ) {
+        Boolean res = projectService.updateProject(
+                projectUrl,
                 updateProjectRequest.getProjectName(),
                 updateProjectRequest.getDescription(),
                 updateProjectRequest.getPrivacy()
         );
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update project failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Update project failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> listProjectRole(String projectUrl) {
+    @Operation(summary = "List project roles")
+    @GetMapping(value = "/project/{projectUrl}/role", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<ProjectMemberVo>>> listProjectRole(
+            @PathVariable String projectUrl
+    ) {
         List<ProjectMemberVo> vos = projectService.listProjectMembersInProject(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> addProjectRole(String projectUrl, String userId,
-            String roleId) {
+    @Operation(summary = "Grant project role to a user")
+    @PostMapping(value = "/project/{projectUrl}/role", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> addProjectRole(
+            @PathVariable String projectUrl,
+            @RequestParam String userId,
+            @RequestParam String roleId
+    ) {
         Boolean res = projectService.addProjectMember(projectUrl, idConvertor.revert(userId),
-                idConvertor.revert(roleId));
+                idConvertor.revert(roleId)
+        );
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Add project role failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteProjectRole(String projectUrl,
-            String projectRoleId) {
+    @Operation(summary = "Delete a project role")
+    @DeleteMapping(value = "/project/{projectUrl}/role/{projectRoleId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> deleteProjectRole(
+            @PathVariable String projectUrl,
+            @PathVariable String projectRoleId
+    ) {
         Boolean res = memberService.deleteProjectMember(idConvertor.revert(projectRoleId));
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Delete project role failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> modifyProjectRole(String projectUrl,
-            String projectRoleId, String roleId) {
-        Boolean res = memberService.modifyProjectMember(idConvertor.revert(projectRoleId),
-                idConvertor.revert(roleId));
+    @Operation(summary = "Modify a project role")
+    @PutMapping(value = "/project/{projectUrl}/role/{projectRoleId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> modifyProjectRole(
+            @PathVariable String projectUrl,
+            @PathVariable String projectRoleId,
+            @RequestParam String roleId
+    ) {
+        Boolean res = memberService.modifyProjectMember(
+                idConvertor.revert(projectRoleId),
+                idConvertor.revert(roleId)
+        );
         if (!res) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Modify project role failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }

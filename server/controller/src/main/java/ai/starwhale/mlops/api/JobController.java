@@ -45,16 +45,31 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
+@Validated
 @RestController
+@Tag(name = "Job")
 @RequestMapping("${sw.controller.api-prefix}")
-public class JobController implements JobApi {
+public class JobController {
 
     private final JobServiceForWeb jobServiceForWeb;
     private final TaskService taskService;
@@ -92,15 +107,16 @@ public class JobController implements JobApi {
         this.jobActions = actions.unmodifiable();
     }
 
-    @Override
+    @Operation(summary = "Get the list of jobs")
+    @GetMapping(value = "/project/{projectUrl}/job", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(
-            String projectUrl,
-            String modelId,
-            Integer pageNum,
-            Integer pageSize
+            @PathVariable String projectUrl,
+            @RequestParam(required = false) String swmpId,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
-
-        PageInfo<JobVo> jobVos = jobServiceForWeb.listJobs(projectUrl, idConvertor.revert(modelId),
+        PageInfo<JobVo> jobVos = jobServiceForWeb.listJobs(projectUrl, idConvertor.revert(swmpId),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
@@ -108,18 +124,25 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse(jobVos));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<JobVo>> findJob(String projectUrl, String jobUrl) {
+    @Operation(summary = "Job information")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<JobVo>> findJob(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl
+    ) {
         JobVo job = jobServiceForWeb.findJob(projectUrl, jobUrl);
         return ResponseEntity.ok(Code.success.asResponse(job));
     }
 
-    @Override
+    @Operation(summary = "Get the list of tasks")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     public ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(
-            String projectUrl,
-            String jobUrl,
-            Integer pageNum,
-            Integer pageSize
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
 
         PageInfo<TaskVo> pageInfo = taskService.listTasks(jobUrl,
@@ -130,15 +153,24 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<TaskVo>> getTask(String projectUrl, String jobUrl, String taskUrl) {
+    @Operation(summary = "Get task info")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task/{taskUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<TaskVo>> getTask(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @PathVariable String taskUrl
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(taskService.getTask(taskUrl)));
     }
 
-    @Override
+    @Operation(summary = "Create a new job")
+    @PostMapping(value = "/project/{projectUrl}/job", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> createJob(
-            String projectUrl,
-            JobRequest jobRequest
+            @PathVariable String projectUrl,
+            @Valid @RequestBody JobRequest jobRequest
     ) {
         if (jobRequest.isDevMode() && !featuresProperties.isJobDevEnabled()) {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
@@ -161,11 +193,13 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 
-    @Override
+    @Operation(summary = "Job Action")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/{action}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> action(
-            String projectUrl,
-            String jobUrl,
-            String action
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @PathVariable String action
     ) {
         try {
             jobActions.invoke(action, jobUrl);
@@ -177,19 +211,26 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<Object>> getJobResult(String projectUrl, String jobUrl) {
+    @Operation(summary = "Job Evaluation Result")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<Object>> getJobResult(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl
+    ) {
         Object jobResult = jobServiceForWeb.getJobResult(projectUrl, jobUrl);
         return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 
-    @Override
+    @Operation(summary = "Set Job Comment")
+    @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> modifyJobComment(
-            String projectUrl,
-            String jobUrl,
-            JobModifyRequest jobModifyRequest
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @Valid @RequestBody JobModifyRequest jobRequest
     ) {
-        Boolean res = jobServiceForWeb.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
+        Boolean res = jobServiceForWeb.updateJobComment(projectUrl, jobUrl, jobRequest.getComment());
 
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job comment failed."),
@@ -198,11 +239,13 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
+    @Operation(summary = "Pin Job")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/pin", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
-            String projectUrl,
-            String jobUrl,
-            JobModifyPinRequest jobRequest
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @Valid @RequestBody JobModifyPinRequest jobRequest
     ) {
         Boolean res = jobServiceForWeb.updateJobPinStatus(projectUrl, jobUrl, jobRequest.isPinned());
 
@@ -213,13 +256,23 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<Graph>> getJobDag(String projectUrl, String jobUrl) {
+    @Operation(summary = "DAG of Job")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<Graph>> getJobDag(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl)));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> removeJob(String projectUrl, String jobUrl) {
+    @Operation(summary = "Remove job")
+    @DeleteMapping(value = "/project/{projectUrl}/job/{jobUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> removeJob(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl
+    ) {
         Boolean res = jobServiceForWeb.removeJob(projectUrl, jobUrl);
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Remove job failed."),
@@ -228,8 +281,13 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> recoverJob(String projectUrl, String jobUrl) {
+    @Operation(summary = "Recover job")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/recover", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    public ResponseEntity<ResponseMessage<String>> recoverJob(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl
+    ) {
         Boolean res = jobServiceForWeb.recoverJob(projectUrl, jobUrl);
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover job failed."),
@@ -238,10 +296,12 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
+    @Operation(summary = "Create a new model serving job")
+    @PostMapping(value = "/project/{projectUrl}/serving", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<ModelServingVo>> createModelServing(
-            String projectUrl,
-            ModelServingRequest request
+            @PathVariable String projectUrl,
+            @Valid @RequestBody ModelServingRequest request
     ) {
         if (!featuresProperties.isOnlineEvalEnabled()) {
             throw new StarwhaleApiException(
@@ -259,8 +319,14 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse(resp));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(Long projectId, Long servingId) {
+    @Operation(summary = "Get the events of the model serving job")
+    @GetMapping(value = "/project/{projectId}/serving/{servingId}/status",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(
+            @PathVariable Long projectId,
+            @PathVariable Long servingId
+    ) {
         if (!featuresProperties.isOnlineEvalEnabled()) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "Online evaluation is not enabled."),
@@ -269,10 +335,13 @@ public class JobController implements JobApi {
         return ResponseEntity.ok(Code.success.asResponse(modelServingService.getStatus(servingId)));
     }
 
-    @Override
+    @Operation(summary = "Get suggest runtime for eval or online eval")
+    @GetMapping(value = "/job/suggestion/runtime", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<RuntimeSuggestionVo>> getRuntimeSuggestion(
-            Long projectId,
-            Long modelVersionId
+            // projectId may be unnecessary in the future, so we do not put this in the uri parts
+            @Valid @RequestParam Long projectId,
+            @Valid @RequestParam(required = false) Long modelVersionId
     ) {
         return ResponseEntity.ok(Code.success.asResponse(
                 RuntimeSuggestionVo.builder()
@@ -281,12 +350,15 @@ public class JobController implements JobApi {
         );
     }
 
-    @Override
+    @Operation(summary = "Execute command in running task")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/task/{taskId}/exec",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<ExecResponse>> exec(
-            String projectUrl,
-            String jobUrl,
-            String taskId,
-            ExecRequest execRequest
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @PathVariable String taskId,
+            @Valid @RequestBody ExecRequest execRequest
     ) {
         var resp = jobServiceForWeb.exec(projectUrl, jobUrl, taskId, execRequest);
         return ResponseEntity.ok(Code.success.asResponse(resp));

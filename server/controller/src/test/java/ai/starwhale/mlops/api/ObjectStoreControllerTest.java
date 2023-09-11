@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.api.ObjectStoreController.URI_PREFIX;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +51,7 @@ public class ObjectStoreControllerTest {
         when(rsp.getOutputStream()).thenReturn(outputStream);
         req = mock(HttpServletRequest.class);
         when(req.getRequestURI()).thenReturn(
-                "/" + ObjectStoreApi.URI_PREFIX + "/p/" + System.currentTimeMillis() + 1000);
+                "/" + URI_PREFIX + "/p/" + System.currentTimeMillis() + 1000);
         when(req.getContextPath()).thenReturn("");
     }
 
