@@ -20,12 +20,14 @@ import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.datastore.impl.RecordEncoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
+import ai.starwhale.mlops.datastore.wal.WalManager;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,24 +72,25 @@ public class DataStore {
     private final DumpThread dumpThread;
 
     public DataStore(StorageAccessService storageAccessService,
-            @Value("${sw.datastore.wal-file-size}") int walFileSize,
             @Value("${sw.datastore.wal-max-file-size}") int walMaxFileSize,
-            @Value("${sw.datastore.oss-max-attempts}") int ossMaxAttempts,
+            @Value("#{T(java.nio.file.Paths).get('${sw.datastore.wal-local-cache-dir:wal_cache}')}")
+            Path walLocalCacheDir,
+            @Value("${sw.datastore.oss-max-attempts:5}") int ossMaxAttempts,
             @Value("${sw.datastore.data-root-path:}") String dataRootPath,
             @Value("${sw.datastore.dump-interval:1h}") String dumpInterval,
             @Value("${sw.datastore.min-no-update-period:4h}") String minNoUpdatePeriod,
             @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
-            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit) {
+            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit) throws IOException {
         this.storageAccessService = storageAccessService;
         if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
             dataRootPath += "/";
         }
         this.snapshotRootPath = dataRootPath + "snapshot/";
         this.walManager = new WalManager(this.storageAccessService,
-                walFileSize,
                 walMaxFileSize,
+                walLocalCacheDir,
                 dataRootPath + "wal/",
                 ossMaxAttempts);
         this.parquetConfig = new ParquetConfig();
@@ -100,7 +103,6 @@ public class DataStore {
         while (it.hasNext()) {
             var entry = it.next();
             var table = this.getTable(entry.getTableName(), true, true);
-            log.info("Loading wal log for table:{}.", entry.getTableName());
             //noinspection ConstantConditions
             table.updateFromWal(entry);
             if (table.getFirstWalLogId() >= 0) {
@@ -123,17 +125,17 @@ public class DataStore {
                 .flatMap(prefix -> {
                     try {
                         return Stream.concat(
-                                    this.storageAccessService.list(this.snapshotRootPath + prefix)
-                                            .map(path -> {
-                                                path = path.substring(this.snapshotRootPath.length());
-                                                var index = path.indexOf(PATH_SEPARATOR);
-                                                if (index < 0) {
-                                                    return path;
-                                                } else {
-                                                    return path.substring(0, index);
-                                                }
-                                            }),
-                                    tables.keySet().stream().filter(name -> name.startsWith(prefix))
+                                this.storageAccessService.list(this.snapshotRootPath + prefix)
+                                        .map(path -> {
+                                            path = path.substring(this.snapshotRootPath.length());
+                                            var index = path.indexOf(PATH_SEPARATOR);
+                                            if (index < 0) {
+                                                return path;
+                                            } else {
+                                                return path.substring(0, index);
+                                            }
+                                        }),
+                                tables.keySet().stream().filter(name -> name.startsWith(prefix))
                         );
                     } catch (IOException e) {
                         throw new SwProcessException(ErrorType.DATASTORE, "failed to list", e);

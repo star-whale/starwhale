@@ -88,7 +88,8 @@ sw:
   datastore:
     wal-file-size: ${SW_DATASTORE_WAL_FILE_SIZE:65536}
     wal-max-file-size: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
-    oss-max-attempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
+    wal-local-cache-dir: ${SW_DATASTORE_WAL_LOCAL_CACHE_DIR:wal_cache}
+    oss-max-attempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:5}
     data-root-path: ${SW_DATASTORE_DATA_ROOT_PATH:}
     dump-interval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
     min-no-update-period: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:4h}
