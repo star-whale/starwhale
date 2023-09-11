@@ -72,10 +72,8 @@ public interface ModelVersionMapper {
     List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select({"<script>",
-            "SET @old_sql_mode = @@sql_mode;",
-            "SET sql_mode = '';", // default is only_full_group_by
             "select ",
-            "   (@i:=@i+1) as row_num, id, user_name, project_name, model_name, model_id,",
+            "   id, MAX(job_id) as job_id, user_name, project_name, model_name, model_id,",
             "   version_order, version_name, shared, created_time, modified_time",
             "from(",
             "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
@@ -91,10 +89,11 @@ public interface ModelVersionMapper {
             "       and j.owner_id = #{userId}", // jobs in current user
             "       and j.project_id = #{projectId}", // jobs in current project
             "   order by j.id desc",
-            ") as tmp, (select @i:=0) as n", // generate an increased row num, so that the group result is the front row
+            "   limit 100", // recently jobs
+            ") as tmp",
             "group by id",
+            "order by job_id desc",
             "limit #{limit};",
-            "SET sql_mode = @old_sql_mode;",
             "</script>"
     })
     List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsed(

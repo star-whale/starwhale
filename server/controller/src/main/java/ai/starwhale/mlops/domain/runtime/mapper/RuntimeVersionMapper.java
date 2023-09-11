@@ -116,10 +116,8 @@ public interface RuntimeVersionMapper {
     List<RuntimeVersionViewEntity> listRuntimeVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select({"<script>",
-            "SET @old_sql_mode = @@sql_mode;",
-            "SET sql_mode = '';", // default is only_full_group_by
             "select ",
-            "   id, user_name, project_name, runtime_name, runtime_id,",
+            "   id, MAX(job_id) as job_id, user_name, project_name, runtime_name, runtime_id,",
             "   version_order, version_name, shared, created_time, modified_time",
             "from(",
             "   select " + VERSION_VIEW_COLUMNS + ", j.id as job_id",
@@ -135,10 +133,11 @@ public interface RuntimeVersionMapper {
             "       and j.owner_id = #{userId}", // jobs in current user
             "       and j.project_id = #{projectId}", // jobs in current project
             "   order by j.id desc",
-            ") as tmp, (select @i:=0) as n",
+            "   limit 100", // recently jobs
+            ") as tmp",
             "group by id",
+            "order by job_id desc",
             " limit #{limit};",
-            "SET sql_mode = @old_sql_mode;",
             "</script>"
     })
     List<RuntimeVersionViewEntity> listRuntimeVersionsByUserRecentlyUsed(
