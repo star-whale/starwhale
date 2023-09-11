@@ -34,6 +34,37 @@ import org.junit.jupiter.api.Test;
 public class MysqlBackupServiceTest extends MySqlContainerHolder {
 
     @Test
+    public void testSimplifySql() {
+        String sql = "-- start: insert \n"
+                + "insert into test_r (id) values\n"
+                + "(1),\n"
+                + "(2),\n"
+                + "(3),\n"
+                + "(4),\n"
+                + "(5);\n"
+                + "-- end: insert\n";
+        String simplifiedSql = MysqlBackupService.simplifySql(sql);
+        assertThat(simplifiedSql, is(
+                "insert into test_r (id) values\n"
+                    + "(1),\n"
+                    + "(2),\n"
+                    + "(3),\n"
+                    + "(4),\n"
+                    + "(5)\n"
+        ));
+
+        // unnecessary to simplify
+        sql = "insert into test_r (id) values\n"
+                + "(1),\n"
+                + "(2),\n"
+                + "(3),\n"
+                + "(4),\n"
+                + "(5)\n";
+        simplifiedSql = MysqlBackupService.simplifySql(sql);
+        assertThat(simplifiedSql, is(sql));
+    }
+
+    @Test
     public void testBackupAndRestore() throws SQLException, ClassNotFoundException {
         assertThat("extract db",
                 MysqlBackupService.extractDatabaseFromUrl(mySqlDB.getJdbcUrl()), is("arbitrary_dbname"));
