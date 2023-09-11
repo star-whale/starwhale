@@ -2,7 +2,7 @@
     <img src="https://github.com/star-whale/docs/raw/main/static/img/starwhale.png" width="600" style="max-width: 600px;">
     <h1 align="center" style="margin-top: 10px">An MLOps/LLMOps Platform</h1>
 
-🚀 ️☁️ [Starwhale Cloud](https://cloud.starwhale.cn) is now open to the public, try it! 🎉🍻
+🚀 ️☁️ [Starwhale Cloud](https://cloud.starwhale.cn) 已经上线，欢迎试用! 🎉🍻
 </div>
 
 <p align="center">
@@ -46,35 +46,34 @@
 
 <h4 align="center">
     <p>
-        <b>English</b> |
-        <a href="https://github.com/star-whale/starwhale/blob/main/README_ZH.md">中文</a>
+        <b>中文</b> |
+        <a href="https://github.com/star-whale/starwhale/blob/main/README.md">English</a>
     <p>
 </h4>
 
-## What is Starwhale
+## Starwhale 是什么
 
-Starwhale is an MLOps/LLMOps platform that make your model creation, evaluation and publication much easier. It aims to create a handy tool for data scientists and machine learning engineers. Starwhale helps you:
+Starwhale是一个 MLOps/LLMOps平台，能够让您的模型创建、评估和发布流程变得更加轻松。它旨在为数据科学家和机器学习工程师创建一个方便的工具。Starwhale能够帮助您：
 
-- 🏗️ Keep track of your training/testing dataset history including data items and their labels, so that you can easily access them.
-- 🧳 Manage your model packages that you can share across your team.
-- 🌊 Run your models in different environments, either on a Nvidia GPU server or on an embedded device like Cherry Pi.
-- 🔥 Create a online service with interactive Web UI for your models.
+- 🏗️ 跟踪您的训练/测试数据集历史记录，包括所有数据项及其相关标签，以便您轻松访问它们。
+- 🧳 管理您可以在团队中共享的模型包。
+- 🌊 在不同的环境中运行您的模型，无论是在 Nvidia GPU服务器上还是在嵌入式设备（如 Cherry Pi）上。
+- 🔥 为您的模型快速创建配备交互式 Web UI的在线服务。
 
-## Key Concepts
+## 核心概念
 
-### 🦍 Starwhale Instance
+### 🦍 Starwhale 实例
 
-Each deployment of Starwhale is called an instance. All instances can be managed by the Starwhale Client (swcli). You can start using Starwhale with one of the following instance types:
+Starwhale的每个部署称为一个实例。所有实例都可以通过Starwhale Client（swcli）进行管理。您可以任选以下实例类型之一开始使用：
 
-- 👻 **Starwhale Standalone**:  Rather than a running service, Starwhale Standalone is actually a repository that resides in your local file system. It is created and managed by the Starwhale Client (SWCLI). You only need to install SWCLI to use it. Currently, each user on a single machine can have only ONE Starwhale Standalone instance. We recommend you use the Starwhale Standalone to build and test your datasets, runtime, and models before pushing them to Starwhale Server/Cloud instances.
-- 🎍 **Starwhale Server**:  Starwhale Server is a service deployed on your local server. Besides text-only results from the Starwhale Client (SWCLI), Starwhale Server provides Web UI for you to manage your datasets and models, evaluate your models in your local Kubernetes cluster, and review the evaluation results.
-- ☁️ **Starwhale Cloud**: Starwhale Cloud is a managed service hosted on public clouds. By registering an account on https://cloud.starwhale.cn , you are ready to use Starwhale without needing to install, operate, and maintain your own instances. Starwhale Cloud also provides public resources for you to download, like datasets, runtimes, and models. Check the "starwhale/public" project on Starwhale Cloud for more details.
+- 👻 **Starwhale Standalone**: Starwhale Standalone 本质上是一套存储在本地文件系统中的数据库。它由 Starwhale Client（swcli）创建和管理。您只需安装 swcli 即可使用。目前，一台机器上的每个用户只能拥有一个Starwhale Standalone 实例。我们建议您使用 Starwhale Standalone 来构建和测试您的数据集和模型，然后再将它们推送到 Starwhale Server/Cloud 实例。
+- 🎍 **Starwhale Server**: Starwhale Server 是部署在您本地服务器上的服务。除了 Starwhale Client（swcli）的文本交互界面，Starwhale Server还提供 Web UI供您管理数据集和模型，以及在Kubernetes集群中运行模型并查看运行结果。
+- ☁️ **Starwhale Cloud**: Starwhale Cloud 是托管在公共云上的服务。 通过在https://cloud.starwhale.cn注册一个账号，您就可以使用Starwhale，而无需安装、运行和维护您自己的实例。 Starwhale Cloud 还提供公共资源供您下载，例如一些流行的开源集数据集、模型和运行时。查看 Starwhale Cloud 实例上的 “starwhale/public”项目以获取更多详细信息。
+**Starwhale 会在不同实例上保持概念上的一致性，用户可以轻松的在不同实例上复制模型、数据集和运行时**。
 
-**Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between them.**
+### 🐘 Starwhale 数据集
 
-### 🐘 Starwhale Dataset
-
-Starwhale Dataset offers efficient data storage, loading, and visualization capabilities, making it a dedicated data management tool tailored for the field of machine learning and deep learning
+Starwhale 数据集能够高效的数据存储、数据加载和数据可视化，是一款面向ML/DL领域的数据管理工具。
 
 ![dataset overview](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/dataset-overview.svg)
 
@@ -99,9 +98,9 @@ torch_loader = torch.utils.data.DataLoader(torch_ds, batch_size=5)
 print(next(iter(torch_loader)))
 ```
 
-### 🐇 Starwhale Model
+### 🐇 Starwhale 模型
 
-Starwhale Model is a standard format for packaging machine learning models that can be used for various purposes, like model fine-tuning, model evaluation, and online serving. A Starwhale Model contains the model file, inference codes, configuration files, and any other files required to run the model.
+Starwhale 模型是一种机器学习模型的标准包格式，可用于多种用途，例如模型微调、模型评估和在线服务。 Starwhale 模型包含模型文件、推理代码、配置文件等等。
 
 ![overview](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/model-overview.svg)
 
@@ -117,9 +116,9 @@ swcli model run --uri mnist --runtime pytorch --dataset mnist
 swcli model run --workdir . --module mnist.evaluator --handler mnist.evaluator:MNISTInference.cmp
 ```
 
-### 🐌 Starwhale Runtime
+### 🐌 Starwhale 运行时
 
-Starwhale Runtime aims to provide a reproducible and sharable running environment for python programs. You can easily share your working environment with your teammates or outsiders, and vice versa. Furthermore, you can run your programs on Starwhale Server or Starwhale Cloud without bothering with the dependencies.
+Starwhale 运行时能够针对运行Python程序，提供一种可复现、可分享的运行环境。使用 Starwhale 运行时，可以非常容易的与他人分享，并且能在 Starwhale Server 和 Starwhale Cloud 实例上使用 Starwhale 运行时。
 
 ![overview](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/runtime-overview.svg)
 
@@ -139,9 +138,9 @@ swcli model build . --runtime pytorch
 swcli dataset build --runtime pytorch
 ```
 
-### 🐄 Starwhale Evaluation
+### 🐄 Starwhale 模型评测
 
-Starwhale Evaluation enables users to evaluate sophisticated, production-ready distributed models by writing just a few lines of code with Starwhale Python SDK.
+Starwhale 模型评测能让用户通过SDK写少量的Python 代码就能实现复杂的、生产级别的、分布式的模型评测任务。
 
 ```python
 import typing as t
@@ -174,11 +173,11 @@ def predict_view(file: t.Any) -> t.Any:
     return {i: p for i, p in enumerate(prob)}
 ```
 
-## Installation
+## 安装
 
 ### 🍉 Starwhale Standalone
 
-Requirements: Python 3.7~3.11 in the Linux or macOS os.
+前置条件: Python 3.7~3.11，运行 Linux 或 macOS 操作系统上。
 
 ```bash
 python3 -m pip install starwhale
@@ -186,7 +185,7 @@ python3 -m pip install starwhale
 
 ### 🥭 Starwhale Server
 
-Starwhale Server is delivered as a Docker image, which can be run with Docker directly or deployed to a Kubernetes cluster. For the laptop environment, using [Minikube](https://minikube.sigs.k8s.io/docs/start/) is a appropriate choice.
+Starwhale Server 以 Docker 镜像的形式发布。您可以直接使用 Docker 运行，也可以部署到 Kubernetes 集群上。对于本地笔记本电脑环境，推荐使用 [Minikube](https://minikube.sigs.k8s.io/docs/start/) 进行安装。
 
 ```bash
 minikube start --addons ingress
@@ -197,21 +196,21 @@ helm pull starwhale/starwhale --untar --untardir ./charts
 helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.global.yaml
 ```
 
-## Quick Tour
+## 快速指南
 
-We use [MNIST](https://paperswithcode.com/dataset/mnist) as the hello world example to show the basic Starwhale Model workflow.
+我们使用 [Minikube](https://minikube.sigs.k8s.io/docs/start/) 作为Starwhale 平台hello world例子，来展示 Starwhale 的典型工作流程。
 
-### 🪅 MNIST Evaluation in Starwhale Standalone
+### 🪅 Starwhale Standalone 上评测 MNIST
 
-- Use your own Python environment, follow the [Standalone quickstart doc](https://starwhale.cn/docs/en/next/getting-started/standalone/).
-- Use Google Colab environment, follow the [Jupyter notebook example](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb).
+- 如果使用本地Python环境，请参考 [Standalone 快速入门文档](https://starwhale.cn/docs/en/next/getting-started/standalone/)。
+- 如果使用Google Colab环境，请参考 [jupyter notebook 例子](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb)。
 
-### 🪆 MNIST Evaluation in Starwhale Server
+### 🪆 Starwhale Server 上评测 MNIST
 
-- Run it in the your private Starwhale Server instance, please read [Server installation(minikube)](https://starwhale.cn/docs/en/next/server/installation/minikube) and [Server quickstart](https://starwhale.cn/docs/en/next/getting-started/server) docs.
-- Run it in the [Starwhale Cloud](https://cloud.starwhale.cn), please read [Cloud quickstart doc](https://starwhale.cn/docs/en/next/getting-started/cloud).
+- 如果想运行在私有化的 Starwhale Server 实例中，请阅读 [Server 安装](https://starwhale.cn/docs/en/next/server/installation/minikube) 和 [Server 快速入门](https://starwhale.cn/docs/en/next/getting-started/server)。
+- 如果想运行在 [Starwhale Cloud](https://cloud.starwhale.cn) 中，请阅读 [Cloud 快速入门](https://starwhale.cn/docs/en/next/getting-started/cloud)文档。
 
-## Examples
+## 例子
 
 - 🚀 LLM:
   - 🐊 OpenSource LLMs Leaderboard: [Evaluation](https://cloud.starwhale.cn/projects/349/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/llm-leaderboard)
@@ -221,7 +220,7 @@ We use [MNIST](https://paperswithcode.com/dataset/mnist) as the hello world exam
   - 🎹 [MusicGen](https://github.com/star-whale/starwhale/tree/main/example/LLM/musicgen)
 
 - 🦦 Image Classification:
-  - 🐻‍❄️ MNIST: [Cloud Demo](https://cloud.starwhale.cn/projects/392/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/mnist).
+  - 🐻‍❄️ MNIST: [Cloud Demo](https://cloud.starwhale.cn/projects/392/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/mnist)
   - 🦫 [CIFAR10](https://github.com/star-whale/starwhale/tree/main/example/cifar10)
 
 - 🎙️ Speech Recognition: [Speech Command](https://github.com/star-whale/starwhale/tree/main/example/speech_command)
@@ -230,25 +229,27 @@ We use [MNIST](https://paperswithcode.com/dataset/mnist) as the hello world exam
 - 🦋 Machine Translation: [Neural machine translation](https://github.com/star-whale/starwhale/tree/main/example/nmt)
 - 🐜 Text Classification: [AG News](https://github.com/star-whale/starwhale/tree/main/example/text_cls_AG_NEWS)
 
-## Documentation, Community, and Support
+## 文档、社区和帮助
 
-- Visit [Starwhale HomePage](https://starwhale.ai).
-- More information in the [official documentation](https://doc.starwhale.ai).
-- For general questions and support, join the [Slack](https://starwhale.slack.com/).
-- For bug reports and feature requests, please use [Github Issue](https://github.com/star-whale/starwhale/issues).
-- To get community updates, follow [@starwhaleai](https://twitter.com/starwhaleai) on Twitter.
-- For Starwhale artifacts, please visit:
+- [Starwhale 首页](https://starwhale.ai)
+- [官方文档](https://doc.starwhale.ai)
+- 使用 [Github Issue](https://github.com/star-whale/starwhale/issues) 反馈Bug 和 提交Feature Request。
+- 微信公众号：
 
-  - Python Package on [Pypi](https://pypi.org/project/starwhale/).
-  - Helm Charts on [Artifacthub](https://artifacthub.io/packages/helm/starwhale/starwhale).
-  - Docker Images on [Docker Hub](https://hub.docker.com/u/starwhaleai), [Github Packages](https://github.com/orgs/star-whale/packages) and [Starwhale Registry](https://docker-registry.starwhale.cn/).
+  <img src="https://starwhale-examples.oss-cn-beijing.aliyuncs.com/wechat-public.jpg" width=240>
 
-- Additionally, you can always find us at *developer@starwhale.ai*.
+- Starwhale 发布的制品：
 
-## Contributing
+  - [Python Package](https://pypi.org/project/starwhale/)
+  - [Helm Charts](https://artifacthub.io/packages/helm/starwhale/starwhale)
+  - Docker Image: [Github Packages](https://github.com/orgs/star-whale/packages) 和 [Starwhale Registry](https://docker-registry.starwhale.cn/)。
 
-🌼👏**PRs are always welcomed** 👍🍺. See [Contribution to Starwhale](https://doc.starwhale.ai/community/contribute) for more details.
+- 更多帮助，请您通过邮箱 *developer@starwhale.ai* 联系我们。
 
-## License
+## 贡献代码
 
-Starwhale is licensed under the [Apache License 2.0](https://github.com/star-whale/starwhale/blob/main/LICENSE).
+🌼👏**欢迎提交PR** 👍🍺. 请阅读 [Starwhale 开源贡献指南](https://doc.starwhale.ai/community/contribute)。
+
+## 开源协议
+
+Starwhale 使用 [Apache License 2.0](https://github.com/star-whale/starwhale/blob/main/LICENSE) 协议。
