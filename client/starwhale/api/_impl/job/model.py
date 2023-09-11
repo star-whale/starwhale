@@ -166,7 +166,7 @@ class Job:
         j1 = job("https://server/job/1")
         # get job from standalone instance
         j2 = job("local/project/self/job/xm5wnup")
-        j3 = job(xm5wnup")
+        j3 = job("xm5wnup")
         ```
         """
 
