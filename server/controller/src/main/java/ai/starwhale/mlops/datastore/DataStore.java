@@ -20,9 +20,6 @@ import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.datastore.impl.RecordEncoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
-import ai.starwhale.mlops.datastore.type.ListValue;
-import ai.starwhale.mlops.datastore.type.MapValue;
-import ai.starwhale.mlops.datastore.type.ObjectValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -245,12 +242,7 @@ public class DataStore {
             }
             var records = results.stream()
                     .filter(r -> !r.isDeleted())
-                    .map(r -> {
-                        if (columnSchemaMap != null) {
-                            checkRecord(columnSchemaMap, r.getValues());
-                        }
-                        return RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType());
-                    })
+                    .map(r -> RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType()))
                     .collect(Collectors.toList());
             return new RecordList(columnSchemaMap,
                     table.getColumnStatistics(columns).entrySet().stream()
@@ -419,9 +411,6 @@ public class DataStore {
                         } else {
                             if (record == null) {
                                 record = new HashMap<>();
-                            }
-                            if (columnSchemaMap != null && r.record.getValues() != null) {
-                                checkRecord(columnSchemaMap, r.record.getValues());
                             }
                             record.putAll(
                                     RecordEncoder.encodeRecord(r.record.getValues(),
@@ -642,48 +631,6 @@ public class DataStore {
             } catch (InterruptedException e) {
                 log.error("interrupted", e);
             }
-        }
-    }
-
-    private static void checkRecord(Map<String, ColumnSchema> columnSchemaMap, Map<String, BaseValue> record) {
-        record.forEach((k, v) -> checkValue(columnSchemaMap.get(k), v));
-    }
-
-    private static void checkValue(ColumnSchema schema, BaseValue value) {
-        if (value == null) {
-            return;
-        }
-        if (value.getColumnType() != schema.getType()) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "mixed column type. try to query/scan with encodeWithType=true");
-        }
-        switch (value.getColumnType()) {
-            case LIST:
-            case TUPLE:
-                ((ListValue) value).forEach(e -> checkValue(schema.getElementSchema(), e));
-                break;
-            case MAP:
-                ((MapValue) value).forEach((k, v) -> {
-                    checkValue(schema.getKeySchema(), k);
-                    checkValue(schema.getValueSchema(), v);
-                });
-                break;
-            case OBJECT:
-                if (!((ObjectValue) value).getPythonType().equals(schema.getPythonType())) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            "mixed column type. try to query/scan with encodeWithType=true");
-                }
-                ((ObjectValue) value).forEach((k, v) -> {
-                    var attrSchema = schema.getAttributesSchema().get(k);
-                    if (attrSchema == null) {
-                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                                "mixed column type. try to query/scan with encodeWithType=true");
-                    }
-                    checkValue(attrSchema, v);
-                });
-                break;
-            default:
-                break;
         }
     }
 }
