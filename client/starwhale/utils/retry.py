@@ -3,7 +3,7 @@ from inspect import iscoroutinefunction
 from urllib.error import HTTPError
 
 import requests
-from tenacity import Retrying
+from tenacity import Retrying, wait_random_exponential
 from tenacity.stop import stop_after_attempt
 from tenacity.retry import retry_if_exception
 from tenacity._asyncio import AsyncRetrying
@@ -38,12 +38,13 @@ def http_retry(*args: t.Any, **kw: t.Any) -> t.Any:
     else:
 
         def wrap(f: t.Callable) -> t.Any:
-            _attempts = kw.pop("attempts", 3)
+            _attempts = kw.pop("attempts", 10)
             _cls = AsyncRetrying if iscoroutinefunction(f) else Retrying
             return _cls(
                 *args,
                 reraise=True,
                 stop=kw.pop("stop", stop_after_attempt(_attempts)),
+                wait=kw.pop("wait", wait_random_exponential(multiplier=1, max=60)),
                 retry=kw.pop(
                     "retry", retry_if_http_exception(_RETRY_HTTP_STATUS_CODES)
                 ),
