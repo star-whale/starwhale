@@ -20,7 +20,7 @@ export const StyledTreeItemList = styled<
         marginTop: 0,
         marginBottom: 0,
         [`margin${direction}`]: $isChildNode ? $theme.sizing.scale550 : 0,
-        overflow: 'auto',
+        // overflow: 'auto',
         paddingTop: 0,
         paddingBottom: 0,
         [`padding${direction}`]: $isChildNode ? $theme.sizing.scale200 : 0,
@@ -48,7 +48,7 @@ export const StyledTreeItem = styled<
         marginBottom: 0,
         marginLeft: 0,
         marginRight: 0,
-        overflow: 'auto',
+        // overflow: 'auto',
         paddingTop: 0,
         paddingBottom: 0,
         paddingLeft: 0,
@@ -127,6 +127,6 @@ export const StyledNoIconContainer = styled('div', ({ $theme }) => {
 StyledNoIconContainer.displayName = 'StyledNoIconContainer'
 
 export const StyledLabelInteractable = styled('div', () => ({
-    width: '100%',
+    // width: '100%',
 }))
 StyledLabelInteractable.displayName = 'StyledLabelInteractable'

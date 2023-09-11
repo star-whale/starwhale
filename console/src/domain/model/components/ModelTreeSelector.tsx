@@ -9,6 +9,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useFetchModelTree } from '../hooks/useFetchModelTree'
 import _ from 'lodash'
 import { DynamicSelectorPropsT, SelectorItemValueT } from '@starwhale/ui/DynamicSelector/types'
+import QuickGroup from '@/components/QuickGroup'
 
 const ModelTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -16,8 +17,33 @@ const ModelTreeNode = themedStyled('div', () => ({
     alignItems: 'center',
     flexWrap: 'nowrap',
     height: '24px',
-    width: '100%',
+    width: 'auto',
 }))
+
+export function ModelTree({ ...props }: any) {
+    const [t] = useTranslation()
+    const OPTIONS = [
+        {
+            key: 'latest',
+            label: t('model.selector.lastest'),
+        },
+        {
+            key: 'current',
+            label: t('model.selector.current'),
+        },
+        {
+            key: 'guest',
+            label: t('model.selector.shared'),
+        },
+        {
+            key: 'all',
+            label: t('model.selector.all'),
+        },
+    ]
+    const SearchSlot = React.memo((args: any) => <QuickGroup options={OPTIONS} {...args} />)
+
+    return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
+}
 
 export function ModelTreeSelector(
     props: {
@@ -43,7 +69,11 @@ export function ModelTreeSelector(
         const treeData: TreeNodeData[] = modelInfo.data.map((model) => {
             return {
                 id: model.modelName,
-                label: [model.ownerName, model.projectName, model.modelName].join('/'),
+                label: (
+                    <p className='color-[#02102b] text-14px'>
+                        {[model.ownerName, model.projectName, model.modelName].join('/')}
+                    </p>
+                ),
                 isExpanded: true,
                 children:
                     model.versions?.map((item) => {
@@ -51,7 +81,7 @@ export function ModelTreeSelector(
                             id: getId(item),
                             label: (
                                 <ModelTreeNode>
-                                    <ModelLabel version={item} />
+                                    <ModelLabel version={item} style={{ fontSize: '14px', marginRight: '4px' }} />
                                     <Button
                                         key='version-history'
                                         kind='tertiary'
@@ -73,8 +103,17 @@ export function ModelTreeSelector(
                                 </ModelTreeNode>
                             ),
                             info: {
-                                labelView: <ModelLabel version={item} model={model} isProjectShow />,
+                                labelView: (
+                                    <ModelLabel
+                                        version={item}
+                                        model={model}
+                                        isProjectShow
+                                        style={{ fontSize: '14px' }}
+                                    />
+                                ),
                                 labelTitle: getModelLabel(item, model),
+                                data: model,
+                                version: item,
                             },
                             isExpanded: true,
                         }
@@ -97,7 +136,7 @@ export function ModelTreeSelector(
                 getDataToLabelView: (data: any) => data?.info.labelView,
                 getDataToLabelTitle: (data: any) => data?.info.labelTitle,
                 getDataToValue: (data: any) => data?.id,
-                render: SelectorItemByTree as React.FC<any>,
+                render: ModelTree as React.FC<any>,
             },
         ]
     }, [$treeData, multiple])

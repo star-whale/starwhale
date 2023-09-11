@@ -6,6 +6,7 @@ export interface DynamicSelectorPropsT<T> {
     placeholder?: React.ReactNode
     options?: SelectorItemOptionT<T>[]
     data?: T
+    forceFocus?: boolean
 }
 
 export type SelectorItemValueT = {
@@ -40,6 +41,7 @@ export type SelectorItemRenderPropsT = {
     style?: React.CSSProperties
     addItemRef?: (ref: React.RefObject<any>) => void
     selectedIds?: any[]
+    forceFocus?: boolean
 }
 
 export type SelectorItemPropsT = {
@@ -49,4 +51,5 @@ export type SelectorItemPropsT = {
     inputRef?: React.RefObject<HTMLInputElement>
     data?: any
     info?: SelectorItemOptionT['info']
+    SearchSlot?: React.FC<any>
 } & SelectorSharedPropsT
