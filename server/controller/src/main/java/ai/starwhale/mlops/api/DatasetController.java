@@ -420,7 +420,7 @@ public class DatasetController implements DatasetApi {
             pageInfo = datasetService.listDataset(
                     DatasetQuery.builder()
                             .projectUrl(projectUrl)
-                            .namePrefix(name)
+                            .name(name)
                             .owner(owner)
                             .build(),
                     PageParams.builder()

@@ -182,7 +182,7 @@ public class ModelService {
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
+        List<ModelEntity> entities = modelMapper.list(projectId, query.getName(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVo vo = modelVoConverter.convert(entity);
             var modelVersion = modelVersionMapper.findByLatest(entity.getId());

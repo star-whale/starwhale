@@ -282,7 +282,7 @@ public class RuntimeServiceTest {
                 ));
         var res = service.listRuntime(RuntimeQuery.builder()
                 .projectUrl("1")
-                .namePrefix("")
+                .name("")
                 .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),

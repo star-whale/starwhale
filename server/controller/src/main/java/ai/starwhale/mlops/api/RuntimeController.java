@@ -68,7 +68,7 @@ public class RuntimeController implements RuntimeApi {
         PageInfo<RuntimeVo> pageInfo = runtimeService.listRuntime(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
-                        .namePrefix(name)
+                        .name(name)
                         .owner(owner)
                         .build(),
                 PageParams.builder()

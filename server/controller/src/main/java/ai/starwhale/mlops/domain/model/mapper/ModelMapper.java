@@ -38,7 +38,7 @@ public interface ModelMapper {
 
     @SelectProvider(value = ModelProvider.class, method = "listSql")
     List<ModelEntity> list(@Param("projectId") Long projectId,
-            @Param("namePrefix") String namePrefix,
+            @Param("name") String name,
             @Param("ownerId") Long ownerId,
             @Param("order") String order);
 
@@ -71,7 +71,7 @@ public interface ModelMapper {
     class ModelProvider {
 
         public String listSql(@Param("projectId") Long projectId,
-                @Param("namePrefix") String namePrefix,
+                @Param("name") String name,
                 @Param("ownerId") Long ownerId,
                 @Param("order") String order) {
             return new SQL() {
@@ -82,8 +82,8 @@ public interface ModelMapper {
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
-                    if (StrUtil.isNotEmpty(namePrefix)) {
-                        WHERE("model_name like concat(#{namePrefix}, '%')");
+                    if (StrUtil.isNotEmpty(name)) {
+                        WHERE("model_name like concat('%', #{name}, '%')");
                     }
                     if (Objects.nonNull(ownerId)) {
                         WHERE("owner_id = #{ownerId}");

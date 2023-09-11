@@ -88,7 +88,7 @@ public class ModelController implements ModelApi {
             pageInfo = modelService.listModel(
                     ModelQuery.builder()
                             .projectUrl(projectUrl)
-                            .namePrefix(name)
+                            .name(name)
                             .owner(owner)
                             .build(),
                     PageParams.builder()

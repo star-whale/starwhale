@@ -29,7 +29,7 @@ public class DatasetQuery {
 
     private String projectUrl;
 
-    private String namePrefix;
+    private String name;
 
     private String owner;
 }

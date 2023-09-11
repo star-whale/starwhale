@@ -39,7 +39,7 @@ public interface RuntimeMapper {
 
     @SelectProvider(value = RuntimeProvider.class, method = "listSql")
     List<RuntimeEntity> list(@Param("projectId") Long projectId,
-            @Param("namePrefix") String namePrefix,
+            @Param("name") String name,
             @Param("ownerId") Long ownerId,
             @Param("order") String order);
 
@@ -72,7 +72,7 @@ public interface RuntimeMapper {
     class RuntimeProvider {
 
         public String listSql(@Param("projectId") Long projectId,
-                @Param("namePrefix") String namePrefix,
+                @Param("name") String name,
                 @Param("ownerId") Long ownerId,
                 @Param("order") String order) {
             return new SQL() {
@@ -83,8 +83,8 @@ public interface RuntimeMapper {
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
-                    if (StrUtil.isNotEmpty(namePrefix)) {
-                        WHERE("runtime_name like concat(#{namePrefix}, '%')");
+                    if (StrUtil.isNotEmpty(name)) {
+                        WHERE("runtime_name like concat('%', #{name}, '%')");
                     }
                     if (Objects.nonNull(ownerId)) {
                         WHERE("owner_id = #{ownerId}");
