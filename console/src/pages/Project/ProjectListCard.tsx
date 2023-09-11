@@ -29,6 +29,7 @@ import { useLocalStorage } from 'react-use'
 import { useEventCallback } from '@starwhale/core'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
+import Checkbox from '@starwhale/ui/Checkbox'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -480,6 +481,7 @@ export default function ProjectListCard() {
     const [filter, setFilter] = useState('')
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
     const [editProject, setEditProject] = useState<IProjectSchema>()
+    const [onlyMyProject, setOnlyMyProject] = useState(true)
 
     const handleCreateProject = useCallback(
         async (data: ICreateProjectSchema) => {
@@ -508,12 +510,19 @@ export default function ProjectListCard() {
     useEffect(() => {
         const items = projectsInfo.data?.list ?? []
         setData(
-            items.filter((i) => {
-                if (filter) return [i.name, i.owner?.name].join('/').includes(filter)
-                return filter === ''
-            })
+            items
+                .filter((i) => {
+                    if (filter) return [i.name, i.owner?.name].join('/').includes(filter)
+                    return filter === ''
+                })
+                .filter((i) => {
+                    if (onlyMyProject) {
+                        return i.owner?.name === currentUser?.name || currentUser?.projectRoles[i.id]
+                    }
+                    return true
+                })
         )
-    }, [filter, projectsInfo.data])
+    }, [filter, onlyMyProject, projectsInfo.data, currentUser])
 
     const handleRefresh = useEventCallback(async () => {
         await projectsInfo.refetch()
@@ -573,17 +582,40 @@ export default function ProjectListCard() {
                     />
                 </div>
                 <div
-                    className={css({
+                    style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        minWidth: '100px',
-                        fontSize: '12px',
-                        color: 'rgba(2,16,43,0.60);',
-                        gap: '4px',
-                    })}
+                        alignSelf: 'flex-end',
+                        gap: '20px',
+                    }}
                 >
-                    {t('project.visit.orderby')}:
-                    <VisitSelector value={visit} onChange={setVisit as any} />
+                    <div className='flex items-center gap-8px'>
+                        <Checkbox checked={onlyMyProject} onChange={(e) => setOnlyMyProject(e.target.checked)} />
+                        {t('project.filter.only')}
+                        <Tooltip content={t('project.filter.only.tooltip')} showArrow placement='top'>
+                            <p
+                                className={css({
+                                    'cursor': 'pointer',
+                                    'color': 'rgba(2,16,43,0.40);',
+                                    ':hover': { color: '#5181E0' },
+                                })}
+                            >
+                                <IconFont type='info' />
+                            </p>
+                        </Tooltip>
+                    </div>
+                    <div
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            minWidth: '100px',
+                            fontSize: '12px',
+                            color: 'rgba(2,16,43,0.60);',
+                            gap: '4px',
+                        })}
+                    >
+                        {t('project.visit.orderby')}:
+                        <VisitSelector value={visit} onChange={setVisit as any} />
+                    </div>
                 </div>
             </div>
             <div
