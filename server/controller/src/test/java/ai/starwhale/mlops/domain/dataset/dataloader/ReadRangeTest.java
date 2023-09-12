@@ -58,7 +58,7 @@ public class ReadRangeTest {
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
-                sessionDao, dataReadLogDao, dataRangeProvider, 1);
+                sessionDao, dataReadLogDao, dataRangeProvider);
         dataLoader = new DataLoader(dataReadManager);
     }
 
@@ -144,16 +144,14 @@ public class ReadRangeTest {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-                Arguments.of(true, 2, ReadMode.AT_LEAST_ONCE),
-                Arguments.of(false, 0, ReadMode.AT_LEAST_ONCE),
-                Arguments.of(true, 2, ReadMode.AT_MOST_ONCE),
-                Arguments.of(false, 0, ReadMode.AT_MOST_ONCE)
+                Arguments.of(true, 2),
+                Arguments.of(false, 0)
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideMultiParams")
-    public void testNextDataRange(boolean isSerial, int executeCount, ReadMode readMode) {
+    public void testNextDataRange(boolean isSerial, int executeCount) {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
@@ -168,7 +166,6 @@ public class ReadRangeTest {
                 .datasetName(datasetName)
                 .datasetVersion(datasetVersion)
                 .isSerial(isSerial)
-                .readMode(readMode)
                 .processedData(List.of())
                 .batchSize(2)
                 .start("0000-000")
@@ -292,42 +289,6 @@ public class ReadRangeTest {
         verify(dataReadLogDao, times(1))
                 .updateToProcessed(sid, consumerIdFor1, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());
-
-        // case 3: get next data with exist session and consumer 2
-        request.setConsumerId(consumerIdFor2);
-        given(dataReadLogDao.selectTop1UnAssignedData(sid)).willReturn(null);
-        switch (readMode) {
-            case AT_LEAST_ONCE:
-                given(dataReadLogDao.getMaxProcessedMicrosecondTime(sid)).willReturn(null);
-                given(dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerIdFor2))
-                        .willReturn(DataReadLog.builder()
-                            .id(2L)
-                            .sessionId(sid)
-                            .start("0000-002").startInclusive(true)
-                            .end("0000-003").endInclusive(true)
-                            .size(2)
-                            .assignedNum(1) // previous data belong to consumer 1
-                            .build());
-
-                dataRange = dataLoader.next(request);
-                assertThat("get data range 2", dataRange,
-                        is(DataReadLog.builder()
-                            .id(2L)
-                            .sessionId(sid)
-                            .consumerId(consumerIdFor2) // change to 2
-                            .start("0000-002").startInclusive(true)
-                            .end("0000-003").endInclusive(true)
-                            .size(2)
-                            .assignedNum(2)
-                            .status(Status.DataStatus.UNPROCESSED)
-                            .build()));
-                break;
-            case AT_MOST_ONCE:
-                dataRange = dataLoader.next(request);
-                assertThat("get data range 2", dataRange == null);
-                break;
-            default:
-        }
 
     }
 }

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
+import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -45,18 +46,20 @@ public class JobUpdateHelper {
     final JobStatusMachine jobStatusMachine;
     final SwTaskScheduler swTaskScheduler;
     final TaskStatusMachine taskStatusMachine;
+    final DataLoader dataLoader;
 
     public JobUpdateHelper(HotJobHolder jobHolder,
                            JobStatusCalculator jobStatusCalculator,
                            JobDao jobDao, JobStatusMachine jobStatusMachine,
                            SwTaskScheduler swTaskScheduler,
-                           TaskStatusMachine taskStatusMachine) {
+                           TaskStatusMachine taskStatusMachine, DataLoader dataLoader) {
         this.jobHolder = jobHolder;
         this.jobStatusCalculator = jobStatusCalculator;
         this.jobDao = jobDao;
         this.jobStatusMachine = jobStatusMachine;
         this.swTaskScheduler = swTaskScheduler;
         this.taskStatusMachine = taskStatusMachine;
+        this.dataLoader = dataLoader;
     }
 
     public void updateJob(Job job) {
@@ -90,6 +93,8 @@ public class JobUpdateHelper {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
                 });
             }
+            // deal with the data which belong to current job TODO: the same with retry logic
+            dataLoader.resetUnProcessed(job.getUuid());
             jobHolder.remove(job.getId());
         }
     }

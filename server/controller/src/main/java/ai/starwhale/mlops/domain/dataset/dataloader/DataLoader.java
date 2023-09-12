@@ -33,6 +33,15 @@ public class DataLoader {
 
         dataReadManager.handleConsumerData(consumerId, request.isSerial(), request.getProcessedData(), session);
 
-        return dataReadManager.assignmentData(consumerId, session, request.getReadMode());
+        return dataReadManager.assignmentData(consumerId, session);
+    }
+
+    /**
+     * Expect to continue processing data(which were unprocessed in current time) on next startup
+     *
+     * @param sessionId session id
+     */
+    public void resetUnProcessed(String sessionId) {
+        dataReadManager.resetUnProcessedData(sessionId);
     }
 }
