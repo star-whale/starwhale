@@ -125,9 +125,17 @@ public interface DataReadLogMapper {
             + "WHERE session_id in (SELECT id from dataset_read_session where session_id=#{sessionId})")
     int totalAssignedNum(String sessionId);
 
-    @Select("SELECT drs.dataset_name, drl.consumer_id as consumer, drl.status, sum(drl.size) as number "
-            + "FROM dataset_read_session drs, dataset_read_log drl"
+    @Select("SELECT"
+            + "  drs.dataset_name,"
+            + "  drl.consumer_id as consumer,"
+            + "  drs.batch_size,"
+            + "  drl.status,"
+            + "  sum(drl.size) as total_number,"
+            + "  sum(drl.assigned_num) as assigned_num,"
+            + "  sum(drl.size * drl.assigned_num) as total_consumption_number "
+            + "FROM dataset_read_session drs, dataset_read_log drl "
             + "WHERE drs.id = drl.session_id and drs.session_id = #{sessionId}"
-            + "GROUP BY dataset_name, status, consumer_id")
+            + "GROUP BY dataset_name, batch_size, status, consumer_id"
+    )
     List<ConsumptionStatistic> statistic(String sessionId);
 }
