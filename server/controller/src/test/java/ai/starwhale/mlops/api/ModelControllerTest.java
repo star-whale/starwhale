@@ -191,11 +191,14 @@ public class ModelControllerTest {
     @CsvSource({"all, 2", "project, 1", "shared, 1"})
     public void testListModelTree(DataScope scope, int listCount) {
         given(modelService.listModelVersionView(anyString(), eq(true), eq(true)))
-                .willReturn(List.of(ModelViewVo.builder().build(), ModelViewVo.builder().build()));
+                .willReturn(List.of(
+                        ModelViewVo.builder().projectName("p").build(),
+                        ModelViewVo.builder().projectName("p").build()
+                ));
         given(modelService.listModelVersionView(anyString(), eq(false), eq(true)))
-                .willReturn(List.of(ModelViewVo.builder().build()));
+                .willReturn(List.of(ModelViewVo.builder().projectName("p").build()));
         given(modelService.listModelVersionView(anyString(), eq(true), eq(false)))
-                .willReturn(List.of(ModelViewVo.builder().build()));
+                .willReturn(List.of(ModelViewVo.builder().projectName("p").build()));
 
         var resp = controller.listModelTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -203,6 +206,23 @@ public class ModelControllerTest {
         assertThat(resp.getBody().getData(), allOf(
                 notNullValue(),
                 is(iterableWithSize(listCount))
+        ));
+    }
+
+    @Test
+    public void testRecentListModelTree() {
+        given(modelService.listRecentlyModelVersionView(anyString(), eq(5)))
+                .willReturn(List.of(
+                        ModelViewVo.builder().projectName("p").build(),
+                        ModelViewVo.builder().projectName("p").build()
+                ));
+
+        var resp = controller.recentModelTree("1", 5);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(2))
         ));
     }
 

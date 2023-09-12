@@ -389,6 +389,23 @@ public class DatasetControllerTest {
     }
 
     @Test
+    public void testRecentDatasetTree() {
+        given(datasetService.listRecentlyDatasetVersionView(anyString(), eq(5)))
+                .willReturn(List.of(
+                        DatasetViewVo.builder().projectName("p").build(),
+                        DatasetViewVo.builder().projectName("p").build()
+                ));
+
+        var resp = controller.recentDatasetTree("1", 5);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(2))
+        ));
+    }
+
+    @Test
     public void testShareDatasetVersion() {
         var resp = controller.shareDatasetVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
