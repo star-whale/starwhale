@@ -19,6 +19,7 @@ import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
 import yaml from 'js-yaml'
+import Shared from '@/components/Shared'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -67,6 +68,7 @@ export default function DatasetListCard() {
                         t('sth name', [t('Dataset')]),
                         t('Version'),
                         t('Alias'),
+                        t('Shared'),
                         t('dataset.file.count'),
                         t('Owner'),
                         t('Created'),
@@ -90,6 +92,7 @@ export default function DatasetListCard() {
                                 </TextLink>,
                                 <VersionText key='name' version={dataset.version?.name ?? '-'} />,
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
+                                <Shared key='shared' shared={dataset.version?.shared} isTextShow />,
                                 counts,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),

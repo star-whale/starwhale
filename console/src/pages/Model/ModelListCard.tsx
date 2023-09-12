@@ -19,6 +19,7 @@ import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
+import Shared from '@/components/Shared'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -45,6 +46,7 @@ export default function ModelListCard() {
                     t('sth name', [t('Model')]),
                     t('Model Version'),
                     t('Alias'),
+                    t('Shared'),
                     t('Size'),
                     t('Owner'),
                     t('Created'),
@@ -61,6 +63,7 @@ export default function ModelListCard() {
                             </TextLink>,
                             <VersionText key='name' version={model.version?.name ?? '-'} />,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
+                            <Shared key='shared' shared={model.version?.shared} isTextShow />,
                             model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
                             model.version?.createdTime && formatTimestampDateTime(model.version?.createdTime),
