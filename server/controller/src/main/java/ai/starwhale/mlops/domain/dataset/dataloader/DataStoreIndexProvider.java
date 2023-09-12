@@ -56,10 +56,8 @@ public class DataStoreIndexProvider implements DataIndexProvider {
             var records = dataStore.scan(DataStoreScanRequest.builder()
                     // start params must use the current cursor
                     .start(start)
-                    .startType("STRING")
                     .startInclusive(startInclusive)
                     .end(request.getEnd())
-                    .endType("STRING")
                     .endInclusive(request.isEndInclusive())
                     .keepNone(true)
                     .rawResult(false)

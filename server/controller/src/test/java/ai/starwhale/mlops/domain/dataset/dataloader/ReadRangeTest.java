@@ -77,10 +77,8 @@ public class ReadRangeTest {
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
                         .start("0000-000")
-                        .startType("STRING")
                         .startInclusive(true)
                         .end("0000-008")
-                        .endType("STRING")
                         .endInclusive(true)
                         .keepNone(true)
                         .rawResult(false)
@@ -111,10 +109,8 @@ public class ReadRangeTest {
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
                         .start("0000-008")
-                        .startType("STRING")
                         .startInclusive(false)
                         .end("0000-008")
-                        .endType("STRING")
                         .endInclusive(true)
                         .keepNone(true)
                         .rawResult(false)
@@ -201,10 +197,8 @@ public class ReadRangeTest {
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
                         .start("0000-000")
-                        .startType("STRING")
                         .startInclusive(true)
                         .end("0000-008")
-                        .endType("STRING")
                         .endInclusive(true)
                         .keepNone(true)
                         .rawResult(false)
