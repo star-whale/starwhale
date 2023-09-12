@@ -215,6 +215,13 @@ public class ModelController implements ModelApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<List<ModelViewVo>>> recentModelTree(String projectUrl, Integer limit) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                    modelService.listRecentlyModelVersionView(projectUrl, limit)
+        ));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> modifyModel(
             String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request
     ) {

@@ -42,10 +42,6 @@ public class ModelVersionViewVo {
     @NotNull
     private Boolean latest;
 
-    @NotNull
-    @Builder.Default
-    private Boolean recentlyUsed = false;
-
     private List<String> tags;
 
     @NotNull

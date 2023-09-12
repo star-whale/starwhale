@@ -452,6 +452,13 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<List<DatasetViewVo>>> recentDatasetTree(String projectUrl, Integer limit) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                datasetService.listRecentlyDatasetVersionView(projectUrl, limit)
+        ));
+    }
+
+    @Override
     public ResponseEntity<?> headDataset(String projectUrl, String datasetUrl, String versionUrl) {
         try {
             datasetService.query(projectUrl, datasetUrl, versionUrl);

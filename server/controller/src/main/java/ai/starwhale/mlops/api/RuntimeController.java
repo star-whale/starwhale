@@ -99,6 +99,13 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> recentRuntimeTree(String projectUrl, Integer limit) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                runtimeService.listRecentlyRuntimeVersionView(projectUrl, limit)
+        ));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
             String projectUrl,
             String runtimeUrl,

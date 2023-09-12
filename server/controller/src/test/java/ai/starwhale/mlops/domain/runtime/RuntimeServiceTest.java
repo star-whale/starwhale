@@ -25,7 +25,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -793,11 +792,8 @@ public class RuntimeServiceTest {
         assertEquals(1, res.get(3).getVersions().size());
         assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
         assertTrue(res.get(0).getVersions().get(0).getLatest());
-        assertFalse(res.get(0).getVersions().get(0).getRecentlyUsed());
         assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
         assertTrue(res.get(1).getVersions().get(0).getLatest());
-        assertFalse(res.get(1).getVersions().get(0).getRecentlyUsed());
-        assertTrue(res.get(1).getVersions().get(1).getRecentlyUsed());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }

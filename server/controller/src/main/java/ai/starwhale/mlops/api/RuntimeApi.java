@@ -40,6 +40,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -274,6 +276,19 @@ public interface RuntimeApi {
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
             @RequestParam(required = false, defaultValue = "all") DataScope scope
+    );
+
+    @GetMapping(value = "/project/{projectUrl}/recent-runtime-tree", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> recentRuntimeTree(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data limit", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "5")
+            @Valid
+            @Min(value = 1, message = "limit must be greater than or equal to 1")
+            @Max(value = 50, message = "limit must be less than or equal to 50")
+            Integer limit
     );
 
     @Operation(summary = "Create a new runtime version",

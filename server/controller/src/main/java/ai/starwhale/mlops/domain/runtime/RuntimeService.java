@@ -215,32 +215,27 @@ public class RuntimeService {
 
     public List<RuntimeViewVo> listRuntimeVersionView(
             String projectUrl, boolean includeShared, boolean includeCurrentProject) {
-        Long projectId = projectService.getProjectId(projectUrl);
+        var project = projectService.findProject(projectUrl);
         var list = new ArrayList<RuntimeViewVo>();
         if (includeCurrentProject) {
-            var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(projectId);
-            list.addAll(viewEntityToVo(versions, false));
+            var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(project.getId());
+            list.addAll(viewEntityToVo(versions, project));
         }
         if (includeShared) {
-            var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
-            list.addAll(viewEntityToVo(shared, true));
-        }
-        if (!list.isEmpty()) {
-            var userId = userService.currentUserDetail().getId();
-            var recentlyUsed = runtimeVersionMapper.listRuntimeVersionsByUserRecentlyUsed(projectId, userId, 5)
-                    .stream().map(version -> String.valueOf(version.getId())).collect(Collectors.toList());
-            for (var vo : list) {
-                for (var version : vo.getVersions()) {
-                    if (recentlyUsed.contains(version.getId())) {
-                        version.setRecentlyUsed(true);
-                    }
-                }
-            }
+            var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(project.getId());
+            list.addAll(viewEntityToVo(shared, project));
         }
         return list;
     }
 
-    private Collection<RuntimeViewVo> viewEntityToVo(List<RuntimeVersionViewEntity> list, Boolean shared) {
+    public List<RuntimeViewVo> listRecentlyRuntimeVersionView(String projectUrl, Integer limit) {
+        var project = projectService.findProject(projectUrl);
+        var userId = userService.currentUserDetail().getId();
+        var list = runtimeVersionMapper.listRuntimeVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    private List<RuntimeViewVo> viewEntityToVo(List<RuntimeVersionViewEntity> list, Project currentProject) {
         Map<Long, RuntimeViewVo> map = new LinkedHashMap<>();
         for (RuntimeVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getRuntimeId())) {
@@ -251,7 +246,7 @@ public class RuntimeService {
                                 .projectName(entity.getProjectName())
                                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                                 .runtimeName(entity.getRuntimeName())
-                                .shared(toInt(shared))
+                                .shared(toInt(entity.getProjectName().equals(currentProject.getName())))
                                 .versions(new ArrayList<>())
                                 .build());
             }
@@ -267,7 +262,7 @@ public class RuntimeService {
                             .shared(toInt(entity.getShared()))
                             .build());
         }
-        return map.values();
+        return new ArrayList<>(map.values());
     }
 
     public Runtime findRuntime(Long runtimeId) {

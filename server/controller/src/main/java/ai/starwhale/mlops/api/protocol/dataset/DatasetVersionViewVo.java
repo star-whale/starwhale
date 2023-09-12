@@ -40,10 +40,6 @@ public class DatasetVersionViewVo {
     private Boolean latest;
 
     @NotNull
-    @Builder.Default
-    private Boolean recentlyUsed = false;
-
-    @NotNull
     private Integer shared;
 
     @NotNull
