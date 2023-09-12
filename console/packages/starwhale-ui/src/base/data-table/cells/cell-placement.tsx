@@ -151,6 +151,9 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                         onPreview?.({
                             record: value,
                             columnKey: column.key,
+                            column,
+                            rowIndex,
+                            columnIndex,
                         })
                     }}
                 >

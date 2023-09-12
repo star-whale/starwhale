@@ -134,8 +134,6 @@ function GridTable({
         isSelectedAll,
         isSelectedIndeterminate,
         preview,
-        onPreview,
-        onPreviewClose,
     } = useGrid()
 
     const paginationHeight = paginationable ? 50 : 0
@@ -189,7 +187,7 @@ function GridTable({
                     sortDirection={sortDirection}
                     sortIndex={sortIndex}
                     textQuery={textQuery}
-                    onPreview={onPreview as any}
+                    onPreview={preview.onPreview as any}
                     onRemove={onRemove}
                     getId={getId}
                     // controlRef={controlRef}
@@ -198,12 +196,7 @@ function GridTable({
                 {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
             {paginationable && <AutoStorePagination />}
-            <Preview
-                preview={preview.record as any}
-                previewKey={preview.columnKey}
-                isFullscreen={!!preview.record}
-                setIsFullscreen={onPreviewClose}
-            />
+            <Preview {...preview} isFullscreen={!!preview.current} setIsFullscreen={preview.onPreviewClose} />
         </div>
     )
 }
