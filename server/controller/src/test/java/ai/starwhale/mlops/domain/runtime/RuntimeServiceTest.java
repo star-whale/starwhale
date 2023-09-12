@@ -162,13 +162,12 @@ public class RuntimeServiceTest {
                 .willReturn(1000L);
 
         userService = mock(UserService.class);
-        given(userService.currentUserDetail())
-                .willReturn(User.builder().id(1L).build());
+        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).build());
         projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("2")))
-                .willReturn(2L);
+        given(projectService.findProject(same("1"))).willReturn(Project.builder().id(1L).name("p").build());
+        given(projectService.findProject(same("2"))).willReturn(Project.builder().id(2L).name("p2").build());
+        given(projectService.getProjectId(same("1"))).willReturn(1L);
+        given(projectService.getProjectId(same("2"))).willReturn(2L);
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
 
