@@ -76,6 +76,12 @@ const SelectWidget = ({
                         ...SELECT_STYLE,
                     },
                 },
+                Popover: {
+                    props: {
+                        ignoreBoundary: true,
+                        placement: 'bottom',
+                    },
+                },
             }}
             size={SIZE.compact}
             autoFocus={autofocus}
