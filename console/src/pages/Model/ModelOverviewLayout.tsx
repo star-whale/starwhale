@@ -6,7 +6,6 @@ import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchModel, removeModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import IconFont from '@starwhale/ui/IconFont'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { Button, Toggle } from '@starwhale/ui'
 import { usePage } from '@/hooks/usePage'
@@ -202,15 +201,8 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                             )}
                         </div>
                         <Button
-                            overrides={{
-                                Root: {
-                                    style: {
-                                        justifySelf: 'flex-end',
-                                    },
-                                },
-                            }}
                             kind='secondary'
-                            startEnhancer={() => <IconFont type='runtime' />}
+                            icon='time'
                             onClick={() => history.push(`/projects/${projectId}/models/${modelId}`)}
                         >
                             {t('History')}
