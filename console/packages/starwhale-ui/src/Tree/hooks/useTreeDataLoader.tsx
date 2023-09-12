@@ -7,9 +7,10 @@ type TreeDataLoaderT = {
     search: string
     searchFilter: (search: string, node: TreeNodeData) => boolean
     nodeRender: (node: TreeNodeData) => React.ReactNode
+    extraFilters?: ((node: TreeNodeData) => boolean)[]
 }
 
-function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender }: TreeDataLoaderT) {
+function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender, extraFilters }: TreeDataLoaderT) {
     const walk = (treeNodes: TreeNodeData[], path: any[] = []): TreeNodeDataT[] => {
         return treeNodes
             ?.map((node: TreeNodeData, index: number): TreeNodeDataT => {
@@ -28,10 +29,20 @@ function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender }: Tr
             .filter((node: TreeNodeData) => {
                 if (node.isLeafNode && node.children?.length !== 0) return true
                 if (!search) return true
-
                 return searchFilter(search, node)
             })
+            .filter((node: TreeNodeData) => {
+                if (node.isLeafNode && node.children?.length !== 0) return true
+                if (!extraFilters) return true
+                return extraFilters?.every((filter) => filter(node))
+            })
+            .filter((node: TreeNodeData) => {
+                if (node.isLeafNode && node.children?.length === 0) return false
+                return true
+            })
     }
+
+    // console.log(walk($data))
 
     return React.useMemo(() => {
         return {

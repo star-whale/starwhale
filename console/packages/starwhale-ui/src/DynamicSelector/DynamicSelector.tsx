@@ -20,16 +20,25 @@ const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
 
-export function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
+export function SelectorItemByTree({
+    value,
+    onChange,
+    search,
+    inputRef,
+    info,
+    $multiple,
+    SearchSlot,
+}: SelectorItemPropsT) {
     return (
         <Tree
             data={info.data}
             selectedIds={value as any}
             onSelectedIdsChange={onChange as any}
             search={search}
-            searchable={false}
+            searchable
             multiple={$multiple}
             keyboardControlNode={inputRef as any}
+            SearchSlot={SearchSlot}
         />
     )
 }
@@ -41,6 +50,7 @@ export function DynamicSelector<T = any>({
     startEnhancer,
     endEnhancer = defaultEndEnhancer(),
     options = [],
+    forceFocus = false,
     ...rest
 }: DynamicSelectorPropsT<T>) {
     const [t] = useTranslation()
@@ -71,6 +81,8 @@ export function DynamicSelector<T = any>({
     })
 
     function focusItem(index: number) {
+        if (!forceFocus) return
+
         if (itemRefs.current[index]) {
             itemRefs.current[index]?.inputRef?.current?.focus()
         }
@@ -128,6 +140,7 @@ export function DynamicSelector<T = any>({
         (i: number) => {
             return {
                 isEditing,
+                forceFocus,
                 options,
                 containerRef: ref,
                 onRemove: () => handelRemove(i),

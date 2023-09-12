@@ -31,6 +31,7 @@ export function SelectorItemRender(
         onChange = () => {},
         isFocus = false,
         isEditing = false,
+        forceFocus = false,
         style = {},
         addItemRef,
     }: SelectorItemRenderPropsT,
@@ -163,19 +164,33 @@ export function SelectorItemRender(
     }, [isFocus, isEditing])
 
     return (
-        <SelectItemContainer
-            ref={ref}
-            role='button'
-            tabIndex={0}
-            // @ts-ignore
-            onKeyDown={handleKeyDown}
-            style={style}
-            {...sharedProps}
-        >
-            <LabelsContainer {...sharedProps}>{$selectedLabels}</LabelsContainer>
+        <>
+            <SelectItemContainer
+                ref={ref}
+                role='button'
+                tabIndex={0}
+                // @ts-ignore
+                onKeyDown={handleKeyDown}
+                style={style}
+                {...sharedProps}
+            >
+                <LabelsContainer {...sharedProps}>{$selectedLabels}</LabelsContainer>
+                {isEditing && forceFocus && (
+                    <AutosizeInputContainer className='autosize-input' {...sharedProps}>
+                        {/* @ts-ignore */}
+                        <AutosizeInput
+                            inputRef={inputRef as any}
+                            value={search}
+                            onChange={handleInputChange}
+                            // overrides={{ Input: FilterValue as any }}
+                            $style={{ width: '100%', height: '100%' }}
+                        />
+                    </AutosizeInputContainer>
+                )}
+            </SelectItemContainer>
+
             <SelectorPopover
                 isOpen={sharedProps.$isEditing}
-                rows={Math.ceil($selectedLabels.length / 2)}
                 content={
                     <itemOption.render
                         {...sharedProps}
@@ -186,19 +201,7 @@ export function SelectorItemRender(
                     />
                 }
             />
-            {isEditing && (
-                <AutosizeInputContainer className='autosize-input' {...sharedProps}>
-                    {/* @ts-ignore */}
-                    <AutosizeInput
-                        inputRef={inputRef as any}
-                        value={search}
-                        onChange={handleInputChange}
-                        // overrides={{ Input: FilterValue as any }}
-                        $style={{ width: '100%', height: '100%' }}
-                    />
-                </AutosizeInputContainer>
-            )}
-        </SelectItemContainer>
+        </>
     )
 }
 

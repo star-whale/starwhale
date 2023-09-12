@@ -16,7 +16,7 @@ const useStyles = createUseStyles({
     modelField: {
         display: 'grid',
         columnGap: 40,
-        gridTemplateColumns: '660px 280px 280px',
+        gridTemplateColumns: '660px 280px 180px',
         gridTemplateRows: 'minmax(0px, max-content)',
     },
 })

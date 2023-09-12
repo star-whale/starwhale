@@ -8,6 +8,7 @@ import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchRuntimeTree } from '../hooks/useFetchRuntimeTree'
 import _ from 'lodash'
+import QuickGroup from '@/components/QuickGroup'
 
 const RuntimeTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -15,8 +16,32 @@ const RuntimeTreeNode = themedStyled('div', () => ({
     alignItems: 'center',
     flexWrap: 'nowrap',
     height: '24px',
-    width: '100%',
+    width: 'auto',
 }))
+export function RuntimeTree({ ...props }: any) {
+    const [t] = useTranslation()
+    const OPTIONS = [
+        {
+            key: 'latest',
+            label: t('runtime.selector.lastest'),
+        },
+        {
+            key: 'current',
+            label: t('runtime.selector.current'),
+        },
+        {
+            key: 'guest',
+            label: t('runtime.selector.shared'),
+        },
+        {
+            key: 'all',
+            label: t('runtime.selector.all'),
+        },
+    ]
+    const SearchSlot = React.memo((args: any) => <QuickGroup options={OPTIONS} {...args} />)
+
+    return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
+}
 
 export function RuntimeTreeSelector(
     props: any & {
@@ -24,6 +49,7 @@ export function RuntimeTreeSelector(
         onDataChange?: (data: any) => void
         getId?: (obj: any) => any
         multiple?: boolean
+        clearable?: boolean
     }
 ) {
     const [t] = useTranslation()
@@ -54,7 +80,11 @@ export function RuntimeTreeSelector(
         const treeData: TreeNodeData[] = runtimeInfo.data.map((runtime) => {
             return {
                 id: runtime.runtimeName,
-                label: [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/'),
+                label: (
+                    <p className='color-[#02102b] text-14px'>
+                        {[runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/')}{' '}
+                    </p>
+                ),
                 isExpanded: true,
                 children:
                     runtime.versions?.map((item) => {
@@ -62,7 +92,11 @@ export function RuntimeTreeSelector(
                             id: getId(item),
                             label: (
                                 <RuntimeTreeNode>
-                                    <RuntimeLabel version={item} runtime={runtime} />
+                                    <RuntimeLabel
+                                        version={item}
+                                        runtime={runtime}
+                                        style={{ fontSize: '14px', marginRight: '4px' }}
+                                    />
                                     <Button
                                         key='version-history'
                                         kind='tertiary'
@@ -84,8 +118,17 @@ export function RuntimeTreeSelector(
                                 </RuntimeTreeNode>
                             ),
                             info: {
-                                labelView: <RuntimeLabel version={item} runtime={runtime} isProjectShow />,
+                                labelView: (
+                                    <RuntimeLabel
+                                        version={item}
+                                        runtime={runtime}
+                                        isProjectShow
+                                        style={{ fontSize: '14px' }}
+                                    />
+                                ),
                                 labelTitle: getRuntimeLabel(item, runtime),
+                                data: runtime,
+                                version: item,
                             },
                             isExpanded: true,
                         }
@@ -108,7 +151,7 @@ export function RuntimeTreeSelector(
                 getDataToLabelView: (data: any) => data?.info?.labelView,
                 getDataToLabelTitle: (data: any) => data?.info?.labelTitle,
                 getDataToValue: (data: any) => data?.id,
-                render: SelectorItemByTree as React.FC<any>,
+                render: RuntimeTree as React.FC<any>,
             },
         ]
     }, [$treeData, multiple])
