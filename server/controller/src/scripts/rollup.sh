@@ -64,6 +64,10 @@ new_up() {
 old_down() {
   status_notify "$CONTROLLER_SERVER_ADDRESS_NEW" "DOWN"
 }
+# notify the old server that the new server is down
+new_down() {
+  status_notify "$CONTROLLER_SERVER_ADDRESS_OLD" "DOWN"
+}
 
 # start the new server automatically
 if [ -z "$1" ] ; then

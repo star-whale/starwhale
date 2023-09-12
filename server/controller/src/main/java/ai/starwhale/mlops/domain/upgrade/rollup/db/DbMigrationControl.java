@@ -59,7 +59,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                 .url(dataSourceProperties.getUrl())
                 .username(dataSourceProperties.getUsername())
                 .password(dataSourceProperties.getPassword())
-                .build();;
+                .build();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
             } catch (Exception e) {
                 log.error("flyway db migration failed", e);
                 // https://documentation.red-gate.com/fd/rolling-back-138347144.html#Rollingback-Rollingback
-                flyway.undo();
+                flyway.undo(); //this feature is not supported by flyway community edition
                 throw e;
             }
         }

@@ -241,6 +241,7 @@ public class DataStoreController implements DataStoreApi {
                     break;
                 }
                 request.setStart(recordList.getLastKey());
+                request.setStartInclusive(false);
                 if (remaining > 0) {
                     remaining = remaining - resultSize;
                     if (remaining <= 0) {
