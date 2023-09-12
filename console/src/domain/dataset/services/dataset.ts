@@ -25,6 +25,11 @@ export async function fetchDatasetTree(projectId: string): Promise<IDatasetTreeS
     return resp.data
 }
 
+export async function fetchRecentDatasetTree(projectId: string): Promise<IDatasetTreeSchema[]> {
+    const resp = await axios.get<IDatasetTreeSchema[]>(`/api/v1/project/${projectId}/recent-dataset-tree`)
+    return resp.data
+}
+
 export async function createDataset(
     projectId: string,
     datasetName: string,

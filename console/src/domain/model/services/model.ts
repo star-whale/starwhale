@@ -49,3 +49,8 @@ export async function fetchModelTree(projectId: string): Promise<IModelTreeSchem
     const resp = await axios.get<IModelTreeSchema[]>(`/api/v1/project/${projectId}/model-tree`)
     return resp.data
 }
+
+export async function fetchRecentModelTree(projectId: string): Promise<IModelTreeSchema[]> {
+    const resp = await axios.get<IModelTreeSchema[]>(`/api/v1/project/${projectId}/recent-model-tree`)
+    return resp.data
+}

@@ -2,13 +2,14 @@ import { findTreeNode } from '@starwhale/ui/base/tree-view/utils'
 import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelector'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React, { useEffect } from 'react'
-import { useFetchDatasetTree } from '../hooks/useFetchDatasetTree'
+import { useFetchDatasetTree, useFetchRecentDatasetTree } from '../hooks/useFetchDatasetTree'
 import DatasetLabel, { getDatasetLabel } from './DatasetLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import _ from 'lodash'
-import QuickGroup from '@/components/QuickGroup'
+import QuickGroup, { QuickGroupEnum } from '@/components/QuickGroup'
+import { useProject } from '@/domain/project/hooks/useProject'
 
 const DatasetTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -39,7 +40,24 @@ export function DatasetTree({ ...props }: any) {
             label: t('dataset.selector.all'),
         },
     ]
-    const SearchSlot = React.memo((args: any) => <QuickGroup options={OPTIONS} {...args} />)
+    const { project } = useProject()
+    const info = useFetchRecentDatasetTree(project?.id)
+    const SearchSlot = (args: any) => (
+        <QuickGroup
+            options={OPTIONS}
+            {...args}
+            filters={{
+                [QuickGroupEnum.latest]: [
+                    (node: any) =>
+                        info.data?.find((item) =>
+                            item.versions.find((version) => {
+                                return version.id === node?.info?.version?.id
+                            })
+                        ),
+                ],
+            }}
+        />
+    )
 
     return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
 }
