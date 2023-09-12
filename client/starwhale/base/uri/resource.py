@@ -6,7 +6,6 @@ from glob import glob
 from http import HTTPStatus
 from typing import Any, Dict, Optional
 from pathlib import Path
-from dataclasses import dataclass
 
 import requests
 from requests import HTTPError
@@ -54,7 +53,6 @@ class ResourceType(Enum):
     job = "job"
 
 
-@dataclass(unsafe_hash=True)
 class Resource:
     """
     Resource holds the DataSet, Model, Runtime, Eval etc.
@@ -356,4 +354,13 @@ class Resource:
     def __str__(self) -> str:
         return self.full_uri
 
-    __repr__ = __str__
+    def __repr__(self) -> str:
+        return f"<Resource {self.full_uri}>"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Resource):
+            return NotImplemented
+        return self.full_uri == other.full_uri
+
+    def __hash__(self) -> int:
+        return hash(self.full_uri)

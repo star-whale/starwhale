@@ -11,7 +11,6 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
-from collections import defaultdict
 
 import yaml
 import jinja2
@@ -34,7 +33,6 @@ from starwhale.consts import (
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
-    CREATED_AT_KEY,
     DEFAULT_PROJECT,
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
@@ -70,7 +68,6 @@ from starwhale.base.type import (
 )
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
-from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     is_venv,
     is_conda,
@@ -115,10 +112,23 @@ from starwhale.utils.error import (
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.models.base import ListFilter
+from starwhale.base.uri.project import Project
 from starwhale.base.uri.project import Project as ProjectURI
+from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
-
-from .store import RuntimeStorage, get_docker_run_image_by_manifest
+from starwhale.core.runtime.store import (
+    RuntimeStorage,
+    get_docker_run_image_by_manifest,
+)
+from starwhale.base.models.runtime import (
+    RuntimeListType,
+    LocalRuntimeVersion,
+    LocalRuntimeVersionInfo,
+    LocalRuntimeVersionInfoBasic,
+)
+from starwhale.base.client.api.runtime import RuntimeApi
+from starwhale.base.client.models.models import RuntimeInfoVo
 
 RUNTIME_API_VERSION = "1.1"
 _TEMPLATE_DIR = Path(__file__).parent / "template"
@@ -702,8 +712,19 @@ class RuntimeConfig(ASDictMixin):
 
 
 class Runtime(BaseBundle, metaclass=ABCMeta):
+    @classmethod
     @abstractmethod
-    def info(self) -> t.Dict[str, t.Any]:
+    def list(
+        cls,
+        project_uri: Project,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+        filter: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[RuntimeListType, t.Dict[str, t.Any]]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def info(self) -> LocalRuntimeVersionInfo | RuntimeInfoVo | None:
         raise NotImplementedError
 
     @classmethod
@@ -712,17 +733,23 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
 
     @classmethod
     def get_runtime(cls, uri: Resource) -> Runtime:
-        _cls = cls._get_cls(uri)
+        _cls = cls._get_cls(uri.instance)
         return _cls(uri)
+
+    @classmethod
+    def get_cls(
+        cls, uri: Instance
+    ) -> t.Union[t.Type[StandaloneRuntime], t.Type[CloudRuntime]]:
+        return cls._get_cls(uri)
 
     @classmethod
     def _get_cls(  # type: ignore
         cls,
-        uri: Resource,
+        uri: Instance,
     ) -> t.Union[t.Type[StandaloneRuntime], t.Type[CloudRuntime]]:
-        if uri.instance.is_local:
+        if uri.is_local:
             return StandaloneRuntime
-        elif uri.instance.is_cloud:
+        elif uri.is_cloud:
             return CloudRuntime
         else:
             raise NoSupportError(f"runtime uri:{uri}")
@@ -847,49 +874,47 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._version = uri.version
         self._detected_sw_version: str = ""
 
-    def info(self) -> t.Dict[str, t.Any]:
-        ret: t.Dict[str, t.Any] = {}
+    def info(self) -> LocalRuntimeVersionInfo | RuntimeInfoVo | None:
         if not self.store.bundle_path.exists():
-            return ret
+            return None
 
-        ret["basic"] = {
-            "name": self.uri.name,
-            "uri": str(self.uri),
-            "project": self.uri.project.name,
-            "snapshot_workdir": str(self.store.snapshot_workdir),
-            "bundle_path": str(self.store.bundle_path),
-            "version": self.uri.version,
-            "tags": StandaloneTag(self.uri).list(),
-        }
+        basic = LocalRuntimeVersionInfoBasic(
+            name=self.uri.name,
+            uri=self.uri,
+            snapshot_workdir=str(self.store.snapshot_workdir),
+            bundle_path=str(self.store.bundle_path),
+            tags=StandaloneTag(self.uri).list(),
+        )
 
-        ret["basic"]["version"] = self.uri.version
-        ret["basic"]["tags"] = StandaloneTag(self.uri).list()
-
+        lock = {}
         if self.store.snapshot_workdir.exists():
-            ret["manifest"] = self.store.manifest
-            ret["runtime_yaml"] = (
+            manifest = self.store.manifest
+            runtime_yaml = (
                 self.store.snapshot_workdir / DefaultYAMLName.RUNTIME
             ).read_text()
-            ret["lock"] = {}
-            for fname in ret["manifest"]["environment"]["lock"]["files"]:
-                ret["lock"][os.path.basename(fname)] = (
+            for fname in manifest["environment"]["lock"]["files"]:
+                lock[os.path.basename(fname)] = (
                     self.store.snapshot_workdir / "dependencies" / fname
                 ).read_text()
         else:
             with TarFS(str(self.store.bundle_path)) as tar:
                 with tar.open(DEFAULT_MANIFEST_NAME) as f:
-                    ret["manifest"] = yaml.safe_load(f)
+                    manifest = yaml.safe_load(f)
 
                 with tar.open(DefaultYAMLName.RUNTIME) as f:
-                    ret["runtime_yaml"] = f.read()
+                    runtime_yaml = f.read()
 
-                ret["lock"] = {}
-                for fname in ret["manifest"]["environment"]["lock"]["files"]:
+                for fname in manifest["environment"]["lock"]["files"]:
                     fpath = os.path.join("dependencies", fname)
                     with tar.open(fpath) as f:
-                        ret["lock"][os.path.basename(fpath)] = f.read()
+                        lock[os.path.basename(fpath)] = f.read()
 
-        return ret
+        return LocalRuntimeVersionInfo(
+            basic=basic,
+            manifest=manifest,
+            yaml=runtime_yaml,
+            lock=lock,
+        )
 
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
@@ -1450,10 +1475,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         project_uri: ProjectURI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filters = filters or {}
-        rs = defaultdict(list)
+        filters: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[RuntimeListType, t.Dict[str, t.Any]]:
+        ret: t.List[LocalRuntimeVersion] = []
         for _bf in RuntimeStorage.iter_all_bundles(
             project_uri, bundle_type=BundleType.RUNTIME, uri_type=ResourceType.runtime
         ):
@@ -1464,18 +1488,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 continue
 
             # TODO: add more manifest info
-            rs[_bf.name].append(
-                {
-                    "name": _bf.name,
-                    "version": _bf.version,
-                    "path": str(_bf.path.absolute()),
-                    CREATED_AT_KEY: get_path_created_time(_bf.path),
-                    "size": _bf.path.stat().st_size,
-                    "is_removed": _bf.is_removed,
-                    "tags": _bf.tags,
-                }
+            ret.append(
+                LocalRuntimeVersion(
+                    name=_bf.name,
+                    version=_bf.version,
+                    path=str(_bf.path.absolute()),
+                    created_at=get_path_created_time(_bf.path),
+                    size=_bf.path.stat().st_size,
+                    removed=_bf.is_removed,
+                    tags=_bf.tags,
+                )
             )
-        return rs, {}
+
+        return ret, {}
 
     @classmethod
     def quickstart_from_uri(
@@ -2203,16 +2228,27 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         self.typ = InstanceType.CLOUD
 
     @classmethod
-    @ignore_error(({}, {}))
     def list(
         cls,
         project_uri: ProjectURI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filter_dict = filter_dict or {}
+        filter: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[RuntimeListType, t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(
-            project_uri, ResourceType.runtime, page, size, filter_dict
+        r = (
+            RuntimeApi(project_uri.instance)
+            .list(project_uri.name)
+            .raise_on_error()
+            .response()
+        )
+        return r.data.list or [], crm.parse_pager(r.dict())
+
+    def info(self) -> LocalRuntimeVersionInfo | RuntimeInfoVo | None:
+        return (
+            RuntimeApi(self.uri.instance)
+            .info(self.uri)
+            .raise_on_error()
+            .response()
+            .data
         )

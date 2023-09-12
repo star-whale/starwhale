@@ -13,8 +13,8 @@ class ModelApi(Client):
     def __init__(self, instance: Instance) -> None:
         super().__init__(instance.url, instance.token)
 
-    def list(self, rc: Resource) -> TypeWrapper[ResponseMessagePageInfoModelVo]:
-        uri = f"/api/v1/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{rc.version}/tag"
+    def list(self, project: str) -> TypeWrapper[ResponseMessagePageInfoModelVo]:
+        uri = f"/api/v1/project/{project}/model"
         return TypeWrapper(ResponseMessagePageInfoModelVo, self.http_get(uri))
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageModelInfoVo]:

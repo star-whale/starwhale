@@ -30,6 +30,7 @@ from starwhale.base.store import BaseStorage, BundleField
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource
 
@@ -72,51 +73,54 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def list(
+    def _list(
         cls,
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
+        filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filters = filters or {}
         _cls = cls._get_cls(project_uri)
-        _filter = cls.get_filter_dict(filters, cls.get_filter_fields())
+        _filter = cls.get_list_filter(filters)
         return _cls.list(project_uri, page, size, _filter)  # type: ignore
 
     @classmethod
-    def get_filter_dict(
+    def get_list_filter(
         cls,
-        filters: t.Union[t.Dict[str, t.Any], t.List[str]],
-        fields: t.Optional[t.List[str]] = None,
-    ) -> t.Dict[str, t.Any]:
-        fields = fields or []
-        if isinstance(filters, t.Dict):
-            return {k: v for k, v in filters.items() if k in fields}
+        filters: t.Union[t.List[str], None],
+    ) -> ListFilter | None:
+        if filters is None:
+            return None
 
-        _filter_dict: t.Dict[str, t.Any] = {}
-        for _f in filters:
-            _item = _f.split("=", 1)
-            if _item[0] in fields:
-                _filter_dict[_item[0]] = _item[1] if len(_item) > 1 else ""
-        return _filter_dict
+        if isinstance(filters, dict):
+            fs = filters
+        else:
+            fs = dict()
+            for _f in filters:
+                _item = _f.split("=", 1)
+                fs[_item[0]] = _item[1] if len(_item) > 1 else ""
+        ret = ListFilter()
+        if "name" in fs:
+            ret.name = fs["name"]
+        if "version" in fs:
+            ret.version = fs["version"]
+        if "latest" in fs:
+            ret.latest = True
+        if "owner" in fs:
+            ret.owner = fs["owner"]
 
-    @classmethod
-    def get_filter_fields(cls) -> t.List[str]:
-        return ["name", "owner", "latest"]
+        return ret
 
     @classmethod
     def do_bundle_filter(
-        cls,
-        bundle_field: BundleField,
-        filters: t.Union[t.Dict[str, t.Any], t.List[str]],
+        cls, bundle_field: BundleField, filters: t.Optional[ListFilter] = None
     ) -> bool:
-        filter_dict = cls.get_filter_dict(filters, cls.get_filter_fields())
-        _name = filter_dict.get("name")
+        if filters is None:
+            return True
+        _name = filters.name
         if _name and not bundle_field.name.startswith(_name):
             return False
-        _latest = filter_dict.get("latest") is not None
-        if _latest and "latest" not in bundle_field.tags:
+        if filters.latest and "latest" not in bundle_field.tags:
             return False
 
         return True

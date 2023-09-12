@@ -1,11 +1,9 @@
 from typing import Optional
-from dataclasses import dataclass
 
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.exceptions import UriTooShortException
 
 
-@dataclass(unsafe_hash=True)
 class Project:
     name: str
     instance: Instance
@@ -79,4 +77,10 @@ class Project:
     def __str__(self) -> str:
         return self.full_uri
 
-    __repr__ = __str__
+    def __repr__(self) -> str:
+        return f"<Project {self.full_uri}>"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Project):
+            return False
+        return self.full_uri == other.full_uri

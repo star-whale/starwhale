@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 import subprocess
 from abc import ABCMeta, abstractmethod
-from typing import Union
 
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
@@ -15,14 +14,17 @@ from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.core.job.store import JobStorage
-from starwhale.base.models.job import JobManifest, LocalJobInfo, RemoteJobInfo
+from starwhale.base.models.job import (
+    JobListType,
+    JobManifest,
+    LocalJobInfo,
+    RemoteJobInfo,
+)
 from starwhale.api._impl.metric import MetricKind
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource
 from starwhale.base.client.api.job import JobApi
 from starwhale.base.client.models.models import JobVo, TaskVo
-
-JobListType = Union[t.List[LocalJobInfo], t.List[JobVo]]
 
 
 class Job(metaclass=ABCMeta):

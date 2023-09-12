@@ -17,6 +17,7 @@ import jsonlines
 import requests_mock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import ROOT_DIR, BaseTestCase
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_PROJECT
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -32,8 +33,6 @@ from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
-
-from .. import ROOT_DIR, BaseTestCase
 
 
 class BatchDataHandler(PipelineHandler):

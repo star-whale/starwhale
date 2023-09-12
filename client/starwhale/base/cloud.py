@@ -296,11 +296,9 @@ class CloudRequestMixed:
         uri_typ: ResourceType,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
+        filter_dict: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filter_dict = filter_dict or {}
         _params = {"pageNum": page, "pageSize": size}
-        _params.update(filter_dict)
         resp = self.do_http_request(
             f"/project/{project_uri.name}/{uri_typ.value}",
             params=_params,
@@ -369,10 +367,6 @@ class CloudRequestMixed:
 
 
 class CloudBundleModelMixin(CloudRequestMixed):
-    def info(self) -> t.Dict[str, t.Any]:
-        uri: Resource = self.uri  # type: ignore
-        return self._fetch_bundle_info(uri, uri.typ)
-
     @ignore_error(({}, {}))
     def history(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE

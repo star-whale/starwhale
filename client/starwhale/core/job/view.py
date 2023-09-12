@@ -23,9 +23,9 @@ from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .model import Job, JobListType
+from .model import Job
 from ...base.cloud import CloudRequestMixed
-from ...base.models.job import LocalJobInfo, RemoteJobInfo
+from ...base.models.job import JobListType, LocalJobInfo, RemoteJobInfo
 from ...base.client.models.models import JobVo, TaskVo
 
 

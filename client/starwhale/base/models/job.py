@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import typing as t
-from typing import List, Optional
+from typing import List, Union, Optional
 
-from pydantic import BaseModel
-
+from starwhale.base.models.base import SwBaseModel
 from starwhale.base.client.models.models import JobVo, TaskVo
 
 
-class JobManifest(BaseModel):
+class JobManifest(SwBaseModel):
     created_at: str
     scheduler_run_args: Optional[dict]
     version: str
@@ -23,12 +22,15 @@ class JobManifest(BaseModel):
     finished_at: str
 
 
-class LocalJobInfo(BaseModel):
+class LocalJobInfo(SwBaseModel):
     manifest: JobManifest
     report: t.Optional[t.Dict[str, t.Any]] = None
 
 
-class RemoteJobInfo(BaseModel):
+class RemoteJobInfo(SwBaseModel):
     job: JobVo
     tasks: t.Optional[t.List[TaskVo]] = None
     report: t.Dict[str, t.Any]
+
+
+JobListType = Union[t.List[LocalJobInfo], t.List[JobVo]]
