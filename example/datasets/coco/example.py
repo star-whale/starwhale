@@ -25,18 +25,16 @@ def draw_bbox(img, bbox_view_):
 
 def local():
     ds = dataset("coco/version/latest", readonly=True)
-    for row in ds:
-        with PILImage.open(
-            io.BytesIO(row.features.image.to_bytes())
-        ) as img, PILImage.open(io.BytesIO(row.features.mask.to_bytes())).convert(
-            "RGBA"
-        ) as msk:
-            for seg in row.features.segments_info:
-                draw_bbox(img, seg["bbox"])
+    row = ds[0]
+    with PILImage.open(io.BytesIO(row.features.image.to_bytes())) as img, PILImage.open(
+        io.BytesIO(row.features.mask.to_bytes())
+    ).convert("RGBA") as msk:
+        for seg in row.features.segments_info:
+            draw_bbox(img, seg["bbox"])
 
-            msk.putalpha(127)
-            img.paste(msk, (0, 0), mask=msk)
-            img.show()
+        msk.putalpha(127)
+        img.paste(msk, (0, 0), mask=msk)
+        img.save("coco_1.png")
 
 
 def remote():
