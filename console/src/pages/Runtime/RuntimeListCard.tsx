@@ -16,6 +16,7 @@ import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { getAliasStr } from '@base/utils/alias'
 import { removeRuntime } from '@/domain/runtime/services/runtime'
+import Shared from '@/components/Shared'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -34,6 +35,7 @@ export default function RuntimeListCard() {
                     t('sth name', [t('Runtime')]),
                     t('Runtime Version'),
                     t('Alias'),
+                    t('Shared'),
                     t('Image'),
                     t('Owner'),
                     t('Created'),
@@ -50,6 +52,7 @@ export default function RuntimeListCard() {
                             </TextLink>,
                             <VersionText key='name' version={runtime.version?.name ?? '-'} />,
                             runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
+                            <Shared key='shared' shared={runtime.version?.shared} isTextShow />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.version?.createdTime && formatTimestampDateTime(runtime.version?.createdTime),
