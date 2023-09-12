@@ -128,7 +128,7 @@ const dataset = {
         zh: '最近使用',
     },
     'dataset.selector.current': {
-        en: 'This project‘s datasets',
+        en: "This project's datasets",
         zh: '本项目数据集',
     },
     'dataset.selector.shared': {
@@ -227,7 +227,7 @@ const runtime = {
         zh: '最近使用',
     },
     'runtime.selector.current': {
-        en: 'This project‘s runtimes',
+        en: "This project's runtimes",
         zh: '本项目运行时',
     },
     'runtime.selector.shared': {
@@ -290,7 +290,7 @@ const model = {
         zh: '最近使用',
     },
     'model.selector.current': {
-        en: 'This project‘s models',
+        en: "This project's models",
         zh: '本项目模型',
     },
     'model.selector.shared': {
