@@ -3,7 +3,7 @@ import { ExtendButton } from '@starwhale/ui'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view/types'
 
-enum QuickGroupEnum {
+export enum QuickGroupEnum {
     latest = 'latest',
     current = 'current',
     guest = 'guest',
@@ -11,10 +11,12 @@ enum QuickGroupEnum {
 }
 
 function QuickGroup({
+    filters = [],
     value = QuickGroupEnum.all,
     options = [],
     onChange,
 }: {
+    filters: any[]
     value: QuickGroupEnum
     options: { key: string; label: string }[]
     onChange: (key: string, filters: any[]) => void
@@ -22,10 +24,11 @@ function QuickGroup({
     // const [quickGroup, setQuickGroup] = useState<QuickGroupEnum>(QuickGroupEnum.all)
     const { project } = useProject()
     const filterFunctions = {
-        [QuickGroupEnum.latest]: [() => true, (item: TreeNodeData) => item?.info?.version?.recentlyUsed],
-        [QuickGroupEnum.current]: [(item: TreeNodeData) => item?.info?.data?.projectName === project?.name, () => true],
-        [QuickGroupEnum.guest]: [(item: TreeNodeData) => item?.info?.data?.projectName !== project?.name, () => true],
-        [QuickGroupEnum.all]: [() => true, () => true],
+        [QuickGroupEnum.latest]: [() => false],
+        [QuickGroupEnum.current]: [(item: TreeNodeData) => item?.info?.data?.projectName === project?.name],
+        [QuickGroupEnum.guest]: [(item: TreeNodeData) => item?.info?.data?.projectName !== project?.name],
+        [QuickGroupEnum.all]: [() => true],
+        ...filters,
     }
     const quickGroup = value
 

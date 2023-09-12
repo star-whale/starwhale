@@ -6,9 +6,10 @@ import RuntimeLabel, { getRuntimeLabel } from './RuntimeLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
-import { useFetchRuntimeTree } from '../hooks/useFetchRuntimeTree'
+import { useFetchRecentRuntimeTree, useFetchRuntimeTree } from '../hooks/useFetchRuntimeTree'
 import _ from 'lodash'
-import QuickGroup from '@/components/QuickGroup'
+import QuickGroup, { QuickGroupEnum } from '@/components/QuickGroup'
+import { useProject } from '@/domain/project/hooks/useProject'
 
 const RuntimeTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -38,7 +39,24 @@ export function RuntimeTree({ ...props }: any) {
             label: t('runtime.selector.all'),
         },
     ]
-    const SearchSlot = React.memo((args: any) => <QuickGroup options={OPTIONS} {...args} />)
+    const { project } = useProject()
+    const info = useFetchRecentRuntimeTree(project?.id)
+    const SearchSlot = (args: any) => (
+        <QuickGroup
+            options={OPTIONS}
+            {...args}
+            filters={{
+                [QuickGroupEnum.latest]: [
+                    (node: any) =>
+                        info.data?.find((item) =>
+                            item.versions.find((version) => {
+                                return version.id === node?.info?.version?.id
+                            })
+                        ),
+                ],
+            }}
+        />
+    )
 
     return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
 }

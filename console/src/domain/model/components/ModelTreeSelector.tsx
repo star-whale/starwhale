@@ -6,10 +6,11 @@ import ModelLabel, { getModelLabel } from './ModelLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
-import { useFetchModelTree } from '../hooks/useFetchModelTree'
+import { useFetchModelTree, useFetchRecentModelTree } from '../hooks/useFetchModelTree'
 import _ from 'lodash'
 import { DynamicSelectorPropsT, SelectorItemValueT } from '@starwhale/ui/DynamicSelector/types'
-import QuickGroup from '@/components/QuickGroup'
+import QuickGroup, { QuickGroupEnum } from '@/components/QuickGroup'
+import { useProject } from '@/domain/project/hooks/useProject'
 
 const ModelTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -40,7 +41,24 @@ export function ModelTree({ ...props }: any) {
             label: t('model.selector.all'),
         },
     ]
-    const SearchSlot = React.memo((args: any) => <QuickGroup options={OPTIONS} {...args} />)
+    const { project } = useProject()
+    const info = useFetchRecentModelTree(project?.id)
+    const SearchSlot = (args: any) => (
+        <QuickGroup
+            options={OPTIONS}
+            {...args}
+            filters={{
+                [QuickGroupEnum.latest]: [
+                    (node: any) =>
+                        info.data?.find((item) =>
+                            item.versions.find((version) => {
+                                return version.id === node?.info?.version?.id
+                            })
+                        ),
+                ],
+            }}
+        />
+    )
 
     return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
 }

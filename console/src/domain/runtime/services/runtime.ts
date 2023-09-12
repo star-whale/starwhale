@@ -28,3 +28,8 @@ export async function fetchRuntimeTree(projectId: string): Promise<IRuntimeTreeS
     const resp = await axios.get<IRuntimeTreeSchema[]>(`/api/v1/project/${projectId}/runtime-tree`)
     return resp.data
 }
+
+export async function fetchRecentRuntimeTree(projectId: string): Promise<IRuntimeTreeSchema[]> {
+    const resp = await axios.get<IRuntimeTreeSchema[]>(`/api/v1/project/${projectId}/recent-runtime-tree`)
+    return resp.data
+}
