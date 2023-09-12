@@ -33,7 +33,11 @@ class Process:
         uri: t.Union[Resource, str],
         force_restore: bool = False,
     ) -> None:
-        self._uri = uri if isinstance(uri, Resource) else Resource(uri)
+        self._uri = (
+            uri
+            if isinstance(uri, Resource)
+            else Resource(uri, typ=ResourceType.runtime)
+        )
         self._prefix_path = self._restore_runtime(force_restore=force_restore)
         self._mode = guess_python_env_mode(self._prefix_path)
 
