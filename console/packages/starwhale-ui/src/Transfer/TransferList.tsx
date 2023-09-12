@@ -161,7 +161,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
     const List = useMemo(() => {
         if (isDragable) {
             return (
-                <ul className='transfer-list-content-ul'>
+                <ul className='transfer-list-content-ul scroller-sm'>
                     <ReactSortable
                         delay={0}
                         handle='.transfer-handle'

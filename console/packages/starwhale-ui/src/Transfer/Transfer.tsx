@@ -161,6 +161,9 @@ export default function Transfer({
         initialSelectedIds: value?.selectedIds ?? [],
         initialPinnedIds: value?.pinnedIds ?? [],
     })
+    const $rightIds = useMemo(() => {
+        return value.ids ?? []
+    }, [value.ids])
 
     // handelers: move action
     const handleToRight = useCallback(() => {
@@ -255,7 +258,7 @@ export default function Transfer({
                             })
                         },
                         handleOrderChange: (ids: any[], dragId: any) => {
-                            const rtn = rightOperators.handleOrderChange(ids, dragId)
+                            const rtn = rightOperators.handleOrderChange(ids, dragId, $rightIds)
                             onChange({
                                 selectedIds: rtn.selectedIds,
                                 pinnedIds: rtn.pinnedIds,

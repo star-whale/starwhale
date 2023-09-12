@@ -177,7 +177,7 @@ export default function Preview({
                 className={styles.layoutNormal}
             >
                 <div className={styles.wrapper}>
-                    {Panel && <div className={[styles.panel, 'flex-full'].join(' ')}>{Panel}</div>}
+                    {Panel && <div className={[styles.panel].join(' ')}>{Panel}</div>}
                     <div className={styles.card}>
                         {!isFullscreen && (
                             <div

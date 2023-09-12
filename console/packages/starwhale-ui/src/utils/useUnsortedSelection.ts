@@ -44,10 +44,18 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
     )
 
     const handleOrderChange = useCallback(
-        (newIds: T[], dragId: T) => {
+        (newIds: T[], dragId: T, rawIds: T[]) => {
             const sortedMergeIds = Array.from(newIds).filter((v: T) => ids.has(v))
             const $pinnedIds = new Set(pinnedIds)
             const dragIndex = sortedMergeIds.findIndex((v: T) => v === dragId)
+            const prevIds = rawIds
+            const dragPrevSiblingId = sortedMergeIds[dragIndex - 1]
+            const dragPrevSiblingRawIndex = dragIndex > 0 ? prevIds.findIndex((v: T) => v === dragPrevSiblingId) : 0
+            const dragPrevRawIndex = prevIds.findIndex((v: T) => v === dragId)
+
+            prevIds.splice(dragPrevRawIndex, 1)
+            if (dragPrevSiblingId === undefined) prevIds.unshift(dragId)
+            else prevIds.splice(dragPrevSiblingRawIndex + 1, 0, dragId)
 
             $pinnedIds.delete(dragId)
 
@@ -68,10 +76,10 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             }
 
             setPinnedIds($pinnedIds)
-            setIds(new Set(sortedMergeIds))
+            setIds(new Set(prevIds))
             return {
                 pinnedIds: Array.from($pinnedIds),
-                ids: Array.from(sortedMergeIds),
+                ids: prevIds,
                 selectedIds: Array.from(selectedIds),
             }
         },

@@ -145,7 +145,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                             />
                         </div>
                         <Button
-                            icon='runtime'
+                            icon='time'
                             kind='secondary'
                             onClick={() => history.push(`/projects/${projectId}/runtimes/${runtimeId}/versions`)}
                         >

@@ -202,15 +202,8 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                             )}
                         </div>
                         <Button
-                            overrides={{
-                                Root: {
-                                    style: {
-                                        justifySelf: 'flex-end',
-                                    },
-                                },
-                            }}
                             kind='secondary'
-                            startEnhancer={() => <IconFont type='runtime' />}
+                            icon='time'
                             onClick={() => history.push(`/projects/${projectId}/models/${modelId}`)}
                         >
                             {t('History')}
