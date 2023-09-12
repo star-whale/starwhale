@@ -211,7 +211,10 @@ export default function Transfer({
             <div className='list'>
                 <TransferList
                     columns={$leftFilteredColumns}
-                    operators={leftOperators}
+                    operators={{
+                        ...leftOperators,
+                        handleOrderChange: undefined,
+                    }}
                     title={t('table.column.invisible')}
                 />
                 <div className='transfer-list-toolbar'>

@@ -45,7 +45,7 @@ type TransferValueT = Pick<ConfigT, 'selectedIds' | 'pinnedIds' | 'ids'>
 type TransferListPropsT = {
     isDragable?: boolean
     operators: TransferValueT & {
-        handleOrderChange: (ids: string[], dragId: any) => void
+        handleOrderChange?: (ids: string[], dragId: any) => void
         handleSelectOne: (id: string) => void
         handleSelectMany: (ids: string[]) => void
         handleSelectNone: () => void
@@ -176,7 +176,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                         onUnchoose={() => {}}
                         onEnd={(args) => {
                             if (dataRef.current) {
-                                handleOrderChange(
+                                handleOrderChange?.(
                                     dataRef.current.map((v: any) => v.id),
                                     $data[args.oldIndex as any].id
                                 )
