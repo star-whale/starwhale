@@ -236,7 +236,7 @@ public class DatasetService {
                                 .projectName(entity.getProjectName())
                                 .datasetId(idConvertor.convert(entity.getDatasetId()))
                                 .datasetName(entity.getDatasetName())
-                                .shared(toInt(entity.getProjectName().equals(currentProject.getName())))
+                                .shared(toInt(!entity.getProjectName().equals(currentProject.getName())))
                                 .versions(new ArrayList<>())
                                 .build()
                 );

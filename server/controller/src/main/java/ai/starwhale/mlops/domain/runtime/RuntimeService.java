@@ -246,7 +246,7 @@ public class RuntimeService {
                                 .projectName(entity.getProjectName())
                                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                                 .runtimeName(entity.getRuntimeName())
-                                .shared(toInt(entity.getProjectName().equals(currentProject.getName())))
+                                .shared(toInt(!entity.getProjectName().equals(currentProject.getName())))
                                 .versions(new ArrayList<>())
                                 .build());
             }
