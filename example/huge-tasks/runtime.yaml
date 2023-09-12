@@ -1,0 +1,9 @@
+name: huge-tasks
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  python: "3.10"
+dependencies:
+  - pip:
+      - numpy
