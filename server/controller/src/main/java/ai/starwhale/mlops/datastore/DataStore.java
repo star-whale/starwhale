@@ -616,7 +616,7 @@ public class DataStore implements RollingUpdateStatusListener {
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
-        synchronized (dumpThread){
+        synchronized (dumpThread) {
             if (status == ServerInstanceStatus.READY_DOWN && null == this.walManager) {
                 this.walManager = new WalManager(
                         this.storageAccessService,

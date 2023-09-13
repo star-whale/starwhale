@@ -41,7 +41,7 @@ public class WriteOperationCare implements RollingUpdateStatusListener {
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
-        if(status == ServerInstanceStatus.DOWN){
+        if (status == ServerInstanceStatus.DOWN) {
             this.forbidWrite = false;
         }
     }

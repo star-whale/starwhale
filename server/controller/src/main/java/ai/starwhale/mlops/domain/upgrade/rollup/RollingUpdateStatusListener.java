@@ -56,6 +56,8 @@ public interface RollingUpdateStatusListener {
      * When this method is called, the current instance is considered to be an old instance which needs to be replaced.
      * The old instance shall do the corresponding stuffs to make sure service works as expected
      * The implementation for this method shall be idempotent
+     * Once the method returns, the operation for the old instance is considered to be done
+     * So it's necessary that the implementation for this method shall be blocking
      *
      * @param status the status for the new instance
      */
@@ -66,6 +68,8 @@ public interface RollingUpdateStatusListener {
      * which is going to take over the old one
      * The new instance shall do the corresponding stuffs to make sure service works as expected
      * The implementation for this method shall be idempotent
+     * Once the method returns, the operation for the new instance is considered to be done
+     * So it's necessary that the implementation for this method shall be blocking
      *
      * @param status the status for the old instance
      */

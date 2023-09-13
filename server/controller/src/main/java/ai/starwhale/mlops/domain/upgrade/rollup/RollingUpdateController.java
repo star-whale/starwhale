@@ -51,7 +51,10 @@ public class RollingUpdateController {
             value = STATUS_NOTIFY_PATH,
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
-    public ResponseEntity<ResponseMessage<String>> newInstanceStatus(ServerInstanceStatus status, InstanceType instanceType) {
+    public ResponseEntity<ResponseMessage<String>> newInstanceStatus(
+            ServerInstanceStatus status,
+            InstanceType instanceType
+    ) {
         try {
             if (instanceType == InstanceType.NEW) {
                 for (var l : rollingUpdateStatusListeners) {
@@ -72,7 +75,7 @@ public class RollingUpdateController {
 
     }
 
-    public enum InstanceType{
+    public enum InstanceType {
         NEW, OLD
     }
 }

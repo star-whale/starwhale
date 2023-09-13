@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -46,10 +47,15 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
 
     private final MysqlBackupService mysqlBackupService;
 
+    private final Boolean rollUp;
+
+    private boolean migrated;
+
     public DbMigrationControl(Flyway flyway,
                               StorageAccessService accessService,
                               DataSourceProperties dataSourceProperties,
-                              StoragePathCoordinator storagePathCoordinator
+                              StoragePathCoordinator storagePathCoordinator,
+                              @Value("${sw.rollup}") Boolean rollUp
     ) {
         this.flyway = flyway;
         this.accessService = accessService;
@@ -60,6 +66,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                 .username(dataSourceProperties.getUsername())
                 .password(dataSourceProperties.getPassword())
                 .build();
+        this.rollUp = rollUp;
     }
 
     @Override
@@ -81,13 +88,23 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
         if (status == ServerInstanceStatus.READY_DOWN) {
-            try {
-                flyway.migrate();
-            } catch (Exception e) {
-                log.error("flyway db migration failed", e);
-                // https://documentation.red-gate.com/fd/rolling-back-138347144.html#Rollingback-Rollingback
-                flyway.undo(); //this feature is not supported by flyway community edition
-                throw e;
+            //migration has been done on server start up if rollUp is false
+            if (!rollUp) {
+                return;
+            }
+            synchronized (flyway) {
+                if (migrated) {
+                    return;
+                }
+                try {
+                    flyway.migrate();
+                } catch (Exception e) {
+                    log.error("flyway db migration failed", e);
+                    // https://documentation.red-gate.com/fd/rolling-back-138347144.html#Rollingback-Rollingback
+                    flyway.undo(); //this feature is not supported by flyway community edition
+                    throw e;
+                }
+                migrated = true;
             }
         }
     }

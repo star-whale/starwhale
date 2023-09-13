@@ -17,7 +17,7 @@
 #
 # This script is used to roll up the controller server
 
-set -x
+#set -x
 CONTROLLER_SERVER_ADDRESS_NEW="http://localhost:8083"
 CONTROLLER_SERVER_ADDRESS_OLD="http://localhost:8082"
 printf "Please Confirm the server address:\n The new Instance is %s, \n The old Instance is: %s \n" $CONTROLLER_SERVER_ADDRESS_NEW $CONTROLLER_SERVER_ADDRESS_OLD
@@ -49,16 +49,16 @@ status_notify() {
 }
 
 # notify the old server that the new server is ready
-new_ready_up() {
-  status_notify "$CONTROLLER_SERVER_ADDRESS_OLD" "READY_UP"
+new_born() {
+  status_notify "$CONTROLLER_SERVER_ADDRESS_OLD" "BORN"
 }
 # notify the new server that the old server is ready
 old_ready_down() {
   status_notify "$CONTROLLER_SERVER_ADDRESS_NEW" "READY_DOWN"
 }
 # notify the old server that the new server is up
-new_up() {
-  status_notify "$CONTROLLER_SERVER_ADDRESS_OLD" "UP"
+new_ready_up() {
+  status_notify "$CONTROLLER_SERVER_ADDRESS_OLD" "READY_UP"
 }
 # notify the new server that the old server is down
 old_down() {
@@ -71,7 +71,7 @@ new_down() {
 
 # start the new server automatically
 if [ -z "$1" ] ; then
-  new_ready_up && old_ready_down && new_up && old_down
+  new_born && old_ready_down && new_ready_up && old_down
 else
 # start the new server manually
   $1

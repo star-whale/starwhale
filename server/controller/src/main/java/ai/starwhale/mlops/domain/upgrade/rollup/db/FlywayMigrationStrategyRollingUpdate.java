@@ -16,11 +16,13 @@
 
 package ai.starwhale.mlops.domain.upgrade.rollup.db;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(value = "sw.rollup", havingValue = "true")
 public class FlywayMigrationStrategyRollingUpdate {
 
 
