@@ -30,5 +30,7 @@ public class ConsumptionStatistic {
     private String datasetName;
     private String consumer;
     private Status.DataStatus status;
-    private Long number;
+    private Long dataSize;
+    private Long assignedNum;
+    private Long consumedNum;
 }

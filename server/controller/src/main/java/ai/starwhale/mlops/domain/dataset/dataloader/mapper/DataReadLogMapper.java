@@ -68,15 +68,15 @@ public interface DataReadLogMapper {
                                                   String end,
                                                   String status) {
             return new SQL() {{
-                UPDATE("dataset_read_log");
-                SET("consumer_id=#{consumerId}", "status=#{status}", "finished_time=NOW()");
-                WHERE("session_id=#{sessionId}", "start=#{start}");
-                if (Objects.isNull(end)) {
-                    WHERE("end is null");
-                } else {
-                    WHERE("end=#{end}");
-                }
-            }}
+                        UPDATE("dataset_read_log");
+                        SET("consumer_id=#{consumerId}", "status=#{status}", "finished_time=NOW()");
+                        WHERE("session_id=#{sessionId}", "start=#{start}");
+                        if (Objects.isNull(end)) {
+                            WHERE("end is null");
+                        } else {
+                            WHERE("end=#{end}");
+                        }
+                    }}
                     .toString();
         }
     }
@@ -130,12 +130,12 @@ public interface DataReadLogMapper {
             + "  drl.consumer_id as consumer,"
             + "  drs.batch_size,"
             + "  drl.status,"
-            + "  sum(drl.size) as total_number,"
+            + "  sum(drl.size) as data_size,"
             + "  sum(drl.assigned_num) as assigned_num,"
-            + "  sum(drl.size * drl.assigned_num) as total_consumption_number "
+            + "  sum(drl.size * drl.assigned_num) as consumption_num "
             + "FROM dataset_read_session drs, dataset_read_log drl "
             + "WHERE drs.id = drl.session_id and drs.session_id = #{sessionId}"
             + "GROUP BY dataset_name, batch_size, status, consumer_id"
     )
-    List<ConsumptionStatistic> statistic(String sessionId);
+    List<ConsumptionStatistic> consumptionStatistic(String sessionId);
 }
