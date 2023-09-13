@@ -61,8 +61,8 @@ public class DataReadLogDao {
         return mapper.updateToUnAssigned(sid, consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
 
-    public boolean updateUnProcessedToUnAssigned(Long sid) {
-        return mapper.updateToUnAssignedForSession(sid, Status.DataStatus.UNPROCESSED.name()) > 0;
+    public boolean updateUnProcessedToUnAssigned(String consumerId) {
+        return mapper.updateToUnAssignedForSession(consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
 
     public DataReadLog selectTop1UnAssignedData(Long sid) {

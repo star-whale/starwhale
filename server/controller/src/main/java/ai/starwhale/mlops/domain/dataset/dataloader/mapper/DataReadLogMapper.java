@@ -91,8 +91,8 @@ public interface DataReadLogMapper {
 
     @Update("UPDATE dataset_read_log SET "
             + "consumer_id=null "
-            + "WHERE session_id=#{sessionId} and status=#{status}")
-    int updateToUnAssignedForSession(Long sessionId, String status);
+            + "WHERE consumer_id=#{consumerId} and status=#{status}")
+    int updateToUnAssignedForSession(String consumerId, String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and (consumer_id is null or consumer_id = '') and status=#{status} "

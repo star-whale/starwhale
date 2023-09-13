@@ -164,12 +164,8 @@ public class DataReadManager {
     }
 
     @Transactional
-    void resetUnProcessedData(String sessionId) {
-        var sessions = sessionDao.selectBySessionId(sessionId);
-        for (Session session : sessions) {
-            var sid = session.getId();
-            var res = dataReadLogDao.updateUnProcessedToUnAssigned(sid);
-            log.info("Reset unprocessed data for session:{}, result:{}", sessionId, res);
-        }
+    void resetUnProcessedData(String consumerId) {
+        var res = dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
+        log.info("Reset unprocessed data for consumer:{}, result:{}", consumerId, res);
     }
 }

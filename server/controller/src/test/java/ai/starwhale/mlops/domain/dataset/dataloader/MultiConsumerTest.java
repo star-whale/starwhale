@@ -195,19 +195,30 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         given(dataRangeProvider.returnDataIndex(any())).willReturn(indices);
 
+        var errorConsumers = new ArrayList<String>();
         // first consumption with error
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < consumerNum; i++) {
+            var consumerId = String.valueOf(i);
+            if (errorNumPerConsumer > 0) {
+                errorConsumers.add(consumerId);
+            }
             futures.add(executor.submit(
-                new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+                new ConsumerMock(consumerId, datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
         }
 
         for (Future<?> future : futures) {
             future.get();
         }
-        // mock reset logic
-        var f = executor.submit(() -> dataLoader.resetUnProcessed(sessionId));
-        f.get();
+
+        // mock data reset logic
+        futures.clear();
+        for (String errorConsumer : errorConsumers) {
+            futures.add(executor.submit(() -> dataLoader.resetUnProcessed(errorConsumer)));
+        }
+        for (Future<?> future : futures) {
+            future.get();
+        }
 
         // try again
         futures.clear();

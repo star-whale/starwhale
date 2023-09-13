@@ -39,9 +39,9 @@ public class DataLoader {
     /**
      * Expect to continue processing data(which were unprocessed in current time) on next startup
      *
-     * @param sessionId session id
+     * @param consumerId consumer id
      */
-    public void resetUnProcessed(String sessionId) {
-        dataReadManager.resetUnProcessedData(sessionId);
+    public void resetUnProcessed(String consumerId) {
+        dataReadManager.resetUnProcessedData(consumerId);
     }
 }
