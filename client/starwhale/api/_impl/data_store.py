@@ -1095,8 +1095,8 @@ class ZipCompressor(Compressor):
     @contextlib.contextmanager
     def decompress(self, source: Path) -> Iterator[Path]:
         with zipfile.ZipFile(source, "r") as zipf:
-            # extract to tmp dir
-            tmp_dir = tempfile.TemporaryDirectory()
+            # use the same dir as the extracted tmp parent dir
+            tmp_dir = tempfile.TemporaryDirectory(dir=source.parent)
             zipf.extractall(tmp_dir.name)
             file_name = zipf.namelist()[0]
             try:
@@ -1813,7 +1813,7 @@ class TableWriter(threading.Thread):
                         except Exception:
                             can_merge = False
                         if not can_merge:
-                            console.debug(f"schema changed, {last_schema} -> {schema}")
+                            console.trace(f"schema changed, {last_schema} -> {schema}")
                             self._batch_update_table(last_schema, to_submit)
                             to_submit = []
                             last_schema = schema

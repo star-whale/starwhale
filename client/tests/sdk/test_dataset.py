@@ -47,6 +47,7 @@ from starwhale.core.dataset.type import (
     Binary,
     JsonDict,
     MIMEType,
+    Sequence,
     ClassLabel,
     BoundingBox,
     NumpyBinary,
@@ -121,6 +122,21 @@ def iter_complex_annotations_swds() -> _TGenItem:
                     f"s3://admin:123@localhost:9000/users/{i}_mask.png",
                 ),
             ),
+            "mixed_types_list": [
+                1,
+                "2",
+                3.0,
+                ["a", "b", "c"],
+                Sequence([1, "b", {"a": 1, "b": "str"}]),
+            ],
+            "mixed_types_tuple": (1, "2", 3.0, ("a", "b")),
+            "mixed_dict": {
+                "a": 1,
+                "b": "2",
+                "c": [1, 3],
+                "d": {"a": 1, "b": "2", "c": [1, "3", 1.1, "abc" * 100]},
+                "e": (1, "a", [1, 2], [1, "2", 1.1]),
+            },
         }
         yield f"idx-{i}", data
 
@@ -225,6 +241,39 @@ class TestDatasetCopy(BaseTestCase):
             ],
             "pythonType": "starwhale.core.dataset.type.BoundingBox",
             "name": "features/bbox",
+        } in content["tableSchemaDesc"]["columnSchemaList"]
+
+        assert {
+            "attributes": [
+                {"name": "_type", "type": "STRING"},
+                {"name": "sequence_type", "type": "STRING"},
+                {"name": "_cnt", "type": "INT64"},
+                {
+                    "attributes": [
+                        {"name": "i0", "type": "INT64"},
+                        {"name": "i1", "type": "STRING"},
+                        {"name": "i2", "type": "FLOAT64"},
+                        {
+                            "elementType": {"type": "STRING"},
+                            "name": "i3",
+                            "type": "TUPLE",
+                        },
+                    ],
+                    "name": "data",
+                    "pythonType": "starwhale.core.dataset.type.JsonDict",
+                    "type": "OBJECT",
+                },
+                {"name": "auto_convert", "type": "BOOL"},
+            ],
+            "name": "features/mixed_types_tuple",
+            "pythonType": "starwhale.core.dataset.type.Sequence",
+            "type": "OBJECT",
+        } in content["tableSchemaDesc"]["columnSchemaList"]
+
+        assert {
+            "elementType": {"type": "INT64"},
+            "name": "features/list_int",
+            "type": "LIST",
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
         assert {
@@ -506,6 +555,17 @@ class TestDatasetType(TestCase):
                 bbox=BoundingBox(1, 2, 3, 4),
                 iscrowd=1,
             ),
+            Sequence([]),
+            Sequence((1, "2", 3.0)),
+            Sequence(
+                [
+                    1,
+                    "2",
+                    3.0,
+                    ["a", "b", "c"],
+                    Sequence([1, "b", {"a": 1, "b": "str"}]),
+                ]
+            ),
         ]
 
         for obj in objs:
@@ -522,6 +582,28 @@ class TestDatasetType(TestCase):
             "encoding": "",
             "display_name": "",
         }
+
+    def test_sequence(self) -> None:
+        raw_data = [
+            1,
+            "2",
+            3.0,
+            ["a", "b", "c"],
+            Sequence([1, "b", {"a": 1, "b": "str"}]),
+        ]
+        s = Sequence(raw_data)
+        assert str(s)
+        assert repr(s)
+        assert len(s) == 5
+        assert bool(s)
+
+        assert s.sequence_type == "list"
+        assert s.to_raw_data() == raw_data
+
+        s = Sequence([])
+        assert not bool(s)
+        assert len(s) == 0
+        assert s.to_raw_data() == []
 
     def test_numpy_binary(self) -> None:
         np_array = np.array([[1.008, 6.94, 22.990], [39.098, 85.468, 132.91]])

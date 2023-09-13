@@ -529,6 +529,52 @@ class Video(BaseArtifact, SwObject):
             raise NoSupportError(f"Video type: {self.mime_type}")
 
 
+class Sequence(ASDictMixin, SwObject):
+    """Datastore does not support mixed type list or tuple, so we need to wrap it with Sequence type."""
+
+    _supported_types = {
+        "list": list,
+        "tuple": tuple,
+    }
+    _prefix = "i"
+
+    def __init__(
+        self, data: list | tuple | None = None, auto_convert: bool = False
+    ) -> None:
+        data = [] if data is None else data
+
+        self._type = "sequence"
+
+        self.sequence_type = type(data).__name__
+        if self.sequence_type not in self._supported_types:
+            raise NoSupportError(f"Sequence type: {self.sequence_type}")
+
+        _dict_data = {f"{self._prefix}{idx}": item for idx, item in enumerate(data)}
+        self._cnt = len(_dict_data)
+        self.data = JsonDict.from_data(_dict_data)
+        self.auto_convert = auto_convert
+
+    def __str__(self) -> str:
+        return f"Sequence[{self.sequence_type}] with {self._cnt} items"
+
+    def __repr__(self) -> str:
+        return f"Sequence: {self.to_raw_data()}"
+
+    def __len__(self) -> int:
+        return self._cnt
+
+    def __bool__(self) -> bool:
+        return self._cnt != 0
+
+    def to_raw_data(self) -> t.Any:
+        return self._supported_types[self.sequence_type](self)
+
+    def __iter__(self) -> t.Iterator[t.Any]:
+        _unwrap_data = self.data.asdict()
+        for i in range(0, self._cnt):
+            yield _unwrap_data[f"{self._prefix}{i}"]
+
+
 class ClassLabel(ASDictMixin, SwObject):
     def __init__(
         self, names: t.Optional[t.List[t.Union[int, float, str]]] = None
@@ -1044,7 +1090,7 @@ class JsonDict(SwObject):
             return tuple(cls.from_data(_d) for _d in d)
 
         raise ValueError(
-            f"json like dict shouldn't have values who's type is not in [SwObject, list, dict, str, int, bool, None], Type: {type(d)}"
+            f"json like dict shouldn't have values who's type is not in [SwObject, list, dict, scalar], Type: {type(d)}"
         )
 
     def asdict(self) -> t.Dict:
@@ -1055,9 +1101,7 @@ class JsonDict(SwObject):
 
     @classmethod
     def to_data(cls, d: t.Any) -> t.Any:
-        """
-        unwrap JsonDict to dict
-        """
+        """unwrap JsonDict to dict"""
         if isinstance(d, JsonDict):
             return d.asdict()
         if isinstance(d, list):

@@ -575,6 +575,15 @@ class TestJsonDict(TestCase):
         self.assertEqual(self.JSON_DICT, sw_j_o.asdict())
         self.assertEqual({}, JsonDict().asdict())
 
+    def test_exceptions(self):
+        class _MockStr(str):
+            ...
+
+        cases = [{1: "int"}, {b"a": "bytes"}, {_MockStr("test"): "obj"}]
+        for case in cases:
+            with self.assertRaises(ValueError):
+                JsonDict.from_data(case)
+
 
 class TestLine(TestCase):
     def test_to_list(self):

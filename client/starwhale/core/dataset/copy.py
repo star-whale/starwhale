@@ -42,7 +42,7 @@ _LOCAL_STORAGE_SCHEMES = ("", "file")
 
 
 class DatasetCopy(BundleCopy):
-    def __init__(self, src_uri: Resource, dest_uri: str, **kw: t.Any) -> None:
+    def __init__(self, src_uri: str | Resource, dest_uri: str, **kw: t.Any) -> None:
         super().__init__(
             src_uri,
             dest_uri,

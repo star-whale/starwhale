@@ -29,7 +29,7 @@ from starwhale.utils.retry import http_retry
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
+from starwhale.core.dataset.type import Link, JsonDict, Sequence, BaseArtifact
 from starwhale.api._impl.data_store import TableEmptyException
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
@@ -195,10 +195,9 @@ class TabularDatasetRow(ASDictMixin):
         """Encode some feature types for the efficient storage.
 
         Supported types:
-            string(>32) -> Text
-            bytes(>32)  -> Binary
-
-        32 ->
+            string(>_ENCODE_MIN_SIZE) -> Text
+            bytes(>_ENCODE_MIN_SIZE)  -> Binary
+            mixed types of list or tuple -> Sequence
         """
 
         def _transform(data: t.Any) -> t.Any:
@@ -213,7 +212,12 @@ class TabularDatasetRow(ASDictMixin):
             elif isinstance(data, dict):
                 return {k: _transform(v) for k, v in data.items()}
             elif isinstance(data, (list, tuple)):
-                return type(data)([_transform(v) for v in data])
+                data = type(data)([_transform(v) for v in data])
+                types = set(type(i) for i in data)
+                if len(types) > 1:
+                    return Sequence(data=data, auto_convert=True)
+                else:
+                    return data
             else:
                 return data
 
@@ -225,6 +229,7 @@ class TabularDatasetRow(ASDictMixin):
         Supported types:
             Text(encoded) -> string
             Binary(encoded) -> bytes
+            Sequence(encoded) -> list/tuple
         """
 
         def _transform(data: t.Any) -> t.Any:
@@ -237,6 +242,9 @@ class TabularDatasetRow(ASDictMixin):
             elif isinstance(data, dict):
                 return {k: _transform(v) for k, v in data.items()}
             elif isinstance(data, (list, tuple)):
+                return type(data)([_transform(v) for v in data])
+            elif isinstance(data, Sequence) and data.auto_convert:
+                data = data.to_raw_data()
                 return type(data)([_transform(v) for v in data])
             else:
                 return data
