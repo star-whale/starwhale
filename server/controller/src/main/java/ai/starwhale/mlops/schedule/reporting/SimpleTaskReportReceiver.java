@@ -62,9 +62,6 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpda
     @Override
     public void receive(List<ReportedTask> reportedTasks) {
         if (!primaryInstance) {
-            //new instance shall consider itself as the primary instance before
-            // old instance consider itself as not the primary instance
-            // there shall be a small overlap instead of a small gap between primary instances
             log.info("server is upgrading and i'm not the primary instance, abandon all reported info");
             return;
         }
@@ -146,13 +143,17 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpda
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
-        if (status == ServerInstanceStatus.UP) {
+        // As the status report is idempotent, and we could not suffer the loss for status
+        // there shall be a small overlap instead of a small gap between the primary instances
+        if (status == ServerInstanceStatus.READY_UP) {
             primaryInstance = false;
         }
     }
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
+        // As the status report is idempotent, and we could not suffer the loss for status
+        // there shall be a small overlap instead of a small gap between the primary instances
         if (status == ServerInstanceStatus.READY_DOWN) {
             primaryInstance = true;
         }

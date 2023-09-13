@@ -18,25 +18,43 @@ package ai.starwhale.mlops.domain.upgrade.rollup;
 
 
 /**
- * components that doesn't tolerant multiple server instances shall implement this interface
+ * Components that doesn't tolerant multiple server instances shall implement this interface
  */
 public interface RollingUpdateStatusListener {
 
     /**
      * new instance / old instance
-     * READY_UP ->
+     *     BORN ->
      *          <- READY_DOWN
-     *       UP ->
+     * READY_UP ->
      *          <- DOWN
      */
     enum ServerInstanceStatus {
-        READY_UP, UP, READY_DOWN, DOWN
+        /**
+         * application start up but no service is not available yet
+         */
+        BORN,
+        /**
+         * All necessary stuffs are done before the instance goes down. Such as:
+         * 1. states writing operations are forbidden
+         * 2. states have been durably written to the storage
+         */
+        READY_DOWN,
+        /**
+         * All necessary stuffs are done before the instance goes up. Such as:
+         * 1. storage schemas have been merged
+         * 2. states have been loaded from the storage.
+         */
+        READY_UP,
+        /**
+         * all services are closed
+         */
+        DOWN
     }
 
     /**
-     * when this method is called, the current instance is considered to be an old instance
-     * which needs to be replaced
-     * The old instance shall do the corresponding things to make sure service works as expected
+     * When this method is called, the current instance is considered to be an old instance which needs to be replaced.
+     * The old instance shall do the corresponding stuffs to make sure service works as expected
      * The implementation for this method shall be idempotent
      *
      * @param status the status for the new instance
@@ -44,11 +62,12 @@ public interface RollingUpdateStatusListener {
     void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException;
 
     /**
-     * when this method is called, the current instance is considered to be a new instance
-     * which is ready to take over the old one
+     * When this method is called, the current instance is considered to be the new instance
+     * which is going to take over the old one
+     * The new instance shall do the corresponding stuffs to make sure service works as expected
      * The implementation for this method shall be idempotent
      *
-     * @param status the status for the old instace
+     * @param status the status for the old instance
      */
     void onOldInstanceStatus(ServerInstanceStatus status);
 }

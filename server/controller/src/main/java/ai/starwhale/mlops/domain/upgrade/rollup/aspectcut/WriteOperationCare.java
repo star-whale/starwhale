@@ -28,11 +28,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class WriteOperationCare implements RollingUpdateStatusListener {
 
-    private volatile boolean forbidWrite;
+    private volatile boolean forbidWrite = true;
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) {
-        if (status == ServerInstanceStatus.READY_UP) {
+        if (status == ServerInstanceStatus.BORN) {
             this.forbidWrite = true;
         } else if (status == ServerInstanceStatus.DOWN) {
             this.forbidWrite = false;
@@ -41,6 +41,9 @@ public class WriteOperationCare implements RollingUpdateStatusListener {
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
+        if(status == ServerInstanceStatus.DOWN){
+            this.forbidWrite = false;
+        }
     }
 
     @Before("@annotation(ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation)")

@@ -603,7 +603,7 @@ public class DataStore implements RollingUpdateStatusListener {
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
-        if (status == ServerInstanceStatus.READY_UP) {
+        if (status == ServerInstanceStatus.BORN) {
             while (updateHandle.size() > 0) {
                 log.debug("currently {} updating process", updateHandle.size());
                 synchronized (updateHandle) {

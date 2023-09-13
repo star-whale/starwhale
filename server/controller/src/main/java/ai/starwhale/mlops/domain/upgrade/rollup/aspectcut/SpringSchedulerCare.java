@@ -32,7 +32,7 @@ public class SpringSchedulerCare implements RollingUpdateStatusListener {
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) {
-        if (status == ServerInstanceStatus.UP) {
+        if (status == ServerInstanceStatus.READY_UP) {
             this.forbidSchedule = true;
         } else if (status == ServerInstanceStatus.DOWN) {
             this.forbidSchedule = false;

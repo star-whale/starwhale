@@ -274,6 +274,7 @@ public class DatasetController implements DatasetApi {
             String hash,
             MultipartFile dsFile
     ) {
+        log.info("upload hashed blob: project={}, dataset={}, hash={}, file={}", projectUrl, datasetName, hash, dsFile);
         return ResponseEntity.ok(
                 Code.success.asResponse(datasetUploader.uploadHashedBlob(projectUrl, datasetName, dsFile, hash)));
     }

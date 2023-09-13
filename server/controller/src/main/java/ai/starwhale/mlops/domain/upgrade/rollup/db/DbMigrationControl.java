@@ -64,7 +64,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
-        if (status == ServerInstanceStatus.READY_UP) {
+        if (status == ServerInstanceStatus.BORN) {
             try {
                 String sql = mysqlBackupService.backup(Set.of("server_status", "upgrade_log"));
                 //store sql

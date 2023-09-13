@@ -58,7 +58,7 @@ public class UpgradeHealthIndicator implements HealthIndicator, RollingUpdateSta
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
         details.get(DETAIL_NEW_INSTANCE_STATUSES).add(new Tuple2<>(System.currentTimeMillis(), status));
-        if (status == ServerInstanceStatus.UP) {
+        if (status == ServerInstanceStatus.READY_UP) {
             primaryInstance = false;
         } else if (status == ServerInstanceStatus.DOWN) {
             primaryInstance = true;

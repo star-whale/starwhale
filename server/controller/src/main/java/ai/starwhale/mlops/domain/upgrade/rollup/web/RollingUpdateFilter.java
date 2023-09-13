@@ -65,7 +65,9 @@ public class RollingUpdateFilter extends OncePerRequestFilter implements Rolling
 
     @Override
     public void onNewInstanceStatus(ServerInstanceStatus status) throws InterruptedException {
-        if (status == ServerInstanceStatus.UP) {
+        // there shall be a gap between the web API of new server and old server
+        // in case that some API is not idempotent like dataset consumption
+        if (status == ServerInstanceStatus.READY_UP) {
             readyToServe = false;
         } else if (status == ServerInstanceStatus.DOWN) {
             readyToServe = true;
@@ -74,6 +76,8 @@ public class RollingUpdateFilter extends OncePerRequestFilter implements Rolling
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
+        // there shall be a gap between the web API of new server and old server
+        // in case that some API is not idempotent like dataset consumption
         if (status == ServerInstanceStatus.DOWN) {
             readyToServe = true;
         }
