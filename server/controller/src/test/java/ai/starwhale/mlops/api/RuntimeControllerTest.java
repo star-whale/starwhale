@@ -201,6 +201,23 @@ public class RuntimeControllerTest {
     }
 
     @Test
+    public void testRecentRuntimeTree() {
+        given(runtimeService.listRecentlyRuntimeVersionView(anyString(), eq(5)))
+                .willReturn(List.of(
+                        RuntimeViewVo.builder().projectName("p").build(),
+                        RuntimeViewVo.builder().projectName("p").build()
+                ));
+
+        var resp = controller.recentRuntimeTree("1", 5);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(2))
+        ));
+    }
+
+    @Test
     public void testShareRuntimeVersion() {
         var resp = controller.shareRuntimeVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

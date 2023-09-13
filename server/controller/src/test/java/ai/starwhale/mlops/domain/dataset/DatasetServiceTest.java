@@ -152,19 +152,16 @@ public class DatasetServiceTest {
                 });
 
         storageService = mock(StorageService.class);
-        given(storageService.listStorageFile(any()))
-                .willReturn(List.of());
-        given(storageService.getStorageSize(any()))
-                .willReturn(1000L);
+        given(storageService.listStorageFile(any())).willReturn(List.of());
+        given(storageService.getStorageSize(any())).willReturn(1000L);
 
         userService = mock(UserService.class);
-        given(userService.currentUserDetail())
-                .willReturn(User.builder().id(1L).build());
+        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).build());
         projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("2")))
-                .willReturn(2L);
+        given(projectService.findProject(same("1"))).willReturn(Project.builder().id(1L).name("p").build());
+        given(projectService.findProject(same("2"))).willReturn(Project.builder().id(2L).name("p2").build());
+        given(projectService.getProjectId(same("1"))).willReturn(1L);
+        given(projectService.getProjectId(same("2"))).willReturn(2L);
         datasetDao = mock(DatasetDao.class);
 
         uriAccessor = mock(UriAccessor.class);
@@ -542,6 +539,13 @@ public class DatasetServiceTest {
                         DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).datasetName("ds4").build()
                 ));
+
+        given(datasetVersionMapper.listDatasetVersionsByUserRecentlyUsed(same(1L), same(1L), same(5)))
+                .willReturn(List.of(
+                        DatasetVersionViewEntity.builder().id(1L).datasetId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(false).datasetName("ds3").build()
+                ));
+
         given(datasetVersionMapper.findByLatest(same(2L)))
                 .willReturn(DatasetVersionEntity.builder().id(8L).build());
         given(datasetVersionMapper.findByLatest(same(4L)))

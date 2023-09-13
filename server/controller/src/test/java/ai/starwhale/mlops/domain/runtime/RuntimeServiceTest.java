@@ -162,13 +162,12 @@ public class RuntimeServiceTest {
                 .willReturn(1000L);
 
         userService = mock(UserService.class);
-        given(userService.currentUserDetail())
-                .willReturn(User.builder().id(1L).build());
+        given(userService.currentUserDetail()).willReturn(User.builder().id(1L).build());
         projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("2")))
-                .willReturn(2L);
+        given(projectService.findProject(same("1"))).willReturn(Project.builder().id(1L).name("p").build());
+        given(projectService.findProject(same("2"))).willReturn(Project.builder().id(2L).name("p2").build());
+        given(projectService.getProjectId(same("1"))).willReturn(1L);
+        given(projectService.getProjectId(same("2"))).willReturn(2L);
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
 
@@ -763,6 +762,13 @@ public class RuntimeServiceTest {
                         RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).runtimeName("rt4").build()
                 ));
+
+        given(runtimeVersionMapper.listRuntimeVersionsByUserRecentlyUsed(same(1L), same(1L), same(5)))
+                .willReturn(List.of(
+                        RuntimeVersionViewEntity.builder().id(1L).runtimeId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(false).runtimeName("rt3").build()
+                ));
+
         given(runtimeVersionMapper.findByLatest(same(2L)))
                 .willReturn(RuntimeVersionEntity.builder().id(8L).build());
         given(runtimeVersionMapper.findByLatest(same(4L)))

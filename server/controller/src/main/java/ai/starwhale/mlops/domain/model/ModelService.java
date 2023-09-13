@@ -369,20 +369,27 @@ public class ModelService {
 
     public List<ModelViewVo> listModelVersionView(
             String projectUrl, boolean includeShared, boolean includeCurrentProject) {
-        Long projectId = projectService.getProjectId(projectUrl);
+        var project = projectService.findProject(projectUrl);
         var list = new ArrayList<ModelViewVo>();
         if (includeCurrentProject) {
-            var versions = modelVersionMapper.listModelVersionViewByProject(projectId);
-            list.addAll(viewEntityToVo(versions, false));
+            var versions = modelVersionMapper.listModelVersionViewByProject(project.getId());
+            list.addAll(viewEntityToVo(versions, project));
         }
         if (includeShared) {
-            var shared = modelVersionMapper.listModelVersionViewByShared(projectId);
-            list.addAll(viewEntityToVo(shared, true));
+            var shared = modelVersionMapper.listModelVersionViewByShared(project.getId());
+            list.addAll(viewEntityToVo(shared, project));
         }
         return list;
     }
 
-    private Collection<ModelViewVo> viewEntityToVo(List<ModelVersionViewEntity> list, Boolean shared) {
+    public List<ModelViewVo> listRecentlyModelVersionView(String projectUrl, Integer limit) {
+        var project = projectService.findProject(projectUrl);
+        var userId = userService.currentUserDetail().getId();
+        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    private List<ModelViewVo> viewEntityToVo(List<ModelVersionViewEntity> list, Project currentProject) {
         Map<Long, ModelViewVo> map = new LinkedHashMap<>();
         var tags = new HashMap<Long, Map<Long, List<String>>>();
         // group by modelId
@@ -394,6 +401,8 @@ public class ModelService {
             tags.put(modelId, tagsMap);
         }
 
+        Map<Long, Long> latestCache = new HashMap<>();
+
         for (ModelVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getModelId())) {
                 map.put(
@@ -403,12 +412,14 @@ public class ModelService {
                                 .projectName(entity.getProjectName())
                                 .modelId(idConvertor.convert(entity.getModelId()))
                                 .modelName(entity.getModelName())
-                                .shared(toInt(shared))
+                                // TODO: replace by inProject?
+                                .shared(toInt(!entity.getProjectName().equals(currentProject.getName())))
                                 .versions(new ArrayList<>())
                                 .build()
                 );
             }
-            ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
+            Long latest = latestCache.computeIfAbsent(entity.getId(), value ->
+                        modelVersionMapper.findByLatest(entity.getModelId()).getId());
             var versionTags =
                     tags.get(entity.getModelId()) == null ? null : tags.get(entity.getModelId()).get(entity.getId());
             try {
@@ -419,7 +430,7 @@ public class ModelService {
                                      .versionName(entity.getVersionName())
                                      .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                                      .tags(versionTags)
-                                     .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                                     .latest(entity.getId() != null && entity.getId().equals(latest))
                                      .createdTime(entity.getCreatedTime().getTime())
                                      .shared(toInt(entity.getShared()))
                                      .builtInRuntime(entity.getBuiltInRuntime())
@@ -430,7 +441,7 @@ public class ModelService {
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
             }
         }
-        return map.values();
+        return new ArrayList<>(map.values());
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
