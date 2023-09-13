@@ -15,6 +15,12 @@ class LocalDatasetInfoBase(SwBaseModel):
     created_at: str
     is_removed: bool
     size: int
+    rows: t.Optional[int]
+
+
+class LocalDatasetInfo(LocalDatasetInfoBase):
+    uri: str
+    manifest: t.Optional[t.Dict[str, t.Any]]
 
 
 DatasetListType = t.Union[t.List[LocalDatasetInfoBase], t.List[DatasetVo]]
