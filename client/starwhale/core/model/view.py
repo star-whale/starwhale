@@ -22,6 +22,7 @@ from starwhale.consts import (
 from starwhale.utils.fs import cmp_file_content
 from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.consts.env import SWEnv
+from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.base.uri.project import Project
 from starwhale.core.model.model import (
@@ -334,7 +335,9 @@ class ModelTermView(BaseTermView, TagViewMixin):
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
         model = Model.get_cls(_uri.instance)
-        _models, _pager = model.list(_uri, page, size, filters)
+        _models, _pager = model.list(
+            _uri, page, size, BaseBundle.get_list_filter(filters)
+        )
         return _models, {}
 
     @classmethod

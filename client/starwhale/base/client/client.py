@@ -9,6 +9,7 @@ from pydantic.tools import parse_obj_as
 from fastapi.encoders import jsonable_encoder
 
 from starwhale.utils import console
+from starwhale.base.models.base import ListFilter
 from starwhale.base.client.models.base import ResponseCode
 
 T = typing.TypeVar("T")
@@ -90,6 +91,14 @@ class Client:
 
         # The server will respond 500 if error happens, dead retry will not help
         return resp.json()
+
+    def _list(
+        self, uri: str, page: int, size: int, _filter: ListFilter | None
+    ) -> typing.Any:
+        params = {"pageNum": page, "pageSize": size}
+        if _filter is not None:
+            params.update(_filter.dict())
+        return self.http_get(uri, params=params)
 
     def http_get(self, uri: str, params: dict | None = None) -> typing.Any:
         return self.http_request("GET", uri, params=params)

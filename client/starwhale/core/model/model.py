@@ -72,6 +72,7 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
 from starwhale.base.models.job import JobManifest
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
@@ -169,7 +170,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter_dict: t.Optional[t.List[str]] = None,
+        filter: t.Optional[ListFilter] = None,
     ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
         raise NotImplementedError
 
@@ -593,7 +594,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.List[str]] = None,
+        filters: t.Optional[ListFilter] = None,
     ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
         rs: t.List[LocalModelInfoBase] = []
         for _bf in ModelStorage.iter_all_bundles(
@@ -602,9 +603,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             uri_type=ResourceType.model,
         ):
             _mpath = _bf.path / DEFAULT_MANIFEST_NAME
-            if not _mpath.exists() or not cls.do_bundle_filter(
-                _bf, BaseBundle.get_list_filter(filters)
-            ):
+            if not _mpath.exists() or not cls.do_bundle_filter(_bf, filters):
                 continue
 
             _digest_path = _bf.path / "src" / SW_AUTO_DIRNAME / DIGEST_FILE_NAME
@@ -923,13 +922,13 @@ class CloudModel(CloudBundleModelMixin, Model):
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter: t.Optional[t.List[str]] = None,
+        filter: t.Optional[ListFilter] = None,
     ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
         # TODO support filter
         crm = CloudRequestMixed()
         r = (
             ModelApi(project_uri.instance)
-            .list(project_uri.name)
+            .list(project_uri.name, page, size, filter)
             .raise_on_error()
             .response()
         )
