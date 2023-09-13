@@ -575,7 +575,6 @@ export default function ProjectListCard() {
             >
                 <div style={{ maxWidth: '280px' }}>
                     <QueryInput
-                        over
                         onChange={(val: string) => {
                             setFilter(val.trim())
                         }}

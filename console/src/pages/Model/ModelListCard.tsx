@@ -12,7 +12,7 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
-import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
+import { ButtonGroup, ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
@@ -20,13 +20,17 @@ import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 import Shared from '@/components/Shared'
+import _ from 'lodash'
 
 export default function ModelListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ modelId: string; projectId: string }>()
     const history = useHistory()
-
-    const modelsInfo = useFetchModels(projectId, page)
+    const [name, setName] = React.useState('')
+    const modelsInfo = useFetchModels(projectId, {
+        ...page,
+        name,
+    })
     const [isCreateModelOpen, setIsCreateModelOpen] = useState(false)
     const handleCreateModel = useCallback(
         async (data: ICreateModelSchema) => {
@@ -40,6 +44,14 @@ export default function ModelListCard() {
 
     return (
         <Card title={t('Models')}>
+            <div className='max-w-280px mb-10px'>
+                <QueryInput
+                    placeholder={t('model.search.name.placeholder')}
+                    onChange={_.debounce((val: string) => {
+                        setName(val.trim())
+                    }, 100)}
+                />
+            </div>
             <Table
                 isLoading={modelsInfo.isLoading}
                 columns={[

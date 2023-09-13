@@ -8,7 +8,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
-import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
+import { ButtonGroup, ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
 import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
@@ -17,18 +17,31 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import { getAliasStr } from '@base/utils/alias'
 import { removeRuntime } from '@/domain/runtime/services/runtime'
 import Shared from '@/components/Shared'
+import _ from 'lodash'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
     const history = useHistory()
+    const [name, setName] = React.useState('')
     const { projectId } = useParams<{ runtimeId: string; projectId: string }>()
 
-    const runtimesInfo = useFetchRuntimes(projectId, page)
+    const runtimesInfo = useFetchRuntimes(projectId, {
+        ...page,
+        name,
+    })
 
     const [t] = useTranslation()
 
     return (
         <Card title={t('Runtimes')}>
+            <div className='max-w-280px mb-10px'>
+                <QueryInput
+                    placeholder={t('model.search.name.placeholder')}
+                    onChange={_.debounce((val: string) => {
+                        setName(val.trim())
+                    }, 100)}
+                />
+            </div>
             <Table
                 isLoading={runtimesInfo.isLoading}
                 columns={[
@@ -66,7 +79,7 @@ export default function RuntimeListCard() {
                                 <WithCurrentAuth id='runtime.image.build'>
                                     <ExtendButton
                                         disabled={!!runtime.version?.builtImage}
-                                        iconDisable={!!runtime.version?.builtImage}
+                                        icondisable={!!runtime.version?.builtImage}
                                         as='link'
                                         icon={runtime.version?.builtImage ? 'a-ImageBuilt' : 'a-BuildImage'}
                                         tooltip={

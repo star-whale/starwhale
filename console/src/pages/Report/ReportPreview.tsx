@@ -51,7 +51,7 @@ export default function ReportPreview() {
             {!isWide && isNotice && (
                 <div className='flex fixed bottom-0 left-0 right-0 h-10 lh-10 px-4 bg-[rgba(2,16,43,0.60)] text-xs text-white justify-between items-center'>
                     {t('report.mobile.notice')}
-                    <ExtendButton iconDisable as='link' onClick={() => setIsNotice(false)}>
+                    <ExtendButton icondisable as='link' onClick={() => setIsNotice(false)}>
                         <IconFont type='close' kind='white' size={20} />
                     </ExtendButton>
                 </div>
