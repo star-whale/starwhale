@@ -2238,7 +2238,7 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         crm = CloudRequestMixed()
         r = (
             RuntimeApi(project_uri.instance)
-            .list(project_uri.name)
+            .list(project_uri.name, page, size, filter)
             .raise_on_error()
             .response()
         )
