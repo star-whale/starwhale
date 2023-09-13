@@ -20,13 +20,19 @@ import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
 import yaml from 'js-yaml'
 import Shared from '@/components/Shared'
+import { QueryInput } from '@starwhale/ui/Input'
+import _ from 'lodash'
 
 export default function DatasetListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ datasetId: string; projectId: string }>()
     const history = useHistory()
+    const [name, setName] = React.useState('')
 
-    const datasetsInfo = useFetchDatasets(projectId, page)
+    const datasetsInfo = useFetchDatasets(projectId, {
+        ...page,
+        name,
+    })
     const [t] = useTranslation()
 
     const query = { status: 'BUILDING', ...page }
@@ -40,7 +46,6 @@ export default function DatasetListCard() {
             enabled: isPrivileged,
         }
     )
-
     const buildCount = datasetBuildList.data?.list?.length ?? 0
 
     return (
@@ -62,6 +67,14 @@ export default function DatasetListCard() {
                     </WithCurrentAuth>
                 }
             >
+                <div className='max-w-280px mb-10px'>
+                    <QueryInput
+                        placeholder={t('dataset.search.name.placeholder')}
+                        onChange={_.debounce((val: string) => {
+                            setName(val.trim())
+                        }, 100)}
+                    />
+                </div>
                 <Table
                     isLoading={datasetsInfo.isLoading}
                     columns={[

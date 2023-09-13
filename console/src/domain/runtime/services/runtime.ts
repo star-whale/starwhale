@@ -2,7 +2,10 @@ import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
 import { IRuntimeSchema, IRuntimeDetailSchema, IRuntimeTreeSchema } from '../schemas/runtime'
 
-export async function listRuntimes(projectId: string, query: IListQuerySchema): Promise<IListSchema<IRuntimeSchema>> {
+export async function listRuntimes(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IRuntimeSchema>> {
     const resp = await axios.get<IListSchema<IRuntimeSchema>>(`/api/v1/project/${projectId}/runtime`, {
         params: query,
     })

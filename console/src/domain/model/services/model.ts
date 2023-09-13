@@ -8,7 +8,10 @@ import {
     IModelTreeSchema,
 } from '../schemas/model'
 
-export async function listModels(projectId: string, query: IListQuerySchema): Promise<IListSchema<IModelSchema>> {
+export async function listModels(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IModelSchema>> {
     const resp = await axios.get<IListSchema<IModelSchema>>(`/api/v1/project/${projectId}/model`, {
         params: query,
     })

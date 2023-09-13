@@ -114,7 +114,7 @@ export default function UserManagement() {
                                 icon={user.isEnabled ? 'Disable' : 'Enable'}
                                 onClick={() => changUserState(user.id, !user.isEnabled)}
                                 disabled={user.id === currentUser?.id}
-                                iconDisable={user.id === currentUser?.id}
+                                icondisable={user.id === currentUser?.id}
                             />
                             <ExtendButton
                                 tooltip={t('Change Password')}

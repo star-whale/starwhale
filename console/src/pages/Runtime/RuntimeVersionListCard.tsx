@@ -94,7 +94,7 @@ export default function RuntimeVersionListCard() {
                             <WithCurrentAuth id='runtime.image.build'>
                                 <ExtendButton
                                     disabled={!!runtime.builtImage}
-                                    iconDisable={!!runtime.builtImage}
+                                    icondisable={!!runtime.builtImage}
                                     as='link'
                                     icon={runtime.builtImage ? 'a-ImageBuilt' : 'a-BuildImage'}
                                     tooltip={runtime.builtImage ? t('runtime.image.built') : t('runtime.image.build')}

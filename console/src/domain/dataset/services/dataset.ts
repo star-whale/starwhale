@@ -8,7 +8,10 @@ import {
     IDatasetTaskBuildSchema,
 } from '../schemas/dataset'
 
-export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
+export async function listDatasets(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IDatasetSchema>> {
     const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
         params: query,
     })

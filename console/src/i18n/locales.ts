@@ -203,6 +203,10 @@ const dataset = {
         en: 'Files count',
         zh: '数量',
     },
+    'dataset.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
+    },
 }
 
 const runtime = {
@@ -253,6 +257,10 @@ const runtime = {
     'runtime.image.other': {
         en: 'Other',
         zh: '其他',
+    },
+    'runtime.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
     },
 }
 
@@ -332,6 +340,10 @@ const model = {
     'model.run': {
         en: 'Run Model',
         zh: '运行模型',
+    },
+    'model.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
     },
 }
 const trash = {
