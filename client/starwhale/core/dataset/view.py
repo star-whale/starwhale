@@ -6,17 +6,21 @@ from pathlib import Path
 from rich import box
 from rich.table import Table
 from rich.pretty import Pretty
+from rich.syntax import Syntax
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
 from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.view import BaseTermView, TagViewMixin
+from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.bundle import BaseBundle
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Text, DatasetConfig
 from starwhale.core.dataset.model import Dataset
 from starwhale.base.models.dataset import DatasetListType, LocalDatasetInfoBase
 from starwhale.core.runtime.process import Process as RuntimeProcess
+from starwhale.base.client.models.models import DatasetVo, DatasetInfoVo
 
 
 class DatasetTermView(BaseTermView, TagViewMixin):
@@ -49,10 +53,35 @@ class DatasetTermView(BaseTermView, TagViewMixin):
 
     def info(self) -> None:
         info = self.dataset.info()
-        if info:
-            console.print(Pretty(info, expand_all=True))
-        else:
+        if info is None:
             console.print(f":bird: Dataset info not found: [bold red]{self.uri}[/]")
+            return
+
+        if isinstance(info, DatasetInfoVo):
+            table = Table(box=box.SIMPLE, show_header=False)
+            table.add_column(style="cyan")
+            table.add_column()
+            data = {
+                "id": info.id,
+                "version id": info.version_id,
+                "version name": info.version_name,
+                "version alias": info.version_alias,
+                "version tag": info.version_tag,
+                "shared": info.shared and "Yes" or "No",
+                "created time": CloudRequestMixed.fmt_timestamp(
+                    info.version_info and info.version_info.created_time or None
+                ),
+                "index table": info.version_info
+                and info.version_info.index_table
+                or "",
+            }
+            for k, v in data.items():
+                table.add_row(f"{k}:", v)
+            console.print(table)
+            console.rule("version meta")
+            console.print(Syntax(info.version_meta, "yaml"))
+        else:
+            console.print(Pretty(info, expand_all=True))
 
     def summary(self) -> None:
         summary = self.dataset.summary()
@@ -153,14 +182,14 @@ class DatasetTermView(BaseTermView, TagViewMixin):
 
         cls.must_have_project(_uri)
         dataset = Dataset.get_cls(_uri.instance)
-        _datasets, _pager = dataset.list(_uri, page, size, filters)
+        _datasets, _pager = dataset.list(
+            _uri, page, size, BaseBundle.get_list_filter(filters)
+        )
 
-        _list: t.List[LocalDatasetInfoBase] = [
-            _d for _d in _datasets if isinstance(_d, LocalDatasetInfoBase)
-        ]
         if not show_removed:
-            _list = [_d for _d in _list if not _d.is_removed]
-        return _list, _pager
+            if all(isinstance(i, LocalDatasetInfoBase) for i in _datasets):
+                _datasets = [_d for _d in _datasets if not _d.is_removed]  # type: ignore
+        return _datasets, _pager
 
     @classmethod
     @BaseTermView._only_standalone
@@ -306,7 +335,7 @@ class DatasetTermViewRich(DatasetTermView):
     @BaseTermView._pager
     def list(
         cls,
-        project_uri: str = "",
+        project_uri: t.Union[str, Project] = "",
         fullname: bool = False,
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
@@ -321,11 +350,45 @@ class DatasetTermViewRich(DatasetTermView):
             "tags": lambda x: ",".join(x),
             "size": lambda x: pretty_bytes(x),
             "runtime": cls.place_holder_for_empty(),
-            "rows": lambda x: str(x),
+            "rows": lambda x: x and str(x) or "",
         }
 
         cls.print_header(project_uri)
-        cls.print_table("Dataset List", _datasets, custom_column=custom_column)
+        if all(isinstance(i, LocalDatasetInfoBase) for i in _datasets):
+            allowed_col = ["name", "version", "created_at", "tags", "size", "rows"]
+            cls.print_table(
+                "Dataset List",
+                _datasets,
+                custom_column=custom_column,
+                allowed_keys=allowed_col,
+            )
+        else:
+            rows: t.List[t.Dict[str, t.Any]] = []
+            for i in _datasets:
+                if not isinstance(i, DatasetVo):
+                    # can not happen
+                    continue
+                owner = ""
+                if i.version.owner is not None:
+                    owner = i.version.owner.name
+                row = {
+                    "name": i.name,
+                    "version": i.version.name,
+                    "id": f"{i.id}/version/{i.version.id}",
+                    "owner": owner,
+                    "tags": [i.version.alias] + (i.version.tags or []),
+                    "shared": i.version.shared != 0,
+                    "created_at": CloudRequestMixed.fmt_timestamp(
+                        i.version.created_time
+                    ),
+                }
+                rows.append(row)
+            allowed_col = None
+            cls.print_table(
+                "Dataset List",
+                rows,
+                allowed_keys=allowed_col,
+            )
         return _datasets, _pager
 
 
@@ -333,7 +396,7 @@ class DatasetTermViewJson(DatasetTermView):
     @classmethod
     def list(  # type: ignore
         cls,
-        project_uri: str = "",
+        project_uri: t.Union[str, Project] = "",
         fullname: bool = False,
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,

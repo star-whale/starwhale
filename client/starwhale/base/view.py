@@ -62,15 +62,17 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def print_header(project_uri: str = "") -> None:
+    def print_header(project_uri: str | Project = "") -> None:
         sw = SWCliConfigMixed()
         grid = Table.grid(expand=True)
         grid.add_column(justify="center", ratio=1)
 
         if project_uri:
             title = "Starwhale Project"
-            project = Project(project_uri)
-            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({sw._config['instances'][project.instance.alias]['uri']})"
+            project = (
+                Project(project_uri) if isinstance(project_uri, str) else project_uri
+            )
+            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({project.instance.url})"
         else:
             title = "Starwhale Instance"
             content = f"{sw.current_instance} ({sw._current_instance_obj['uri']})"

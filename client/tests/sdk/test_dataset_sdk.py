@@ -41,7 +41,7 @@ from starwhale.core.dataset.type import (
     D_ALIGNMENT_SIZE,
     COCOObjectAnnotation,
 )
-from starwhale.base.models.dataset import LocalDatasetInfoBase
+from starwhale.base.models.dataset import LocalDatasetInfo, LocalDatasetInfoBase
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
 
@@ -502,9 +502,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds_v2.close()
 
         assert v0_revision != v1_revision != v2_revision
-        assert manifest_v0["manifest"]["data_datastore_revision"] == v0_revision
-        assert manifest_v1["manifest"]["data_datastore_revision"] == v1_revision
-        assert manifest_v2["manifest"]["data_datastore_revision"] == v2_revision
+        assert manifest_v0.manifest["data_datastore_revision"] == v0_revision
+        assert manifest_v1.manifest["data_datastore_revision"] == v1_revision
+        assert manifest_v2.manifest["data_datastore_revision"] == v2_revision
 
     def test_versioning_data_scan_in_one_commit(self) -> None:
         ds = dataset("mnist")
@@ -1343,15 +1343,15 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds = dataset(existed_ds_uri)
 
         m = ds.manifest()
-        assert isinstance(m, dict)
-        assert m["name"] == ds.uri.name
-        assert m["version"] == ds.loading_version
-        assert m["tags"] == ["latest", "v0"]
-        assert m["project"] == ds.uri.project.name
+        assert isinstance(m, LocalDatasetInfo)
+        assert m.name == ds.uri.name
+        assert m.version == ds.loading_version
+        assert m.tags == ["latest", "v0"]
+        assert m.project == ds.uri.project.name
 
         empty_ds = dataset("mnist_new")
         m = empty_ds.manifest()
-        assert m == {}
+        assert m is None
 
     def test_summary(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
