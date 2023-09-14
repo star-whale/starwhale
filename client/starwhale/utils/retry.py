@@ -1,6 +1,6 @@
-from http.client import RemoteDisconnected
 import typing as t
 from inspect import iscoroutinefunction
+from http.client import RemoteDisconnected
 from urllib.error import HTTPError
 
 import requests
