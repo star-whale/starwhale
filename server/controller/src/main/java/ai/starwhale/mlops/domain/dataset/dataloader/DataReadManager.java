@@ -31,26 +31,22 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
 public class DataReadManager {
-    private final Integer timeoutTolerance;
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
 
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
-                           DataIndexProvider dataIndexProvider,
-                           @Value("${sw.dataset.processed.timeout.tolerance: 5}") Integer timeoutTolerance) {
+                           DataIndexProvider dataIndexProvider) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
-        this.timeoutTolerance = timeoutTolerance;
     }
 
     @Transactional(propagation = REQUIRES_NEW)
@@ -113,15 +109,13 @@ public class DataReadManager {
 
     /**
      * Assign data for consumer
-     * Message Delivery Semantics: At least once
      *
      * @param consumerId consumer
      * @param session session
-     * @param readMode read mode
      * @return data
      */
-    @Transactional(propagation = REQUIRES_NEW)
-    DataReadLog assignmentData(String consumerId, Session session, ReadMode readMode) {
+    @Transactional
+    DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
 
         var sessionId = session.getSessionId();
@@ -133,24 +127,6 @@ public class DataReadManager {
             sessionLock.lock();
             // get first
             var dataRange = dataReadLogDao.selectTop1UnAssignedData(sid);
-
-            switch (readMode) {
-                case AT_LEAST_ONCE:
-                    if (Objects.isNull(dataRange)) {
-                        // find timeout data to consume
-                        var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
-                        dataRange = maxProcessedTime == null ?  null : dataReadLogDao.selectTop1TimeoutData(
-                            sid, maxProcessedTime * timeoutTolerance);
-                    }
-
-                    if (Objects.isNull(dataRange)) {
-                        // find unprocessed data to consume(only lead to repeat consume, but it doesn't matter)
-                        dataRange = dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
-                    }
-                    break;
-                case AT_MOST_ONCE:
-                default:
-            }
 
             if (Objects.nonNull(dataRange)) {
                 dataRange.setConsumerId(consumerId);
@@ -164,7 +140,7 @@ public class DataReadManager {
 
     }
 
-    @Transactional(propagation = REQUIRES_NEW)
+    @Transactional
     void handleConsumerData(String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
         var sid = session.getId();
         var lock = new KeyLock<>(consumerId);
@@ -185,5 +161,11 @@ public class DataReadManager {
             lock.unlock();
         }
 
+    }
+
+    @Transactional
+    void resetUnProcessedData(String consumerId) {
+        var res = dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
+        log.info("Reset unprocessed data for consumer:{}, result:{}", consumerId, res);
     }
 }

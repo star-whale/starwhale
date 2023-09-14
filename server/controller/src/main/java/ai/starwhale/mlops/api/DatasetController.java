@@ -38,7 +38,6 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
-import ai.starwhale.mlops.domain.dataset.dataloader.ReadMode;
 import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
@@ -164,7 +163,6 @@ public class DatasetController implements DatasetApi {
                         .sessionId(dataRangeRequest.getSessionId())
                         .consumerId(dataRangeRequest.getConsumerId())
                         .isSerial(dataRangeRequest.isSerial())
-                        .readMode(ReadMode.values()[dataRangeRequest.getMode()])
                         .datasetName(dataset.getDatasetName())
                         .datasetVersion(dataset.getVersionName())
                         .tableName(dataset.getIndexTable())

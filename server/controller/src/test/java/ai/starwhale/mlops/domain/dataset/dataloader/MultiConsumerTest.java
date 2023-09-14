@@ -86,24 +86,24 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-            Arguments.of(0, true, 1),
-            Arguments.of(2, true, 1),
-            Arguments.of(6, true, 1),
-            Arguments.of(10, true, 1),
-            Arguments.of(0, false, 2),
-            Arguments.of(2, false, 2),
-            Arguments.of(6, false, 2),
-            Arguments.of(10, false, 2),
-            Arguments.of(0, true, 3),
-            Arguments.of(2, true, 3),
-            Arguments.of(6, true, 3),
-            Arguments.of(10, true, 3)
+            Arguments.of(0, false, 1),
+            Arguments.of(2, false, 1),
+            Arguments.of(6, false, 1),
+            Arguments.of(10, false, 1),
+            Arguments.of(0, true, 2),
+            Arguments.of(2, true, 2),
+            Arguments.of(6, true, 2),
+            Arguments.of(10, true, 2),
+            Arguments.of(0, false, 3),
+            Arguments.of(2, false, 3),
+            Arguments.of(6, false, 3),
+            Arguments.of(10, false, 3)
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideMultiParams")
-    public void testMultiConsumerReadAtLeastOnce(int errorNumPerConsumer, boolean isSerial, int datasetNum)
+    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial, int datasetNum)
             throws InterruptedException, ExecutionException {
 
         var sessionId = "session" + errorNumPerConsumer + isSerial + datasetNum;
@@ -138,7 +138,6 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .sessionId(sessionId)
                             .consumerId(consumerId)
                             .isSerial(isSerial)
-                            .readMode(ReadMode.AT_LEAST_ONCE)
                             .datasetName(datasetName)
                             .datasetVersion(datasetVersion)
                             .tableName("test-table-name")
@@ -160,15 +159,15 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             break;
                         }
 
+                        try {
+                            Thread.sleep(random.nextInt(10));
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         // mock error
                         if (retryNum < errorNum) {
-                            // mock restart
+                            // mock error
                             retryNum++;
-                            try {
-                                Thread.sleep(random.nextInt(10));
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
                             request.setProcessedData(null);
                         } else {
                             indexCount.addAndGet(1);
@@ -194,13 +193,38 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         ArrayList<DataIndex> indices = getDataIndices(batchSize, totalRangesNum);
 
-        given(dataRangeProvider.returnDataIndex(any()))
-                .willReturn(indices);
+        given(dataRangeProvider.returnDataIndex(any())).willReturn(indices);
 
+        var errorConsumers = new ArrayList<String>();
+        // first consumption with error
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < consumerNum; i++) {
+            var consumerId = String.valueOf(i);
+            if (errorNumPerConsumer > 0) {
+                errorConsumers.add(consumerId);
+            }
             futures.add(executor.submit(
-                new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+                new ConsumerMock(consumerId, datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+        }
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
+
+        // mock data reset logic
+        futures.clear();
+        for (String errorConsumer : errorConsumers) {
+            futures.add(executor.submit(() -> dataLoader.resetUnProcessed(errorConsumer)));
+        }
+        for (Future<?> future : futures) {
+            future.get();
+        }
+
+        // try again
+        futures.clear();
+        for (int i = 0; i < 2; i++) {
+            futures.add(executor.submit(
+                    new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, 0, datasetNum)));
         }
 
         for (Future<?> future : futures) {
@@ -210,8 +234,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         verify(dataRangeProvider, times(datasetNum)).returnDataIndex(any());
 
         var datasetSize = (totalRangesNum - 1) * batchSize + 8;
-        // Message Delivery Semantics: At least once
-        assertTrue(datasetSize * datasetNum <= count.get());
+
+        assertEquals(datasetSize * datasetNum, count.get());
 
         var processedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.PROCESSED.name());
         var unprocessedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.UNPROCESSED.name());
@@ -219,8 +243,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         assertEquals(totalRangesNum * datasetNum, processedData.size());
         assertEquals(0, unprocessedData.size());
-        // Message Delivery Semantics: At least once
-        assertTrue((totalRangesNum) * datasetNum + errorNumPerConsumer * consumerNum <= totalProcessedNum);
+
+        assertEquals((totalRangesNum) * datasetNum + errorNumPerConsumer * consumerNum, totalProcessedNum);
 
         executor.shutdownNow();
     }

@@ -43,6 +43,9 @@ public interface SessionMapper {
     @Select("SELECT * from dataset_read_session WHERE id=#{id} FOR UPDATE")
     SessionEntity selectForUpdate(Long id);
 
+    @Select("SELECT * from dataset_read_session WHERE session_id=#{sessionId}")
+    List<SessionEntity> selectBySessionId(String sessionId);
+
     @Select("SELECT * from dataset_read_session")
-    List<SessionEntity> select();
+    List<SessionEntity> selectAll();
 }
