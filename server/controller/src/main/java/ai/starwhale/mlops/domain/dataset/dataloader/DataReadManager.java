@@ -50,7 +50,7 @@ public class DataReadManager {
     }
 
     @Transactional(propagation = REQUIRES_NEW)
-    Session getOrGenerateSession(DataReadRequest request) {
+    public Session getOrGenerateSession(DataReadRequest request) {
         var sessionId = request.getSessionId();
         var datasetName = request.getDatasetName();
         var datasetVersion = request.getDatasetVersion();
@@ -115,7 +115,7 @@ public class DataReadManager {
      * @return data
      */
     @Transactional
-    DataReadLog assignmentData(String consumerId, Session session) {
+    public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
 
         var sessionId = session.getSessionId();
@@ -141,7 +141,7 @@ public class DataReadManager {
     }
 
     @Transactional
-    void handleConsumerData(String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
+    public void handleConsumerData(String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
         var sid = session.getId();
         var lock = new KeyLock<>(consumerId);
         try {
@@ -164,7 +164,7 @@ public class DataReadManager {
     }
 
     @Transactional
-    void resetUnProcessedData(String consumerId) {
+    public void resetUnProcessedData(String consumerId) {
         var res = dataReadLogDao.updateUnProcessedToUnAssigned(consumerId);
         log.info("Reset unprocessed data for consumer:{}, result:{}", consumerId, res);
     }
