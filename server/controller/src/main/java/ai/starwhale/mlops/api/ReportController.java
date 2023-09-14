@@ -28,13 +28,28 @@ import ai.starwhale.mlops.domain.report.bo.CreateParam;
 import ai.starwhale.mlops.domain.report.bo.QueryParam;
 import ai.starwhale.mlops.domain.report.bo.UpdateParam;
 import com.github.pagehelper.PageInfo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
+@Tag(name = "Report")
 @RequestMapping("${sw.controller.api-prefix}")
-public class ReportController implements ReportApi {
+public class ReportController {
 
     private final ReportService service;
 
@@ -43,8 +58,12 @@ public class ReportController implements ReportApi {
     }
 
 
-    public ResponseEntity<ResponseMessage<String>> createReport(
-            String projectUrl, CreateReportRequest createReportRequest) {
+    @PostMapping(value = "/project/{projectUrl}/report", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> createReport(
+            @PathVariable String projectUrl,
+            @Valid @RequestBody CreateReportRequest createReportRequest
+    ) {
         Long id = service.create(CreateParam.builder()
                 .projectUrl(projectUrl)
                 .title(createReportRequest.getTitle())
@@ -54,13 +73,24 @@ public class ReportController implements ReportApi {
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(id)));
     }
 
-    public ResponseEntity<ResponseMessage<String>> transfer(
-            String projectUrl, Long reportId, TransferReportRequest transferRequest) {
+    @PostMapping(value = "/project/{projectUrl}/report/{reportId}/transfer",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> transfer(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @Valid @RequestBody TransferReportRequest transferRequest
+    ) {
         return null;
     }
 
-    public ResponseEntity<ResponseMessage<String>> modifyReport(
-            String projectUrl, Long reportId, UpdateReportRequest updateReportRequest) {
+    @PutMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> modifyReport(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @Valid @RequestBody UpdateReportRequest updateReportRequest
+    ) {
         service.update(UpdateParam.builder()
                 .reportId(reportId)
                 .projectUrl(projectUrl)
@@ -72,19 +102,34 @@ public class ReportController implements ReportApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> sharedReport(String projectUrl, Long reportId, Boolean shared) {
+    @PutMapping(value = "/project/{projectUrl}/report/{reportId}/shared", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> sharedReport(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @RequestParam Boolean shared
+    ) {
         service.shared(UpdateParam.builder().reportId(reportId).shared(shared).build());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    public ResponseEntity<ResponseMessage<String>> deleteReport(String projectUrl, Long reportId) {
+    @DeleteMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteReport(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId
+    ) {
         service.delete(QueryParam.builder()
                 .projectUrl(projectUrl).reportId(reportId).build());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    public ResponseEntity<ResponseMessage<ReportVo>> getReport(String projectUrl, Long reportId) {
+    @GetMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ReportVo>> getReport(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(
                 service.getReport(QueryParam.builder()
                         .projectUrl(projectUrl)
@@ -92,15 +137,26 @@ public class ReportController implements ReportApi {
                         .build())));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<ReportVo>> preview(String reportUuid) {
-        return ResponseEntity.ok(Code.success.asResponse(service.getReportByUuidForPreview(reportUuid)));
+    @GetMapping(value = "/report/{uuid}/preview", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
+    ResponseEntity<ResponseMessage<ReportVo>> preview(
+            @PathVariable String uuid
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(service.getReportByUuidForPreview(uuid)));
     }
 
-    public ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(
-            String projectUrl, String title, Integer pageNum, Integer pageSize) {
+    @Operation(summary = "Get the list of reports")
+    @GetMapping(value = "/project/{projectUrl}/report", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(
+            @PathVariable String projectUrl,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(service.listReport(
                 QueryParam.builder().title(title).projectUrl(projectUrl).build(),
-                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build())));
+                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build()
+        )));
     }
 }

@@ -23,14 +23,25 @@ import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.domain.system.SystemService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
+@Tag(name = "System")
 @RequestMapping("${sw.controller.api-prefix}")
-public class SystemController implements SystemApi {
+public class SystemController {
 
     private final SystemService systemService;
 
@@ -42,19 +53,27 @@ public class SystemController implements SystemApi {
         this.systemSettingService = systemSettingService;
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools() {
+    @Operation(summary = "Get the list of resource pool")
+    @GetMapping(value = "/system/resourcePool", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools() {
         return ResponseEntity.ok(Code.success.asResponse(systemService.listResourcePools()));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> updateResourcePools(List<ResourcePool> resourcePools) {
+    @Operation(summary = "Update resource pool")
+    @PostMapping(value = "/system/resourcePool", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> updateResourcePools(
+            @Valid @RequestBody List<ResourcePool> resourcePools
+    ) {
         systemService.updateResourcePools(resourcePools);
         return ResponseEntity.ok(Code.success.asResponse("Resource pools updated."));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion() {
+    @Operation(summary = "Get current version of the system")
+    @GetMapping(value = "/system/version", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion() {
         SystemVersionVo version = SystemVersionVo.builder()
                 .version(systemService.controllerVersion())
                 .id("")
@@ -62,18 +81,24 @@ public class SystemController implements SystemApi {
         return ResponseEntity.ok(Code.success.asResponse(version));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> updateSetting(String setting) {
+    @Operation(summary = "Update system settings", description = "Update system settings")
+    @PostMapping(value = "/system/setting", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> updateSetting(@RequestBody String setting) {
         return ResponseEntity.ok(Code.success.asResponse(systemSettingService.updateSetting(setting)));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> querySetting() {
+    @Operation(summary = "Get system settings", description = "Get system settings in yaml string")
+    @GetMapping(value = "/system/setting", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> querySetting() {
         return ResponseEntity.ok(Code.success.asResponse(systemSettingService.querySetting()));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<FeaturesVo>> queryFeatures() {
+    @Operation(summary = "Get system features", description = "Get system features list")
+    @GetMapping(value = "/system/features", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<FeaturesVo>> queryFeatures() {
         return ResponseEntity.ok(Code.success.asResponse(systemService.queryFeatures()));
     }
 }
