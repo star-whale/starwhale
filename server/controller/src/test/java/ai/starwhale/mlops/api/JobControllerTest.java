@@ -49,6 +49,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
@@ -94,7 +95,8 @@ public class JobControllerTest {
                 runtimeSuggestionService,
                 new IdConverter(),
                 dagQuerier,
-                featuresProperties
+                featuresProperties,
+                mock(EventService.class)
         );
     }
 
@@ -304,7 +306,8 @@ public class JobControllerTest {
                 runtimeSuggestionService,
                 new IdConverter(),
                 dagQuerier,
-                featuresProperties
+                featuresProperties,
+                mock(EventService.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "pause"));
@@ -324,7 +327,8 @@ public class JobControllerTest {
                 runtimeSuggestionService,
                 new IdConverter(),
                 dagQuerier,
-                featuresProperties
+                featuresProperties,
+                mock(EventService.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "resume"));

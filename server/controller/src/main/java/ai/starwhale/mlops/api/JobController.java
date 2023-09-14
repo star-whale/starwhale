@@ -18,6 +18,8 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.event.EventRequest;
+import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
@@ -35,6 +37,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
@@ -47,6 +50,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -79,6 +83,7 @@ public class JobController {
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
     private final FeaturesProperties featuresProperties;
+    private final EventService eventService;
 
     public JobController(
             JobServiceForWeb jobServiceForWeb,
@@ -87,7 +92,8 @@ public class JobController {
             RuntimeSuggestionService runtimeSuggestionService,
             IdConverter idConvertor,
             DagQuerier dagQuerier,
-            FeaturesProperties featuresProperties
+            FeaturesProperties featuresProperties,
+            EventService eventService
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
         this.taskService = taskService;
@@ -96,6 +102,7 @@ public class JobController {
         this.idConvertor = idConvertor;
         this.dagQuerier = dagQuerier;
         this.featuresProperties = featuresProperties;
+        this.eventService = eventService;
         var actions = InvokerManager.<String, String>create()
                 .addInvoker("cancel", jobServiceForWeb::cancelJob);
         if (featuresProperties.isJobPauseEnabled()) {
@@ -362,5 +369,35 @@ public class JobController {
     ) {
         var resp = jobServiceForWeb.exec(projectUrl, jobUrl, taskId, execRequest);
         return ResponseEntity.ok(Code.success.asResponse(resp));
+    }
+
+    @Operation(summary = "Add event to job or task")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/event", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> addEvent(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @Valid @RequestBody EventRequest request
+    ) {
+        eventService.addEventForJob(jobUrl, request);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Operation(summary = "Get events of job or task")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/event", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<List<EventVo>>> getEvents(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @RequestParam(required = false) Long taskId
+    ) {
+        EventRequest.RelatedResource request = null;
+        if (taskId != null) {
+            request = new EventRequest.RelatedResource();
+            request.setResource(EventRequest.EventResource.TASK);
+            request.setId(taskId);
+        }
+
+        return ResponseEntity.ok(Code.success.asResponse(eventService.getEventsForJob(jobUrl, request)));
     }
 }
