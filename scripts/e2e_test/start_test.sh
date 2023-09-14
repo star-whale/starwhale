@@ -225,6 +225,21 @@ setup_minikube_dns_mock() {
     fi
 }
 
+open_api_model_test() {
+    # generate openapi model
+    pushd ../../client
+    python3 -m pip install datamodel-code-generator[http]
+    OPEN_API_URL=$CONTROLLER_URL make gen-model
+
+    if git diff --exit-code; then
+      echo "openapi model is up to date"
+    else
+      echo "openapi model is not up to date"
+      git diff
+      exit 1
+    fi
+}
+
 client_test() {
   pushd ../../client
   rm -rf build/*
@@ -314,6 +329,7 @@ main() {
     publish_to_mini_k8s
   fi
   client_test
+  open_api_model_test
   api_test
   console_test
 }

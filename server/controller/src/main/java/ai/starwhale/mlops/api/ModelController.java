@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
+
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.bundle.DataScope;
@@ -44,22 +46,43 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
+@Validated
 @RestController
+@Tag(name = "Model")
 @RequestMapping("${sw.controller.api-prefix}")
-public class ModelController implements ModelApi {
+public class ModelController {
 
     private final ModelService modelService;
     private final IdConverter idConvertor;
@@ -69,14 +92,15 @@ public class ModelController implements ModelApi {
         this.idConvertor = idConvertor;
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
-            String projectUrl,
-            String versionId,
-            String name,
-            String owner,
-            Integer pageNum,
-            Integer pageSize
+    @GetMapping(value = "/project/{projectUrl}/model", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
+            @PathVariable String projectUrl,
+            @RequestParam(required = false) String versionId,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String owner,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
         PageInfo<ModelVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
@@ -88,7 +112,7 @@ public class ModelController implements ModelApi {
             pageInfo = modelService.listModel(
                     ModelQuery.builder()
                             .projectUrl(projectUrl)
-                            .namePrefix(name)
+                            .name(name)
                             .owner(owner)
                             .build(),
                     PageParams.builder()
@@ -100,11 +124,12 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> revertModelVersion(
-            String projectUrl,
-            String modelUrl,
-            RevertModelVersionRequest revertRequest
+    @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/revert", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> revertModelVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestBody RevertModelVersionRequest revertRequest
     ) {
         Boolean res = modelService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
@@ -116,12 +141,16 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl, String modelUrl) {
+    @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteModel(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl
+    ) {
         Boolean res = modelService.deleteModel(ModelQuery.builder()
-                                                       .projectUrl(projectUrl)
-                                                       .modelUrl(modelUrl)
-                                                       .build());
+                .projectUrl(projectUrl)
+                .modelUrl(modelUrl)
+                .build());
         if (!res) {
             throw new StarwhaleApiException(
                     new SwProcessException(ErrorType.DB, "Delete model failed."),
@@ -131,8 +160,12 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/recover", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> recoverModel(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl
+    ) {
         Boolean res = modelService.recoverModel(projectUrl, modelUrl);
         if (!res) {
             throw new StarwhaleApiException(
@@ -143,9 +176,12 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
-            String projectUrl, String modelUrl, String versionUrl
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam(required = false) String versionUrl
     ) {
         ModelInfoVo modelInfo = modelService.getModelInfo(
                 ModelQuery.builder()
@@ -156,22 +192,26 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse(modelInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
-            String projectUrl, String modelUrl, String baseVersion, String compareVersion
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/diff", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam String baseVersion,
+            @Valid @RequestParam String compareVersion
     ) {
-
         return ResponseEntity.ok(Code.success.asResponse(
                 modelService.getModelDiff(projectUrl, modelUrl, baseVersion, compareVersion)));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
-            String projectUrl,
-            String modelUrl,
-            String name,
-            Integer pageNum,
-            Integer pageSize
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam(required = false) String name,
+            @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
         PageInfo<ModelVersionVo> pageInfo = modelService.listModelVersionHistory(
                 ModelVersionQuery.builder()
@@ -187,16 +227,27 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> shareModelVersion(
-            String projectUrl, String modelUrl, String versionUrl, Boolean shared
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareModelVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @RequestParam Boolean shared
     ) {
         modelService.shareModelVersion(projectUrl, modelUrl, versionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(String projectUrl, DataScope scope) {
+    @GetMapping(value = "/project/{projectUrl}/model-tree", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "all") DataScope scope
+    ) {
         List<ModelViewVo> list;
         switch (scope) {
             case all:
@@ -214,17 +265,38 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse(list));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> modifyModel(
-            String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request
+    @GetMapping(value = "/project/{projectUrl}/recent-model-tree", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<ModelViewVo>>> recentModelTree(
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data limit", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "5")
+            @Valid
+            @Min(value = 1, message = "limit must be greater than or equal to 1")
+            @Max(value = 50, message = "limit must be less than or equal to 50")
+            Integer limit
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                modelService.listRecentlyModelVersionView(projectUrl, limit)
+        ));
+    }
+
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> modifyModel(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @Valid @RequestBody ModelUpdateRequest modelUpdateRequest
     ) {
         Boolean res = modelService.modifyModelVersion(
                 projectUrl,
                 modelUrl,
                 versionUrl,
                 ModelVersion.builder()
-                        .tag(request.getTag())
-                        .builtInRuntime(request.getBuiltInRuntime())
+                        .tag(modelUpdateRequest.getTag())
+                        .builtInRuntime(modelUpdateRequest.getBuiltInRuntime())
                         .build()
         );
         if (!res) {
@@ -236,12 +308,14 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> addModelVersionTag(
-            String projectUrl,
-            String modelUrl,
-            String versionUrl,
-            ModelTagRequest modelTagRequest
+    @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> addModelVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @Valid @RequestBody ModelTagRequest modelTagRequest
     ) {
         modelService.addModelVersionTag(
                 projectUrl,
@@ -253,29 +327,39 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<String>>> listModelVersionTags(
-            String projectUrl,
-            String modelUrl,
-            String versionUrl
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<String>>> listModelVersionTags(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl
     ) {
         var tags = modelService.listModelVersionTags(projectUrl, modelUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(tags));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModelVersionTag(
-            String projectUrl,
-            String modelUrl,
-            String versionUrl,
-            String tag
+    @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteModelVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @PathVariable String tag
     ) {
         modelService.deleteModelVersionTag(projectUrl, modelUrl, versionUrl, tag);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<Long>> getModelVersionTag(String projectUrl, String modelUrl, String tag) {
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getModelVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String tag
+    ) {
         var entity = modelService.getModelVersionTag(projectUrl, modelUrl, tag);
         if (entity == null) {
             return ResponseEntity.notFound().build();
@@ -284,31 +368,45 @@ public class ModelController implements ModelApi {
     }
 
 
-    @Override
-    public ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
-            InitUploadBlobRequest initUploadBlobRequest
+    @PostMapping(value = "/blob", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
+            @Valid @RequestBody InitUploadBlobRequest initUploadBlobRequest
     ) {
         var result = this.modelService.initUploadBlob(initUploadBlobRequest);
         return ResponseEntity.ok(Code.success.asResponse(result));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<CompleteUploadBlobResult>> completeUploadBlob(String blobId) {
+    @PostMapping(value = "/blob/{blobId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<CompleteUploadBlobResult>> completeUploadBlob(
+            @PathVariable String blobId
+    ) {
         var result = this.modelService.completeUploadBlob(blobId);
-        return ResponseEntity.ok(Code.success.asResponse(CompleteUploadBlobResult.builder().blobId(result).build()));
+        return ResponseEntity.ok(Code.success.asResponse(CompleteUploadBlobResult.builder()
+                .blobId(result)
+                .build()));
     }
 
-    @Override
-    public void createModelVersion(
-            String project, String modelName, String version,
-            CreateModelVersionRequest createModelVersionRequest
+    @PostMapping(value = "/project/{project}/model/{modelName}/version/{version}/completeUpload",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    void createModelVersion(
+            @PathVariable String project,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.")
+            @PathVariable String modelName,
+            @PathVariable String version,
+            @Valid @RequestBody CreateModelVersionRequest createModelVersionRequest
     ) {
         this.modelService.createModelVersion(project, modelName, version, createModelVersionRequest);
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
-            String project, String model, String version, String blobId
+    @GetMapping(value = "/project/{project}/model/{model}/version/{version}/meta",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
+            @PathVariable String project,
+            @PathVariable String model,
+            @PathVariable String version,
+            @RequestParam(required = false, defaultValue = "") String blobId
     ) {
         var root = this.modelService.getModelMetaBlob(project, model, version, blobId);
         try {
@@ -318,16 +416,27 @@ public class ModelController implements ModelApi {
         }
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
-            String project, String model, String version, String path
+    @GetMapping(value = "/project/{project}/model/{model}/listFiles", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
+            @PathVariable String project,
+            @PathVariable String model,
+            @RequestParam(required = false, defaultValue = "latest") String version,
+            @RequestParam(required = false, defaultValue = "") String path
     ) {
         var result = this.modelService.listFiles(project, model, version, path);
         return ResponseEntity.ok(Code.success.asResponse(result));
     }
 
-    @Override
-    public ResponseEntity<InputStreamResource> getFileData(String project, String model, String version, String path) {
+    @GetMapping(value = "/project/{project}/model/{model}/getFileData",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<InputStreamResource> getFileData(
+            @PathVariable String project,
+            @PathVariable String model,
+            @RequestParam(required = false, defaultValue = "latest") String version,
+            @RequestParam String path
+    ) {
         var result = this.modelService.getFileData(project, model, version, path);
         return ResponseEntity.ok(new InputStreamResource(result) {
             @Override
@@ -337,8 +446,16 @@ public class ModelController implements ModelApi {
         });
     }
 
-    @Override
-    public ResponseEntity<?> headModel(String projectUrl, String modelUrl, String versionUrl) {
+    @RequestMapping(
+            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.HEAD)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<?> headModel(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl
+    ) {
         try {
             modelService.query(projectUrl, modelUrl, versionUrl);
             return ResponseEntity.ok().build();

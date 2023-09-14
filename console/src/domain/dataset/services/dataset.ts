@@ -8,7 +8,10 @@ import {
     IDatasetTaskBuildSchema,
 } from '../schemas/dataset'
 
-export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
+export async function listDatasets(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IDatasetSchema>> {
     const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
         params: query,
     })
@@ -22,6 +25,11 @@ export async function fetchDataset(projectId: string, datasetId: string): Promis
 
 export async function fetchDatasetTree(projectId: string): Promise<IDatasetTreeSchema[]> {
     const resp = await axios.get<IDatasetTreeSchema[]>(`/api/v1/project/${projectId}/dataset-tree`)
+    return resp.data
+}
+
+export async function fetchRecentDatasetTree(projectId: string): Promise<IDatasetTreeSchema[]> {
+    const resp = await axios.get<IDatasetTreeSchema[]>(`/api/v1/project/${projectId}/recent-dataset-tree`)
     return resp.data
 }
 

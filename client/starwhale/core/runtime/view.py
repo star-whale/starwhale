@@ -15,13 +15,19 @@ from starwhale.consts import (
     STANDALONE_INSTANCE,
 )
 from starwhale.base.view import BaseTermView, TagViewMixin
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
 from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-
-from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
+from starwhale.core.runtime.model import Runtime, RuntimeInfoFilter, StandaloneRuntime
+from starwhale.base.models.runtime import (
+    RuntimeListType,
+    LocalRuntimeVersion,
+    LocalRuntimeVersionInfo,
+)
+from starwhale.base.client.models.models import RuntimeVo, RuntimeInfoVo
 
 
 class RuntimeTermView(BaseTermView, TagViewMixin):
@@ -56,19 +62,21 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
     ) -> None:
         info = self.runtime.info()
-        if not info:
+        if info is None:
             console.print(
                 f":anguished_face: No runtime info found: {self.uri}", style="red"
             )
             return
 
-        basic_content = Pretty(info["basic"], expand_all=True)
-        runtime_content = Syntax(
-            info.get("runtime_yaml", ""), "yaml", theme="ansi_dark"
-        )
-        manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
+        if isinstance(info, RuntimeInfoVo):
+            console.print(info)
+            return
+
+        basic_content = Pretty(info.basic, expand_all=True)
+        runtime_content = Syntax(info.yaml, "yaml", theme="ansi_dark")
+        manifest_content = Pretty(info.manifest, expand_all=True)
         _locks = []
-        for fname, content in info.get("lock", {}).items():
+        for fname, content in info.lock.items():
             _locks.append(f"#lock file: {fname}")
             _locks.append(content)
         lock_content = "\n".join(_locks)
@@ -288,14 +296,14 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.List[str]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        filters = filters or []
+    ) -> t.Tuple[RuntimeListType, t.Dict[str, t.Any]]:
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
-        fullname = fullname or _uri.instance.is_cloud
-        _runtimes, _pager = Runtime.list(_uri, page, size, filters)
-        _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
-        return _data, _pager
+        runtime = Runtime.get_cls(_uri.instance)
+        _runtimes, _pager = runtime.list(
+            _uri, page, size, runtime.get_list_filter(filters)
+        )
+        return _runtimes, _pager
 
     @classmethod
     @BaseTermView._only_standalone
@@ -394,8 +402,7 @@ class RuntimeTermViewRich(RuntimeTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.List[str]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        filters = filters or []
+    ) -> t.Tuple[RuntimeListType, t.Dict[str, t.Any]]:
         _data, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )
@@ -403,11 +410,49 @@ class RuntimeTermViewRich(RuntimeTermView):
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
             "tags": lambda x: ",".join(x),
             "size": lambda x: pretty_bytes(x),
-            "runtime": cls.place_holder_for_empty(),
         }
 
         cls.print_header(project_uri)
-        cls.print_table("Runtime List", _data, custom_column=custom_column)
+
+        if all(isinstance(i, LocalRuntimeVersion) for i in _data):
+            allowed_col = ["name", "version", "created_at", "size", "tags", "removed"]
+            cls.print_table(
+                "Runtime List",
+                _data,
+                custom_column=custom_column,
+                allowed_keys=allowed_col,
+            )
+        else:
+            # remote runtime list
+            rows: t.List[t.Dict[str, t.Any]] = []
+            for i in _data:
+                if not isinstance(i, RuntimeVo):
+                    # can not happen
+                    continue
+                owner = ""
+                if i.version.owner is not None:
+                    owner = i.version.owner.name
+                row = {
+                    "name": i.name,
+                    "version": i.version.name,
+                    "id": f"{i.id}/version/{i.version.id}",
+                    "owner": owner,
+                    "tags": [i.version.alias] + (i.version.tags or []),
+                    "shared": i.version.shared != 0,
+                    "image": i.version.image,
+                    "created_at": CloudRequestMixed.fmt_timestamp(
+                        i.version.created_time
+                    ),
+                }
+                rows.append(row)
+            allowed_col = None
+            cls.print_table(
+                "Runtime List",
+                rows,
+                custom_column=custom_column,
+                allowed_keys=allowed_col,
+            )
+
         return _data, _pager
 
 
@@ -433,17 +478,37 @@ class RuntimeTermViewJson(RuntimeTermView):
         output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
     ) -> None:
         info = self.runtime.info()
+        if info is None:
+            console.print(
+                f":anguished_face: No runtime info found: {self.uri}", style="red"
+            )
+            return
 
+        out: t.Dict[str, t.Any] = dict()
         if output_filter == RuntimeInfoFilter.basic:
-            info = {"basic": info.get("basic", {})}
-        elif output_filter == RuntimeInfoFilter.lock:
-            info = {"lock": info.get("lock", {})}
-        elif output_filter == RuntimeInfoFilter.manifest:
-            info = {"manifest": info.get("manifest", {})}
-        elif output_filter == RuntimeInfoFilter.runtime_yaml:
-            info = {"runtime_yaml": info.get("runtime_yaml", "")}
+            from fastapi.encoders import jsonable_encoder
 
-        self.pretty_json(info)
+            out = jsonable_encoder(info.dict(by_alias=True))
+        elif output_filter == RuntimeInfoFilter.lock:
+            if isinstance(info, LocalRuntimeVersionInfo):
+                out = {"data": info.lock}
+            else:
+                # TODO: support cloud runtime lock
+                out = {"data": ""}
+        elif output_filter == RuntimeInfoFilter.manifest:
+            if isinstance(info, LocalRuntimeVersionInfo):
+                out = {"data": info.manifest}
+            else:
+                # TODO: support cloud runtime manifest
+                out = {"data": ""}
+        elif output_filter == RuntimeInfoFilter.runtime_yaml:
+            if isinstance(info, LocalRuntimeVersionInfo):
+                out = {"data": info.yaml}
+            else:
+                # TODO: support cloud runtime yaml
+                out = {"data": ""}
+
+        self.pretty_json(out)
 
     def history(self, fullname: bool = False) -> None:
         fullname = fullname or self.uri.instance.is_cloud

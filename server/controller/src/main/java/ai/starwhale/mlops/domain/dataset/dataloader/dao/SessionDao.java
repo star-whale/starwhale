@@ -45,7 +45,11 @@ public class SessionDao {
         return entity != null ? converter.revert(entity) : null;
     }
 
+    public List<Session> selectBySessionId(String sessionId) {
+        return mapper.selectBySessionId(sessionId).stream().map(converter::revert).collect(Collectors.toList());
+    }
+
     public List<Session> selectAll() {
-        return mapper.select().stream().map(converter::revert).collect(Collectors.toList());
+        return mapper.selectAll().stream().map(converter::revert).collect(Collectors.toList());
     }
 }

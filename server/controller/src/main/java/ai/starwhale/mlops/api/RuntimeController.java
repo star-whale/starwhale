@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api;
 
+import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
+
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.bundle.DataScope;
@@ -37,19 +39,42 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
+@Validated
 @RestController
+@Tag(name = "Runtime")
 @RequestMapping("${sw.controller.api-prefix}")
-public class RuntimeController implements RuntimeApi {
+public class RuntimeController {
 
     private final RuntimeService runtimeService;
 
@@ -57,18 +82,21 @@ public class RuntimeController implements RuntimeApi {
         this.runtimeService = runtimeService;
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(
-            String projectUrl,
-            String name,
-            String owner,
-            Integer pageNum,
-            Integer pageSize
+    @Operation(summary = "Get the list of runtimes")
+    @GetMapping(value = "/project/{projectUrl}/runtime", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Runtime name prefix to search for")
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String owner,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
         PageInfo<RuntimeVo> pageInfo = runtimeService.listRuntime(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
-                        .namePrefix(name)
+                        .name(name)
                         .owner(owner)
                         .build(),
                 PageParams.builder()
@@ -79,8 +107,14 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(String projectUrl, DataScope scope) {
+    @Operation(summary = "List runtime tree including global runtimes")
+    @GetMapping(value = "/project/{projectUrl}/runtime-tree", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data range")
+            @RequestParam(required = false, defaultValue = "all") DataScope scope
+    ) {
         List<RuntimeViewVo> list;
         switch (scope) {
             case all:
@@ -98,11 +132,35 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse(list));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
-            String projectUrl,
-            String runtimeUrl,
-            RuntimeRevertRequest revertRequest
+    @GetMapping(value = "/project/{projectUrl}/recent-runtime-tree", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> recentRuntimeTree(
+            @PathVariable String projectUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Data limit", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "5")
+            @Valid
+            @Min(value = 1, message = "limit must be greater than or equal to 1")
+            @Max(value = 50, message = "limit must be less than or equal to 50")
+            Integer limit
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                runtimeService.listRecentlyRuntimeVersionView(projectUrl, limit)
+        ));
+
+    }
+
+    @Operation(
+            summary = "Revert Runtime version",
+            description =
+                    "Select a historical version of the runtime and revert the latest version of the current runtime"
+                            + " to this version")
+    @PostMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/revert",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @Valid @RequestBody RuntimeRevertRequest revertRequest
     ) {
         Boolean res = runtimeService.revertVersionTo(projectUrl, runtimeUrl, revertRequest.getVersionUrl());
         if (!res) {
@@ -114,10 +172,12 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteRuntime(
-            String projectUrl,
-            String runtimeUrl
+    @Operation(summary = "Delete a runtime")
+    @DeleteMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteRuntime(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl
     ) {
         Boolean res = runtimeService.deleteRuntime(
                 RuntimeQuery.builder()
@@ -134,10 +194,13 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> recoverRuntime(
-            String projectUrl,
-            String runtimeUrl
+    @Operation(summary = "Recover a runtime")
+    @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/recover",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> recoverRuntime(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl
     ) {
         Boolean res = runtimeService.recoverRuntime(projectUrl, runtimeUrl);
         if (!res) {
@@ -150,11 +213,14 @@ public class RuntimeController implements RuntimeApi {
 
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl
+    @Operation(summary = "Get the information of a runtime",
+            description = "Return the information of the latest version of the current runtime")
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @RequestParam(required = false) String versionUrl
     ) {
         RuntimeInfoVo runtimeInfo = runtimeService.getRuntimeInfo(
                 RuntimeQuery.builder()
@@ -166,12 +232,16 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse(runtimeInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> modifyRuntime(
-            String projectUrl,
-            String runtimeUrl,
-            String runtimeVersionUrl,
-            RuntimeTagRequest tagRequest
+    @Operation(summary = "Set tag of the runtime version")
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> modifyRuntime(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String runtimeVersionUrl,
+            @Valid @RequestBody RuntimeTagRequest tagRequest
     ) {
         Boolean res = runtimeService.modifyRuntimeVersion(
                 projectUrl,
@@ -191,12 +261,14 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> addRuntimeVersionTag(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl,
-            RuntimeTagRequest runtimeTagRequest
+    @PostMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> addRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @Valid @RequestBody RuntimeTagRequest runtimeTagRequest
     ) {
         runtimeService.addRuntimeVersionTag(
                 projectUrl,
@@ -208,32 +280,38 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<String>>> listRuntimeVersionTags(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<String>>> listRuntimeVersionTags(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl
     ) {
         var tags = runtimeService.listRuntimeVersionTags(projectUrl, runtimeUrl, versionUrl);
         return ResponseEntity.ok(Code.success.asResponse(tags));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> deleteRuntimeVersionTag(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl,
-            String tag
+    @DeleteMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @PathVariable String tag
     ) {
         runtimeService.deleteRuntimeVersionTag(projectUrl, runtimeUrl, versionUrl, tag);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<Long>> getRuntimeVersionTag(
-            String projectUrl,
-            String runtimeUrl,
-            String tag
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String tag
     ) {
         var entity = runtimeService.getRuntimeVersionTag(projectUrl, runtimeUrl, tag);
         if (entity == null) {
@@ -242,30 +320,43 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse(entity.getVersionId()));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(
-            String projectUrl,
-            String runtimeUrl,
-            String runtimeVersionUrl,
-            Boolean shared
+    @Operation(summary = "Share or unshare the runtime version")
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String runtimeVersionUrl,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "1 or true - shared, 0 or false - unshared",
+                    schema = @Schema())
+            @RequestParam Boolean shared
     ) {
         runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVo>>> listRuntimeVersion(
-            String projectUrl,
-            String runtimeUrl,
-            String versionName,
-            Integer pageNum,
-            Integer pageSize
+    @Operation(summary = "Get the list of the runtime versions")
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVo>>> listRuntimeVersion(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @Parameter(in = ParameterIn.QUERY, description = "Runtime version name prefix")
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
         PageInfo<RuntimeVersionVo> pageInfo = runtimeService.listRuntimeVersionHistory(
                 RuntimeVersionQuery.builder()
                         .projectUrl(projectUrl)
                         .runtimeUrl(runtimeUrl)
-                        .versionName(versionName)
+                        .versionName(name)
                         .build(),
                 PageParams.builder()
                         .pageNum(pageNum)
@@ -275,35 +366,53 @@ public class RuntimeController implements RuntimeApi {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> upload(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl,
-            MultipartFile file,
+    @Operation(summary = "Create a new runtime version",
+            description = "Create a new version of the runtime. "
+                    + "The data resources can be selected by uploading the file package or entering the server path.")
+    @PostMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> upload(
+            @PathVariable String projectUrl,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Runtime name is invalid.") @PathVariable String runtimeName,
+            @PathVariable String versionName,
+            @RequestPart MultipartFile file,
             ClientRuntimeRequest uploadRequest
     ) {
         uploadRequest.setProject(projectUrl);
-        uploadRequest.setRuntime(runtimeUrl + ":" + versionUrl);
+        uploadRequest.setRuntime(runtimeName + ":" + versionName);
         runtimeService.upload(file, uploadRequest);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Override
-    public void pull(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl,
+    @Operation(summary = "Pull file of a runtime version",
+            description = "Pull file of a runtime version. ")
+    @GetMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    void pull(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
             HttpServletResponse httpResponse
     ) {
         runtimeService.pull(projectUrl, runtimeUrl, versionUrl, httpResponse);
     }
 
-    @Override
-    public ResponseEntity<?> headRuntime(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl
+    @Operation(summary = "head for runtime info ",
+            description = "head for runtime info")
+    @RequestMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.HEAD)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<?> headRuntime(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl
     ) {
         try {
             runtimeService.query(projectUrl, runtimeUrl, versionUrl);
@@ -314,20 +423,35 @@ public class RuntimeController implements RuntimeApi {
         }
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(
-            String projectUrl,
-            String runtimeUrl,
-            String versionUrl,
-            RunEnvs runEnvs
+    @Operation(summary = "build image for runtime", description = "build image for runtime")
+    @RequestMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/image/build",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.POST)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @Parameter(description = "user defined running configurations such environment variables")
+            @RequestBody(required = false) RunEnvs runEnvs
     ) {
         BuildImageResult res = runtimeService.dockerize(projectUrl, runtimeUrl, versionUrl, runEnvs);
         return ResponseEntity.ok(Code.success.asResponse(res));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<?>> updateRuntime(String projectUrl, String runtimeUrl, String versionUrl,
-            String runtimeImage) {
+    @Operation(summary = "update image for runtime", description = "update image for runtime")
+    @RequestMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/image",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = RequestMethod.PUT)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<?>> updateRuntime(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @Parameter(description = "the image used for this runtime") String runtimeImage
+    ) {
         runtimeService.updateImage(projectUrl, runtimeUrl, versionUrl, runtimeImage);
         return ResponseEntity.ok(Code.success.asResponse(null));
     }

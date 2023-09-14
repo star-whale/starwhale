@@ -606,7 +606,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
     public void testListModel() {
         var res = modelService.listModel(ModelQuery.builder()
                 .projectUrl("1")
-                .namePrefix("")
+                .name("")
                 .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),

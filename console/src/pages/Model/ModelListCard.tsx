@@ -12,20 +12,25 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
-import { ButtonGroup, ConfirmButton, ExtendButton } from '@starwhale/ui'
+import { ButtonGroup, ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
 import { toaster } from 'baseui/toast'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
+import Shared from '@/components/Shared'
+import _ from 'lodash'
 
 export default function ModelListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ modelId: string; projectId: string }>()
     const history = useHistory()
-
-    const modelsInfo = useFetchModels(projectId, page)
+    const [name, setName] = React.useState('')
+    const modelsInfo = useFetchModels(projectId, {
+        ...page,
+        name,
+    })
     const [isCreateModelOpen, setIsCreateModelOpen] = useState(false)
     const handleCreateModel = useCallback(
         async (data: ICreateModelSchema) => {
@@ -39,12 +44,21 @@ export default function ModelListCard() {
 
     return (
         <Card title={t('Models')}>
+            <div className='max-w-280px mb-10px'>
+                <QueryInput
+                    placeholder={t('model.search.name.placeholder')}
+                    onChange={_.debounce((val: string) => {
+                        setName(val.trim())
+                    }, 100)}
+                />
+            </div>
             <Table
                 isLoading={modelsInfo.isLoading}
                 columns={[
                     t('sth name', [t('Model')]),
                     t('Model Version'),
                     t('Alias'),
+                    t('Shared'),
                     t('Size'),
                     t('Owner'),
                     t('Created'),
@@ -61,6 +75,7 @@ export default function ModelListCard() {
                             </TextLink>,
                             <VersionText key='name' version={model.version?.name ?? '-'} />,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
+                            <Shared key='shared' shared={model.version?.shared} isTextShow />,
                             model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
                             model.version?.createdTime && formatTimestampDateTime(model.version?.createdTime),

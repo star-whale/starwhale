@@ -52,6 +52,7 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.base.models.dataset import DatasetListType, LocalDatasetInfo
 from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
     TabularDataset,
@@ -62,6 +63,7 @@ from starwhale.core.dataset.tabular import (
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
+from starwhale.base.client.models.models import DatasetInfoVo
 
 from .loader import DataRow, DataLoader, get_data_loader
 from .builder import MappingDatasetBuilder
@@ -631,7 +633,7 @@ class Dataset:
         # TODO: wait for datastore diff feature
         raise NotImplementedError
 
-    def manifest(self) -> t.Dict[str, t.Any]:
+    def manifest(self) -> LocalDatasetInfo | DatasetInfoVo | None:
         return self.__loading_core_dataset.info()
 
     def head(self, n: int = 5, skip_fetch_data: bool = False) -> t.List[DataRow]:
@@ -1110,7 +1112,7 @@ class Dataset:
         show_removed: bool = False,
         page_index: int = DEFAULT_PAGE_IDX,
         page_size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
         from starwhale.core.dataset.view import DatasetTermView
 
         return DatasetTermView.list(

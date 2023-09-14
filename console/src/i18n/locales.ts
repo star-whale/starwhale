@@ -123,6 +123,22 @@ const dataset = {
         en: 'View',
         zh: '查看',
     },
+    'dataset.selector.lastest': {
+        en: 'Recently used',
+        zh: '最近使用',
+    },
+    'dataset.selector.current': {
+        en: "This project's datasets",
+        zh: '本项目数据集',
+    },
+    'dataset.selector.shared': {
+        en: 'Shared datasets by users',
+        zh: '共享数据集',
+    },
+    'dataset.selector.all': {
+        en: 'All',
+        zh: '全部',
+    },
     'dataset.create': {
         en: 'Create Dataset',
         zh: '创建数据集',
@@ -137,7 +153,7 @@ const dataset = {
     },
     'dataset.create.owner': {
         en: 'Owner',
-        zh: '拥有者',
+        zh: '所有者',
     },
     'dataset.create.files': {
         en: 'Dataset Files',
@@ -187,6 +203,10 @@ const dataset = {
         en: 'Files count',
         zh: '数量',
     },
+    'dataset.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
+    },
 }
 
 const runtime = {
@@ -206,6 +226,22 @@ const runtime = {
         en: 'View',
         zh: '查看',
     },
+    'runtime.selector.lastest': {
+        en: 'Recently used',
+        zh: '最近使用',
+    },
+    'runtime.selector.current': {
+        en: "This project's runtimes",
+        zh: '本项目运行时',
+    },
+    'runtime.selector.shared': {
+        en: 'Shared runtimes by users',
+        zh: '共享运行时',
+    },
+    'runtime.selector.all': {
+        en: 'All',
+        zh: '全部',
+    },
     'runtime.image.build': {
         en: 'Build Image',
         zh: '构建镜像',
@@ -221,6 +257,10 @@ const runtime = {
     'runtime.image.other': {
         en: 'Other',
         zh: '其他',
+    },
+    'runtime.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
     },
 }
 
@@ -253,6 +293,22 @@ const model = {
         en: 'View',
         zh: '查看',
     },
+    'model.selector.lastest': {
+        en: 'Recently used',
+        zh: '最近使用',
+    },
+    'model.selector.current': {
+        en: "This project's models",
+        zh: '本项目模型',
+    },
+    'model.selector.shared': {
+        en: 'Shared models by users',
+        zh: '共享模型',
+    },
+    'model.selector.all': {
+        en: 'All',
+        zh: '全部',
+    },
     'model.handler': {
         en: 'Handler',
         zh: 'Handler',
@@ -284,6 +340,10 @@ const model = {
     'model.run': {
         en: 'Run Model',
         zh: '运行模型',
+    },
+    'model.search.name.placeholder': {
+        en: 'Search by name',
+        zh: '按名称搜索',
     },
 }
 const trash = {
@@ -373,6 +433,14 @@ const project = {
     'project.visit.oldest': {
         en: 'Oldest',
         zh: '最老的',
+    },
+    'project.filter.only': {
+        zh: '只看“我的项目”',
+        en: 'Only show "My Projects"',
+    },
+    'project.filter.only.tooltip': {
+        zh: '我的项目：您作为项目成员参与的项目',
+        en: 'My Projects: Projects you are involved in as a member',
     },
 }
 

@@ -5,9 +5,7 @@ function SelectorPopover({
     isOpen: $isOpen,
     children,
     content,
-    rows,
 }: {
-    rows: number
     isOpen: boolean
     children?: React.ReactNode
     content: React.ReactNode | (() => React.ReactNode)
@@ -23,32 +21,51 @@ function SelectorPopover({
 
     return (
         <Popover
-            // placement={PLACEMENT.bottomRight}
+            ignoreBoundary
+            placement='right'
             showArrow
-            autoFocus={false}
+            // autoFocus
             isOpen={isOpen}
-            innerRef={ref}
             onEsc={handleClose}
+            popperOptions={{
+                modifiers: {
+                    preventOverflow: { enabled: false },
+                },
+            }}
             overrides={{
                 Body: {
                     style: {
-                        marginTop: `${(rows + 1) * 22 + 10}px`,
+                        marginTop: '300px',
+                        padding: '8px 12px',
+                        backgroundColor: '#fff',
+                        top: '-10px',
+                    },
+                },
+                Arrow: {
+                    style: {
+                        backgroundColor: '#fff',
+                        marginTop: '20px',
                     },
                 },
                 Inner: {
                     style: {
-                        padding: '12px 12px',
                         backgroundColor: '#FFF',
                         minHeight: '200px',
-                        minWidth: '410px',
-                        maxHeight: '400px',
-                        overflow: 'auto',
+                        width: '410px',
+                        height: '500px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
                     },
                 },
             }}
-            content={() => <div className='popover'>{typeof content === 'function' ? content() : content}</div>}
+            content={() => (
+                <div className='popover flex flex-column overflow-hidden flex-1'>
+                    {typeof content === 'function' ? content() : content}
+                </div>
+            )}
         >
-            <p>{children}</p>
+            <p className='popover-handler absolute right-0 top-1/2'>{children}</p>
         </Popover>
     )
 }

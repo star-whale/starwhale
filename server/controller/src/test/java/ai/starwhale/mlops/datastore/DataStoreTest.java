@@ -356,7 +356,12 @@ public class DataStoreTest {
                         .operator(Operator.EQUAL)
                         .operands(List.of(new TableQueryFilter.Column("k"), new Constant(ColumnType.STRING, "0")))
                         .build());
-        assertThrows(SwValidationException.class, () -> this.dataStore.query(req.build()));
+
+        recordList = this.dataStore.query(req.build());
+        assertThat("typed", recordList.getColumnSchemaMap(), notNullValue());
+        assertThat("typed", recordList.getRecords(), is(List.of(Map.of("k", "00000000"), Map.of("k", "0"))));
+
+
         recordList = this.dataStore.query(req.encodeWithType(true).build());
         assertThat("mixed", recordList.getColumnSchemaMap(), nullValue());
         assertThat("test",
@@ -389,7 +394,7 @@ public class DataStoreTest {
         }
 
         var encodeString = new EncodeString();
-        var testParams = new boolean[]{true, false, true, false, true, false};
+        var testParams = new boolean[] {true, false, true, false, true, false};
         for (boolean rawResult : testParams) {
             var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                     .tableName("t1")
@@ -1375,11 +1380,28 @@ public class DataStoreTest {
         this.dataStore.update("t",
                 new TableSchemaDesc("key", List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build())),
                 List.of(Map.of("key", "1")));
-        assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
-                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
-                        .tableName("t")
-                        .build()))
-                .build()));
+        result = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t").build())).build());
+        assertThat(result.getColumnSchemaMap().entrySet().stream()
+                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
+                is(new HashMap<>() {{
+                        put("key", ColumnType.INT32);
+                        put("a", ColumnType.BOOL);
+                        put("b", ColumnType.INT8);
+                        put("c", ColumnType.INT16);
+                        put("d", ColumnType.INT32);
+                        put("e", ColumnType.INT64);
+                        put("f", ColumnType.FLOAT32);
+                        put("g", ColumnType.FLOAT64);
+                        put("h", ColumnType.BYTES);
+                        put("i", ColumnType.UNKNOWN);
+                        put("j", ColumnType.LIST);
+                        put("k", ColumnType.OBJECT);
+                        put("l", ColumnType.TUPLE);
+                        put("m", ColumnType.MAP);
+                        put("complex", ColumnType.OBJECT);
+                    }}
+                ));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")

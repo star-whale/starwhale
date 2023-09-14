@@ -297,10 +297,10 @@ class JobRequest(BaseModel):
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: str = Field(..., alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
-    runtime_version_url: str = Field(..., alias='runtimeVersionUrl')
+    runtime_version_url: Optional[str] = Field(None, alias='runtimeVersionUrl')
     comment: Optional[str] = None
     resource_pool: str = Field(..., alias='resourcePool')
-    handler: str
+    handler: Optional[str] = None
     step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
     type: Optional[Type] = None
     dev_mode: Optional[bool] = Field(None, alias='devMode')

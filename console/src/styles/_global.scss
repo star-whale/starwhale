@@ -56,6 +56,33 @@ a:-webkit-any-link {
     cursor: pointer !important;
 }
 
+.scroller-sm {
+    &::-webkit-scrollbar {
+        height: 5px;
+        width: 5px;
+        border-radius: 4px;
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(2, 16, 43, 0.2);
+        border-radius: 4px;
+        width: 5px;
+        cursor: pointer !important;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: rgba(2, 16, 43, 0.4);
+        border-radius: 4px;
+        width: 5px;
+        cursor: pointer !important;
+    }
+}
+
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }

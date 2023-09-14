@@ -189,7 +189,7 @@ public class DatasetService {
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<DatasetEntity> entities = datasetMapper.list(projectId, query.getNamePrefix(), userId, null);
+        List<DatasetEntity> entities = datasetMapper.list(projectId, query.getName(), userId, null);
 
         return PageUtil.toPageInfo(entities, ds -> {
             DatasetVo vo = datasetVoConverter.convert(ds);
@@ -205,20 +205,27 @@ public class DatasetService {
 
     public List<DatasetViewVo> listDatasetVersionView(
             String projectUrl, boolean includeShared, boolean includeCurrentProject) {
-        Long projectId = projectService.getProjectId(projectUrl);
+        var project = projectService.findProject(projectUrl);
         var list = new ArrayList<DatasetViewVo>();
         if (includeCurrentProject) {
-            var versions = datasetVersionMapper.listDatasetVersionViewByProject(projectId);
-            list.addAll(viewEntityToVo(versions, false));
+            var versions = datasetVersionMapper.listDatasetVersionViewByProject(project.getId());
+            list.addAll(viewEntityToVo(versions, project));
         }
         if (includeShared) {
-            var shared = datasetVersionMapper.listDatasetVersionViewByShared(projectId);
-            list.addAll(viewEntityToVo(shared, true));
+            var shared = datasetVersionMapper.listDatasetVersionViewByShared(project.getId());
+            list.addAll(viewEntityToVo(shared, project));
         }
         return list;
     }
 
-    private Collection<DatasetViewVo> viewEntityToVo(List<DatasetVersionViewEntity> list, Boolean shared) {
+    public List<DatasetViewVo> listRecentlyDatasetVersionView(String projectUrl, Integer limit) {
+        var project = projectService.findProject(projectUrl);
+        var userId = userService.currentUserDetail().getId();
+        var list = datasetVersionMapper.listDatasetVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    private List<DatasetViewVo> viewEntityToVo(List<DatasetVersionViewEntity> list, Project currentProject) {
         Map<Long, DatasetViewVo> map = new LinkedHashMap<>();
         for (DatasetVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getDatasetId())) {
@@ -229,7 +236,7 @@ public class DatasetService {
                                 .projectName(entity.getProjectName())
                                 .datasetId(idConvertor.convert(entity.getDatasetId()))
                                 .datasetName(entity.getDatasetName())
-                                .shared(toInt(shared))
+                                .shared(toInt(!entity.getProjectName().equals(currentProject.getName())))
                                 .versions(new ArrayList<>())
                                 .build()
                 );
@@ -246,7 +253,7 @@ public class DatasetService {
                             .shared(toInt(entity.getShared()))
                             .build());
         }
-        return map.values();
+        return new ArrayList<>(map.values());
     }
 
     public Boolean deleteDataset(DatasetQuery query) {

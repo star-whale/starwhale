@@ -13,11 +13,14 @@ server:
   - "**/*.java"
   - "server/**"
 
+server_api:
+  - "server/controller/src/main/java/ai/starwhale/mlops/api/**"
+
 docs:
   - "docs/**"
 
 scripts:
-  - "script/**"
+  - "scripts/**"
 
 js:
   - "**/*.js"

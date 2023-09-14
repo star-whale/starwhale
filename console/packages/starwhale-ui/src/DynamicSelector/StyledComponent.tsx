@@ -21,9 +21,11 @@ export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) =
           }
 
     return {
+        'position': 'relative',
         'display': 'flex',
         'lineHeight': '20px',
-        'padding': '4px',
+        'paddingTop': '4px',
+        'paddingBottom': '4px',
         'borderRadius': '4px',
         '&::-webkit-scrollbar': {
             height: '4px !important',
@@ -35,6 +37,7 @@ export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) =
         'borderWidth': '1px',
         'borderColor': $isEditing ? '#799EE8' : '#CFD7E6',
         'borderStyle': 'solid',
+        'paddingLeft': '10px',
         ...$style,
     }
 })
@@ -73,6 +76,7 @@ export const Placeholder = themedStyled('div', () => ({
     display: 'flex',
     width: 0,
     alignItems: 'center',
+    height: '24px',
 }))
 Placeholder.displayName = 'Placeholder'
 
@@ -87,13 +91,14 @@ export const SelectItemContainer = themedStyled('div', ({ $isGrid }: any) => {
               flexWrap: 'nowrap',
               width: 'auto',
               height: '22px',
+              minWidth: 0,
           }
 
     return {
         'position': 'relative',
         'gap': '1px',
         'cursor': 'pointer',
-        'lineHeight': '22px',
+        'lineHeight': '24px',
         '&:hover .label': {
             backgroundColor: '#EDF3FF',
         },
@@ -174,10 +179,10 @@ export const defalutPlaceholder = (children: React.ReactNode) => (
             color: 'rgba(2,16,43,0.40)',
             position: 'absolute',
             width: '150px',
-            height: '22px',
+            height: '24px',
             top: 0,
             left: '8px',
-            lineHeight: '22px',
+            lineHeight: '24px',
         }}
     >
         {children}

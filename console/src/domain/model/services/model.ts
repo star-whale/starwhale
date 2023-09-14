@@ -8,7 +8,10 @@ import {
     IModelTreeSchema,
 } from '../schemas/model'
 
-export async function listModels(projectId: string, query: IListQuerySchema): Promise<IListSchema<IModelSchema>> {
+export async function listModels(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IModelSchema>> {
     const resp = await axios.get<IListSchema<IModelSchema>>(`/api/v1/project/${projectId}/model`, {
         params: query,
     })
@@ -47,5 +50,10 @@ export async function createOnlineEval(projectId: string, data: ICreateOnlineEva
 
 export async function fetchModelTree(projectId: string): Promise<IModelTreeSchema[]> {
     const resp = await axios.get<IModelTreeSchema[]>(`/api/v1/project/${projectId}/model-tree`)
+    return resp.data
+}
+
+export async function fetchRecentModelTree(projectId: string): Promise<IModelTreeSchema[]> {
+    const resp = await axios.get<IModelTreeSchema[]>(`/api/v1/project/${projectId}/recent-model-tree`)
     return resp.data
 }

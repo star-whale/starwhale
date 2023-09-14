@@ -1,18 +1,22 @@
-import { useEffect } from 'react'
 import { useQuery } from 'react-query'
-import { fetchDatasetTree } from '../services/dataset'
+import { fetchDatasetTree, fetchRecentDatasetTree } from '../services/dataset'
 
 export function useFetchDatasetTree(projectId: string) {
     const datasetInfo = useQuery(`fetchDatasetTree:${projectId}`, () => fetchDatasetTree(projectId), {
         enabled: !!projectId,
     })
 
-    useEffect(() => {
-        if (projectId) {
-            datasetInfo.refetch()
+    return datasetInfo
+}
+
+export function useFetchRecentDatasetTree(projectId?: string) {
+    const datasetInfo = useQuery(
+        `fetchRecentDatasetTree:${projectId}`,
+        () => fetchRecentDatasetTree(projectId as string),
+        {
+            enabled: !!projectId,
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId])
+    )
 
     return datasetInfo
 }

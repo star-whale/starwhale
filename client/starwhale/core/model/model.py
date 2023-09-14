@@ -9,7 +9,6 @@ import tarfile
 from abc import ABCMeta, abstractmethod
 from enum import Enum, unique
 from pathlib import Path
-from collections import defaultdict
 
 import yaml
 from fs import open_fs
@@ -61,7 +60,6 @@ from starwhale.utils.fs import (
 from starwhale.base.type import BundleType, InstanceType, RunSubDirType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
-from starwhale.utils.http import ignore_error
 from starwhale.utils.load import load_module
 from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -74,10 +72,18 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
 from starwhale.base.models.job import JobManifest
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
-from starwhale.base.models.model import File, JobHandlers, LocalModelInfo
+from starwhale.base.models.model import (
+    File,
+    JobHandlers,
+    ModelListType,
+    LocalModelInfo,
+    LocalModelInfoBase,
+)
+from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.base.client.api.job import JobApi
@@ -157,20 +163,37 @@ class Model(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Model: {self.uri}"
 
+    @classmethod
+    @abstractmethod
+    def list(
+        cls,
+        project_uri: Project,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+        filter: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
+        raise NotImplementedError
+
     @abstractmethod
     def info(self) -> ModelInfoVo | LocalModelInfo | None:
         raise NotImplementedError
 
     @classmethod
     def get_model(cls, uri: Resource) -> Model:
-        _cls = cls._get_cls(uri)
+        _cls = cls._get_cls(uri.instance)
         return _cls(uri)
 
     @classmethod
-    def _get_cls(cls, uri: Resource) -> t.Union[t.Type[StandaloneModel], t.Type[CloudModel]]:  # type: ignore
-        if uri.instance.is_local:
+    def get_cls(
+        cls, uri: Instance
+    ) -> t.Union[t.Type[StandaloneModel], t.Type[CloudModel]]:
+        return cls._get_cls(uri)
+
+    @classmethod
+    def _get_cls(cls, uri: Instance) -> t.Union[t.Type[StandaloneModel], t.Type[CloudModel]]:  # type: ignore
+        if uri.is_local:
             return StandaloneModel
-        elif uri.instance.is_cloud:
+        elif uri.is_cloud:
             return CloudModel
         else:
             raise NoSupportError(f"model uri:{uri}")
@@ -510,6 +533,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             handlers=handlers.__root__,
             model_yaml=(self.store.hidden_sw_dir / DefaultYAMLName.MODEL).read_text(),
             files=self.store.resource_files,
+            created_at=self._manifest.get(CREATED_AT_KEY, ""),
+            is_removed=False,
+            size=self._manifest.get("size", 0),
         )
 
     def history(
@@ -568,10 +594,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filters = filters or {}
-        rs = defaultdict(list)
+        filters: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
+        rs: t.List[LocalModelInfoBase] = []
         for _bf in ModelStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.MODEL,
@@ -590,16 +615,17 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not _info:
                 continue
 
-            rs[_bf.name].append(
-                {
-                    "name": _bf.name,
-                    "version": _bf.version,
-                    "path": str(_bf.path.absolute()),
-                    "size": _info.get("size", 0),
-                    "is_removed": _bf.is_removed,
-                    CREATED_AT_KEY: _info[CREATED_AT_KEY],
-                    "tags": _bf.tags,
-                }
+            rs.append(
+                LocalModelInfoBase(
+                    project=project_uri.name,
+                    name=_bf.name,
+                    version=_bf.version,
+                    path=str(_bf.path.absolute()),
+                    tags=_bf.tags,
+                    size=_info.get("size", 0),
+                    is_removed=_bf.is_removed,
+                    created_at=_info[CREATED_AT_KEY],
+                )
             )
         return rs, {}
 
@@ -891,19 +917,22 @@ class CloudModel(CloudBundleModelMixin, Model):
         return ModelApi(uri.instance).info(uri).raise_on_error().response().data
 
     @classmethod
-    @ignore_error(({}, {}))
     def list(
         cls,
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filter_dict = filter_dict or {}
+        filter: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
+        # TODO support filter
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(
-            project_uri, ResourceType.model, page, size, filter_dict
+        r = (
+            ModelApi(project_uri.instance)
+            .list(project_uri.name, page, size, filter)
+            .raise_on_error()
+            .response()
         )
+        return r.data.list or [], crm.parse_pager(r.dict())
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")

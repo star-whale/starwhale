@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.instance import Instance
 from starwhale.base.client.client import Client, TypeWrapper
 from starwhale.base.client.models.models import (
@@ -16,10 +17,10 @@ class JobApi(Client):
         super().__init__(instance.url, instance.token)
 
     def list(
-        self, project: str, page: int, size: int
+        self, project: str, page: int, size: int, _filter: ListFilter | None = None
     ) -> TypeWrapper[ResponseMessagePageInfoJobVo]:
         uri = f"/api/v1/project/{project}/job"
-        data = self.http_get(uri, params={"pageNum": page, "pageSize": size})
+        data = self._list(uri, page, size, _filter)
         return TypeWrapper(ResponseMessagePageInfoJobVo, data)
 
     def create(

@@ -2,7 +2,7 @@ import os
 import json
 import typing as t
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 
 import yaml
 import numpy
@@ -27,6 +27,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
+from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
     Line,
@@ -39,8 +40,18 @@ from starwhale.core.dataset.type import (
     GrayscaleImage,
     D_FILE_VOLUME_SIZE,
 )
-from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
+from starwhale.core.dataset.view import (
+    DatasetTermView,
+    DatasetTermViewJson,
+    DatasetTermViewRich,
+)
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.base.models.dataset import LocalDatasetInfo, LocalDatasetInfoBase
+from starwhale.base.client.models.models import (
+    DatasetVo,
+    DatasetInfoVo,
+    DatasetVersionVo,
+)
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
@@ -402,16 +413,19 @@ class StandaloneDatasetTestCase(TestCase):
         sd = StandaloneDataset(dataset_uri)
         _info = sd.info()
 
-        assert _info["version"] == build_version
-        assert _info["name"] == name
-        assert _info["bundle_path"] == str(snapshot_workdir.resolve())
+        assert isinstance(_info, LocalDatasetInfo)
+        assert _info.version == build_version
+        assert _info.name == name
+        assert _info.path == str(snapshot_workdir.resolve())
 
         tags = sd.tag.list()
         assert set(tags) == {"t0", "t1", "latest", "v0"}
 
         _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list) == 1
-        assert not _list[name][0]["is_removed"]
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert not item.is_removed
 
         dataset_uri = Resource(
             f"mnist/version/{build_version}", typ=ResourceType.dataset
@@ -421,11 +435,17 @@ class StandaloneDatasetTestCase(TestCase):
         assert _ok
 
         _list, _ = StandaloneDataset.list(Project(""))
-        assert _list[name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert item.is_removed
 
         _ok, _ = sd.recover(True)
         _list, _ = StandaloneDataset.list(Project(""))
-        assert not _list[name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalDatasetInfoBase)
+        assert not item.is_removed
 
         DatasetTermView(name).info()
         DatasetTermViewJson(dataset_uri).info()
@@ -440,7 +460,7 @@ class StandaloneDatasetTestCase(TestCase):
 
         sd.remove(True)
         _list, _ = StandaloneDataset.list(Project(""))
-        assert len(_list[name]) == 0
+        assert len(_list) == 0
 
         config.project_uri = "self"
         DatasetTermView.build(workdir, config)
@@ -679,3 +699,48 @@ class CloudDatasetTest(TestCase):
         assert mock_obj.list.call_count == 1
         call_args = mock_obj.list.call_args[0]
         assert len(call_args[5]) == 0
+
+    @patch("starwhale.core.dataset.model.CloudDataset.list")
+    @patch("starwhale.core.dataset.model.CloudDataset.info")
+    def test_info_list_view(self, mock_info: MagicMock, mock_list: MagicMock) -> None:
+        dataset_uri = MagicMock(spec=Resource)
+        ins = MagicMock(spec=Instance)
+        type(ins).is_cloud = PropertyMock(return_value=True)
+        type(ins).is_local = PropertyMock(return_value=False)
+        type(ins).url = PropertyMock(return_value="http://example.com")
+        type(ins).alias = PropertyMock(return_value="cloud")
+        dataset_uri.name = "mnist"
+        dataset_uri.typ = ResourceType.dataset
+        dataset_uri.version = "v0"
+        project = Project("starwhale", instance=ins)
+        dataset_uri.project = project
+        type(dataset_uri).instance = PropertyMock(return_value=ins)
+        type(dataset_uri).full_uri = PropertyMock(
+            return_value="http://example.com/project/starwhale"
+        )
+        ds_info = DatasetInfoVo(
+            id="1",
+            name="mnist",
+            version_id="2",
+            version_name="123",
+            shared=False,
+            created_time=123,
+            version_meta="meta",
+        )
+        mock_info.return_value = ds_info
+
+        DatasetTermView(dataset_uri).info()
+        DatasetTermViewJson(dataset_uri).info()
+        ds = DatasetVo(
+            id="1",
+            name="mnist",
+            created_time=1,
+            version=DatasetVersionVo(
+                latest=True, id="2", name="mnist", created_time=2, tags=[]
+            ),
+        )
+        mock_list.return_value = ([ds], {})
+
+        DatasetTermView.list(project_uri=project)
+        DatasetTermViewRich.list(project_uri=project)
+        DatasetTermViewJson.list(project_uri=project)

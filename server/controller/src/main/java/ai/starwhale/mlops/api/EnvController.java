@@ -20,14 +20,17 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
 import ai.starwhale.mlops.domain.job.EnvService;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("${sw.controller.api-prefix}")
-public class EnvController implements EnvApi {
+public class EnvController {
 
     private final EnvService envService;
 
@@ -36,10 +39,10 @@ public class EnvController implements EnvApi {
     }
 
 
-    @Override
-    public ResponseEntity<ResponseMessage<List<DeviceVo>>> listDevice() {
+    @Operation(summary = "Get the list of device types")
+    @GetMapping(value = "/runtime/device", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<List<DeviceVo>>> listDevice() {
         List<DeviceVo> deviceVos = envService.listDevices();
         return ResponseEntity.ok(Code.success.asResponse(deviceVos));
     }
-
 }

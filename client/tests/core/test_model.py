@@ -51,13 +51,17 @@ from starwhale.base.models.model import (
     JobHandlers,
     LocalModelInfo,
     StepSpecClient,
+    LocalModelInfoBase,
 )
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
 from starwhale.core.runtime.process import Process
 from starwhale.base.client.models.models import (
+    UserVo,
+    ModelVo,
     JobRequest,
+    ModelVersionVo,
     ResponseMessageString,
     ResponseMessageListString,
 )
@@ -242,7 +246,9 @@ class StandaloneModelTestCase(TestCase):
 
         _list, _ = StandaloneModel.list(Project(""))
         assert len(_list) == 1
-        assert not _list[self.name][0]["is_removed"]
+        item = _list[0]
+        assert isinstance(item, LocalModelInfoBase)
+        assert not item.is_removed
 
         model_uri = Resource(
             f"{self.name}/version/{build_version}",
@@ -253,11 +259,17 @@ class StandaloneModelTestCase(TestCase):
         assert _ok
 
         _list, _ = StandaloneModel.list(Project(""))
-        assert _list[self.name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalModelInfoBase)
+        assert item.is_removed
 
         _ok, _ = sd.recover(True)
         _list, _ = StandaloneModel.list(Project(""))
-        assert not _list[self.name][0]["is_removed"]
+        assert len(_list) == 1
+        item = _list[0]
+        assert isinstance(item, LocalModelInfoBase)
+        assert not item.is_removed
 
         fname = f"{self.name}/version/{build_version}"
         for f in ModelInfoFilter:
@@ -280,7 +292,7 @@ class StandaloneModelTestCase(TestCase):
         _ok, _ = sd.remove(True)
         assert _ok
         _list, _ = StandaloneModel.list(Project(""))
-        assert len(_list[self.name]) == 0
+        assert len(_list) == 0
 
         ModelTermView.build(
             workdir=self.workdir,
@@ -749,19 +761,25 @@ class StandaloneModelTestCase(TestCase):
         models, _ = ModelTermView.list()
         assert len(models) == 0
 
-        mock_models = (
-            {
-                "proj": [
-                    {"version": "foo", "is_removed": False, "created_at": 1},
-                    {"version": "bar", "is_removed": False, "created_at": 2},
-                ]
-            },
-            None,
+        model_foo = ModelVo(
+            id="1",
+            name="foo",
+            created_time=123,
+            owner=UserVo(id="1", name="owner", created_time=4, is_enabled=True),
+            version=ModelVersionVo(
+                latest=True,
+                step_specs=[],
+                id="2",
+                name="foo",
+                alias="v2",
+                created_time=5,
+                shared=False,
+            ),
         )
-        mock_list.return_value = mock_models
+        mock_list.return_value = ([model_foo, model_foo], {})
         # list supports using instance/project uri which is not current_instance/current_project
         models, _ = ModelTermView.list("remote/whatever")
-        assert len(models) == 2  # project foo and bar
+        assert len(models) == 2
 
     @patch("starwhale.utils.process.check_call")
     @patch("starwhale.utils.docker.gen_swcli_docker_cmd")

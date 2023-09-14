@@ -5,6 +5,8 @@ import { TreeNodeDataT, TreePropsT } from './types'
 import TreeNode from './TreeNode'
 import useTreeDataSelection from './hooks/useTreeDataSelection'
 import useTreeDataLoader from './hooks/useTreeDataLoader'
+import { expandMargin } from '../utils/index'
+import { useMount } from 'react-use'
 
 const searchFilter = (searchTmp: string, node: TreeNodeDataT) => {
     if (typeof node.info?.labelTitle !== 'string') return false
@@ -24,7 +26,10 @@ export function Tree({
     multiple = true,
     search: rawSearch,
     keyboardControlNode,
-}: TreePropsT) {
+    SearchSlot,
+}: TreePropsT & {
+    SearchSlot?: React.FC<any>
+}) {
     const [data, setData] = React.useState(rawData)
     const [search, setSearch] = React.useState('')
     const { onToggle: $onSelectToggle } = useTreeDataSelection({ selectedIds, onSelectedIdsChange, multiple })
@@ -32,6 +37,10 @@ export function Tree({
     useEffect(() => {
         setSearch(rawSearch ?? '')
     }, [rawSearch])
+
+    useEffect(() => {
+        setData(rawData)
+    }, [rawData])
 
     const nodeRender = React.useCallback(
         (node: TreeNodeDataT) => {
@@ -60,30 +69,49 @@ export function Tree({
         },
         [selectable, selectedIds, multiple, renderLabel, renderActions, $onSelectToggle]
     )
-
+    const [extraFilters, setExtraFilters] = React.useState<any[]>([])
     const { data: $data } = useTreeDataLoader({
         data,
         search,
         searchFilter,
+        extraFilters,
         nodeRender,
     })
 
-    useEffect(() => {
-        setData(rawData)
-    }, [rawData])
-
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearch?.(e.target.value)
     const onToggle = (node: any) => setData((prevData) => toggleIsExpanded(prevData, node) as any)
+    const inputRef = React.useRef<HTMLInputElement>(null)
+    const [extraValue, setExtraValue] = React.useState<any>()
+    const onExtraFiltersChange = React.useCallback((key, filters) => {
+        setExtraValue(key)
+        setExtraFilters(filters)
+    }, [])
+
+    useMount(() => {
+        if (inputRef.current) inputRef.current.focus()
+    })
 
     return (
         <TreeContainer>
-            {searchable && <TreeSearch value={search} onChange={onChange} />}
-            <TreeView
-                data={$data}
-                onToggle={onToggle}
-                keyboardControlNode={keyboardControlNode}
-                onSelect={$onSelectToggle}
-            />
+            {SearchSlot && <SearchSlot value={extraValue} onChange={onExtraFiltersChange} />}
+            {searchable && <TreeSearch value={search} onChange={onChange} inputRef={inputRef} />}
+            <div className='flex flex-column overflow-auto flex-1 scroller-sm'>
+                <TreeView
+                    data={$data}
+                    onToggle={onToggle}
+                    // @ts-ignore
+                    keyboardControlNode={keyboardControlNode?.current ? keyboardControlNode : inputRef}
+                    onSelect={$onSelectToggle}
+                    overrides={{
+                        Root: {
+                            style: {
+                                ...expandMargin('0', 'auto', 'auto', '0'),
+                            },
+                        },
+                        LeafIconContainer: () => (multiple ? <p className='w-12px' /> : <p className='ml-0px' />),
+                    }}
+                />
+            </div>
         </TreeContainer>
     )
 }

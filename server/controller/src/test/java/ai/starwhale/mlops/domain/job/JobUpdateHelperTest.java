@@ -99,7 +99,6 @@ public class JobUpdateHelperTest {
                 argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
         Thread.sleep(100); // wait for async status update
         Assertions.assertEquals(TaskStatus.CANCELLING, luckTask.getStatus());
-
     }
 
     @Test
@@ -135,7 +134,6 @@ public class JobUpdateHelperTest {
         JobStatusMachine jobStatusMachine = new JobStatusMachine();
         JobDao jobDao = mock(JobDao.class);
         SwTaskScheduler swTaskScheduler = mock(SwTaskScheduler.class);
-
         JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
@@ -156,7 +154,6 @@ public class JobUpdateHelperTest {
         var jobStatusMachine = new JobStatusMachine();
         var jobDao = mock(JobDao.class);
         var swTaskScheduler = mock(SwTaskScheduler.class);
-
         var jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
                 jobStatusMachine, swTaskScheduler, taskStatusMachine);
         var mockJob = new JobMockHolder().mockJob();

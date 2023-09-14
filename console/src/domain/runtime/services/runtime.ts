@@ -2,7 +2,10 @@ import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
 import { IRuntimeSchema, IRuntimeDetailSchema, IRuntimeTreeSchema } from '../schemas/runtime'
 
-export async function listRuntimes(projectId: string, query: IListQuerySchema): Promise<IListSchema<IRuntimeSchema>> {
+export async function listRuntimes(
+    projectId: string,
+    query: IListQuerySchema & { name?: string }
+): Promise<IListSchema<IRuntimeSchema>> {
     const resp = await axios.get<IListSchema<IRuntimeSchema>>(`/api/v1/project/${projectId}/runtime`, {
         params: query,
     })
@@ -26,5 +29,10 @@ export async function removeRuntime(projectId: string, runtimeId: string): Promi
 
 export async function fetchRuntimeTree(projectId: string): Promise<IRuntimeTreeSchema[]> {
     const resp = await axios.get<IRuntimeTreeSchema[]>(`/api/v1/project/${projectId}/runtime-tree`)
+    return resp.data
+}
+
+export async function fetchRecentRuntimeTree(projectId: string): Promise<IRuntimeTreeSchema[]> {
+    const resp = await axios.get<IRuntimeTreeSchema[]>(`/api/v1/project/${projectId}/recent-runtime-tree`)
     return resp.data
 }

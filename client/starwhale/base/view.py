@@ -6,11 +6,13 @@ import sys
 import json
 import typing as t
 from functools import wraps
+from collections import OrderedDict
 
-from rich import box
+from rich import box, pretty
 from pydantic import BaseModel
 from rich.panel import Panel
 from rich.table import Table
+from rich.protocol import is_renderable
 
 from starwhale.utils import (
     Order,
@@ -60,15 +62,17 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def print_header(project_uri: str = "") -> None:
+    def print_header(project_uri: str | Project = "") -> None:
         sw = SWCliConfigMixed()
         grid = Table.grid(expand=True)
         grid.add_column(justify="center", ratio=1)
 
         if project_uri:
             title = "Starwhale Project"
-            project = Project(project_uri)
-            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({sw._config['instances'][project.instance.alias]['uri']})"
+            project = (
+                Project(project_uri) if isinstance(project_uri, str) else project_uri
+            )
+            content = f"{project.name} :ear_of_corn: @{project.instance.alias}({project.instance.url})"
         else:
             title = "Starwhale Instance"
             content = f"{sw.current_instance} ({sw._current_instance_obj['uri']})"
@@ -271,11 +275,12 @@ class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def print_table(
         title: str,
-        data: t.List[t.Dict[str, t.Any]],
+        data: t.Sequence[t.Dict[str, t.Any]] | t.Sequence[BaseModel],
         custom_header: t.Optional[t.Dict[int, t.Dict]] = None,
         custom_column: t.Optional[t.Dict[str, t.Callable[[t.Any], str]]] = None,
         custom_row: t.Optional[t.Callable] = None,
         custom_table: t.Optional[t.Dict[str, t.Any]] = None,
+        allowed_keys: t.Optional[t.List[str]] = None,
     ) -> None:
         default_attr = {
             "title": title,
@@ -286,6 +291,11 @@ class BaseTermView(SWCliConfigMixed):
             default_attr = {**default_attr, **custom_table}
         table = Table(**default_attr)  # type: ignore
 
+        allowed_keys = allowed_keys or []
+
+        def filter_row(_data: t.Dict[str, t.Any]) -> t.OrderedDict[str, t.Any]:
+            return OrderedDict([(k, _data[k]) for k in allowed_keys if k in _data])
+
         def init_header(row: t.List[str]) -> None:
             for idx, field in enumerate(row):
                 extra = dict()
@@ -295,6 +305,9 @@ class BaseTermView(SWCliConfigMixed):
 
         header_inited = False
         for row in data:
+            if isinstance(row, BaseModel):
+                row = row.dict()
+            row = filter_row(row) if allowed_keys else row
             if not header_inited:
                 init_header(list(row.keys()))
                 header_inited = True
@@ -302,6 +315,8 @@ class BaseTermView(SWCliConfigMixed):
             for field, col in row.items():
                 if custom_column and field in custom_column:
                     col = custom_column[field](col)
+                if not is_renderable(col):
+                    col = pretty.Pretty(col)
                 rendered_row.append(col)
 
             row_ext: t.Dict[str, t.Any] = {}
@@ -317,7 +332,7 @@ class BaseTermView(SWCliConfigMixed):
     def get_history_data(
         history: t.List[t.Dict[str, t.Any]],
         fullname: bool = False,
-    ) -> t.List[t.Dict]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         result = list()
 
         for _h in history:

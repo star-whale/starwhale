@@ -14,11 +14,11 @@ export interface IButtonProps extends ButtonProps {
 }
 
 export interface IExtendButtonProps extends IButtonProps {
-    noPadding?: boolean
+    nopadding?: boolean
     negative?: boolean
     tooltip?: string
     transparent?: boolean
-    iconDisable?: boolean
+    icondisable?: boolean
 }
 
 function Button(
@@ -175,7 +175,7 @@ ForwardButton.defaultProps = {
 const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
     const [, theme] = themedUseStyletron()
     const STYLES = {
-        noPadding: {
+        nopadding: {
             BaseButton: {
                 style: {
                     lineHeight: '1',
@@ -229,7 +229,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
             },
         },
         // btn & icon & disabled
-        iconDisable: {
+        icondisable: {
             BaseButton: {
                 style: {
                     'color': 'rgba(2,16,43,0.40) !important',
@@ -245,10 +245,10 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         },
     }
     const overrides = [
-        props.noPadding ? STYLES.noPadding : {},
+        props.nopadding ? STYLES.nopadding : {},
         props.transparent ? STYLES.transparent : {},
         props.negative ? STYLES.negative : {},
-        props.iconDisable ? STYLES.iconDisable : {},
+        props.icondisable ? STYLES.icondisable : {},
         props.overrides ? props.overrides : {},
     ].reduce(mergeOverrides, {})
 
@@ -266,7 +266,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
 })
 ExtendButton.displayName = 'ExtendButton'
 ExtendButton.defaultProps = {
-    noPadding: false,
+    nopadding: false,
     transparent: false,
     negative: false,
     kind: 'primary',
@@ -275,7 +275,7 @@ ExtendButton.defaultProps = {
     icon: undefined,
     className: undefined,
     tooltip: '',
-    iconDisable: false,
+    icondisable: false,
 }
 
 export { ExtendButton }

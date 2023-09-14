@@ -18,7 +18,11 @@ title: The `coco-raw` Dataset
     - other original fields
 
 
-## Build `coco-raw` Dataset locally
+## Build `coco` Dataset locally
+
+You can build `coco` dataset either using local data or remote data by `swcli` or Starwhale SDK
+
+### Using `swcli` to build `coco` Dataset from local data
 
 - download raw data
 
@@ -30,6 +34,12 @@ make download
 
 ```shell
 swcli dataset build . --name coco-raw --handler dataset:do_iter_item
+```
+
+### Using StarWhale SDK to build `coco` Dataset from remote data
+
+```shell
+python coco_builder.py
 ```
 
 ## Example

@@ -4,7 +4,6 @@ import typing as t
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from pathlib import Path
-from collections import defaultdict
 
 import yaml
 
@@ -13,6 +12,7 @@ from starwhale.consts import (
     HTTPMethod,
     CREATED_AT_KEY,
     DefaultYAMLName,
+    RECOVER_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -28,16 +28,23 @@ from starwhale.base.type import (
     DatasetFolderSourceType,
 )
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
+from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
+from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
+from starwhale.core.dataset.type import DatasetConfig, DatasetSummary
+from starwhale.core.dataset.store import DatasetStorage
+from starwhale.base.models.dataset import (
+    DatasetListType,
+    LocalDatasetInfo,
+    LocalDatasetInfoBase,
+)
+from starwhale.base.client.api.dataset import DatasetApi
 from starwhale.api._impl.dataset.loader import DataRow
-
-from .type import DatasetConfig, DatasetSummary
-from .store import DatasetStorage
+from starwhale.base.client.models.models import DatasetInfoVo
 
 if t.TYPE_CHECKING:
     from starwhale.api._impl.dataset.model import Dataset as SDKDataset
@@ -47,8 +54,19 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Dataset: {self.uri}"
 
+    @classmethod
     @abstractmethod
-    def info(self) -> t.Dict[str, t.Any]:
+    def list(
+        cls,
+        project_uri: Project,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+        filters: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def info(self) -> LocalDatasetInfo | DatasetInfoVo | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -93,7 +111,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
 
     @classmethod
     def get_dataset(cls, uri: Resource) -> Dataset:
-        _cls = cls._get_cls(uri)
+        _cls = cls._get_cls(uri.instance)
         return _cls(uri)
 
     @classmethod
@@ -117,12 +135,18 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         dc.do()
 
     @classmethod
-    def _get_cls(  # type: ignore
-        cls, uri: Resource
+    def get_cls(
+        cls, uri: Instance
     ) -> t.Union[t.Type[StandaloneDataset], t.Type[CloudDataset]]:
-        if uri.instance.is_local:
+        return cls._get_cls(uri)
+
+    @classmethod
+    def _get_cls(  # type: ignore
+        cls, uri: Instance
+    ) -> t.Union[t.Type[StandaloneDataset], t.Type[CloudDataset]]:
+        if uri.is_local:
             return StandaloneDataset
-        elif uri.instance.is_cloud:
+        elif uri.is_cloud:
             return CloudDataset
         else:
             raise NoSupportError(f"dataset uri:{uri}")
@@ -189,19 +213,24 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         dest_path = self.store.bundle_dir / f"{self.uri.version}{BundleType.DATASET}"
         return move_dir(self.store.recover_loc, dest_path, force)
 
-    def info(self) -> t.Dict[str, t.Any]:
+    def info(self) -> LocalDatasetInfo | DatasetInfoVo | None:
         if not self.store.bundle_path.exists():
-            return {}
+            return None
         else:
-            return {
-                "name": self.name,
-                "uri": str(self.uri),
-                "project": self.uri.project.name,
-                "bundle_path": str(self.store.bundle_path),
-                "version": self.uri.version,
-                "tags": StandaloneTag(self.uri).list(),
-                "manifest": self.store.manifest,
-            }
+            return LocalDatasetInfo(
+                name=self.name,
+                uri=str(self.uri),
+                project=self.uri.project.name,
+                path=str(self.store.bundle_path),
+                version=self.uri.version,
+                tags=StandaloneTag(self.uri).list(),
+                manifest=self.store.manifest,
+                created_at=self.store.manifest.get(CREATED_AT_KEY, ""),
+                is_removed=RECOVER_DIRNAME in str(self.store.bundle_path),
+                size=self.store.manifest.get("dataset_summary", {}).get(
+                    "blobs_byte_size", 0
+                ),
+            )
 
     def summary(self) -> t.Optional[DatasetSummary]:
         _manifest = self.store.manifest
@@ -214,10 +243,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filters = filters or {}
-        rs = defaultdict(list)
+        filters: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
+        rs: t.List[LocalDatasetInfoBase] = []
 
         for _bf in DatasetStorage.iter_all_bundles(
             project_uri,
@@ -233,15 +261,17 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
             _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
 
-            rs[_bf.name].append(
-                dict(
+            rs.append(
+                LocalDatasetInfoBase(
                     name=_bf.name,
                     version=_bf.version,
                     size=_manifest.get("dataset_summary", {}).get("blobs_byte_size", 0),
                     created_at=_manifest[CREATED_AT_KEY],
+                    rows=_manifest.get("dataset_summary", {}).get("rows", 0),
                     is_removed=_bf.is_removed,
-                    path=_bf.path,
+                    path=str(_bf.path),
                     tags=_bf.tags,
+                    project=project_uri.name,
                 )
             )
 
@@ -352,20 +382,27 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
 
+    def info(self) -> LocalDatasetInfo | DatasetInfoVo | None:
+        uri: Resource = self.uri
+        r = DatasetApi(uri.instance).info(uri).raise_on_error().response()
+        return r.data
+
     @classmethod
-    @ignore_error(({}, {}))
     def list(
         cls,
         project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        filter_dict = filter_dict or {}
+        filter: t.Optional[ListFilter] = None,
+    ) -> t.Tuple[DatasetListType, t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        return crm._fetch_bundle_all_list(
-            project_uri, ResourceType.dataset, page, size, filter_dict
+        r = (
+            DatasetApi(project_uri.instance)
+            .list(project_uri.name, page, size, filter)
+            .raise_on_error()
+            .response()
         )
+        return r.data.list or [], crm.parse_pager(r.dict())
 
     def summary(self) -> t.Optional[DatasetSummary]:
         resp = self.do_http_request(

@@ -62,6 +62,7 @@ from starwhale.core.runtime.store import (
     RuntimeStorage,
     get_docker_run_image_by_manifest,
 )
+from starwhale.base.models.runtime import LocalRuntimeVersion, LocalRuntimeVersionInfo
 
 _runtime_data_dir = f"{ROOT_DIR}/data/runtime"
 _swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
@@ -1037,16 +1038,17 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         sr = StandaloneRuntime(uri)
         info = sr.info()
-        assert "history" not in info
-        assert info["basic"]["version"] == build_version
-        assert "manifest" in info
-        assert "runtime_yaml" in info
-        assert "requirements-sw-lock.txt" in info["lock"]
+        assert isinstance(info, LocalRuntimeVersionInfo)
+        assert info.basic.uri.version == build_version
+        assert info.manifest
+        assert info.yaml
+        assert "requirements-sw-lock.txt" in info.lock
 
-        rts = StandaloneRuntime.list(Project(""))
-        assert len(rts[0]) == 1
-        assert len(rts[0][name]) == 1
-        assert rts[0][name][0]["version"] == build_version
+        rts, _ = StandaloneRuntime.list(Project(""))
+        assert len(rts) == 1
+        item = rts[0]
+        assert isinstance(item, LocalRuntimeVersion)
+        assert item.version == build_version
 
         runtime_json_view = get_term_view({"output": "json"})
         runtime_term_view = get_term_view({"output": "terminal"})
@@ -1098,8 +1100,8 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
         )
 
-        rts = StandaloneRuntime.list(Project(""))
-        assert len(rts[0][name]) == 2
+        rts, _ = StandaloneRuntime.list(Project(""))
+        assert len(rts) == 2
 
         rtv = runtime_term_view(f"{name}/version/{build_version[:8]}")
         ok, _ = rtv.remove()

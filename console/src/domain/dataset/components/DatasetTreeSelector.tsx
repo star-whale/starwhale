@@ -2,12 +2,14 @@ import { findTreeNode } from '@starwhale/ui/base/tree-view/utils'
 import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelector'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React, { useEffect } from 'react'
-import { useFetchDatasetTree } from '../hooks/useFetchDatasetTree'
+import { useFetchDatasetTree, useFetchRecentDatasetTree } from '../hooks/useFetchDatasetTree'
 import DatasetLabel, { getDatasetLabel } from './DatasetLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import _ from 'lodash'
+import QuickGroup, { QuickGroupEnum } from '@/components/QuickGroup'
+import { useProject } from '@/domain/project/hooks/useProject'
 
 const DatasetTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -15,8 +17,50 @@ const DatasetTreeNode = themedStyled('div', () => ({
     alignItems: 'center',
     flexWrap: 'nowrap',
     height: '24px',
-    width: '100%',
+    width: 'auto',
 }))
+
+export function DatasetTree({ ...props }: any) {
+    const [t] = useTranslation()
+    const OPTIONS = [
+        {
+            key: 'latest',
+            label: t('dataset.selector.lastest'),
+        },
+        {
+            key: 'current',
+            label: t('dataset.selector.current'),
+        },
+        {
+            key: 'guest',
+            label: t('dataset.selector.shared'),
+        },
+        {
+            key: 'all',
+            label: t('dataset.selector.all'),
+        },
+    ]
+    const { project } = useProject()
+    const info = useFetchRecentDatasetTree(project?.id)
+    const SearchSlot = (args: any) => (
+        <QuickGroup
+            options={OPTIONS}
+            {...args}
+            filters={{
+                [QuickGroupEnum.latest]: [
+                    (node: any) =>
+                        info.data?.find((item) =>
+                            item.versions.find((version) => {
+                                return version.id === node?.info?.version?.id
+                            })
+                        ),
+                ],
+            }}
+        />
+    )
+
+    return <SelectorItemByTree {...props} SearchSlot={SearchSlot} />
+}
 
 export function DatasetTreeSelector(
     props: any & {
@@ -24,6 +68,7 @@ export function DatasetTreeSelector(
         onDataChange?: (data: any) => void
         getId?: (obj: any) => any
         multiple?: boolean
+        clearable?: boolean
     }
 ) {
     const [t] = useTranslation()
@@ -41,7 +86,11 @@ export function DatasetTreeSelector(
         const treeData: TreeNodeData[] = datasetInfo.data.map((dataset) => {
             return {
                 id: dataset.datasetName,
-                label: [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/'),
+                label: (
+                    <p className='color-[#02102b] text-14px'>
+                        {[dataset.ownerName, dataset.projectName, dataset.datasetName].join('/')}
+                    </p>
+                ),
                 isExpanded: true,
                 children:
                     dataset.versions?.map((item) => {
@@ -49,7 +98,11 @@ export function DatasetTreeSelector(
                             id: getId(item),
                             label: (
                                 <DatasetTreeNode>
-                                    <DatasetLabel version={item} dataset={dataset} />
+                                    <DatasetLabel
+                                        version={item}
+                                        dataset={dataset}
+                                        style={{ fontSize: '14px', marginRight: '4px' }}
+                                    />
                                     <Button
                                         overrides={{
                                             BaseButton: {
@@ -71,8 +124,17 @@ export function DatasetTreeSelector(
                                 </DatasetTreeNode>
                             ),
                             info: {
-                                labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow />,
+                                labelView: (
+                                    <DatasetLabel
+                                        version={item}
+                                        dataset={dataset}
+                                        isProjectShow
+                                        style={{ fontSize: '14px' }}
+                                    />
+                                ),
                                 labelTitle: getDatasetLabel(item, dataset),
+                                data: dataset,
+                                version: item,
                             },
                             isExpanded: true,
                         }
@@ -95,7 +157,7 @@ export function DatasetTreeSelector(
                 getDataToLabelView: (data: any) => data?.info.labelView,
                 getDataToLabelTitle: (data: any) => data?.info.labelTitle,
                 getDataToValue: (data: any) => data?.id,
-                render: SelectorItemByTree as React.FC<any>,
+                render: DatasetTree as React.FC<any>,
             },
         ]
     }, [$treeData, multiple])

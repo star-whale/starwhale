@@ -22,6 +22,7 @@ from starwhale.consts import (
 from starwhale.utils.fs import cmp_file_content
 from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.consts.env import SWEnv
+from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.base.uri.project import Project
 from starwhale.core.model.model import (
@@ -32,7 +33,7 @@ from starwhale.core.model.model import (
     StandaloneModel,
 )
 from starwhale.core.model.store import ModelStorage
-from starwhale.base.models.model import LocalModelInfo
+from starwhale.base.models.model import ModelListType, LocalModelInfo
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
@@ -329,15 +330,15 @@ class ModelTermView(BaseTermView, TagViewMixin):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-        filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        filters = filters or {}
+        filters: t.Optional[t.List[str]] = None,
+    ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
-        fullname = fullname or _uri.instance.is_cloud
-        _models, _pager = Model.list(_uri, page, size, filters)
-        _data = BaseTermView.list_data(_models, show_removed, fullname)
-        return _data, _pager
+        model = Model.get_cls(_uri.instance)
+        _models, _pager = model.list(
+            _uri, page, size, BaseBundle.get_list_filter(filters)
+        )
+        return _models, {}
 
     @classmethod
     @BaseTermView._only_standalone
@@ -427,7 +428,7 @@ class ModelTermViewRich(ModelTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.List[str]] = None,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[ModelListType, t.Dict[str, t.Any]]:
         filters = filters or []
         _models, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
@@ -463,6 +464,9 @@ class ModelTermViewJson(ModelTermView):
     def info(self, output_filter: ModelInfoFilter = ModelInfoFilter.basic) -> None:
         info = self.model.info()
         if info is None:
+            console.print(
+                f":anguished_face: No model info found: {self.uri}", style="red"
+            )
             return
 
         out: t.Dict[str, t.Any] = dict()
