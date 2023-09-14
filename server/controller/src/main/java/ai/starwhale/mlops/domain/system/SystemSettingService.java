@@ -130,6 +130,7 @@ public class SystemSettingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        log.info("system setting service starting ...");
         SystemSettingEntity setting = systemSettingMapper.get();
         if (null != setting) {
             try {

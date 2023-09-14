@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetBoConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -86,6 +87,8 @@ public class JobBoConverter {
 
     final TaskBoConverter taskBoConverter;
 
+    final JobMapper jobMapper;
+
     public JobBoConverter(
             DatasetDao datasetDao,
             ModelMapper modelMapper,
@@ -95,7 +98,8 @@ public class JobBoConverter {
             JobSpecParser jobSpecParser,
             SystemSettingService systemSettingService, StepMapper stepMapper,
             StepConverter stepConverter, TaskMapper taskMapper,
-            TaskBoConverter taskBoConverter
+            TaskBoConverter taskBoConverter,
+            JobMapper jobMapper
     ) {
         this.datasetDao = datasetDao;
         this.modelMapper = modelMapper;
@@ -108,6 +112,7 @@ public class JobBoConverter {
         this.stepConverter = stepConverter;
         this.taskMapper = taskMapper;
         this.taskBoConverter = taskBoConverter;
+        this.jobMapper = jobMapper;
     }
 
     public Job fromEntity(JobEntity jobEntity) {
@@ -155,6 +160,29 @@ public class JobBoConverter {
                 .virtualJobName(jobEntity.getVirtualJobName())
                 .build();
         return fillStepsAndTasks(job);
+    }
+
+    public Job fromTaskId(Long taskId) {
+        TaskEntity taskEntity = taskMapper.findTaskById(taskId);
+        if (null == taskEntity) {
+            log.warn("no task record for id {}", taskId);
+            return null;
+        }
+        StepEntity stepEntity = stepMapper.findById(taskEntity.getStepId());
+        if (null == stepEntity) {
+            log.warn("no step record for task {}", taskEntity.getId());
+            return null;
+        }
+        return fromJobId(stepEntity.getJobId());
+    }
+
+    public Job fromJobId(Long jobId) {
+        JobEntity jobEntity = jobMapper.findJobById(jobId);
+        if (null == jobEntity) {
+            log.warn("no job record for step {}", jobId);
+            return null;
+        }
+        return fromEntity(jobEntity);
     }
 
     private Model modelFromJob(JobEntity jobEntity) {
@@ -220,7 +248,7 @@ public class JobBoConverter {
         return jobRuntime;
     }
 
-    public Job fillStepsAndTasks(Job job) {
+    private Job fillStepsAndTasks(Job job) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.stream().map(entity -> {
             try {

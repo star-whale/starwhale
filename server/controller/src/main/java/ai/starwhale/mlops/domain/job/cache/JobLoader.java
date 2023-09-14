@@ -22,6 +22,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
+import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.Collection;
@@ -55,6 +56,7 @@ public class JobLoader {
         this.taskReportReceiver = taskReportReceiver;
     }
 
+    @WriteOperation
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
         //wrap task with watchers
         job.getSteps().forEach(step -> {

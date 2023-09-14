@@ -124,7 +124,7 @@ def test_version() -> None:
 
 
 class TestRetry(TestCase):
-    @http_retry
+    @http_retry(attempts=3)
     def _do_request(self, url: str) -> None:
         _r = requests.get(url, timeout=1)
         _r.raise_for_status()

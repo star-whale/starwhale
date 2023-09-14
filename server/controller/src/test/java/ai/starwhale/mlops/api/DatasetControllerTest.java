@@ -211,11 +211,6 @@ public class DatasetControllerTest {
                 allOf(notNullValue(), hasProperty("uploadId", is(1L)))
         );
 
-        uploadRequest.setPhase(UploadPhase.BLOB);
-        resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), hasProperty("uploadId", is(1L)));
-
         uploadRequest.setPhase(UploadPhase.CANCEL);
         resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

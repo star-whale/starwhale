@@ -16,14 +16,20 @@
 
 package ai.starwhale.mlops.schedule.reporting;
 
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -33,19 +39,32 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Service
-public class SimpleTaskReportReceiver implements TaskReportReceiver {
+public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpdateStatusListener {
 
     final HotJobHolder jobHolder;
 
     final TaskMapper taskMapper;
 
-    public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
+    final SwTaskScheduler taskScheduler;
+    final JobBoConverter jobBoConverter;
+
+    private volatile boolean primaryInstance;
+
+    public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper, @Lazy SwTaskScheduler taskScheduler,
+                                    JobBoConverter jobBoConverter
+    ) {
         this.jobHolder = jobHolder;
         this.taskMapper = taskMapper;
+        this.taskScheduler = taskScheduler;
+        this.jobBoConverter = jobBoConverter;
     }
 
     @Override
     public void receive(List<ReportedTask> reportedTasks) {
+        if (!primaryInstance) {
+            log.info("server is upgrading and i'm not the primary instance, abandon all reported info");
+            return;
+        }
 
         reportedTasks.forEach(reportedTask -> {
             if (reportedTask.getFailedReason() != null) {
@@ -59,6 +78,12 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
             }
 
             if (inMemoryTask == null) {
+                Job job = jobBoConverter.fromTaskId(reportedTask.getId());
+                if (null == job) {
+                    log.error("bad data from scheduler: no job for reported task {}", reportedTask.getId());
+                    return;
+                }
+                taskScheduler.stop(Set.of(job.getTask(reportedTask.getId())));
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
@@ -114,5 +139,23 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
             }
         });
 
+    }
+
+    @Override
+    public void onNewInstanceStatus(ServerInstanceStatus status) {
+        // As the status report is idempotent, and we could not suffer the loss for status
+        // there shall be a small overlap instead of a small gap between the primary instances
+        if (status == ServerInstanceStatus.READY_UP) {
+            primaryInstance = false;
+        }
+    }
+
+    @Override
+    public void onOldInstanceStatus(ServerInstanceStatus status) {
+        // As the status report is idempotent, and we could not suffer the loss for status
+        // there shall be a small overlap instead of a small gap between the primary instances
+        if (status == ServerInstanceStatus.READY_DOWN) {
+            primaryInstance = true;
+        }
     }
 }

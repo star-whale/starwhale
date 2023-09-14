@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
+import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -205,6 +206,7 @@ public class JobServiceForWeb {
      * transactional jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
     @Transactional
+    @WriteOperation
     public void cancelJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
