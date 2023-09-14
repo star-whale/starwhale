@@ -27,24 +27,24 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @Order(2)
-public class RollingUpdateManager implements CommandLineRunner {
+public class RollingUpdateStarter implements CommandLineRunner {
 
     private final List<RollingUpdateStatusListener> rollingUpdateStatusListeners;
 
-    private final Boolean rollUp;
+    private final Boolean rollUpStart;
 
-    public RollingUpdateManager(
+    public RollingUpdateStarter(
             List<RollingUpdateStatusListener> rollingUpdateStatusListeners,
-            @Value("${sw.rollup}") Boolean rollUp
+            @Value("${sw.rollup}") Boolean rollUpStart
     ) {
         this.rollingUpdateStatusListeners = rollingUpdateStatusListeners;
-        this.rollUp = rollUp;
+        this.rollUpStart = rollUpStart;
     }
 
     @Override
     public void run(String... args) throws Exception {
 
-        if (!rollUp) {
+        if (!rollUpStart) {
             log.info("start up in normal start mode ...");
             for (var l : rollingUpdateStatusListeners) {
                 l.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);

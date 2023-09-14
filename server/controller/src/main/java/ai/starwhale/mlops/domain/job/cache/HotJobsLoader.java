@@ -72,15 +72,19 @@ public class HotJobsLoader implements RollingUpdateStatusListener {
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
         if (status == ServerInstanceStatus.READY_DOWN) {
-            hotJobsFromDb().forEach(job -> {
-                try {
-                    jobLoader.load(job, false);
-                } catch (Exception e) {
-                    log.error("loading hotting job failed {}", job.getId(), e);
-                    jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
-                }
-            });
-            log.info("hot jobs loaded");
+            loadJobs();
         }
+    }
+
+    public void loadJobs() {
+        hotJobsFromDb().forEach(job -> {
+            try {
+                jobLoader.load(job, false);
+            } catch (Exception e) {
+                log.error("loading hotting job failed {}", job.getId(), e);
+                jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
+            }
+        });
+        log.info("hot jobs loaded");
     }
 }

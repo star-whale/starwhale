@@ -987,6 +987,157 @@ class StepSpec(BaseModel):
     parameters_sig: Optional[List[ParameterSignature]] = None
 
 
+class DatasetVersionViewVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    id: str
+    version_name: str = Field(..., alias='versionName')
+    alias: Optional[str] = None
+    latest: bool
+    shared: int
+    created_time: int = Field(..., alias='createdTime')
+
+
+class DatasetViewVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    owner_name: str = Field(..., alias='ownerName')
+    project_name: str = Field(..., alias='projectName')
+    dataset_id: str = Field(..., alias='datasetId')
+    dataset_name: str = Field(..., alias='datasetName')
+    shared: int
+    versions: List[DatasetVersionViewVo]
+
+
+class ResponseMessageListDatasetViewVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: List[DatasetViewVo]
+
+
+class ModelVersionVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    latest: bool
+    tags: Optional[List[str]] = None
+    step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
+    id: str
+    name: str
+    alias: str
+    size: Optional[int] = None
+    created_time: int = Field(..., alias='createdTime')
+    owner: Optional[UserVo] = None
+    shared: int
+    built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
+
+
+class ModelVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    id: str
+    name: str
+    created_time: int = Field(..., alias='createdTime')
+    owner: UserVo
+    version: ModelVersionVo
+
+
+class PageInfoModelVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    total: Optional[int] = None
+    list: Optional[List[ModelVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoModelVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: PageInfoModelVo
+
+
+class ModelInfoVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    version_info: ModelVersionVo = Field(..., alias='versionInfo')
+    id: str
+    name: str
+    version_alias: str = Field(..., alias='versionAlias')
+    version_id: str = Field(..., alias='versionId')
+    version_name: str = Field(..., alias='versionName')
+    version_tag: Optional[str] = Field(None, alias='versionTag')
+    created_time: int = Field(..., alias='createdTime')
+    shared: int
+
+
+class ResponseMessageModelInfoVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: ModelInfoVo
+
+
+class PageInfoModelVersionVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    total: Optional[int] = None
+    list: Optional[List[ModelVersionVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoModelVersionVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: PageInfoModelVersionVo
+
+
 class ResponseMessageMapStringListFileNode(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -994,42 +1145,6 @@ class ResponseMessageMapStringListFileNode(BaseModel):
     code: str
     message: str
     data: Dict[str, List[FileNode]]
-
-
-class ModelVersionViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    id: str
-    version_name: str = Field(..., alias='versionName')
-    alias: str
-    latest: bool
-    tags: Optional[List[str]] = None
-    shared: int
-    step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
-    built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
-    created_time: int = Field(..., alias='createdTime')
-
-
-class ModelViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    owner_name: str = Field(..., alias='ownerName')
-    project_name: str = Field(..., alias='projectName')
-    model_id: str = Field(..., alias='modelId')
-    model_name: str = Field(..., alias='modelName')
-    shared: int
-    versions: List[ModelVersionViewVo]
-
-
-class ResponseMessageListModelViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: List[ModelViewVo]
 
 
 class DatasetVersionVo(BaseModel):
@@ -1083,6 +1198,76 @@ class JobStatus(Enum):
     success = 'SUCCESS'
     fail = 'FAIL'
     unknown = 'UNKNOWN'
+
+
+class JobVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    exposed_links: List[ExposedLinkVo] = Field(..., alias='exposedLinks')
+    id: str
+    uuid: str
+    model_name: str = Field(..., alias='modelName')
+    model_version: str = Field(..., alias='modelVersion')
+    model: ModelVo
+    job_name: Optional[str] = Field(None, alias='jobName')
+    datasets: Optional[List[str]] = None
+    dataset_list: Optional[List[DatasetVo]] = Field(None, alias='datasetList')
+    runtime: RuntimeVo
+    is_builtin_runtime: Optional[bool] = Field(None, alias='isBuiltinRuntime')
+    device: Optional[str] = None
+    device_amount: Optional[int] = Field(None, alias='deviceAmount')
+    owner: UserVo
+    created_time: int = Field(..., alias='createdTime')
+    stop_time: Optional[int] = Field(None, alias='stopTime')
+    job_status: JobStatus = Field(..., alias='jobStatus')
+    comment: Optional[str] = None
+    step_spec: Optional[str] = Field(None, alias='stepSpec')
+    resource_pool: str = Field(..., alias='resourcePool')
+    duration: Optional[int] = None
+    pinned_time: Optional[int] = Field(None, alias='pinnedTime')
+
+
+class PageInfoJobVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    total: Optional[int] = None
+    list: Optional[List[JobVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoJobVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: PageInfoJobVo
+
+
+class ResponseMessageJobVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: JobVo
 
 
 class TaskStatus(Enum):
@@ -1369,39 +1554,6 @@ class ResponseMessagePageInfoBuildRecordVo(BaseModel):
     data: PageInfoBuildRecordVo
 
 
-class DatasetVersionViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    id: str
-    version_name: str = Field(..., alias='versionName')
-    alias: Optional[str] = None
-    latest: bool
-    shared: int
-    created_time: int = Field(..., alias='createdTime')
-
-
-class DatasetViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    owner_name: str = Field(..., alias='ownerName')
-    project_name: str = Field(..., alias='projectName')
-    dataset_id: str = Field(..., alias='datasetId')
-    dataset_name: str = Field(..., alias='datasetName')
-    shared: int
-    versions: List[DatasetVersionViewVo]
-
-
-class ResponseMessageListDatasetViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: List[DatasetViewVo]
-
-
 class ModelServingStatusVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -1478,7 +1630,6 @@ class DataConsumptionRequest(BaseModel):
 
     session_id: Optional[str] = Field(None, alias='sessionId')
     consumer_id: Optional[str] = Field(None, alias='consumerId')
-    mode: Optional[int] = None
     batch_size: Optional[int] = Field(None, alias='batchSize')
     start: Optional[str] = None
     start_inclusive: Optional[bool] = Field(None, alias='startInclusive')
@@ -1732,192 +1883,40 @@ class ResponseMessageListRuntimeViewVo(BaseModel):
     data: List[RuntimeViewVo]
 
 
-class ModelVersionVo(BaseModel):
+class ModelVersionViewVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
+    id: str
+    version_name: str = Field(..., alias='versionName')
+    alias: str
     latest: bool
     tags: Optional[List[str]] = None
+    shared: int
     step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
-    id: str
-    name: str
-    alias: str
-    size: Optional[int] = None
-    created_time: int = Field(..., alias='createdTime')
-    owner: Optional[UserVo] = None
-    shared: int
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
-
-
-class ModelVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    id: str
-    name: str
     created_time: int = Field(..., alias='createdTime')
-    owner: UserVo
-    version: ModelVersionVo
 
 
-class PageInfoModelVo(BaseModel):
+class ModelViewVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    total: Optional[int] = None
-    list: Optional[List[ModelVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoModelVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: PageInfoModelVo
-
-
-class ModelInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    version_info: ModelVersionVo = Field(..., alias='versionInfo')
-    id: str
-    name: str
-    version_alias: str = Field(..., alias='versionAlias')
-    version_id: str = Field(..., alias='versionId')
-    version_name: str = Field(..., alias='versionName')
-    version_tag: Optional[str] = Field(None, alias='versionTag')
-    created_time: int = Field(..., alias='createdTime')
-    shared: int
-
-
-class ResponseMessageModelInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: ModelInfoVo
-
-
-class PageInfoModelVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    total: Optional[int] = None
-    list: Optional[List[ModelVersionVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoModelVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: PageInfoModelVersionVo
-
-
-class JobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    exposed_links: List[ExposedLinkVo] = Field(..., alias='exposedLinks')
-    id: str
-    uuid: str
+    owner_name: str = Field(..., alias='ownerName')
+    project_name: str = Field(..., alias='projectName')
+    model_id: str = Field(..., alias='modelId')
     model_name: str = Field(..., alias='modelName')
-    model_version: str = Field(..., alias='modelVersion')
-    model: ModelVo
-    job_name: Optional[str] = Field(None, alias='jobName')
-    datasets: Optional[List[str]] = None
-    dataset_list: Optional[List[DatasetVo]] = Field(None, alias='datasetList')
-    runtime: RuntimeVo
-    is_builtin_runtime: Optional[bool] = Field(None, alias='isBuiltinRuntime')
-    device: Optional[str] = None
-    device_amount: Optional[int] = Field(None, alias='deviceAmount')
-    owner: UserVo
-    created_time: int = Field(..., alias='createdTime')
-    stop_time: Optional[int] = Field(None, alias='stopTime')
-    job_status: JobStatus = Field(..., alias='jobStatus')
-    comment: Optional[str] = None
-    step_spec: Optional[str] = Field(None, alias='stepSpec')
-    resource_pool: str = Field(..., alias='resourcePool')
-    duration: Optional[int] = None
-    pinned_time: Optional[int] = Field(None, alias='pinnedTime')
+    shared: int
+    versions: List[ModelVersionViewVo]
 
 
-class PageInfoJobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    total: Optional[int] = None
-    list: Optional[List[JobVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoJobVo(BaseModel):
+class ResponseMessageListModelViewVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
     code: str
     message: str
-    data: PageInfoJobVo
-
-
-class ResponseMessageJobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: JobVo
+    data: List[ModelViewVo]
 
 
 class PageInfoTaskVo(BaseModel):

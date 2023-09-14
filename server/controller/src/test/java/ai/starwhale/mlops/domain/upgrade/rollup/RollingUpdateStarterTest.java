@@ -29,21 +29,21 @@ import org.junit.jupiter.api.Test;
 /**
  * a test for RollingUpdateManager
  */
-public class RollingUpdateManagerTest {
+public class RollingUpdateStarterTest {
 
     @Test
     public void testRollingUpdate() throws Throwable {
         RollingUpdateStatusListener listener = mock(RollingUpdateStatusListener.class);
-        RollingUpdateManager rollingUpdateManager = new RollingUpdateManager(List.of(listener), true);
-        rollingUpdateManager.run();
+        RollingUpdateStarter rollingUpdateStarter = new RollingUpdateStarter(List.of(listener), true);
+        rollingUpdateStarter.run();
         verify(listener, times(0)).onOldInstanceStatus(any());
     }
 
     @Test
     public void testNormal() throws Throwable {
         RollingUpdateStatusListener listener = mock(RollingUpdateStatusListener.class);
-        RollingUpdateManager rollingUpdateManager = new RollingUpdateManager(List.of(listener), false);
-        rollingUpdateManager.run();
+        RollingUpdateStarter rollingUpdateStarter = new RollingUpdateStarter(List.of(listener), false);
+        rollingUpdateStarter.run();
         verify(listener, times(1)).onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
         verify(listener, times(1)).onOldInstanceStatus(ServerInstanceStatus.DOWN);
     }

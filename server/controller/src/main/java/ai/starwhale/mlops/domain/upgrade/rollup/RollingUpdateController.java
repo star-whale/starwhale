@@ -19,6 +19,8 @@ package ai.starwhale.mlops.domain.upgrade.rollup;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -65,7 +67,7 @@ public class RollingUpdateController {
                     l.onOldInstanceStatus(status);
                 }
             } else {
-                throw new IllegalArgumentException("unknown instance type");
+                throw new SwValidationException(ValidSubject.UPGRADE, "unknown instance type");
             }
             return ResponseEntity.ok(Code.success.asResponse("old instance is ready to go down"));
         } catch (Exception e) {

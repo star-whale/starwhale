@@ -47,7 +47,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
 
     private final MysqlBackupService mysqlBackupService;
 
-    private final Boolean rollUp;
+    private final Boolean rollUpStart;
 
     private boolean migrated;
 
@@ -55,7 +55,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                               StorageAccessService accessService,
                               DataSourceProperties dataSourceProperties,
                               StoragePathCoordinator storagePathCoordinator,
-                              @Value("${sw.rollup}") Boolean rollUp
+                              @Value("${sw.rollup}") Boolean rollUpStart
     ) {
         this.flyway = flyway;
         this.accessService = accessService;
@@ -66,7 +66,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                 .username(dataSourceProperties.getUsername())
                 .password(dataSourceProperties.getPassword())
                 .build();
-        this.rollUp = rollUp;
+        this.rollUpStart = rollUpStart;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
     public void onOldInstanceStatus(ServerInstanceStatus status) {
         if (status == ServerInstanceStatus.READY_DOWN) {
             //migration has been done on server start up if rollUp is false
-            if (!rollUp) {
+            if (!rollUpStart) {
                 return;
             }
             synchronized (flyway) {
