@@ -37,6 +37,7 @@ jobs:
       docker: ${{ steps.filter.outputs.docker }}
       example: ${{ steps.filter.outputs.example }}
       labels: ${{ steps.pr-labels.outputs.labels }}
+      server_api: ${{ steps.filter.outputs.server_api }}
 
     steps:
       - uses: actions/checkout@v3
@@ -55,7 +56,19 @@ jobs:
 
     needs:
       - filter
-    if: ${{  github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' || needs.filter.outputs.scripts == 'true' || needs.filter.outputs.docker == 'true' || needs.filter.outputs.example == 'true') && contains(needs.filter.outputs.labels, 'e2e'))}}
+    if: ${{ github.event_name == 'push'
+            || github.event_name == 'workflow_dispatch'
+            || github.event_name == 'schedule'
+            || (github.event_name == 'pull_request'
+               && (needs.filter.outputs.client == 'true'
+                  || needs.filter.outputs.server == 'true'
+                  || needs.filter.outputs.scripts == 'true'
+                  || needs.filter.outputs.docker == 'true'
+                  || needs.filter.outputs.example == 'true'
+                  )
+               && contains(needs.filter.outputs.labels, 'e2e')
+               )
+            || needs.filter.outputs.server_api == 'true' }}
 
     defaults:
       run:
@@ -163,6 +176,10 @@ jobs:
       - name: Setup minikube dns mock
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh setup_minikube_dns_mock
+
+      - name: Test OpenAPI model generating
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh open_api_model_test
 
       - name: Test by client side
         working-directory: ./scripts/e2e_test
