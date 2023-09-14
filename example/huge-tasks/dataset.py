@@ -6,20 +6,21 @@ try:
 except ImportError:
     from utils import random_text
 
+cnt = 200 * 1000 - 1
 
-def build():
-    with dataset("huge-tasks-random-text-1m") as ds:
-        console.print(f"start to build dataset: {ds.uri.name}")
-        for i in range(0, 1000 * 1000 - 1):
-            ds[i] = {
-                "label": i,
-                "text": random_text(),
-            }
-            if i % 5000 == 0:
-                console.print(f"\t {i} records appended")
-        ds.commit()
-        console.print(f"generate dataset: {ds.uri}")
+
+def iter_items():
+    for i in range(0, cnt):
+        yield {
+            "label": i,
+            "text": random_text(),
+        }
 
 
 if __name__ == "__main__":
-    build()
+    with dataset("huge-tasks-random-text") as ds:
+        console.print(f"start to build dataset: {ds.uri.name}")
+        for item in iter_items():
+            ds.append(item)
+        ds.commit()
+        console.print(f"generate dataset: {ds.uri}")
