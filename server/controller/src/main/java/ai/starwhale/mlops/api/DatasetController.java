@@ -218,7 +218,7 @@ public class DatasetController {
                         .consumerId(dataRangeRequest.getConsumerId())
                         .isSerial(dataRangeRequest.isSerial())
                         .datasetName(dataset.getDatasetName())
-                        .datasetVersion(dataset.getVersionName())
+                        .datasetVersionId(dataset.getId())
                         .tableName(dataset.getIndexTable())
                         .start(dataRangeRequest.getStart())
                         .startInclusive(dataRangeRequest.isStartInclusive())

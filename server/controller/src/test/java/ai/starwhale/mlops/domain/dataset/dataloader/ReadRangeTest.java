@@ -155,7 +155,7 @@ public class ReadRangeTest {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
-        var datasetVersion = "test-version";
+        var datasetVersion = 1L;
         var tableName = "test-table-name";
         var consumerIdFor1 = "1";
         var consumerIdFor2 = "2";
@@ -164,7 +164,7 @@ public class ReadRangeTest {
                 .consumerId(consumerIdFor1)
                 .tableName(tableName)
                 .datasetName(datasetName)
-                .datasetVersion(datasetVersion)
+                .datasetVersionId(datasetVersion)
                 .isSerial(isSerial)
                 .processedData(List.of())
                 .batchSize(2)
@@ -175,7 +175,7 @@ public class ReadRangeTest {
                 .build();
 
         // case 1: generate
-        given(sessionDao.selectOne(sessionId, datasetName, datasetVersion))
+        given(sessionDao.selectOne(sessionId, datasetName, String.valueOf(datasetVersion)))
                 .willReturn(null);
         given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
             var session = invocation.getArgument(0, Session.class);
@@ -257,7 +257,7 @@ public class ReadRangeTest {
                 .batchSize(2)
                 .build();
 
-        given(sessionDao.selectOne(sessionId, datasetName, datasetVersion))
+        given(sessionDao.selectOne(sessionId, datasetName, String.valueOf(datasetVersion)))
                 .willReturn(session);
         given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()

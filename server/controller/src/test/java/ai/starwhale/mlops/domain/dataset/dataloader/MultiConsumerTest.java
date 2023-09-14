@@ -121,10 +121,10 @@ public class MultiConsumerTest extends MySqlContainerHolder {
             private final String datasetName;
             private final String datasetVersion;
             private final int errorNum;
-            private final int datasetNum;
+            private final long datasetNum;
             private int retryNum = 0;
 
-            ConsumerMock(String consumerId, String datasetName, String datasetVersion, int errorNum, int datasetNum) {
+            ConsumerMock(String consumerId, String datasetName, String datasetVersion, int errorNum, long datasetNum) {
                 this.consumerId = consumerId;
                 this.datasetName = datasetName;
                 this.datasetVersion = datasetVersion;
@@ -139,7 +139,6 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .consumerId(consumerId)
                             .isSerial(isSerial)
                             .datasetName(datasetName)
-                            .datasetVersion(datasetVersion)
                             .tableName("test-table-name")
                             .processedData(List.of())
                             .batchSize(batchSize)
@@ -148,9 +147,9 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .end(null)
                             .endInclusive(true)
                             .build();
-                for (int i = 0; i < datasetNum; i++) {
+                for (long i = 0; i < datasetNum; i++) {
                     // mock multi datasets
-                    request.setDatasetVersion(datasetVersion + i);
+                    request.setDatasetVersionId(i);
                     // TODO
                     request.setProcessedData(null);
                     for (; ; ) {

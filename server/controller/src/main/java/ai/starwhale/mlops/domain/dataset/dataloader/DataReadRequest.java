@@ -33,7 +33,7 @@ public class DataReadRequest {
     private boolean isSerial = false;
 
     private String datasetName;
-    private String datasetVersion;
+    private Long datasetVersionId;
     private String tableName;
 
     private int batchSize;

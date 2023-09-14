@@ -53,17 +53,17 @@ public class DataReadManager {
     Session getOrGenerateSession(DataReadRequest request) {
         var sessionId = request.getSessionId();
         var datasetName = request.getDatasetName();
-        var datasetVersion = request.getDatasetVersion();
+        var datasetVersionId = request.getDatasetVersionId();
         // ensure serially in the same session
-        var sessionLock = new KeyLock<>(String.format("%s-%s-%s", sessionId, datasetName, datasetVersion));
+        var sessionLock = new KeyLock<>(String.format("%s-%s-%s", sessionId, datasetName, datasetVersionId));
         try {
             sessionLock.lock();
-            var session = sessionDao.selectOne(sessionId, datasetName, datasetVersion);
+            var session = sessionDao.selectOne(sessionId, datasetName, String.valueOf(datasetVersionId));
             if (session == null) {
                 session = Session.builder()
                         .sessionId(sessionId)
                         .datasetName(request.getDatasetName())
-                        .datasetVersion(request.getDatasetVersion())
+                        .datasetVersion(String.valueOf(request.getDatasetVersionId()))
                         .tableName(request.getTableName())
                         .start(request.getStart())
                         .startInclusive(request.isStartInclusive())
