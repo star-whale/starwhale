@@ -141,7 +141,8 @@ public class DataReadManager {
     }
 
     @Transactional
-    public void handleConsumerData(String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
+    public void handleConsumerData(
+            String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
         var sid = session.getId();
         var lock = new KeyLock<>(consumerId);
         try {
