@@ -109,7 +109,8 @@ public class DataStoreTest {
                 params.compressionCodec,
                 params.rowGroupSize,
                 params.pageSize,
-                params.pageRowCountLimit);
+                params.pageRowCountLimit)
+                .start();
     }
 
     @AfterEach

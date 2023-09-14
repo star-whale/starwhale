@@ -112,6 +112,36 @@ public class DataStore implements RollingUpdateStatusListener {
                 DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis());
     }
 
+    public DataStore start() {
+        synchronized (dumpThread) {
+            if (null != this.walManager) {
+                return this;
+            }
+            this.walManager = new WalManager(
+                    this.storageAccessService,
+                    walFileSize,
+                    walMaxFileSize,
+                    dataRootPath + "wal/",
+                    ossMaxAttempts
+            );
+            var it = this.walManager.readAll();
+            log.info("Start to load wal log...");
+            while (it.hasNext()) {
+                var entry = it.next();
+                var table = this.getTable(entry.getTableName(), true, true);
+                log.info("Loading wal log for table:{}.", entry.getTableName());
+                //noinspection ConstantConditions
+                table.updateFromWal(entry);
+                if (table.getFirstWalLogId() >= 0) {
+                    this.dirtyTables.put(table, "");
+                }
+            }
+            log.info("Finished load wal log...");
+            this.dumpThread.start();
+        }
+        return this;
+    }
+
     public void terminate() {
         this.dumpThread.terminate();
         this.walManager.terminate();
@@ -616,30 +646,8 @@ public class DataStore implements RollingUpdateStatusListener {
 
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
-        synchronized (dumpThread) {
-            if (status == ServerInstanceStatus.READY_DOWN && null == this.walManager) {
-                this.walManager = new WalManager(
-                        this.storageAccessService,
-                        walFileSize,
-                        walMaxFileSize,
-                        dataRootPath + "wal/",
-                        ossMaxAttempts
-                );
-                var it = this.walManager.readAll();
-                log.info("Start to load wal log...");
-                while (it.hasNext()) {
-                    var entry = it.next();
-                    var table = this.getTable(entry.getTableName(), true, true);
-                    log.info("Loading wal log for table:{}.", entry.getTableName());
-                    //noinspection ConstantConditions
-                    table.updateFromWal(entry);
-                    if (table.getFirstWalLogId() >= 0) {
-                        this.dirtyTables.put(table, "");
-                    }
-                }
-                log.info("Finished load wal log...");
-                this.dumpThread.start();
-            }
+        if (status == ServerInstanceStatus.READY_DOWN) {
+            this.start();
         }
     }
 

@@ -38,7 +38,6 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
-import ai.starwhale.mlops.domain.dataset.upload.DatasetVersionWithMetaConverter;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
@@ -55,13 +54,16 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * test for {@link DatasetUploader}
@@ -139,7 +141,6 @@ public class DatasetUploaderTest {
 
     @Test
     public void testDatasetUploader() throws IOException {
-        DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter();
         DatasetMapper datasetMapper = mock(DatasetMapper.class);
         DatasetVersionMapper datasetVersionMapper = mock(DatasetVersionMapper.class);
         given(datasetVersionMapper.insert(any())).will((Answer<Integer>) invocation -> {
@@ -186,10 +187,6 @@ public class DatasetUploaderTest {
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
         uploadRequest.setProject("project");
         datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest);
-        //datasetUploader.uploadHashedBlob(
-        //        dsVersionId,
-        //        new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
-        //        "abc/index.jsonl");
 
         when(datasetDao.selectVersionOrderForUpdate(any(), any())).thenReturn(1L);
         when(datasetDao.selectMaxVersionOrderOfBundleForUpdate(any())).thenReturn(2L);
@@ -197,7 +194,6 @@ public class DatasetUploaderTest {
 
         datasetUploader.end(dsVersionId);
 
-        verify(storageAccessService).put(anyString(), any(InputStream.class));
         verify(datasetVersionMapper).updateStatus(1L, DatasetVersion.STATUS_AVAILABLE);
         verify(datasetVersionMapper).insert(any(DatasetVersionEntity.class));
         verify(datasetMapper).findByName(eq(dsName), anyLong(), any());
@@ -265,6 +261,42 @@ public class DatasetUploaderTest {
         datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest);
         verify(datasetVersionMapper, times(1)).updateStatus(1L, DatasetVersion.STATUS_UN_AVAILABLE);
 
+    }
+
+    @Test
+    public void testUploadHashedBlob() throws IOException {
+        StoragePathCoordinator storagePathCoordinator = new StoragePathCoordinator("/test");
+        StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null, null));
+        UserService userService = mock(UserService.class);
+        when(userService.currentUserDetail()).thenReturn(User.builder().id(1L).build());
+        ProjectService projectService = mock(ProjectService.class);
+        when(projectService.findProject(anyString())).thenReturn(
+                Project.builder().id(1L).build());
+        when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
+        DatasetUploader datasetUploader = new DatasetUploader(
+                mock(DatasetMapper.class),
+                mock(DatasetVersionMapper.class),
+                mock(BundleVersionTagDao.class),
+                storagePathCoordinator,
+                storageAccessService,
+                userService,
+                mock(HotJobHolder.class),
+                projectService,
+                dataStoreTableNameHelper,
+                mock(DatasetDao.class),
+                mock(IdConverter.class),
+                mock(VersionAliasConverter.class)
+        );
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getInputStream()).thenReturn(new ByteArrayInputStream("fc".getBytes(StandardCharsets.UTF_8)));
+        datasetUploader.uploadHashedBlob("p", "ds", file, "aabbc");
+        ArgumentCaptor<InputStream> argumentCaptor = ArgumentCaptor.forClass(InputStream.class);
+        verify(storageAccessService).put(
+                eq("/test/controller/project/1/common-dataset/ds/aa/aabbc"),
+                argumentCaptor.capture()
+        );
+        Assertions.assertEquals("fc", new String(argumentCaptor.getValue().readAllBytes()));
     }
 
     static final String index_file_content = "/*\n"

@@ -91,7 +91,9 @@ public class DataStoreControllerTest {
                         "SNAPPY",
                         "1MB",
                         "1KB",
-                        1000));
+                        1000)
+                        .start()
+        );
     }
 
     @Test
