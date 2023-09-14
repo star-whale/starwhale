@@ -13,8 +13,16 @@ export type KindT = keyof typeof KIND
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN],
-    [KIND.NUMERICAL]: [OPERATOR.EQUAL, OPERATOR.GREATER, OPERATOR.GREATER_EQUAL, OPERATOR.LESS, OPERATOR.LESS_EQUAL],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN, OPERATOR.NOT_IN],
+    [KIND.NUMERICAL]: [
+        OPERATOR.EQUAL,
+        OPERATOR.GREATER,
+        OPERATOR.GREATER_EQUAL,
+        OPERATOR.LESS,
+        OPERATOR.LESS_EQUAL,
+        OPERATOR.IN,
+        OPERATOR.NOT_IN,
+    ],
     BOOLEAN: [OPERATOR.EQUAL],
     CUSTOM: [],
     DATETIME: [],
@@ -147,18 +155,24 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.IN,
         label: 'in',
         value: 'in',
-        buildFilter: () => () => true,
+        // @ts-ignore
+        buildFilter: ({ value = [] }) => {
+            return (data) => {
+                return value.includes(data)
+            }
+        },
     },
-    // [OPERATOR.NOT_IN]: {
-    //     key: OPERATOR.NOT_IN,
-    //     label: 'not in',
-    //     value: 'not in',
-    //     buildFilter: ({ value = [] }) => {
-    //         return (data) => {
-    //             return !value.has(data)
-    //         }
-    //     },
-    // },
+    [OPERATOR.NOT_IN]: {
+        key: OPERATOR.NOT_IN,
+        label: 'not in',
+        value: 'not in',
+        // @ts-ignore
+        buildFilter: ({ value = [] }) => {
+            return (data) => {
+                return !value.includes(data)
+            }
+        },
+    },
 }
 
 export type SearchFieldSchemaT = {

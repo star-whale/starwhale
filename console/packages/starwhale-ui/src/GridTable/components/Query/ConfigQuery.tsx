@@ -24,7 +24,6 @@ export type ExtraPropsT = {
 
 function ConfigQuery(props: PropsT) {
     const fields = React.useMemo(() => {
-        // @FIXME why columnTypes is frozen?
         return (props.columnTypes ?? [])
             .map((column) => {
                 return {
