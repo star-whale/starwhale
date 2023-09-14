@@ -175,8 +175,7 @@ public class ReadRangeTest {
                 .build();
 
         // case 1: generate
-        given(sessionDao.selectOne(sessionId, datasetName, String.valueOf(datasetVersion)))
-                .willReturn(null);
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
         given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
             var session = invocation.getArgument(0, Session.class);
             session.setId(sid);
@@ -257,8 +256,7 @@ public class ReadRangeTest {
                 .batchSize(2)
                 .build();
 
-        given(sessionDao.selectOne(sessionId, datasetName, String.valueOf(datasetVersion)))
-                .willReturn(session);
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(session);
         given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()
                         .id(2L)

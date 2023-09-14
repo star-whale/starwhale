@@ -37,8 +37,8 @@ public interface SessionMapper {
     int insert(SessionEntity session);
 
     @Select("SELECT * from dataset_read_session "
-            + "WHERE session_id=#{sessionId} and dataset_name=#{datasetName} and dataset_version=#{datasetVersion}")
-    SessionEntity selectOne(String sessionId, String datasetName, String datasetVersion);
+            + "WHERE session_id=#{sessionId} and dataset_version=#{datasetVersion}")
+    SessionEntity selectOne(String sessionId, String datasetVersion);
 
     @Select("SELECT * from dataset_read_session WHERE id=#{id} FOR UPDATE")
     SessionEntity selectForUpdate(Long id);
