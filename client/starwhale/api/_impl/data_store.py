@@ -1205,6 +1205,7 @@ class MemoryTable:
         if not file.exists() or not file.is_file():
             raise RuntimeError(f"File {file} does not exist")
 
+        console.debug(f"start to load table {table_name} from {file}")
         with get_compressor(file).decompress(file) as f:
             with jsonlines.open(f) as reader:
                 meta = reader.read()
@@ -1213,6 +1214,7 @@ class MemoryTable:
                 for record in reader:
                     ir = InnerRecord.loads(record)
                     table.records[ir.key] = ir
+        console.debug(f"table {table_name} finished loading")
         return table
 
     def dump(self, root_path: str, if_dirty: bool = True) -> None:
@@ -1264,6 +1266,7 @@ class MemoryTable:
         if not existing.exists():
             return dumped_keys
 
+        console.log(f"start to dump table {self.table_name} from {existing}")
         with get_compressor(existing).decompress(existing) as f:
             with jsonlines.open(f, mode="r") as reader:
                 self._parse_meta(reader.read())
@@ -1273,6 +1276,7 @@ class MemoryTable:
                     ir.update(r)
                     dumped_keys.add(ir.key)
                     output.write(ir.dumps())
+        console.log(f"table {self.table_name} finished dumping")
 
         return dumped_keys
 

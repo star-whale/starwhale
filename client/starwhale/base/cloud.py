@@ -75,14 +75,11 @@ class CloudRequestMixed:
             **kw,
             stream=True,
         )
-        total = float(r.headers.get("Content-Length", 0))
         ensure_dir(dest_path.parent)
         with dest_path.open("wb") as f:
             for chunk in r.iter_content(chunk_size=_TMP_FILE_BUFSIZE):
                 if progress:
-                    progress.update(
-                        task_id, total=total, advance=len(chunk), refresh=True
-                    )
+                    progress.update(task_id, advance=len(chunk), refresh=True)
                 f.write(chunk)
         # TODO make do_http_request support __exit__ and use with statement
         r.close()
@@ -104,7 +101,7 @@ class CloudRequestMixed:
 
         def _progress_bar(monitor: MultipartEncoderMonitor) -> None:
             if progress:
-                progress.update(task_id, completed=monitor.bytes_read)
+                progress.update(task_id, advance=monitor.bytes_read, refresh=True)
 
         _headers = deepcopy(headers)
         fpath = Path(file_path).resolve().absolute()

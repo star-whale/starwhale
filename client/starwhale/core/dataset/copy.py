@@ -9,11 +9,13 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
 from rich.progress import (
+    TaskID,
     Progress,
     BarColumn,
     TextColumn,
     SpinnerColumn,
     TimeElapsedColumn,
+    MofNCompleteColumn,
     TotalFileSizeColumn,
     TransferSpeedColumn,
 )
@@ -23,7 +25,6 @@ from starwhale.consts import (
     FileDesc,
     HTTPMethod,
     CREATED_AT_KEY,
-    SHORT_VERSION_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
 )
@@ -49,7 +50,7 @@ class DatasetCopy(BundleCopy):
             typ=ResourceType.dataset,
             **kw,
         )
-        self._max_workers = int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
+        self._max_workers = int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "12"))
         self._copy_mode = kw.get("mode", DatasetChangeMode.PATCH)
 
     def _check_dataset_existed(self, uri: Resource) -> bool:
@@ -85,35 +86,24 @@ class DatasetCopy(BundleCopy):
             f":construction: start to copy[{self._copy_mode.value}] {self.src_uri} -> {self.dest_uri}"
         )
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TimeElapsedColumn(),
-            TotalFileSizeColumn(),
-            TransferSpeedColumn(),
-            console=console.rich_console,
-            refresh_per_second=0.2,
-        ) as progress:
-            src = TabularDataset(
-                name=self.src_uri.name,
-                project=self.src_uri.project.name,
-                instance_name=self.src_uri.instance.url,
-                token=self.src_uri.instance.token,
-            )
+        src = TabularDataset(
+            name=self.src_uri.name,
+            project=self.src_uri.project.name,
+            instance_name=self.src_uri.instance.url,
+            token=self.src_uri.instance.token,
+        )
+        dest = TabularDataset(
+            name=self.dest_uri.name or self.src_uri.name,
+            project=self.dest_uri.project.name,
+            instance_name=self.dest_uri.instance.url,
+            token=self.dest_uri.instance.token,
+        )
 
-            dest = TabularDataset(
-                name=self.dest_uri.name or self.src_uri.name,
-                project=self.dest_uri.project.name,
-                instance_name=self.dest_uri.instance.url,
-                token=self.dest_uri.instance.token,
-            )
-            try:
-                self._do_dataset_copy(src=src, dest=dest, progress=progress)
-            finally:
-                src.close()
-                dest.close()
+        try:
+            self._do_dataset_copy(src=src, dest=dest)
+        finally:
+            src.close()
+            dest.close()
 
         remote_url = self._get_remote_bundle_console_url()
         console.print(f":tea: console url of the remote bundle: {remote_url}")
@@ -122,12 +112,13 @@ class DatasetCopy(BundleCopy):
         self,
         src: TabularDataset,
         dest: TabularDataset,
-        progress: Progress,
     ) -> None:
         console.print(":bird: preprocess artifacts link")
         _artifacts_uri_map: t.Dict[str, str] = {}
 
+        src_rows = 0
         for row in src.scan():
+            src_rows += 1
             for artifact in row.artifacts:
                 link = artifact.link
                 if (
@@ -139,34 +130,64 @@ class DatasetCopy(BundleCopy):
 
                 _artifacts_uri_map[link.uri] = ""
 
-        if dest.instance_name == STANDALONE_INSTANCE:
-            console.print(f":cat: try to download {len(_artifacts_uri_map)} blobs")
-            self._do_download_blobs(_artifacts_uri_map, progress)
-        else:
-            console.print(f":cat: try to upload {len(_artifacts_uri_map)} blobs")
-            self._do_upload_blobs(_artifacts_uri_map, progress)
-
-        console.print(":horse: dump dataset meta from src to dest")
+        with Progress(
+            SpinnerColumn(),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TransferSpeedColumn(),
+            TotalFileSizeColumn(),
+            TimeElapsedColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console.rich_console,
+            refresh_per_second=0.2,
+        ) as blob_progress:
+            if dest.instance_name == STANDALONE_INSTANCE:
+                console.print(f":cat: try to download {len(_artifacts_uri_map)} blobs")
+                self._do_download_blobs(_artifacts_uri_map, blob_progress)
+            else:
+                self._do_upload_blobs(_artifacts_uri_map, blob_progress)
 
         if (
             self._copy_mode == DatasetChangeMode.OVERWRITE
             and self._check_dataset_existed(self.dest_uri)
         ):
+            console.print(":horse: prepare to overwrite dest dataset")
             # TODO: use datastore high performance api to delete all rows
             for row in dest.scan():
                 dest.delete(row.id)
 
-        for row in src.scan():
-            for artifact in row.artifacts:
-                link = artifact.link
-                if (
-                    not link
-                    or link.scheme not in _LOCAL_STORAGE_SCHEMES
-                    or link.uri not in _artifacts_uri_map
-                ):
-                    continue
-                link.uri = _artifacts_uri_map[link.uri]
-            dest.put(row)
+        with Progress(
+            SpinnerColumn(),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console.rich_console,
+            refresh_per_second=0.2,
+        ) as row_progress:
+            task_id = row_progress.add_task(
+                ":cookie: dumping dataset meta...", total=src_rows
+            )
+            for row in src.scan():
+                for artifact in row.artifacts:
+                    link = artifact.link
+                    if (
+                        not link
+                        or link.scheme not in _LOCAL_STORAGE_SCHEMES
+                        or link.uri not in _artifacts_uri_map
+                    ):
+                        continue
+                    link.uri = _artifacts_uri_map[link.uri]
+                dest.put(row)
+                row_progress.update(task_id, advance=1, refresh=True)
+
+            row_progress.update(
+                task_id,
+                description=":white_check_mark: rows dump done",
+                refresh=True,
+                completed=src_rows,
+            )
 
         console.print(":kangaroo: update dataset info")
         dest._info = copy.deepcopy(src.info)
@@ -251,14 +272,20 @@ class DatasetCopy(BundleCopy):
         artifacts_uri_map: t.Dict[str, str],
         progress: Progress,
     ) -> None:
+        # TODO: get size by head api
+        task_id = progress.add_task(
+            ":arrow_down: downloading blobs",
+            visible=True,
+        )
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = [
                 executor.submit(
                     self._do_download_blob_to_object_store,
                     progress,
+                    task_id,
                     k,
                 )
-                for k, v in artifacts_uri_map.items()
+                for k in artifacts_uri_map
             ]
 
             results = [t.result() for t in as_completed(futures)]
@@ -266,19 +293,18 @@ class DatasetCopy(BundleCopy):
             for src_uri, dest_uri in results:
                 artifacts_uri_map[src_uri] = dest_uri
 
+            progress.update(
+                task_id,
+                description=f":white_check_mark: {len(results)} blobs downloaded",
+            )
+
     def _do_download_blob_to_object_store(
         self,
         progress: Progress,
+        task_id: TaskID,
         remote_uri: str,
     ) -> t.Tuple[str, str]:
         hash_name = remote_uri.strip().strip("/").split("/")[-1]
-
-        # TODO: get size by head api
-        task_id = progress.add_task(
-            f":arrow_down: {hash_name[:SHORT_VERSION_CNT]}",
-            visible=True,
-        )
-
         local_blob_path = DatasetStorage._get_object_store_path(hash_name)
         if not local_blob_path.exists():
             self.do_download_file(
@@ -289,22 +315,18 @@ class DatasetCopy(BundleCopy):
                 task_id=task_id,
             )
         else:
-            progress.update(task_id, completed=local_blob_path.stat().st_size)
+            progress.update(
+                task_id, advance=local_blob_path.stat().st_size, refresh=True
+            )
 
         return remote_uri, hash_name
 
     def _do_upload_blob_from_object_store(
-        self, progress: Progress, local_hashed_uri: str
+        self, progress: Progress, task_id: TaskID, local_hashed_uri: str
     ) -> t.Tuple[str, str]:
         local_blob_path = DatasetStorage._get_object_store_path(local_hashed_uri)
         url_path = f"/project/{self.dest_uri.project.name}/dataset/{self.src_uri.name}/hashedBlob/{local_hashed_uri}"
         blob_size = local_blob_path.stat().st_size
-
-        task_id = progress.add_task(
-            f":arrow_up: {local_hashed_uri[:SHORT_VERSION_CNT]}",
-            total=blob_size,
-            visible=True,
-        )
 
         r = self.do_http_request(
             path=url_path,
@@ -313,7 +335,7 @@ class DatasetCopy(BundleCopy):
             ignore_status_codes=[HTTPStatus.NOT_FOUND],
         )
         if r.status_code == HTTPStatus.OK:
-            progress.update(task_id, completed=blob_size)
+            progress.update(task_id, advance=blob_size, refresh=True)
             return local_hashed_uri, r.headers["X-SW-LOCAL-STORAGE-URI"]
 
         remote_uri = self.do_multipart_upload_file(
@@ -331,17 +353,36 @@ class DatasetCopy(BundleCopy):
         artifacts_uri_map: t.Dict[str, str],
         progress: Progress,
     ) -> None:
+        total_size = sum(
+            DatasetStorage._get_object_store_path(uri).stat().st_size
+            for uri in artifacts_uri_map
+        )
+
+        task_id = progress.add_task(
+            f":arrow_up: uploading {len(artifacts_uri_map)} blobs ...",
+            total=total_size,
+            visible=True,
+        )
+
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = [
                 executor.submit(
                     self._do_upload_blob_from_object_store,
                     progress,
+                    task_id,
                     k,
                 )
-                for k, v in artifacts_uri_map.items()
+                for k in artifacts_uri_map
             ]
 
             results = [t.result() for t in as_completed(futures)]
 
             for src_uri, dest_uri in results:
                 artifacts_uri_map[src_uri] = dest_uri
+
+        progress.update(
+            task_id,
+            description=":white_check_mark: upload blobs done",
+            refresh=True,
+            completed=total_size,
+        )
