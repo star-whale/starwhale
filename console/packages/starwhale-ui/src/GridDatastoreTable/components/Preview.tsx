@@ -1,6 +1,6 @@
 import _, { toUpper } from 'lodash'
 import React from 'react'
-import Button from '@starwhale/ui/Button'
+import Button, { ExtendButton } from '@starwhale/ui/Button'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
@@ -11,6 +11,8 @@ import { LabelMedium } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { useDatasetTableAnnotations } from '@starwhale/core/dataset'
 import JSONView from '@starwhale/ui/JSONView'
+import { useHover } from 'react-use'
+import { RecordAttr } from '../recordAttrModel'
 
 const useStyles = createUseStyles({
     cardImg: {
@@ -82,7 +84,7 @@ const useStyles = createUseStyles({
     },
     panel: {
         flexBasis: '370px',
-        padding: '20px',
+        padding: '20px 20px 20px 30px',
         borderRight: '1px solid #EEF1F6',
         overflow: 'auto',
         flexShrink: 0,
@@ -116,15 +118,23 @@ const useStyles = createUseStyles({
 })
 
 export default function Preview({
-    preview,
+    prev,
+    next,
+    current: preview,
     previewKey,
     isFullscreen = false,
     setIsFullscreen = () => {},
+    onPreviewNext,
+    onPreviewPrev,
 }: {
-    preview: { summary: Map<string, any> }
+    current?: RecordAttr
+    prev: any
+    next: any
     previewKey: string
     isFullscreen?: boolean
     setIsFullscreen?: any
+    onPreviewNext?: any
+    onPreviewPrev?: any
 }) {
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
@@ -147,6 +157,47 @@ export default function Preview({
             />
         )
     }, [preview, activeKey, setHiddenLabels, hiddenLabels, isSimpleView])
+
+    const hoverable = useHover((hovered) => {
+        return (
+            <ModalBody
+                style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto', marginLeft: 0, marginRight: 0 }}
+                className={styles.layoutNormal}
+            >
+                {hovered && prev && (
+                    <div className='prev-row absolute z-10 left-4px bg-[rgba(2,16,43,0.30)] hover:bg-[rgba(2,16,43,0.60)] w-26px h-80px rounded-4px top-1/2 -mt-37px flex justify-stretch items-stretch'>
+                        <ExtendButton isFull as='transparent' onClick={onPreviewPrev}>
+                            <IconFont type='arrow_left' kind='white' />
+                        </ExtendButton>
+                    </div>
+                )}
+                {hovered && next && (
+                    <div className='prev-row absolute z-10 right-4px bg-[rgba(2,16,43,0.30)] hover:bg-[rgba(2,16,43,0.60)] w-26px h-80px rounded-4px top-1/2 -mt-37px flex justify-stretch items-stretch'>
+                        <ExtendButton isFull as='transparent' onClick={onPreviewNext}>
+                            <IconFont type='arrow_right' kind='white' />
+                        </ExtendButton>
+                    </div>
+                )}
+                <div className={styles.wrapper}>
+                    {Panel && <div className={[styles.panel, 'content-full'].join(' ')}>{Panel}</div>}
+                    <div className={styles.card}>
+                        {!isFullscreen && (
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className={styles.cardFullscreen}
+                                onClick={() => setIsFullscreen((v: boolean) => !v)}
+                            >
+                                <IconFont type='fullscreen' />
+                            </div>
+                        )}
+
+                        <DataViewer data={preview} showKey={previewKey} isZoom hiddenLabels={hiddenLabels} />
+                    </div>
+                </div>
+            </ModalBody>
+        )
+    })
 
     if (!isFullscreen) return <></>
 
@@ -172,28 +223,7 @@ export default function Preview({
             }}
         >
             <ModalHeader />
-            <ModalBody
-                style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}
-                className={styles.layoutNormal}
-            >
-                <div className={styles.wrapper}>
-                    {Panel && <div className={[styles.panel].join(' ')}>{Panel}</div>}
-                    <div className={styles.card}>
-                        {!isFullscreen && (
-                            <div
-                                role='button'
-                                tabIndex={0}
-                                className={styles.cardFullscreen}
-                                onClick={() => setIsFullscreen((v: boolean) => !v)}
-                            >
-                                <IconFont type='fullscreen' />
-                            </div>
-                        )}
-
-                        <DataViewer data={preview} showKey={previewKey} isZoom hiddenLabels={hiddenLabels} />
-                    </div>
-                </div>
-            </ModalBody>
+            {hoverable}
             <ModalFooter />
         </Modal>
     )
@@ -284,7 +314,7 @@ function TabControl({
     }, [hiddenLabels, setHiddenLabels, annotationTypeMap, styles, hiddenTypes])
 
     return (
-        <div className='flex-full'>
+        <div className='flex-content'>
             {!$isSimpleView && (
                 <div className={styles.annotation}>
                     <LabelMedium>Annotation Type</LabelMedium>
@@ -371,7 +401,7 @@ function TabControl({
                 </Tabs>
             )}
             {$isSimpleView && (
-                <div className='flex-full-scroll'>
+                <div className='content-full-scroll'>
                     <JSONView data={record} />{' '}
                 </div>
             )}

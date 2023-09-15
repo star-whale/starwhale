@@ -214,13 +214,13 @@ table {
     align-items: center;
     justify-content: center;
 }
-.flex-full {
+.content-full {
     display: flex;
     flex-direction: column;
     overflow: hidden;
     min-width: 0;
 }
-.flex-full-scroll {
+.content-full-scroll {
     display: flex;
     flex-direction: column;
     overflow: auto;
