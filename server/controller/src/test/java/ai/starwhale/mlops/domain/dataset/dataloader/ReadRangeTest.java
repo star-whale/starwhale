@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -35,12 +34,8 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Answer;
 
 public class ReadRangeTest {
@@ -142,16 +137,8 @@ public class ReadRangeTest {
         verify(dataStore, times(4)).scan(any());
     }
 
-    public static Stream<Arguments> provideMultiParams() {
-        return Stream.of(
-                Arguments.of(true, 2),
-                Arguments.of(false, 0)
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideMultiParams")
-    public void testNextDataRange(boolean isSerial, int executeCount) {
+    @Test
+    public void testNextDataRange() {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
@@ -165,7 +152,6 @@ public class ReadRangeTest {
                 .tableName(tableName)
                 .datasetName(datasetName)
                 .datasetVersionId(datasetVersion)
-                .isSerial(isSerial)
                 .processedData(List.of())
                 .batchSize(2)
                 .start("0000-000")
@@ -283,7 +269,6 @@ public class ReadRangeTest {
 
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
-        verify(dataReadLogDao, times(executeCount)).updateUnProcessedToUnAssigned(eq(sid), eq(consumerIdFor1));
         verify(dataReadLogDao, times(1))
                 .updateToProcessed(sid, consumerIdFor1, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());

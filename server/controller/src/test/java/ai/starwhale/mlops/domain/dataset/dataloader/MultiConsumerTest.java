@@ -84,26 +84,24 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
     @ParameterizedTest
     @CsvSource(value = {
-            "1,0,false,1",
-            "2,2,false,1",
-            "3,6,false,1",
-            "4,10,false,1",
-            "5,0,true,2",
-            "6,2,true,2",
-            "7,6,true,2",
-            "8,10,true,2",
-            "9,0,false,3",
-            "10,2,false,3",
-            "11,6,false,3",
-            "12,10,false,3"
+            "1,0,1",
+            "2,2,1",
+            "3,6,1",
+            "4,10,1",
+            "5,0,2",
+            "6,2,2",
+            "7,6,2",
+            "8,10,2",
+            "9,0,3",
+            "10,2,3",
+            "11,6,3",
+            "12,10,3"
     })
-    public void testMultiConsumerRead(
-            String consumptionRound, int errorNumPerConsumer, boolean isSerial, int datasetNum
-    ) throws InterruptedException, ExecutionException {
+    public void testMultiConsumerRead(String consumptionRound, int errorNumPerConsumer, int datasetNum)
+            throws InterruptedException, ExecutionException {
 
-        var sessionId = "session" + errorNumPerConsumer + isSerial + datasetNum;
+        var sessionId = "session" + errorNumPerConsumer + datasetNum;
         var datasetName = "test-name";
-        var datasetVersion = "test-version";
         var batchSize = 10;
 
         AtomicInteger count = new AtomicInteger(0);
@@ -130,7 +128,6 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                 var request = DataReadRequest.builder()
                             .sessionId(sessionId)
                             .consumerId(consumerId)
-                            .isSerial(isSerial)
                             .datasetName(datasetName)
                             .tableName("test-table-name")
                             .processedData(List.of())

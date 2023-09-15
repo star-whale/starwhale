@@ -123,18 +123,13 @@ public class DataReadManager {
 
     @Transactional
     public void handleConsumerData(
-            String consumerId, boolean isSerial, List<DataIndexDesc> processedData, Session session) {
+            String consumerId, List<DataIndexDesc> processedData, Session session) {
         var sid = session.getId();
         // update processed data
         if (CollectionUtils.isNotEmpty(processedData)) {
             for (DataIndexDesc indexDesc : processedData) {
                 dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
             }
-        }
-        // Whether to process serially under the same consumer,
-        // if serial is true, unassigned the previous unprocessed data
-        if (isSerial) {
-            dataReadLogDao.updateUnProcessedToUnAssigned(sid, consumerId);
         }
     }
 

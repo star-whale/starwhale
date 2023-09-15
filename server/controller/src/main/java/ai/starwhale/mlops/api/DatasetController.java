@@ -216,7 +216,6 @@ public class DatasetController {
                 DataReadRequest.builder()
                         .sessionId(dataRangeRequest.getSessionId())
                         .consumerId(dataRangeRequest.getConsumerId())
-                        .isSerial(dataRangeRequest.isSerial())
                         .datasetName(dataset.getDatasetName())
                         .datasetVersionId(dataset.getId())
                         .tableName(dataset.getIndexTable())

@@ -31,6 +31,7 @@ public class DataConsumptionRequest {
      * True: auto processed the previous data
      * False: determined by processedData
      */
+    @Deprecated
     private boolean isSerial = false;
 
     private int batchSize;

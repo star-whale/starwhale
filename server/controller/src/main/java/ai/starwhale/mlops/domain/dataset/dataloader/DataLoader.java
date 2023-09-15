@@ -49,7 +49,7 @@ public class DataLoader {
             }
         }
 
-        dataReadManager.handleConsumerData(consumerId, request.isSerial(), request.getProcessedData(), session);
+        dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
 
         // this lock can be replaced by select fot update in future
         var lock = new KeyLock<>(String.format("dl-assignment-%s", session.getId()));
