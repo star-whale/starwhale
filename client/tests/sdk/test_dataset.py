@@ -9,6 +9,7 @@ import queue
 import base64
 import struct
 import typing as t
+import inspect
 import tempfile
 import threading
 from http import HTTPStatus
@@ -569,6 +570,13 @@ class TestDatasetType(TestCase):
         typ = _get_type(img)
         assert isinstance(typ, SwObjectType)
         assert typ.attrs["_raw_base64_data"] == STRING
+
+    def test_swobject_subclass_init(self) -> None:
+        from starwhale.core.dataset import type as dataset_type
+
+        for v in dataset_type.__dict__.values():
+            if inspect.isclass(v) and issubclass(v, SwObject):
+                self.assertIsInstance(v()._to_dict(), dict, f"class: {v}")
 
     def test_audio(self) -> None:
         fp = "/test/1.wav"
