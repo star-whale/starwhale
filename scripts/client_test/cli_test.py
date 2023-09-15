@@ -75,6 +75,12 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "datasets": [DatasetExpl("ucf101", "")],
         "runtime": "pytorch310",
     },
+    "huge-tasks": {
+        "run_handler": "evaluation:evaluation_results",
+        "workdir": f"{ROOT_DIR}/example/huge-tasks",
+        "datasets": [DatasetExpl("huge-tasks-random-text", "")],
+        "runtime": "pytorch310",
+    },
 }
 
 GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
