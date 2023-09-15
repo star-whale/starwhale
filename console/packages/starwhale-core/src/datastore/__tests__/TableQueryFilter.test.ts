@@ -15,13 +15,13 @@ describe('TableQueryFilter class', () => {
                                 {
                                     filter: {
                                         operator: 'EQUAL',
-                                        operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                                        operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
                                     },
                                 },
                                 {
                                     filter: {
                                         operator: 'EQUAL',
-                                        operands: [{ stringValue: '46' }, { columnName: 'sys/id' }],
+                                        operands: [{ columnName: 'sys/id' }, { stringValue: '46' }],
                                     },
                                 },
                             ],
@@ -48,7 +48,7 @@ describe('TableQueryFilter class', () => {
                     {
                         filter: {
                             operator: 'EQUAL',
-                            operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                            operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
                         },
                     },
                 ],
@@ -72,13 +72,13 @@ describe('TableQueryFilter class', () => {
                     {
                         filter: {
                             operator: 'EQUAL',
-                            operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                            operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
                         },
                     },
                     {
                         filter: {
                             operator: 'EQUAL',
-                            operands: [{ stringValue: '46' }, { columnName: 'sys/id' }],
+                            operands: [{ columnName: 'sys/id' }, { stringValue: '46' }],
                         },
                     },
                 ],
@@ -98,7 +98,7 @@ describe('TableQueryFilter class', () => {
         const expectedSchema = {
             filter: {
                 operator: 'EQUAL',
-                operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
             },
         }
         expect(
@@ -118,7 +118,7 @@ describe('TableQueryFilter class', () => {
                 {
                     filter: {
                         operator: 'EQUAL',
-                        operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                        operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
                     },
                 },
             ],
@@ -139,7 +139,7 @@ describe('TableQueryFilter class', () => {
         const expectedSchema = {
             filter: {
                 operator: 'GREATER',
-                operands: [{ stringValue: '45' }, { columnName: 'sys/id' }],
+                operands: [{ columnName: 'sys/id' }, { stringValue: '45' }],
             },
         }
         expect(
