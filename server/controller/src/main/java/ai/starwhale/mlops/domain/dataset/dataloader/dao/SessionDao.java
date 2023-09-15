@@ -40,8 +40,8 @@ public class SessionDao {
         return rows > 0;
     }
 
-    public Session selectOne(String sessionId, String datasetName, String datasetVersion) {
-        var entity = mapper.selectOne(sessionId, datasetName, datasetVersion);
+    public Session selectOne(String sessionId, String datasetVersion) {
+        var entity = mapper.selectOne(sessionId, datasetVersion);
         return entity != null ? converter.revert(entity) : null;
     }
 

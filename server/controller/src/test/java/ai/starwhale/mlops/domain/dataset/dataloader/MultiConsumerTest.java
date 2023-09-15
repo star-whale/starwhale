@@ -44,12 +44,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -84,31 +82,26 @@ public class MultiConsumerTest extends MySqlContainerHolder {
     @Autowired
     private DataReadLogConverter dataReadLogConverter;
 
-    public static Stream<Arguments> provideMultiParams() {
-        return Stream.of(
-            Arguments.of(0, false, 1),
-            Arguments.of(2, false, 1),
-            Arguments.of(6, false, 1),
-            Arguments.of(10, false, 1),
-            Arguments.of(0, true, 2),
-            Arguments.of(2, true, 2),
-            Arguments.of(6, true, 2),
-            Arguments.of(10, true, 2),
-            Arguments.of(0, false, 3),
-            Arguments.of(2, false, 3),
-            Arguments.of(6, false, 3),
-            Arguments.of(10, false, 3)
-        );
-    }
-
     @ParameterizedTest
-    @MethodSource("provideMultiParams")
-    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial, int datasetNum)
+    @CsvSource(value = {
+            "1,0,1",
+            "2,2,1",
+            "3,6,1",
+            "4,10,1",
+            "5,0,2",
+            "6,2,2",
+            "7,6,2",
+            "8,10,2",
+            "9,0,3",
+            "10,2,3",
+            "11,6,3",
+            "12,10,3"
+    })
+    public void testMultiConsumerRead(String consumptionRound, int errorNumPerConsumer, int datasetNum)
             throws InterruptedException, ExecutionException {
 
-        var sessionId = "session" + errorNumPerConsumer + isSerial + datasetNum;
+        var sessionId = "session" + errorNumPerConsumer + datasetNum;
         var datasetName = "test-name";
-        var datasetVersion = "test-version";
         var batchSize = 10;
 
         AtomicInteger count = new AtomicInteger(0);
@@ -119,15 +112,13 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         class ConsumerMock implements Runnable {
             private final String consumerId;
             private final String datasetName;
-            private final String datasetVersion;
             private final int errorNum;
-            private final int datasetNum;
+            private final long datasetNum;
             private int retryNum = 0;
 
-            ConsumerMock(String consumerId, String datasetName, String datasetVersion, int errorNum, int datasetNum) {
+            ConsumerMock(String consumerId, String datasetName, int errorNum, long datasetNum) {
                 this.consumerId = consumerId;
                 this.datasetName = datasetName;
-                this.datasetVersion = datasetVersion;
                 this.errorNum = errorNum;
                 this.datasetNum = datasetNum;
             }
@@ -137,9 +128,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                 var request = DataReadRequest.builder()
                             .sessionId(sessionId)
                             .consumerId(consumerId)
-                            .isSerial(isSerial)
                             .datasetName(datasetName)
-                            .datasetVersion(datasetVersion)
                             .tableName("test-table-name")
                             .processedData(List.of())
                             .batchSize(batchSize)
@@ -148,10 +137,9 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .end(null)
                             .endInclusive(true)
                             .build();
-                for (int i = 0; i < datasetNum; i++) {
+                for (long i = 0; i < datasetNum; i++) {
                     // mock multi datasets
-                    request.setDatasetVersion(datasetVersion + i);
-                    // TODO
+                    request.setDatasetVersionId(i);
                     request.setProcessedData(null);
                     for (; ; ) {
                         var dataRange = dataLoader.next(request);
@@ -199,12 +187,12 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         // first consumption with error
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < consumerNum; i++) {
-            var consumerId = String.valueOf(i);
+            var consumerId = consumptionRound + i;
             if (errorNumPerConsumer > 0) {
                 errorConsumers.add(consumerId);
             }
             futures.add(executor.submit(
-                new ConsumerMock(consumerId, datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+                new ConsumerMock(consumerId, datasetName, errorNumPerConsumer, datasetNum)));
         }
 
         for (Future<?> future : futures) {
@@ -222,9 +210,9 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         // try again
         futures.clear();
-        for (int i = 0; i < 2; i++) {
+        for (String errorConsumer : errorConsumers) {
             futures.add(executor.submit(
-                    new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, 0, datasetNum)));
+                    new ConsumerMock(errorConsumer, datasetName, 0, datasetNum)));
         }
 
         for (Future<?> future : futures) {
@@ -276,7 +264,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         // insert a session
         var sessionId = "000000000000000001";
         var datasetName = "test-name";
-        var datasetVersion = "test-version";
+        var datasetVersion = "1";
         var session = Session.builder()
                 .sessionId(sessionId)
                 .datasetName(datasetName)
@@ -291,7 +279,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         assertEquals(1, sessionMapper.insert(sessionConverter.convert(session)));
 
-        var result = sessionMapper.selectOne(sessionId, datasetName, datasetVersion);
+        var result = sessionMapper.selectOne(sessionId, datasetVersion);
 
         assertEquals(session.getDatasetName(), result.getDatasetName());
         assertEquals(session.getDatasetVersion(), result.getDatasetVersion());

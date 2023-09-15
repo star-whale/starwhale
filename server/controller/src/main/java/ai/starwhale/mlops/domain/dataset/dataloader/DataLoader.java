@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
+import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,11 +31,34 @@ public class DataLoader {
 
     public DataReadLog next(DataReadRequest request) {
         var consumerId = request.getConsumerId();
-        var session = dataReadManager.getOrGenerateSession(request);
+        var sessionId = request.getSessionId();
+        var datasetVersionId = request.getDatasetVersionId();
+        Session session = dataReadManager.getSession(request);
+        if (session == null) {
+            // ensure serially in the same session with the same dataset version
+            // this lock should wrap the transaction and use double check
+            var sessionLock = new KeyLock<>(String.format("dl-session-generate-%s-%s", sessionId, datasetVersionId));
+            try {
+                sessionLock.lock();
+                session = dataReadManager.getSession(request);
+                if (session == null) {
+                    session = dataReadManager.generateSession(request);
+                }
+            } finally {
+                sessionLock.unlock();
+            }
+        }
 
-        dataReadManager.handleConsumerData(consumerId, request.isSerial(), request.getProcessedData(), session);
+        dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
 
-        return dataReadManager.assignmentData(consumerId, session);
+        // this lock can be replaced by select fot update in future
+        var lock = new KeyLock<>(String.format("dl-assignment-%s", session.getId()));
+        try {
+            lock.lock();
+            return dataReadManager.assignmentData(consumerId, session);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
