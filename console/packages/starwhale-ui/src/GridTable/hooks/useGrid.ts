@@ -7,10 +7,9 @@ import useGridQuery from './useGridQuery'
 import { IGridState } from '../types'
 import { useStore } from './useStore'
 import shallow from 'zustand/shallow'
-import { useState } from 'react'
-import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 import useGridCurrentView from './useGridCurrentView'
 import useGridConfigColumns from './useGridConfigColumns'
+import useGridCellPreview from './useGridCellPreview'
 
 const selector = (s: IGridState) => ({
     initStore: s.initStore,
@@ -34,13 +33,7 @@ function useGrid() {
     } = useGridSelection()
     const { renderConfigQuery, renderConfigQueryInline } = useGridQuery()
     const { renderConfigColumns, renderStatefulConfigColumns } = useGridConfigColumns()
-    const [preview, setPreview] = useState<{
-        record?: RecordAttr
-        columnKey: string
-    }>({
-        record: undefined,
-        columnKey: '',
-    })
+    const preview = useGridCellPreview(rows, columns)
 
     return {
         onSave,
@@ -76,10 +69,7 @@ function useGrid() {
         renderStatefulConfigColumns,
         // store
         initStore,
-        // preview
         preview,
-        onPreview: setPreview,
-        onPreviewClose: () => setPreview({ record: undefined, columnKey: '' }),
     }
 }
 
