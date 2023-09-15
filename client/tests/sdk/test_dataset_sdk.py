@@ -35,6 +35,7 @@ from starwhale.core.dataset.type import (
     Video,
     Binary,
     MIMEType,
+    Sequence,
     BoundingBox,
     DatasetSummary,
     GrayscaleImage,
@@ -253,16 +254,33 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             "large_str": "abc" * 1000,
             "bytes": b"abc",
             "large_bytes": b"abc" * 1000,
+            "one_type_list": [1, 2, 3],
+            "one_type_tuple": ["a", "b", "c"],
+            "mixed_types_list": [1, "2", 3.0, ["a", "b"], [1, "2", 1.1]],
+            "mixed_types_tuple": (
+                1,
+                "2",
+                3.0,
+                ("a", "b"),
+                ("a", 1),
+                Sequence([1, 2.0, "3"]),
+                {"a": 1, "b": "2", "c": ["1", 3, "abc" * 100, 1.0]},
+            ),
+            "mixed_dict": {
+                "a": 1,
+                "b": "2",
+                "c": [1, 3],
+                "d": {"a": 1, "b": "2", "c": [1, "3", 1.1]},
+                "e": (1, "a", [1, "2"], [1, 2]),
+            },
         }
         ds.append(raw_features)
         ds.commit()
         ds.close()
 
         load_ds = dataset(ds.uri)
-        assert load_ds[0].features["str"] == raw_features["str"]
-        assert load_ds[0].features["large_str"] == raw_features["large_str"]
-        assert load_ds[0].features["bytes"] == raw_features["bytes"]
-        assert load_ds[0].features["large_bytes"] == raw_features["large_bytes"]
+        for k, v in raw_features.items():
+            assert load_ds[0].features[k] == v
 
     def test_parallel_setitem(self) -> None:
         ds = dataset("mnist")
