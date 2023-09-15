@@ -171,7 +171,6 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                 "cycle_evaluator:handle": [
                     StepSpecClient(
                         cls_name="",
-                        concurrency=1,
                         func_name="handle",
                         module_name="cycle_evaluator",
                         name="cycle_evaluator:handle",

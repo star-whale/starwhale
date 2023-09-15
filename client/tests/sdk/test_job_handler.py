@@ -208,7 +208,6 @@ def video_evaluate_handler(*args, **kwargs): ...
         assert jobs_info["mock_user_module:img_evaluate_handler"] == [
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
@@ -231,7 +230,6 @@ def video_evaluate_handler(*args, **kwargs): ...
             ),
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 extra_kwargs={"predict_auto_log": True},
                 func_name="img_evaluate_handler",
                 module_name="mock_user_module",
@@ -250,7 +248,6 @@ def video_evaluate_handler(*args, **kwargs): ...
         assert jobs_info["mock_user_module:video_evaluate_handler"] == [
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
@@ -273,7 +270,6 @@ def video_evaluate_handler(*args, **kwargs): ...
             ),
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 extra_kwargs={"predict_auto_log": True},
                 func_name="video_evaluate_handler",
                 module_name="mock_user_module",
@@ -316,7 +312,6 @@ def evaluate_handler(*args, **kwargs): ...
             "mock_user_module:evaluate_handler": [
                 StepSpecClient(
                     cls_name="",
-                    concurrency=1,
                     extra_kwargs={
                         "dataset_uris": None,
                         "ignore_error": False,
@@ -339,7 +334,6 @@ def evaluate_handler(*args, **kwargs): ...
                 ),
                 StepSpecClient(
                     cls_name="",
-                    concurrency=1,
                     extra_kwargs={"predict_auto_log": True},
                     func_name="evaluate_handler",
                     module_name="mock_user_module",
@@ -357,7 +351,6 @@ def evaluate_handler(*args, **kwargs): ...
             "mock_user_module:predict_handler": [
                 StepSpecClient(
                     cls_name="",
-                    concurrency=1,
                     extra_kwargs={
                         "dataset_uris": None,
                         "ignore_error": False,
@@ -490,7 +483,6 @@ class MockHandler(PipelineHandler):
         assert jobs_info["mock_user_module:MockHandler.evaluate"] == [
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 func_name="predict",
                 module_name="mock_user_module",
                 name="mock_user_module:MockHandler.predict",
@@ -507,7 +499,6 @@ class MockHandler(PipelineHandler):
             ),
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 func_name="evaluate",
                 module_name="mock_user_module",
                 name="mock_user_module:MockHandler.evaluate",
@@ -527,7 +518,6 @@ class MockHandler(PipelineHandler):
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 func_name="predict",
                 module_name="mock_user_module",
                 name="mock_user_module:MockHandler.predict",
@@ -590,7 +580,6 @@ class MockHandler:
         assert jobs_info["mock_user_module:MockHandler.predict_handler"] == [
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
@@ -616,7 +605,6 @@ class MockHandler:
         assert jobs_info["mock_user_module:MockHandler.evaluate_handler"] == [
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 extra_kwargs={
                     "dataset_uris": None,
                     "ignore_error": False,
@@ -639,7 +627,6 @@ class MockHandler:
             ),
             StepSpecClient(
                 cls_name="MockHandler",
-                concurrency=1,
                 extra_kwargs={"predict_auto_log": True},
                 func_name="evaluate_handler",
                 module_name="mock_user_module",
@@ -693,7 +680,6 @@ def run(): ...
             "mock_user_module:run": [
                 StepSpecClient(
                     cls_name="",
-                    concurrency=1,
                     func_name="run",
                     module_name="mock_user_module",
                     name="mock_user_module:run",
@@ -726,7 +712,6 @@ def handle(context): ...
             "mock_user_module:handle": [
                 StepSpecClient(
                     cls_name="",
-                    concurrency=1,
                     func_name="handle",
                     module_name="mock_user_module",
                     name="mock_user_module:handle",
@@ -773,6 +758,7 @@ def ft2(): ...
                     require_dataset=True,
                     needs=[],
                     expose=0,
+                    replicas=1,
                     resources=[],
                     parameters_sig=[],
                     cls_name="",
@@ -788,6 +774,7 @@ def ft2(): ...
                     require_dataset=True,
                     needs=[],
                     expose=0,
+                    replicas=1,
                     resources=[],
                     parameters_sig=[],
                     cls_name="",
@@ -806,6 +793,7 @@ def ft2(): ...
                             type="nvidia.com/gpu",
                         )
                     ],
+                    replicas=1,
                     needs=["mock_user_module:ft1"],
                     expose=0,
                     parameters_sig=[],
@@ -849,6 +837,7 @@ class MockReport:
                 func_name="prepare_handler",
                 module_name="mock_user_module",
                 require_dataset=False,
+                replicas=1,
                 needs=[],
                 expose=0,
                 resources=[],
@@ -866,6 +855,7 @@ class MockReport:
                 func_name="evaluate_handler",
                 module_name="mock_user_module",
                 require_dataset=False,
+                replicas=1,
                 needs=["mock_user_module:prepare_handler"],
                 expose=0,
                 resources=[],
@@ -886,6 +876,7 @@ class MockReport:
                 resources=[],
                 show_name="evaluate",
                 expose=0,
+                replicas=1,
                 parameters_sig=[],
                 cls_name="",
                 ext_cmd_args="",
@@ -896,7 +887,6 @@ class MockReport:
         assert (
             StepSpecClient(
                 cls_name="MockReport",
-                concurrency=1,
                 func_name="report_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:MockReport.report_handler",
@@ -917,7 +907,6 @@ class MockReport:
 
         assert StepSpecClient(
             cls_name="",
-            concurrency=1,
             func_name="predict_handler",
             module_name="mock_user_module",
             name="mock_user_module:predict_handler",
@@ -934,7 +923,6 @@ class MockReport:
         assert jobs_info["mock_user_module:evaluate_handler"] == [
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 func_name="prepare_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:prepare_handler",
@@ -949,7 +937,6 @@ class MockReport:
             ),
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 func_name="evaluate_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:evaluate_handler",
@@ -966,7 +953,6 @@ class MockReport:
         assert jobs_info["mock_user_module:predict_handler"] == [
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 func_name="prepare_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:prepare_handler",
@@ -981,7 +967,6 @@ class MockReport:
             ),
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 func_name="predict_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:predict_handler",
@@ -998,7 +983,6 @@ class MockReport:
         assert jobs_info["mock_user_module:prepare_handler"] == [
             StepSpecClient(
                 cls_name="",
-                concurrency=1,
                 func_name="prepare_handler",
                 module_name="mock_user_module",
                 name="mock_user_module:prepare_handler",
@@ -1055,16 +1039,6 @@ class MockReport:
         assert len(results) == 1
         assert len(results[0].task_results) == 10
         assert {i for i in range(10)} == {t.id for t in results[0].task_results}
-
-        results = scheduler.run(
-            step_name="mock_user_module:predict_handler",
-            task_num=3,
-        )
-        assert {3} == {len(r.task_results) for r in results}
-        assert {"mock_user_module:predict_handler"} == {r.name for r in results}
-        assert len(results) == 1
-        assert len(results[0].task_results) == 3
-        assert {i for i in range(3)} == {t.id for t in results[0].task_results}
 
         results = scheduler.run(
             step_name="mock_user_module:predict_handler",

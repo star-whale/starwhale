@@ -39,7 +39,6 @@ class Step(ASDictMixin):
         show_name: str = "",
         resources: t.Optional[t.List[t.Dict]] = None,
         needs: t.Optional[t.List[str]] = None,
-        concurrency: int = 1,
         task_num: int = 1,
         cls_name: str = "",
         module_name: str = "",
@@ -54,7 +53,6 @@ class Step(ASDictMixin):
         self.cls_name = cls_name
         self.func_name = func_name
         self.resources = resources or []
-        self.concurrency = concurrency
         self.task_num = task_num
         self.needs = needs or []
         self.extra_args = extra_args or []
@@ -95,7 +93,6 @@ class Step(ASDictMixin):
 
         """
         - cls_name: MNISTInference
-          concurrency: 1
           extra_args: []
           extra_kwargs: {}
           func_name: ppl
@@ -118,7 +115,6 @@ class Step(ASDictMixin):
                 show_name=v["show_name"],
                 resources=v["resources"],
                 needs=v["needs"],
-                concurrency=v["concurrency"],
                 task_num=v["replicas"],
                 cls_name=v["cls_name"],
                 module_name=v["module_name"],
@@ -168,10 +164,10 @@ class StepExecutor:
         return f"StepExecutor: step-{self.step}, version-{self.version}"
 
     def __repr__(self) -> str:
-        return f"StepExecutor: step-{self.step}, version-{self.version}, dataset_uris:{self.dataset_uris}"
+        return f"StepExecutor: step-{self.step}, version-{self.version}, dataset_uris-{self.dataset_uris}"
 
     def execute(self) -> StepResult:
-        console.info(f"start to execute step:{self.step}")
+        console.info(f"start to execute step[tasks:{self.task_num}]: {self.step}")
 
         tasks = [
             TaskExecutor(
@@ -192,9 +188,10 @@ class StepExecutor:
             for index in range(self.task_num)
         ]
 
-        with ThreadPoolExecutor(max_workers=self.step.concurrency) as pool:
+        # avoid to create too many threads, up to 32
+        with ThreadPoolExecutor(max_workers=min(32, len(tasks))) as pool:
             future_tasks = [pool.submit(t.execute) for t in tasks]
             task_results = [t.result() for t in as_completed(future_tasks)]
 
-        console.info(f"finish to execute step:{self.step}")
+        console.info(f"finish to execute step[{self.task_num}]:{self.step}")
         return StepResult(name=self.step.name, task_results=task_results)

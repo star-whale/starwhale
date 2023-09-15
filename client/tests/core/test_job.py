@@ -96,7 +96,6 @@ class JobTestCase(TestCase):
                     Step(
                         name="ppl",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                        concurrency=1,
                         task_num=2,
                         # cycle point
                         needs=["cmp"],
@@ -104,7 +103,6 @@ class JobTestCase(TestCase):
                     Step(
                         name="cmp",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                        concurrency=1,
                         task_num=2,
                         needs=["ppl"],
                     ),
@@ -126,14 +124,12 @@ class JobTestCase(TestCase):
                 Step(
                     name="ppl",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                    concurrency=1,
                     task_num=2,
                     needs=[],
                 ),
                 Step(
                     name="cmp",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
-                    concurrency=1,
                     task_num=1,
                     needs=["ppl"],
                 ),

@@ -25,7 +25,6 @@ model: t.Optional[Net] = None
 
 @evaluation.predict(
     resources={"memory": 5 * 1024 * 1024 * 1024},  # 5G
-    concurrency=2,
     replicas=4,
     batch_size=1,
     fail_on_error=False,

@@ -661,7 +661,6 @@ def _register_predict(
     datasets: t.Optional[t.List[str]] = None,
     resources: t.Optional[t.Dict[str, t.Any]] = None,
     needs: t.Optional[t.List[t.Callable]] = None,
-    concurrency: int = 1,
     replicas: int = 1,
     batch_size: int = 1,
     fail_on_error: bool = True,
@@ -674,7 +673,6 @@ def _register_predict(
     Handler.register(
         name="predict",
         resources=resources,
-        concurrency=concurrency,
         needs=needs,
         replicas=replicas,
         require_dataset=True,
@@ -745,7 +743,6 @@ def _register_evaluate(
     Handler.register(
         name="evaluate",
         resources=resources,
-        concurrency=1,
         replicas=1,
         needs=needs,
         extra_kwargs=dict(
