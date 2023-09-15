@@ -8,7 +8,7 @@ from starwhale import dataset
 
 def show_image(image: typing.Any) -> None:
     plt.imshow(image, cmap="gray")
-    plt.show(block=True)
+    plt.show(block=True)  # type: ignore
 
 
 ds_name = "mnist/version/latest"
