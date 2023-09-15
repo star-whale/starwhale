@@ -48,7 +48,7 @@ export default function ModelVersionOverview() {
                 >
                     <Shared shared={modelVersion?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={modelVersion?.versionInfo.shared === 1}
+                        value={modelVersion?.versionInfo.shared}
                         onChange={async (v) => {
                             try {
                                 await updateModelVersionShared(projectId, modelId, modelVersionId, v)

@@ -70,7 +70,7 @@ public class ModelVersionConverterTest {
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("tags", is(List.of("tag2"))), // use the tag from the parameter
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))

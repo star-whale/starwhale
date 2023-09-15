@@ -24,6 +24,6 @@ export interface IRuntimeTreeSchema {
     ownerName: string
     projectName: string
     runtimeName: string
-    shared: number
+    shared: boolean
     versions: IRuntimeTreeVersionSchema[]
 }

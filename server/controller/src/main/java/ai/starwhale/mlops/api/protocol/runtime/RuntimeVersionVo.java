@@ -72,5 +72,5 @@ public class RuntimeVersionVo implements Serializable {
 
     @NotNull
     @JsonProperty("shared")
-    private Integer shared;
+    private Boolean shared;
 }

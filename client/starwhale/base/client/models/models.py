@@ -808,7 +808,7 @@ class RuntimeVersionVo(BaseModel):
     built_image: Optional[str] = Field(None, alias='builtImage')
     created_time: int = Field(..., alias='createdTime')
     owner: Optional[UserVo] = None
-    shared: int
+    shared: bool
 
 
 class RuntimeVo(BaseModel):
@@ -919,7 +919,7 @@ class RuntimeViewVo(BaseModel):
     project_name: str = Field(..., alias='projectName')
     runtime_id: str = Field(..., alias='runtimeId')
     runtime_name: str = Field(..., alias='runtimeName')
-    shared: int
+    shared: bool
     versions: List[RuntimeVersionViewVo]
 
 
@@ -1031,7 +1031,7 @@ class DatasetViewVo(BaseModel):
     project_name: str = Field(..., alias='projectName')
     dataset_id: str = Field(..., alias='datasetId')
     dataset_name: str = Field(..., alias='datasetName')
-    shared: int
+    shared: bool
     versions: List[DatasetVersionViewVo]
 
 
@@ -1057,7 +1057,7 @@ class ModelVersionVo(BaseModel):
     size: Optional[int] = None
     created_time: int = Field(..., alias='createdTime')
     owner: Optional[UserVo] = None
-    shared: int
+    shared: bool
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
 
 
@@ -1184,7 +1184,7 @@ class DatasetVersionVo(BaseModel):
     meta: Optional[str] = None
     created_time: int = Field(..., alias='createdTime')
     owner: Optional[UserVo] = None
-    shared: Optional[int] = None
+    shared: bool
 
 
 class DatasetVo(BaseModel):
@@ -1963,7 +1963,7 @@ class ModelViewVo(BaseModel):
     project_name: str = Field(..., alias='projectName')
     model_id: str = Field(..., alias='modelId')
     model_name: str = Field(..., alias='modelName')
-    shared: int
+    shared: bool
     versions: List[ModelVersionViewVo]
 
 

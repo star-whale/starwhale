@@ -745,7 +745,12 @@ class CloudDatasetTest(TestCase):
             name="mnist",
             created_time=1,
             version=DatasetVersionVo(
-                latest=True, id="2", name="mnist", created_time=2, tags=[]
+                latest=True,
+                id="2",
+                name="mnist",
+                created_time=2,
+                tags=[],
+                shared=False,
             ),
         )
         mock_list.return_value = ([ds], {})

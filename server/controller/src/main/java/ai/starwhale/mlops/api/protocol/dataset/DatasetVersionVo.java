@@ -58,8 +58,9 @@ public class DatasetVersionVo implements Serializable {
     @JsonProperty("owner")
     private UserVo owner;
 
+    @NotNull
     @JsonProperty("shared")
-    private Integer shared;
+    private Boolean shared;
 
     /**
      * the table name for index in DataStore

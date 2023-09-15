@@ -64,7 +64,7 @@ public class RuntimeVersionConverterTest {
                 hasProperty("latest", is(false)),
                 hasProperty("tags", nullValue()), // tag is not set
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
         assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
@@ -77,7 +77,7 @@ public class RuntimeVersionConverterTest {
                 hasProperty("latest", is(true)),
                 hasProperty("tags", is(List.of("tag2"))), // use the tag from parameter
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
     }

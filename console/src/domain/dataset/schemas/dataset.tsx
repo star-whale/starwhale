@@ -18,7 +18,7 @@ export interface IDatasetDetailSchema {
     versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
-    shared?: number
+    shared?: boolean
 }
 
 export interface IUpdateDatasetSchema {
@@ -44,7 +44,7 @@ export interface IDatasetTreeSchema {
     ownerName: string
     projectName: string
     datasetName: string
-    shared: number
+    shared: boolean
     versions: IDatasetTreeVersionSchema[]
 }
 

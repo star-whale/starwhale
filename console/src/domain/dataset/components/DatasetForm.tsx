@@ -144,7 +144,7 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
             </div>
             <div className={styles.shared}>
                 {t('Shared')}:
-                <Shared shared={form.getFieldValue('shared') ? 1 : 0} />
+                <Shared shared={!!form.getFieldValue('shared')} />
                 <FormItem name='shared'>
                     <Toggle />
                 </FormItem>

@@ -49,7 +49,7 @@ export default function RuntimeVersionOverview() {
                 >
                     <Shared shared={runtimeVersion?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={runtimeVersion?.versionInfo.shared === 1}
+                        value={runtimeVersion?.versionInfo.shared}
                         onChange={async (v) => {
                             try {
                                 await updateRuntimeVersionShared(projectId, runtimeId, runtimeVersionId, v)

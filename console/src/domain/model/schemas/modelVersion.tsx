@@ -8,7 +8,7 @@ export interface IModelVersionSchema extends IResourceSchema, IHasTagSchema {
     owner?: IUserSchema
     stepSpecs: StepSpec[]
     builtInRuntime: string
-    shared?: number
+    shared?: boolean
 }
 
 export interface IModelTreeVersionSchema extends IModelVersionSchema {

@@ -2,14 +2,14 @@ import useTranslation from '@/hooks/useTranslation'
 import IconFont from '@starwhale/ui/IconFont'
 import React from 'react'
 
-export function Shared({ shared = 0, isTextShow = false }: { shared?: number; isTextShow?: boolean }) {
+export function Shared({ shared = false, isTextShow = false }: { shared?: boolean; isTextShow?: boolean }) {
     const [t] = useTranslation()
 
-    if (shared === 0 && !isTextShow) return null
+    if (!shared && !isTextShow) return null
 
     return (
         <div className='shared' style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-            {shared === 1 && (
+            {shared && (
                 <div
                     style={{
                         width: '16px',
@@ -30,7 +30,7 @@ export function Shared({ shared = 0, isTextShow = false }: { shared?: number; is
                     />
                 </div>
             )}
-            {isTextShow && (shared === 1 ? t('dataset.overview.shared.yes') : t('dataset.overview.shared.no'))}
+            {isTextShow && (shared ? t('dataset.overview.shared.yes') : t('dataset.overview.shared.no'))}
         </div>
     )
 }

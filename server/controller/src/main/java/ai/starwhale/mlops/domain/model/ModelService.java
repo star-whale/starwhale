@@ -413,7 +413,7 @@ public class ModelService {
                                 .modelId(idConvertor.convert(entity.getModelId()))
                                 .modelName(entity.getModelName())
                                 // TODO: replace by inProject?
-                                .shared(toInt(!entity.getProjectName().equals(currentProject.getName())))
+                                .shared(!entity.getProjectName().equals(currentProject.getName()))
                                 .versions(new ArrayList<>())
                                 .build()
                 );
