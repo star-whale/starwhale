@@ -59,14 +59,14 @@ class TableQueryFilter {
                 return value.map(
                     (v) =>
                         new TableQueryFilter(OPERATOR.EQUAL, [
-                            TableQueryFilter.convertOperandType(type, v),
                             { columnName },
+                            TableQueryFilter.convertOperandType(type, v),
                         ])
                 )
             }
-            return [TableQueryFilter.convertOperandType(type, value[0]), { columnName }]
+            return [{ columnName }, TableQueryFilter.convertOperandType(type, value[0])]
         }
-        return [TableQueryFilter.convertOperandType(type, value), { columnName }]
+        return [{ columnName }, TableQueryFilter.convertOperandType(type, value)]
     }
 
     static fromUI(operand: TableQueryOperandT) {
