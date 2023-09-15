@@ -14,32 +14,26 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.dataloader;
+package ai.starwhale.mlops.domain.event.po;
 
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import java.util.List;
+import ai.starwhale.mlops.api.protocol.event.Event;
+import java.util.Date;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DataReadRequest {
-    private String sessionId;
-    private String consumerId;
-
-    private String datasetName;
-    private Long datasetVersionId;
-    private String tableName;
-
-    private int batchSize;
-    private String start;
-    private boolean startInclusive = true;
-    private String end;
-    private boolean endInclusive;
-
-    private List<DataIndexDesc> processedData;
+public class EventEntity {
+    Long id;
+    Event.EventType type;
+    Event.EventSource source;
+    Event.EventResource resource;
+    Long resourceId;
+    String message;
+    String data;
+    Date createdTime;
 }

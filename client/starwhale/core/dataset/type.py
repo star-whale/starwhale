@@ -342,9 +342,9 @@ class Binary(BaseArtifact, SwObject):
 class NumpyBinary(BaseArtifact, SwObject):
     def __init__(
         self,
-        fp: _TArtifactFP,
-        dtype: t.Type,
-        shape: _TShape,
+        fp: _TArtifactFP = "",
+        dtype: t.Type = numpy.uint8,
+        shape: _TShape | None = None,
         link: t.Optional[Link] = None,
     ) -> None:
         super().__init__(
@@ -597,7 +597,12 @@ class BoundingBox3D(ASDictMixin, SwObject):
 
     SHAPE = 2, 4
 
-    def __init__(self, bbox_a: BoundingBox, bbox_b: BoundingBox) -> None:
+    def __init__(
+        self, bbox_a: BoundingBox | None = None, bbox_b: BoundingBox | None = None
+    ) -> None:
+        bbox_a = bbox_a or BoundingBox()
+        bbox_b = bbox_b or BoundingBox()
+
         self._type = "bounding_box3D"
         self.bbox_a = bbox_a
         self.bbox_b = bbox_b
@@ -631,7 +636,8 @@ class BoundingBox3D(ASDictMixin, SwObject):
 
 
 class Line(ASDictMixin, SwObject):
-    def __init__(self, points: t.List[Point]) -> None:
+    def __init__(self, points: t.List[Point] | None = None) -> None:
+        points = points or []
         self._type = "line"
         self.points = points
 
@@ -690,7 +696,8 @@ class Point(ASDictMixin, SwObject):
 
 
 class Polygon(ASDictMixin, SwObject):
-    def __init__(self, points: t.List[Point]) -> None:
+    def __init__(self, points: t.List[Point] | None = None) -> None:
+        points = points or []
         self._type = "polygon"
         self.points = points
 
@@ -1019,7 +1026,8 @@ class JsonDict(SwObject):
     Besides the standard value types, SwObject is an extra value type that is allowed to be passed in
     """
 
-    def __init__(self, d: dict = {}) -> None:
+    def __init__(self, d: dict | None = None) -> None:
+        d = d or {}
         for _k, _v in d.items():
             if type(_k) != str:
                 raise ValueError(f"json like dict shouldn't have none-str keys {_k}")

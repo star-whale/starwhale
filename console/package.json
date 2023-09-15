@@ -167,18 +167,7 @@
     "build:extend": "rm -rf build/* && NODE_OPTIONS='--max-old-space-size=5120' vite build --mode extend --emptyOutDir false",
     "serve": "vite preview",
     "test": "jest --config jest.config.ts",
-    "test:coverage": "jest --coverage --config jest.config.ts",
-    "packages:build": "lerna run build --ignore @grafana-plugins/input-datasource",
-    "packages:clean": "lerna run clean --parallel",
-    "packages:prepare": "lerna version --no-push --no-git-tag-version --force-publish --exact",
-    "packages:pack": "lerna exec --no-private -- yarn pack",
-    "packages:publish": "lerna exec --no-private -- npm publish package.tgz",
-    "packages:publishCanary": "lerna exec --no-private -- npm publish package.tgz --tag canary",
-    "packages:publishLatest": "lerna exec --no-private -- npm publish package.tgz",
-    "packages:publishNext": "lerna exec --no-private -- npm publish package.tgz --tag next",
-    "packages:publishTest": "lerna exec --no-private -- npm publish package.tgz --tag test",
-    "packages:publishDev": "lerna exec --no-private -- npm publish package.tgz --tag dev --registry http://localhost:4873",
-    "packages:typecheck": "lerna run typecheck"
+    "test:coverage": "jest --coverage --config jest.config.ts"
   },
   "eslintConfig": {
     "extends": [

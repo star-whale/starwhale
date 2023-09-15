@@ -21,6 +21,7 @@ swcli runtime build --yaml runtime.yaml --name huge-tasks
 ```bash
 swcli runtime activate huge-tasks
 python3 dataset.py
+# swcli dataset build
 ```
 
 ### Building Starwhale Model

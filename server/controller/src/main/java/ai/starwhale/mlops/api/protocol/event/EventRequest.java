@@ -14,32 +14,31 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.dataloader;
+package ai.starwhale.mlops.api.protocol.event;
 
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DataReadRequest {
-    private String sessionId;
-    private String consumerId;
+@Validated
+@EqualsAndHashCode(callSuper = true)
+public class EventRequest extends Event {
 
-    private String datasetName;
-    private Long datasetVersionId;
-    private String tableName;
+    @Data
+    @Validated
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RelatedResource {
+        @NotNull
+        private EventResource resource;
+        @NotNull
+        private Long id;
+    }
 
-    private int batchSize;
-    private String start;
-    private boolean startInclusive = true;
-    private String end;
-    private boolean endInclusive;
-
-    private List<DataIndexDesc> processedData;
+    @NotNull
+    private RelatedResource relatedResource;
 }

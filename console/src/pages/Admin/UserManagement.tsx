@@ -18,6 +18,7 @@ import CopyToClipboard from 'react-copy-to-clipboard'
 import PasswordForm from '@user/components/PasswordForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { ConfirmButton } from '@starwhale/ui/Modal'
+import { Toggle } from '@starwhale/ui/Select/Toggle'
 
 interface IPasswordResultProps {
     title: string
@@ -104,18 +105,26 @@ export default function UserManagement() {
                 data={
                     data.map((user) => [
                         user.name,
-                        user.isEnabled ? t('Enabled User') : t('Disabled User'),
-                        user.createdTime && formatTimestampDateTime(user.createdTime),
-                        <ButtonGroup key={user.id}>
+                        <div key='enable' className='status flex gap-9px items-center'>
                             <ConfirmButton
                                 title={user.isEnabled ? t('Disable User Confirm') : t('Enable User Confirm')}
                                 tooltip={user.isEnabled ? t('Disable User') : t('Enable User')}
                                 as='link'
-                                icon={user.isEnabled ? 'Disable' : 'Enable'}
-                                onClick={() => changUserState(user.id, !user.isEnabled)}
+                                onClick={() => {
+                                    changUserState(user.id, !user.isEnabled)
+                                }}
                                 disabled={user.id === currentUser?.id}
                                 icondisable={user.id === currentUser?.id}
-                            />
+                            >
+                                <Toggle
+                                    value={Boolean(user.isEnabled) && user.id !== currentUser?.id}
+                                    disabled={user.id === currentUser?.id}
+                                />
+                            </ConfirmButton>
+                            {user.isEnabled ? t('Enabled User') : t('Disabled User')}
+                        </div>,
+                        user.createdTime && formatTimestampDateTime(user.createdTime),
+                        <ButtonGroup key={user.id}>
                             <ExtendButton
                                 tooltip={t('Change Password')}
                                 icon='a-passwordresets'

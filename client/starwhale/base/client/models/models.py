@@ -339,6 +339,30 @@ class JobModifyPinRequest(BaseModel):
     pinned: bool
 
 
+class EventType(Enum):
+    info = 'INFO'
+    warning = 'WARNING'
+    error = 'ERROR'
+
+
+class Source(Enum):
+    client = 'CLIENT'
+    server = 'SERVER'
+
+
+class Resource1(Enum):
+    job = 'JOB'
+    task = 'TASK'
+
+
+class RelatedResource(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    resource: Resource1
+    id: int
+
+
 class ConfigRequest(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -1309,6 +1333,27 @@ class ResponseMessageTaskVo(BaseModel):
     data: TaskVo
 
 
+class EventVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    event_type: EventType = Field(..., alias='eventType')
+    source: Source
+    message: str
+    data: Optional[str] = None
+    timestamp: Optional[int] = None
+    id: Optional[int] = None
+
+
+class ResponseMessageListEventVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: List[EventVo]
+
+
 class GraphEdge(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -1622,6 +1667,18 @@ class ResourcePool(BaseModel):
     metadata: Optional[Dict[str, str]] = None
     is_private: Optional[bool] = Field(None, alias='isPrivate')
     visible_user_ids: Optional[List[int]] = Field(None, alias='visibleUserIds')
+
+
+class EventRequest(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    event_type: EventType = Field(..., alias='eventType')
+    source: Source
+    message: str
+    data: Optional[str] = None
+    timestamp: Optional[int] = None
+    related_resource: RelatedResource = Field(..., alias='relatedResource')
 
 
 class DataConsumptionRequest(BaseModel):

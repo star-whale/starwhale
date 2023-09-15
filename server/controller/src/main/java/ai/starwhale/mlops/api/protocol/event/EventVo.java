@@ -14,32 +14,15 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.dataloader;
+package ai.starwhale.mlops.api.protocol.event;
 
-import java.util.List;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@NoArgsConstructor
-public class DataConsumptionRequest {
-    private String sessionId;
-    private String consumerId;
-
-    /**
-     * Whether serial under the same consumer
-     * True: auto processed the previous data
-     * False: determined by processedData
-     */
-    @Deprecated
-    private boolean isSerial = false;
-
-    private int batchSize;
-
-    private String start;
-    private boolean startInclusive = true;
-    private String end;
-    private boolean endInclusive;
-
-    private List<DataIndexDesc> processedData;
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class EventVo extends Event {
+    Long id;
 }
