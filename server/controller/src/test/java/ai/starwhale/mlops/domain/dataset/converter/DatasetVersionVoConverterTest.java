@@ -61,7 +61,7 @@ public class DatasetVersionVoConverterTest {
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("alias", is("v2")),
                 hasProperty("tags", is(List.of("the outer tag"))),
                 hasProperty("meta", is("meta1")),

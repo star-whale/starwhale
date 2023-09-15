@@ -42,7 +42,7 @@ public class RuntimeViewVo {
     private String runtimeName;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private List<RuntimeVersionViewVo> versions;

@@ -8,7 +8,7 @@ export interface IRuntimeVersionSchema extends IResourceSchema, IHasTagSchema {
     image: string
     builtImage: string
     runtimeId: string
-    shared?: number
+    shared?: boolean
     meta: string
 }
 

@@ -42,7 +42,7 @@ public class DatasetViewVo {
     private String datasetName;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private List<DatasetVersionViewVo> versions;

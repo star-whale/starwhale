@@ -49,7 +49,7 @@ export default function DatasetVersionOverview() {
                 >
                     <Shared shared={dataset?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={dataset?.versionInfo.shared === 1}
+                        value={dataset?.versionInfo.shared}
                         onChange={async (v) => {
                             try {
                                 await updateDatasetVersionShared(projectId, datasetId, datasetVersionId, v)

@@ -8,7 +8,7 @@ export interface IDatasetFileSchema {
 export interface IDatasetVersionSchema extends IResourceSchema, IHasTagSchema {
     meta: string
     owner?: IUserSchema
-    shared?: number
+    shared?: boolean
     indexTable?: string
 }
 

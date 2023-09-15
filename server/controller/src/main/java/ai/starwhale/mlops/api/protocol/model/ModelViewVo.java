@@ -41,7 +41,7 @@ public class ModelViewVo {
     private String modelName;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private List<ModelVersionViewVo> versions;

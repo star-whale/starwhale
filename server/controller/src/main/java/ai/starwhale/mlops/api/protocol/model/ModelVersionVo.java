@@ -62,7 +62,7 @@ public class ModelVersionVo implements Serializable {
 
     @NotNull
     @JsonProperty("shared")
-    private Integer shared;
+    private Boolean shared;
 
     @JsonProperty("builtInRuntime")
     private String builtInRuntime;
@@ -71,6 +71,6 @@ public class ModelVersionVo implements Serializable {
     private List<StepSpec> stepSpecs;
 
     public static ModelVersionVo empty() {
-        return new ModelVersionVo("", "", "", false, List.of(), 0L, -1L, UserVo.empty(), 0, "", List.of());
+        return new ModelVersionVo("", "", "", false, List.of(), 0L, -1L, UserVo.empty(), false, "", List.of());
     }
 }

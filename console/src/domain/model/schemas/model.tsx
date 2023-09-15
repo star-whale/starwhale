@@ -16,7 +16,7 @@ export interface IModelDetailSchema {
     versionAlias?: string
     createdTime?: number
     files?: Array<IModelFileSchema>
-    shared?: number
+    shared?: boolean
 }
 
 export interface IModelFileSchema {
@@ -46,6 +46,6 @@ export interface IModelTreeSchema {
     ownerName: string
     projectName: string
     modelName: string
-    shared: number
+    shared: boolean
     versions: IModelTreeVersionSchema[]
 }
