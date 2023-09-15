@@ -57,7 +57,6 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
 
     final TaskContainerSpecificationFinder taskContainerSpecificationFinder;
     final String restartPolicy;
-    final int backoffLimit;
     final StorageAccessService storageAccessService;
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
@@ -67,7 +66,6 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
             K8sJobTemplate k8sJobTemplate,
             TaskContainerSpecificationFinder taskContainerSpecificationFinder,
             String restartPolicy,
-            Integer backoffLimit,
             StorageAccessService storageAccessService,
             ThreadPoolTaskScheduler cmdExecThreadPool) {
         this.k8sClient = k8sClient;
@@ -75,7 +73,6 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
         this.taskContainerSpecificationFinder = taskContainerSpecificationFinder;
         this.storageAccessService = storageAccessService;
         this.restartPolicy = restartPolicy;
-        this.backoffLimit = backoffLimit;
         this.cmdExecThreadPool = cmdExecThreadPool;
     }
 
@@ -163,7 +160,6 @@ public class K8sSwTaskScheduler implements SwTaskScheduler {
                     k8sJob,
                     task.getId().toString(),
                     this.restartPolicy,
-                    this.backoffLimit,
                     containerSpecMap,
                     nodeSelector,
                     tolerations,

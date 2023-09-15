@@ -94,7 +94,6 @@ public class K8sSwTaskSchedulerTest {
                 new K8sJobTemplateMock(""),
                 tcsFinder,
                 "rp",
-                10,
                 storageAccessService,
                 mock(ThreadPoolTaskScheduler.class));
     }
@@ -197,7 +196,7 @@ public class K8sSwTaskSchedulerTest {
         }
 
         @Override
-        public V1Job renderJob(V1Job job, String jobName, String restartPolicy, int backoffLimit,
+        public V1Job renderJob(V1Job job, String jobName, String restartPolicy,
                                Map<String, ContainerOverwriteSpec> containerSpecMap,
                                Map<String, String> nodeSelectors, List<Toleration> tolerations,
                                Map<String, String> annotations) {
@@ -206,7 +205,7 @@ public class K8sSwTaskSchedulerTest {
             Assertions.assertEquals("testimage", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
-            super.renderJob(job, jobName, restartPolicy, backoffLimit, containerSpecMap, nodeSelectors, tolerations,
+            super.renderJob(job, jobName, restartPolicy, containerSpecMap, nodeSelectors, tolerations,
                     annotations);
             return null;
         }
@@ -217,7 +216,6 @@ public class K8sSwTaskSchedulerTest {
     public void testExec() throws ApiException, IOException, InterruptedException, ExecutionException {
         var client = mock(K8sClient.class);
         var restartPolicy = "";
-        var backoffLimit = 2;
 
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
@@ -227,7 +225,6 @@ public class K8sSwTaskSchedulerTest {
                 mock(K8sJobTemplate.class),
                 mock(TaskContainerSpecificationFinder.class),
                 restartPolicy,
-                backoffLimit,
                 mock(StorageAccessService.class),
                 threadPoolTaskScheduler);
 
@@ -256,7 +253,6 @@ public class K8sSwTaskSchedulerTest {
     public void testStop() throws ApiException {
         var client = mock(K8sClient.class);
         var restartPolicy = "";
-        var backoffLimit = 2;
 
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
@@ -266,7 +262,6 @@ public class K8sSwTaskSchedulerTest {
                 mock(K8sJobTemplate.class),
                 mock(TaskContainerSpecificationFinder.class),
                 restartPolicy,
-                backoffLimit,
                 mock(StorageAccessService.class),
                 threadPoolTaskScheduler);
 
