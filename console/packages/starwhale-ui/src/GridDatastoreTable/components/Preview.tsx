@@ -12,6 +12,7 @@ import Checkbox from '@starwhale/ui/Checkbox'
 import { useDatasetTableAnnotations } from '@starwhale/core/dataset'
 import JSONView from '@starwhale/ui/JSONView'
 import { useHover } from 'react-use'
+import { RecordAttr } from '../recordAttrModel'
 
 const useStyles = createUseStyles({
     cardImg: {
@@ -126,7 +127,7 @@ export default function Preview({
     onPreviewNext,
     onPreviewPrev,
 }: {
-    current: { summary: Map<string, any> }
+    current?: RecordAttr
     prev: any
     next: any
     previewKey: string
