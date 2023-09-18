@@ -368,6 +368,10 @@ class TestCli:
 
     def test_all(self) -> None:
         for name, example in ALL_EXAMPLES.items():
+            if not os.path.exists(os.path.join(example["workdir"], "Makefile")):
+                logger.info("no Makefile found, skip prepare data")
+                continue
+
             logger.info(f"preparing data for {example}")
             process = subprocess.Popen(
                 ["make", "CN=1", "prepare"],
