@@ -92,7 +92,6 @@ class Handler(StepSpecClient):
     def register(
         cls,
         resources: t.Dict[str, t.Any] | None = None,
-        concurrency: int = 1,
         replicas: int = 1,
         needs: t.List[t.Callable] | None = None,
         extra_args: t.List | None = None,
@@ -103,7 +102,7 @@ class Handler(StepSpecClient):
         built_in: bool = False,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
-        and control concurrency and replicas of handler run.
+        and control replicas of handler run.
 
         Arguments:
             resources: [Dict, optional] Resources for the handler run, such as memory, cpu, nvidia.com/gpu etc. Current only supports
@@ -187,7 +186,6 @@ class Handler(StepSpecClient):
                 func_name=func_name,
                 module_name=func.__module__,
                 cls_name=cls_name,
-                concurrency=concurrency,
                 replicas=replicas,
                 needs=key_name_needs,
                 resources=cls._transform_resource(resources),

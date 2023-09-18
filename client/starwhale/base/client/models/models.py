@@ -996,7 +996,7 @@ class StepSpec(BaseModel):
         allow_population_by_field_name = True
 
     name: str
-    concurrency: int
+    concurrency: Optional[int] = None
     replicas: int
     needs: Optional[List[str]] = None
     resources: Optional[List[RuntimeResource]] = None

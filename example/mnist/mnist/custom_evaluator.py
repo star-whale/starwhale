@@ -35,7 +35,7 @@ class CustomPipelineHandler:
         self.model = self._load_model(self.device)
         self.batch_size = 5
 
-    @handler(concurrency=2, replicas=2, name="ppl")
+    @handler(replicas=2, name="ppl")
     @pass_context
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")

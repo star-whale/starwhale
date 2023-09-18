@@ -110,8 +110,6 @@ class TaskExecutor:
     def _do_execute(self) -> None:
         from starwhale.api._impl.evaluation import PipelineHandler
 
-        console.debug(f"start to execute step: {repr(self.step)}")
-
         module = load_module(self.step.module_name, self.workdir)
         cls_ = getattr(module, self.step.cls_name, None)
 
@@ -170,7 +168,9 @@ class TaskExecutor:
                         func()
 
     def execute(self) -> TaskResult:
-        console.info(f"start to execute task with context({self.context}) ...")
+        console.info(
+            f"start to execute task: context({self.context}) step({repr(self.step)})"
+        )
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:

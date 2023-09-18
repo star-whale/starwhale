@@ -7,13 +7,13 @@ from starwhale.base.client.models.models import ModelVo, StepSpec
 
 
 class StepSpecClient(StepSpec):
-    concurrency = 1
+    concurrency: t.Optional[int] = 1  # concurrency is deprecated in the sdk side
     replicas = 1
     func_name: str
     module_name: str
-    cls_name: t.Optional[str]
-    extra_args: t.Optional[t.List]
-    extra_kwargs: t.Optional[t.Dict[str, t.Any]]
+    cls_name: t.Optional[str] = None
+    extra_args: t.Optional[t.List] = None
+    extra_kwargs: t.Optional[t.Dict[str, t.Any]] = None
 
 
 class JobHandlers(SwBaseModel):

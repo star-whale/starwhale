@@ -283,7 +283,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             func_name=func.__qualname__,
             module_name=func.__module__,
             expose=8080,
-            concurrency=1,
             replicas=1,
             virtual=True,
             extra_kwargs={

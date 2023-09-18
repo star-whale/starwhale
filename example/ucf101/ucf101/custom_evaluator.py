@@ -129,7 +129,7 @@ def batch_ppl(videos: t.List[Video], **kw: t.Any) -> t.Any:
     return ppl_post(output)
 
 
-@handler(concurrency=2, replicas=2)
+@handler(replicas=2)
 @pass_context
 def run_ppl(context: Context) -> None:
     print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")

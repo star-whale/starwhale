@@ -42,7 +42,7 @@ class Scheduler:
             return self._schedule_all()
 
         if task_index is None or task_index < 0:
-            return [self._schedule_one_step(step_name=step_name, task_num=task_num)]
+            return [self._schedule_one_step(step_name=step_name)]
         else:
             return [
                 self._schedule_one_task(
@@ -100,7 +100,7 @@ class Scheduler:
                 break
         return _results
 
-    def _schedule_one_step(self, step_name: str, task_num: int = 0) -> StepResult:
+    def _schedule_one_step(self, step_name: str) -> StepResult:
         step = self._steps[step_name]
         start_time = time.time()
         result = StepExecutor(
@@ -109,7 +109,6 @@ class Scheduler:
             dataset_uris=self.dataset_uris,
             workdir=self.workdir,
             version=self.version,
-            task_num=task_num,
         ).execute()
 
         console.info(

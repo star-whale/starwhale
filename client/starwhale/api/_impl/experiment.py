@@ -53,7 +53,6 @@ def _register_ft(
     Handler.register(
         name="fine_tune",
         resources=resources,
-        concurrency=1,
         replicas=1,
         needs=needs,
         require_dataset=True,
