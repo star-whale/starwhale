@@ -100,6 +100,7 @@ public class K8sJobTemplate {
         job.getMetadata().name(jobName);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
+        jobSpec.backoffLimit(0);
 
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
