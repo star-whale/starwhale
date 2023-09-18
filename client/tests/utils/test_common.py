@@ -124,19 +124,23 @@ def test_version() -> None:
 
 
 class TestRetry(TestCase):
-    @http_retry(attempts=3)
+    @http_retry(attempts=3, wait=tenacity.wait_fixed(0.1))
     def _do_request(self, url: str) -> None:
         _r = requests.get(url, timeout=1)
         _r.raise_for_status()
         raise Exception("dummy")
 
-    @http_retry(attempts=6)
+    @http_retry(attempts=6, wait=tenacity.wait_fixed(0.1))
     def _do_urllib_raise(self):
         raise urllib.error.HTTPError("http://1.1.1.1", 500, "dummy", None, None)  # type: ignore
 
     @http_retry(attempts=2, retry=tenacity.retry_always, wait=tenacity.wait_fixed(1))
     def _do_raise(self):
         raise Exception("dummy")
+
+    @http_retry(attempts=4, wait=tenacity.wait_fixed(0.1))
+    def _do_raise_connection(self):
+        raise ConnectionError("dummy")
 
     @Mocker()
     def test_http_retry(self, request_mock: Mocker) -> None:
@@ -167,3 +171,7 @@ class TestRetry(TestCase):
             self._do_raise()
         assert self._do_raise.retry.statistics["attempt_number"] == 2
         assert self._do_raise.retry.statistics["idle_for"] == 1.0
+
+        with self.assertRaises(ConnectionError):
+            self._do_raise_connection()
+        assert self._do_raise_connection.retry.statistics["attempt_number"] == 4

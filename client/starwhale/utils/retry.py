@@ -1,6 +1,5 @@
 import typing as t
 from inspect import iscoroutinefunction
-from http.client import RemoteDisconnected
 from urllib.error import HTTPError
 
 import requests
@@ -26,8 +25,6 @@ class retry_if_http_exception(retry_if_exception):
             elif isinstance(e, HTTPError):
                 return e.code in self.status_codes
             elif isinstance(e, ConnectionError):
-                return True
-            elif isinstance(e, RemoteDisconnected):
                 return True
             else:
                 return False
