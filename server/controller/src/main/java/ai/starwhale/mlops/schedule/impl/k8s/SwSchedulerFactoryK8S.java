@@ -39,7 +39,6 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
     final TaskContainerSpecificationFinder taskContainerSpecificationFinder;
 
     final String restartPolicy;
-    final int backoffLimit;
     final StorageAccessService storageAccessService;
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
@@ -48,7 +47,6 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
             K8sJobTemplate k8sJobTemplate,
             TaskContainerSpecificationFinder taskContainerSpecificationFinder,
             @Value("${sw.scheduler.k8s.job.restart-policy}") String restartPolicy,
-            @Value("${sw.scheduler.k8s.job.backoff-limit}") Integer backoffLimit,
             StorageAccessService storageAccessService,
             ThreadPoolTaskScheduler cmdExecThreadPool
     ) {
@@ -56,7 +54,6 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
         this.k8sJobTemplate = k8sJobTemplate;
         this.taskContainerSpecificationFinder = taskContainerSpecificationFinder;
         this.restartPolicy = restartPolicy;
-        this.backoffLimit = backoffLimit;
         this.storageAccessService = storageAccessService;
         this.cmdExecThreadPool = cmdExecThreadPool;
     }
@@ -69,7 +66,6 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
                 k8sJobTemplate,
                 taskContainerSpecificationFinder,
                 restartPolicy,
-                backoffLimit,
                 storageAccessService,
                 cmdExecThreadPool);
     }

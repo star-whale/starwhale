@@ -92,7 +92,6 @@ public class K8sJobTemplate {
             V1Job job,
             String jobName,
             String restartPolicy,
-            int backoffLimit,
             Map<String, ContainerOverwriteSpec> containerSpecMap,
             Map<String, String> nodeSelectors,
             List<Toleration> tolerations,
@@ -101,7 +100,7 @@ public class K8sJobTemplate {
         job.getMetadata().name(jobName);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
-        jobSpec.backoffLimit(backoffLimit);
+        jobSpec.backoffLimit(0);
 
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");

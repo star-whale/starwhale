@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -64,9 +63,8 @@ public class K8sJobTemplateTest {
         job.getSpec().getTemplate().getMetadata().annotations(originalAnnotations);
         var toleration = new Toleration("key1", "Equal", "value1", "NoSchedule", 100L);
         var annotations = Map.of("annotation1", "value1", "annotation2", "value2");
-        k8sJobTemplate.renderJob(job, "yxz", "OnFailure", 10, containerSpecMap,
+        k8sJobTemplate.renderJob(job, "yxz", "OnFailure", containerSpecMap,
                 nodeSelectors, List.of(toleration), annotations);
-        Assertions.assertEquals(10, Objects.requireNonNull(job.getSpec()).getBackoffLimit());
         V1PodSpec v1PodSpec = job.getSpec().getTemplate().getSpec();
         Assertions.assertEquals("true", v1PodSpec.getNodeSelector().get("label.pool.bj01"));
         Assertions.assertEquals(1, v1PodSpec.getNodeSelector().size());
@@ -120,7 +118,7 @@ public class K8sJobTemplateTest {
     public void testPipCache() throws IOException {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         var job = k8sJobTemplate.loadJobTemplate();
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", containerSpecMap, Map.of(), null, null);
         var volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
@@ -128,7 +126,7 @@ public class K8sJobTemplateTest {
         // empty host path
         var template = new K8sJobTemplate("", "");
         job = k8sJobTemplate.loadJobTemplate();
-        template.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
+        template.renderJob(job, "foo", "OnFailure", containerSpecMap, Map.of(), null, null);
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertNull(volume.getHostPath());
@@ -139,7 +137,7 @@ public class K8sJobTemplateTest {
     public void testDevInfoLabel() {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         var job = k8sJobTemplate.loadJobTemplate();
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", containerSpecMap, Map.of(), null, null);
         var labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, hasEntry(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true"));
 
@@ -155,7 +153,7 @@ public class K8sJobTemplateTest {
         specs.put("baz", cpuSpec);
 
         job = k8sJobTemplate.loadJobTemplate();
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), null, null);
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", specs, Map.of(), null, null);
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, is(Map.of(
                 K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
