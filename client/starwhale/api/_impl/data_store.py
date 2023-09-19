@@ -1355,7 +1355,7 @@ class LocalDataStore:
         self,
         prefixes: List[str],
     ) -> List[str]:
-        table_names = []
+        table_names = set()
 
         for prefix in prefixes:
             prefix_path = Path(self.root_path) / prefix.strip("/")
@@ -1366,9 +1366,13 @@ class LocalDataStore:
                 table_name = str(fpath.relative_to(self.root_path)).split(
                     datastore_table_file_ext
                 )[0]
-                table_names.append(table_name)
+                table_names.add(table_name)
 
-        return table_names
+            for table in self.tables:
+                if table.startswith(prefix):
+                    table_names.add(table)
+
+        return list(table_names)
 
     def update_table(
         self,

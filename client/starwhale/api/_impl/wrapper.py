@@ -3,7 +3,7 @@ import re
 import urllib
 import threading
 from enum import Enum, unique
-from typing import Any, Dict, List, Union, Callable, Iterator, Optional
+from typing import Any, Set, Dict, List, Union, Callable, Iterator, Optional
 from functools import lru_cache
 
 import requests
@@ -109,6 +109,9 @@ def _get_remote_project_id(instance_uri: str, project: str) -> Any:
 
 class Evaluation(Logger):
     _ID_KEY = "id"
+    _RESULTS_TABLE = "results"
+    _stashing_tables: Set[str] = set()
+    _stashing_tables_lock = threading.Lock()
 
     def __init__(self, eval_id: str, project: str, instance: str = ""):
         if not eval_id:
@@ -172,7 +175,9 @@ class Evaluation(Logger):
         return super()._flush(_storage_table_name)
 
     def log_result(self, record: Dict) -> None:
-        self._log(self._eval_table_name("results"), record)
+        with self._stashing_tables_lock:
+            self._stashing_tables.add(self._RESULTS_TABLE)
+        self._log(self._eval_table_name(self._RESULTS_TABLE), record)
 
     def log_summary_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
@@ -194,10 +199,12 @@ class Evaluation(Logger):
         record = {}
         for k, v in kwargs.items():
             record[k.lower()] = v
+        with self._stashing_tables_lock:
+            self._stashing_tables.add(table_name)
         self._log(self._eval_table_name(table_name), record)
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
-        return self._get(self._eval_table_name("results"))
+        return self._get(self._eval_table_name(self._RESULTS_TABLE))
 
     def get_summary_metrics(self) -> Dict[str, Any]:
         # TODO: tune performance by queryTable api
@@ -225,13 +232,19 @@ class Evaluation(Logger):
     get_table_rows = get
 
     def flush_results(self) -> None:
-        self._flush(self._eval_table_name("results"))
+        self._flush(self._eval_table_name(self._RESULTS_TABLE))
 
     def flush_metrics(self) -> None:
         self._flush(self._eval_summary_table_name)
 
     def flush(self, table_name: str) -> None:
         self._flush(self._eval_table_name(table_name))
+
+    def flush_all(self) -> None:
+        self.flush_metrics()
+        with self._stashing_tables_lock:
+            for table_name in self._stashing_tables:
+                self.flush(table_name)
 
     def get_tables(self) -> List[str]:
         prefix = _gen_storage_table_name(

@@ -365,8 +365,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         duration_seconds=_duration,
                     )
 
-        if self.predict_auto_log:
-            self.evaluation_store.flush_results()
+        self.evaluation_store.flush_all()
 
         console.info(
             f"{self.context.step}-{self.context.index} received {received_rows_cnt} data items for dataset {self.dataset_uris}"
