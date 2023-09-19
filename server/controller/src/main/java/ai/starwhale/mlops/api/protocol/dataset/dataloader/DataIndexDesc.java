@@ -29,5 +29,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude
 public class DataIndexDesc {
     private String start;
+    private String startType;
     private String end;
+    private String endType;
 }

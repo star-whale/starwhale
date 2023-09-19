@@ -24,6 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -51,9 +53,17 @@ public class DataStoreIndexProvider implements DataIndexProvider {
         String start = request.getStart();
         boolean startInclusive = request.isStartInclusive();
         // TODO: cache for dataset version
-        var keys = new LinkedList<String>();
+
+        @Getter
+        @AllArgsConstructor
+        class Key {
+            String value;
+            String type;
+        }
+
+        var keys = new LinkedList<Key>();
         for (; ; ) {
-            var records = dataStore.scan(DataStoreScanRequest.builder()
+            var result = dataStore.scan(DataStoreScanRequest.builder()
                     // start params must use the current cursor
                     .start(start)
                     .startInclusive(startInclusive)
@@ -68,21 +78,26 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                                     .build()
                     ))
                     .limit(maxBatchSize)
+                    // return the key and value
+                    .encodeWithType(true)
                     .build()
             );
-            if (records.getRecords().size() == 0) {
+            if (result.getRecords().size() == 0) {
                 break;
             } else {
                 keys.addAll(
-                        records.getRecords()
+                        result.getRecords()
                                 .stream()
-                                .map(r -> (String) r.get(KeyColumn))
+                                .map(r -> new Key(
+                                        (String) ((Map<?, ?>) r.get(KeyColumn)).get("value"),
+                                        (String) ((Map<?, ?>) r.get(KeyColumn)).get("type"))
+                                )
                                 .collect(Collectors.toList())
                 );
-                if (records.getRecords().size() < maxBatchSize) {
+                if (result.getRecords().size() < maxBatchSize) {
                     break;
                 }
-                start = records.getLastKey();
+                start = result.getLastKey();
                 startInclusive = false;
             }
         }
@@ -92,14 +107,17 @@ public class DataStoreIndexProvider implements DataIndexProvider {
         while (index < keys.size()) {
             if (index + batchSize < keys.size()) {
                 indices.add(DataIndex.builder()
-                        .start(keys.get(index))
-                        .end(keys.get(index + batchSize))
+                        .start(keys.get(index).value)
+                        .startType(keys.get(index).type)
+                        .end(keys.get(index + batchSize).value)
+                        .endType(keys.get(index + batchSize).type)
                         .size(batchSize)
                         .build());
                 index += batchSize;
             } else {
                 indices.add(DataIndex.builder()
-                        .start(keys.get(index))
+                        .start(keys.get(index).value)
+                        .startType(keys.get(index).type)
                         .end(null)
                         .size(keys.size() - index)
                         .build());

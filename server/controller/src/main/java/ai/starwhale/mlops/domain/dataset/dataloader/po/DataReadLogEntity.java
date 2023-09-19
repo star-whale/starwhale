@@ -33,8 +33,10 @@ public class DataReadLogEntity {
     private String consumerId;
 
     private String start;
+    private String startType;
     private boolean startInclusive;
     private String end;
+    private String endType;
     private boolean endInclusive;
     private int size;
     private int assignedNum;

@@ -29,9 +29,11 @@ public class DataReadLog {
     private Long sessionId;
     private String consumerId;
     private String start;
+    private String startType;
     @Builder.Default
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
     private int size;
     private int assignedNum;

@@ -84,19 +84,20 @@ public class ReadRangeTest {
                                         .build()
                         ))
                         .limit(9)
+                        .encodeWithType(true)
                         .build()
         )).willReturn(new RecordList(
                 Map.of(),
                 Map.of(),
-                List.of(Map.of("id", "0000-000"),
-                        Map.of("id", "0000-001"),
-                        Map.of("id", "0000-002"),
-                        Map.of("id", "0000-003"),
-                        Map.of("id", "0000-004"),
-                        Map.of("id", "0000-005"),
-                        Map.of("id", "0000-006"),
-                        Map.of("id", "0000-007"),
-                        Map.of("id", "0000-008")
+                List.of(Map.of("id", Map.of("value", "0000-000", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-001", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-002", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-003", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-004", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-005", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-006", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-007", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-008", "type", "STRING"))
                 ),
                 "0000-008",
                 "STRING"
@@ -116,12 +117,13 @@ public class ReadRangeTest {
                                         .build()
                         ))
                         .limit(9)
+                        .encodeWithType(true)
                         .build()
         )).willReturn(new RecordList(
                 Map.of(), Map.of(), List.of(
-                Map.of("id", "0000-009"),
-                Map.of("id", "0000-010"),
-                Map.of("id", "0000-011")
+                Map.of("id", Map.of("value", "0000-009", "type", "STRING")),
+                Map.of("id", Map.of("value", "0000-010", "type", "STRING")),
+                Map.of("id", Map.of("value", "0000-011", "type", "STRING"))
         ), "0000-010",
                 "STRING"
         ));
@@ -191,19 +193,20 @@ public class ReadRangeTest {
                                         .build()
                         ))
                         .limit(1000)
+                        .encodeWithType(true)
                         .build()
         )).willReturn(new RecordList(
                 Map.of(),
                 Map.of(),
-                List.of(Map.of("id", "0000-000"),
-                        Map.of("id", "0000-001"),
-                        Map.of("id", "0000-002"),
-                        Map.of("id", "0000-003"),
-                        Map.of("id", "0000-004"),
-                        Map.of("id", "0000-005"),
-                        Map.of("id", "0000-006"),
-                        Map.of("id", "0000-007"),
-                        Map.of("id", "0000-008")
+                List.of(Map.of("id", Map.of("value", "0000-000", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-001", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-002", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-003", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-004", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-005", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-006", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-007", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-008", "type", "STRING"))
                 ),
                 "0000-008",
                 "STRING"
