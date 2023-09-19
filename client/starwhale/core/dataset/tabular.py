@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-import json
 import typing as t
-import urllib
 import threading
 from copy import deepcopy
 from enum import Enum, unique
@@ -13,7 +11,6 @@ from types import TracebackType
 from functools import partial
 from collections import UserDict, defaultdict
 
-import requests
 from typing_extensions import Protocol
 
 from starwhale.utils import console, validate_obj_name
@@ -25,12 +22,13 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
-from starwhale.utils.retry import http_retry
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, JsonDict, Sequence, BaseArtifact
-from starwhale.api._impl.data_store import TableEmptyException
+from starwhale.api._impl.data_store import SwType, _get_type, TableEmptyException
+from starwhale.base.client.api.dataset import DatasetApi
+from starwhale.base.client.models.models import DataIndexDesc, DataConsumptionRequest
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
 
@@ -598,42 +596,50 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         if not self.consumer_id:
             raise RuntimeError("failed to get pod name")
 
-    @http_retry
     def get_scan_range(
         self, processed_keys: t.Optional[t.List[t.Tuple[t.Any, t.Any]]] = None
     ) -> t.Optional[t.Tuple[t.Any, t.Any]]:
-        post_data = {
-            "batchSize": self.batch_size,
-            "sessionId": self.session_id,
-            "consumerId": self.consumer_id,
-        }
+        processed_data = []
         if processed_keys is not None:
-            post_data["processedData"] = [
-                {"start": p[0], "end": p[1]} for p in processed_keys
-            ]
+            for k in processed_keys:
+                start, end = k
+                start_type = _get_type(start)
+                end_type = _get_type(end)
+                processed_data.append(
+                    DataIndexDesc(
+                        start=start_type.encode(start),
+                        start_type=str(start_type),
+                        end=end_type.encode(end),
+                        end_type=str(end_type),
+                    )
+                )
 
-        if self.session_start is not None:
-            post_data["start"] = self.session_start
-
-        if self.session_end is not None:
-            post_data["end"] = self.session_end
-
-        resp = requests.post(
-            urllib.parse.urljoin(
-                self.instance_uri,
-                f"api/v1/project/{self.dataset_uri.project.name}/dataset/{self.dataset_uri.name}/version/{self.dataset_uri.version}/consume",
-            ),
-            data=json.dumps(post_data),
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": self.instance_token,  # type: ignore
-            },
-            timeout=300,
+        req = DataConsumptionRequest(
+            session_id=self.session_id,
+            consumer_id=self.consumer_id,
+            batch_size=self.batch_size,
+            start=_get_type(self.session_start).encode(self.session_start),
+            start_inclusive=True,
+            end=_get_type(self.session_end).encode(self.session_end),
+            end_inclusive=False,
+            processed_data=processed_data,
         )
-        resp.raise_for_status()
-        range_data = resp.json()["data"]
-
-        return None if range_data is None else (range_data["start"], range_data["end"])
+        r = (
+            DatasetApi(self.dataset_uri.instance)
+            .consume(
+                self.dataset_uri,
+                req=req,
+            )
+            .raise_on_error()
+            .response()
+            .data
+        )
+        if r is None:
+            return None
+        else:
+            start = SwType.decode_schema({"type": r.start_type}).decode(r.start)
+            end = SwType.decode_schema({"type": r.end_type}).decode(r.end)
+            return (start, end)
 
     def __str__(self) -> str:
         return (
