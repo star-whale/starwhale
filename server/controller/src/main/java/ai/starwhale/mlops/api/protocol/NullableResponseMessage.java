@@ -16,28 +16,29 @@
 
 package ai.starwhale.mlops.api.protocol;
 
-public enum Code {
-    success("Success"),
-    validationException("ValidationException"),
-    internalServerError("InternalServerError"),
-    accessDenied("AccessDenied"),
-    Unauthorized("Unauthorized"),
-    unknownError("unknownError");
-    private final String type;
+import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    Code(String type) {
-        this.type = type;
+@Data
+@Builder
+@NoArgsConstructor
+public class NullableResponseMessage<T> {
+    @NotNull
+    private String code;
+    @NotNull
+    private String message;
+    private T data;
+
+    public NullableResponseMessage(String code, String message, T data) {
+        setCode(code);
+        setMessage(message);
+        setData(data);
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public <T> ResponseMessage<T> asResponse(T data) {
-        return new ResponseMessage<>(this.name(), this.type, data);
-    }
-
-    public <T> NullableResponseMessage<T> asNullableResponse(T data) {
-        return new NullableResponseMessage<>(this.name(), this.type, data);
+    public NullableResponseMessage(String code, String message) {
+        setCode(code);
+        setMessage(message);
     }
 }

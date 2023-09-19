@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.api.protocol.NullableResponseMessage;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.bundle.DataScope;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
@@ -204,7 +205,7 @@ public class DatasetController {
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/consume",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(
+    ResponseEntity<NullableResponseMessage<DataIndexDesc>> consumeNextData(
             @PathVariable String projectUrl,
             @PathVariable String datasetUrl,
             @PathVariable String versionUrl,
@@ -212,7 +213,7 @@ public class DatasetController {
     ) {
         var dataset = datasetService.query(projectUrl, datasetUrl, versionUrl);
 
-        return ResponseEntity.ok(Code.success.asResponse(datasetService.nextData(
+        return ResponseEntity.ok(Code.success.asNullableResponse(datasetService.nextData(
                 DataReadRequest.builder()
                         .sessionId(dataRangeRequest.getSessionId())
                         .consumerId(dataRangeRequest.getConsumerId())
