@@ -119,6 +119,7 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                         .start(keys.get(index).value)
                         .startType(keys.get(index).type)
                         .end(null)
+                        .endType(keys.get(keys.size() - 1).type)
                         .size(keys.size() - index)
                         .build());
                 index = keys.size();

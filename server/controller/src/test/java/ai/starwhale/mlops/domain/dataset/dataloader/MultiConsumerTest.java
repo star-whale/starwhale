@@ -148,7 +148,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                         }
 
                         assertEquals(dataRange.getStartType(), "STRING");
-                        assertEquals(dataRange.getEndType(), null == dataRange.getEnd() ? null : "STRING");
+                        assertEquals(dataRange.getEndType(), "STRING");
 
                         try {
                             Thread.sleep(random.nextInt(10));
@@ -258,11 +258,12 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         }
         indices.add(
                 DataIndex.builder()
-                    .start(String.valueOf((totalRangesNum - 1) * batchSize))
-                    .startType("STRING")
-                    .end(null)
-                    .size(8)
-                    .build()
+                        .start(String.valueOf((totalRangesNum - 1) * batchSize))
+                        .startType("STRING")
+                        .end(null)
+                        .endType("STRING")
+                        .size(8)
+                        .build()
         );
         return indices;
     }
