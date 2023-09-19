@@ -1103,7 +1103,7 @@ class TestLocalDataStore(BaseTestCase):
     def test_list_tables(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
 
-        prefix = "/project/self/eval/test-0/"
+        prefix = "project/self/eval/test-0/"
 
         tables = ds.list_tables([prefix])
         assert tables == []
@@ -1118,10 +1118,22 @@ class TestLocalDataStore(BaseTestCase):
         ensure_dir(root / "mock-dir.sw-datastore.zip")
         ensure_file(root / "dummy.file", "abc", parents=True)
 
+        m_table_name = f"{prefix}memory-test-table"
+        ds.tables[m_table_name] = data_store.MemoryTable(
+            m_table_name, ColumnSchema("k", INT64)
+        )
+
         tables = ds.list_tables([prefix])
         assert set(tables) == {
             f"{prefix.strip('/')}/{k}"
-            for k in {"labels", "results", "roc/0", "roc/1", "roc/2"}
+            for k in {
+                "labels",
+                "results",
+                "roc/0",
+                "roc/1",
+                "roc/2",
+                "memory-test-table",
+            }
         }
 
     def test_data_store_scan(self) -> None:
