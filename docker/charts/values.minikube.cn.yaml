@@ -29,9 +29,8 @@ minikube:
 mirror:
   pypi:
     enabled: true
-    indexUrl: "https://mirrors.aliyun.com/pypi/simple/"
-    extraIndexUrl: "https://pypi.doubanio.com/simple/"
-    trustedHost: "mirrors.aliyun.com pypi.doubanio.com"
+    indexUrl: "https://pypi.tuna.tsinghua.edu.cn/simple"
+    extraIndexUrl: "https://mirrors.aliyun.com/pypi/simple"
 # If you use the Aliyun ECS, the ECS internal pypi mirror is a better choice. Examples are shown below:
 # mirror:
 #   pypi:
