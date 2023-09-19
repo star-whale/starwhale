@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.dataloader.mapper;
 
 import ai.starwhale.mlops.domain.dataset.dataloader.po.DataReadLogEntity;
+import ai.starwhale.mlops.domain.dataset.dataloader.vo.ConsumptionStatistic;
 import java.util.List;
 import java.util.Objects;
 import org.apache.ibatis.annotations.Insert;
@@ -41,17 +42,17 @@ public interface DataReadLogMapper {
     int insert(DataReadLogEntity dataBlock);
 
     @Insert({
-        "<script>",
-        "INSERT INTO dataset_read_log"
-            + "(id, session_id, start, start_inclusive, end, end_inclusive, size, status)",
-        "VALUES"
-            + "<foreach item='data' collection='records' open='' separator=',' close=''>"
-            + "("
-            + "#{data.id}, #{data.sessionId}, #{data.start}, #{data.startInclusive},"
-            + "#{data.end}, #{data.endInclusive}, #{data.size}, #{data.status}"
-            + ")"
-            + "</foreach>",
-        "</script>"})
+            "<script>",
+            "INSERT INTO dataset_read_log"
+                    + "(id, session_id, start, start_inclusive, end, end_inclusive, size, status)",
+            "VALUES"
+                    + "<foreach item='data' collection='records' open='' separator=',' close=''>"
+                    + "("
+                    + "#{data.id}, #{data.sessionId}, #{data.start}, #{data.startInclusive},"
+                    + "#{data.end}, #{data.endInclusive}, #{data.size}, #{data.status}"
+                    + ")"
+                    + "</foreach>",
+            "</script>"})
     int batchInsert(@Param("records") List<DataReadLogEntity> theCollection);
 
     @Update("UPDATE dataset_read_log SET "
@@ -67,16 +68,16 @@ public interface DataReadLogMapper {
                                                   String end,
                                                   String status) {
             return new SQL() {{
-                    UPDATE("dataset_read_log");
-                    SET("consumer_id=#{consumerId}", "status=#{status}", "finished_time=NOW()");
-                    WHERE("session_id=#{sessionId}", "start=#{start}");
-                    if (Objects.isNull(end)) {
-                        WHERE("end is null");
-                    } else {
-                        WHERE("end=#{end}");
-                    }
-                }}
-                .toString();
+                        UPDATE("dataset_read_log");
+                        SET("consumer_id=#{consumerId}", "status=#{status}", "finished_time=NOW()");
+                        WHERE("session_id=#{sessionId}", "start=#{start}");
+                        if (Objects.isNull(end)) {
+                            WHERE("end is null");
+                        } else {
+                            WHERE("end=#{end}");
+                        }
+                    }}
+                    .toString();
         }
     }
 
@@ -128,4 +129,18 @@ public interface DataReadLogMapper {
     @Select("SELECT sum(assigned_num) from dataset_read_log "
             + "WHERE session_id in (SELECT id from dataset_read_session where session_id=#{sessionId})")
     int totalAssignedNum(String sessionId);
+
+    @Select("SELECT"
+            + "  drs.dataset_name,"
+            + "  drl.consumer_id as consumer,"
+            + "  drs.batch_size,"
+            + "  drl.status,"
+            + "  sum(drl.size) as data_size,"
+            + "  sum(drl.assigned_num) as assigned_num,"
+            + "  sum(drl.size * drl.assigned_num) as consumption_num "
+            + "FROM dataset_read_session drs, dataset_read_log drl "
+            + "WHERE drs.id = drl.session_id and drs.session_id = #{sessionId}"
+            + "GROUP BY dataset_name, batch_size, status, consumer_id"
+    )
+    List<ConsumptionStatistic> consumptionStatistic(String sessionId);
 }
