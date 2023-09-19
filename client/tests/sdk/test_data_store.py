@@ -11,23 +11,20 @@ import pytest
 import requests
 from requests_mock import Mocker
 
+from tests import BaseTestCase
 from starwhale.consts import HTTPMethod
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
     INT32,
-    INT64,
     STRING,
     SwType,
     UNKNOWN,
     SwMapType,
     SwListType,
     SwTupleType,
-    ColumnSchema,
     TableWriterException,
 )
-
-from .. import BaseTestCase
 
 
 class TestBasicFunctions(BaseTestCase):
@@ -577,7 +574,7 @@ class TestBasicFunctions(BaseTestCase):
 
 class TestMemoryTable(BaseTestCase):
     def test_mixed(self) -> None:
-        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table = data_store.LocalTable("test", "/tmp", "k")
         table.insert({"k": 0, "a": "0"})
         table.insert({"k": 1, "a": "1"})
         table.insert({"k": 2, "a": "2"})
@@ -625,7 +622,7 @@ class TestMemoryTable(BaseTestCase):
         )
 
     def test_revision(self):
-        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table = data_store.LocalTable("test", "/tmp", "k")
         table.insert({"k": 0, "a": "0"})
         rev = table.insert({"k": 0, "a": "1"})
         self.assertEqual(
@@ -665,18 +662,18 @@ class TestMemoryTable(BaseTestCase):
         )
 
     def test_insert_with_diff(self):
-        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table = data_store.LocalTable("test", self.datastore_root, "k")
         table.insert({"k": 0, "a": "0"})
         table.insert({"k": 0, "a": "1"})
         self.assertEqual(
             [{"*": 0, "k": 0, "a": "1"}],
             list(table.scan()),
         )
-        self.assertEqual(len(table.records[0].records), 2)
+        self.assertEqual(len(table.memory_table.records[0].records), 2)
 
         # insert the same row again
         table.insert({"k": 0, "a": "1"})
-        self.assertEqual(len(table.records[0].records), 2)
+        self.assertEqual(len(table.memory_table.records[0].records), 2)
         self.assertEqual(
             [{"*": 0, "k": 0, "a": "1"}],
             list(table.scan()),
@@ -691,34 +688,35 @@ class TestMemoryTable(BaseTestCase):
 
     def test_merge_dump(self):
         table_name = "test"
-        table = data_store.MemoryTable(table_name, ColumnSchema("k", INT64))
+        workdir = f"{self.local_storage}/{table_name}"
+        table = data_store.LocalTable(table_name, workdir, "k")
         table.insert({"k": 0, "a": "0"})
-        workdir = self.local_storage
-        table.dump(workdir)
+        table.dump()
 
-        data_file = Path(data_store._get_table_path(workdir, table_name))
         # load again
-        table2 = data_store.MemoryTable.loads(data_file, table_name=table_name)
+        table2 = data_store.LocalTable(table_name, workdir, "k")
         self.assertEqual([{"*": 0, "k": 0, "a": "0"}], list(table2.scan()))
 
         # simulate another process saving
-        table3 = data_store.MemoryTable(table_name, ColumnSchema("k", INT64))
+        table3 = data_store.LocalTable(table_name, workdir, "k")
         # insert new column b which will be overwritten by table2 and column c
         rev = table3.insert({"k": 0, "b": "1", "c": "foo"})
-        self.assertEqual([{"*": 0, "k": 0, "b": "1", "c": "foo"}], list(table3.scan()))
-        table3.dump(workdir)
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "0", "b": "1", "c": "foo"}], list(table3.scan())
+        )
+        table3.dump()
         # make sure the data is saved
         self.assertEqual(
             [{"*": 0, "k": 0, "b": "1", "a": "0", "c": "foo"}],
-            list(data_store.MemoryTable.loads(data_file, table_name=table_name).scan()),
+            list(data_store.LocalTable(table_name, workdir, "k").scan()),
         )
 
         time.sleep(0.1)
         table2.insert({"k": 0, "b": "2"})
-        table2.dump(workdir)
+        table2.dump()
 
         # load again
-        table4 = data_store.MemoryTable.loads(data_file, table_name=table_name)
+        table4 = data_store.LocalTable(table_name, workdir, "k")
         # should have the latest data in table2 and table3
         # use table2's data when there is overlap
         self.assertEqual(
@@ -732,7 +730,7 @@ class TestMemoryTable(BaseTestCase):
         )
 
     def test_mutable_schema(self):
-        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table = data_store.LocalTable("test", self.datastore_root, "k")
         table.insert({"k": 0, "a": "0"})
         self.assertEqual(
             [{"*": 0, "k": 0, "a": "0"}],
@@ -775,7 +773,7 @@ class TestMemoryTable(BaseTestCase):
         )
 
     def test_deep_copy(self):
-        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table = data_store.LocalTable("test", self.datastore_root, "k")
         obj = {"b": 1}
 
         # insert a mutable object
@@ -1119,8 +1117,8 @@ class TestLocalDataStore(BaseTestCase):
         ensure_file(root / "dummy.file", "abc", parents=True)
 
         m_table_name = f"{prefix}memory-test-table"
-        ds.tables[m_table_name] = data_store.MemoryTable(
-            m_table_name, ColumnSchema("k", INT64)
+        ds.tables[m_table_name] = data_store.LocalTable(
+            m_table_name, self.datastore_root, "k"
         )
 
         tables = ds.list_tables([prefix])
