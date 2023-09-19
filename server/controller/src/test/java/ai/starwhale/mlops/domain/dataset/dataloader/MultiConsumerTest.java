@@ -147,6 +147,9 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             break;
                         }
 
+                        assertEquals(dataRange.getStartType(), "STRING");
+                        assertEquals(dataRange.getEndType(), null == dataRange.getEnd() ? null : "STRING");
+
                         try {
                             Thread.sleep(random.nextInt(10));
                         } catch (InterruptedException e) {
@@ -163,9 +166,11 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             // data processed
                             request.setProcessedData(List.of(
                                     DataIndexDesc.builder()
-                                        .start(dataRange.getStart())
-                                        .end(dataRange.getEnd())
-                                        .build()
+                                            .start(dataRange.getStart())
+                                            .startType(dataRange.getStartType())
+                                            .end(dataRange.getEnd())
+                                            .endType(dataRange.getEndType())
+                                            .build()
                             ));
                         }
 
@@ -244,7 +249,9 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         for (int i = 1; i < totalRangesNum; i++) {
             indices.add(DataIndex.builder()
                     .start(String.valueOf((i - 1) * batchSize))
+                    .startType("STRING")
                     .end(String.valueOf(i * batchSize))
+                    .endType("STRING")
                     .size(batchSize)
                     .build()
             );
@@ -252,6 +259,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         indices.add(
                 DataIndex.builder()
                     .start(String.valueOf((totalRangesNum - 1) * batchSize))
+                    .startType("STRING")
                     .end(null)
                     .size(8)
                     .build()

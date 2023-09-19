@@ -34,13 +34,6 @@ public class DataReadLogDao {
         this.converter = converter;
     }
 
-    public boolean insertOne(DataReadLog dataReadLog) {
-        var entity = converter.convert(dataReadLog);
-        var count = mapper.insert(entity);
-        dataReadLog.setId(entity.getId());
-        return count > 0;
-    }
-
     public boolean batchInsert(List<DataReadLog> dataReadLogs) {
         var entities = dataReadLogs.stream()
                 .map(converter::convert)
