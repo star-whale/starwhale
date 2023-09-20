@@ -18,6 +18,8 @@ from . import data_store
 
 
 class Logger:
+    _ID_KEY = "id"
+
     def _init_writers(self, tables: List[str]) -> None:
         self._writers: Dict[str, Optional[data_store.TableWriter]] = {
             table: None for table in tables
@@ -47,11 +49,22 @@ class Logger:
             writer = self._writers[table_name]
             if writer is None:
                 _store = getattr(self, "_data_store", None)
-                writer = data_store.TableWriter(table_name, data_store=_store)
+                writer = data_store.TableWriter(
+                    table_name, data_store=_store, key_column=self._ID_KEY
+                )
                 self._writers[table_name] = writer
         return writer
 
     def _log(self, table_name: str, record: Dict[str, Any]) -> None:
+        _id = record.get(self._ID_KEY)
+        if _id is None:
+            raise RuntimeError(f"id is not set for table {table_name}")
+
+        if not isinstance(_id, (str, int)):
+            raise RuntimeError(
+                f"id should be str or int, got {type(_id)} for table {table_name}"
+            )
+
         writer = self._fetch_writer(table_name)
         writer.insert(record)
 
@@ -108,7 +121,6 @@ def _get_remote_project_id(instance_uri: str, project: str) -> Any:
 
 
 class Evaluation(Logger):
-    _ID_KEY = "id"
     _RESULTS_TABLE = "results"
     _stashing_tables: Set[str] = set()
     _stashing_tables_lock = threading.Lock()
@@ -301,7 +313,7 @@ class Dataset(Logger):
         self._init_writers([self._table_name])
 
     def put(self, data_id: Union[str, int], **kwargs: Any) -> None:
-        record = {"id": data_id}
+        record = {self._ID_KEY: data_id}
         for k, v in kwargs.items():
             record[k.lower()] = v
         self._log(self._table_name, record)
@@ -342,7 +354,7 @@ class Dataset(Logger):
             tables=[
                 data_store.TableDesc(
                     table_name=self._table_name,
-                    columns=["id"],
+                    columns=[self._ID_KEY],
                     revision=revision or self.dataset_scan_revision,
                 )
             ],

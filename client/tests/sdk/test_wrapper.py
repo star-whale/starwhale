@@ -70,6 +70,18 @@ class TestEvaluation(BaseTestCase):
         self.assertEqual(expect_result, list(e.get_results()))
         self.assertEqual(expect_result, list(e.get("results")))
 
+    def test_id_validation(self) -> None:
+        e = wrapper.Evaluation("tt", "test")
+        with self.assertRaisesRegex(RuntimeError, "id is not set"):
+            e.log("table/1", a=1)
+
+        msg = "id should be str or int"
+        with self.assertRaisesRegex(RuntimeError, msg):
+            e.log("table/1", id=(1, 2))
+
+        with self.assertRaisesRegex(RuntimeError, msg):
+            e.log_result({"id": (1, 2), "a": 1})
+
     def test_log_summary_metrics(self) -> None:
         e = wrapper.Evaluation("tt", "test")
         e.log_summary_metrics(a=0, B=1, c=None)
@@ -159,9 +171,6 @@ class TestEvaluation(BaseTestCase):
 
 
 class TestDataset(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
     def test_put_and_scan(self) -> None:
         dataset = wrapper.Dataset("dt", "test")
         dataset.put("0", a=1, b=2)
@@ -196,3 +205,9 @@ class TestDataset(BaseTestCase):
             list(dataset.scan("0", None)),
             "scan",
         )
+
+    def test_id_validation(self) -> None:
+        dataset = wrapper.Dataset("dt", "test")
+
+        with self.assertRaisesRegex(RuntimeError, "id should be str or int"):
+            dataset.put((1, 2), a=1)
