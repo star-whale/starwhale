@@ -6,8 +6,11 @@ import { ColorSelector } from './color-selector'
 import { LinkSelector } from './link-selector'
 import { cn } from '../lib/utils'
 import { BubbleMenuItem } from './types'
+import { Editor } from '@tiptap/core'
 
-type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>
+type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children' | 'editor'> & {
+    editor: Editor
+}
 
 export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
     const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false)

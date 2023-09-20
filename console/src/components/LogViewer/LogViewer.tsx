@@ -219,24 +219,47 @@ const ComplexToolbarLogViewer = ({
         [isPaused, scrollToBottom, t]
     )
 
+    const selectRef = React.useRef<any>(null)
     const leftAlignedToolbarGroup = React.useMemo(
         () => (
             <>
                 <ToolbarToggleGroup toggleIcon={<EllipsisVIcon />} breakpoint='md'>
                     <ToolbarItem variant='search-filter' style={{ minWidth: '280px', maxWidth: '500px' }}>
-                        <SWSelect
-                            clearable={false}
-                            options={dataSources.map(({ id }) => ({ label: id, id }))}
-                            value={selectedDataSource ? [{ id: selectedDataSource }] : []}
-                            onChange={(params) => {
-                                if (!params.option) {
-                                    return
+                        <div ref={selectRef} className='w-100%'>
+                            <SWSelect
+                                clearable={false}
+                                options={dataSources.map(({ id }) => ({ label: id, id }))}
+                                value={selectedDataSource ? [{ id: selectedDataSource }] : []}
+                                mountNode={selectRef.current}
+                                onChange={(params) => {
+                                    if (!params.option) {
+                                        return
+                                    }
+                                    reset()
+                                    const selection = params.option.id
+                                    setSelectedDataSource(selection as any)
+                                }}
+                                overrides={
+                                    show
+                                        ? {
+                                              Popover: {
+                                                  props: {
+                                                      overrides: {
+                                                          Body: {
+                                                              style: {
+                                                                  top: '0',
+                                                                  marginBottom: '0',
+                                                                  transform: 'translate3d(0px, 34px, 0px)',
+                                                              },
+                                                          },
+                                                      },
+                                                  },
+                                              },
+                                          }
+                                        : {}
                                 }
-                                reset()
-                                const selection = params.option.id
-                                setSelectedDataSource(selection as any)
-                            }}
-                        />
+                            />
+                        </div>
                     </ToolbarItem>
                     <ToolbarItem variant='search-filter'>
                         <LogViewerSearch
@@ -255,7 +278,7 @@ const ComplexToolbarLogViewer = ({
                 <ToolbarItem>{ControlButton}</ToolbarItem>
             </>
         ),
-        [dataSources, selectedDataSource, reset, ControlButton, scrollToBottom]
+        [dataSources, selectedDataSource, reset, ControlButton, scrollToBottom, show]
     )
 
     const rightAlignedToolbarGroup = React.useMemo(

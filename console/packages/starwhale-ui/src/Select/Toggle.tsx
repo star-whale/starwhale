@@ -17,22 +17,42 @@ export function Toggle({ value, onChange, disabled, ...props }: IToggleProps) {
         {
             Root: {
                 style: {
-                    width: '39px',
+                    width: '37px',
                 },
             },
 
             Toggle: {
-                style: {
-                    backgroundColor: '#FFF',
-                    width: '14px',
-                    height: '14px',
+                style: ({ $checked }) => {
+                    if (disabled) {
+                        return {
+                            backgroundColor: $checked ? '  rgba(255,255,255,0.60)' : 'rgba(255,255,255,0.40);',
+                            width: '12px',
+                            height: '12px',
+                        }
+                    }
+
+                    return {
+                        backgroundColor: '#FFF',
+                        width: '12px',
+                        height: '12px',
+                    }
                 },
             },
             ToggleTrack: {
-                style: ({ $checked }: any) => ({
-                    backgroundColor: $checked ? '#2B65D9' : 'rgba(2,16,43,0.20)',
-                    width: '39px',
-                }),
+                style: ({ $checked }: any) => {
+                    if (disabled) {
+                        return {
+                            backgroundColor: $checked ? ' rgba(43,101,217,0.30)' : ' rgba(2,16,43,0.20)',
+                            width: '39px',
+                            paddingLeft: '1px',
+                        }
+                    }
+                    return {
+                        backgroundColor: $checked ? '#2B65D9' : 'rgba(2,16,43,0.20)',
+                        width: '39px',
+                        paddingLeft: '2px',
+                    }
+                },
             },
         },
         props.overrides
