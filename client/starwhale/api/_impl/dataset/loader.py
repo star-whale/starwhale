@@ -173,33 +173,14 @@ class DataLoader:
             raise ValueError(f"cache_size({cache_size}) must be a positive int number")
         self._cache_size = cache_size
 
-        self._iter_row_processing = False
         self._meta_fetched_queue: queue.Queue[_TMetaQItem] | None = None
         self._row_unpacked_queue: queue.Queue[_TRowQItem] | None = None
         self._key_processed_queue: queue.Queue[_TProcessedQItem] | None = None
 
+        self._lock = threading.Lock()
+        self._expected_rows_cnt = 0
+        self._processed_rows_cnt = 0
         self._key_range_dict: t.Dict[t.Tuple[t.Any, t.Any], t.Dict[str, int]] = {}
-
-    def _check_pipe_data_empty(self) -> bool:
-        if (
-            self._meta_fetched_queue is not None
-            and self._meta_fetched_queue.qsize() > 0
-        ):
-            return False
-
-        if (
-            self._row_unpacked_queue is not None
-            and self._row_unpacked_queue.qsize() > 0
-        ):
-            return False
-
-        if (
-            self._key_processed_queue is not None
-            and self._key_processed_queue.qsize() > 0
-        ):
-            return False
-
-        return True
 
     def _get_processed_key_range(self) -> t.Optional[t.List[t.Tuple[t.Any, t.Any]]]:
         if self._key_processed_queue is None:
@@ -211,25 +192,39 @@ class DataLoader:
             key = self._key_processed_queue.get(block=True)
 
             # TODO: tune performance for find key range
-            for rk in self._key_range_dict:
-                if (rk[0] is None or rk[0] <= key) and (rk[1] is None or key < rk[1]):
-                    self._key_range_dict[rk]["processed_cnt"] += 1
-                    break
-            else:
-                raise RuntimeError(
-                    f"key({key}) not found in key range dict:{self._key_range_dict}"
-                )
+            with self._lock:
+                for rk in self._key_range_dict:
+                    if (rk[0] is None or rk[0] <= key) and (
+                        rk[1] is None or key < rk[1]
+                    ):
+                        self._key_range_dict[rk]["processed_cnt"] += 1
+                        break
+                else:
+                    raise RuntimeError(
+                        f"key({key}) not found in key range dict:{self._key_range_dict}"
+                    )
 
         processed_range_keys = []
-        for rk in list(self._key_range_dict.keys()):
-            if (
-                self._key_range_dict[rk]["processed_cnt"]
-                == self._key_range_dict[rk]["rows_cnt"]
-            ):
-                processed_range_keys.append(rk)
-                del self._key_range_dict[rk]
+        with self._lock:
+            for rk in list(self._key_range_dict.keys()):
+                if (
+                    self._key_range_dict[rk]["processed_cnt"]
+                    == self._key_range_dict[rk]["rows_cnt"]
+                ):
+                    processed_range_keys.append(rk)
+                    del self._key_range_dict[rk]
 
         return processed_range_keys
+
+    def _check_all_processed_done(self) -> bool:
+        with self._lock:
+            unfinished = self._expected_rows_cnt - self._processed_rows_cnt
+            if unfinished < 0:
+                raise ValueError(
+                    f"unfinished rows cnt({unfinished}) < 0, processed rows cnt has been called more than expected"
+                )
+            else:
+                return unfinished == 0
 
     def _iter_meta(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
@@ -241,11 +236,11 @@ class DataLoader:
                 pk = self._get_processed_key_range()
                 rt = self.session_consumption.get_scan_range(pk)
                 if rt is None:
-                    if self._iter_row_processing or not self._check_pipe_data_empty():
+                    if self._check_all_processed_done():
+                        break
+                    else:
                         time.sleep(1)
                         continue
-                    else:
-                        break
 
                 rows_cnt = 0
                 if self.dataset_uri.instance.is_cloud:
@@ -272,10 +267,12 @@ class DataLoader:
                         rows_cnt += 1
                         yield row
 
-                self._key_range_dict[(rt[0], rt[1])] = {
-                    "rows_cnt": rows_cnt,
-                    "processed_cnt": 0,
-                }
+                with self._lock:
+                    self._expected_rows_cnt += rows_cnt
+                    self._key_range_dict[(rt[0], rt[1])] = {
+                        "rows_cnt": rows_cnt,
+                        "processed_cnt": 0,
+                    }
 
     def _iter_meta_for_queue(self) -> None:
         out_mq = self._meta_fetched_queue
@@ -285,6 +282,10 @@ class DataLoader:
             for meta in self._iter_meta():
                 if meta and isinstance(meta, TabularDatasetRow):
                     out_mq.put(meta)
+                else:
+                    console.warn(
+                        f"meta is not TabularDatasetRow type: {meta} - {type(meta)}"
+                    )
         except Exception as e:
             out_mq.put(e)
             raise
@@ -376,11 +377,9 @@ class DataLoader:
             elif isinstance(row, Exception):
                 raise row
             else:
-                try:
-                    self._iter_row_processing = True
-                    yield row
-                finally:
-                    self._iter_row_processing = False
+                yield row
+                with self._lock:
+                    self._processed_rows_cnt += 1
 
                 if self._key_processed_queue is not None:
                     self._key_processed_queue.put(row.index)
