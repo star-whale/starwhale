@@ -116,10 +116,7 @@ export default function UserManagement() {
                                 disabled={user.id === currentUser?.id}
                                 icondisable={user.id === currentUser?.id}
                             >
-                                <Toggle
-                                    value={Boolean(user.isEnabled) && user.id !== currentUser?.id}
-                                    disabled={user.id === currentUser?.id}
-                                />
+                                <Toggle value={Boolean(user.isEnabled)} disabled={user.id === currentUser?.id} />
                             </ConfirmButton>
                             {user.isEnabled ? t('Enabled User') : t('Disabled User')}
                         </div>,
