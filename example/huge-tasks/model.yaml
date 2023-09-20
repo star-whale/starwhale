@@ -1,0 +1,4 @@
+name: huge-tasks
+run:
+  modules:
+    - evaluation
