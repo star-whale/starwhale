@@ -640,7 +640,7 @@ class Dataset:
         # TODO: render artifact in JupyterNotebook
         ret = []
         loader = self._get_data_loader(disable_consumption=True)
-        for idx, td_row in enumerate(loader._iter_meta()):
+        for idx, td_row in enumerate(loader.tabular_dataset.scan()):
             if idx >= n:
                 break
             data_row = loader._unpack_row(td_row, skip_fetch_data=skip_fetch_data)

@@ -14,20 +14,6 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.dataloader.bo;
 
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
-public class DataIndex {
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
-    private int size;
-}
+ALTER TABLE dataset_read_log ADD start_type varchar(100) NULL;
+ALTER TABLE dataset_read_log ADD end_type varchar(100) NULL;

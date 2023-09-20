@@ -1041,7 +1041,16 @@ class TestDatasetSessionConsumption(TestCase):
         mock_request = rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/consume",
-            json={"data": {"start": "path/1", "end": "path/100"}},
+            json={
+                "data": {
+                    "start": "path/1",
+                    "startType": "STRING",
+                    "end": "path/100",
+                    "endType": "STRING",
+                },
+                "code": "success",
+                "message": "success",
+            },
         )
 
         range_key = tdsc.get_scan_range()
@@ -1053,6 +1062,9 @@ class TestDatasetSessionConsumption(TestCase):
             "batchSize": 50,
             "sessionId": "123",
             "consumerId": "pod-1",
+            "endInclusive": False,
+            "startInclusive": True,
+            "processedData": [],
         }
 
         range_key = tdsc.get_scan_range(processed_keys=[(1, 1)])
@@ -1062,7 +1074,16 @@ class TestDatasetSessionConsumption(TestCase):
             "batchSize": 50,
             "sessionId": "123",
             "consumerId": "pod-1",
-            "processedData": [{"end": 1, "start": 1}],
+            "endInclusive": False,
+            "startInclusive": True,
+            "processedData": [
+                {
+                    "end": "0000000000000001",
+                    "startType": "INT64",
+                    "endType": "INT64",
+                    "start": "0000000000000001",
+                }
+            ],
         }
 
     @patch("starwhale.utils.config.load_swcli_config")

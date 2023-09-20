@@ -423,7 +423,9 @@ public class DatasetService {
         var dataRange = dataLoader.next(request);
         return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
                 .start(dataRange.getStart())
+                .startType(dataRange.getStartType())
                 .end(dataRange.getEnd())
+                .endType(dataRange.getEndType())
                 .build();
     }
 

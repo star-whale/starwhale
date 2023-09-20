@@ -36,4 +36,8 @@ public enum Code {
     public <T> ResponseMessage<T> asResponse(T data) {
         return new ResponseMessage<>(this.name(), this.type, data);
     }
+
+    public <T> NullableResponseMessage<T> asNullableResponse(T data) {
+        return new NullableResponseMessage<>(this.name(), this.type, data);
+    }
 }

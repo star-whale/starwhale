@@ -384,16 +384,18 @@ class DataIndexDesc(BaseModel):
         allow_population_by_field_name = True
 
     start: Optional[str] = None
+    start_type: Optional[str] = Field(None, alias='startType')
     end: Optional[str] = None
+    end_type: Optional[str] = Field(None, alias='endType')
 
 
-class ResponseMessageDataIndexDesc(BaseModel):
+class NullableResponseMessageDataIndexDesc(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
     code: str
     message: str
-    data: DataIndexDesc
+    data: Optional[DataIndexDesc] = None
 
 
 class RevertDatasetRequest(BaseModel):

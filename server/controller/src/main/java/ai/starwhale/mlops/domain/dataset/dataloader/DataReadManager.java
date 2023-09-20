@@ -81,18 +81,20 @@ public class DataReadManager {
         );
         Long sid = session.getId();
         Iterables.partition(
-            dataIndices.stream()
-                .map(dataIndex -> DataReadLog.builder()
-                    .sessionId(sid)
-                    .start(dataIndex.getStart())
-                    .startInclusive(dataIndex.isStartInclusive())
-                    .end(dataIndex.getEnd())
-                    .endInclusive(dataIndex.isEndInclusive())
-                    .size(dataIndex.getSize())
-                    .status(Status.DataStatus.UNPROCESSED)
-                    .build())
-                .collect(Collectors.toList()),
-            1000).forEach(dataReadLogDao::batchInsert);
+                dataIndices.stream()
+                        .map(dataIndex -> DataReadLog.builder()
+                                .sessionId(sid)
+                                .start(dataIndex.getStart())
+                                .startType(dataIndex.getStartType())
+                                .startInclusive(dataIndex.isStartInclusive())
+                                .end(dataIndex.getEnd())
+                                .endType(dataIndex.getEndType())
+                                .endInclusive(dataIndex.isEndInclusive())
+                                .size(dataIndex.getSize())
+                                .status(Status.DataStatus.UNPROCESSED)
+                                .build())
+                        .collect(Collectors.toList()),
+                1000).forEach(dataReadLogDao::batchInsert);
 
         return session;
 

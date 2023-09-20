@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -31,24 +30,15 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface DataReadLogMapper {
 
-    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    @Insert("INSERT into dataset_read_log("
-            + "id, session_id, consumer_id, start, start_inclusive, end, end_inclusive, size, status) "
-            + "VALUES("
-            + "#{id}, #{sessionId}, #{consumerId}, #{start}, #{startInclusive}, "
-            + "#{end}, #{endInclusive}, #{size}, #{status}"
-            + ") ")
-    int insert(DataReadLogEntity dataBlock);
-
     @Insert({
         "<script>",
         "INSERT INTO dataset_read_log"
-            + "(id, session_id, start, start_inclusive, end, end_inclusive, size, status)",
+            + "(id, session_id, start, start_type, start_inclusive, end, end_type, end_inclusive, size, status)",
         "VALUES"
             + "<foreach item='data' collection='records' open='' separator=',' close=''>"
             + "("
-            + "#{data.id}, #{data.sessionId}, #{data.start}, #{data.startInclusive},"
-            + "#{data.end}, #{data.endInclusive}, #{data.size}, #{data.status}"
+            + "#{data.id}, #{data.sessionId}, #{data.start}, #{data.startType}, #{data.startInclusive},"
+            + "#{data.end}, #{data.endType}, #{data.endInclusive}, #{data.size}, #{data.status}"
             + ")"
             + "</foreach>",
         "</script>"})

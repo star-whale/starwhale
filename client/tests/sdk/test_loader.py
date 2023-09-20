@@ -1,4 +1,5 @@
 import os
+import queue
 import shutil
 import typing as t
 import tempfile
@@ -509,10 +510,10 @@ class TestDataLoader(TestCase):
         rm.get("http://localhost/api/v1/project/x/dataset/mnist", json={})
         m_summary.return_value = DatasetSummary(rows=4)
         tdsc = m_sc()
-        tdsc.get_scan_range.side_effect = [["a", "d"], None]
+        tdsc.get_scan_range.side_effect = [["a", "e"]] + [None] * 120
         tdsc.batch_size = 20
         tdsc.session_start = "a"
-        tdsc.session_end = "d"
+        tdsc.session_end = "e"
         dataset_uri = Resource(
             "http://localhost/projects/x/datasets/mnist/versions/1122",
             typ=ResourceType.dataset,
@@ -641,7 +642,7 @@ class TestDataLoader(TestCase):
         loader = get_data_loader(
             dataset_uri,
             start="a",
-            end="d",
+            end="e",
             session_consumption=tdsc,
             field_transformer={"image": "img"},
         )
@@ -725,6 +726,37 @@ class TestDataLoader(TestCase):
 
         with self.assertRaisesRegex(ValueError, "must be a positive int number"):
             get_data_loader(self.dataset_uri, num_workers=0)
+
+    def test_processed_key_range(self) -> None:
+        loader = get_data_loader(self.dataset_uri)
+        with self.assertRaisesRegex(
+            RuntimeError, "key processed queue is not initialized"
+        ):
+            loader._get_processed_key_range()
+
+        loader._key_processed_queue = queue.Queue()
+        pk = loader._get_processed_key_range()
+        assert pk == []
+
+        for i in range(25):
+            loader._key_processed_queue.put(i)
+
+        loader._key_range_dict = {
+            (0, 10): {"rows_cnt": 10, "processed_cnt": 0},
+            (10, 20): {"rows_cnt": 10, "processed_cnt": 0},
+            (20, 30): {"rows_cnt": 10, "processed_cnt": 0},
+        }
+
+        pk = loader._get_processed_key_range()
+        assert pk == [(0, 10), (10, 20)]
+
+        assert (0, 10) not in loader._key_range_dict
+        assert (10, 20) not in loader._key_range_dict
+        assert loader._key_range_dict[(20, 30)]["processed_cnt"] == 5
+
+        with self.assertRaisesRegex(RuntimeError, "not found in key range"):
+            loader._key_processed_queue.put(30)
+            loader._get_processed_key_range()
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")

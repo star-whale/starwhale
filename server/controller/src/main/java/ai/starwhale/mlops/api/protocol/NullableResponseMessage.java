@@ -14,20 +14,31 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.dataloader.bo;
+package ai.starwhale.mlops.api.protocol;
 
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class DataIndex {
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
-    private int size;
+@NoArgsConstructor
+public class NullableResponseMessage<T> {
+    @NotNull
+    private String code;
+    @NotNull
+    private String message;
+    private T data;
+
+    public NullableResponseMessage(String code, String message, T data) {
+        setCode(code);
+        setMessage(message);
+        setData(data);
+    }
+
+    public NullableResponseMessage(String code, String message) {
+        setCode(code);
+        setMessage(message);
+    }
 }

@@ -5,8 +5,10 @@ from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource
 from starwhale.base.client.client import Client, TypeWrapper
 from starwhale.base.client.models.models import (
+    DataConsumptionRequest,
     ResponseMessageDatasetInfoVo,
     ResponseMessagePageInfoDatasetVo,
+    NullableResponseMessageDataIndexDesc,
 )
 
 
@@ -26,4 +28,12 @@ class DatasetApi(Client):
         return TypeWrapper(
             ResponseMessageDatasetInfoVo,
             self.http_get(uri, params={"versionName": rc.version}),
+        )
+
+    def consume(
+        self, rc: Resource, req: DataConsumptionRequest
+    ) -> TypeWrapper[NullableResponseMessageDataIndexDesc]:
+        uri = f"/api/v1/project/{rc.project.name}/dataset/{rc.name}/version/{rc.version}/consume"
+        return TypeWrapper(
+            NullableResponseMessageDataIndexDesc, self.http_post(uri, json=req)
         )
