@@ -16,20 +16,28 @@
 
 package ai.starwhale.mlops.domain.upgrade.rollup.db;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import ai.starwhale.mlops.domain.upgrade.rollup.starter.Starter;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(value = "sw.rollup", havingValue = "true")
 public class FlywayMigrationStrategyRollingUpdate {
+
+    private final Starter starter;
+
+    public FlywayMigrationStrategyRollingUpdate(Starter starter) {
+        this.starter = starter;
+    }
 
 
     @Bean
     public FlywayMigrationStrategy flywayMigrationStrategy() {
         return flyway -> {
-            // replace the default strategy which would do migrate on server start up
+            if (starter.rollupStart()) {
+                return;
+            }
+            flyway.migrate();
         };
     }
 

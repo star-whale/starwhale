@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.SimpleTaskReportReceiver;
@@ -66,7 +65,6 @@ public class TaskReportReceiverImpTest {
                 mock(SwTaskScheduler.class),
                 jobBoConverter
         );
-        taskStatusReceiver.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
     }
 
     @Test

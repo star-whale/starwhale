@@ -22,7 +22,6 @@ import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
 import java.util.Date;
@@ -39,7 +38,7 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Service
-public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpdateStatusListener {
+public class SimpleTaskReportReceiver implements TaskReportReceiver {
 
     final HotJobHolder jobHolder;
 
@@ -47,8 +46,6 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpda
 
     final SwTaskScheduler taskScheduler;
     final JobBoConverter jobBoConverter;
-
-    private volatile boolean primaryInstance;
 
     public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper, @Lazy SwTaskScheduler taskScheduler,
                                     JobBoConverter jobBoConverter
@@ -61,10 +58,6 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpda
 
     @Override
     public void receive(List<ReportedTask> reportedTasks) {
-        if (!primaryInstance) {
-            log.info("server is upgrading and i'm not the primary instance, abandon all reported info");
-            return;
-        }
 
         reportedTasks.forEach(reportedTask -> {
             if (reportedTask.getFailedReason() != null) {
@@ -141,21 +134,4 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver, RollingUpda
 
     }
 
-    @Override
-    public void onNewInstanceStatus(ServerInstanceStatus status) {
-        // As the status report is idempotent, and we could not suffer the loss for status
-        // there shall be a small overlap instead of a small gap between the primary instances
-        if (status == ServerInstanceStatus.READY_UP) {
-            primaryInstance = false;
-        }
-    }
-
-    @Override
-    public void onOldInstanceStatus(ServerInstanceStatus status) {
-        // As the status report is idempotent, and we could not suffer the loss for status
-        // there shall be a small overlap instead of a small gap between the primary instances
-        if (status == ServerInstanceStatus.READY_DOWN) {
-            primaryInstance = true;
-        }
-    }
 }

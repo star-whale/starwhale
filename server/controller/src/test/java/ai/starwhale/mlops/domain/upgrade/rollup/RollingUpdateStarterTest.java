@@ -21,8 +21,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
+import ai.starwhale.mlops.domain.upgrade.rollup.starter.Starter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +36,10 @@ public class RollingUpdateStarterTest {
     @Test
     public void testRollingUpdate() throws Throwable {
         RollingUpdateStatusListener listener = mock(RollingUpdateStatusListener.class);
+        Starter starter = mock(Starter.class);
+        when(starter.rollupStart()).thenReturn(true);
         RollingUpdateStarter rollingUpdateStarter = new RollingUpdateStarter(new RollingUpdateStatusListeners(List.of(
-                listener)), true);
+                listener)), starter);
         rollingUpdateStarter.run();
         verify(listener, times(0)).onOldInstanceStatus(any());
     }
@@ -43,8 +47,10 @@ public class RollingUpdateStarterTest {
     @Test
     public void testNormal() throws Throwable {
         RollingUpdateStatusListener listener = mock(RollingUpdateStatusListener.class);
+        Starter starter = mock(Starter.class);
+        when(starter.rollupStart()).thenReturn(false);
         RollingUpdateStarter rollingUpdateStarter = new RollingUpdateStarter(new RollingUpdateStatusListeners(List.of(
-                listener)), false);
+                listener)), starter);
         rollingUpdateStarter.run();
         verify(listener, times(1)).onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
         verify(listener, times(1)).onOldInstanceStatus(ServerInstanceStatus.DOWN);

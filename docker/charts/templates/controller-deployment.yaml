@@ -73,8 +73,8 @@ spec:
             failureThreshold: 60
           startupProbe:
             httpGet:
-              path: /actuator/health
-              port: {{ .Values.controller.managementPort }}
+              path: /
+              port: {{ .Values.controller.containerPort }}
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 15

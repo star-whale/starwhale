@@ -27,6 +27,7 @@ import ai.starwhale.mlops.backup.db.MysqlBackupService;
 import ai.starwhale.mlops.configuration.DataSourceProperties;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
+import ai.starwhale.mlops.domain.upgrade.rollup.starter.Starter;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -56,6 +57,8 @@ public class DbMigrationControlTest {
 
     private DbMigrationControl dbMigrationControl;
 
+    private Starter starter;
+
     @BeforeEach
     public void setup() throws NoSuchFieldException, IllegalAccessException, SQLException, ClassNotFoundException {
         flyway = mock(Flyway.class);
@@ -65,13 +68,14 @@ public class DbMigrationControlTest {
         dataSourceProperties = mock(DataSourceProperties.class);
         mysqlBackupService = mock(MysqlBackupService.class);
         when(mysqlBackupService.backup(any())).thenReturn("sql_sql");
+        starter = mock(Starter.class);
+        when(starter.rollupStart()).thenReturn(true);
         dbMigrationControl = new DbMigrationControl(
                 flyway,
                 accessService,
                 dataSourceProperties,
                 storagePathCoordinator,
-                true
-        );
+                starter);
         Field field = dbMigrationControl.getClass().getDeclaredField("mysqlBackupService");
         field.setAccessible(true);
         field.set(dbMigrationControl, mysqlBackupService);
@@ -93,9 +97,7 @@ public class DbMigrationControlTest {
 
     @Test
     public void testRollUp() throws Throwable {
-        Field field = dbMigrationControl.getClass().getDeclaredField("rollUpStart");
-        field.setAccessible(true);
-        field.set(dbMigrationControl, Boolean.FALSE);
+        when(starter.rollupStart()).thenReturn(false);
         dbMigrationControl.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
         verify(flyway, times(0)).migrate();
     }

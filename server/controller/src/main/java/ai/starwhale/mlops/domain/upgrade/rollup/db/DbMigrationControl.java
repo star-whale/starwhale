@@ -20,6 +20,7 @@ import ai.starwhale.mlops.backup.db.MysqlBackupService;
 import ai.starwhale.mlops.configuration.DataSourceProperties;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
+import ai.starwhale.mlops.domain.upgrade.rollup.starter.Starter;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -32,7 +33,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -47,7 +47,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
 
     private final MysqlBackupService mysqlBackupService;
 
-    private final Boolean rollUpStart;
+    private final Starter starter;
 
     private boolean migrated;
 
@@ -55,7 +55,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                               StorageAccessService accessService,
                               DataSourceProperties dataSourceProperties,
                               StoragePathCoordinator storagePathCoordinator,
-                              @Value("${sw.rollup}") Boolean rollUpStart
+                              Starter starter
     ) {
         this.flyway = flyway;
         this.accessService = accessService;
@@ -66,7 +66,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
                 .username(dataSourceProperties.getUsername())
                 .password(dataSourceProperties.getPassword())
                 .build();
-        this.rollUpStart = rollUpStart;
+        this.starter = starter;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DbMigrationControl implements RollingUpdateStatusListener {
     public void onOldInstanceStatus(ServerInstanceStatus status) {
         if (status == ServerInstanceStatus.READY_DOWN) {
             //migration has been done on server start up if rollUp is false
-            if (!rollUpStart) {
+            if (!starter.rollupStart()) {
                 return;
             }
             synchronized (flyway) {

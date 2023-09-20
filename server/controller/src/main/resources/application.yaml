@@ -104,7 +104,6 @@ sw:
     enabled: ${SW_UPGRADE_ENABLED:false}
     k8s:
       name-space: ${SW_UPGRADE_K8S_NAME_SPACE:default}
-  rollup: ${SW_ROLL_START:false}
 ---
 #Development
 spring:

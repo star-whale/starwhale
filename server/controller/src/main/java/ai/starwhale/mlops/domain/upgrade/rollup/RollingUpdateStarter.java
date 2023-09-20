@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.domain.upgrade.rollup;
 
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
+import ai.starwhale.mlops.domain.upgrade.rollup.starter.Starter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
@@ -30,26 +30,27 @@ public class RollingUpdateStarter implements CommandLineRunner {
 
     private final RollingUpdateStatusListeners rollingUpdateStatusListeners;
 
-    private final Boolean rollUpStart;
+    private final Starter starter;
 
     public RollingUpdateStarter(
             RollingUpdateStatusListeners rollingUpdateStatusListeners,
-            @Value("${sw.rollup}") Boolean rollUpStart
+            Starter starter
     ) {
         this.rollingUpdateStatusListeners = rollingUpdateStatusListeners;
-        this.rollUpStart = rollUpStart;
+        this.starter = starter;
     }
 
     @Override
     public void run(String... args) throws Exception {
 
-        if (!rollUpStart) {
+        if (!starter.rollupStart()) {
             log.info("start up in normal start mode ...");
             rollingUpdateStatusListeners.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
             rollingUpdateStatusListeners.onOldInstanceStatus(ServerInstanceStatus.DOWN);
         } else {
             log.info("start up in rolling update mode, waiting for old controller instance status notify ...");
         }
+        starter.reset();
     }
 
 }
