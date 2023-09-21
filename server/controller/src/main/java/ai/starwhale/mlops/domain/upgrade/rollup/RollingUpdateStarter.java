@@ -42,7 +42,6 @@ public class RollingUpdateStarter implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
         if (!starter.rollupStart()) {
             log.info("start up in normal start mode ...");
             rollingUpdateStatusListeners.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
@@ -50,7 +49,6 @@ public class RollingUpdateStarter implements CommandLineRunner {
         } else {
             log.info("start up in rolling update mode, waiting for old controller instance status notify ...");
         }
-        starter.reset();
     }
 
 }
