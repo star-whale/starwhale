@@ -79,7 +79,7 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "run_handler": "evaluation:evaluation_results",
         "workdir": f"{ROOT_DIR}/example/huge-tasks",
         "datasets": [DatasetExpl("huge-tasks-random-text", "")],
-        "runtime": "pytorch310",
+        "runtime": "huge-tasks",
     },
 }
 
@@ -146,6 +146,10 @@ class TestCli:
             "pytorch38": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-8.yaml"},
             "pytorch39": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-9.yaml"},
             "pytorch310": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-10.yaml"},
+            "huge-tasks": {
+                "workdir": f"{self._work_dir}/example/huge-tasks",
+                "yaml": "runtime.yaml",
+            },
         }
 
         self.cloud_target_project_uri = f"cloud://server/project/{self.server_project}"

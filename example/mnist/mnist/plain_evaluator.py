@@ -18,13 +18,15 @@ except ImportError:
     from model import Net  # type: ignore
 
 ROOTDIR = Path(__file__).parent.parent
+MEMORY_REQUEST = 1 * 1024 * 1024 * 1024  # 1GB
+MEMORY_LIMIT = 8 * 1024 * 1024 * 1024  # 8GB
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model: t.Optional[Net] = None
 
 
 @evaluation.predict(
-    resources={"memory": 5 * 1024 * 1024 * 1024},  # 5G
+    resources={"memory": {"request": MEMORY_REQUEST, "limit": MEMORY_LIMIT}},
     replicas=4,
     batch_size=1,
     fail_on_error=False,
@@ -50,7 +52,11 @@ def predict_image(data: t.Dict) -> t.Any:
     return pred_value, probability_matrix[0]
 
 
-@evaluation.evaluate(use_predict_auto_log=True, needs=[predict_image])
+@evaluation.evaluate(
+    use_predict_auto_log=True,
+    needs=[predict_image],
+    resources={"memory": {"request": MEMORY_REQUEST, "limit": MEMORY_LIMIT}},
+)
 @multi_classification(
     confusion_matrix_normalize="all",
     show_hamming_loss=True,
