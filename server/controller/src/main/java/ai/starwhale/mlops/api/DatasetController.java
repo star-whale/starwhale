@@ -296,16 +296,14 @@ public class DatasetController {
                 }
                 return ResponseEntity.ok(Code.success.asResponse(
                         new UploadResult(datasetUploader.create(text, dsFile.getOriginalFilename(), uploadRequest))));
-            case BLOB:
-                //get ds path and upload to the dest path
-                datasetUploader.uploadHashedBlob(uploadId, dsFile, partName);
-                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             case CANCEL:
                 datasetUploader.cancel(uploadId);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             case END:
                 datasetUploader.end(uploadId);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
+            case BLOB:
+                //this phase is abandoned
             default:
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.DATASET, "unknown phase " + uploadRequest.getPhase()),

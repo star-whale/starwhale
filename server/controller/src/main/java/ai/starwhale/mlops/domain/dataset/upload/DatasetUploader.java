@@ -32,7 +32,6 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
-import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -55,7 +54,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
@@ -75,7 +73,6 @@ public class DatasetUploader {
      * prefix + / + fileName
      */
     static final String DATASET_MANIFEST = "_manifest.yaml";
-    final HotDatasetHolder hotDatasetHolder;
     final DatasetMapper datasetMapper;
     final DatasetVersionMapper datasetVersionMapper;
     final StoragePathCoordinator storagePathCoordinator;
@@ -91,7 +88,6 @@ public class DatasetUploader {
     private final BundleVersionTagDao bundleVersionTagDao;
 
     public DatasetUploader(
-            HotDatasetHolder hotDatasetHolder,
             DatasetMapper datasetMapper,
             DatasetVersionMapper datasetVersionMapper,
             BundleVersionTagDao bundleVersionTagDao,
@@ -105,7 +101,6 @@ public class DatasetUploader {
             IdConverter idConvertor,
             VersionAliasConverter versionAliasConvertor
     ) {
-        this.hotDatasetHolder = hotDatasetHolder;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
         this.bundleVersionTagDao = bundleVersionTagDao;
@@ -121,24 +116,7 @@ public class DatasetUploader {
     }
 
     public void cancel(Long uploadId) {
-        final DatasetVersionWithMeta swDatasetVersionEntityWithMeta = getDatasetVersion(uploadId);
-        datasetVersionMapper.delete(swDatasetVersionEntityWithMeta.getDatasetVersion().getId());
-        hotDatasetHolder.cancel(uploadId);
-    }
-
-    public void uploadHashedBlob(Long uploadId, MultipartFile file, String blobHash) {
-        final DatasetVersionWithMeta swDatasetVersionWithMeta = getDatasetVersion(uploadId);
-        String filename = file.getOriginalFilename();
-        try (InputStream inputStream = file.getInputStream()) {
-            HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService,
-                    swDatasetVersionWithMeta.getDatasetVersion().getStoragePath());
-            hashNamedObjectStore.put(StringUtils.hasText(blobHash) ? blobHash : filename, inputStream);
-        } catch (IOException e) {
-            log.error("read dataset failed {}", filename, e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.NETWORK),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
+        datasetVersionMapper.delete(uploadId);
     }
 
     public String uploadHashedBlob(String projectName, String datasetName, MultipartFile file, String blobHash) {
@@ -154,15 +132,6 @@ public class DatasetUploader {
         }
     }
 
-    DatasetVersionWithMeta getDatasetVersion(Long uploadId) {
-        final Optional<DatasetVersionWithMeta> swDatasetVersionEntityOpt = hotDatasetHolder.of(uploadId);
-        return swDatasetVersionEntityOpt
-                .orElseThrow(
-                        () -> new StarwhaleApiException(
-                                new SwValidationException(ValidSubject.DATASET, "uploadId invalid"),
-                                HttpStatus.BAD_REQUEST));
-    }
-
     @Transactional
     public Long create(String yamlContent, String fileName, DatasetUploadRequest uploadRequest) {
         Manifest manifest;
@@ -172,12 +141,14 @@ public class DatasetUploader {
         } catch (JsonProcessingException e) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "read dataset yaml failed " + fileName, e),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
         if (null == manifest.getVersion()) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "version is required in manifest "),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
         Project project = projectService.findProject(uploadRequest.getProject());
         Long projectId = project.getId();
@@ -211,17 +182,23 @@ public class DatasetUploader {
                             .map(DataSet::getId)
                             .collect(Collectors.toSet());
                     if (runningDataSets.contains(datasetVersionEntity.getId())) {
-                        throw new SwValidationException(ValidSubject.DATASET,
-                                " dataset version is being hired by running job, force push is not allowed now");
+                        throw new SwValidationException(
+                                ValidSubject.DATASET,
+                                " dataset version is being hired by running job, force push is not allowed now"
+                        );
                     } else {
                         datasetVersionEntity.setVersionMeta(yamlContent);
                         datasetVersionMapper.update(datasetVersionEntity);
-                        datasetVersionMapper.updateStatus(datasetVersionEntity.getId(),
-                                DatasetVersion.STATUS_UN_AVAILABLE);
+                        datasetVersionMapper.updateStatus(
+                                datasetVersionEntity.getId(),
+                                DatasetVersion.STATUS_UN_AVAILABLE
+                        );
                     }
                 } else {
-                    throw new SwValidationException(ValidSubject.DATASET,
-                            " same dataset version can't be uploaded twice without force option");
+                    throw new SwValidationException(
+                            ValidSubject.DATASET,
+                            " same dataset version can't be uploaded twice without force option"
+                    );
                 }
             } else {
                 // dataset is being created
@@ -229,8 +206,6 @@ public class DatasetUploader {
                 datasetVersionMapper.update(datasetVersionEntity);
             }
         }
-
-        hotDatasetHolder.manifest(DatasetVersion.fromEntity(datasetEntity, datasetVersionEntity));
 
         return datasetVersionEntity.getId();
     }
@@ -260,17 +235,16 @@ public class DatasetUploader {
     private Long getOwner() {
         User currentUserDetail = userService.currentUserDetail();
         if (null == currentUserDetail) {
-            throw new StarwhaleApiException(new SwAuthException(SwAuthException.AuthType.DATASET_UPLOAD),
-                    HttpStatus.FORBIDDEN);
+            throw new StarwhaleApiException(
+                    new SwAuthException(SwAuthException.AuthType.DATASET_UPLOAD),
+                    HttpStatus.FORBIDDEN
+            );
         }
         return currentUserDetail.getId();
     }
 
     public void end(Long uploadId) {
-        final DatasetVersionWithMeta datasetVersionWithMeta = getDatasetVersion(uploadId);
-        datasetVersionMapper.updateStatus(datasetVersionWithMeta.getDatasetVersion().getId(),
-                DatasetVersion.STATUS_AVAILABLE);
-        hotDatasetHolder.end(uploadId);
+        datasetVersionMapper.updateStatus(uploadId, DatasetVersion.STATUS_AVAILABLE);
     }
 
 
@@ -279,7 +253,8 @@ public class DatasetUploader {
      */
     public void pull(String project, String name, String version, String blobHash, HttpServletResponse httpResponse) {
         BundleManager bundleManager = new BundleManager(idConvertor, versionAliasConvertor,
-                projectService, datasetDao, datasetDao, this.bundleVersionTagDao);
+                                                        projectService, datasetDao, datasetDao, this.bundleVersionTagDao
+        );
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(project, name, version));
         DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.find(versionId);
         if (null == datasetVersionEntity) {
@@ -297,8 +272,11 @@ public class DatasetUploader {
             }
 
         } else {
-            try (InputStream inputStream = new HashNamedObjectStore(storageAccessService,
-                    datasetVersionEntity.getStoragePath()).get(blobHash.trim());
+            try (
+                    InputStream inputStream = new HashNamedObjectStore(
+                            storageAccessService,
+                            datasetVersionEntity.getStoragePath()
+                    ).get(blobHash.trim());
                     ServletOutputStream outputStream = httpResponse.getOutputStream()) {
                 long length = inputStream.transferTo(outputStream);
                 httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");

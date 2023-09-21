@@ -168,6 +168,9 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:info}
 
 management:
+  endpoint:
+    health:
+      show-details: "ALWAYS"
   endpoints:
     web:
       exposure:

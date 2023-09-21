@@ -20,21 +20,19 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 /**
  * loading hot jobs
  */
 @Service
-@Order(2)
 @Slf4j
-public class HotJobsLoader implements CommandLineRunner {
+public class HotJobsLoader implements RollingUpdateStatusListener {
 
     final JobDao jobDao;
 
@@ -67,7 +65,18 @@ public class HotJobsLoader implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void onNewInstanceStatus(ServerInstanceStatus status) {
+
+    }
+
+    @Override
+    public void onOldInstanceStatus(ServerInstanceStatus status) {
+        if (status == ServerInstanceStatus.READY_DOWN) {
+            loadJobs();
+        }
+    }
+
+    public void loadJobs() {
         hotJobsFromDb().forEach(job -> {
             try {
                 jobLoader.load(job, false);

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener.ServerInstanceStatus;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ public class HotJobsLoaderTest {
         Job job2 = Job.builder().id(2L).build();
         when(jobDao.findJobByStatusIn(anyList())).thenReturn(List.of(job1, job2));
 
-        hotJobsLoader.run();
+        hotJobsLoader.onOldInstanceStatus(ServerInstanceStatus.READY_DOWN);
         verify(jobLoader, times(2)).load(any(Job.class), eq(false));
     }
 

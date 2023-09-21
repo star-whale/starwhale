@@ -162,6 +162,7 @@ public class PluginService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        log.info("plugin service starting ...");
         initPluginCaches();
     }
 }

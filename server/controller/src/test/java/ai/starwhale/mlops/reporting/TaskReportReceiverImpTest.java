@@ -24,11 +24,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.SimpleTaskReportReceiver;
 import java.util.Collections;
@@ -52,7 +55,16 @@ public class TaskReportReceiverImpTest {
     public void setup() {
         jobHolder = mock(HotJobHolder.class);
         taskMapper = mock(TaskMapper.class);
-        taskStatusReceiver = new SimpleTaskReportReceiver(jobHolder, taskMapper);
+        JobBoConverter jobBoConverter = mock(JobBoConverter.class);
+        Job job = mock(Job.class);
+        when(job.getTask(any())).thenReturn(new Task());
+        when(jobBoConverter.fromTaskId(any())).thenReturn(job);
+        taskStatusReceiver = new SimpleTaskReportReceiver(
+                jobHolder,
+                taskMapper,
+                mock(SwTaskScheduler.class),
+                jobBoConverter
+        );
     }
 
     @Test

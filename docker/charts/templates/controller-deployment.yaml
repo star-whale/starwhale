@@ -55,15 +55,6 @@ spec:
           {{- end }}
           livenessProbe:
             httpGet:
-              path: /actuator/health
-              port: {{ .Values.controller.managementPort }}
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 15
-            successThreshold: 1
-            failureThreshold: 5
-          readinessProbe:
-            httpGet:
               path: /
               port: {{ .Values.controller.containerPort }}
             initialDelaySeconds: 10
@@ -71,6 +62,15 @@ spec:
             timeoutSeconds: 15
             successThreshold: 1
             failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.controller.managementPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+            successThreshold: 1
+            failureThreshold: 60
           startupProbe:
             httpGet:
               path: /

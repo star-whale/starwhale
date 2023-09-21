@@ -16,14 +16,19 @@
 
 package ai.starwhale.mlops.schedule.reporting;
 
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -39,9 +44,16 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
 
     final TaskMapper taskMapper;
 
-    public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
+    final SwTaskScheduler taskScheduler;
+    final JobBoConverter jobBoConverter;
+
+    public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper, @Lazy SwTaskScheduler taskScheduler,
+                                    JobBoConverter jobBoConverter
+    ) {
         this.jobHolder = jobHolder;
         this.taskMapper = taskMapper;
+        this.taskScheduler = taskScheduler;
+        this.jobBoConverter = jobBoConverter;
     }
 
     @Override
@@ -59,6 +71,12 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
             }
 
             if (inMemoryTask == null) {
+                Job job = jobBoConverter.fromTaskId(reportedTask.getId());
+                if (null == job) {
+                    log.error("bad data from scheduler: no job for reported task {}", reportedTask.getId());
+                    return;
+                }
+                taskScheduler.stop(Set.of(job.getTask(reportedTask.getId())));
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
@@ -115,4 +133,5 @@ public class SimpleTaskReportReceiver implements TaskReportReceiver {
         });
 
     }
+
 }
