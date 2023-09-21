@@ -77,15 +77,14 @@ export default function JobTasks() {
             style={{
                 width: '100%',
                 flex: '1',
-                display: 'flex',
+                display: 'grid',
                 flexDirection: 'column',
-                overflow: 'hidden',
                 minHeight: 0,
+                overflow: 'auto',
+                gridTemplateRows: sources.length > 0 ? 'minmax(200px, 0.4fr) minmax(300px, 1fr)' : '1fr',
             }}
         >
-            <div className='basis-30% flex-shrink-0 overflow-hidden flex-col flex'>
-                <TaskListCard header={null} onAction={onAction} />
-            </div>
+            <TaskListCard header={null} onAction={onAction} />
             {sources.length > 0 && (
                 <Card
                     outTitle={t('Logs collected')}
