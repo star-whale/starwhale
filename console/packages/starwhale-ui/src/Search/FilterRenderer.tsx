@@ -201,8 +201,6 @@ export default function FilterRenderer({
         }
     }, [rawValues])
 
-    console.log({ values, op, property, value, editing, isEditing })
-
     return (
         // @ts-ignore
         <div
