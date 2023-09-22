@@ -19,7 +19,7 @@ package ai.starwhale.mlops.datastore;
 import java.text.SimpleDateFormat;
 import java.util.Random;
 
-abstract class TestThread extends Thread {
+public abstract class TestThread extends Thread {
 
     protected final Random random = new Random();
     protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
@@ -34,7 +34,7 @@ abstract class TestThread extends Thread {
         }
     }
 
-    abstract void execute() throws Exception;
+    public abstract void execute() throws Exception;
 
     public void checkException() throws Throwable {
         if (this.throwable != null) {

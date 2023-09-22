@@ -240,6 +240,11 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
             <version>${micrometer.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.jimfs</groupId>
+            <artifactId>jimfs</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
