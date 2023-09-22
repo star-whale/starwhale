@@ -212,11 +212,9 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     sortIndex === props.index && (
                         <div
                             style={{
-                                // display: 'flex',
                                 alignItems: 'center',
-                                // position: 'absolute',
                                 display: 'block',
-                                right: 15,
+                                color: 'gray',
                             }}
                         >
                             {props.sortDirection === SORT_DIRECTIONS.DESC && <IconFont type='a-sortdesc' />}
