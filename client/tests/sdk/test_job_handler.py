@@ -66,7 +66,7 @@ class JobTestCase(unittest.TestCase):
                     "memory": "100",
                     "nvidia.com/gpu": "1",
                 },
-                "resources value is illegal, attribute's type must be number or dict",
+                "only support type",
             ),
             (
                 {
@@ -88,34 +88,32 @@ class JobTestCase(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, exception_str):
                 mock_handler._transform_resource(resource)
 
-        self.assertEqual(
-            mock_handler._transform_resource(
+        cases = [
+            (
                 {
                     "cpu": 0.1,
                     "memory": 100,
                     "nvidia.com/gpu": 1,
-                }
+                },
+                [
+                    {
+                        "type": "cpu",
+                        "request": 0.1,
+                        "limit": 0.1,
+                    },
+                    {
+                        "type": "memory",
+                        "request": 100,
+                        "limit": 100,
+                    },
+                    {
+                        "type": "nvidia.com/gpu",
+                        "request": 1,
+                        "limit": 1,
+                    },
+                ],
             ),
-            [
-                {
-                    "type": "cpu",
-                    "request": 0.1,
-                    "limit": 0.1,
-                },
-                {
-                    "type": "memory",
-                    "request": 100,
-                    "limit": 100,
-                },
-                {
-                    "type": "nvidia.com/gpu",
-                    "request": 1,
-                    "limit": 1,
-                },
-            ],
-        )
-        self.assertEqual(
-            mock_handler._transform_resource(
+            (
                 {
                     "cpu": {
                         "request": 0.1,
@@ -129,26 +127,37 @@ class JobTestCase(unittest.TestCase):
                         "request": 1,
                         "limit": 2,
                     },
-                }
+                },
+                [
+                    {
+                        "type": "cpu",
+                        "request": 0.1,
+                        "limit": 0.2,
+                    },
+                    {
+                        "type": "memory",
+                        "request": 100.1,
+                        "limit": 100.2,
+                    },
+                    {
+                        "type": "nvidia.com/gpu",
+                        "request": 1,
+                        "limit": 2,
+                    },
+                ],
             ),
-            [
-                {
-                    "type": "cpu",
-                    "request": 0.1,
-                    "limit": 0.2,
-                },
-                {
-                    "type": "memory",
-                    "request": 100.1,
-                    "limit": 100.2,
-                },
-                {
-                    "type": "nvidia.com/gpu",
-                    "request": 1,
-                    "limit": 2,
-                },
-            ],
-        )
+            (
+                {"memory": {"request": "100Mi", "limit": "1G"}},
+                [{"type": "memory", "request": 104857600, "limit": 1000000000}],
+            ),
+            (
+                {"memory": "1.5Gi"},
+                [{"type": "memory", "request": 1610612736, "limit": 1610612736}],
+            ),
+        ]
+
+        for resource, expect in cases:
+            self.assertEqual(mock_handler._transform_resource(resource), expect)
 
 
 class GenerateJobsTestCase(BaseTestCase):
