@@ -22,6 +22,11 @@ export default function VisitSelector({ value = VisitBy.Visited, onChange }: IVi
         { id: VisitBy.Latest, label: t('project.visit.latest') },
         { id: VisitBy.Oldest, label: t('project.visit.oldest') },
     ]
+    const optionsValue = {
+        [VisitBy.Visited]: t('project.visit.visited'),
+        [VisitBy.Latest]: t('project.visit.latest.value'),
+        [VisitBy.Oldest]: t('project.visit.oldest.value'),
+    }
     return (
         <Select
             backspaceClearsInputValue={false}
@@ -31,7 +36,7 @@ export default function VisitSelector({ value = VisitBy.Visited, onChange }: IVi
                 Root: {
                     style: {
                         width: 'fit-content',
-                        minWidth: '138px',
+                        minWidth: '150px',
                     },
                 },
                 ValueContainer: {
@@ -52,6 +57,9 @@ export default function VisitSelector({ value = VisitBy.Visited, onChange }: IVi
                         />
                     )
                 },
+            }}
+            getValueLabel={({ option }) => {
+                return option.id ? optionsValue[option.id] : ''
             }}
             options={options}
             onChange={({ option }) => {

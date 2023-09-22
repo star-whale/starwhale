@@ -84,6 +84,14 @@ const basic = {
         en: 'No',
         zh: '否',
     },
+    'latest.version': {
+        en: 'Latest version',
+        zh: '最新版本',
+    },
+    'latest.version.alias': {
+        en: 'Latest version alias',
+        zh: '最新版本别名',
+    },
 }
 
 const dataset = {
@@ -424,15 +432,23 @@ const project = {
     },
     'project.visit.visited': {
         en: 'Visited',
-        zh: '访问历史',
+        zh: '最近访问',
     },
     'project.visit.latest': {
         en: 'Latest',
-        zh: '最新的',
+        zh: '创建时间从近到远',
+    },
+    'project.visit.latest.value': {
+        en: 'Latest',
+        zh: ' 创建时间↓ ',
     },
     'project.visit.oldest': {
         en: 'Oldest',
-        zh: '最老的',
+        zh: '创建时间从远到近',
+    },
+    'project.visit.oldest.value': {
+        en: 'Oldest',
+        zh: '创建时间↑',
     },
     'project.filter.only': {
         zh: '只看“我的项目”',
@@ -977,7 +993,7 @@ const locales0 = {
     },
     'Private Project Desc': {
         en: 'You can choose who can maintain and browse.',
-        zh: '您可以选择谁可以维护和浏览。',
+        zh: '项目对有权限的人可见',
     },
     'Public': {
         en: 'Public',
@@ -985,7 +1001,7 @@ const locales0 = {
     },
     'Public Project Desc': {
         en: 'Anyone on the internet can see this project.',
-        zh: '互联网上的任何人都可以看到这个项目。',
+        zh: '项目对所有人可见',
     },
     'Description': {
         en: 'Description',
@@ -1181,7 +1197,7 @@ const locales0 = {
     },
     'Owner': {
         en: 'Owner',
-        zh: '操作者',
+        zh: '所属人',
     },
     'File': {
         en: 'File',
@@ -1373,7 +1389,7 @@ const locales0 = {
     },
     'Logout': {
         en: 'Logout',
-        zh: '登出',
+        zh: '退出登录',
     },
     'Change Password': {
         en: 'Change Password',
@@ -1401,11 +1417,11 @@ const locales0 = {
     },
     'overview': {
         en: 'Overview',
-        zh: '总览',
+        zh: '概览',
     },
     'Overview': {
         en: 'Overview',
-        zh: '总览',
+        zh: '概览',
     },
     'TP': {
         en: 'tp',
@@ -1738,7 +1754,7 @@ const locales0 = {
     },
     'Privacy': {
         en: 'Privacy',
-        zh: '隐私',
+        zh: '项目类型',
     },
     'Member': {
         en: 'Member',
@@ -1778,7 +1794,7 @@ const locales0 = {
     },
     'Signed in as': {
         en: 'Signed in as',
-        zh: '登录为',
+        zh: '登录账号',
     },
     'runtime version reverted': {
         en: 'runtime version reverted',

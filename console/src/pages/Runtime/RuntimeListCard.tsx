@@ -46,8 +46,8 @@ export default function RuntimeListCard() {
                 isLoading={runtimesInfo.isLoading}
                 columns={[
                     t('sth name', [t('Runtime')]),
-                    t('Runtime Version'),
-                    t('Alias'),
+                    t('latest.version'),
+                    t('latest.version.alias'),
                     t('Shared'),
                     t('Image'),
                     t('Owner'),

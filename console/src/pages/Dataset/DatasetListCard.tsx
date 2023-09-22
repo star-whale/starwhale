@@ -79,8 +79,8 @@ export default function DatasetListCard() {
                     isLoading={datasetsInfo.isLoading}
                     columns={[
                         t('sth name', [t('Dataset')]),
-                        t('Version'),
-                        t('Alias'),
+                        t('latest.version'),
+                        t('latest.version.alias'),
                         t('Shared'),
                         t('dataset.file.count'),
                         t('Owner'),
