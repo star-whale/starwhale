@@ -36,17 +36,8 @@ export default function BaseSubLayout({
             {navItems ? (
                 <>
                     <BaseNavTabs navItems={navItems} />
-                    <div
-                        data-type='sub-layout'
-                        style={{
-                            paddingTop: 15,
-                            paddingBottom: 15,
-                            flex: '1',
-                            display: 'flex',
-                            flexDirection: 'column',
-                        }}
-                    >
-                        {children}
+                    <div data-type='sub-layout' className='flex flex-1 flex-col overflow-hidden py-15px'>
+                        <div className='flex flex-1 flex-col overflow-auto'>{children}</div>
                     </div>
                 </>
             ) : (

@@ -112,7 +112,6 @@ export default function FilterRenderer({
         setOp(values?.op)
         setValue(values.value)
         setRemoving(false)
-        setEditing(false)
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {

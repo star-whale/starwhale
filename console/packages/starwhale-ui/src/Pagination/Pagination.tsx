@@ -100,7 +100,7 @@ function Pagination(paginationProps: IPaginationProps) {
                     onChange={(num) => {
                         setPage?.({
                             ...page,
-                            pageNum: total ? Math.ceil(total / (currentPage * num)) : 1,
+                            ...(total ? { pageNum: Math.min(page.pageNum, Math.ceil(total / num)) } : {}),
                             pageSize: num,
                         })
                     }}
