@@ -1323,7 +1323,7 @@ class IterWithRangeHint(SwBaseModel, smart_union=True):
 
     def __gt__(self, other: Any) -> Any:
         if not isinstance(other, IterWithRangeHint):
-            return NotImplementedError
+            raise NotImplementedError
 
         if self.min_key is None:
             return True  # we assume that the iter must be touched at first
@@ -1366,23 +1366,45 @@ def _merge_iters_with_hint(iters: List[IterWithRangeHint]) -> Iterator[InnerReco
                 self.item = None
                 self.key = None
 
-    iters = sorted(iters, reverse=True)
+    iters = sorted(iters)
     nodes: List[Node] = []
+    # find the first non-empty iterator and get the global min key
     while len(iters) > 0 and len(nodes) == 0:
-        n = Node(iters.pop().iter)
+        n = Node(iters.pop(0).iter)
         if not n.exhausted:
             nodes.append(n)
 
+    def add_iters_to_node_if_needed(
+        _nodes: List[Node], _iters: List[IterWithRangeHint]
+    ) -> Tuple[List[Node], List[IterWithRangeHint]]:
+        """
+        Add the iterators to the nodes if the min key of the iterator is less than the global min key.
+        This method have no side effect to the input parameters.
+        """
+        ret_nodes = _nodes[:]
+        min_key = len(ret_nodes) > 0 and min(ret_nodes, key=lambda x: x.key).key or None
+        filtered: List[IterWithRangeHint] = []
+        for _iter in _iters:
+            if (
+                _iter.min_key is None
+                or min_key is None
+                or _iter.min_key <= min_key
+                or len(ret_nodes) == 0
+            ):
+                _n = Node(_iter.iter)
+                if not _n.exhausted:
+                    ret_nodes.append(_n)
+                    min_key = min(ret_nodes, key=lambda x: x.key).key
+            else:
+                filtered.append(_iter)
+        return ret_nodes, sorted(filtered)
+
+    # note that there may be multiple iterators with the same min key or None
+    # we need to merge them together
+    nodes, iters = add_iters_to_node_if_needed(nodes, iters)
+
     if len(nodes) == 0:
         return
-
-    for i, iter in enumerate(iters):
-        assert nodes[0].key is not None
-        if iter.min_key is None or nodes[0].key >= iter.min_key or len(nodes) == 0:
-            n = Node(iter.iter)
-            iters.pop(i)
-            if not n.exhausted:
-                nodes.append(n)
 
     while len(nodes) > 0:
         key = min(nodes, key=lambda x: x.key).key
@@ -1400,12 +1422,8 @@ def _merge_iters_with_hint(iters: List[IterWithRangeHint]) -> Iterator[InnerReco
 
         nodes = [node for node in nodes if not node.exhausted]
 
-        for i, iter in enumerate(iters):
-            if iter.min_key <= key or len(nodes) == 0:
-                n = Node(iter.iter)
-                iters.pop(i)
-                if not n.exhausted:
-                    nodes.append(n)
+        # touch the iterator if the min key of the iterator is less than the global min key
+        nodes, iters = add_iters_to_node_if_needed(nodes, iters)
 
 
 class LocalTable:

@@ -17,12 +17,15 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
     INT32,
+    Record,
     STRING,
     SwType,
     UNKNOWN,
     SwMapType,
     SwListType,
+    InnerRecord,
     SwTupleType,
+    IterWithRangeHint,
     TableWriterException,
 )
 
@@ -229,6 +232,61 @@ class TestBasicFunctions(BaseTestCase):
             ),
             "mixed",
         )
+
+    def test_merge_iters_with_hint(self):
+        mock_iter1 = MagicMock()
+        mock_iter1.__next__.side_effect = [InnerRecord("k", Record({"k": 55}))]
+
+        iter1 = IterWithRangeHint(
+            iter=mock_iter1,  # type: ignore
+            min_key=55,
+        )
+
+        mock_iter2 = MagicMock()
+        mock_iter2.__next__.side_effect = [InnerRecord("k", Record({"k": 200}))]
+        iter2 = IterWithRangeHint(
+            iter=mock_iter2,  # type: ignore
+            min_key=200,
+        )
+
+        mock_iter3 = MagicMock()
+        mock_iter3.__next__.side_effect = [
+            InnerRecord("k", Record({"k": 50})),
+            InnerRecord("k", Record({"k": 60})),
+            InnerRecord("k", Record({"k": 300})),
+        ]
+        iter3 = IterWithRangeHint(
+            iter=mock_iter3,  # type: ignore
+            min_key=50,
+        )
+
+        mock_iter4 = MagicMock()
+        mock_iter4.__next__.side_effect = [
+            InnerRecord("k", Record({"k": 400})),
+        ]
+        iter4 = IterWithRangeHint(
+            iter=mock_iter4,  # type: ignore
+            min_key=None,
+        )
+
+        merged = data_store._merge_iters_with_hint([iter1, iter2, iter3, iter4])
+        item = next(merged)
+        assert item.key == 50
+        assert mock_iter1.__next__.call_count == 0
+        assert mock_iter2.__next__.call_count == 0
+        # tried next when init and after 50
+        assert mock_iter3.__next__.call_count == 2
+
+        item = next(merged)
+        assert item.key == 55
+        # tried next when init and after 50
+        assert mock_iter1.__next__.call_count == 2
+        assert mock_iter2.__next__.call_count == 0
+        # no need to try next, because the min key of iter3 now is 60
+        assert mock_iter3.__next__.call_count == 2
+
+        lasts = [next(merged) for _ in range(4)]
+        assert [item.key for item in lasts] == [60, 200, 300, 400]
 
     def test_get_type(self) -> None:
         self.assertEqual(data_store.UNKNOWN, data_store._get_type(None), "unknown")

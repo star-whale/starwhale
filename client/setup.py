@@ -43,6 +43,7 @@ install_requires = [
     "httpx>=0.22.0",
     "urllib3<1.27",
     "pydantic<2.0.0",  # current broker and fastapi lib code only work with pydantic < 2.0.0
+    "sortedcontainers",
 ]
 
 extras_require = {
