@@ -1,5 +1,13 @@
-from typing import Optional
+import os
+import urllib
+from typing import Any, Union, Optional
+from functools import lru_cache
 
+import requests
+
+from starwhale.consts.env import SWEnv
+from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.exceptions import UriTooShortException
 
@@ -40,6 +48,14 @@ class Project:
             raise Exception("can not init project with empty name")
         self.name = name
         # TODO check if project exists for local and remote
+        if self.instance.is_cloud:
+            self.id = (
+                int(self.name)
+                if self.name.isdigit()
+                else get_remote_project_id(self.instance.url, self.name)
+            )
+        else:
+            self.id = self.name
 
     @classmethod
     def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
@@ -71,8 +87,12 @@ class Project:
         return cls(uri=uri)
 
     @property
+    def unique_key(self) -> Union[str, int]:
+        return self.id or self.name
+
+    @property
     def full_uri(self) -> str:
-        return "/".join([self.instance.url, "project", self.name])
+        return "/".join([self.instance.url, "project", str(self.unique_key)])
 
     def __str__(self) -> str:
         return self.full_uri
@@ -84,3 +104,22 @@ class Project:
         if not isinstance(other, Project):
             return False
         return self.full_uri == other.full_uri
+
+
+# TODO there should have a clean operation when it be used in a daemon thread
+@lru_cache(maxsize=None)
+@http_retry
+def get_remote_project_id(instance_uri: str, project: str) -> Any:
+    resp = requests.get(
+        urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": (
+                SWCliConfigMixed().get_sw_token(instance=instance_uri)
+                or os.getenv(SWEnv.instance_token, "")
+            ),
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.json().get("data", {})["id"]

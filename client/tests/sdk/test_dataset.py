@@ -18,13 +18,23 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config
-from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    HTTPMethod,
+    ENV_POD_NAME,
+    DEFAULT_PROJECT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.base.uri.project import Project, get_remote_project_id
+from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.dataset.copy import DatasetCopy
+from starwhale.core.dataset.type import (
 from starwhale.base.data_type import (
     Link,
     Text,
@@ -133,6 +143,7 @@ class TestDatasetCopy(BaseTestCase):
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
         cloud_project = "project"
+        cloud_project_id = 1
 
         swds_config = DatasetConfig(
             name=dataset_name, handler=iter_complex_annotations_swds
@@ -145,17 +156,17 @@ class TestDatasetCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/project",
-            json={"data": {"id": 1, "name": "project"}},
+            json={"data": {"id": cloud_project_id, "name": "project"}},
         )
         rm.request(
             HTTPMethod.POST,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}/file",
             json={"data": {"uploadId": 1}},
         )
 
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -174,7 +185,7 @@ class TestDatasetCopy(BaseTestCase):
         rm.register_uri(
             HTTPMethod.HEAD,
             re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+                f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/"
             ),
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -182,7 +193,7 @@ class TestDatasetCopy(BaseTestCase):
         upload_blob_req = rm.register_uri(
             HTTPMethod.POST,
             re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+                f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/"
             ),
             json={"data": "server_return_uri"},
         )
@@ -324,26 +335,27 @@ class TestDatasetCopy(BaseTestCase):
         dataset_name = "complex_annotations"
         dataset_version = "dataset-version"
         cloud_project = "project"
+        cloud_project_id = 1
 
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/project",
-            json={"data": {"id": 1, "name": "project"}},
+            json={"data": {"id": cloud_project_id, "name": "project"}},
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/111",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/111",
         )
 
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/tag",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}/tag",
             json=ResponseMessageListString(
                 code="success",
                 message="success",
@@ -353,7 +365,7 @@ class TestDatasetCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}?versionUrl={dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}?versionUrl={dataset_version}",
             json={
                 "data": {"versionMeta": yaml.safe_dump({"version": dataset_version})}
             },
@@ -494,7 +506,7 @@ class TestDatasetCopy(BaseTestCase):
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-        tdb = TabularDataset(name=dataset_name, project="self")
+        tdb = TabularDataset(name=dataset_name, project=Project(DEFAULT_PROJECT))
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
@@ -924,7 +936,7 @@ class TestTabularDatasetInfo(BaseTestCase):
         assert isinstance(load_info["image"], Image)
 
     def test_tabular_dataset_property(self) -> None:
-        td = TabularDataset(name="test", project="self")
+        td = TabularDataset(name="test", project=Project(DEFAULT_PROJECT))
         assert td._info is None
         assert isinstance(td.info, TabularDatasetInfo)
         assert not bool(td.info)
@@ -944,7 +956,7 @@ class TestTabularDatasetInfo(BaseTestCase):
 
         td.close()
 
-        loaded_td = TabularDataset(name="test", project="self")
+        loaded_td = TabularDataset(name="test", project=Project(DEFAULT_PROJECT))
         assert loaded_td.info["a"] == 1
         assert list(loaded_td.info) == ["a", "b", "dict"]
         assert not loaded_td._info_changed
@@ -1000,10 +1012,10 @@ class TestTabularDataset(TestCase):
             assert isinstance(rs[0], TabularDatasetRow)
 
         with self.assertRaises(InvalidObjectName):
-            TabularDataset(name="", project="")
+            TabularDataset(name="", project=Project())
 
         with self.assertRaisesRegex(RuntimeError, "project is not set"):
-            TabularDataset(name="a123", project="")
+            TabularDataset(name="a123", project=Project())
 
     def test_encode_decode_feature_types(self) -> None:
         raw_features = {
@@ -1086,7 +1098,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.workdir = Path(self.local_storage) / "test"
-        self.project_name = "self"
+        self.project = Project(DEFAULT_PROJECT)
         self.dataset_name = "mnist"
         self.holder_dataset_version = "_current"
         with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
@@ -1103,12 +1115,12 @@ class TestMappingDatasetBuilder(BaseTestCase):
 
         self.tdb = TabularDataset(
             name=self.dataset_name,
-            project=self.project_name,
+            project=self.project,
         )
 
     def tearDown(self) -> None:
         super().tearDown()
-        _get_remote_project_id.cache_clear()
+        get_remote_project_id.cache_clear()
 
     def test_put(self) -> None:
         mdb = MappingDatasetBuilder(
@@ -1337,6 +1349,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     def test_put_for_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
         instance_uri = "http://1.1.1.1"
+        cloud_project = "cloud_pro"
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -1351,7 +1364,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         }
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{self.project_name}",
+            f"{instance_uri}/api/v1/project/{cloud_project}",
             json={"data": {"id": 1, "name": "project"}},
         )
         update_req = rm.request(
@@ -1368,16 +1381,24 @@ class TestMappingDatasetBuilder(BaseTestCase):
         upload_req = rm.register_uri(
             HTTPMethod.POST,
             re.compile(
-                f"{instance_uri}/api/v1/project/{self.project_name}/dataset/{self.dataset_name}/hashedBlob/",
+                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{self.dataset_name}/hashedBlob/",
             ),
             json={"data": server_return_uri},
+        )
+
+        project_id_req = rm.register_uri(
+            HTTPMethod.GET,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{cloud_project}",
+            ),
+            json={"data": {"id": 1}},
         )
 
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
             dataset_uri=Resource(
                 "mnist",
-                project=Project("cloud://foo/project/self"),
+                project=Project(f"cloud://foo/project/{cloud_project}"),
                 typ=ResourceType.dataset,
                 refine=False,
             ),

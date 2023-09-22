@@ -22,7 +22,7 @@ class ModelApi(Client):
         return TypeWrapper(ResponseMessagePageInfoModelVo, data)
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageModelInfoVo]:
-        uri = f"/api/v1/project/{rc.project.name}/model/{rc.name}"
+        uri = f"/api/v1/project/{rc.project.unique_key}/model/{rc.name}"
         return TypeWrapper(
             ResponseMessageModelInfoVo,
             self.http_get(uri, params={"versionName": rc.version}),

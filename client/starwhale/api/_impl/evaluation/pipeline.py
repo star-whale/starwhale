@@ -22,6 +22,7 @@ from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.base.data_type import JsonDict
 from starwhale.core.job.store import JobStorage
+from starwhale.base.uri.project import Project
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
@@ -58,7 +59,10 @@ class PipelineHandler(metaclass=ABCMeta):
         self.predict_log_mode = PredictLogMode(predict_log_mode)
         self.kwargs = kwargs
 
-        _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
+        # TODO: whether store to the target which point to
+        _logdir = JobStorage.local_run_dir(
+            self.context.run_project.unique_key, self.context.version
+        )
         _run_dir = (
             _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
         )
@@ -70,7 +74,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: use EvaluationLogStore to refactor this?
         self.evaluation_store = wrapper.Evaluation(
-            eval_id=self.context.version, project=self.context.project
+            eval_id=self.context.version, project=self.context.log_project
         )
         self._update_status(RunStatus.START)
 

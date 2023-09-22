@@ -39,8 +39,7 @@ class MappingDatasetBuilder(AsyncArtifactWriterBase):
         self._in_standalone = dataset_uri.instance.is_local
         self._tabular_dataset = TabularDataset(
             name=dataset_uri.name,
-            project=dataset_uri.project.name,
-            instance_name=dataset_uri.instance.url,
+            project=dataset_uri.project,
         )
         self._stash_uri_rows_map: t.Dict[
             Path, t.List[t.Tuple[BaseArtifact, TabularDatasetRow]]

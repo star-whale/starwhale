@@ -374,7 +374,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         cls,
         model_src_dir: Path,
         model_config: ModelConfig,
-        project: str,
+        run_project: Project,
+        log_project: Project,
         version: str = "",
         run_handler: str = "",
         dataset_uris: t.Optional[t.List[str]] = None,
@@ -388,7 +389,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
 
-        job_dir = JobStorage.local_run_dir(project, version)
+        job_dir = JobStorage.local_run_dir(run_project.name, version)
         if forbid_snapshot:
             snapshot_dir = model_src_dir
         else:
@@ -443,7 +444,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 created_at=start,
                 scheduler_run_args=scheduler_run_args,
                 version=version,
-                project=project,
+                project=run_project.name,
                 model_src_dir=str(snapshot_dir),
                 datasets=dataset_uris,
                 model=model_config.name,

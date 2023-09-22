@@ -142,7 +142,7 @@ class BundleCopy(CloudRequestMixed):
 
         return (
             self._sw_config.rootdir
-            / uri.project.name
+            / uri.project.unique_key
             / self.typ.value
             / uri.name
             / self.src_uri.version[:VERSION_PREFIX_CNT]
@@ -163,7 +163,7 @@ class BundleCopy(CloudRequestMixed):
             remote = self.dest_uri
             resource_name = self.dest_uri.name or self.src_uri.name
 
-        url = f"{remote.instance.url}/projects/{remote.project.name}/{self.typ.value}s/{resource_name}"
+        url = f"{remote.instance.url}/projects/{remote.project.unique_key}/{self.typ.value}s/{resource_name}"
         if with_version:
             url = f"{url}/versions/{self.src_uri.version}/overview"
         return url
@@ -188,7 +188,7 @@ class BundleCopy(CloudRequestMixed):
             )
 
         base = [
-            f"/project/{project.name}/{self.typ.value}/{resource_name}/version/{version}"
+            f"/project/{project.unique_key}/{self.typ.value}/{resource_name}/version/{version}"
         ]
         if not for_head:
             # uri for head request contains no 'file'
@@ -209,7 +209,7 @@ class BundleCopy(CloudRequestMixed):
             instance=self.dest_uri.instance,
             fields={
                 self.field_flag: self.field_value,
-                "project": self.dest_uri.project.name,
+                "project": self.dest_uri.project.unique_key,
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
@@ -228,7 +228,7 @@ class BundleCopy(CloudRequestMixed):
             instance=self.src_uri.instance,
             params={
                 self.field_flag: self.field_value,
-                "project": self.src_uri.project.name,
+                "project": self.src_uri.project.unique_key,
             },
             progress=progress,
             task_id=task_id,
@@ -370,7 +370,7 @@ class BundleCopy(CloudRequestMixed):
 
         def _check_built_in_runtime_existed(rc: Resource) -> bool:
             ok, _ = self.do_http_request_simple_ret(
-                path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{rc.version}",
+                path=f"/project/{rc.project.unique_key}/{rc.typ.value}/{rc.name}/version/{rc.version}",
                 method=HTTPMethod.HEAD,
                 instance=rc.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],
@@ -385,14 +385,14 @@ class BundleCopy(CloudRequestMixed):
                 total=file_path.stat().st_size,
             )
             self.do_multipart_upload_file(
-                url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
+                url_path=f"/project/{dest_uri.project.unique_key}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
                 file_path=file_path,
                 instance=dest_uri.instance,
                 fields={
                     _query_param_map[
                         ResourceType.runtime
                     ]: f"{SW_BUILT_IN}:{rt_version}",
-                    "project": dest_uri.project.name,
+                    "project": dest_uri.project.unique_key,
                     "force": "1" if self.force else "0",
                 },
                 use_raise=True,

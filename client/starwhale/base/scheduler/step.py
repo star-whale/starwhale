@@ -8,6 +8,7 @@ from starwhale.utils import console, load_yaml
 from starwhale.consts import RunStatus
 from starwhale.base.mixin import ASDictMixin
 from starwhale.base.context import Context
+from starwhale.base.uri.project import Project
 
 from .dag import DAG
 from .task import TaskResult, TaskExecutor
@@ -145,7 +146,8 @@ class StepExecutor:
     def __init__(
         self,
         step: Step,
-        project: str,
+        run_project: Project,
+        log_project: Project,
         version: str,
         workdir: Path,
         dataset_uris: t.List[str],
@@ -154,7 +156,8 @@ class StepExecutor:
     ) -> None:
         self.step = step
         self.task_num = step.task_num if task_num <= 0 else task_num
-        self.project = project
+        self.run_project = run_project
+        self.log_project = log_project
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
@@ -173,7 +176,8 @@ class StepExecutor:
             TaskExecutor(
                 index=index,
                 context=Context(
-                    project=self.project,
+                    run_project=self.run_project,
+                    log_project=self.log_project,
                     version=self.version,
                     step=self.step.name,
                     total=self.task_num,

@@ -8,6 +8,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from starwhale.utils import console
 from starwhale.consts import RunStatus
 from starwhale.base.context import Context
+from starwhale.base.uri.project import Project
 
 from .dag import DAG
 from .step import Step, StepResult, StepExecutor
@@ -17,7 +18,8 @@ from .task import TaskResult, TaskExecutor
 class Scheduler:
     def __init__(
         self,
-        project: str,
+        run_project: Project,
+        log_project: Project,
         version: str,
         workdir: Path,
         dataset_uris: t.List[str],
@@ -26,7 +28,8 @@ class Scheduler:
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
-        self.project = project
+        self.run_project = run_project
+        self.log_project = log_project
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
@@ -66,7 +69,8 @@ class Scheduler:
             tasks = [
                 StepExecutor(
                     self._steps[v],
-                    project=self.project,
+                    run_project=self.run_project,
+                    log_project=self.log_project,
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
                     version=self.version,

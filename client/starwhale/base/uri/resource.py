@@ -205,7 +205,9 @@ class Resource:
 
     def _parse_by_version(self, ver: str) -> None:
         if self.instance.is_local:
-            root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
+            root = (
+                Path(load_swcli_config()["storage"]["root"]) / self.project.unique_key
+            )
             # storage-root/project/type/name/prefix/full-version
             p = f"{root.absolute()}/*/*/*/{ver}*"
             m = glob(p)
@@ -241,7 +243,7 @@ class Resource:
             # have remote info, assume it is already refined
             return
 
-        base_path = f"{self.instance.url}/api/{SW_API_VERSION}/project/{self.project.name}/{self.typ.value}/{self.name}"
+        base_path = f"{self.instance.url}/api/{SW_API_VERSION}/project/{self.project.unique_key}/{self.typ.value}/{self.name}"
         headers = {"Authorization": self.instance.token}
         resp = requests.get(
             base_path, timeout=60, params={"versionUrl": ver}, headers=headers
@@ -252,7 +254,7 @@ class Resource:
         self.version = self._remote_info.get("versionName", self.version)
 
     def _refine_local_rc_info(self) -> None:
-        root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
+        root = Path(load_swcli_config()["storage"]["root"]) / self.project.unique_key
 
         if self.typ == ResourceType.job:
             p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
@@ -318,7 +320,7 @@ class Resource:
 
     def asdict(self) -> Dict:
         return {
-            "project": self.project.name,
+            "project": self.project.unique_key,
             "name": self.name,
             "version": self.version,
             "type": self.typ.name,
@@ -329,7 +331,7 @@ class Resource:
         parts = [
             self.instance.url,
             "project",
-            self.project.name,
+            str(self.project.unique_key),
             self.typ.value,
         ]
 

@@ -24,7 +24,7 @@ class DatasetApi(Client):
         return TypeWrapper(ResponseMessagePageInfoDatasetVo, data)
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageDatasetInfoVo]:
-        uri = f"/api/v1/project/{rc.project.name}/dataset/{rc.name}"
+        uri = f"/api/v1/project/{rc.project.unique_key}/dataset/{rc.name}"
         return TypeWrapper(
             ResponseMessageDatasetInfoVo,
             self.http_get(uri, params={"versionName": rc.version}),

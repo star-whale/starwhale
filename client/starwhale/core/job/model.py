@@ -69,8 +69,7 @@ class Job(metaclass=ABCMeta):
     def _get_report(self) -> t.Dict[str, t.Any]:
         evaluation = wrapper.Evaluation(
             eval_id=self._get_version(),
-            project=self.uri.project.name,
-            instance=self.uri.instance.url,
+            project=self.uri.project,
         )
         summary = evaluation.get_summary_metrics()
         kind = summary.get("kind", "")
@@ -261,7 +260,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _do_job_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support force action
         return self.do_http_request_simple_ret(
-            f"/project/{self.uri.project.name}/job/{self.name}/{action}",
+            f"/project/{self.uri.project.unique_key}/job/{self.name}/{action}",
             method=HTTPMethod.POST,
             instance=self.uri.instance,
         )

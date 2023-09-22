@@ -22,6 +22,7 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.base.uri.project import Project
 from starwhale.base.data_type import Link, JsonDict, Sequence, BaseArtifact
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
@@ -257,11 +258,9 @@ class TabularDataset:
     def __init__(
         self,
         name: str,
-        project: str,
+        project: Project,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
-        instance_name: str = "",
-        token: str = "",
         data_datastore_revision: str = "",
         info_datastore_revision: str = "",
     ) -> None:
@@ -271,14 +270,12 @@ class TabularDataset:
         self.name = name
 
         self.project = project
-        self.instance_name = instance_name
+        self.instance_name = project.instance.url
 
         dwd = partial(
             DatastoreWrapperDataset,
             dataset_name=name,
             project=project,
-            instance_name=instance_name,
-            token=token,
         )
         self._ds_wrapper = dwd(
             kind=DatasetTableKind.META, dataset_scan_revision=data_datastore_revision
@@ -380,10 +377,9 @@ class TabularDataset:
     ) -> _TDType:
         return cls(
             name=uri.name,
-            project=uri.project.name,
+            project=uri.project,
             start=start,
             end=end,
-            instance_name=uri.instance.url,
             data_datastore_revision=data_datastore_revision,
             info_datastore_revision=info_datastore_revision,
         )
@@ -515,7 +511,7 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
         # TODO: support datastore revision
         wrapper = DatastoreWrapperDataset(
             dataset_name=self.dataset_name,
-            project=self.project.name,
+            project=self.project,
         )
         ids = [i["id"] for i in wrapper.scan_id(self.session_start, self.session_end)]
         id_cnt = len(ids)

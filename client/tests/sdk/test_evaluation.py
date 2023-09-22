@@ -139,7 +139,7 @@ class TestModelPipelineHandler(TestCase):
         self.setUpPyfakefs()
         self.root = "/home/starwhale/model_test"
 
-        self.project = DEFAULT_PROJECT
+        self.local_project = Project(DEFAULT_PROJECT)
         self.eval_id = "mm3wky3dgbqt"
 
         self.dataset_version = gen_uniq_version()
@@ -188,7 +188,7 @@ class TestModelPipelineHandler(TestCase):
 
         context = Context(
             workdir=Path(),
-            project=self.project,
+            run_project=self.local_project,
             version=self.eval_id,
             dataset_uris=[self.dataset_uri_raw],
             step="cmp",
@@ -207,7 +207,7 @@ class TestModelPipelineHandler(TestCase):
         m_eval_log_metrics: MagicMock,
         m_eval_get: MagicMock,
     ) -> None:
-        _logdir = JobStorage.local_run_dir(self.project, self.eval_id)
+        _logdir = JobStorage.local_run_dir(self.local_project.unique_key, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "cmp" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -222,7 +222,7 @@ class TestModelPipelineHandler(TestCase):
 
         context = Context(
             workdir=Path(),
-            project=self.project,
+            run_project=self.local_project,
             version=self.eval_id,
             dataset_uris=[self.dataset_uri_raw],
             step="cmp",
@@ -278,7 +278,9 @@ class TestModelPipelineHandler(TestCase):
                 "storage": {"root": tempfile.gettempdir()},
             }
 
-            _logdir = JobStorage.local_run_dir(self.project, self.eval_id)
+            _logdir = JobStorage.local_run_dir(
+                self.local_project.unique_key, self.eval_id
+            )
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
             _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -319,7 +321,8 @@ class TestModelPipelineHandler(TestCase):
             )
             context = Context(
                 workdir=Path(),
-                project=Project("https://localhost:80/project/starwhale").full_uri,
+                run_project=self.local_project,
+                log_project=Project("https://localhost:80/project/starwhale"),
                 version=self.eval_id,
                 dataset_uris=[
                     f"https://localhost:80/project/starwhale/dataset/{self.dataset_uri_raw}"
@@ -348,7 +351,9 @@ class TestModelPipelineHandler(TestCase):
         ) as m_ds_info, patch(
             "starwhale.api._impl.wrapper.Evaluation.log_result"
         ) as m_log_result:
-            _logdir = JobStorage.local_run_dir(self.project, self.eval_id)
+            _logdir = JobStorage.local_run_dir(
+                self.local_project.unique_key, self.eval_id
+            )
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
             _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -386,7 +391,7 @@ class TestModelPipelineHandler(TestCase):
 
             context = Context(
                 workdir=Path(),
-                project=self.project,
+                run_project=self.local_project,
                 version=self.eval_id,
                 dataset_uris=[self.dataset_uri_raw],
                 step="ppl",
@@ -547,7 +552,7 @@ class TestModelPipelineHandler(TestCase):
 
         context = Context(
             workdir=Path(),
-            project=self.project,
+            run_project=self.local_project,
             version=self.eval_id,
             dataset_uris=[self.dataset_uri_raw],
             step="ppl",
@@ -559,7 +564,7 @@ class TestModelPipelineHandler(TestCase):
 
         context = Context(
             workdir=Path(),
-            project=self.project,
+            run_project=self.local_project,
             version=self.eval_id,
             dataset_uris=[self.dataset_uri_raw],
             step="cmp",
@@ -663,6 +668,7 @@ class TestEvaluationLogStore(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.version = str(uuid.uuid4())
+        self.local_project = Project(DEFAULT_PROJECT)
         self._cleanup_context()
 
     def tearDown(self) -> None:
@@ -698,7 +704,7 @@ class TestEvaluationLogStore(BaseTestCase):
         _log = EvaluationLogStore.log
 
         Context.set_runtime_context(
-            Context(version=self.version, project="test_project")
+            Context(version=self.version, log_project=self.local_project)
         )
         category = "test"
 
@@ -715,7 +721,7 @@ class TestEvaluationLogStore(BaseTestCase):
         _log_s = EvaluationLogStore.log_summary
 
         Context.set_runtime_context(
-            Context(version=self.version, project="test_project")
+            Context(version=self.version, log_project=self.local_project)
         )
         _log_s(loss=0.98)
         _log_s(loss=0.99, accuracy=0.98)
@@ -736,7 +742,7 @@ class TestEvaluationLogStore(BaseTestCase):
         _log_s = EvaluationLogStore.log_summary
 
         Context.set_runtime_context(
-            Context(version=self.version, project="test_project")
+            Context(version=self.version, log_project=self.local_project)
         )
 
         with self.assertRaisesRegex(ParameterError, "are specified at the same time"):
@@ -750,11 +756,11 @@ class TestEvaluationLogStore(BaseTestCase):
 
     def test_get_instance(self) -> None:
         Context.set_runtime_context(
-            Context(version=self.version, project="test_project")
+            Context(version=self.version, log_project=self.local_project)
         )
         inst = EvaluationLogStore._get_instance()
         assert inst.id == self.version
-        assert inst.project == "test_project"
+        assert inst.project.unique_key == "self"
 
         inst_another = EvaluationLogStore._get_instance()
         assert inst == inst_another

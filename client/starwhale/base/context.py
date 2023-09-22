@@ -7,6 +7,7 @@ from functools import wraps
 
 from starwhale.utils import console
 from starwhale.utils.error import ParameterError
+from starwhale.base.uri.project import Project
 
 
 # TODO: support __setattr__, __getattr__ function for Context
@@ -21,9 +22,13 @@ class Context:
         index: int = 0,
         dataset_uris: t.Optional[t.List[str]] = None,
         version: str = "",
-        project: str = "",
+        run_project: t.Optional[Project] = None,
+        log_project: t.Optional[Project] = None,
     ):
-        self.project = project
+        # TODO run in standalone is different with cloud in container(re:just login in as it and select it as local?)
+        self.project = run_project.name
+        self.run_project = run_project
+        self.log_project = log_project or run_project
         self.version = version
         self.step = step
         self.total = total
