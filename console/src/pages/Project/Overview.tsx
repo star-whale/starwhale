@@ -168,7 +168,7 @@ export default function ProjectOverview() {
     const [t] = useTranslation()
 
     return (
-        <Card title={t('Overview')}>
+        <Card title={[t('Project'), t('Overview')].join('')}>
             {project && <ProjectCard project={project} onEdit={() => setIsCreateProjectModalOpen(true)} />}
             <Modal
                 isOpen={isCreateProjectModalOpen}

@@ -17,6 +17,7 @@ import { DataTableLocaleT } from '../locale'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 import shallow from 'zustand/shallow'
+import useGridSort from '@starwhale/ui/GridTable/hooks/useGridSort'
 
 type HeaderCellPropsT = {
     index: number
@@ -62,6 +63,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
     const { sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
+
+    const { sortIndex, sortDirection } = useGridSort()
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {
@@ -199,36 +202,27 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     position: 'relative',
                     width: '100%',
                     display: 'flex',
-                    alignItems: 'flex-end',
+                    alignItems: 'center',
                     flex: 0,
                 })}
             >
-                {(props.isHovered || props.sortDirection) && props.sortable && (
-                    <div
-                        style={{
-                            // display: 'flex',
-                            alignItems: 'center',
-                            position: 'absolute',
-                            display: 'none',
-                            right: -3,
-                        }}
-                    >
-                        {props.sortDirection === SORT_DIRECTIONS.DESC && (
-                            <ChevronDown
-                                color={
-                                    props.sortDirection ? theme.colors.contentPrimary : theme.colors.contentSecondary
-                                }
-                            />
-                        )}
-                        {(props.sortDirection === SORT_DIRECTIONS.ASC || !props.sortDirection) && (
-                            <ChevronUp
-                                color={
-                                    props.sortDirection ? theme.colors.contentPrimary : theme.colors.contentSecondary
-                                }
-                            />
-                        )}
-                    </div>
-                )}
+                {(props.isHovered || props.sortDirection) &&
+                    !props.compareable &&
+                    sortable &&
+                    sortIndex === props.index && (
+                        <div
+                            style={{
+                                alignItems: 'center',
+                                display: 'block',
+                                color: 'gray',
+                            }}
+                        >
+                            {props.sortDirection === SORT_DIRECTIONS.DESC && <IconFont type='a-sortdesc' />}
+                            {(props.sortDirection === SORT_DIRECTIONS.ASC || !props.sortDirection) && (
+                                <IconFont type='a-sortasc' />
+                            )}
+                        </div>
+                    )}
                 {props.isHovered && props.compareable && props.index !== 0 && (
                     <Button
                         // @ts-ignore

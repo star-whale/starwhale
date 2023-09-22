@@ -56,8 +56,8 @@ export default function ModelListCard() {
                 isLoading={modelsInfo.isLoading}
                 columns={[
                     t('sth name', [t('Model')]),
-                    t('Model Version'),
-                    t('Alias'),
+                    t('latest.version'),
+                    t('latest.version.alias'),
                     t('Shared'),
                     t('Size'),
                     t('Owner'),
