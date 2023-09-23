@@ -39,6 +39,10 @@ logger = logging.getLogger(__name__)
 
 init_logger(3)
 
+random_pytorch_runtime: t.Callable[[], str] = lambda: random.choice(
+    ["pytorch37", "pytorch38", "pytorch39", "pytorch310"]
+)
+
 CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
         "run_handler": "mnist.evaluator:MNISTInference.evaluate",
@@ -49,31 +53,31 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
                 "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
             ),
         ],
-        "runtime": "pytorch37",
+        "runtime": random_pytorch_runtime(),
     },
     "cifar10": {
         "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
         "workdir": f"{ROOT_DIR}/example/cifar10",
         "datasets": [DatasetExpl("cifar10", "")],
-        "runtime": "pytorch38",
+        "runtime": random_pytorch_runtime(),
     },
     "nmt": {
         "run_handler": "nmt.evaluator:NMTPipeline.cmp",
         "workdir": f"{ROOT_DIR}/example/nmt",
         "datasets": [DatasetExpl("nmt", "")],
-        "runtime": "pytorch39",
+        "runtime": random_pytorch_runtime(),
     },
     "ag_news": {
         "run_handler": "tcan.evaluator:TextClassificationHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
         "datasets": [DatasetExpl("ag_news", "")],
-        "runtime": "pytorch310",
+        "runtime": random_pytorch_runtime(),
     },
     "ucf101": {
         "run_handler": "ucf101.evaluator:UCF101PipelineHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/ucf101",
         "datasets": [DatasetExpl("ucf101", "")],
-        "runtime": "pytorch310",
+        "runtime": random_pytorch_runtime(),
     },
     "huge-tasks": {
         "run_handler": "evaluation:evaluation_results",
@@ -88,7 +92,7 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "run_handler": "pfp.evaluator:cmp",
         "workdir": f"{ROOT_DIR}/example/PennFudanPed",
         "datasets": [DatasetExpl("pfp", "")],
-        "runtime": "pytorch39",
+        "runtime": random_pytorch_runtime(),
     },
     "speech_command": {
         "run_handler": "sc.evaluator:evaluate_speech",
@@ -99,7 +103,7 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
                 "speech_command_link", "sc.dataset:LinkRawDatasetBuildExecutor"
             ),
         ],
-        "runtime": "pytorch38",
+        "runtime": random_pytorch_runtime(),
     },
 }
 
@@ -402,7 +406,7 @@ class TestCli:
                     name,
                     example["run_handler"],
                     in_standalone=False,
-                    runtime=random.choice(list(self.RUNTIME_EXAMPLES.keys())),
+                    runtime=example["runtime"],
                 )
                 for name, example in ALL_EXAMPLES.items()
             ]
@@ -435,7 +439,7 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=True,
-                runtime=random.choice(list(self.RUNTIME_EXAMPLES.keys())),
+                runtime=example["runtime"],
             )
 
         if self.server_url:
