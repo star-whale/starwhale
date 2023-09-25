@@ -48,7 +48,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             const sortedMergeIds = Array.from(newIds).filter((v: T) => ids.has(v))
             const $pinnedIds = new Set(pinnedIds)
             const dragIndex = sortedMergeIds.findIndex((v: T) => v === dragId)
-            const prevIds = rawIds
+            const prevIds = [...rawIds]
             const dragPrevSiblingId = sortedMergeIds[dragIndex - 1]
             const dragPrevSiblingRawIndex = dragIndex > 0 ? prevIds.findIndex((v: T) => v === dragPrevSiblingId) : 0
             const dragPrevRawIndex = prevIds.findIndex((v: T) => v === dragId)
@@ -61,17 +61,18 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
 
             // move pined column to no pined column will auto remove pined status
             const pindedFlag: number[] = []
-            Array.from(sortedMergeIds).forEach((v: T, index) => {
+            Array.from(prevIds).forEach((v: T, index) => {
                 if ($pinnedIds.has(v)) {
                     pindedFlag.push(index)
                 }
             })
 
             const maxPinedFlag = Math.max(...pindedFlag)
+            const dragToIndex = dragIndex > 0 ? dragPrevSiblingRawIndex + 1 : 0
 
-            if (dragIndex > maxPinedFlag) {
+            if (dragToIndex > maxPinedFlag) {
                 $pinnedIds.delete(dragId)
-            } else if (dragIndex < maxPinedFlag) {
+            } else if (dragToIndex < maxPinedFlag) {
                 $pinnedIds.add(dragId)
             }
 
@@ -87,7 +88,7 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
     )
 
     const handlePinOne = useCallback(
-        (id: T) => {
+        (id: T, rawIds: T[]) => {
             if (pinnedIds.has(id)) {
                 pinnedIds.delete(id)
             } else {
@@ -95,13 +96,13 @@ export default function useUnSortedSelection<T>(props: IUseSelectionPropsT<T>) {
             }
             setPinnedIds(new Set(pinnedIds))
 
-            const prevIds = ids
+            const prevIds = new Set(rawIds)
             Array.from(pinnedIds).forEach((i) => prevIds.delete(i))
             const sortedIds = [...Array.from(pinnedIds), ...Array.from(prevIds)]
             setIds(new Set(sortedIds))
             return { pinnedIds: Array.from(pinnedIds), ids: sortedIds, selectedIds: Array.from(selectedIds) }
         },
-        [setPinnedIds, pinnedIds, ids, selectedIds]
+        [setPinnedIds, pinnedIds, selectedIds]
     )
 
     return {

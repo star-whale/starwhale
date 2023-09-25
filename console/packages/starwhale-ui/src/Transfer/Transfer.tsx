@@ -253,7 +253,7 @@ export default function Transfer({
                     operators={{
                         ...rightOperators,
                         handlePinOne: (id: any) => {
-                            const rtn = rightOperators.handlePinOne(id)
+                            const rtn = rightOperators.handlePinOne(id, $rightIds)
                             onChange({
                                 selectedIds: rtn.selectedIds,
                                 pinnedIds: rtn.pinnedIds,
