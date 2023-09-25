@@ -32,6 +32,7 @@ from starwhale.utils.error import (
 )
 from starwhale.base.uri.project import Project, get_remote_project_id
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.type import (
@@ -644,11 +645,12 @@ class TestDatasetSessionConsumption(TestCase):
         MagicMock(),
     )
     def test_cloud_tdsc(self, rm: Mocker, m_conf: MagicMock) -> None:
+        instance_uri = "http://1.1.1.1:8081"
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
                 "test": {
-                    "uri": "http://1.1.1.1:8081",
+                    "uri": instance_uri,
                     "current_project": "p",
                     "sw_token": "token",
                 },
@@ -659,6 +661,11 @@ class TestDatasetSessionConsumption(TestCase):
 
         os.environ[ENV_POD_NAME] = ""
         with self.assertRaises(RuntimeError):
+            rm.request(
+                HTTPMethod.GET,
+                f"{instance_uri}/api/v1/project/p",
+                json={"data": {"id": 1, "name": "p"}},
+            )
             CloudTDSC(
                 Resource(
                     "mnist/version/latest",
@@ -668,6 +675,11 @@ class TestDatasetSessionConsumption(TestCase):
                 "",
             )
 
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/test",
+            json={"data": {"id": 1, "name": "test"}},
+        )
         os.environ[ENV_POD_NAME] = "pod-1"
         tdsc = get_dataset_consumption(
             dataset_uri="cloud://test/project/test/dataset/mnist/version/123",
@@ -682,7 +694,7 @@ class TestDatasetSessionConsumption(TestCase):
 
         mock_request = rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/consume",
+            "http://1.1.1.1:8081/api/v1/project/1/dataset/mnist/version/123/consume",
             json={
                 "data": {
                     "start": "path/1",
@@ -699,7 +711,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert range_key == ("path/1", "path/100")
         assert len(mock_request.request_history) == 1  # type: ignore
         request = mock_request.request_history[0]  # type: ignore
-        assert request.path == "/api/v1/project/test/dataset/mnist/version/123/consume"
+        assert request.path == "/api/v1/project/1/dataset/mnist/version/123/consume"
         assert request.json() == {
             "batchSize": 50,
             "sessionId": "123",
@@ -913,7 +925,7 @@ class TestTabularDatasetInfo(BaseTestCase):
     def test_datastore(self) -> None:
         ds_wrapper = DatastoreWrapperDataset(
             "test",
-            "self",
+            Project("self"),
             kind=DatasetTableKind.INFO,
         )
         info = TabularDatasetInfo(
@@ -1013,9 +1025,6 @@ class TestTabularDataset(TestCase):
 
         with self.assertRaises(InvalidObjectName):
             TabularDataset(name="", project=Project())
-
-        with self.assertRaisesRegex(RuntimeError, "project is not set"):
-            TabularDataset(name="a123", project=Project())
 
     def test_encode_decode_feature_types(self) -> None:
         raw_features = {

@@ -18,18 +18,18 @@ from .task import TaskResult, TaskExecutor
 class Scheduler:
     def __init__(
         self,
-        run_project: Project,
-        log_project: Project,
         version: str,
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
         handler_args: t.List[str] | None = None,
+        run_project: t.Optional[Project] = None,
+        log_project: t.Optional[Project] = None,
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
-        self.run_project = run_project
-        self.log_project = log_project
+        self.run_project = run_project or Project()
+        self.log_project = log_project or self.run_project
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
@@ -109,7 +109,8 @@ class Scheduler:
         start_time = time.time()
         result = StepExecutor(
             step=step,
-            project=self.project,
+            run_project=self.run_project,
+            log_project=self.log_project,
             dataset_uris=self.dataset_uris,
             workdir=self.workdir,
             version=self.version,

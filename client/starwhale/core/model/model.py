@@ -322,9 +322,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         apis = dict()
 
         # TODO: refine this ugly ad hoc
-        Context.set_runtime_context(
-            Context(pkg, version="-1", project="tmp-project-for-build")
-        )
+        Context.set_runtime_context(Context(pkg, version="-1", run_project=Project()))
 
         for module_name in search_modules:
             module_name = module_name.split(":")[0].strip()

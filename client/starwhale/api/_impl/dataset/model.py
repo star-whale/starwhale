@@ -543,7 +543,7 @@ class Dataset:
         if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             ok, _ = crm.do_http_request_simple_ret(
-                path=f"/project/{uri.project.name}/{ResourceType.dataset.value}/{uri.name}/version/{uri.version}",
+                path=f"/project/{uri.project.unique_key}/{ResourceType.dataset.value}/{uri.name}/version/{uri.version}",
                 method=HTTPMethod.HEAD,
                 instance=uri.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],

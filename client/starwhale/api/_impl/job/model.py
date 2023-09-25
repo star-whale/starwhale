@@ -51,8 +51,7 @@ class Job:
                 eval_id = info.job.uuid
             self._evaluation_store = wrapper.Evaluation(
                 eval_id=eval_id,
-                project=self.uri.project.name,
-                instance=self.uri.instance.url,
+                project=self.uri.project,
             )
         return self._evaluation_store
 

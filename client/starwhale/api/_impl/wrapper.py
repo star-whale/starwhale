@@ -102,7 +102,9 @@ class Evaluation(Logger):
             lambda name: f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}"
         )
         self._eval_summary_table_name = "eval/summary"
-        self._data_store = data_store.get_data_store(instance_uri=project.instance.url)
+        self._data_store = data_store.get_data_store(
+            project.instance.url, project.instance.token
+        )
         self._init_writers([])
 
     def _get_storage_table_name(self, table: str) -> str:
@@ -257,7 +259,9 @@ class Dataset(Logger):
             project=project.unique_key,
             table=f"dataset/{dataset_name}/_current/{kind.value}",
         )
-        self._data_store = data_store.get_data_store(project.instance.url)
+        self._data_store = data_store.get_data_store(
+            project.instance.url, project.instance.token
+        )
         self._init_writers([self._table_name])
 
     def put(self, data_id: Union[str, int], **kwargs: Any) -> None:

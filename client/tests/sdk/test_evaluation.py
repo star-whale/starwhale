@@ -302,14 +302,21 @@ class TestModelPipelineHandler(TestCase):
             ]
             m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
 
+            project_id = 1
+            rm.request(
+                HTTPMethod.GET,
+                "https://localhost:80/api/v1/project/starwhale",
+                json={"data": {"id": project_id, "name": "starwhale"}},
+            )
+
             rm.request(
                 HTTPMethod.HEAD,
-                f"https://localhost:80/api/v1/project/starwhale/dataset/mnist/version/{self.dataset_version}",
+                f"https://localhost:80/api/v1/project/{project_id}/dataset/mnist/version/{self.dataset_version}",
                 json={"message": "found"},
                 status_code=HTTPStatus.OK,
             )
             rm.get(
-                "https://localhost:80/api/v1/project/starwhale/dataset/mnist",
+                f"https://localhost:80/api/v1/project/{project_id}/dataset/mnist",
                 json={
                     "data": {
                         "id": 11,
@@ -641,7 +648,7 @@ class TestModelPipelineHandler(TestCase):
             DummyWithOnlyData,
             DummyWithOnlyVarPositional,
         ]
-        Context.set_runtime_context(Context(version="123", project="test"))
+        Context.set_runtime_context(Context(version="123", run_project=Project("self")))
         uri = Resource("mnist/version/123456", typ=ResourceType.dataset, refine=False)
         for h in handlers:
             h()._do_predict(

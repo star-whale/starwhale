@@ -333,7 +333,7 @@ class TestDataLoader(TestCase):
         m_scan_id.return_value = [{"id": 0}]
         version = "1122334455667788"
         dataset_uri = Resource(
-            f"http://127.0.0.1:1234/project/self/dataset/mnist/version/{version}",
+            f"http://127.0.0.1:1234/project/1/dataset/mnist/version/{version}",
             typ=ResourceType.dataset,
             refine=False,
         )
@@ -371,7 +371,7 @@ class TestDataLoader(TestCase):
 
         signed_url = "http://minio/signed/path/file"
         rm.post(
-            "http://127.0.0.1:1234/api/v1/project/self/dataset/mnist/uri/sign-links",
+            "http://127.0.0.1:1234/api/v1/project/1/dataset/mnist/uri/sign-links",
             json={"data": {fname: signed_url}},
         )
         rm.get(
@@ -391,23 +391,23 @@ class TestDataLoader(TestCase):
         assert isinstance(_data["image"], Image)
 
         assert list(ObjectStore._stores.keys()) == [
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
         ]
         backend = ObjectStore._stores[
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+            "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
         ].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
         assert (
             ObjectStore._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+                "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
             ].bucket
             == ""
         )
         assert (
             ObjectStore._stores[
-                "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788."
+                "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
             ].key_prefix
             == ""
         )
@@ -508,7 +508,11 @@ class TestDataLoader(TestCase):
                 "local": {"uri": "local"},
             },
         }
-        rm.get("http://localhost/api/v1/project/x/dataset/mnist", json={})
+        rm.get(
+            "http://localhost/api/v1/project/x",
+            json={"data": {"id": 1, "name": "x"}},
+        )
+        rm.get("http://localhost/api/v1/project/1/dataset/mnist", json={})
         m_summary.return_value = DatasetSummary(rows=4)
         tdsc = m_sc()
         tdsc.get_scan_range.side_effect = [["a", "e"]] + [None] * 120
@@ -632,12 +636,8 @@ class TestDataLoader(TestCase):
         raw_content = b"abcdefg"
         req_get_file = rm.register_uri(HTTPMethod.GET, "/get-file", content=raw_content)
         rm.post(
-            "http://localhost/api/v1/project/x/dataset/mnist/uri/sign-links",
+            "http://localhost/api/v1/project/1/dataset/mnist/uri/sign-links",
             json={"data": _uri_dict},
-        )
-        rm.get(
-            "http://localhost/api/v1/project/x",
-            json={"data": {"id": 1, "name": "x"}},
         )
 
         loader = get_data_loader(

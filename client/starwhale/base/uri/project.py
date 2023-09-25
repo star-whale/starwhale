@@ -49,6 +49,7 @@ class Project:
         self.name = name
         # TODO check if project exists for local and remote
         if self.instance.is_cloud:
+            # TODO check whether contains namespace in name(like 'sw:project')?
             self.id = (
                 int(self.name)
                 if self.name.isdigit()
