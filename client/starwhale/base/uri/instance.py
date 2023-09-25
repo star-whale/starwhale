@@ -29,7 +29,7 @@ def _find_alias_by_url(url: str, token: Optional[str] = None) -> Tuple[str, str]
     ins_url = "://".join([p.scheme, p.netloc])
     if token is not None:
         return "tmp", url
-
+    print(f"haha:{inst_uri_map.keys()}")
     # use host as alias when url starts with cloud or non-scheme
     if p.scheme == "cloud":
         if p.netloc not in inst_uri_map:

@@ -51,9 +51,9 @@ class Project:
         if self.instance.is_cloud:
             # TODO check whether contains namespace in name(like 'sw:project')?
             self.unique = (
-                self.name
+                int(self.name)
                 if self.name.isdigit()
-                else str(get_remote_project_id(self.instance.url, self.name))
+                else get_remote_project_id(self.instance.url, self.name)
             )
         else:
             self.unique = self.name
@@ -88,7 +88,7 @@ class Project:
         return cls(uri=uri)
 
     @property
-    def unique_key(self) -> str:
+    def unique_key(self) -> Union[str, int]:
         return self.unique
 
     @property

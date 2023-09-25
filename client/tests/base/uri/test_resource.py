@@ -356,8 +356,9 @@ class TestResource(TestCase):
                 "local": {"uri": "local"},
             },
         }
+        rm.get("https://foo.com/api/v1/project/starwhale", json={"data": {"id": 1}})
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/dataset/mnist",
+            "https://foo.com/api/v1/project/1/dataset/mnist",
             json={
                 "data": {
                     "id": 1,

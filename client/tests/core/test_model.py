@@ -1159,20 +1159,20 @@ class CloudModelTest(TestCase):
         )
         assert result
         assert data == "success"
-        assert rm.call_count == 4
-        assert rm.request_history[0].qs == {"versionurl": ["123456a"]}
-        assert rm.request_history[0].method == "GET"
-        assert rm.request_history[1].qs == {"versionurl": ["223456a"]}
+        assert rm.call_count == 5
+        assert rm.request_history[1].qs == {"versionurl": ["123456a"]}
         assert rm.request_history[1].method == "GET"
-        assert rm.request_history[2].qs == {"versionurl": ["323456a"]}
+        assert rm.request_history[2].qs == {"versionurl": ["223456a"]}
         assert rm.request_history[2].method == "GET"
-        req = JobRequest(**json.loads(rm.request_history[3].text))
+        assert rm.request_history[3].qs == {"versionurl": ["323456a"]}
+        assert rm.request_history[3].method == "GET"
+        req = JobRequest(**json.loads(rm.request_history[4].text))
         assert req.model_version_url == "100"
         assert req.dataset_version_urls == "200"
         assert req.runtime_version_url == "300"
         assert req.resource_pool == "default"
         assert req.handler == "test:predict"
-        assert rm.request_history[3].method == "POST"
+        assert rm.request_history[4].method == "POST"
 
     def test_cli_list(self) -> None:
         mock_obj = MagicMock()

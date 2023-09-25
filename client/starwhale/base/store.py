@@ -183,7 +183,7 @@ class BaseStorage(metaclass=ABCMeta):
         uri_type: ResourceType,
     ) -> t.Generator[BundleField, None, None]:
         sw = SWCliConfigMixed()
-        _obj_dir = sw.rootdir / project_uri.name / uri_type.value
+        _obj_dir = sw.rootdir / str(project_uri.unique_key) / uri_type.value
         _tags_map = {}
         for _path in _obj_dir.glob(f"**/*{bundle_type}"):
             if not _path.name.endswith(bundle_type):

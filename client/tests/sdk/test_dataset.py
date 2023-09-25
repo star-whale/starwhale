@@ -577,6 +577,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert isinstance(consumption_cloud, CloudTDSC)
         assert consumption_cloud.instance_token == "123"
 
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
         "starwhale.base.uri.resource.Resource._refine_local_rc_info",
@@ -586,7 +587,16 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
-    def test_standalone_tdsc_multi_thread(self, m_scan_id: MagicMock) -> None:
+    def test_standalone_tdsc_multi_thread(
+        self, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": "/root"},
+        }
         total = 1002
         batch_size = 10
         m_scan_id.return_value = [{"id": f"{i}-{i}"} for i in range(0, total)]
@@ -740,6 +750,7 @@ class TestDatasetSessionConsumption(TestCase):
             ],
         }
 
+    @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
@@ -750,7 +761,9 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
-    def test_standalone_tdsc(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+    def test_standalone_tdsc(
+        self, rm: Mocker, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -775,6 +788,9 @@ class TestDatasetSessionConsumption(TestCase):
             )
 
         with self.assertRaises(NoSupportError):
+            rm.get(
+                "http://1.1.1.1:8082/api/v1/project/starwhale", json={"data": {"id": 1}}
+            )
             StandaloneTDSC(
                 dataset_uri=Resource(
                     "http://1.1.1.1:8082/project/starwhale/dataset/mnist/version/latest",
@@ -1395,7 +1411,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
             json={"data": server_return_uri},
         )
 
-        project_id_req = rm.register_uri(
+        rm.register_uri(
             HTTPMethod.GET,
             re.compile(
                 f"{instance_uri}/api/v1/project/{cloud_project}",
