@@ -209,7 +209,7 @@ class BundleCopy(CloudRequestMixed):
             instance=self.dest_uri.instance,
             fields={
                 self.field_flag: self.field_value,
-                "project": self.dest_uri.project.unique_key,
+                "project": str(self.dest_uri.project.unique_key),
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
@@ -228,7 +228,7 @@ class BundleCopy(CloudRequestMixed):
             instance=self.src_uri.instance,
             params={
                 self.field_flag: self.field_value,
-                "project": self.src_uri.project.unique_key,
+                "project": str(self.src_uri.project.unique_key),
             },
             progress=progress,
             task_id=task_id,
@@ -392,7 +392,7 @@ class BundleCopy(CloudRequestMixed):
                     _query_param_map[
                         ResourceType.runtime
                     ]: f"{SW_BUILT_IN}:{rt_version}",
-                    "project": dest_uri.project.unique_key,
+                    "project": str(dest_uri.project.unique_key),
                     "force": "1" if self.force else "0",
                 },
                 use_raise=True,
