@@ -238,6 +238,7 @@ open_api_model_test() {
       git diff
       exit 1
     fi
+    popd
 }
 
 client_test() {
