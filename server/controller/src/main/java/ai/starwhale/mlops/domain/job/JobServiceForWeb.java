@@ -294,6 +294,7 @@ public class JobServiceForWeb {
     /**
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
+    @WriteOperation
     public void resumeJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
         Job job = jobDao.findJobById(jobId);
