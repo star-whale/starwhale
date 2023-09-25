@@ -29,6 +29,7 @@ from starwhale.core.dataset.type import (
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.api._impl.data_store import datastore_max_dirty_records
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 from starwhale.api._impl.dataset.loader import DataRow
 
@@ -207,7 +208,7 @@ class MappingDatasetBuilder:
         )
         self._rows_put_queue: queue.Queue[
             t.Optional[t.Union[DataRow, Exception]]
-        ] = queue.Queue()
+        ] = queue.Queue(maxsize=datastore_max_dirty_records)
         self._rows_put_thread = threading.Thread(
             target=self._rows_put_worker, daemon=True, name="RowPutThread"
         )

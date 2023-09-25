@@ -50,6 +50,7 @@ from starwhale.base.models.base import SwBaseModel
 
 datastore_table_file_ext = ".sw-datastore"
 datastore_manifest_file_name = "manifest.json"
+datastore_max_dirty_records = int(os.getenv("DATASTORE_MAX_DIRTY_RECORDS", "10000"))
 
 
 class SwType(metaclass=ABCMeta):
@@ -1137,6 +1138,7 @@ class MemoryTable:
         self.dirty = False
         self.compressor = ZipCompressor()
         self._key_type: SwType | None = None
+        self._max_dirty_records = datastore_max_dirty_records
 
     @property
     def key_type(self) -> SwType | None:
@@ -1212,6 +1214,9 @@ class MemoryTable:
             del_mark = Record({self.key_column: key, "-": True})
             revision = r.append(del_mark)
         return revision  # type: ignore
+
+    def should_dump(self) -> bool:
+        return len(self.records) >= self._max_dirty_records
 
 
 class DataBlock:
@@ -1300,7 +1305,6 @@ class DataBlockDesc(SwBaseModel, smart_union=True):
     max_key: KeyType
     row_count: int
     block_id: Optional[int]
-    legacy_file: Optional[str]
 
 
 class DataBlockConfig(SwBaseModel):
@@ -1454,11 +1458,14 @@ class LocalTable:
         self.root_path = Path(root_path)
         self.key_column = key_column
         self.lock = threading.Lock()
+        self._dump_lock = threading.Lock()
+        self._data_block_lock = threading.Lock()
         self.compressor = ZipCompressor()
         self.create_if_missing = create_if_missing
         self._key_column_type: SwType | None = None
         self._load_manifest()
         self.memory_table: MemoryTable | None = None
+        self._immutable_memory_table: MemoryTable | None = None
         if self.key_column is not None:
             self.memory_table = MemoryTable(self.key_column)
 
@@ -1467,14 +1474,42 @@ class LocalTable:
         return self.memory_table and self.memory_table.key_type or self._key_column_type
 
     def _must_get_mem_table(self) -> MemoryTable:
+        """
+        Get the memory table. If the memory table is None, it will create a new memory table.
+        If the memory table is full, it will create a new memory table and dump the old memory table to a data block.
+        """
         if self.memory_table is None and self.key_column is not None:
             self.memory_table = MemoryTable(self.key_column)
         assert self.memory_table is not None
+
+        if self.memory_table.should_dump():
+            # check if there is an immutable memory table
+            if self._immutable_memory_table is not None:
+                # wait for the dump thread
+                while self._immutable_memory_table.should_dump():
+                    console.trace("wait for the immutable memory table dump thread")
+                    time.sleep(0.5)
+
+            self._immutable_memory_table = self.memory_table
+            assert self.key_column is not None
+            self.memory_table = MemoryTable(self.key_column)
+            # start a new thread to dump the data
+            # no need to join the thread, the thread will be waited when the dump method is called
+            threading.Thread(
+                target=self._dump,
+                args=(self.root_path, self._immutable_memory_table),
+                name="immutable_memory_table_dump",
+            ).start()
+
         return self.memory_table
 
     def insert(self, record: Dict[str, Any]) -> str:
         with self.lock:
-            return self._must_get_mem_table().insert_dict(record)
+            mem = self._must_get_mem_table()
+            rv = mem.insert_dict(record)
+            if self._key_column_type is None:
+                self._key_column_type = mem.key_type
+            return rv
 
     def delete(self, keys: List[Union[int, str]]) -> str:
         with self.lock:
@@ -1496,57 +1531,62 @@ class LocalTable:
             deep_copy = True if env is None else env.strip().upper() == "TRUE"
 
         with self.lock:
+            mem_tables = [self._must_get_mem_table()]
+            if self._immutable_memory_table is not None:
+                mem_tables.append(self._immutable_memory_table)
+
             iters = [
                 IterWithRangeHint(
-                    iter=self._must_get_mem_table().scan(start, end, end_inclusive),
+                    iter=mem.scan(start, end, end_inclusive),
                 )
+                for mem in mem_tables
             ]
-            data_blocks = self._load_data_blocks()
-            for block in data_blocks:
-                if block.virtual:
-                    continue
-                if block.ahead(start):
-                    continue
-                if block.behind(end):
-                    break
-                iters.append(
-                    IterWithRangeHint(
-                        iter=block.scan(start, end, end_inclusive),
-                        min_key=block.min_key,
+            with self._data_block_lock:
+                data_blocks = self._load_data_blocks()
+                for block in data_blocks:
+                    if block.virtual:
+                        continue
+                    if block.ahead(start):
+                        continue
+                    if block.behind(end):
+                        break
+                    iters.append(
+                        IterWithRangeHint(
+                            iter=block.scan(start, end, end_inclusive),
+                            min_key=block.min_key,
+                        )
                     )
-                )
-            for item in _merge_iters_with_hint(iters):
-                if item is None:
-                    continue
-                r = item.get_record(revision=revision, deep_copy=deep_copy)
-                if r is None:
-                    continue
-                if columns is None:
-                    d = dict(r)
-                else:
-                    d = {columns[k]: v for k, v in r.items() if k in columns}
-                    if "-" in r:
-                        d["-"] = r["-"]
-                assert self.key_column is not None  # load_manifest will set key_column
-                d["*"] = r[self.key_column]
-                if not keep_none:
-                    d = {k: v for k, v in d.items() if v is not None}
-                yield d
+                for item in _merge_iters_with_hint(iters):
+                    if item is None:
+                        continue
+                    r = item.get_record(revision=revision, deep_copy=deep_copy)
+                    if r is None:
+                        continue
+                    if columns is None:
+                        d = dict(r)
+                    else:
+                        d = {columns[k]: v for k, v in r.items() if k in columns}
+                        if "-" in r:
+                            d["-"] = r["-"]
+                    assert (
+                        self.key_column is not None
+                    )  # load_manifest will set key_column
+                    d["*"] = r[self.key_column]
+                    if not keep_none:
+                        d = {k: v for k, v in d.items() if v is not None}
+                    yield d
 
     def _load_data_blocks(self) -> SortedList[DataBlock]:
         manifest = self._load_manifest()
         ret: SortedList[DataBlock] = SortedList()
         for block in manifest.blocks:
-            if block.legacy_file:
-                file = Path(block.legacy_file)
-            else:
-                if block.block_id is None:
-                    raise RuntimeError("block_id can not be None")
-                file = self._get_block_file_name(
-                    self.root_path,
-                    manifest.block_config.block_name_prefix,
-                    block.block_id,
-                )
+            if block.block_id is None:
+                raise RuntimeError("block_id can not be None")
+            file = self._get_block_file_name(
+                self.root_path,
+                manifest.block_config.block_name_prefix,
+                block.block_id,
+            )
             assert self.key_column is not None  # load_manifest will set key_column
             db = DataBlock(
                 min_key=block.min_key,
@@ -1575,20 +1615,6 @@ class LocalTable:
                     )
                 return manifest
 
-        # for backward compatibility
-        file = _get_table_path(self.root_path, self.table_name)
-        if Path(file).exists():
-            return Manifest(
-                block_config=DataBlockConfig(),
-                blocks=[
-                    DataBlockDesc(
-                        min_key=None, max_key=None, row_count=0, legacy_file=str(file)
-                    )
-                ],
-                key_column=self.key_column or "",
-                next_block_id=0,
-            )
-
         if self.create_if_missing:
             return Manifest(
                 block_config=DataBlockConfig(),
@@ -1602,12 +1628,18 @@ class LocalTable:
     def _get_block_file_name(self, root_path: Path, prefix: str, block_id: int) -> Path:
         return root_path / f"{prefix}.{block_id:07d}{self.compressor.extension()}"
 
-    def _dump(self, root_path: Path) -> None:
+    def _dump(self, root_path: Path, mem_table: MemoryTable) -> None:
+        with self._dump_lock:
+            self._dump_mem_table(root_path, mem_table)
+
+    def _dump_mem_table(self, root_path: Path, mem_table: MemoryTable) -> None:
+        if len(mem_table.records) == 0:
+            return
+
         root_path.mkdir(parents=True, exist_ok=True)
 
         # reload the manifest file
         manifest = self._load_manifest()
-        mem_table = self._must_get_mem_table()
         if manifest.key_column_type is None and mem_table.key_type is not None:
             key_type_str = SwType.encode_schema(mem_table.key_type)
             manifest.key_column_type = key_type_str
@@ -1619,27 +1651,43 @@ class LocalTable:
         if key_column is None:
             raise RuntimeError("key_column can not be None")
 
+        blocks_to_rm = []
         # dump the memory table
         dest_blocks: Dict[DataBlock, List[InnerRecord]] = {}
         records = list(mem_table.scan())
+        key_range_not_found: List[Tuple[Any, Any]] = []
+        last_range_broken = True
         for record in records:
             key = record.key
-            # TODO deal with the rows out of the data blocks range
+            block_found = False
             for block in data_blocks:
                 if block.block_id is None:
                     continue
                 if block.min_key <= key <= block.max_key:
                     dest_blocks.setdefault(block, []).append(record)
+                    blocks_to_rm = [block.file]
+                    block_found = True
+                    last_range_broken = True
+            if not block_found:
+                if last_range_broken:
+                    key_range_not_found.append((key, key))
+                else:
+                    key_range_not_found[-1] = (
+                        key_range_not_found[-1][0],
+                        key,
+                    )
+                last_range_broken = False
 
-        if len(dest_blocks) == 0:
-            # create new if there is no block
+        for start, end in key_range_not_found:
+            console.trace(f"create new block for key range {start} - {end}")
             block_id = manifest.next_block_id
             file = self._get_block_file_name(
                 root_path, manifest.block_config.block_name_prefix, block_id
             )
+            block_records = [record for record in records if start <= record.key <= end]
             dest_blocks[
-                DataBlock(records[0].key, records[-1].key, key_column, block_id, file)
-            ] = records
+                DataBlock(start, end, key_column, block_id, file)
+            ] = block_records
 
         # update the data block records and check if the block reaches the max size
         for block, records in dest_blocks.items():
@@ -1694,26 +1742,29 @@ class LocalTable:
                 )
                 manifest.next_block_id += 1
 
-        # regenerate the manifest file and replace the old one
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
-            tmp.write(manifest.json())
-            tmp.flush()
-            shutil.move(tmp.name, root_path / datastore_manifest_file_name)
+        with self._data_block_lock:
+            # regenerate the manifest file and replace the old one
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+                tmp.write(manifest.json())
+                tmp.flush()
+                shutil.move(tmp.name, root_path / datastore_manifest_file_name)
 
-        # remove the old data files
-        for block in data_blocks:
-            if block.file is not None:
-                console.trace(f"remove block {block.file}")
-                block.file.unlink()
+            # remove the old data files
+            for f in blocks_to_rm:
+                console.trace(f"remove block {f}")
+                f.unlink()
 
-    def dump(self, if_dirty: bool = True) -> None:
-        if if_dirty:
-            if self.memory_table is None:
-                return
-            if not self.memory_table.dirty:
-                return
+        # release the memory
+        mem_table.records.clear()
+
+    def dump(self) -> None:
         with self.lock:
-            self._dump(self.root_path)
+            if self._immutable_memory_table is not None:
+                self._dump(self.root_path, self._immutable_memory_table)
+                self._immutable_memory_table = None
+            if self.memory_table is not None:
+                self._dump(self.root_path, self.memory_table)
+                self.memory_table = None
 
 
 class TableDesc:
@@ -2206,6 +2257,12 @@ class TableWriter(threading.Thread):
             raise RuntimeError(
                 f"the key {self.key_column} should not be none, record:{record}"
             )
+        # block until the records are flushed
+        while True:
+            if len(self._records) < datastore_max_dirty_records * 2:
+                break
+            time.sleep(0.1)
+
         with self._cond:
             schema = _update_schema(self.key_column, record)
             # TODO: group the records with the same schema
