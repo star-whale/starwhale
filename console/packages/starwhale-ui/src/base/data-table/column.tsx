@@ -7,7 +7,7 @@ import Checkbox from '../../Checkbox'
 import { themedUseStyletron } from '../../theme/styletron'
 
 const MIN_WIDTH = 100
-const MAX_WIDTH = 400
+const MAX_WIDTH = 1000
 
 const sortFn = function (a, b) {
     if (isNaN(a)) {

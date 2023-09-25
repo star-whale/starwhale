@@ -46,7 +46,7 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
 
     if (!isZoom) {
         return (
-            <div className={classNames(styles.wrapper, 'dataset-viewer text line-clamp line-clamp-2')}>
+            <div className={classNames(styles.wrapper, 'dataset-viewer text line-clamp line-clamp-2 break-words')}>
                 <Tooltip
                     content={() => (
                         <p

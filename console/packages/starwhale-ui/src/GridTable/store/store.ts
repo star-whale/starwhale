@@ -46,6 +46,11 @@ export interface ICurrentViewState {
     onCurrentViewQueriesChange: (queries: QueryT[]) => void
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) => void
     onCurrentViewColumnsPin: (columnId: string, bool?: boolean) => void
+    onColumnResize: (columnKey: any, resizeDelta: number) => void
+    getResizeDeltas: () => Record<string, any> | undefined
+    setResizeDeltas: (resizeDeltas: Record<string, any>) => void
+    getMeasuredWidths: () => Record<string, any> | undefined
+    setMeasuredWidths: (measuredWidths: Record<string, any>) => void
 }
 export interface IViewInteractiveState {
     viewEditing: ConfigT
@@ -148,6 +153,8 @@ const rawCurrentView: ConfigT = {
     updated: false,
     updateColumn: false,
     id: 'all',
+    measuredWidths: {},
+    resizeDeltas: {},
 }
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => {
     const update = (updateAttrs: Partial<ConfigT>, name?: string) => {
@@ -222,6 +229,40 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             update({ pinnedIds: Array.from($pinnedIds), ids: sortedMergeSelectedIds }, 'onCurrentViewColumnsPin')
         },
         onCurrentViewSort: (key, direction) => update({ sortBy: key, sortDirection: direction }, 'onCurrentViewSort'),
+        getMeasuredWidths: () => get().currentView.measuredWidths,
+        setMeasuredWidths: (measuredWidths: Record<string, any>) =>
+            set(
+                {
+                    currentView: {
+                        ...get().currentView,
+                        measuredWidths: { ...measuredWidths },
+                    },
+                },
+                undefined,
+                'setMeasuredWidths'
+            ),
+        getResizeDeltas: () => get().currentView.resizeDeltas,
+        setResizeDeltas: (resizeDeltas: Record<string, any>) =>
+            set(
+                {
+                    currentView: {
+                        ...get().currentView,
+                        resizeDeltas: { ...resizeDeltas },
+                    },
+                },
+                undefined,
+                'setResizeDeltas'
+            ),
+        onColumnResize: (key: string, delta = 0) => {
+            const { resizeDeltas = {} } = get().currentView
+            const prev = resizeDeltas?.[key] ?? 0
+            update(
+                {
+                    resizeDeltas: { ...resizeDeltas, [key]: Math.max(prev + delta, 0) },
+                },
+                'onColumnResize'
+            )
+        },
     }
 }
 

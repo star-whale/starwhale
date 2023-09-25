@@ -49,7 +49,7 @@ type TransferListPropsT = {
         handleSelectOne: (id: string) => void
         handleSelectMany: (ids: string[]) => void
         handleSelectNone: () => void
-        handlePinOne: (id: string) => void
+        handlePinOne?: (id: string) => void
     }
     columns: ColumnT[]
     title?: string
@@ -129,7 +129,7 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                                 }}
                                 as='transparent'
                                 onClick={() => {
-                                    handlePinOne(column.key as string)
+                                    handlePinOne?.(column.key as string)
                                 }}
                             >
                                 <IconFont size={14} type='pin' />

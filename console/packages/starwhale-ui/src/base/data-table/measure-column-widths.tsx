@@ -5,7 +5,6 @@ import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
 import _ from 'lodash'
 
-const IS_BROWSER = true
 const emptyFunction = () => {}
 
 // @ts-ignore
@@ -15,10 +14,8 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
     const ref = useRef<HTMLDivElement | null>(null)
 
     React.useEffect(() => {
-        if (IS_BROWSER) {
-            if (ref.current && column) {
-                onLayout(columnIndex, ref.current.getBoundingClientRect())
-            }
+        if (ref.current && column) {
+            onLayout(columnIndex, ref.current.getBoundingClientRect())
         }
     }, [column, onLayout, columnIndex])
 
@@ -78,6 +75,7 @@ type MeasureColumnWidthsPropsT = {
     isQueryInline: boolean
     onWidthsChange: (nums: Map<any, any>) => void
     rows: RowT[]
+    measuredWidths: Map<string, any>
 }
 
 const MAX_SAMPLE_SIZE = 20
@@ -113,6 +111,7 @@ export default function MeasureColumnWidths({
     isSelectable,
     isQueryInline,
     onWidthsChange,
+    measuredWidths,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
@@ -153,6 +152,8 @@ export default function MeasureColumnWidths({
 
     const $columns = React.useMemo(() => {
         return columns.map((column, i) => {
+            if (measuredWidths.has(column.key)) return null
+
             return (
                 <MeasureColumn
                     key={`${column.title}-${String(i)}`}
@@ -167,7 +168,7 @@ export default function MeasureColumnWidths({
                 />
             )
         })
-    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes, isQueryInline])
+    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes, isQueryInline, measuredWidths])
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props

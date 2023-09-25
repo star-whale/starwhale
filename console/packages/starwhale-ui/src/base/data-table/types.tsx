@@ -121,6 +121,8 @@ export type ConfigT = {
     name?: string
     sortBy?: string
     sortDirection?: SortDirectionsT
+    measuredWidths?: Record<string, number>
+    resizeDeltas?: Record<string, number>
 }
 
 export type StatefulDataTablePropsT = {
