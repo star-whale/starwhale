@@ -12,6 +12,9 @@ import CellPlacementMemo from './cells/cell-placement'
 import { DataTablePropsT } from './types'
 import { useEvent, useEventCallback } from '@starwhale/core'
 import _ from 'lodash'
+import { IGridState } from '@starwhale/ui/GridTable/types'
+import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
+import shallow from 'zustand/shallow'
 
 const STYLE = { overflow: 'auto' }
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
@@ -40,6 +43,13 @@ function MeasureScrollbarWidth(props: { onWidthChange: (width: number) => void }
     )
 }
 
+const selector = (s: IGridState) => ({
+    measuredWidths: new Map(Object.entries(s.getMeasuredWidths() || {})),
+    setMeasuredWidths: s.setMeasuredWidths,
+    resizeDeltas: new Map(Object.entries(s.getResizeDeltas() || {})),
+    onColumnResize: s.onColumnResize,
+})
+
 export function DataTable({
     selectable = false,
     columns,
@@ -63,10 +73,8 @@ export function DataTable({
     previewable = false,
     removable = false,
     rows: allRows,
-    rowActions,
     rowHeight = 44,
     rowHighlightIndex: rowHighlightIndexControlled,
-    selectedRowIds: $selectedRowIds = new Set(),
     sortIndex,
     sortDirection,
     textQuery = '',
@@ -85,10 +93,10 @@ export function DataTable({
         [rowHeight]
     )
 
+    const { measuredWidths, setMeasuredWidths, resizeDeltas, onColumnResize } = useStore(selector, shallow)
+
     // We use state for our ref, to allow hooks to  update when the ref changes.
     const [gridRef, setGridRef] = React.useState<VariableSizeGrid<any> | null>(null)
-    const [measuredWidths, setMeasuredWidths] = React.useState(new Map())
-    const [resizeDeltas, setResizeDeltas] = React.useState(new Map())
 
     const [itemIndexs, setItemIndexs] = React.useState({
         overscanColumnStartIndex: 0,
@@ -150,17 +158,13 @@ export function DataTable({
     )
 
     const handleWidthsChange = useEventCallback((nextWidths) => {
-        setMeasuredWidths(new Map(nextWidths))
+        setMeasuredWidths(Object.fromEntries(nextWidths))
         resetAfterColumnIndex(itemIndexs.overscanColumnStartIndex)
     })
 
     const handleColumnResize = useEventCallback((columnIndex, delta) => {
         const column = columns[columnIndex]
-        setResizeDeltas((prev) => {
-            const v = prev.has(column.key) ? prev.get(column.key) : 0
-            prev.set(column.key, Math.max(v + delta, 0))
-            return new Map(prev)
-        })
+        onColumnResize(column.key, delta)
         resetAfterColumnIndex(columnIndex)
     })
     const [isScrollingX, setIsScrollingX] = React.useState(false)
@@ -458,6 +462,7 @@ export function DataTable({
             <MeasureColumnWidths
                 columns={$columnsShowed}
                 rows={rows}
+                measuredWidths={measuredWidths}
                 isSelectable={isSelectable}
                 isQueryInline={isQueryInline}
                 onWidthsChange={handleWidthsChange}

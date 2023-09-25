@@ -214,6 +214,7 @@ export default function Transfer({
                     operators={{
                         ...leftOperators,
                         handleOrderChange: undefined,
+                        handlePinOne: undefined,
                     }}
                     title={t('table.column.invisible')}
                 />
