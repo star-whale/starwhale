@@ -50,13 +50,13 @@ class Project:
         # TODO check if project exists for local and remote
         if self.instance.is_cloud:
             # TODO check whether contains namespace in name(like 'sw:project')?
-            self.id = (
-                int(self.name)
+            self.unique = (
+                self.name
                 if self.name.isdigit()
-                else get_remote_project_id(self.instance.url, self.name)
+                else str(get_remote_project_id(self.instance.url, self.name))
             )
         else:
-            self.id = self.name
+            self.unique = self.name
 
     @classmethod
     def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
@@ -88,8 +88,8 @@ class Project:
         return cls(uri=uri)
 
     @property
-    def unique_key(self) -> Union[str, int]:
-        return self.id or self.name
+    def unique_key(self) -> str:
+        return self.unique
 
     @property
     def full_uri(self) -> str:

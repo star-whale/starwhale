@@ -267,7 +267,8 @@ class ModelTermView(BaseTermView, TagViewMixin):
             StandaloneModel.run(
                 model_src_dir=Path(model_src_dir),
                 model_config=model_config,
-                project=Project(project).name,
+                run_project=run_project,
+                log_project=log_project,
                 version=version,
                 run_handler=run_handler,
                 dataset_uris=dataset_uris,

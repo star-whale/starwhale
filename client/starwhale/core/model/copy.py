@@ -482,7 +482,7 @@ async def upload_model(
             runtime_version = await runtime_version_recv.receive()
         await _http_request(
             "POST",
-            path=f"/project/{dest_uri.project.name}"
+            path=f"/project/{dest_uri.project.unique_key}"
             + f"/model/{dest_uri.name}"
             + f"/version/{dest_uri.version}/completeUpload",
             json={
@@ -497,7 +497,7 @@ async def upload_model(
 
 async def _download_meta_blobs(src_uri: Resource) -> t.List[pb2.MetaBlob]:
     meta_path = (
-        f"/project/{src_uri.project.name}"
+        f"/project/{src_uri.project.unique_key}"
         + f"/model/{src_uri.name}"
         + f"/version/{src_uri.version}/meta"
     )

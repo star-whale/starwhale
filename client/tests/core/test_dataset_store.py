@@ -48,11 +48,16 @@ class TestDatasetBackend(TestCase):
             },
             "storage": {"root": "/tmp"},
         }
+        rm.get(
+            "http://127.0.0.1:1234/api/v1/project/self",
+            json={"data": {"id": 1}},
+        )
+
         signed_url = "http://minio-io/path/to/signed/file"
         raw_content = string.ascii_lowercase.encode()
         data_uri = "12345678abcdefg"
         req_signed_url = rm.post(
-            "http://127.0.0.1:1234/api/v1/project/self/dataset/mnist/uri/sign-links",
+            "http://127.0.0.1:1234/api/v1/project/1/dataset/mnist/uri/sign-links",
             json={"data": {data_uri: signed_url}},
         )
         req_file_download = rm.get(
@@ -61,7 +66,7 @@ class TestDatasetBackend(TestCase):
         )
 
         dataset_uri = Resource(
-            "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
+            "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788",
             typ=ResourceType.dataset,
             refine=False,
         )

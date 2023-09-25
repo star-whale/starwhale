@@ -8,6 +8,7 @@ from pydantic import Field, BaseModel
 from starwhale.api._impl import wrapper
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.web.response import success, SuccessResp
+from starwhale.base.uri.project import Project
 from starwhale.api._impl.data_store import SwType, _get_type, TableDesc, LocalDataStore
 
 router = APIRouter()
@@ -104,8 +105,7 @@ def _is_eval_summary(request: QueryTableRequest) -> t.Union[str, None]:
 def _eval_summary(eval_id: str) -> SuccessResp:
     evaluation = wrapper.Evaluation(
         eval_id=eval_id,
-        project="self",
-        instance="local",
+        project=Project("self"),
     )
     summary = evaluation.get_summary_metrics()
     col, rows = _rows_to_type_and_records(summary)

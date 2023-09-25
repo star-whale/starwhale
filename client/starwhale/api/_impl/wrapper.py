@@ -256,8 +256,8 @@ class Dataset(Logger):
 
         # _current is only holder part of the dataset table name
         self._table_name = table_name_formatter(
-            project=project.unique_key,
-            table=f"dataset/{dataset_name}/_current/{kind.value}",
+            project.unique_key,
+            f"dataset/{dataset_name}/_current/{kind.value}",
         )
         self._data_store = data_store.get_data_store(
             project.instance.url, project.instance.token

@@ -199,9 +199,13 @@ class CloudJobTestCase(TestCase):
     @Mocker()
     @patch("starwhale.core.job.view.console.print")
     def test_list(self, rm: Mocker, m_console: MagicMock):
+        rm.get(
+            f"{self.instance_uri}/api/v1/project/self",
+            json={"data": {"id": 1}},
+        )
         rm.request(
             HTTPMethod.GET,
-            f"{self.instance_uri}/api/v1/project/self/job",
+            f"{self.instance_uri}/api/v1/project/1/job",
             text=_job_list.json(by_alias=True),
         )
 
@@ -234,19 +238,23 @@ class CloudJobTestCase(TestCase):
         MagicMock(),
     )
     def test_actions(self, rm: Mocker, m_console: MagicMock):
+        rm.get(
+            f"{self.instance_uri}/api/v1/project/self",
+            json={"data": {"id": 1}},
+        )
         rm.request(
             HTTPMethod.POST,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/resume",
+            f"{self.instance_uri}/api/v1/project/1/job/{self.job_name}/resume",
             json={"code": 1, "message": "ok", "data": "resume"},
         )
         rm.request(
             HTTPMethod.POST,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/pause",
+            f"{self.instance_uri}/api/v1/project/1/job/{self.job_name}/pause",
             json={"code": 1, "message": "ok", "data": "pause"},
         )
         rm.request(
             HTTPMethod.POST,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/cancel",
+            f"{self.instance_uri}/api/v1/project/1/job/{self.job_name}/cancel",
             json={"code": 1, "message": "ok", "data": "cancel"},
         )
 

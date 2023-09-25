@@ -144,7 +144,12 @@ class TestBundleCopy(BaseTestCase):
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}/tag",
+            "http://1.1.1.1:8182/api/v1/project/myproject",
+            json={"data": {"id": 1, "name": "myproject"}},
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/pytorch/version/{version}/tag",
             json=ResponseMessageListString(
                 code=_success.code,
                 message=_success.message,
@@ -153,19 +158,19 @@ class TestBundleCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch",
+            "http://1.1.1.1:8182/api/v1/project/1/runtime/pytorch",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/pytorch/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/pytorch/version/{version}/file",
             content=b"pytorch content",
         )
 
@@ -253,7 +258,11 @@ class TestBundleCopy(BaseTestCase):
                 }
             ),
         )
-
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist",
+            json={"data": {"id": 1, "name": "mnist"}},
+        )
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
@@ -325,13 +334,13 @@ class TestBundleCopy(BaseTestCase):
         for case in cases:
             head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{case['dest_runtime']}/version/{version}",
+                f"http://1.1.1.1:8182/api/v1/project/1/runtime/{case['dest_runtime']}/version/{version}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
             upload_request = rm.request(
                 HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{case['dest_runtime']}/version/{version}/file",
+                f"http://1.1.1.1:8182/api/v1/project/1/runtime/{case['dest_runtime']}/version/{version}/file",
             )
             BundleCopy(
                 src_uri=case["src_uri"],
@@ -343,13 +352,13 @@ class TestBundleCopy(BaseTestCase):
 
         head_request = rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist-alias/version/{version}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
         upload_request = rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist-alias/version/{version}/file",
         )
         BundleCopy(
             src_uri="mnist/v1",
@@ -368,23 +377,27 @@ class TestBundleCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/tag",
+            "http://1.1.1.1:8182/api/v1/project/myproject",
+            json={"data": {"id": 1, "name": "myproject"}},
+        )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}/tag",
             json=ResponseMessageListString(
                 code=_success.code,
                 message=_success.message,
                 data=[""],
             ).dict(),
         )
-
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/myproject/model/mnist",
+            "http://1.1.1.1:8182/api/v1/project/1/model/mnist",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
@@ -500,7 +513,7 @@ class TestBundleCopy(BaseTestCase):
             )
         )
         respx.get(
-            url__eq=f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/meta"
+            url__eq=f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}/meta"
         ).mock(
             return_value=httpx.Response(
                 200,
@@ -508,7 +521,7 @@ class TestBundleCopy(BaseTestCase):
             )
         )
         respx.get(
-            url__eq=f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/meta?blobId=0000000000000063"
+            url__eq=f"http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/{version}/meta?blobId=0000000000000063"
         ).mock(
             return_value=httpx.Response(
                 200,
@@ -634,9 +647,13 @@ class TestBundleCopy(BaseTestCase):
                 }
             ),
         )
-
         respx.route().side_effect = self._model_server.serve
 
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist",
+            json={"data": {"id": 1, "name": "mnist"}},
+        )
         cases = [
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
@@ -715,14 +732,14 @@ class TestBundleCopy(BaseTestCase):
         for case in cases:
             head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}",
+                f"http://1.1.1.1:8182/api/v1/project/1/model/{case['dest_model']}/version/{version}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
 
             rt_upload_head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}",
+                f"http://1.1.1.1:8182/api/v1/project/1/runtime/{SW_BUILT_IN}/version/{built_in_version}",
                 json={},
                 status_code=HTTPStatus.OK
                 if case["dest_builtin_exist"]
@@ -731,7 +748,7 @@ class TestBundleCopy(BaseTestCase):
 
             rt_upload_request = rm.request(
                 HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
+                f"http://1.1.1.1:8182/api/v1/project/1/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
                 headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
                 json={"data": {"uploadId": "126"}},
             )
@@ -747,13 +764,13 @@ class TestBundleCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist-alias/version/{version}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
             headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
             json={"data": {"uploadId": "126"}},
         )
@@ -813,19 +830,19 @@ class TestBundleCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias?versionUrl=v1",
+            "http://1.1.1.1:8182/api/v1/project/1/model/mnist-alias?versionUrl=v1",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist-alias/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/tag",
+            f"http://1.1.1.1:8182/api/v1/project/1/model/mnist-alias/version/{version}/tag",
             json=ResponseMessageListString(
                 code=_success.code,
                 message=_success.message,
@@ -833,7 +850,7 @@ class TestBundleCopy(BaseTestCase):
             ).dict(),
         )
         BundleCopy(
-            src_uri="cloud://pre-bare/project/mnist/model/mnist-alias/version/v1",
+            src_uri="cloud://pre-bare/project/1/model/mnist-alias/version/v1",
             dest_uri="mnist/v2",
             typ=ResourceType.model,
         ).do()
@@ -935,20 +952,20 @@ class TestBundleCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/{version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
             json={
                 "signature": [],
             },
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/file?desc=SRC_TAR&partName=archive.swds_meta&signature=",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/{version}/file?desc=SRC_TAR&partName=archive.swds_meta&signature=",
             content=b"mnist dataset content",
         )
         rm.request(
@@ -959,13 +976,13 @@ class TestBundleCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist?versionUrl={version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist?versionUrl={version}",
             json={"data": {"versionMeta": yaml.safe_dump({"version": version})}},
         )
 
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/tag",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/{version}/tag",
             json=ResponseMessageListString(
                 code=_success.code,
                 message=_success.message,
@@ -1054,12 +1071,12 @@ class TestBundleCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}/version/{version}",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/{name}/version/{version}",
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}/version/{version}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/{name}/version/{version}/file",
             json={"data": {"uploadId": 1}},
         )
         src_uri = Resource(
@@ -1069,13 +1086,13 @@ class TestBundleCopy(BaseTestCase):
 
         tag_request = rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist/version/{version}/tag",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/{version}/tag",
             json=_success.dict(),
         )
 
         head_request = rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/{name}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -1087,7 +1104,7 @@ class TestBundleCopy(BaseTestCase):
 
         head_request = rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}",
+            f"http://1.1.1.1:8182/api/v1/project/1/dataset/{name}",
             status_code=HTTPStatus.OK,
         )
         DatasetCopy(src_uri, dest_uri, mode=DatasetChangeMode.PATCH, force=True).do()
@@ -1207,31 +1224,31 @@ class TestBundleCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-new-alias?versionUrl=123",
+            "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist-new-alias?versionUrl=123",
             json={"data": {"id": 2, "name": "mnist-new-alias"}},
         )
 
         for case in cases:
             rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/{case['dest_dataset']}/version/{version}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
             head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/{case['dest_dataset']}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
             upload_request = rm.request(
                 HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/{case['dest_dataset']}/version/{version}/file",
                 json={"data": {"uploadId": 1}},
             )
             tag_request = rm.request(
                 HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/tag",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/{case['dest_dataset']}/version/{version}/tag",
                 json=_success.dict(),
             )
             try:
@@ -1253,32 +1270,37 @@ class TestBundleCopy(BaseTestCase):
         with self.assertRaises(NoSupportError):
             head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist-alias/version/{version}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
             upload_request = rm.request(
                 HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}/file",
+                f"http://1.1.1.1:8182/api/v1/project/1/dataset/mnist-alias/version/{version}/file",
                 json={"data": {"uploadId": 1}},
             )
             BundleCopy(
                 src_uri="mnist/v1",
-                dest_uri="cloud://pre-bare/project/mnist/dataset/mnist-alias",
+                dest_uri="cloud://pre-bare/project/1/dataset/mnist-alias",
                 typ=ResourceType.dataset,
             ).do()
 
     @Mocker()
     def test_upload_bundle_file(self, rm: Mocker) -> None:
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/project",
+            json={"data": {"id": 1, "name": "project"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/project/runtime/mnist/version/abcdefg1234",
+            "http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/abcdefg1234",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/project/project/runtime/mnist/version/abcdefg1234/file",
+            "http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/abcdefg1234/file",
         )
 
         runtime_dir = self._sw_config.rootdir / "self" / "runtime" / "mnist" / "ab"

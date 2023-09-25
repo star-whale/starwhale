@@ -413,7 +413,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         job_name, steps = Step.get_steps_from_yaml(run_handler, job_yaml_path)
         scheduler = Scheduler(
-            project=project,
+            run_project=run_project,
+            log_project=log_project,
             version=version,
             workdir=snapshot_dir,
             dataset_uris=dataset_uris,
@@ -980,5 +981,5 @@ class CloudModel(CloudBundleModelMixin, Model):
             resource_pool=resource_pool,
             handler=run_handler,
         )
-        resp = JobApi(project_uri.instance).create(project_uri.name, req)
+        resp = JobApi(project_uri.instance).create(project_uri.unique_key, req)
         return resp.is_success(), resp.response().data

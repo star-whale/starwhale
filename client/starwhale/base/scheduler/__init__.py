@@ -136,7 +136,8 @@ class Scheduler:
         _task = TaskExecutor(
             index=task_index,
             context=Context(
-                project=self.project,
+                run_project=self.run_project,
+                log_project=self.log_project,
                 version=self.version,
                 step=_step.name,
                 total=task_num,
