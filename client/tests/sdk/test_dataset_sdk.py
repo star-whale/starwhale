@@ -145,6 +145,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ):
             _ = dataset("mnist", create="not-option")
 
+    def test_no_support_type(self) -> None:
+        with self.assertRaisesRegex(
+            RuntimeError, "json like dict shouldn't have none-str key"
+        ):
+            with dataset("no-support") as ds:
+                ds.append({"dict": {1: "a"}})
+                ds.append({"dict": {b"test": "b"}})
+                ds.append({"dict": {2.0: "c"}})
+                ds.flush()
+
     def test_append(self) -> None:
         size = 11
         ds = dataset("mnist")

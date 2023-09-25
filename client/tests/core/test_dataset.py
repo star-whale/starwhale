@@ -89,6 +89,21 @@ class StandaloneDatasetTestCase(TestCase):
         assert m_commit.call_count == 1
         assert m_setitem.call_count == 1
 
+    def test_no_support_type_for_build_handler(self) -> None:
+        name = "no-support"
+        dataset_uri = Resource(name, typ=ResourceType.dataset)
+
+        def _iter_rows() -> t.Generator:
+            for i in range(0, 5):
+                yield {"a": {1: "a", b"b": "b"}}
+
+        sd = StandaloneDataset(dataset_uri)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "RowPutThread raise exception: json like dict shouldn't have none-str keys 1",
+        ):
+            sd.build(config=DatasetConfig(name=name, handler=_iter_rows))
+
     @patch("starwhale.core.dataset.cli.import_object")
     def test_build_from_yaml(self, m_import: MagicMock) -> None:
         workdir = "/tmp/workdir"
