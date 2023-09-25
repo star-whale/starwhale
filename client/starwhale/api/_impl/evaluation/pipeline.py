@@ -51,6 +51,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.context = Context.get_runtime_context()
 
         self.dataset_uris = self.context.dataset_uris or dataset_uris or []
+        self.dataset_head = self.context.dataset_head
 
         self.predict_log_dataset_features = predict_log_dataset_features
         self.ignore_error = ignore_error
@@ -299,8 +300,18 @@ class PipelineHandler(metaclass=ABCMeta):
                 if not r_id:
                     raise KeyError("fetch dataset id error")
                 idx_prefix = str(r_id)
+
+            dataset_consumed_rows = 0
             for rows in ds.batch_iter(self.predict_batch_size):
-                received_rows_cnt += len(rows)
+                rows_cnt = len(rows)
+                if self.dataset_head > 0:
+                    rows_cnt = min(rows_cnt, self.dataset_head - dataset_consumed_rows)
+                    if rows_cnt <= 0:
+                        break
+
+                rows = rows[:rows_cnt]
+                dataset_consumed_rows += rows_cnt
+                received_rows_cnt += rows_cnt
                 _start = time.time()
                 _exception = None
                 _results: t.Any = b""

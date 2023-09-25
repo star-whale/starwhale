@@ -377,6 +377,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         version: str = "",
         run_handler: str = "",
         dataset_uris: t.Optional[t.List[str]] = None,
+        dataset_head: int = 0,
         scheduler_run_args: t.Optional[t.Dict[str, t.Any]] = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
@@ -420,6 +421,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             dataset_uris=dataset_uris,
             steps=steps,
             handler_args=handler_args or [],
+            dataset_head=dataset_head,
         )
         scheduler_status = RunStatus.START
         error_message = ""

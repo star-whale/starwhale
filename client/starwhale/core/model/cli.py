@@ -465,6 +465,16 @@ def _recover(model: str, force: bool) -> None:
     help=f"dataset uri, env is {SWEnv.dataset_uri}",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "-dh",
+    "--dataset-head",
+    required=False,
+    default=0,
+    type=int,
+    show_default=True,
+    help="[ONLY STANDALONE]For debugging purpose, every prediction task will, at most, consume the first n rows from every dataset."
+    "When the value is less than or equal to 0, all samples will be used.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "--in-container",
     is_flag=True,
     help="[ONLY Standalone]Use docker container to run model handler, the docker image or runtime uri must be set",
@@ -545,6 +555,7 @@ def _run(
     run_project: str,
     log_project: str,
     datasets: t.List[str],
+    dataset_head: int,
     in_container: bool,
     runtime: str,
     image: str,
@@ -584,6 +595,10 @@ def _run(
         \b
         # --> run with the args defined in your handler
         swcli model run --workdir . --module mnist.evaluator --handler 1 -- --your-a=1 -b 3 --your-a 4 -d dataset/version/latest
+
+        \b
+        # --> run with dataset of head 10
+        swcli model run --uri mnist --dataset-head 10 --dataset mnist
     """
     # TODO: support run model in cluster mode
     run_project_uri = Project(run_project)
@@ -653,6 +668,7 @@ def _run(
             version=version,
             run_handler=handler,
             dataset_uris=datasets,
+            dataset_head=dataset_head,
             runtime_uri=runtime_uri,
             forbid_snapshot=forbid_snapshot,
             cleanup_snapshot=cleanup_snapshot,

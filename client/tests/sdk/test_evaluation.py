@@ -340,7 +340,7 @@ class TestModelPipelineHandler(TestCase):
             yield _status_dir, m_log_result
 
     @contextmanager
-    def _mock_ppl_prepare_data(self) -> t.Any:
+    def _mock_ppl_prepare_data(self, dataset_head: int = 0) -> t.Any:
         with patch(
             "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         ) as _, patch(
@@ -360,23 +360,25 @@ class TestModelPipelineHandler(TestCase):
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
             _status_dir = _run_dir / RunSubDirType.STATUS
 
+            rows = 100
             m_summary.return_value = DatasetSummary(
-                rows=1,
+                rows=rows,
             )
 
             fname = "data_ubyte_0.swds_bin"
-            m_scan_id.return_value = [{"id": 0}]
+            m_scan_id.return_value = [{"id": i} for i in range(0, rows)]
             m_ds.return_value = [
                 [
                     DataRow(
-                        0,
+                        i,
                         {
                             "image": GrayscaleImage(link=Link(fname)),
-                            "label": 0,
+                            "label": i,
                             "annotation": "a",
                         },
                     )
                 ]
+                for i in range(0, rows)
             ]
             m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
 
@@ -399,10 +401,18 @@ class TestModelPipelineHandler(TestCase):
                 dataset_uris=[self.dataset_uri_raw],
                 step="ppl",
                 index=0,
+                dataset_head=dataset_head,
             )
             Context.set_runtime_context(context)
 
             yield _status_dir, m_log_result
+
+    def test_ppl_with_dataset_head(self) -> None:
+        with self._mock_ppl_prepare_data(dataset_head=10) as (status_dir, m_log_result):
+            with SimpleHandler() as _handler:
+                _handler._starwhale_internal_run_predict()
+
+            assert m_log_result.call_count == 10
 
     def test_ppl_with_batch_input(self) -> None:
         with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
@@ -434,10 +444,10 @@ class TestModelPipelineHandler(TestCase):
             log_result = m_log_result.call_args[0][0]
             assert log_result["id"].startswith("self/mnist_")
             assert log_result["_mode"] == "plain"
-            assert log_result["_index"] == 0
+            assert log_result["_index"] == 99
             assert log_result["output"] == {"result": "ok"}
             assert isinstance(log_result["input/image"], GrayscaleImage)
-            assert log_result["input/label"] == 0
+            assert log_result["input/label"] == 99
             assert "input/annotation" not in log_result
             assert log_result["duration_seconds"] >= 0
 
@@ -465,7 +475,7 @@ class TestModelPipelineHandler(TestCase):
             with SimpleHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
-            m_log_result.assert_called_once()
+            m_log_result.call_count == 100
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
             assert "success" in open(status_file_path).read()
