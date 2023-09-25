@@ -2,7 +2,7 @@ import os
 import json
 import typing as t
 from pathlib import Path
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 import yaml
 from click.testing import CliRunner
@@ -27,7 +27,6 @@ from starwhale.base.data_type import Link, MIMEType, GrayscaleImage
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
-from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.view import (
     DatasetTermView,
