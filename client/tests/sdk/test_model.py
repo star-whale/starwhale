@@ -85,7 +85,9 @@ class ModelBuildTestCase(BaseTestCase):
             },
             "storage": {"root": "/root"},
         }
-        rm.get("http://localhost:8080/api/v1/project/starwhale", {"data": {"id": 1}})
+        rm.get(
+            "http://localhost:8080/api/v1/project/starwhale", json={"data": {"id": 1}}
+        )
 
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "copy" / "workdir"
@@ -126,7 +128,7 @@ class ModelBuildTestCase(BaseTestCase):
         )
         assert (
             m_model_view.copy.call_args[1]["dest_uri"]
-            == "http://localhost:8080/project/starwhale"
+            == "http://localhost:8080/project/1"
         )
 
     @patch("starwhale.utils.load.check_python_interpreter_consistency")

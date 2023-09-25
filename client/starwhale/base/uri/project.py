@@ -1,6 +1,6 @@
 import os
 import urllib
-from typing import Any, Union, Optional
+from typing import Any, Optional
 from functools import lru_cache
 
 import requests
@@ -88,7 +88,7 @@ class Project:
         return cls(uri=uri)
 
     @property
-    def unique_key(self) -> Union[str, int]:
+    def unique_key(self) -> Any:
         return self.unique
 
     @property

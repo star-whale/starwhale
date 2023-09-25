@@ -17,7 +17,11 @@ class DatasetApi(Client):
         super().__init__(instance.url, instance.token)
 
     def list(
-        self, project: str, page: int, size: int, _filter: ListFilter | None = None
+        self,
+        project: str | int,
+        page: int,
+        size: int,
+        _filter: ListFilter | None = None,
     ) -> TypeWrapper[ResponseMessagePageInfoDatasetVo]:
         uri = f"/api/v1/project/{project}/dataset"
         data = self._list(uri, page, size, _filter)

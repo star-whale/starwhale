@@ -81,7 +81,7 @@ class ProjectTestCase(TestCase):
     @Mocker()
     def test_project_select(self, rm: Mocker):
         rm.get(
-            "http://1.1.1.1:8182/api/v1/project/new_project", json={"data": {"id": 1}}
+            "http://1.1.1.2:8182/api/v1/project/new_project", json={"data": {"id": 1}}
         )
         path = get_swcli_config_path()
         self.fs.create_file(path, contents=_existed_config_contents)

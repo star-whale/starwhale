@@ -61,7 +61,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: whether store to the target which point to
         _logdir = JobStorage.local_run_dir(
-            self.context.run_project.unique_key, self.context.version
+            str(self.context.run_project.unique_key), self.context.version
         )
         _run_dir = (
             _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)

@@ -228,7 +228,7 @@ class TestTracker(BaseTestCase):
             },
             "storage": {"root": "/root"},
         }
-        rm.get("http://1.1.1.1/api/v1/project/test", json={"id": 1})
+        rm.get("http://1.1.1.1/api/v1/project/test", json={"data": {"id": 1}})
         with Tracker.start(
             saved_dir=self.local_storage,
             project_uri="http://1.1.1.1/project/test",

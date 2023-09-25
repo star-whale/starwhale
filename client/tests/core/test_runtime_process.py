@@ -190,7 +190,7 @@ class RuntimeProcessTestCase(TestCase):
             },
             "storage": {"root": self.root},
         }
-        rm.get("http://1.1.1.1:8081/api/v1/project/self", json={"id": 1})
+        rm.get("http://1.1.1.1:8081/api/v1/project/self", json={"data": {"id": 1}})
         with self.assertRaisesRegex(
             FieldTypeOrValueError, "is not a valid uri, only support"
         ):

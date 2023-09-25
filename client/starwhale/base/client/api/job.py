@@ -24,19 +24,19 @@ class JobApi(Client):
         return TypeWrapper(ResponseMessagePageInfoJobVo, data)
 
     def create(
-        self, project: str, job: JobRequest
+        self, project: str | int, job: JobRequest
     ) -> TypeWrapper[ResponseMessageString]:
         uri = f"/api/v1/project/{project}/job"
         data = self.http_post(uri, json=job)
         return TypeWrapper(ResponseMessageString, data)
 
-    def info(self, project: str, job: str) -> TypeWrapper[ResponseMessageJobVo]:
+    def info(self, project: str | int, job: str) -> TypeWrapper[ResponseMessageJobVo]:
         uri = f"/api/v1/project/{project}/job/{job}"
         data = self.http_get(uri)
         return TypeWrapper(ResponseMessageJobVo, data)
 
     def tasks(
-        self, project: str, job: str
+        self, project: str | int, job: str
     ) -> TypeWrapper[ResponseMessagePageInfoTaskVo]:
         uri = f"/api/v1/project/{project}/job/{job}/task"
         long_enough_size = 100000

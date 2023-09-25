@@ -205,8 +205,8 @@ class Resource:
 
     def _parse_by_version(self, ver: str) -> None:
         if self.instance.is_local:
-            root = (
-                Path(load_swcli_config()["storage"]["root"]) / self.project.unique_key
+            root = Path(load_swcli_config()["storage"]["root"]) / str(
+                self.project.unique_key
             )
             # storage-root/project/type/name/prefix/full-version
             p = f"{root.absolute()}/*/*/*/{ver}*"
@@ -254,7 +254,9 @@ class Resource:
         self.version = self._remote_info.get("versionName", self.version)
 
     def _refine_local_rc_info(self) -> None:
-        root = Path(load_swcli_config()["storage"]["root"]) / self.project.unique_key
+        root = Path(load_swcli_config()["storage"]["root"]) / str(
+            self.project.unique_key
+        )
 
         if self.typ == ResourceType.job:
             p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
