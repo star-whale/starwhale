@@ -10,39 +10,55 @@ import { withProject } from './Editor'
 import { withDefaultWidgets } from '@starwhale/core/widget'
 import StoreUpdater from '@starwhale/core/store/StoreUpdater'
 
+function groupBy(names: string[]) {
+    const m = {}
+    names?.forEach((name) => {
+        const key = name.split('/')?.[5]
+        // group by arr the fifth element
+        m[key] = m[key] || []
+        m[key].push(name)
+    })
+    return m
+}
+
 function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const { prefix } = props.dynamicVars
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
+            const group: [string, string[]][] = Object.entries(groupBy(names))
+
             return tranformState({
                 key: 'widgets',
                 tree: [
                     {
                         type: 'ui:dndList',
-                        children: [
-                            {
-                                type: 'ui:section',
-                                optionConfig: {
-                                    layout: {
-                                        width: 600,
-                                        height: 500,
-                                    },
-                                },
-                                children: names?.map((name) => {
-                                    return {
-                                        type: 'ui:panel:table',
-                                        fieldConfig: {
-                                            data: {
-                                                chartType: 'ui:panel:table',
-                                                tableName: name,
-                                            },
+                        children:
+                            group?.map(([key, values], index) => {
+                                return {
+                                    type: 'ui:section',
+                                    optionConfig: {
+                                        layout: {
+                                            width: 600,
+                                            height: 500,
                                         },
-                                    }
-                                }),
-                            },
-                        ],
+                                        title: key,
+                                        isExpaned: index < 2,
+                                    },
+                                    children: values?.map((name) => {
+                                        return {
+                                            type: 'ui:panel:table',
+                                            fieldConfig: {
+                                                data: {
+                                                    chartType: 'ui:panel:table',
+                                                    tableName: name,
+                                                },
+                                            },
+                                        }
+                                    }),
+                                }
+                            }) || [],
                     },
                 ],
                 widgets: {},

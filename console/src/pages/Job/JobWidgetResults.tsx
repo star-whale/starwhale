@@ -83,7 +83,7 @@ function JobWidgetResults() {
                     />
                 </div>
             </div>
-            <FullTablesEditor initialState={currentLayout?.content} onStateChange={onStateChange} />
+            <FullTablesEditor initialState={currentLayout?.content} onSave={onStateChange} />
         </div>
     )
 }

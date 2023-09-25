@@ -53,6 +53,7 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
                             style={{
                                 maxWidth: '500px',
                                 whiteSpace: 'pre-wrap',
+                                overflowWrap: 'break-word',
                             }}
                         >
                             {text ?? ''}
