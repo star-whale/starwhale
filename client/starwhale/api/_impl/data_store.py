@@ -9,6 +9,7 @@ import json
 import time
 import atexit
 import base64
+import shutil
 import struct
 import urllib
 import inspect
@@ -20,19 +21,7 @@ import threading
 import contextlib
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
-from typing import (
-    Any,
-    Set,
-    cast,
-    Dict,
-    List,
-    Type,
-    Tuple,
-    Union,
-    Callable,
-    Iterator,
-    Optional,
-)
+from typing import Any, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
 from pathlib import Path
 from collections import UserDict, OrderedDict
 
@@ -42,8 +31,7 @@ import pyarrow as pa  # type: ignore
 import requests
 import tenacity
 import jsonlines
-from filelock import FileLock
-from jsonlines import Writer
+from sortedcontainers import SortedDict, SortedList
 from typing_extensions import Protocol
 
 from starwhale.utils import console
@@ -58,8 +46,10 @@ from starwhale.utils.retry import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.dict_util import flatten as flatten_dict
+from starwhale.base.models.base import SwBaseModel
 
 datastore_table_file_ext = ".sw-datastore"
+datastore_manifest_file_name = "manifest.json"
 
 
 class SwType(metaclass=ABCMeta):
@@ -964,7 +954,7 @@ def _update_schema(key_column: str, record: Dict[str, Any]) -> TableSchema:
 
 class InnerRecord:
     def __init__(self, key_column: str, record: Optional[Record] = None) -> None:
-        self.key = ""
+        self.key: Any = None
         self.key_column = key_column
         self.records: OrderedDict[int, Record] = OrderedDict()
         self.ordered = True
@@ -979,9 +969,15 @@ class InnerRecord:
             last = self.get_record()
             # get diff of the last and record
             # let the record only contains the diff or None
-            diff = {
-                k: v for k, v in record.items() if v is None or last.get(k, None) != v
-            }
+            # TODO support recursive diff
+            if last is None:
+                diff = record.data
+            else:
+                diff = {
+                    k: v
+                    for k, v in record.items()
+                    if v is None or last.get(k, None) != v
+                }
             if not diff:
                 return str(seq)
             record = Record(diff)
@@ -1000,18 +996,22 @@ class InnerRecord:
             self.ordered = True
 
     def get_record(
-        self, revision: Optional[str] = None, deep_copy: Optional[bool] = None
-    ) -> Dict[str, Any]:
+        self, revision: Optional[str] = None, deep_copy: bool = False
+    ) -> Dict[str, Any] | None:
         self._reorder()
         ret: Dict[str, Any] = dict()
+        had_value = False
         for seq, record in self.records.items():
             if revision is None or revision == "" or seq <= int(revision):
                 if "-" in record and record["-"]:
                     ret = record.data
                 else:
+                    had_value = True
                     if "-" in ret:
                         ret = dict()
                     ret.update(record)
+        if not had_value:
+            return None
         ret.update({self.key_column: self.key})
         if deep_copy:
             ret = copy.deepcopy(ret)
@@ -1039,6 +1039,16 @@ class InnerRecord:
     @staticmethod
     def _get_seq_num() -> int:
         return time.monotonic_ns()
+
+    def __gt__(self, other: object) -> Any:
+        if not isinstance(other, InnerRecord):
+            return NotImplemented
+        return self.key > other.key
+
+    def __ge__(self, other: object) -> Any:
+        if not isinstance(other, InnerRecord):
+            return NotImplemented
+        return self.key >= other.key
 
 
 class Compressor(abc.ABC):
@@ -1120,13 +1130,355 @@ def get_compressor(file: Path) -> Compressor:
 
 
 class MemoryTable:
-    def __init__(self, table_name: str, key_column: ColumnSchema) -> None:
-        self.table_name = table_name
+    def __init__(self, key_column: str) -> None:
         self.key_column = key_column
-        self.records: Dict[Any, InnerRecord] = {}
+        self.records: SortedDict[Any, InnerRecord] = SortedDict()
         self.lock = threading.Lock()
         self.dirty = False
         self.compressor = ZipCompressor()
+        self._key_type: SwType | None = None
+
+    @property
+    def key_type(self) -> SwType | None:
+        return self._key_type
+
+    def scan(
+        self,
+        start: Optional[Any] = None,
+        end: Optional[Any] = None,
+        end_inclusive: bool = False,
+    ) -> Iterator[InnerRecord]:
+        for key, record in self.records.items():
+            if start is not None and key < start:
+                continue
+
+            if end_inclusive:
+                if end is not None and key > end:
+                    break
+            else:
+                if end is not None and key >= end:
+                    break
+
+            yield record
+
+    def get(self, key: Any) -> Optional[InnerRecord]:
+        return self.records.get(key, None)  # type: ignore
+
+    def _must_valid_key_type(self, key: Any) -> None:
+        key_type = _get_type(key)
+        if self._key_type is None:
+            self._key_type = key_type
+        elif self._key_type != key_type:
+            raise RuntimeError(
+                f"conflicting key type, expected {self._key_type}, actual {key_type}"
+            )
+
+    def insert_record(self, record: InnerRecord) -> None:
+        self.dirty = True
+        key = record.key
+        self._must_valid_key_type(key)
+        ir = self.records.get(key, None)
+        if ir is None:
+            self.records[key] = record
+        else:
+            ir.update(record)
+
+    def insert_dict(self, record: Dict[str, Any]) -> str:
+        self.dirty = True
+        key = record[self.key_column]
+        self._must_valid_key_type(key)
+        ir = self.get(key)
+        if ir is None:
+            ir = InnerRecord(self.key_column)
+            self.records[key] = ir
+        return ir.append(Record(copy.deepcopy(record)))
+
+    def delete(self, keys: List[Union[int, str]]) -> str:
+        """
+        Delete records by keys. If the key is not found, it will be ignored.
+        Returns the sequence number of the last delete operation, or None if no delete operation is performed.
+        """
+        if len(keys) == 0:
+            raise RuntimeError("keys can not be empty")
+
+        revision = None
+        self.dirty = True
+        for key in keys:
+            r = self.get(key)
+            if r is None:
+                r = InnerRecord(self.key_column)
+                self.records[key] = r
+
+            del_mark = Record({self.key_column: key, "-": True})
+            revision = r.append(del_mark)
+        return revision  # type: ignore
+
+
+class DataBlock:
+    def __init__(
+        self,
+        min_key: Any,
+        max_key: Any,
+        key_column: str,
+        block_id: int | None = None,
+        file: Path | None = None,
+    ) -> None:
+        self.min_key = min_key
+        self.max_key = max_key
+        self.key_column = key_column
+        self.file = file
+        self.block_id = block_id
+
+    @property
+    def virtual(self) -> bool:
+        return self.file is None
+
+    def ahead(self, key: Any) -> bool:
+        return key is not None and self.max_key < key
+
+    def behind(self, key: Any) -> bool:
+        return key is not None and self.min_key > key
+
+    def __ge__(self, other: object) -> Any:
+        if not isinstance(other, DataBlock):
+            raise NotImplementedError
+        return self.min_key >= other.max_key
+
+    def __gt__(self, other: object) -> Any:
+        if not isinstance(other, DataBlock):
+            raise NotImplementedError
+        return self.min_key > other.max_key
+
+    def load(self) -> MemoryTable:
+        if self.file is None:
+            raise RuntimeError("can not load cache for virtual block")
+        if not self.file.exists():
+            raise RuntimeError(f"can not find file {self.file}")
+        compressor = get_compressor(self.file)
+        with compressor.decompress(self.file) as file:
+            with jsonlines.open(file) as reader:
+                # meta = reader.read()
+                # TODO validate the meta
+                table = MemoryTable(self.key_column)
+                for record in reader:
+                    table.insert_record(InnerRecord.loads(record))
+                return table
+
+    def scan(
+        self,
+        start: Optional[Any] = None,
+        end: Optional[Any] = None,
+        end_inclusive: bool = False,
+    ) -> Iterator[InnerRecord]:
+        cache = self.load()
+        yield from cache.scan(start, end, end_inclusive)
+
+    def dump(
+        self,
+        records: List[InnerRecord],
+        compressor: Compressor,
+        tmp_dir: str | None = None,
+    ) -> None:
+        if self.file is None:
+            raise RuntimeError("can not dump cache for virtual block")
+
+        with tempfile.NamedTemporaryFile(mode="w", dir=tmp_dir) as tmp:
+            with jsonlines.Writer(tmp) as writer:
+                for record in records:
+                    writer.write(record.dumps())
+            tmp.flush()
+            tmp_path = compressor.compress(Path(tmp.name))
+            tmp_path.rename(self.file)
+
+
+KeyType = Union[int, str, None]
+
+
+# smart_union=True is used to make sure that pydantic will not convert str to int automatically
+class DataBlockDesc(SwBaseModel, smart_union=True):
+    min_key: KeyType
+    max_key: KeyType
+    row_count: int
+    block_id: Optional[int]
+    legacy_file: Optional[str]
+
+
+class DataBlockConfig(SwBaseModel):
+    block_name_prefix: str = "data"
+    max_block_size: int = 10000  # TODO make this configurable
+
+
+class Manifest(SwBaseModel):
+    version: str = "0.1.1"
+    block_config: DataBlockConfig
+    blocks: List[DataBlockDesc]
+    key_column: str
+    key_column_type: Optional[Dict[str, Any]]  # SwType.encode_schema
+    next_block_id: int = 0
+
+
+class IterWithRangeHint(SwBaseModel, smart_union=True):
+    iter: Iterator[InnerRecord]
+    min_key: KeyType  # set it to None if the iter must be touched at first, or you don't know the min key
+
+    def __gt__(self, other: Any) -> Any:
+        if not isinstance(other, IterWithRangeHint):
+            raise NotImplementedError
+
+        if self.min_key is None:
+            return True  # we assume that the iter must be touched at first
+        if other.min_key is None:
+            return False
+
+        # raise err if min_key has diff type
+        if not isinstance(self.min_key, type(other.min_key)):
+            raise RuntimeError(
+                f"min_key has diff type: {type(self.min_key)} != {type(other.min_key)}"
+            )
+
+        return self.min_key > other.min_key  # type:  ignore[operator]
+
+
+def _merge_iters_with_hint(iters: List[IterWithRangeHint]) -> Iterator[InnerRecord]:
+    """
+    Merge multiple iterators into one iterator.
+    This method will
+    - merge the records with the same key.
+    - keep the order of the records.
+    - do not touch the iterator until it is needed.
+    """
+
+    class Node:
+        def __init__(self, iter: Iterator[InnerRecord]) -> None:
+            self.key: Any = None
+            self.iter = iter
+            self.item: Optional[InnerRecord] = None
+            self.exhausted = False
+            self.next_item()
+
+        def next_item(self) -> None:
+            try:
+                self.item = next(self.iter)
+                self.exhausted = False
+                self.key = self.item.key
+            except StopIteration:
+                self.exhausted = True
+                self.item = None
+                self.key = None
+
+    iters = sorted(iters)
+    nodes: List[Node] = []
+    # find the first non-empty iterator and get the global min key
+    while len(iters) > 0 and len(nodes) == 0:
+        n = Node(iters.pop(0).iter)
+        if not n.exhausted:
+            nodes.append(n)
+
+    def add_iters_to_node_if_needed(
+        _nodes: List[Node], _iters: List[IterWithRangeHint]
+    ) -> Tuple[List[Node], List[IterWithRangeHint]]:
+        """
+        Add the iterators to the nodes if the min key of the iterator is less than the global min key.
+        This method have no side effect to the input parameters.
+        """
+        ret_nodes = _nodes[:]
+        min_key = len(ret_nodes) > 0 and min(ret_nodes, key=lambda x: x.key).key or None
+        filtered: List[IterWithRangeHint] = []
+        for _iter in _iters:
+            if (
+                _iter.min_key is None
+                or min_key is None
+                or _iter.min_key <= min_key
+                or len(ret_nodes) == 0
+            ):
+                _n = Node(_iter.iter)
+                if not _n.exhausted:
+                    ret_nodes.append(_n)
+                    min_key = min(ret_nodes, key=lambda x: x.key).key
+            else:
+                filtered.append(_iter)
+        return ret_nodes, sorted(filtered)
+
+    # note that there may be multiple iterators with the same min key or None
+    # we need to merge them together
+    nodes, iters = add_iters_to_node_if_needed(nodes, iters)
+
+    if len(nodes) == 0:
+        return
+
+    while len(nodes) > 0:
+        key = min(nodes, key=lambda x: x.key).key
+        ret: InnerRecord | None = None
+        for i in range(len(nodes)):
+            while nodes[i].key == key:
+                item = nodes[i].item
+                if ret is None:
+                    ret = item
+                else:
+                    ret.update(item)
+                nodes[i].next_item()
+        if ret is not None:
+            yield ret
+
+        nodes = [node for node in nodes if not node.exhausted]
+
+        # touch the iterator if the min key of the iterator is less than the global min key
+        nodes, iters = add_iters_to_node_if_needed(nodes, iters)
+
+
+class LocalTable:
+    """
+    LocalTable is a table that stores data in local file system. it contains a memory table and multiple data blocks.
+    The memory table is used to store the latest data. The data blocks are used to store the historical data.
+
+    The architecture diagram:
+
+    +-----------------+  +-----------------+  +-----------------+
+    |   MemoryTable   |  |   DataBlock 1   |  |   DataBlock 2   |
+    +-----------------+  +-----------------+  +-----------------+
+    |  key1: record7  |  |  key1: record1  |  |  key11: record4 |
+    |  key12: record8 |  |  key2: record2  |  |  key12: record5 |
+    |  key33: record9 |  |  key3: record3  |  |  key13: record6 |
+    +-----------------+  +-----------------+  +-----------------+
+
+    """
+
+    def __init__(
+        self,
+        table_name: str,
+        root_path: str | Path,
+        key_column: str | None,
+        create_if_missing: bool = True,
+    ) -> None:
+        self.table_name = table_name
+        self.root_path = Path(root_path)
+        self.key_column = key_column
+        self.lock = threading.Lock()
+        self.compressor = ZipCompressor()
+        self.create_if_missing = create_if_missing
+        self._key_column_type: SwType | None = None
+        self._load_manifest()
+        self.memory_table: MemoryTable | None = None
+        if self.key_column is not None:
+            self.memory_table = MemoryTable(self.key_column)
+
+    @property
+    def key_column_type(self) -> SwType | None:
+        return self.memory_table and self.memory_table.key_type or self._key_column_type
+
+    def _must_get_mem_table(self) -> MemoryTable:
+        if self.memory_table is None and self.key_column is not None:
+            self.memory_table = MemoryTable(self.key_column)
+        assert self.memory_table is not None
+        return self.memory_table
+
+    def insert(self, record: Dict[str, Any]) -> str:
+        with self.lock:
+            return self._must_get_mem_table().insert_dict(record)
+
+    def delete(self, keys: List[Union[int, str]]) -> str:
+        with self.lock:
+            return self._must_get_mem_table().delete(keys)
 
     def scan(
         self,
@@ -1138,147 +1490,230 @@ class MemoryTable:
         revision: Optional[str] = None,
         deep_copy: Optional[bool] = None,
     ) -> Iterator[Dict[str, Any]]:
-        _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
         if deep_copy is None:
             env = os.getenv("SW_DATASTORE_SCAN_DEEP_COPY")
             # make deep copy to True as default if env is not set
             deep_copy = True if env is None else env.strip().upper() == "TRUE"
 
         with self.lock:
-            records = []
-            for k, v in self.records.items():
-                if (start is None or k >= start) and (
-                    end is None or _end_check(k, end)
-                ):
-                    records.append(v)
-        records.sort(key=lambda x: x.key)
-        for ir in records:
-            r = ir.get_record(revision, deep_copy)
-            if columns is None:
-                d = dict(r)
-            else:
-                d = {columns[k]: v for k, v in r.items() if k in columns}
-                if "-" in r:
-                    d["-"] = r["-"]
-            d["*"] = r[self.key_column.name]
-            if not keep_none:
-                d = {k: v for k, v in d.items() if v is not None}
-            yield d
-
-    def insert(self, record: Dict[str, Any]) -> str:
-        self.dirty = True
-        with self.lock:
-            key = record.get(self.key_column.name)
-            r = self.records.setdefault(key, InnerRecord(self.key_column.name))
-            return r.append(Record(copy.deepcopy(record)))
-
-    def delete(self, keys: List[Any]) -> str | None:
-        """
-        Delete records by keys. If the key is not found, it will be ignored.
-        Returns the sequence number of the last delete operation, or None if no delete operation is performed.
-        """
-        revision = None
-        with self.lock:
-            for key in keys:
-                r = self.records.get(key, None)
-                if r is not None:
-                    self.dirty = True
-                    revision = r.append(Record({self.key_column.name: key, "-": True}))
-        return revision
-
-    def _dump_meta(self) -> Dict[str, Any]:
-        return {
-            "key_column": self.key_column.dumps(),
-            "version": "0.1",
-        }
-
-    @classmethod
-    def _parse_meta(cls, meta: Any) -> ColumnSchema:
-        if not isinstance(meta, dict):
-            raise RuntimeError(f"Invalid meta data {meta}")
-        if meta["version"] != "0.1":
-            raise ValueError(f"Unsupported version {meta['version']}")
-        return ColumnSchema.loads(meta["key_column"])
-
-    @classmethod
-    def loads(cls, file: Path, table_name: str) -> MemoryTable:
-        if not file.exists() or not file.is_file():
-            raise RuntimeError(f"File {file} does not exist")
-
-        console.debug(f"start to load table {table_name} from {file}")
-        with get_compressor(file).decompress(file) as f:
-            with jsonlines.open(f) as reader:
-                meta = reader.read()
-                key_column = cls._parse_meta(meta)
-                table = MemoryTable(table_name, key_column)
-                for record in reader:
-                    ir = InnerRecord.loads(record)
-                    table.records[ir.key] = ir
-        console.debug(f"table {table_name} finished loading")
-        return table
-
-    def dump(self, root_path: str, if_dirty: bool = True) -> None:
-        root = Path(root_path)
-        ensure_dir(root)
-        lock = root / ".lock"
-        with FileLock(lock):
-            return self._dump(root, if_dirty)
-
-    def _dump(self, root_path: Path, if_dirty: bool = True) -> None:
-        if if_dirty and not self.dirty:
-            return
-
-        dst = Path(_get_table_path(root_path, self.table_name))
-        base = dst.parent
-        temp_filename = base / f"temp.{os.getpid()}"
-        ensure_dir(base)
-
-        with jsonlines.open(temp_filename, mode="w") as writer:
-            writer.write(self._dump_meta())
-            dumped_keys = self._dump_from_local_file(dst, writer)
-
-            for k, ir in self.records.items():
-                if k in dumped_keys:
+            iters = [
+                IterWithRangeHint(
+                    iter=self._must_get_mem_table().scan(start, end, end_inclusive),
+                )
+            ]
+            data_blocks = self._load_data_blocks()
+            for block in data_blocks:
+                if block.virtual:
                     continue
-                writer.write(ir.dumps())
+                if block.ahead(start):
+                    continue
+                if block.behind(end):
+                    break
+                iters.append(
+                    IterWithRangeHint(
+                        iter=block.scan(start, end, end_inclusive),
+                        min_key=block.min_key,
+                    )
+                )
+            for item in _merge_iters_with_hint(iters):
+                if item is None:
+                    continue
+                r = item.get_record(revision=revision, deep_copy=deep_copy)
+                if r is None:
+                    continue
+                if columns is None:
+                    d = dict(r)
+                else:
+                    d = {columns[k]: v for k, v in r.items() if k in columns}
+                    if "-" in r:
+                        d["-"] = r["-"]
+                assert self.key_column is not None  # load_manifest will set key_column
+                d["*"] = r[self.key_column]
+                if not keep_none:
+                    d = {k: v for k, v in d.items() if v is not None}
+                yield d
 
-        compressed = self.compressor.compress(temp_filename)
-        os.unlink(temp_filename)
-        if dst.suffix == datastore_table_file_ext:
-            # the dst file is must not exist, we never save a table as a sw-datastore file
-            # use the same extension as compressed file
-            ext = datastore_table_file_ext + self.compressor.extension()
-        else:
-            # the dst file is a compressed file, change the extension
-            ext = self.compressor.extension()
+    def _load_data_blocks(self) -> SortedList[DataBlock]:
+        manifest = self._load_manifest()
+        ret: SortedList[DataBlock] = SortedList()
+        for block in manifest.blocks:
+            if block.legacy_file:
+                file = Path(block.legacy_file)
+            else:
+                if block.block_id is None:
+                    raise RuntimeError("block_id can not be None")
+                file = self._get_block_file_name(
+                    self.root_path,
+                    manifest.block_config.block_name_prefix,
+                    block.block_id,
+                )
+            assert self.key_column is not None  # load_manifest will set key_column
+            db = DataBlock(
+                min_key=block.min_key,
+                max_key=block.max_key,
+                key_column=self.key_column,
+                block_id=block.block_id,
+                file=file,
+            )
+            ret.add(db)
+        return ret
 
-        # make dst file have the same extension as compressed file
-        new_dst = dst.with_suffix(ext)
-        os.rename(compressed, new_dst)
-        if new_dst != dst and dst.exists():
-            # remove the old file if it is not the new file name
-            dst.unlink()
-        self.dirty = False
+    def _load_manifest(self) -> Manifest:
+        manifest_file = self.root_path / datastore_manifest_file_name
+        if manifest_file.exists():
+            with manifest_file.open() as f:
+                manifest = Manifest.parse_raw(f.read())
+                if self.key_column is None:
+                    self.key_column = manifest.key_column
+                if manifest.key_column != self.key_column:
+                    raise RuntimeError(
+                        f"conflicting key column, expected {self.key_column}, actual {manifest.key_column}"
+                    )
+                if manifest.key_column_type is not None:
+                    self._key_column_type = SwType.decode_schema(
+                        manifest.key_column_type
+                    )
+                return manifest
 
-    def _dump_from_local_file(self, existing: Path, output: Writer) -> Set[str]:
-        dumped_keys: Set[str] = set()
+        # for backward compatibility
+        file = _get_table_path(self.root_path, self.table_name)
+        if Path(file).exists():
+            return Manifest(
+                block_config=DataBlockConfig(),
+                blocks=[
+                    DataBlockDesc(
+                        min_key=None, max_key=None, row_count=0, legacy_file=str(file)
+                    )
+                ],
+                key_column=self.key_column or "",
+                next_block_id=0,
+            )
 
-        if not existing.exists():
-            return dumped_keys
+        if self.create_if_missing:
+            return Manifest(
+                block_config=DataBlockConfig(),
+                blocks=[],
+                key_column=self.key_column or "",
+                next_block_id=1,
+            )
 
-        console.log(f"start to dump table {self.table_name} from {existing}")
-        with get_compressor(existing).decompress(existing) as f:
-            with jsonlines.open(f, mode="r") as reader:
-                self._parse_meta(reader.read())
-                for i in reader:
-                    ir = InnerRecord.loads(i)
-                    r = self.records.get(ir.key)
-                    ir.update(r)
-                    dumped_keys.add(ir.key)
-                    output.write(ir.dumps())
-        console.log(f"table {self.table_name} finished dumping")
+        raise TableEmptyException(f"can not find table {self.table_name}")
 
-        return dumped_keys
+    def _get_block_file_name(self, root_path: Path, prefix: str, block_id: int) -> Path:
+        return root_path / f"{prefix}.{block_id:07d}{self.compressor.extension()}"
+
+    def _dump(self, root_path: Path) -> None:
+        root_path.mkdir(parents=True, exist_ok=True)
+
+        # reload the manifest file
+        manifest = self._load_manifest()
+        mem_table = self._must_get_mem_table()
+        if manifest.key_column_type is None and mem_table.key_type is not None:
+            key_type_str = SwType.encode_schema(mem_table.key_type)
+            manifest.key_column_type = key_type_str
+
+        data_blocks = self._load_data_blocks()
+        console.debug(f"load {len(data_blocks)} data blocks")
+
+        key_column = self.key_column
+        if key_column is None:
+            raise RuntimeError("key_column can not be None")
+
+        # dump the memory table
+        dest_blocks: Dict[DataBlock, List[InnerRecord]] = {}
+        records = list(mem_table.scan())
+        for record in records:
+            key = record.key
+            # TODO deal with the rows out of the data blocks range
+            for block in data_blocks:
+                if block.block_id is None:
+                    continue
+                if block.min_key <= key <= block.max_key:
+                    dest_blocks.setdefault(block, []).append(record)
+
+        if len(dest_blocks) == 0:
+            # create new if there is no block
+            block_id = manifest.next_block_id
+            file = self._get_block_file_name(
+                root_path, manifest.block_config.block_name_prefix, block_id
+            )
+            dest_blocks[
+                DataBlock(records[0].key, records[-1].key, key_column, block_id, file)
+            ] = records
+
+        # update the data block records and check if the block reaches the max size
+        for block, records in dest_blocks.items():
+            if not block.file.exists():
+                mem = MemoryTable(key_column)
+            else:
+                mem = block.load()
+            for record in records:
+                mem.insert_record(record)
+            total = len(mem.records)
+            if total > manifest.block_config.max_block_size:
+                # split the block into more blocks
+                size = total / (total // manifest.block_config.max_block_size + 1)
+            else:
+                size = total
+
+            chunks = list(
+                zip(
+                    range(0, total, int(size)),
+                    range(int(size), total + int(size), int(size)),
+                )
+            )
+            # remove the block desc from manifest
+            manifest.blocks = [
+                b for b in manifest.blocks if b.block_id != block.block_id
+            ]
+
+            view = mem.records.values()
+            for i, (start, end) in enumerate(chunks):
+                if i == len(chunks) - 1:
+                    end = total
+                items = list(view[start:end])
+                block = DataBlock(
+                    min_key=items[0].key,
+                    max_key=items[-1].key,
+                    key_column=key_column,
+                    file=self._get_block_file_name(
+                        root_path,
+                        manifest.block_config.block_name_prefix,
+                        manifest.next_block_id,
+                    ),
+                )
+                console.trace(f"dump block {block.file}")
+                block.dump(items, self.compressor, str(root_path))
+                manifest.blocks.append(
+                    DataBlockDesc(
+                        min_key=block.min_key,
+                        max_key=block.max_key,
+                        row_count=len(items),
+                        block_id=manifest.next_block_id,
+                    )
+                )
+                manifest.next_block_id += 1
+
+        # regenerate the manifest file and replace the old one
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+            tmp.write(manifest.json())
+            tmp.flush()
+            shutil.move(tmp.name, root_path / datastore_manifest_file_name)
+
+        # remove the old data files
+        for block in data_blocks:
+            if block.file is not None:
+                console.trace(f"remove block {block.file}")
+                block.file.unlink()
+
+    def dump(self, if_dirty: bool = True) -> None:
+        if if_dirty:
+            if self.memory_table is None:
+                return
+            if not self.memory_table.dirty:
+                return
+        with self.lock:
+            self._dump(self.root_path)
 
 
 class TableDesc:
@@ -1348,7 +1783,7 @@ class LocalDataStore:
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
         self.name_pattern = re.compile(r"^[A-Za-z0-9-_/: ]+$")
-        self.tables: Dict[str, MemoryTable] = {}
+        self.tables: Dict[str, LocalTable] = {}
         self.lock = threading.Lock()
 
     def list_tables(
@@ -1398,7 +1833,7 @@ class LocalDataStore:
             raise RuntimeError(
                 f"table {table_name} does not exist and can not be created"
             )
-        if schema.key_column != table.key_column.name:
+        if schema.key_column != table.key_column:
             raise RuntimeError(
                 f"invalid key column, expected {table.key_column}, actual {schema.key_column}"
             )
@@ -1419,22 +1854,22 @@ class LocalDataStore:
 
     def _get_table(
         self, table_name: str, key_column: ColumnSchema | None, create: bool = True
-    ) -> MemoryTable | None:
+    ) -> LocalTable | None:
         with self.lock:
             table = self.tables.get(table_name, None)
             if table is None:
-                file = Path(_get_table_path(self.root_path, table_name))
-                if file.exists():
-                    table = MemoryTable.loads(file, table_name)
-                else:
-                    if not create:
-                        return None
-                    if key_column is None:
-                        raise RuntimeError(
-                            f"key column is required for table {table_name}"
-                        )
-                    table = MemoryTable(table_name, key_column)
-                self.tables[table_name] = table
+                try:
+                    table = LocalTable(
+                        table_name=table_name,
+                        root_path=Path(self.root_path) / table_name,
+                        key_column=key_column and key_column.name or None,
+                        create_if_missing=create,
+                    )
+                    self.tables[table_name] = table
+                except TableEmptyException:
+                    if create:
+                        raise
+                    return None
         return table
 
     def scan_tables(
@@ -1465,7 +1900,11 @@ class LocalDataStore:
             table = self._get_table(table_desc.table_name, None, create=False)
             if table is None:
                 continue
-            key_column_type = table.key_column.type
+            key_column_type = table.key_column_type
+            if key_column_type is None:
+                raise RuntimeError(
+                    f"key column type not found for table {table_desc.table_name}"
+                )
             infos.append(
                 TableInfo(
                     table_desc.table_name,
@@ -1509,7 +1948,7 @@ class LocalDataStore:
 
     def dump(self) -> None:
         for table in list(self.tables.values()):
-            table.dump(self.root_path)
+            table.dump()
 
 
 class RemoteDataStore:
