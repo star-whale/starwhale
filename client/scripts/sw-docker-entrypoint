@@ -44,6 +44,7 @@ prepare(){
         # only remote
         echo '-->[Preparing] pulling model ...'
         swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
+        swcli project create ${SW_PROJECT} && swcli project select ${SW_PROJECT}
         if [ -z "${SW_MODEL_URI}" ]; then
             swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
         else
