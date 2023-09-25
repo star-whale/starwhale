@@ -16,8 +16,6 @@ except ImportError:
     from model import Net  # type: ignore
 
 ROOTDIR = Path(__file__).parent.parent
-MEMORY_REQUEST = 1 * 1024 * 1024 * 1024  # 1GB
-MEMORY_LIMIT = 8 * 1024 * 1024 * 1024  # 8GB
 
 
 class MNISTInference(PipelineHandler):
@@ -28,7 +26,7 @@ class MNISTInference(PipelineHandler):
 
     @PipelineHandler.run(
         replicas=1,
-        resources={"memory": {"request": MEMORY_REQUEST, "limit": MEMORY_LIMIT}},
+        resources={"memory": {"request": "1GiB", "limit": "8GiB"}},
     )
     def predict(self, data: t.Dict[str, t.Any]) -> t.Tuple[float, t.List[float]]:  # type: ignore
         data_tensor = self._pre(data["img"])
@@ -49,9 +47,7 @@ class MNISTInference(PipelineHandler):
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
-    @PipelineHandler.run(
-        resources={"memory": {"request": MEMORY_REQUEST, "limit": MEMORY_LIMIT}}
-    )
+    @PipelineHandler.run(resources={"memory": {"request": "1Gi", "limit": "8Gi"}})
     def evaluate(
         self, ppl_result: t.Iterator
     ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:

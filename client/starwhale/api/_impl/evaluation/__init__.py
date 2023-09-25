@@ -47,7 +47,7 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
     @evaluation.predict(
         resources={"nvidia.com/gpu": 1,
                 "cpu": {"request": 1, "limit": 2},
-                "mem": 200 * 1024 * 1024},  # 200MB
+                "mem": "200MiB"},
         log_mode="plain",
     )
     def predict_with_resources(data):
