@@ -6,6 +6,7 @@ import threading
 from starwhale.api._impl import wrapper
 from starwhale.utils.error import ParameterError
 from starwhale.base.context import Context
+from starwhale.base.uri.project import Project
 
 
 # TODO: add flush, get_summary functions?
@@ -13,7 +14,7 @@ class EvaluationLogStore:
     _instance_holder = threading.local()
     _lock = threading.Lock()
 
-    def __init__(self, id: str, project: str) -> None:
+    def __init__(self, id: str, project: Project) -> None:
         self.id = id
         self.project = project
 
@@ -40,7 +41,7 @@ class EvaluationLogStore:
 
             _inst = cls(
                 id=context.version,
-                project=context.project,
+                project=context.log_project,
             )
 
             cls._instance_holder.value = _inst

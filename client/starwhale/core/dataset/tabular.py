@@ -22,8 +22,8 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
-from starwhale.base.uri.project import Project
 from starwhale.base.data_type import Link, JsonDict, Sequence, BaseArtifact
+from starwhale.base.uri.project import Project
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType

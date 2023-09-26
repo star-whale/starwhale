@@ -30,12 +30,6 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
-from starwhale.base.uri.project import Project, get_remote_project_id
-from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
-from starwhale.api._impl.wrapper import DatasetTableKind
-from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.copy import DatasetCopy
-from starwhale.core.dataset.type import (
 from starwhale.base.data_type import (
     Link,
     Text,
@@ -47,9 +41,9 @@ from starwhale.base.data_type import (
     BoundingBox,
     COCOObjectAnnotation,
 )
-from starwhale.base.uri.project import Project
+from starwhale.base.uri.project import Project, get_remote_project_id
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
-from starwhale.api._impl.wrapper import DatasetTableKind, _get_remote_project_id
+from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.model import DatasetConfig, StandaloneDataset
@@ -522,6 +516,7 @@ class TestDatasetSessionConsumption(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
+    @Mocker()
     @patch.dict(os.environ, {})
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
@@ -533,7 +528,9 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
-    def test_get_consumption(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+    def test_get_consumption(
+        self, rm: Mocker, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -546,6 +543,11 @@ class TestDatasetSessionConsumption(TestCase):
             },
             "storage": {"root": "/root"},
         }
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:8081/api/v1/project/test",
+            json={"data": {"id": 1, "name": ""}},
+        )
         m_scan_id.return_value = [{"id": 0}]
         os.environ["DATASET_CONSUMPTION_BATCH_SIZE"] = "10"
         consumption = get_dataset_consumption(

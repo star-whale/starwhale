@@ -22,7 +22,6 @@ from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.base.data_type import JsonDict
 from starwhale.core.job.store import JobStorage
-from starwhale.base.uri.project import Project
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
