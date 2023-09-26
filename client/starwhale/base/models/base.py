@@ -9,6 +9,8 @@ class SwBaseModel(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        # smart_union=True is used to make sure that pydantic will not convert str to int automatically
+        smart_union = True
 
     ...
 
