@@ -1,4 +1,5 @@
 import os
+from typing import Union
 from pathlib import Path
 from dataclasses import dataclass
 from unittest.mock import patch, MagicMock
@@ -176,7 +177,7 @@ class TestResource(TestCase):
         @dataclass
         class Expect:
             instance: str
-            project: str
+            project: Union[str, int]
             typ: ResourceType
             name: str = ""
             version: str = ""
@@ -200,23 +201,23 @@ class TestResource(TestCase):
         }
         tests = {
             "http://127.0.0.1:8082/projects/1/models": Expect(
-                "dev", "1", ResourceType.model
+                "dev", 1, ResourceType.model
             ),
-            "https://foo.com/projects/1/models": Expect("foo", "1", ResourceType.model),
+            "https://foo.com/projects/1/models": Expect("foo", 1, ResourceType.model),
             "https://foo.com/projects/2/runtimes": Expect(
-                "foo", "2", ResourceType.runtime
+                "foo", 2, ResourceType.runtime
             ),
             "https://foo.com/projects/3/datasets": Expect(
-                "foo", "3", ResourceType.dataset
+                "foo", 3, ResourceType.dataset
             ),
             "https://foo.com/projects/4/evaluations": Expect(
-                "foo", "4", ResourceType.evaluation
+                "foo", 4, ResourceType.evaluation
             ),
             "https://foo.com/projects/5/models/1/versions": Expect(
-                "foo", "5", ResourceType.model, "1"
+                "foo", 5, ResourceType.model, "1"
             ),
             "https://foo.com/projects/5/models/1/versions/2/files": Expect(
-                "foo", "5", ResourceType.model, "1", "2"
+                "foo", 5, ResourceType.model, "1", "2"
             ),
         }
         get.return_value.json.return_value = {}
@@ -259,12 +260,12 @@ class TestResource(TestCase):
         }
 
         tests = {
-            "bar/project/self/mnist": ("https://bar.com", "mnist", "self", "bar"),
+            "bar/project/self/mnist": ("https://bar.com", "mnist", 1, "bar"),
             "local/project/self/mnist": ("", "mnist", "self", "local"),
             "cloud://bar/project/self/mnist": (
                 "https://bar.com",
                 "mnist",
-                "self",
+                1,
                 "bar",
             ),
         }
@@ -290,7 +291,7 @@ class TestResource(TestCase):
 
         uri = Resource("cloud://foo/project/starwhale/dataset/mnist", refine=False)
         assert uri.instance.alias == "foo"
-        assert uri.project.name == "starwhale"
+        assert uri.project.name == 1
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == ""
@@ -302,7 +303,7 @@ class TestResource(TestCase):
             refine=False,
         )
         assert uri.instance.alias == "foo"
-        assert uri.project.name == "starwhale"
+        assert uri.project.name == 1
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == ""
@@ -385,7 +386,7 @@ class TestResource(TestCase):
             "cloud://foo/project/starwhale/dataset/mnist/version/123456", refine=True
         )
         assert uri.instance.alias == "foo"
-        assert uri.project.name == "starwhale"
+        assert uri.project.name == 1
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == "123456"

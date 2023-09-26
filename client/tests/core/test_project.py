@@ -94,4 +94,4 @@ class ProjectTestCase(TestCase):
 
         ProjectTermView("new_project").select()
         assert sw.current_instance == "pre-bare2"
-        assert sw.current_project == "new_project"
+        assert sw.current_project == 1

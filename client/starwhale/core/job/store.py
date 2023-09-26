@@ -40,7 +40,7 @@ class JobStorage(BaseStorage):
         project_uri: Project,
     ) -> t.Generator[t.Tuple[Path, bool], None, None]:
         sw = SWCliConfigMixed()
-        _job_dir = sw.rootdir / project_uri.name / ResourceType.job.value
+        _job_dir = sw.rootdir / str(project_uri.name) / ResourceType.job.value
         for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _path, RECOVER_DIRNAME in _path.parts
 

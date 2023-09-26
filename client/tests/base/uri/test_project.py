@@ -35,15 +35,13 @@ class TestProject(TestCase):
         )
 
         p = Project(uri="https://foo.com/project/bar")
-        assert p.name == "bar"
         assert p.path == ""
-        assert p.unique_key == 1
+        assert p.name == 1
         assert remote_id_mock.call_count == 1
 
         p = Project(uri="https://foo.com/project/bar/dataset/mnist/version/baz")
-        assert p.name == "bar"
         assert p.path == "dataset/mnist/version/baz"
-        assert p.unique_key == 1
+        assert p.name == 1
         # the cache was hit
         assert remote_id_mock.call_count == 1
 
@@ -53,9 +51,8 @@ class TestProject(TestCase):
         )
 
         p = Project(uri="https://foo.com/project/sw:bar2")
-        assert p.name == "sw:bar2"
         assert p.path == ""
-        assert p.unique_key == 2
+        assert p.name == 2
         assert remote_id2_mock.call_count == 1
 
     @Mocker()
@@ -74,14 +71,12 @@ class TestProject(TestCase):
 
         for uri, project in tests.items():
             p = Project.parse_from_full_uri(uri, ignore_rc_type=False)
-            assert p.name == project
-            assert p.unique_key == 1
+            assert p.name == 1
 
         p = Project.parse_from_full_uri(
             "foo/project/myproject/mnist", ignore_rc_type=True
         )
-        assert p.name == "myproject"
-        assert p.unique_key == 1
+        assert p.name == 1
 
     def test_parse_from_full_uri_exceptions(self) -> None:
         tests = (

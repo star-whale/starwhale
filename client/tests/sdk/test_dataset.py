@@ -1390,7 +1390,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/{cloud_project}",
-            json={"data": {"id": 1, "name": "project"}},
+            json={"data": {"id": 1, "name": ""}},
         )
         update_req = rm.request(
             HTTPMethod.POST,
@@ -1406,17 +1406,9 @@ class TestMappingDatasetBuilder(BaseTestCase):
         upload_req = rm.register_uri(
             HTTPMethod.POST,
             re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{self.dataset_name}/hashedBlob/",
+                f"{instance_uri}/api/v1/project/1/dataset/{self.dataset_name}/hashedBlob/",
             ),
             json={"data": server_return_uri},
-        )
-
-        rm.register_uri(
-            HTTPMethod.GET,
-            re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}",
-            ),
-            json={"data": {"id": 1}},
         )
 
         mdb = MappingDatasetBuilder(

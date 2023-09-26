@@ -260,7 +260,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _do_job_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support force action
         return self.do_http_request_simple_ret(
-            f"/project/{self.uri.project.unique_key}/job/{self.name}/{action}",
+            f"/project/{self.uri.project.name}/job/{self.name}/{action}",
             method=HTTPMethod.POST,
             instance=self.uri.instance,
         )
@@ -277,7 +277,7 @@ class CloudJob(Job, CloudRequestMixed):
         crm = CloudRequestMixed()
         r = (
             JobApi(project_uri.instance)
-            .list(project_uri.unique_key, page, size)
+            .list(project_uri.name, page, size)
             .raise_on_error()
             .response()
         )
@@ -288,7 +288,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _fetch_job_info(self) -> JobManifest | JobVo | None:
         return (
             JobApi(self.uri.instance)
-            .info(self.uri.project.unique_key, self.uri.name)
+            .info(self.uri.project.name, self.uri.name)
             .raise_on_error()
             .response()
             .data
@@ -297,7 +297,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _fetch_tasks(self) -> t.List[TaskVo] | None:
         return (
             JobApi(self.uri.instance)
-            .tasks(self.uri.project.unique_key, self.uri.name)
+            .tasks(self.uri.project.name, self.uri.name)
             .raise_on_error()
             .response()
             .data.list

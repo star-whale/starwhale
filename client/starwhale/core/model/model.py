@@ -387,7 +387,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
 
-        job_dir = JobStorage.local_run_dir(run_project.name, version)
+        job_dir = JobStorage.local_run_dir(str(run_project.name), version)
         if forbid_snapshot:
             snapshot_dir = model_src_dir
         else:
@@ -443,7 +443,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 created_at=start,
                 scheduler_run_args=scheduler_run_args,
                 version=version,
-                project=run_project.name,
+                project=str(run_project.name),
                 model_src_dir=str(snapshot_dir),
                 datasets=dataset_uris,
                 model=model_config.name,
@@ -526,7 +526,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return LocalModelInfo(
             name=self.uri.name,
             version=self.uri.version,
-            project=self.uri.project.name,
+            project=str(self.uri.project.name),
             path=str(self.store.bundle_path),
             tags=StandaloneTag(self.uri).list(),
             handlers=handlers.__root__,
@@ -616,7 +616,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             rs.append(
                 LocalModelInfoBase(
-                    project=project_uri.name,
+                    project=str(project_uri.name),
                     name=_bf.name,
                     version=_bf.version,
                     path=str(_bf.path.absolute()),
@@ -981,5 +981,5 @@ class CloudModel(CloudBundleModelMixin, Model):
             resource_pool=resource_pool,
             handler=run_handler,
         )
-        resp = JobApi(project_uri.instance).create(project_uri.unique_key, req)
+        resp = JobApi(project_uri.instance).create(project_uri.name, req)
         return resp.is_success(), resp.response().data

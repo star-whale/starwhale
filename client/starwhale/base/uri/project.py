@@ -1,6 +1,6 @@
 import os
 import urllib
-from typing import Any, Optional
+from typing import Any, Union, Optional
 from functools import lru_cache
 
 import requests
@@ -13,7 +13,7 @@ from starwhale.base.uri.exceptions import UriTooShortException
 
 
 class Project:
-    name: str
+    name: Union[str, int]
     instance: Instance
     path: str = ""
 
@@ -23,6 +23,12 @@ class Project:
         uri: Optional[str] = None,
         instance: Optional[Instance] = None,
     ) -> None:
+        """
+
+        :param name: When uri belongs to standalone, it is the name. When uri belongs to cloud, name is the id.
+        :param uri: project uri, like "local/project/starwhale" "http://127.0.0.1:8000/project/sw:p-1"
+        :param instance: instance object, default is the current selected.
+        """
         if name and uri:
             raise Exception("name and uri can not both set")
         # init instance
@@ -50,13 +56,11 @@ class Project:
         # TODO check if project exists for local and remote
         if self.instance.is_cloud:
             # TODO check whether contains namespace in name(like 'sw:project')?
-            self.unique = (
+            self.name = (
                 int(self.name)
                 if self.name.isdigit()
                 else get_remote_project_id(self.instance.url, self.name)
             )
-        else:
-            self.unique = self.name
 
     @classmethod
     def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
@@ -88,12 +92,8 @@ class Project:
         return cls(uri=uri)
 
     @property
-    def unique_key(self) -> Any:
-        return self.unique
-
-    @property
     def full_uri(self) -> str:
-        return "/".join([self.instance.url, "project", str(self.unique_key)])
+        return "/".join([self.instance.url, "project", str(self.name)])
 
     def __str__(self) -> str:
         return self.full_uri
@@ -107,7 +107,6 @@ class Project:
         return self.full_uri == other.full_uri
 
 
-# TODO there should have a clean operation when it be used in a daemon thread
 @lru_cache(maxsize=None)
 @http_retry
 def get_remote_project_id(instance_uri: str, project: str) -> Any:

@@ -328,7 +328,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             return LocalDatasetInfo(
                 name=self.name,
                 uri=str(self.uri),
-                project=self.uri.project.name,
+                project=str(self.uri.project.name),
                 path=str(self.store.bundle_path),
                 version=self.uri.version,
                 tags=StandaloneTag(self.uri).list(),
@@ -379,7 +379,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                     is_removed=_bf.is_removed,
                     path=str(_bf.path),
                     tags=_bf.tags,
-                    project=project_uri.name,
+                    project=str(project_uri.name),
                 )
             )
 
@@ -504,7 +504,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         crm = CloudRequestMixed()
         r = (
             DatasetApi(project_uri.instance)
-            .list(project_uri.unique_key, page, size, filter)
+            .list(project_uri.name, page, size, filter)
             .raise_on_error()
             .response()
         )
@@ -512,7 +512,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
 
     def summary(self) -> t.Optional[DatasetSummary]:
         resp = self.do_http_request(
-            f"/project/{self.uri.project.unique_key}/{self.uri.typ.name}/{self.uri.name}",
+            f"/project/{self.uri.project.name}/{self.uri.typ.name}/{self.uri.name}",
             method=HTTPMethod.GET,
             instance=self.uri.instance,
             params={"versionUrl": self.uri.version},

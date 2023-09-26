@@ -42,7 +42,7 @@ class Dashboard(App):
                     "Starwhale",
                     "projects",
                     current_instance=uri.instance.alias,
-                    current_project=uri.name,
+                    current_project=str(uri.name),
                 )
             ),
             edge="left",
