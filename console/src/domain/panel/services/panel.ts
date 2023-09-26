@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 export async function fetchPanelSetting(projectId: string, key: string): Promise<any> {
-    const resp = await axios.get(`/api/v1/panel/setting/${projectId}/${key}`)
+    const resp = await axios.get(`/api/v1/panel/setting/${projectId}/${key}?slient=true`)
     return resp.data
 }
 

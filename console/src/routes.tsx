@@ -58,6 +58,7 @@ import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
 import JobOverview from './pages/Job/JobOverview'
+import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -143,6 +144,11 @@ const Routes = () => {
                             <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
                                 <EvaluationOverviewLayout>
                                     <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations/:jobId/overview'
+                                            component={EvaluationOverview}
+                                        />
                                         <Route
                                             exact
                                             path='/projects/:projectId/evaluations/:jobId/results'
