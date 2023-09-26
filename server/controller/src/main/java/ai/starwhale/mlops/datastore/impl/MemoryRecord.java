@@ -25,7 +25,7 @@ import lombok.Getter;
 @Builder
 public class MemoryRecord {
 
-    private long timestamp;
+    private long revision;
     private boolean deleted;
     private Map<String, BaseValue> values;
 

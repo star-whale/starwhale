@@ -37,15 +37,14 @@ public class DataStoreScanRequest {
 
         private String tableName;
         // timestamp in milliseconds, used to filter out the data that is older than the timestamp for this table
-        private long timestamp;
+        private long revision;
         private String columnPrefix;
         private Map<String, String> columns;
         private boolean keepNone;
     }
 
     private List<TableInfo> tables;
-    // timestamp in milliseconds, used to filter out the data that is older than the timestamp for all tables
-    private long timestamp;
+    private long revision;
     private String start;
     private String startType;
     @Builder.Default

@@ -58,5 +58,7 @@ public interface MemoryTable {
 
     long getLastUpdateTime();
 
+    long getLastRevision();
+
     Map<String, ColumnStatistics> getColumnStatistics(Map<String, String> columnMapping);
 }

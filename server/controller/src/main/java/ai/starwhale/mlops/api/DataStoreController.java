@@ -311,7 +311,7 @@ public class DataStoreController {
                 .rawResult(request.isRawResult())
                 .encodeWithType(request.isEncodeWithType())
                 .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
-                .timestamp(StringUtils.hasText(request.getRevision()) ? Long.parseLong(request.getRevision()) : 0)
+                .revision(StringUtils.hasText(request.getRevision()) ? Long.parseLong(request.getRevision()) : 0)
                 .build());
     }
 
@@ -502,13 +502,13 @@ public class DataStoreController {
                                         "table name should not be null or empty: " + x
                                 );
                             }
-                            var ts = StringUtils.hasText(x.getRevision()) ? Long.parseLong(x.getRevision()) : 0;
+                            var revision = StringUtils.hasText(x.getRevision()) ? Long.parseLong(x.getRevision()) : 0;
                             return DataStoreScanRequest.TableInfo.builder()
                                     .tableName(x.getTableName())
                                     .columnPrefix(x.getColumnPrefix())
                                     .columns(DataStoreController.convertColumns(x.getColumns()))
                                     .keepNone(x.isKeepNone())
-                                    .timestamp(ts)
+                                    .revision(revision)
                                     .build();
                         })
                         .collect(Collectors.toList()))
