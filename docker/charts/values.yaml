@@ -76,6 +76,10 @@ controller:
     rootdir: /usr/local/starwhale
   persistence:
     size: 50Gi
+  datastore:
+    wal:
+      cache:
+        type: "emptyDir" # supported type: emptyDir/pv
   auth:
     username: starwhale
     password: abcd1234

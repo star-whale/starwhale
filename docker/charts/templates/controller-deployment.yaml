@@ -12,12 +12,15 @@ spec:
     metadata:
       labels: {{ include "chart.controller.labels" . | nindent 8}}
     spec:
-      {{- if or .Values.devMode.createConsoleHostPathVolume.enabled (eq .Values.controller.storageType "fs") }}
       volumes:
-        {{- if eq .Values.controller.storageType "fs"}}
+        {{- if or (eq .Values.controller.storageType "fs") (eq .Values.controller.datastore.wal.cache.type "pv") }}
         - name: controller-storage
           persistentVolumeClaim:
             claimName: controller
+        {{- end }}
+        {{- if eq .Values.controller.datastore.wal.cache.type "emptyDir"}}
+        - name: wal-cache
+          emptyDir: {}
         {{- end }}
         {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
         - name: console-hostpath-volume
@@ -25,7 +28,6 @@ spec:
             path: {{ .Values.devMode.createConsoleHostPathVolume.rootPath }}/controller/console
             type: DirectoryOrCreate
         {{- end }}
-      {{- end }}
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
       {{- else }}
@@ -36,7 +38,6 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Values.image.server.tag | default .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.controller.containerPort }}
-          {{- if or .Values.devMode.createConsoleHostPathVolume.enabled (eq .Values.controller.storageType "fs") }}
           volumeMounts:
             {{- if .Values.devMode.createConsoleHostPathVolume.enabled }}
             - name: console-hostpath-volume
@@ -48,7 +49,16 @@ spec:
               mountPath: "{{ .Values.controller.fs.rootdir }}"
               subPath: controller-fs
             {{- end }}
-          {{- end }}
+            {{- if eq .Values.controller.datastore.wal.cache.type "pv"}}
+            - name: wal-cache
+              mountPath: "/opt/starwhale.java/datastore-wal-cache"
+              subPath: datastore-wal-cache
+            {{- else if eq .Values.controller.datastore.wal.cache.type "emptyDir"}}
+            - name: wal-cache
+              mountPath: "/opt/starwhale.java/datastore-wal-cache"
+            {{- end }}
+            {{- if eq .Values.controller.datastore.wal.cache.type "pv"}}
+            {{- end }}
           {{- if not .Values.minikube.enabled }}
           resources:
             {{- toYaml .Values.resources.controller | nindent 12}}
@@ -164,8 +174,10 @@ spec:
             - name: SW_METADATA_STORAGE_DB
               value: "{{ .Values.externalMySQL.database }}"
             {{- end }}
+            - name: SW_DATASTORE_WAL_LOCAL_CACHE_DIR
+              value: "/opt/starwhale.java/datastore-wal-cache"
 ---
-{{- if eq .Values.controller.storageType "fs"}}
+{{- if or (eq .Values.controller.storageType "fs") (eq .Values.controller.datastore.wal.cache.type "pv") }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
