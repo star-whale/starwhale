@@ -239,7 +239,7 @@ class TestTracker(BaseTestCase):
         with self.assertRaisesRegex(
             ValueError, "access_token is required for cloud instance"
         ):
-            rm.get("http://0.0.0.0/api/v1/project/test", json={"id": 2})
+            rm.get("http://0.0.0.0/api/v1/project/test", json={"data": {"id": 2}})
             Tracker.start(
                 saved_dir=self.local_storage,
                 project_uri="http://0.0.0.0/project/test",

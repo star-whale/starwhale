@@ -34,7 +34,7 @@ class TestEvaluation(BaseTestCase):
                 },
                 "local": {"uri": "local", "current_project": "foo"},
             },
-            "storage": {"root": "/root"},
+            "storage": {"root": self.local_storage},
         }
         request_mock.request(
             HTTPMethod.GET,
@@ -45,19 +45,19 @@ class TestEvaluation(BaseTestCase):
         eval = wrapper.Evaluation("123456-local", Project("project-test"))
 
         result_table_name = eval._eval_table_name("results")
-        assert result_table_name == "eval/12/123456/results"
+        assert result_table_name == "eval/12/123456-local/results"
 
         table_name_1 = eval._get_storage_table_name("table-1")
         assert table_name_1 == "project/project-test/table-1"
 
         eval = wrapper.Evaluation(
-            "123456-cloud", Project(uri=f"{instance_uri}/project/project-test")
+            "123456-cloud", Project(name=f"{instance_uri}/project/project-test")
         )
 
         result_table = eval._eval_table_name("results")
         result_table_name = eval._get_storage_table_name(result_table)
-        assert result_table == "eval/12/123456/results"
-        assert result_table_name == "project/1/eval/12/123456/results"
+        assert result_table == "eval/12/123456-cloud/results"
+        assert result_table_name == "project/1/eval/12/123456-cloud/results"
 
         table_name_1 = eval._get_storage_table_name("table-1")
         assert table_name_1 == "project/1/table-1"
