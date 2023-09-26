@@ -19,7 +19,7 @@ except ImportError:
     log_mode="plain",
 )
 def predict_text(data: dict, external: dict) -> str:
-    seconds = random.randint(10, 300) / 1000
+    seconds = random.randint(10, 30) / 1000
     time.sleep(seconds)
     out = random_text()
     ctx = Context.get_runtime_context()
