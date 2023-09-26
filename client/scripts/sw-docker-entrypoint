@@ -82,7 +82,7 @@ run() {
     swcli ${VERBOSE} model run --handler="${HANDLER}" --step="${STEP}" \
         --task-index="${TASK_INDEX}" --override-task-num="${TASK_NUM}" \
         --uri="${SW_MODEL_VERSION}" --version="${SW_JOB_VERSION}" \
-        --run-project="local/project/self" \
+        --run-project="${SW_PROJECT}" \
         --log-project="${log_project}" \
         --forbid-snapshot \
         ${runtime_args} -- "${SW_TASK_EXTRA_CMD_ARGS}" || exit 1
