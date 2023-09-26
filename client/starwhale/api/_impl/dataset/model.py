@@ -219,6 +219,10 @@ class Dataset:
         self._last_data_datastore_revision = ""
         self._last_info_datastore_revision = ""
 
+        self._len_lock = threading.Lock()
+        self._len_cache = self._approximate_total_rows
+        self._len_may_changed = False
+
     def _make_capsulated_uri(self, version: str, refine: bool) -> Resource:
         return Resource(
             "/version/".join(filter(bool, [self._uri.name, version])),
@@ -251,11 +255,14 @@ class Dataset:
 
     def __len__(self) -> int:
         """__len__ slow but accurate"""
-        if self._dataset_builder is None:
-            return self.approximate_size
-        else:
-            self.flush()
-            return self._dataset_builder.calculate_rows_cnt()
+        with self._len_lock:
+            if self._len_may_changed:
+                self.flush()
+                if self._dataset_builder is None:
+                    raise RuntimeError("dataset builder is not initialized")
+                self._len_cache = self._dataset_builder.calculate_rows_cnt()
+                self._len_may_changed = False
+            return self._len_cache
 
     @property
     def approximate_size(self) -> int:
@@ -775,10 +782,12 @@ class Dataset:
             raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
         # TODO: add gc/rehash for update swds-bin format artifact features
-        self._approximate_total_rows += 1
-
         _ds_builder = self._get_dataset_builder()
-        _ds_builder.put(row)
+        with self._len_lock:
+            _ds_builder.put(row)
+            self._len_may_changed = True
+
+        self._approximate_total_rows += 1
         self._updated_rows_by_commit += 1
 
     def _get_dataset_builder(self) -> MappingDatasetBuilder:
@@ -808,9 +817,13 @@ class Dataset:
         for item in items:
             if not item or not isinstance(item, DataRow):
                 continue  # pragma: no cover
-            _ds_builder.delete(item.index)
-            self._deleted_rows_by_commit += 1
+
+            with self._len_lock:
+                _ds_builder.delete(item.index)
+                self._len_may_changed = True
+
             self._approximate_total_rows -= 1
+            self._deleted_rows_by_commit += 1
 
     @_check_readonly
     def append(self, item: t.Any) -> None:

@@ -227,12 +227,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             index="index-1", features={"data": Binary(), "label": 1}
         )
 
+        assert ds._len_may_changed
         assert len(ds) == 2
+        assert ds._len_cache == 2
+        assert not ds._len_may_changed
         assert ds._dataset_builder is not None
         assert ds._dataset_builder.dataset_uri.name == ds.uri.name
 
         ds["index-4"] = "index-4", {"data": Binary(), "label": 4}
         ds["index-3"] = {"data": Binary(), "label": 3}
+        assert ds._len_may_changed
 
         with self.assertRaises(TypeError):
             ds["index-5"] = (1,)
@@ -241,6 +245,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds["index-6"] = 1
 
         assert len(ds) == 4
+        assert ds._len_cache == 4
         ds.commit()
         ds.close()
 
