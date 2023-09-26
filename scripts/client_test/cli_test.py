@@ -54,36 +54,42 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
             ),
         ],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "cifar10": {
         "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
         "workdir": f"{ROOT_DIR}/example/cifar10",
         "datasets": [DatasetExpl("cifar10", "")],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "nmt": {
         "run_handler": "nmt.evaluator:NMTPipeline.cmp",
         "workdir": f"{ROOT_DIR}/example/nmt",
         "datasets": [DatasetExpl("nmt", "")],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "ag_news": {
         "run_handler": "tcan.evaluator:TextClassificationHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
         "datasets": [DatasetExpl("ag_news", "")],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "ucf101": {
         "run_handler": "ucf101.evaluator:UCF101PipelineHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/ucf101",
         "datasets": [DatasetExpl("ucf101", "")],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "huge-tasks": {
         "run_handler": "evaluation:evaluation_results",
         "workdir": f"{ROOT_DIR}/example/huge-tasks",
         "datasets": [DatasetExpl("huge-tasks-random-text", "")],
         "runtime": "huge-tasks",
+        "is_standalone": False,
     },
 }
 
@@ -93,6 +99,7 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "workdir": f"{ROOT_DIR}/example/PennFudanPed",
         "datasets": [DatasetExpl("pfp", "")],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
     "speech_command": {
         "run_handler": "sc.evaluator:evaluate_speech",
@@ -104,6 +111,7 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
             ),
         ],
         "runtime": random_pytorch_runtime(),
+        "is_standalone": True,
     },
 }
 
@@ -435,6 +443,9 @@ class TestCli:
 
         # model run on standalone
         for name, example in CPU_EXAMPLES.items():
+            if not example["is_standalone"]:
+                continue
+
             self.run_example(
                 name,
                 example["run_handler"],
