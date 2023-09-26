@@ -1308,7 +1308,7 @@ class DataBlockDesc(SwBaseModel):
     block_id: Optional[int]
 
 
-class Tombstone(SwBaseModel):
+class TombstoneDesc(SwBaseModel):
     # None means from the beginning
     min_key: KeyType
     # None means to the end
@@ -1319,7 +1319,7 @@ class Tombstone(SwBaseModel):
     key_prefix: Optional[str]
 
 
-class Checkpoint(SwBaseModel):
+class CheckpointDesc(SwBaseModel):
     revision: str
 
 
@@ -1354,8 +1354,8 @@ class Manifest(SwBaseModel):
     key_column: str
     key_column_type: Optional[Dict[str, Any]]  # SwType.encode_schema
     next_block_id: int = 0
-    tombstones: List[Tombstone]
-    checkpoints: List[Checkpoint]
+    tombstones: List[TombstoneDesc]
+    checkpoints: List[CheckpointDesc]
 
 
 class IterWithRangeHint(SwBaseModel):
