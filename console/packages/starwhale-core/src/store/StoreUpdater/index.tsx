@@ -8,6 +8,7 @@ type StoreUpdaterProps = Pick<WidgetStoreState, 'panelGroup' | 'editable'> & {
     initialState?: any
     onSave?: (state: WidgetStateT) => void
     onEvalSectionDelete?: () => void
+    onInit?: ({ store }) => void
 }
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
@@ -47,6 +48,7 @@ const StoreUpdater = ({
     onEvalSectionDelete,
     onSave,
     initialState,
+    onInit,
 }: StoreUpdaterProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // const { reset } = useStore(selector, shallow)
@@ -65,6 +67,8 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onEvalSectionDelete', onEvalSectionDelete, store.setState)
     useDirectStoreUpdater('onSave', onSave, store.setState)
     useDirectStoreUpdater('initialState', initialState, store.setState)
+    //
+    useDirectStoreUpdater('onInit', onInit, store.setState)
 
     return null
 }

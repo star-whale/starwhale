@@ -42,6 +42,7 @@ export type WideteExternalState = {
     initialState?: any
     onSave?: (state: WidgetStateT) => void
     onEvalSectionDelete?: () => void
+    onInit?: (args: { store: WidgetStateT; eventBus: EventBus }) => void
 }
 
 // -----------the config of options/field---------------

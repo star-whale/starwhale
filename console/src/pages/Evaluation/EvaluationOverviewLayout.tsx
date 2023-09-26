@@ -51,6 +51,10 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
+                title: t('Overview'),
+                path: `/projects/${projectId}/evaluations/${jobId}/overview`,
+            },
+            {
                 title: t('Results'),
                 path: `/projects/${projectId}/evaluations/${jobId}/results`,
             },

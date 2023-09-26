@@ -9,6 +9,7 @@ import { tranformState } from './utils'
 import { withProject } from './Editor'
 import { withDefaultWidgets } from '@starwhale/core/widget'
 import StoreUpdater from '@starwhale/core/store/StoreUpdater'
+import _ from 'lodash'
 
 function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
@@ -16,33 +17,39 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
+            const group: [string, string[]][] =
+                names.length > 0 ? Object.entries(_.groupBy(names, (v) => v.split('/')?.[5])) : [['', []]]
+
             return tranformState({
                 key: 'widgets',
                 tree: [
                     {
                         type: 'ui:dndList',
-                        children: [
-                            {
-                                type: 'ui:section',
-                                optionConfig: {
-                                    layout: {
-                                        width: 600,
-                                        height: 500,
-                                    },
-                                },
-                                children: names?.map((name) => {
-                                    return {
-                                        type: 'ui:panel:table',
-                                        fieldConfig: {
-                                            data: {
-                                                chartType: 'ui:panel:table',
-                                                tableName: name,
-                                            },
+                        children:
+                            group?.map(([key, values], index) => {
+                                return {
+                                    type: 'ui:section',
+                                    optionConfig: {
+                                        layout: {
+                                            width: 600,
+                                            height: 500,
                                         },
-                                    }
-                                }),
-                            },
-                        ],
+                                        title: key,
+                                        isExpaned: index < 2,
+                                    },
+                                    children: values?.map((name) => {
+                                        return {
+                                            type: 'ui:panel:table',
+                                            fieldConfig: {
+                                                data: {
+                                                    chartType: 'ui:panel:table',
+                                                    tableName: name,
+                                                },
+                                            },
+                                        }
+                                    }),
+                                }
+                            }) || [],
                     },
                 ],
                 widgets: {},
@@ -60,6 +67,7 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
                     ...(state as WidgetStoreState),
                 })
             }
+
             const eventBus = new EventBusSrv()
             return {
                 store: store.current,

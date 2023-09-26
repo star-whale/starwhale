@@ -293,6 +293,9 @@ export default function EvaluationListCard() {
                         onSave={doSave}
                         onViewsChange={onViewsChange}
                         onCurrentViewChange={onCurrentViewChange}
+                        emptyColumnMessage={
+                            <BusyPlaceholder type='notfound'>{t('evalution.grid.empty.notice')}</BusyPlaceholder>
+                        }
                     />
                 )}
                 isResizeable={$compareRows.length > 0}

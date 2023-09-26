@@ -167,7 +167,7 @@ ForwardButton.displayName = 'Button'
 ForwardButton.defaultProps = {
     kind: 'primary',
     as: undefined,
-    isFull: false,
+    isFull: undefined,
     icon: undefined,
     className: undefined,
 }
@@ -266,16 +266,16 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
 })
 ExtendButton.displayName = 'ExtendButton'
 ExtendButton.defaultProps = {
-    nopadding: false,
-    transparent: false,
-    negative: false,
+    nopadding: undefined,
+    transparent: undefined,
+    negative: undefined,
     kind: 'primary',
     as: undefined,
-    isFull: false,
+    isFull: undefined,
     icon: undefined,
     className: undefined,
     tooltip: '',
-    icondisable: false,
+    icondisable: undefined,
 }
 
 export { ExtendButton }

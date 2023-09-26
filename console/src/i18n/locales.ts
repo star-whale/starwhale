@@ -215,6 +215,10 @@ const dataset = {
         en: 'Search by name',
         zh: '按名称搜索',
     },
+    'dataset.grid.empty.notice': {
+        en: 'Upload to create a new dataset',
+        zh: '上传文件创建新数据集',
+    },
 }
 
 const runtime = {
@@ -607,6 +611,10 @@ const evaluation = {
     'evalution.panel.add.desc': {
         en: '{{0}} Evaluations have benn added',
         zh: '已添加 {{0}} 个评测',
+    },
+    'evalution.grid.empty.notice': {
+        en: 'Create a new evaluation or Config to add columns',
+        zh: '创建新评测或配置添加列',
     },
 }
 

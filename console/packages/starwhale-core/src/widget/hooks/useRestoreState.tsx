@@ -11,14 +11,32 @@ const selector = (s: any) => ({
     initialState: s.initialState,
 })
 
+function findAllTreeNodeIds(tree: any) {
+    if (!tree) return []
+    let result = [tree.id]
+    const children = tree?.children
+    if (children) {
+        for (let i = 0; i < children.length; i++) {
+            result = [...result, ...findAllTreeNodeIds(children[i])]
+        }
+    }
+    return result
+}
+
 export default function useRestoreState(dynamicVars: Record<string, any>) {
     const { initialState } = useStore(selector, shallow)
     const store = useStoreApi()
 
     const toSave = React.useCallback(() => {
         let data = store.getState().getRawConfigs()
+        const ids = findAllTreeNodeIds(data?.tree[0])
+
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
+                if (!ids.includes(id)) {
+                    // eslint-disable-next-line
+                    delete temp.widgets[id]
+                }
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
             })
         })

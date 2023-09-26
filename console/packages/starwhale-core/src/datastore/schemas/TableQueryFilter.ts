@@ -71,8 +71,8 @@ class TableQueryFilter {
 
     static fromUI(operand: TableQueryOperandT) {
         const { value, type, columnName, operator } = operand
-        const v = Array.isArray(value) ? value : (value as string).split(',')
-        if (!v) return undefined
+        if (!value) return undefined
+        const v = Array.isArray(value) ? value : String(value as string).split(',')
 
         const operands = TableQueryFilter.convertOperand(type, v, columnName)
 

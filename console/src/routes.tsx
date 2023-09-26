@@ -17,7 +17,6 @@ import JobNewCard from '@/pages/Project/JobNewCard'
 import DatasetNewCard from '@/pages/Project/DatasetNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
-import JobWidgetResults from '@/pages/Job/JobWidgetResults'
 import JobOverviewLayout from '@/pages/Job/JobOverviewLayout'
 import SettingsOverviewLayout from '@/pages/Settings/SettingsOverviewLayout'
 import SettingAgentListCard from '@/pages/Settings/SettingAgentListCard'
@@ -58,6 +57,7 @@ import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
 import JobOverview from './pages/Job/JobOverview'
+import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -145,6 +145,11 @@ const Routes = () => {
                                     <Switch>
                                         <Route
                                             exact
+                                            path='/projects/:projectId/evaluations/:jobId/overview'
+                                            component={EvaluationOverview}
+                                        />
+                                        <Route
+                                            exact
                                             path='/projects/:projectId/evaluations/:jobId/results'
                                             component={EvaluationWidgetResults}
                                         />
@@ -177,7 +182,7 @@ const Routes = () => {
                                         <Route
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/results'
-                                            component={JobWidgetResults}
+                                            component={EvaluationWidgetResults}
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'
