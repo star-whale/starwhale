@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router-dom'
 import { BusyPlaceholder, Button, Select } from '@starwhale/ui'

@@ -113,8 +113,8 @@ export default function UserManagement() {
                                 onClick={() => {
                                     changUserState(user.id, !user.isEnabled)
                                 }}
-                                disabled={user.id === currentUser?.id}
-                                icondisable={user.id === currentUser?.id}
+                                disabled={user.id === currentUser?.id ? true : undefined}
+                                icondisable={user.id === currentUser?.id ? true : undefined}
                             >
                                 <Toggle value={Boolean(user.isEnabled)} disabled={user.id === currentUser?.id} />
                             </ConfirmButton>

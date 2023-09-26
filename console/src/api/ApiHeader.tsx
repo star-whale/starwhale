@@ -76,7 +76,8 @@ function ApiHeader() {
                 }
 
                 // for example: user/current as default token auth, it will be triggered multi times, so silent here
-                const withSilentRoute = error.response.config.params?.silent
+                const withSilentRoute =
+                    error.response.config.params?.silent || error.response.config.url.include('slient')
                 if (withSilentRoute) return Promise.reject(error)
 
                 const toastProps = {
