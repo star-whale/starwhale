@@ -9,17 +9,7 @@ import { tranformState } from './utils'
 import { withProject } from './Editor'
 import { withDefaultWidgets } from '@starwhale/core/widget'
 import StoreUpdater from '@starwhale/core/store/StoreUpdater'
-
-function groupBy(names: string[]) {
-    const m = {}
-    names?.forEach((name) => {
-        const key = name.split('/')?.[5]
-        // group by arr the fifth element
-        m[key] = m[key] || []
-        m[key].push(name)
-    })
-    return m
-}
+import _ from 'lodash'
 
 function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
@@ -27,7 +17,8 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
-            const group: [string, string[]][] = names.length > 0 ? Object.entries(groupBy(names)) : [['', []]]
+            const group: [string, string[]][] =
+                names.length > 0 ? Object.entries(_.groupBy(names, (v) => v.split('/')?.[5])) : [['', []]]
 
             return tranformState({
                 key: 'widgets',
