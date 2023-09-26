@@ -1110,11 +1110,11 @@ class CloudModelTest(TestCase):
     @Mocker()
     def test_run(self, rm: Mocker) -> None:
         rm.get(
-            "https://foo.com/api/v1/project/starwhale",
-            json={"data": {"id": 1}},
+            "https://foo.com/api/v1/project/starwhale2",
+            json={"data": {"id": 2}},
         )
         rm.get(
-            "https://foo.com/api/v1/project/1/model/mnist",
+            "https://foo.com/api/v1/project/2/model/mnist",
             json={
                 "data": {
                     "versionId": "100",
@@ -1124,7 +1124,7 @@ class CloudModelTest(TestCase):
             },
         )
         rm.get(
-            "https://foo.com/api/v1/project/1/dataset/mnist",
+            "https://foo.com/api/v1/project/2/dataset/mnist",
             json={
                 "data": {
                     "versionId": "200",
@@ -1134,7 +1134,7 @@ class CloudModelTest(TestCase):
             },
         )
         rm.get(
-            "https://foo.com/api/v1/project/1/runtime/mnist",
+            "https://foo.com/api/v1/project/2/runtime/mnist",
             json={
                 "data": {
                     "versionId": "300",
@@ -1144,13 +1144,13 @@ class CloudModelTest(TestCase):
             },
         )
         rm.post(
-            "https://foo.com/api/v1/project/1/job",
+            "https://foo.com/api/v1/project/2/job",
             json=ResponseMessageString(
                 code="success", message="success", data="success"
             ).dict(),
         )
         result, data = CloudModel.run(
-            project_uri=Project("https://foo.com/project/starwhale"),
+            project_uri=Project("https://foo.com/project/starwhale2"),
             model_uri="mnist/version/123456a",
             dataset_uris=["mnist/version/223456a"],
             runtime_uri="mnist/version/323456a",
