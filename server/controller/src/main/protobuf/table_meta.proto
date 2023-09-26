@@ -5,4 +5,5 @@ option java_package = "ai.starwhale.mlops.datastore";
 message MetaData {
   int64 last_wal_log_id = 1;
   int64 last_update_time = 2;
+  int64 last_revision = 3;
 }

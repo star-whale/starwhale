@@ -238,12 +238,12 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             var schema = table.getSchema();
             var columns = this.getColumnAliases(schema, req.getColumns());
             var results = new ArrayList<RecordResult>();
-            var timestamp = req.getTimestamp();
-            if (timestamp == 0) {
-                timestamp = System.currentTimeMillis();
+            var revision = req.getRevision();
+            if (revision == 0) {
+                revision = table.getLastRevision();
             }
             var iterator = table.query(
-                    timestamp,
+                    revision,
                     columns,
                     req.getOrderBy(),
                     req.getFilter(),
@@ -324,7 +324,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             class TableMeta {
 
                 String tableName;
-                long timestamp;
+                long revision;
                 MemoryTable table;
                 TableSchema schema;
                 Map<String, String> columns;
@@ -332,21 +332,19 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 boolean keepNone;
             }
 
-            var currentTimestamp = System.currentTimeMillis();
-
             var tables = req.getTables().stream().map(info -> {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
-                if (info.getTimestamp() > 0) {
-                    ret.timestamp = info.getTimestamp();
-                } else if (req.getTimestamp() > 0) {
-                    ret.timestamp = req.getTimestamp();
-                } else {
-                    ret.timestamp = currentTimestamp;
-                }
                 ret.table = this.getTable(info.getTableName(), req.isIgnoreNonExistingTable(), false);
                 if (ret.table == null) {
                     return null;
+                }
+                if (info.getRevision() > 0) {
+                    ret.revision = info.getRevision();
+                } else if (req.getRevision() > 0) {
+                    ret.revision = req.getRevision();
+                } else {
+                    ret.revision = ret.table.getLastRevision();
                 }
                 ret.schema = ret.table.getSchema();
                 ret.columns = this.getColumnAliases(ret.schema, info.getColumns());
@@ -424,7 +422,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             for (var table : tables) {
                 var r = new TableRecords();
                 r.meta = table;
-                r.iterator = table.table.scan(table.timestamp,
+                r.iterator = table.table.scan(table.revision,
                         table.columns,
                         req.getStart(),
                         req.getStartType(),

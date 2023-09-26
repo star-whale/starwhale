@@ -68,13 +68,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 
 @Slf4j
 public class MemoryTableImpl implements MemoryTable {
 
-    private static final String TIMESTAMP_COLUMN_NAME = "^";
+    private static final String REVISION_COLUMN_NAME = "^";
 
     static final String DELETED_FLAG_COLUMN_NAME = "-";
 
@@ -100,6 +101,15 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Getter
     private long lastUpdateTime = 0;
+
+    @Getter
+    private transient long lastRevision = 0;
+
+    @Setter
+    private boolean useTimestampAsRevision = false; // unittest only
+
+    private static final long MIN_TIMESTAMP = 86400L * 1000 * 365 * 50;
+    private static final long MAX_TIMESTAMP = 86400L * 1000 * 365 * 100;
 
     private final TreeMap<BaseValue, List<MemoryRecord>> recordMap = new TreeMap<>();
 
@@ -145,6 +155,7 @@ public class MemoryTableImpl implements MemoryTable {
                             var metadata = metaBuilder.build();
                             this.lastWalLogId = metadata.getLastWalLogId();
                             this.lastUpdateTime = metadata.getLastUpdateTime();
+                            this.lastRevision = metadata.getLastRevision();
                         }
                         if (record == null) {
                             break;
@@ -152,11 +163,11 @@ public class MemoryTableImpl implements MemoryTable {
                         var key = record.remove(this.schema.getKeyColumn());
                         this.statisticsMap.computeIfAbsent(this.schema.getKeyColumn(), k -> new ColumnStatistics())
                                 .update(key);
-                        var timestamp = (Int64Value) record.remove(TIMESTAMP_COLUMN_NAME);
+                        var revision = (Int64Value) record.remove(REVISION_COLUMN_NAME);
                         var deletedFlag = (BoolValue) record.remove(DELETED_FLAG_COLUMN_NAME);
                         this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
                                 .add(MemoryRecord.builder()
-                                        .timestamp(timestamp.getValue())
+                                        .revision(revision.getValue())
                                         .deleted(deletedFlag.isValue())
                                         .values(record)
                                         .build());
@@ -184,6 +195,7 @@ public class MemoryTableImpl implements MemoryTable {
             metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
                     .setLastWalLogId(this.lastWalLogId)
                     .setLastUpdateTime(this.lastUpdateTime)
+                    .setLastRevision(this.lastRevision)
                     .build());
         } catch (InvalidProtocolBufferException e) {
             throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
@@ -193,11 +205,11 @@ public class MemoryTableImpl implements MemoryTable {
         for (var entry : new TreeMap<>(this.statisticsMap).entrySet()) {
             columnSchema.put(entry.getKey(), entry.getValue().createSchema(entry.getKey(), index++));
         }
-        var timestampColumnSchema = new ColumnSchema(TIMESTAMP_COLUMN_NAME, index++);
-        timestampColumnSchema.setType(ColumnType.INT64);
+        var revisionColumnSchema = new ColumnSchema(REVISION_COLUMN_NAME, index++);
+        revisionColumnSchema.setType(ColumnType.INT64);
         var deletedFlagColumnSchema = new ColumnSchema(DELETED_FLAG_COLUMN_NAME, index);
         deletedFlagColumnSchema.setType(ColumnType.BOOL);
-        columnSchema.put(TIMESTAMP_COLUMN_NAME, timestampColumnSchema);
+        columnSchema.put(REVISION_COLUMN_NAME, revisionColumnSchema);
         columnSchema.put(DELETED_FLAG_COLUMN_NAME, deletedFlagColumnSchema);
 
         try {
@@ -217,7 +229,7 @@ public class MemoryTableImpl implements MemoryTable {
                                         recordMap.putAll(record.getValues());
                                     }
                                     recordMap.put(this.schema.getKeyColumn(), entry.getKey());
-                                    recordMap.put(TIMESTAMP_COLUMN_NAME, new Int64Value(record.getTimestamp()));
+                                    recordMap.put(REVISION_COLUMN_NAME, new Int64Value(record.getRevision()));
                                     recordMap.put(DELETED_FLAG_COLUMN_NAME, BaseValue.valueOf(record.isDeleted()));
                                     list.add(recordMap);
                                 }
@@ -250,7 +262,7 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var recordList = entry.getRecordsList();
         if (!recordList.isEmpty()) {
-            this.insertRecords(entry.getTimestamp(),
+            this.insertRecords(entry.getRevision(),
                     recordList.stream()
                             .map(r -> WalRecordDecoder.decodeRecord(this.schema, r))
                             .collect(Collectors.toList()));
@@ -293,11 +305,11 @@ public class MemoryTableImpl implements MemoryTable {
             }
             decodedRecords.add(decodedRecord);
         }
-        var timestamp = System.currentTimeMillis();
+        var revision = this.useTimestampAsRevision ? System.currentTimeMillis() : this.lastRevision + 1;
         var logEntryBuilder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName(this.tableName)
-                .setTimestamp(timestamp);
+                .setRevision(revision);
         var logSchemaBuilder = this.schema.getDiff(schema);
         if (logSchemaBuilder != null) {
             logEntryBuilder.setTableSchema(logSchemaBuilder);
@@ -319,13 +331,20 @@ public class MemoryTableImpl implements MemoryTable {
         this.lastUpdateTime = System.currentTimeMillis();
         this.schema = recordSchema;
         if (!decodedRecords.isEmpty()) {
-            this.insertRecords(timestamp, decodedRecords);
+            this.insertRecords(revision, decodedRecords);
         }
-
-        return timestamp;
+        return revision;
     }
 
-    private void insertRecords(long timestamp, List<Map<String, BaseValue>> records) {
+    private long normalizeRevision(long revision) {
+        return revision >= MIN_TIMESTAMP && !this.useTimestampAsRevision ? revision - MAX_TIMESTAMP : revision;
+    }
+
+    private void insertRecords(long revision, List<Map<String, BaseValue>> records) {
+        revision = this.normalizeRevision(revision);
+        if (revision > this.lastRevision) {
+            this.lastRevision = revision;
+        }
         for (var record : records) {
             var newRecord = new HashMap<>(record);
             var key = newRecord.remove(this.schema.getKeyColumn());
@@ -335,12 +354,12 @@ public class MemoryTableImpl implements MemoryTable {
             if (deletedFlag) {
                 if (versions.isEmpty() || !versions.get(versions.size() - 1).isDeleted()) {
                     versions.add(MemoryRecord.builder()
-                            .timestamp(timestamp)
+                            .revision(revision)
                             .deleted(true)
                             .build());
                 }
             } else {
-                var old = this.getRecordMap(key, versions, timestamp);
+                var old = this.getRecordMap(key, versions, revision);
                 if (old != null) {
                     for (var it = newRecord.entrySet().iterator(); it.hasNext(); ) {
                         var entry = it.next();
@@ -354,7 +373,7 @@ public class MemoryTableImpl implements MemoryTable {
                 }
                 if (versions.isEmpty() || !newRecord.isEmpty()) {
                     versions.add(MemoryRecord.builder()
-                            .timestamp(timestamp)
+                            .revision(revision)
                             .values(newRecord)
                             .build());
                 }
@@ -366,12 +385,14 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
-    private Map<String, BaseValue> getRecordMap(BaseValue key, List<MemoryRecord> versions, long timestamp) {
+
+    private Map<String, BaseValue> getRecordMap(BaseValue key, List<MemoryRecord> versions, long revision) {
+        revision = this.normalizeRevision(revision);
         var ret = new HashMap<String, BaseValue>();
         boolean deleted = false;
         boolean hasVersion = false;
         for (var record : versions) {
-            if (record.getTimestamp() <= timestamp) {
+            if (record.getRevision() <= revision) {
                 // record may be empty, use hasVersion to mark if there is a record
                 hasVersion = true;
                 if (record.isDeleted()) {
@@ -395,7 +416,7 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Override
     public Iterator<RecordResult> query(
-            long timestamp,
+            long revision,
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
@@ -421,7 +442,7 @@ public class MemoryTableImpl implements MemoryTable {
             this.checkFilter(filter);
         }
         var stream = this.recordMap.entrySet().stream()
-                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
+                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), revision))
                 .filter(record -> record != null && (filter == null || this.match(filter, record)));
         if (orderBy != null) {
             stream = stream.sorted((a, b) -> {
@@ -445,7 +466,7 @@ public class MemoryTableImpl implements MemoryTable {
 
     @Override
     public Iterator<RecordResult> scan(
-            long timestamp,
+            long revision,
             @NonNull Map<String, String> columns,
             String start,
             String startType,
@@ -510,7 +531,7 @@ public class MemoryTableImpl implements MemoryTable {
             return Collections.emptyIterator();
         }
         var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).entrySet().stream()
-                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
+                .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), revision))
                 .filter(Objects::nonNull)
                 .iterator();
         return new Iterator<>() {

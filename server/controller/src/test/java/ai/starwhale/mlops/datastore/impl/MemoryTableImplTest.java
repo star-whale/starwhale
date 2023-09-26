@@ -637,6 +637,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testUpdateFromWal() throws IOException {
+            this.memoryTable.setUseTimestampAsRevision(true);
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
                             ColumnSchemaDesc.builder().name("key").type("STRING").build(),
@@ -776,6 +777,7 @@ public class MemoryTableImplTest {
                     }
                 });
             }
+            this.memoryTable.setUseTimestampAsRevision(false);
             this.memoryTable.update(desc, records);
             MemoryTableImplTest.this.walManager.terminate();
             MemoryTableImplTest.this.walManager = new WalManager(MemoryTableImplTest.this.storageAccessService,
@@ -3085,24 +3087,17 @@ public class MemoryTableImplTest {
         }
 
         @Test
-        public void testQueryScanTimestamp() throws Exception {
-            var t1 = System.currentTimeMillis();
-            Thread.sleep(100);
-            this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
+        public void testQueryScanVersion() {
+            var t1 = this.memoryTable.getLastRevision();
+            var t2 = this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
                     List.of(Map.of("key", "0", "d", "7", "e", "8"),
                             Map.of("key", "9", "d", "6")));
-            var t2 = System.currentTimeMillis();
-            Thread.sleep(100);
-            this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
+            var t3 = this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
                     List.of(Map.of("key", "0", "d", "8", "h", "t"),
                             Map.of("key", "9", "-", "1")));
-            var t3 = System.currentTimeMillis();
-            Thread.sleep(100);
-            this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
+            var t4 = this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
                     List.of(Map.of("key", "0", "d", "9"),
                             Map.of("key", "9", "d", "8")));
-            var t4 = System.currentTimeMillis();
-            Thread.sleep(100);
             this.memoryTable.update(this.memoryTable.getSchema().toTableSchemaDesc(),
                     List.of(Map.of("key", "a", "d", "7")));
             var columns = Map.of("d", "d", "e", "e", "h", "h");
