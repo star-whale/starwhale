@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 public class DataStoreTest {
 
     private FileSystem fs;
-    private transient DataStore dataStore;
+    private volatile DataStore dataStore;
 
     private StorageAccessService storageAccessService;
 
@@ -83,6 +83,8 @@ public class DataStoreTest {
         String dumpInterval = "1h";
         @Default
         String minNoUpdatePeriod = "1d";
+        @Default
+        int minWalIdGap = 10;
         @Default
         String compressionCodec = "SNAPPY";
         @Default
@@ -111,6 +113,7 @@ public class DataStoreTest {
                 params.dataRootPath,
                 params.dumpInterval,
                 params.minNoUpdatePeriod,
+                params.minWalIdGap,
                 params.compressionCodec,
                 params.rowGroupSize,
                 params.pageSize,
@@ -1019,7 +1022,7 @@ public class DataStoreTest {
                     dataStore.terminate();
                     System.out.printf("%s terminated\n", this.dateFormat.format(new Date()));
                     createDateStore(DataStoreParams.builder()
-                            .dumpInterval("1s")
+                            .dumpInterval("10ms")
                             .minNoUpdatePeriod("1ms")
                             .build());
                     System.out.printf("%s restarted\n", this.dateFormat.format(new Date()));

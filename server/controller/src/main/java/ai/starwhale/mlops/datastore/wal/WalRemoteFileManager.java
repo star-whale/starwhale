@@ -42,7 +42,7 @@ import org.xerial.snappy.Snappy;
 @Slf4j
 public class WalRemoteFileManager extends Thread {
 
-    private transient boolean terminated;
+    private volatile boolean terminated;
     private final StorageAccessService storageAccessService;
 
     private final int ossMaxAttempts;
