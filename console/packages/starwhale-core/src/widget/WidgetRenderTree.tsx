@@ -4,10 +4,11 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import { WidgetProps, WidgetTreeNode } from '../types'
-import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent } from '../events/app'
+import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent, SectionAppendEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
 import { useStoreApi } from '../store'
+import useOnInitHandler from './hooks/useOnInitHandler'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -37,13 +38,15 @@ const selector = (s: any) => ({
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
     tree: s.tree,
+    onInit: s.onInit,
 })
 
 export function WidgetRenderTree() {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
-    const { tree } = api
+    const { tree, onInit } = api
     const storeApi = useStoreApi()
+    useOnInitHandler(onInit, { store, eventBus })
 
     const { toSave } = useRestoreState(dynamicVars)
 
@@ -57,6 +60,16 @@ export function WidgetRenderTree() {
     // subscription
     useEffect(() => {
         const subscription = new Subscription()
+        subscription.add(
+            eventBus.getStream(SectionAppendEvent).subscribe({
+                next: () => {
+                    handleAddSection({
+                        path: [0],
+                        type: 'ui:section',
+                    })
+                },
+            })
+        )
         subscription.add(
             eventBus.getStream(SectionAddEvent).subscribe({
                 next: (evt) => {

@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router-dom'
-import { BusyPlaceholder, Select } from '@starwhale/ui'
+import { BusyPlaceholder, Button, Select } from '@starwhale/ui'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { fetchPanelSetting, updatePanelSetting } from '@/domain/panel/services/panel'
 import { toaster } from 'baseui/toast'
@@ -10,6 +10,8 @@ import { getToken } from '@/api'
 import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
 import useTranslation from '@/hooks/useTranslation'
+import { PanelChartSaveEvent, SectionAppendEvent } from '@starwhale/core'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 interface Layout {
     name: string
@@ -68,6 +70,11 @@ function EvaluationWidgetResults() {
             })
     }, [projectId, project, job, updateLayout, storeKey, t])
 
+    const eventBus = React.useRef<any>()
+    const onInit = React.useCallback((args) => {
+        eventBus.current = args.eventBus
+    }, [])
+
     if (isLoading) {
         return (
             <BusyPlaceholder
@@ -80,28 +87,36 @@ function EvaluationWidgetResults() {
     }
 
     return (
-        <div style={{ width: '100%', height: 'auto' }}>
-            <div style={{ height: '50px', display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex' }}>
-                    <Select
-                        overrides={{
-                            ControlContainer: {
-                                style: {
-                                    width: '200px',
-                                },
+        <div className='flex flex-col content-full'>
+            <div className='flex justify-between mb-14px min-w-0'>
+                <Select
+                    overrides={{
+                        ControlContainer: {
+                            style: {
+                                width: '200px',
                             },
-                        }}
-                        clearable={false}
-                        options={layouts.map((layout) => ({ id: layout.name, label: layout.label }))}
-                        value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
-                        onChange={({ value }) => {
-                            const layout = layouts.find((l) => l.name === value[0].id)
-                            if (layout) setCurrentLayout(layout)
-                        }}
-                    />
+                        },
+                    }}
+                    clearable={false}
+                    options={layouts.map((layout) => ({ id: layout.name, label: layout.label }))}
+                    value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
+                    onChange={({ value }) => {
+                        const layout = layouts.find((l) => l.name === value[0].id)
+                        if (layout) setCurrentLayout(layout)
+                    }}
+                />
+                <div className='flex items-center flex-shrink-0 gap-10px'>
+                    <WithCurrentAuth id='evaluation.panel.save'>
+                        <Button onClick={() => eventBus.current?.publish(new PanelChartSaveEvent())}>
+                            {t('panel.save')}
+                        </Button>
+                    </WithCurrentAuth>
+                    <Button onClick={() => eventBus.current?.publish(new SectionAppendEvent())}>
+                        {t('panel.add')}
+                    </Button>
                 </div>
             </div>
-            <FullTablesEditor initialState={currentLayout?.content} onSave={onStateChange} />
+            <FullTablesEditor onInit={onInit} initialState={currentLayout?.content} onSave={onStateChange} />
         </div>
     )
 }

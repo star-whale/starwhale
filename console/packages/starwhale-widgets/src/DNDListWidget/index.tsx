@@ -16,8 +16,8 @@ export const CONFIG: WidgetConfig = {
     name: 'Dragging Section',
     group: [WidgetGroupType.LIST],
     optionConfig: {
-        isSave: true,
-        isAddPanel: true,
+        isSave: false,
+        isAddPanel: false,
     },
 }
 
