@@ -1299,12 +1299,28 @@ class DataBlock:
 KeyType = Union[int, str, None]
 
 
-# smart_union=True is used to make sure that pydantic will not convert str to int automatically
-class DataBlockDesc(SwBaseModel, smart_union=True):
+class DataBlockDesc(SwBaseModel):
     min_key: KeyType
     max_key: KeyType
+    min_revision: Optional[str]
+    max_revision: Optional[str]
     row_count: int
     block_id: Optional[int]
+
+
+class TombstoneDesc(SwBaseModel):
+    # None means from the beginning
+    min_key: KeyType
+    # None means to the end
+    max_key: KeyType
+    revision: str
+    # Mark the tombstone for the key with the prefix
+    # This works only if the key is a string
+    key_prefix: Optional[str]
+
+
+class CheckpointDesc(SwBaseModel):
+    revision: str
 
 
 class DataBlockConfig(SwBaseModel):
@@ -1313,15 +1329,36 @@ class DataBlockConfig(SwBaseModel):
 
 
 class Manifest(SwBaseModel):
+    """
+                       ┌──────────────┐     ┌──────────────┐      ┌──────────────┐
+                       │              │     │              │      │              │
+                       │   DataBlock  │     │   DataBlock  │      │   DataBlock  │
+                       │              │     │              │      │              │
+                       └──────────────┘     └──────────────┘      └──────────────┘
+    ┌─────────────┐
+    │  Tombstone  ├────────────────────────────────────────────────────────────────────
+    └─────────────┘
+                       ┌──────────────┐     ┌──────────────┐      ┌──────────────┐
+                       │              │     │              │      │              │
+                       │   DataBlock  │     │   DataBlock  │      │   DataBlock  │
+                       │              │     │              │      │              │
+                       └──────────────┘     └──────────────┘      └──────────────┘
+    ┌──────────────┐
+    │  Checkpoint  ├────────────────────────────────────────────────────────────────────
+    └──────────────┘
+    """
+
     version: str = "0.1.1"
     block_config: DataBlockConfig
     blocks: List[DataBlockDesc]
     key_column: str
     key_column_type: Optional[Dict[str, Any]]  # SwType.encode_schema
     next_block_id: int = 0
+    tombstones: List[TombstoneDesc]
+    checkpoints: List[CheckpointDesc]
 
 
-class IterWithRangeHint(SwBaseModel, smart_union=True):
+class IterWithRangeHint(SwBaseModel):
     iter: Iterator[InnerRecord]
     min_key: KeyType  # set it to None if the iter must be touched at first, or you don't know the min key
 
@@ -1621,6 +1658,8 @@ class LocalTable:
                 blocks=[],
                 key_column=self.key_column or "",
                 next_block_id=1,
+                tombstones=[],
+                checkpoints=[],
             )
 
         raise TableEmptyException(f"can not find table {self.table_name}")
