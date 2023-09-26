@@ -207,13 +207,13 @@ class Dataset:
             _summary = self.__loading_core_dataset.summary()
             # TODO: raise none summary exception for existed dataset
             if _summary is None:
-                self._total_rows = 0
+                self._approximate_total_rows = 0
                 self._total_blobs_size = 0
             else:
-                self._total_rows = _summary.rows
+                self._approximate_total_rows = _summary.rows
                 self._total_blobs_size = _summary.blobs_byte_size
         else:
-            self._total_rows = 0
+            self._approximate_total_rows = 0
             self._total_blobs_size = 0
 
         self._last_data_datastore_revision = ""
@@ -250,7 +250,17 @@ class Dataset:
         return f"Dataset: {self._uri.name}, loading uri: {self._loading_uri}, pending commit uri: {self._pending_commit_uri}"
 
     def __len__(self) -> int:
-        return self._total_rows
+        """__len__ slow but accurate"""
+        if self._dataset_builder is None:
+            return self.approximate_size
+        else:
+            self.flush()
+            return self._dataset_builder.calculate_rows_cnt()
+
+    @property
+    def approximate_size(self) -> int:
+        """approximate_size fast but maybe inaccurate"""
+        return self._approximate_total_rows
 
     def __enter__(self: _DType) -> _DType:
         return self
@@ -765,8 +775,7 @@ class Dataset:
             raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
         # TODO: add gc/rehash for update swds-bin format artifact features
-        # TODO improve accuracy of _total_rows during building
-        self._total_rows += 1
+        self._approximate_total_rows += 1
 
         _ds_builder = self._get_dataset_builder()
         _ds_builder.put(row)
@@ -801,17 +810,17 @@ class Dataset:
                 continue  # pragma: no cover
             _ds_builder.delete(item.index)
             self._deleted_rows_by_commit += 1
-            self._total_rows -= 1
+            self._approximate_total_rows -= 1
 
     @_check_readonly
     def append(self, item: t.Any) -> None:
         if isinstance(item, DataRow):
             self.__setitem__(item.index, item)
         elif isinstance(item, dict):
-            self.__setitem__(self._total_rows, item)
+            self.__setitem__(self._approximate_total_rows, item)
         elif isinstance(item, (list, tuple)):
             if len(item) == 1:
-                row = DataRow(self._total_rows, item[0])
+                row = DataRow(self._approximate_total_rows, item[0])
             elif len(item) == 2:
                 row = DataRow(item[0], item[1])
             else:
