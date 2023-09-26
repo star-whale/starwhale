@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
+import ai.starwhale.mlops.api.protocol.job.CreateJobTemplateRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
@@ -428,13 +429,12 @@ public class JobController {
     }
 
     @Operation(summary = "Add Template for job")
-    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/template", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/project/{projectUrl}/job/template", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> addTemplate(
             @PathVariable String projectUrl,
-            @PathVariable String jobUrl,
-            @RequestParam("name") String name) {
-        templateService.add(projectUrl, jobUrl, name);
+            @Valid @RequestBody CreateJobTemplateRequest request) {
+        templateService.add(projectUrl, request.getJobUrl(), request.getName());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
