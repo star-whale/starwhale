@@ -34,6 +34,7 @@ export default function useRestoreState(dynamicVars: Record<string, any>) {
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
                 if (!ids.includes(id)) {
+                    // eslint-disable-next-line
                     delete temp.widgets[id]
                 }
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))

@@ -3,6 +3,7 @@ import WidgetPlugin from './WidgetPlugin'
 import { generateId } from '../utils/generators'
 import WIDGETS from './WidgetModules'
 import _ from 'lodash'
+import { useEffect, useState } from 'react'
 
 export type DerivedPropertiesMap = Record<string, string>
 
@@ -88,19 +89,44 @@ function withReportWidgets(EditorApp: React.FC) {
     }
 }
 
-export { withDefaultWidgets, withReportWidgets }
+function useWidget(widgetType: string) {
+    const [widget, setWidget] = useState<WidgetPlugin | undefined>(WidgetFactory.getWidget(widgetType))
+
+    useEffect(() => {
+        const temp = WidgetFactory.getWidget(widgetType)
+
+        // for hot load, factory will be truncated
+        if (!temp) {
+            WIDGETS.forEach((w: WidgetPlugin<any>) => {
+                if (!w.getType()) return
+                WidgetFactory.register(w.getType(), w)
+            })
+        }
+
+        if (temp && temp !== widget) {
+            setWidget(temp)
+        }
+
+        // @FIXME dynamic Async load the plugin if none exists
+        // importPlugin(pluginId)
+        //   .then((result) => setPlugin(result))
+        //   .catch((err: Error) => {
+        //     setError(err.message);
+        //   });
+    }, [widget, widgetType])
+
+    return {
+        widget,
+        setWidget,
+    }
+}
+
+export { withDefaultWidgets, withReportWidgets, useWidget }
 
 export default WidgetFactory
 
-// @ts-ignore
+// // @ts-ignore
 if (import.meta.hot) {
     // @ts-ignore
-    import.meta.hot.accept(() => {
-        // eslint-disable-next-line no-console
-        console.log('hot reload widget modules')
-        WIDGETS.forEach((w: WidgetPlugin<any>) => {
-            if (!w.getType()) return
-            WidgetFactory.register(w.getType(), w)
-        })
-    })
+    import.meta.hot.accept(() => {})
 }

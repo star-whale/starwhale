@@ -44,11 +44,12 @@ function EvaluationWidgetResults() {
 
     useEffect(() => {
         setIsLoading(true)
-        Promise.all([
+        Promise.allSettled<{ value: any }>([
             fetchModelVersionPanelSetting(project?.name, job?.modelName, job?.modelVersion, getToken()),
             fetchPanelSetting(projectId, storeKey),
         ])
-            .then(([builtin, custom]) => {
+            // @ts-ignore
+            .then(([{ value: builtin }, { value: custom }]) => {
                 if (builtin) {
                     const layout = tryParseSimplified(builtin) ?? builtin
                     updateLayout({
@@ -89,22 +90,17 @@ function EvaluationWidgetResults() {
     return (
         <div className='flex flex-col content-full'>
             <div className='flex justify-between mb-14px min-w-0'>
-                <Select
-                    overrides={{
-                        ControlContainer: {
-                            style: {
-                                width: '200px',
-                            },
-                        },
-                    }}
-                    clearable={false}
-                    options={layouts.map((layout) => ({ id: layout.name, label: layout.label }))}
-                    value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
-                    onChange={({ value }) => {
-                        const layout = layouts.find((l) => l.name === value[0].id)
-                        if (layout) setCurrentLayout(layout)
-                    }}
-                />
+                <div className='w-200px'>
+                    <Select
+                        clearable={false}
+                        options={layouts.map((layout) => ({ id: layout.name, label: layout.label }))}
+                        value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
+                        onChange={({ value }) => {
+                            const layout = layouts.find((l) => l.name === value[0].id)
+                            if (layout) setCurrentLayout(layout)
+                        }}
+                    />
+                </div>
                 <div className='flex items-center flex-shrink-0 gap-10px'>
                     <WithCurrentAuth id='evaluation.panel.save'>
                         <Button onClick={() => eventBus.current?.publish(new PanelChartSaveEvent())}>
