@@ -27,7 +27,7 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
-            const group: [string, string[]][] = Object.entries(groupBy(names))
+            const group: [string, string[]][] = names.length > 0 ? Object.entries(groupBy(names)) : [['', []]]
 
             return tranformState({
                 key: 'widgets',
@@ -76,6 +76,7 @@ function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>
                     ...(state as WidgetStoreState),
                 })
             }
+
             const eventBus = new EventBusSrv()
             return {
                 store: store.current,
