@@ -363,8 +363,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
         total = 0
         for index, item in enumerate(dataset_config.handler()):
-            # TODO: support `--append`, `--update` and `--overwrite` for dataset build from iterable handler.
-            # current build only supports `--update` feature.
             if isinstance(item, DataRow):
                 key = item.index
             elif isinstance(item, (tuple, list)) and len(item) == 2:

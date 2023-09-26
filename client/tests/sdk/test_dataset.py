@@ -1731,10 +1731,18 @@ class TestMappingDatasetBuilder(BaseTestCase):
             dataset_uri=self.uri,
         )
         mdb.put(DataRow(index=5, features={"bin": Binary(1)}))  # type: ignore
-        mdb.flush()
         exception_msg = (
             "RowPutThread raise exception: no support fp type for bin writer"
         )
+        with self.assertRaisesRegex(threading.ThreadError, exception_msg):
+            mdb.flush()
+
+        mdb = MappingDatasetBuilder(
+            workdir=self.workdir,
+            dataset_uri=self.uri,
+        )
+        mdb.put(DataRow(index=5, features={"bin": Binary(1)}))  # type: ignore
+        mdb._rows_put_queue.join()
         with self.assertRaisesRegex(threading.ThreadError, exception_msg):
             mdb.put(DataRow(index=5, features={}))
 
@@ -1745,6 +1753,34 @@ class TestMappingDatasetBuilder(BaseTestCase):
         mdb.put(DataRow(index=5, features={"bin": Binary(1)}))  # type: ignore
         with self.assertRaisesRegex(threading.ThreadError, exception_msg):
             mdb.close()
+
+    @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
+    def test_rows_put_exception(self) -> None:
+        mdb = MappingDatasetBuilder(
+            workdir=self.workdir,
+            dataset_uri=self.uri,
+        )
+        with self.assertRaisesRegex(RuntimeError, "RowPutThread raise exception"):
+            for i in range(0, 5):
+                mdb.put(DataRow(index=i, features={"a": {b"b": 1}}))
+            mdb.flush()
+
+    @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
+    @patch(
+        "starwhale.api._impl.dataset.builder.mapping_builder.DatasetStorage.save_data_file"
+    )
+    def test_abs_handler_exception(self, mock_save_data_file: MagicMock) -> None:
+        mdb = MappingDatasetBuilder(
+            workdir=self.workdir,
+            dataset_uri=self.uri,
+            blob_volume_bytes_size=10,
+        )
+        mock_save_data_file.side_effect = Exception("write error")
+
+        with self.assertRaisesRegex(RuntimeError, "raise exception"):
+            for i in range(0, 10):
+                mdb.put(DataRow(index=i, features={"a": Text("aaa" * 100)}))
+                mdb.flush()
 
     def test_delete(self) -> None:
         mdb = MappingDatasetBuilder(

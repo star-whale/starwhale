@@ -355,6 +355,13 @@ class MappingDatasetBuilder:
                         self._rows_put_queue.task_done()
         except Exception as e:
             self._rows_put_exception = e
+            # clear queued rows that was put into queue before exception occurred, because we will queue.join in flush.
+            while True:
+                try:
+                    self._rows_put_queue.get_nowait()
+                    self._rows_put_queue.task_done()
+                except queue.Empty:
+                    break
             raise
         finally:
             self._artifact_bin_writer.close()
@@ -375,6 +382,14 @@ class MappingDatasetBuilder:
         except Exception as e:
             self._abs_exception = e
             self._rows_put_queue.put(e)
+
+            # clear queued rows that was put into queue before exception occurred, because we will queue.join in flush.
+            while True:
+                try:
+                    self._abs_queue.get_nowait()
+                    self._abs_queue.task_done()
+                except queue.Empty:
+                    break
             raise
 
     def delete(self, key: t.Union[str, int]) -> None:
@@ -387,6 +402,7 @@ class MappingDatasetBuilder:
             self._artifact_bin_writer._rotate()
             self._abs_queue.join()
 
+        self._raise_thread_daemons_exception()
         self._last_flush_revision, _ = self._tabular_dataset.flush()
         return self._last_flush_revision
 
