@@ -121,7 +121,6 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                         ) =>
                             update(
                                 produce((state: WidgetStoreState) => {
-                                    console.log(paths, sourcePaths, widgets, payload)
                                     const { type } = widgets
                                     const currentIndex = getCurrentIndex(paths)
                                     const curr = _.get(get(), sourcePaths) ?? []

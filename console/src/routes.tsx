@@ -17,7 +17,6 @@ import JobNewCard from '@/pages/Project/JobNewCard'
 import DatasetNewCard from '@/pages/Project/DatasetNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
-import JobWidgetResults from '@/pages/Job/JobWidgetResults'
 import JobOverviewLayout from '@/pages/Job/JobOverviewLayout'
 import SettingsOverviewLayout from '@/pages/Settings/SettingsOverviewLayout'
 import SettingAgentListCard from '@/pages/Settings/SettingAgentListCard'
@@ -183,7 +182,7 @@ const Routes = () => {
                                         <Route
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/results'
-                                            component={JobWidgetResults}
+                                            component={EvaluationWidgetResults}
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'
