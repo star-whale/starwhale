@@ -10,8 +10,8 @@ from pathlib import Path
 from binascii import crc32
 
 from starwhale.utils import console
+from starwhale.consts import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 from starwhale.utils.fs import ensure_dir
-from starwhale.core.dataset.type import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 
 
 class RotatedBinWriter:

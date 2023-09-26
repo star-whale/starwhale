@@ -20,10 +20,10 @@ from starwhale.base.type import RunSubDirType, PredictLogMode
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
+from starwhale.base.data_type import JsonDict
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import JsonDict
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(

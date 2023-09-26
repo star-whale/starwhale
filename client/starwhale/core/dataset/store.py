@@ -44,8 +44,8 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
+from starwhale.base.data_type import Link
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"

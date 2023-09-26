@@ -22,10 +22,10 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.base.data_type import Link, JsonDict, Sequence, BaseArtifact
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link, JsonDict, Sequence, BaseArtifact
 from starwhale.api._impl.data_store import SwType, _get_type, TableEmptyException
 from starwhale.base.client.api.dataset import DatasetApi
 from starwhale.base.client.models.models import DataIndexDesc, DataConsumptionRequest
@@ -199,7 +199,7 @@ class TabularDatasetRow(ASDictMixin):
         """
 
         def _transform(data: t.Any) -> t.Any:
-            from starwhale.core.dataset.type import Text, Binary
+            from starwhale.base.data_type import Text, Binary
 
             if isinstance(data, str) and sys.getsizeof(data) > self._ENCODE_MIN_SIZE:
                 return Text(content=data, auto_convert_to_str=True)
@@ -231,7 +231,7 @@ class TabularDatasetRow(ASDictMixin):
         """
 
         def _transform(data: t.Any) -> t.Any:
-            from starwhale.core.dataset.type import Text, Binary
+            from starwhale.base.data_type import Text, Binary
 
             if isinstance(data, Text) and data.auto_convert_to_str:
                 return data.content

@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock, PropertyMock
 
 import yaml
-import numpy
 from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -17,35 +16,25 @@ from starwhale.consts import (
     HTTPMethod,
     DefaultYAMLName,
     SW_TMP_DIR_NAME,
+    D_FILE_VOLUME_SIZE,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.api._impl import data_store
 from starwhale.base.type import BundleType, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.data_type import Link, MIMEType, GrayscaleImage
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import (
-    Line,
-    Link,
-    Point,
-    Polygon,
-    JsonDict,
-    MIMEType,
-    DatasetConfig,
-    GrayscaleImage,
-    D_FILE_VOLUME_SIZE,
-)
 from starwhale.core.dataset.view import (
     DatasetTermView,
     DatasetTermViewJson,
     DatasetTermViewRich,
 )
-from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.core.dataset.model import Dataset, DatasetConfig, StandaloneDataset
 from starwhale.base.models.dataset import LocalDatasetInfo, LocalDatasetInfoBase
 from starwhale.base.client.models.models import (
     DatasetVo,
@@ -531,156 +520,6 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
-
-
-class TestJsonDict(TestCase):
-    JSON_DICT = {
-        "a": 1,
-        "b": [1, 2, 3],
-        "c": {"ca": "1"},
-        "d": Link("http://ad.c/d"),
-        "e": ("a", "b"),
-    }
-
-    def test_init(self) -> None:
-        _jd = JsonDict(self.JSON_DICT)
-        self._do_assert(_jd)
-
-    def _do_assert(self, _jd: JsonDict) -> None:
-        self.assertEqual(1, _jd.a)
-        self.assertEqual([1, 2, 3], _jd.b)
-        self.assertEqual(JsonDict, type(_jd.c))
-        self.assertEqual("1", _jd.c.ca)
-        self.assertEqual(Link, type(_jd.d))
-        self.assertEqual("http://ad.c/d", _jd.d.uri)
-        self.assertEqual(("a", "b"), _jd.e)
-
-        self.assertEqual(
-            data_store.SwObjectType(
-                JsonDict,
-                {
-                    "a": data_store.INT64,
-                    "b": data_store.SwListType(data_store.INT64),
-                    "c": data_store.SwObjectType(JsonDict, {"ca": data_store.STRING}),
-                    "d": data_store.SwObjectType(
-                        data_store.Link,
-                        {
-                            "_type": data_store.STRING,
-                            "uri": data_store.STRING,
-                            "scheme": data_store.STRING,
-                            "offset": data_store.INT64,
-                            "size": data_store.INT64,
-                            "data_type": data_store.UNKNOWN,
-                            "_signed_uri": data_store.STRING,
-                            "extra_info": data_store.SwMapType(
-                                data_store.UNKNOWN, data_store.UNKNOWN
-                            ),
-                        },
-                    ),
-                    "e": data_store.SwTupleType(data_store.STRING),
-                },
-            ),
-            data_store._get_type(_jd),
-        )
-
-    def test_cls_method(self):
-        self.assertEqual(1, JsonDict.from_data(1))
-        self.assertEqual("a", JsonDict.from_data("a"))
-        self.assertEqual([1, 2, 3], JsonDict.from_data([1, 2, 3]))
-        _d = JsonDict.from_data({"ca": "1"})
-        self.assertEqual("1", _d.ca)
-        _l = Link("http://ad.c/d")
-        self.assertEqual(_l, JsonDict.from_data(_l))
-        tpl = ("a", "b")
-        self.assertEqual(tpl, JsonDict.from_data(tpl))
-        sw_j_o = JsonDict.from_data(self.JSON_DICT)
-        self._do_assert(sw_j_o)
-
-    def test_asdict(self):
-        sw_j_o = JsonDict.from_data(self.JSON_DICT)
-        self.assertEqual(self.JSON_DICT, sw_j_o.asdict())
-        self.assertEqual({}, JsonDict().asdict())
-
-    def test_exceptions(self):
-        class _MockStr(str):
-            ...
-
-        cases = [{1: "int"}, {b"a": "bytes"}, {_MockStr("test"): "obj"}]
-        for case in cases:
-            with self.assertRaises(ValueError):
-                JsonDict.from_data(case)
-
-
-class TestLine(TestCase):
-    def test_to_list(self):
-        p = Line([Point(3.9, 4.5), Point(5.9, 6.5), Point(7.9, 9.5)])
-        self.assertEqual([[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]], p.to_list())
-        self.assertEqual("Line: [[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]]", str(p))
-        self.assertEqual(numpy.float64, p.dtype)
-        self.assertEqual(
-            data_store.SwObjectType(
-                Line,
-                {
-                    "_type": data_store.STRING,
-                    "points": data_store.SwListType(
-                        data_store.SwObjectType(
-                            Point,
-                            {
-                                "_type": data_store.STRING,
-                                "x": data_store.FLOAT64,
-                                "y": data_store.FLOAT64,
-                            },
-                        )
-                    ),
-                },
-            ),
-            data_store._get_type(p),
-        )
-
-
-class TestPoint(TestCase):
-    def test_to_list(self):
-        p = Point(3.9, 4.5)
-        self.assertEqual([3.9, 4.5], p.to_list())
-        self.assertEqual(numpy.float64, p.dtype)
-        self.assertEqual(
-            data_store.SwObjectType(
-                Point,
-                {
-                    "_type": data_store.STRING,
-                    "x": data_store.FLOAT64,
-                    "y": data_store.FLOAT64,
-                },
-            ),
-            data_store._get_type(p),
-        ),
-
-
-class TestPolygon(TestCase):
-    def test_to_list(self):
-        p = Polygon([Point(3.9, 4.5), Point(5.9, 6.5), Point(7.9, 9.5)])
-        self.assertEqual([[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]], p.to_list())
-        self.assertEqual("Polygon: [[3.9, 4.5], [5.9, 6.5], [7.9, 9.5]]", str(p))
-        self.assertEqual(numpy.float64, p.dtype)
-        self.assertEqual(
-            data_store.SwObjectType(
-                Polygon,
-                {
-                    "_type": data_store.STRING,
-                    "points": data_store.SwListType(
-                        data_store.SwObjectType(
-                            Point,
-                            {
-                                "_type": data_store.STRING,
-                                "x": data_store.FLOAT64,
-                                "y": data_store.FLOAT64,
-                            },
-                        )
-                    ),
-                },
-            ),
-            data_store._get_type(p),
-        ),
 
 
 class CloudDatasetTest(TestCase):

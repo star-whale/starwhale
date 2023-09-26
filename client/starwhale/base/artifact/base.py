@@ -8,8 +8,8 @@ from types import TracebackType
 from pathlib import Path
 
 from starwhale.utils import console
+from starwhale.consts import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 from starwhale.utils.fs import empty_dir
-from starwhale.core.dataset.type import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 from starwhale.api._impl.data_store import datastore_max_dirty_records
 
 from .rotated_bin import RotatedBinWriter

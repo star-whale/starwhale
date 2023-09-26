@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover
     raise ImportError("Please install huggingface/datasets with `pip install datasets`")
 
 from starwhale.utils import console
-from starwhale.core.dataset.type import Audio, Image, MIMEType
+from starwhale.base.data_type import Audio, Image, MIMEType
 
 
 def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:

@@ -15,7 +15,7 @@ from starwhale.utils.fs import (
     BLAKE2B_SIGNATURE_ALGO,
 )
 from starwhale.utils.error import NoSupportError
-from starwhale.core.dataset.type import Link, BaseArtifact
+from starwhale.base.data_type import Link, BaseArtifact
 from starwhale.api._impl.data_store import TableWriter, LocalDataStore
 
 from .base import (

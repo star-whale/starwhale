@@ -18,9 +18,9 @@ from starwhale.consts import SW_AUTO_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
+from starwhale.base.data_type import BaseArtifact
 from starwhale.utils.dict_util import flatten
 from starwhale.base.uri.project import Project
-from starwhale.core.dataset.type import BaseArtifact
 
 from .base import (
     _TrackMode,

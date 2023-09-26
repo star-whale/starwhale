@@ -115,7 +115,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
         },
         {
             "name": "i",
-            "pythonType": "starwhale.core.dataset.type.Link",
+            "pythonType": "starwhale.base.data_type.Link",
             "type": "OBJECT",
             "attributes": [
                 {"name": "_type", "type": "STRING"},
@@ -188,7 +188,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
                     "valueType": {"type": "UNKNOWN"},
                 },
             ],
-            "pythonType": "starwhale.core.dataset.type.Link",
+            "pythonType": "starwhale.base.data_type.Link",
             "type": "OBJECT",
         },
     }
@@ -226,7 +226,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
             },
             "i": {
                 "type": "OBJECT",
-                "pythonType": "starwhale.core.dataset.type.Link",
+                "pythonType": "starwhale.base.data_type.Link",
                 "value": {
                     "_signed_uri": {"type": "STRING", "value": ""},
                     "_type": {"type": "STRING", "value": "link"},

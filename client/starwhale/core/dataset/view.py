@@ -14,10 +14,10 @@ from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSource
 from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.bundle import BaseBundle
+from starwhale.base.data_type import Text
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Text, DatasetConfig
-from starwhale.core.dataset.model import Dataset
+from starwhale.core.dataset.model import Dataset, DatasetConfig
 from starwhale.base.models.dataset import DatasetListType, LocalDatasetInfoBase
 from starwhale.core.runtime.process import Process as RuntimeProcess
 from starwhale.base.client.models.models import DatasetVo, DatasetInfoVo

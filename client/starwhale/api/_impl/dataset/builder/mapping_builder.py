@@ -5,17 +5,13 @@ import typing as t
 from pathlib import Path
 from collections import defaultdict
 
+from starwhale.consts import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 from starwhale.utils.fs import blake2b_file, BLAKE2B_SIGNATURE_ALGO
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.retry import http_retry
 from starwhale.base.artifact import AsyncArtifactWriterBase
+from starwhale.base.data_type import Link, BaseArtifact
 from starwhale.base.uri.resource import Resource
-from starwhale.core.dataset.type import (
-    Link,
-    BaseArtifact,
-    D_ALIGNMENT_SIZE,
-    D_FILE_VOLUME_SIZE,
-)
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 from starwhale.api._impl.dataset.loader import DataRow

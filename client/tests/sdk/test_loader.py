@@ -14,8 +14,9 @@ from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
+from starwhale.base.data_type import Link, Image, GrayscaleImage
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link, Image, DatasetSummary, GrayscaleImage
+from starwhale.core.dataset.model import DatasetSummary
 from starwhale.core.dataset.store import (
     ObjectStore,
     S3Connection,

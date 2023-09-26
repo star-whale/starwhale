@@ -12,7 +12,13 @@ from starwhale.api.job import (
 )
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.api.metric import multi_classification
-from starwhale.api.dataset import (
+from starwhale.api.dataset import Dataset
+from starwhale.utils.debug import init_logger
+from starwhale.api.instance import login, logout
+from starwhale.base.context import Context, pass_context
+from starwhale.api.evaluation import PipelineHandler
+from starwhale.api.experiment import fine_tune
+from starwhale.base.data_type import (
     Line,
     Link,
     Text,
@@ -21,26 +27,15 @@ from starwhale.api.dataset import (
     Point,
     Video,
     Binary,
-    Dataset,
     Polygon,
-    LinkAuth,
-    LinkType,
     MIMEType,
     ClassLabel,
-    S3LinkAuth,
     BoundingBox,
     NumpyBinary,
     BoundingBox3D,
     GrayscaleImage,
-    LocalFSLinkAuth,
-    DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
-from starwhale.utils.debug import init_logger
-from starwhale.api.instance import login, logout
-from starwhale.base.context import Context, pass_context
-from starwhale.api.evaluation import PipelineHandler
-from starwhale.api.experiment import fine_tune
 from starwhale.base.uri.resource import Resource
 
 dataset = Dataset.dataset
@@ -63,12 +58,7 @@ __all__ = [
     "pass_context",
     "Context",
     "Link",
-    "LinkAuth",
-    "DefaultS3LinkAuth",
-    "LocalFSLinkAuth",
-    "S3LinkAuth",
     "MIMEType",
-    "LinkType",
     "Binary",
     "NumpyBinary",
     "Text",

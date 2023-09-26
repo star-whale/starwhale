@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale import Link, Audio, MIMEType, S3LinkAuth
+from starwhale import Link, Audio, MIMEType
 
 dataset_dir = (
     Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
@@ -34,10 +34,11 @@ class SWDSBuildExecutor:
 
 
 class LinkRawDatasetBuildExecutor:
-
-    _auth = S3LinkAuth(name="speech", access_key="minioadmin", secret="minioadmin")
+    _access_key = "minioadmin"
+    _secret_key = "minioadmin"
     _addr = "10.131.0.1:9000"
     _bucket = "users"
+    _region = "local"
 
     def __iter__(self) -> t.Generator[t.Tuple, None, None]:
         import boto3
@@ -46,10 +47,10 @@ class LinkRawDatasetBuildExecutor:
         s3 = boto3.resource(
             "s3",
             endpoint_url=f"http://{self._addr}",
-            aws_access_key_id=self._auth.access_key,
-            aws_secret_access_key=self._auth.secret,
+            aws_access_key_id=self._access_key,
+            aws_secret_access_key=self._secret_key,
             config=Config(signature_version="s3v4"),
-            region_name=self._auth.region,
+            region_name=self._region,
         )
 
         objects = s3.Bucket(self._bucket).objects.filter(
