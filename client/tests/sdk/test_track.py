@@ -17,8 +17,8 @@ from starwhale.utils.fs import ensure_dir, ensure_file, BLAKE2B_SIGNATURE_ALGO
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.process import check_call
+from starwhale.base.data_type import Link, Audio, Image
 from starwhale.base.uri.project import Project
-from starwhale.core.dataset.type import Link, Audio, Image
 from starwhale.api._impl.data_store import TableDesc, TableWriter
 from starwhale.api._impl.track.base import (
     _TrackType,

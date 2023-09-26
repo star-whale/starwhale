@@ -23,12 +23,15 @@ from requests_mock import Mocker
 from tests import ROOT_DIR, BaseTestCase
 from starwhale import Dataset, dataset
 from starwhale.utils import load_yaml
-from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
+from starwhale.consts import (
+    HTTPMethod,
+    D_ALIGNMENT_SIZE,
+    ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
+)
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import FormatError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import (
+from starwhale.base.data_type import (
     Text,
     Audio,
     Image,
@@ -37,11 +40,11 @@ from starwhale.core.dataset.type import (
     MIMEType,
     Sequence,
     BoundingBox,
-    DatasetSummary,
     GrayscaleImage,
-    D_ALIGNMENT_SIZE,
     COCOObjectAnnotation,
 )
+from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.dataset.model import DatasetSummary
 from starwhale.base.models.dataset import LocalDatasetInfo, LocalDatasetInfoBase
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
@@ -1746,7 +1749,7 @@ class TestPytorch(_DatasetSDKTestBase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "default_collate: batch must contain tensors, numpy arrays, numbers, dicts or lists; found <class 'starwhale.core.dataset.type.Binary'>",
+            "default_collate: batch must contain tensors, numpy arrays, numbers, dicts or lists",
         ):
             list(torch_loader)
 

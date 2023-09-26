@@ -4,7 +4,7 @@ import collections
 import numpy
 import tensorflow as tf
 
-import starwhale.core.dataset.type as sw_type
+import starwhale.base.data_type as sw_type
 from starwhale.utils.error import NoSupportError
 from starwhale.api._impl.dataset import Dataset
 

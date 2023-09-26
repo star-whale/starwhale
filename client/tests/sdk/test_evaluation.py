@@ -25,10 +25,11 @@ from starwhale.base.type import RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.utils.retry import http_retry
 from starwhale.base.context import Context, pass_context
+from starwhale.base.data_type import Link, GrayscaleImage
 from starwhale.core.job.store import JobStorage
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
+from starwhale.core.dataset.model import DatasetSummary
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo

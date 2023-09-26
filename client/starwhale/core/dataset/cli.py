@@ -13,7 +13,7 @@ from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import DatasetAttr, DatasetConfig
+from starwhale.core.dataset.model import DatasetAttr, DatasetConfig
 
 from .view import get_term_view, DatasetTermView
 

@@ -2,26 +2,17 @@ import io
 import os
 import re
 import copy
-import json
 import math
 import time
-import queue
-import base64
-import struct
 import typing as t
-import inspect
 import tempfile
 import threading
 from http import HTTPStatus
 from pathlib import Path
-from binascii import crc32
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
-import numpy
-import numpy as np
-import torch
 import pytest
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -34,33 +25,25 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.base.data_type import (
+    Link,
+    Text,
+    Image,
+    Binary,
+    JsonDict,
+    MIMEType,
+    Sequence,
+    BoundingBox,
+    COCOObjectAnnotation,
+)
 from starwhale.base.uri.project import Project
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind, _get_remote_project_id
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
-from starwhale.core.dataset.type import (
-    Link,
-    Text,
-    Audio,
-    Image,
-    Video,
-    Binary,
-    JsonDict,
-    MIMEType,
-    Sequence,
-    ClassLabel,
-    BoundingBox,
-    NumpyBinary,
-    ArtifactType,
-    BoundingBox3D,
-    DatasetConfig,
-    GrayscaleImage,
-    COCOObjectAnnotation,
-)
-from starwhale.core.dataset.model import StandaloneDataset
+from starwhale.core.dataset.model import DatasetConfig, StandaloneDataset
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
-from starwhale.api._impl.data_store import STRING, SwObject, _get_type, SwObjectType
+from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
@@ -72,10 +55,7 @@ from starwhale.core.dataset.tabular import (
 )
 from starwhale.api._impl.dataset.loader import DataRow
 from starwhale.base.client.models.models import ResponseMessageListString
-from starwhale.api._impl.dataset.builder.mapping_builder import (
-    RotatedBinWriter,
-    MappingDatasetBuilder,
-)
+from starwhale.api._impl.dataset.builder.mapping_builder import MappingDatasetBuilder
 
 from .. import BaseTestCase
 
@@ -240,7 +220,7 @@ class TestDatasetCopy(BaseTestCase):
                 {"type": "INT64", "name": "width"},
                 {"type": "INT64", "name": "height"},
             ],
-            "pythonType": "starwhale.core.dataset.type.BoundingBox",
+            "pythonType": "starwhale.base.data_type.BoundingBox",
             "name": "features/bbox",
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
@@ -261,13 +241,13 @@ class TestDatasetCopy(BaseTestCase):
                         },
                     ],
                     "name": "data",
-                    "pythonType": "starwhale.core.dataset.type.JsonDict",
+                    "pythonType": "starwhale.base.data_type.JsonDict",
                     "type": "OBJECT",
                 },
                 {"name": "auto_convert", "type": "BOOL"},
             ],
             "name": "features/mixed_types_tuple",
-            "pythonType": "starwhale.core.dataset.type.Sequence",
+            "pythonType": "starwhale.base.data_type.Sequence",
             "type": "OBJECT",
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
@@ -314,16 +294,16 @@ class TestDatasetCopy(BaseTestCase):
                                 },
                             ],
                             "name": "link",
-                            "pythonType": "starwhale.core.dataset.type.Link",
+                            "pythonType": "starwhale.base.data_type.Link",
                             "type": "OBJECT",
                         },
                     ],
                     "name": "mask",
-                    "pythonType": "starwhale.core.dataset.type.Image",
+                    "pythonType": "starwhale.base.data_type.Image",
                     "type": "OBJECT",
                 },
             ],
-            "pythonType": "starwhale.core.dataset.type.JsonDict",
+            "pythonType": "starwhale.base.data_type.JsonDict",
             "name": "features/seg",
         } in content["tableSchemaDesc"]["columnSchemaList"]
         assert len(content["records"]) > 0
@@ -397,13 +377,13 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "name": "features/text",
                             "type": "OBJECT",
-                            "pythonType": "starwhale.core.dataset.type.Text",
+                            "pythonType": "starwhale.base.data_type.Text",
                             "attributes": [
                                 {"name": "_BaseArtifact__cache_bytes", "type": "BYTES"},
                                 {
                                     "name": "link",
                                     "type": "OBJECT",
-                                    "pythonType": "starwhale.core.dataset.type.Link",
+                                    "pythonType": "starwhale.base.data_type.Link",
                                     "attributes": [
                                         {"name": "uri", "type": "STRING"},
                                         {"name": "offset", "type": "INT64"},
@@ -423,7 +403,7 @@ class TestDatasetCopy(BaseTestCase):
                                 {"type": "INT64", "name": "width"},
                                 {"type": "INT64", "name": "height"},
                             ],
-                            "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                            "pythonType": "starwhale.base.data_type.BoundingBox",
                         },
                     ],
                     "records": [
@@ -431,7 +411,7 @@ class TestDatasetCopy(BaseTestCase):
                             "id": {"value": "idx-0", "type": "STRING"},
                             "features/text": {
                                 "type": "OBJECT",
-                                "pythonType": "starwhale.core.dataset.type.Text",
+                                "pythonType": "starwhale.base.data_type.Text",
                                 "value": {
                                     "_BaseArtifact__cache_bytes": {
                                         "type": "STRING",
@@ -439,7 +419,7 @@ class TestDatasetCopy(BaseTestCase):
                                     },
                                     "link": {
                                         "type": "OBJECT",
-                                        "pythonType": "starwhale.core.dataset.type.Link",
+                                        "pythonType": "starwhale.base.data_type.Link",
                                         "value": {
                                             "offset": {
                                                 "type": "INT64",
@@ -456,7 +436,7 @@ class TestDatasetCopy(BaseTestCase):
                             },
                             "features/bbox": {
                                 "type": "OBJECT",
-                                "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                                "pythonType": "starwhale.base.data_type.BoundingBox",
                                 "value": {
                                     "x": {"type": "INT64", "value": "0000000000000001"},
                                     "y": {"type": "INT64", "value": "0000000000000002"},
@@ -523,356 +503,6 @@ class TestDatasetCopy(BaseTestCase):
         assert isinstance(bbox, BoundingBox)
         assert bbox.x == 1 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
-
-
-class TestDatasetType(TestCase):
-    def setUp(self) -> None:
-        self.setUpPyfakefs()
-
-    def test_annotation_swobj(self) -> None:
-        objs = [
-            ClassLabel([1, 2, 3]),
-            Binary(b"test"),
-            Image(
-                "path/to/file",
-                display_name="t",
-                shape=[28, 28, 3],
-                mime_type=MIMEType.PNG,
-            ),
-            GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]),
-            Audio("test/1.wav"),
-            Video("test/1.avi"),
-            BoundingBox(1, 2, 3, 4),
-            Text("test"),
-            Link(
-                "path/to/file",
-                data_type=Image(display_name="image"),
-            ),
-            COCOObjectAnnotation(
-                id=1,
-                image_id=1,
-                category_id=1,
-                area=100,
-                bbox=BoundingBox(1, 2, 3, 4),
-                iscrowd=1,
-            ),
-            Sequence([]),
-            Sequence((1, "2", 3.0)),
-            Sequence(
-                [
-                    1,
-                    "2",
-                    3.0,
-                    ["a", "b", "c"],
-                    Sequence([1, "b", {"a": 1, "b": "str"}]),
-                ]
-            ),
-        ]
-
-        for obj in objs:
-            typ = _get_type(obj)
-            assert isinstance(typ, SwObjectType)
-            assert typ.attrs["_type"] == STRING
-
-    def test_binary(self) -> None:
-        b = Binary(b"test")
-        assert b.to_bytes() == b"test"
-        assert b.astype() == {
-            "type": ArtifactType.Binary.value,
-            "mime_type": MIMEType.UNDEFINED.value,
-            "encoding": "",
-            "display_name": "",
-        }
-
-    def test_sequence(self) -> None:
-        raw_data = [
-            1,
-            "2",
-            3.0,
-            ["a", "b", "c"],
-            Sequence([1, "b", {"a": 1, "b": "str"}]),
-        ]
-        s = Sequence(raw_data)
-        assert str(s)
-        assert repr(s)
-        assert len(s) == 5
-        assert bool(s)
-
-        assert s.sequence_type == "list"
-        assert s.to_raw_data() == raw_data
-
-        s = Sequence([])
-        assert not bool(s)
-        assert len(s) == 0
-        assert s.to_raw_data() == []
-
-    def test_numpy_binary(self) -> None:
-        np_array = np.array([[1.008, 6.94, 22.990], [39.098, 85.468, 132.91]])
-        b = NumpyBinary(np_array.tobytes(), np_array.dtype, np_array.shape)
-        assert b.to_bytes() == np_array.tobytes()
-        np.testing.assert_array_equal(b.to_numpy(), np_array)
-        assert torch.equal(torch.from_numpy(np_array), b.to_tensor())
-
-    def test_image(self) -> None:
-        fp = io.StringIO("test")
-        img = Image(fp, display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG)
-        assert img.to_bytes() == b"test"
-        _asdict = img.asdict()
-        assert not _asdict["as_mask"]
-        assert "fp" not in _asdict
-        assert "_raw_base64_data" not in _asdict
-        assert _asdict["_type"] == "image"
-        assert _asdict["display_name"] == "t"
-        assert _asdict["shape"] == [28, 28, 3]
-        assert json.loads(json.dumps(_asdict))["_type"] == "image"
-
-        with self.assertRaises(RuntimeError):
-            _get_type(img)
-
-        img = Image(
-            "path/to/file", display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG
-        )
-        typ = _get_type(img)
-        assert isinstance(typ, SwObjectType)
-        assert typ.attrs["mask_uri"] == STRING
-
-        fp = io.BytesIO(b"test")
-        img = GrayscaleImage(fp, shape=[28, 28, 1]).carry_raw_data()
-        assert img.to_bytes() == b"test"
-        _asdict = json.loads(json.dumps(img.asdict()))
-        assert _asdict["_type"] == "image"
-        assert _asdict["_mime_type"] == MIMEType.GRAYSCALE.value
-        assert _asdict["shape"] == [28, 28, 1]
-        assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
-        with self.assertRaises(RuntimeError):
-            _get_type(img)
-
-        self.fs.create_file("path/to/file", contents="")
-        img = GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]).carry_raw_data()
-        typ = _get_type(img)
-        assert isinstance(typ, SwObjectType)
-        assert typ.attrs["_raw_base64_data"] == STRING
-
-    def test_swobject_subclass_init(self) -> None:
-        from starwhale.core.dataset import type as dataset_type
-
-        for v in dataset_type.__dict__.values():
-            if inspect.isclass(v) and issubclass(v, SwObject):
-                self.assertIsInstance(v()._to_dict(), dict, f"class: {v}")
-
-    def test_audio(self) -> None:
-        fp = "/test/1.wav"
-        self.fs.create_file(fp, contents="test")
-        audio = Audio(fp)
-        _asdict = json.loads(json.dumps(audio.asdict()))
-        assert _asdict["_mime_type"] == MIMEType.WAV.value
-        assert _asdict["_type"] == "audio"
-        assert audio.to_bytes() == b"test"
-        typ = _get_type(audio)
-        assert isinstance(typ, SwObjectType)
-
-    def test_video(self) -> None:
-        fp = "/test/1.avi"
-        self.fs.create_file(fp, contents="test")
-        video = Video(fp)
-        _asdict = json.loads(json.dumps(video.asdict()))
-        assert _asdict["_mime_type"] == MIMEType.AVI.value
-        assert _asdict["_type"] == "video"
-        assert video.to_bytes() == b"test"
-
-    def test_bbox(self) -> None:
-        bbox = BoundingBox(1, 2, 3, 4)
-        assert bbox.to_list() == [1, 2, 3, 4]
-        _asdict = json.loads(json.dumps(bbox.asdict()))
-        assert _asdict["_type"] == "bounding_box"
-        assert _asdict["x"] == 1
-        assert _asdict["y"] == 2
-        assert _asdict["width"] == 3
-        assert _asdict["height"] == 4
-        assert torch.equal(bbox.to_tensor(), torch.Tensor([1, 2, 3, 4]))
-        _bout = bbox.to_bytes()
-        assert isinstance(_bout, bytes)
-        _array = numpy.frombuffer(_bout, dtype=numpy.float64)
-        assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
-
-    def test_bbox3d(self) -> None:
-        bbox_a = BoundingBox(1, 2, 3, 4)
-        bbox_b = BoundingBox(3, 4, 3, 4)
-        bbox = BoundingBox3D(bbox_a, bbox_b)
-        assert bbox.to_list() == [[1, 2, 3, 4], [3, 4, 3, 4]]
-        _asdict = json.loads(json.dumps(bbox.asdict()))
-        assert _asdict["_type"] == "bounding_box3D"
-        assert _asdict["bbox_a"]["x"] == 1
-        assert _asdict["bbox_a"]["y"] == 2
-        assert _asdict["bbox_a"]["width"] == 3
-        assert _asdict["bbox_a"]["height"] == 4
-        assert _asdict["bbox_b"]["x"] == 3
-        assert _asdict["bbox_b"]["y"] == 4
-        assert _asdict["bbox_b"]["width"] == 3
-        assert _asdict["bbox_b"]["height"] == 4
-        assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
-        _bout = bbox.to_bytes()
-        assert isinstance(_bout, bytes)
-        _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(
-            BoundingBox3D.SHAPE
-        )
-        assert numpy.array_equal(
-            _array, numpy.array([[1, 2, 3, 4], [3, 4, 3, 4]], dtype=numpy.float64)
-        )
-
-    def test_text(self) -> None:
-        text = Text("test")
-        _asdict = json.loads(json.dumps(text.asdict()))
-        assert text.to_bytes() == b"test"
-        assert "fp" not in _asdict
-        assert _asdict["_content"] == "test"
-        assert _asdict["_type"] == "text"
-        assert _asdict["_mime_type"] == MIMEType.PLAIN.value
-        assert text.to_str() == "test"
-
-    def test_coco(self) -> None:
-        coco = COCOObjectAnnotation(
-            id=1,
-            image_id=1,
-            category_id=1,
-            area=100,
-            bbox=BoundingBox(1, 2, 3, 4),
-            iscrowd=1,
-        )
-        polygon = ["1", "2", "3", "4"]
-        assert coco.segmentation is None
-        coco.segmentation = polygon
-        _asdict = json.loads(json.dumps(coco.asdict()))
-        assert _asdict["_type"] == "coco_object_annotation"
-        assert coco.segmentation == coco._segmentation_polygon == polygon
-
-        coco_dict = COCOObjectAnnotation(
-            id=2,
-            image_id=2,
-            category_id=2,
-            area=100,
-            bbox=BoundingBox(1, 2, 3, 4),
-            iscrowd=1,
-        )
-        rle = {"size": [100, 200], "counts": "abcd"}
-        assert coco_dict.segmentation is None
-        coco_dict.segmentation = rle
-        _asdict = json.loads(json.dumps(coco.asdict()))
-        assert _asdict["_type"] == "coco_object_annotation"
-        assert coco_dict.segmentation == rle
-        assert coco_dict._segmentation_rle_counts == rle["counts"]
-        assert coco_dict._segmentation_rle_size == rle["size"]
-
-        with self.assertRaises(FieldTypeOrValueError):
-            coco = COCOObjectAnnotation(
-                id=1,
-                image_id=1,
-                category_id=1,
-                area=100,
-                bbox=BoundingBox(1, 2, 3, 4),
-                iscrowd=3,
-            )
-
-    def test_class_label(self) -> None:
-        cl = ClassLabel([1, 2, 3])
-        _asdict = json.loads(json.dumps(cl.asdict()))
-        assert _asdict["_type"] == "class_label"
-        assert _asdict["names"] == [1, 2, 3]
-
-        cl = ClassLabel.from_num_classes(3)
-        assert cl.names == [0, 1, 2]
-
-        with self.assertRaises(FieldTypeOrValueError):
-            ClassLabel.from_num_classes(0)
-
-    @patch("starwhale.core.dataset.store.boto3.resource")
-    @patch(
-        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
-        MagicMock(),
-    )
-    def test_link_standalone(self, m_boto3: MagicMock) -> None:
-        link = Link(
-            uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-            owner="mnist/version/latest",
-            data_type=Image(display_name="test"),
-        )
-        as_type = link.astype()
-        assert as_type["type"] == "link"
-        assert as_type["data_type"]["type"] == ArtifactType.Image.value
-        assert as_type["data_type"]["display_name"] == "test"
-        raw_content = b"123"
-
-        m_boto3.return_value = MagicMock(
-            **{
-                "Object.return_value": MagicMock(
-                    **{
-                        "get.return_value": {
-                            "Body": MagicMock(**{"read.return_value": raw_content}),
-                            "ContentLength": len(raw_content),
-                        }
-                    }
-                )
-            }
-        )
-
-        content = link.to_bytes()
-        assert content == raw_content
-
-        b = Binary(link=link)
-        assert b.to_bytes() == raw_content
-
-    @Mocker()
-    @patch("starwhale.utils.config.load_swcli_config")
-    def test_link_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
-        m_conf.return_value = {
-            "current_instance": "local",
-            "instances": {
-                "foo": {
-                    "uri": "http://127.0.0.1:8081",
-                    "current_project": "test",
-                    "sw_token": "token",
-                },
-            },
-            "storage": {"root": "/root"},
-        }
-
-        link = Link(
-            uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-        )
-
-        rm.request(
-            HTTPMethod.GET,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist",
-            json={"data": {"id": 1, "versionName": "123456a", "versionId": 100}},
-        )
-        link.owner = Resource(
-            "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
-        )
-
-        rm.request(
-            HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/uri/sign-links?expTimeMillis=86400000",
-            json={
-                "data": {
-                    "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"
-                }
-            },
-        )
-
-        raw_content = b"123"
-
-        rm.request(
-            HTTPMethod.GET,
-            "http://127.0.0.1:9001/signed_url",
-            content=raw_content,
-        )
-
-        content = link.to_bytes()
-        assert content == raw_content
-
-        link2 = Link(uri="http://127.0.0.1:9001/signed_url")
-        content = link2.to_bytes()
-        assert content == raw_content
 
 
 class TestDatasetSessionConsumption(TestCase):
@@ -1446,144 +1076,6 @@ class TestTabularDataset(TestCase):
         for r in (s_row, u_row, l_row):
             copy_r = TabularDatasetRow.from_datastore(**r.asdict())
             assert copy_r == r
-
-
-class TestRotatedBinWriter(TestCase):
-    def setUp(self) -> None:
-        self.setUpPyfakefs()
-
-    def test_bin_format(self) -> None:
-        workdir = Path("/home/test")
-        content = b"123456"
-        alignment_size = 64
-
-        with RotatedBinWriter(workdir, alignment_bytes_size=alignment_size) as w:
-            w.write(content)
-
-        bin_path = list(workdir.iterdir())[0]
-        bin_content = bin_path.read_bytes()
-        assert len(bin_content) == alignment_size
-
-        groups = struct.unpack(">IIQIIII", bin_content[0:32])
-        assert len(groups) == 7
-        assert struct.pack(">I", groups[0]) == b"SWDS"  # header magic
-        assert struct.pack(">I", groups[-1]) == b"SDWS"  # data magic
-        assert groups[1] == crc32(content)  # data crc32
-        assert groups[2] == 0  # reserved
-        assert groups[3] == len(content)  # size
-        assert groups[4] == alignment_size - len(content) - 32  # padding size
-        assert groups[5] == 0  # header version
-
-        c_start, c_end = 32, 32 + len(content)
-        assert bin_content[c_start:c_end] == content
-        assert bin_content[c_end:] == b"\0" * groups[4]
-
-    def test_write_one_bin(self) -> None:
-        workdir = Path("/home/test")
-        content = b"abcdef"
-
-        assert not workdir.exists()
-
-        rbw = RotatedBinWriter(workdir, alignment_bytes_size=1, volume_bytes_size=100)
-        assert not rbw._current_writer.closed
-        bin_path, bin_section = rbw.write(content)
-        assert rbw._wrote_size == bin_section.size
-        assert rbw.working_path == bin_path
-        rbw.close()
-
-        assert bin_section.offset == 0
-        assert bin_section.size == len(content) + RotatedBinWriter._header_size
-        assert bin_section.raw_data_offset == RotatedBinWriter._header_size
-        assert bin_section.raw_data_size == len(content)
-
-        assert rbw.working_path != bin_path
-        assert rbw._wrote_size == 0
-
-        assert workdir.exists()
-        assert bin_path.exists()
-        assert rbw.rotated_paths == [bin_path] == list(workdir.iterdir())
-        assert bin_path.parent == workdir
-        assert rbw._current_writer.closed
-
-    def test_write_multi_bins(self) -> None:
-        workdir = Path("/home/test")
-        rbw = RotatedBinWriter(workdir, alignment_bytes_size=1, volume_bytes_size=1)
-        cnt = 10
-        for _ in range(0, cnt):
-            rbw.write(b"\0")
-        rbw.close()
-        assert len(rbw.rotated_paths) == cnt
-        assert set(rbw.rotated_paths) == set(workdir.iterdir())
-        assert rbw.working_path not in rbw.rotated_paths
-
-    def test_notify(self) -> None:
-        notify_queue = queue.Queue()
-
-        cnt = 10
-        assert notify_queue.qsize() == 0
-        with RotatedBinWriter(
-            Path("/home/test"),
-            alignment_bytes_size=1,
-            volume_bytes_size=1,
-            rotated_bin_notify_queue=notify_queue,
-        ) as w:
-            for i in range(0, cnt):
-                w.write(b"\0")
-                assert notify_queue.qsize() == i + 1
-
-        queue_paths = [notify_queue.get() for _ in range(0, cnt)]
-        assert queue_paths == w.rotated_paths
-
-    def test_close(self) -> None:
-        rbw = RotatedBinWriter(Path("/home/test"))
-        rbw.close()
-
-        rbw = RotatedBinWriter(Path("/home/test"))
-        rbw.write(b"123")
-        rbw.close()
-
-        assert rbw._current_writer.closed
-        with self.assertRaisesRegex(ValueError, "I/O operation on closed file"):
-            rbw.close()
-
-    def test_alignment(self) -> None:
-        class _M(t.NamedTuple):
-            content_size: int
-            alignment_size: int
-            expected_bin_size: int
-
-        cases = [
-            _M(0, 1, 32),
-            _M(0, 31, 62),
-            _M(0, 64, 64),
-            _M(1, 1, 33),
-            _M(3, 1, 35),
-            _M(32, 1, 64),
-            _M(32, 63, 126),
-            _M(32, 64, 64),
-            _M(32, 32, 64),
-            _M(32, 65, 65),
-            _M(16, 16, 48),
-            _M(16, 4096, 4096),
-        ]
-
-        for index, meta in enumerate(cases):
-            workdir = Path(f"/home/test/{index}")
-            with RotatedBinWriter(
-                workdir, alignment_bytes_size=meta.alignment_size
-            ) as w:
-                w.write(b"\0" * meta.content_size)
-
-            self.assertEqual(
-                list(workdir.iterdir())[0].stat().st_size,
-                meta.expected_bin_size,
-                msg=f"content:{meta.content_size}, alignment:{meta.alignment_size}, expected:{meta.expected_bin_size}",
-            )
-
-        with self.assertRaisesRegex(
-            ValueError, "alignment_bytes_size must be greater than zero"
-        ):
-            RotatedBinWriter(Path("."), alignment_bytes_size=0)
 
 
 class TestMappingDatasetBuilder(BaseTestCase):

@@ -7,16 +7,19 @@ from pathlib import Path
 
 import yaml
 
-from starwhale.utils import console, load_yaml
+from starwhale.utils import console, load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
     HTTPMethod,
     CREATED_AT_KEY,
     DefaultYAMLName,
     RECOVER_DIRNAME,
+    D_ALIGNMENT_SIZE,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
+    D_FILE_VOLUME_SIZE,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir
@@ -28,14 +31,14 @@ from starwhale.base.type import (
     DatasetFolderSourceType,
 )
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.base.mixin import ASDictMixin
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import NoSupportError
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
-from starwhale.core.dataset.type import DatasetConfig, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.base.models.dataset import (
     DatasetListType,
@@ -48,6 +51,111 @@ from starwhale.base.client.models.models import DatasetInfoVo
 
 if t.TYPE_CHECKING:
     from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+
+class DatasetSummary(ASDictMixin):
+    def __init__(
+        self,
+        rows: int = 0,
+        updated_rows: int = 0,
+        deleted_rows: int = 0,
+        blobs_byte_size: int = 0,
+        increased_blobs_byte_size: int = 0,
+        **kw: t.Any,
+    ) -> None:
+        self.rows = rows
+        self.updated_rows = updated_rows
+        self.deleted_rows = deleted_rows
+        self.blobs_byte_size = blobs_byte_size
+        self.increased_blobs_byte_size = increased_blobs_byte_size
+
+    def __str__(self) -> str:
+        return f"Dataset Summary: rows({self.rows})"
+
+    def __repr__(self) -> str:
+        return (
+            f"Dataset Summary: rows(total: {self.rows}, updated: {self.updated_rows}, deleted: {self.deleted_rows}), "
+            f"size(blobs:{self.blobs_byte_size})"
+        )
+
+
+_size_t = t.Union[int, str, None]
+
+
+# TODO: use attr to tune code
+class DatasetAttr(ASDictMixin):
+    def __init__(
+        self,
+        volume_size: _size_t = D_FILE_VOLUME_SIZE,
+        alignment_size: _size_t = D_ALIGNMENT_SIZE,
+        **kw: t.Any,
+    ) -> None:
+        volume_size = D_FILE_VOLUME_SIZE if volume_size is None else volume_size
+        alignment_size = D_ALIGNMENT_SIZE if alignment_size is None else alignment_size
+
+        self.volume_size = convert_to_bytes(volume_size)
+        self.alignment_size = convert_to_bytes(alignment_size)
+        self.kw = kw
+
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        return super().asdict(ignore_keys=ignore_keys or ["kw"])
+
+
+# TODO: abstract base class from DatasetConfig and ModelConfig
+# TODO: use attr to tune code
+class DatasetConfig(ASDictMixin):
+    def __init__(
+        self,
+        name: str = "",
+        handler: t.Any = "",
+        pkg_data: t.List[str] | None = None,
+        exclude_pkg_data: t.List[str] | None = None,
+        desc: str = "",
+        version: str = DEFAULT_STARWHALE_API_VERSION,
+        attr: t.Dict[str, t.Any] | None = None,
+        project_uri: str = "",
+        runtime_uri: str = "",
+        **kw: t.Any,
+    ) -> None:
+        self.name = name
+        self.handler = handler
+        self.desc = desc
+        self.version = version
+        self.attr = DatasetAttr(**(attr or {}))
+        self.pkg_data = pkg_data or []
+        self.exclude_pkg_data = exclude_pkg_data or []
+        self.project_uri = project_uri
+        self.runtime_uri = runtime_uri
+
+        self.kw = kw
+
+    def do_validate(self) -> None:
+        _ok, _reason = validate_obj_name(self.name)
+        if not _ok:
+            raise FieldTypeOrValueError(f"name field:({self.name}) error: {_reason}")
+
+        if isinstance(self.handler, str) and ":" not in self.handler:
+            raise Exception(
+                f"please use module:class format, current is: {self.handler}"
+            )
+
+        # TODO: add more validator
+
+    def __str__(self) -> str:
+        return f"Dataset Config {self.name}"
+
+    __repr__ = __str__
+
+    @classmethod
+    def create_by_yaml(cls, fpath: t.Union[str, Path]) -> DatasetConfig:
+        c = load_yaml(fpath)
+
+        return cls(**c)
+
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        d = super().asdict(["handler"])
+        d["handler"] = getattr(self.handler, "__name__", None) or str(self.handler)
+        return d
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):

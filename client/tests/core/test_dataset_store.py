@@ -13,8 +13,8 @@ from pyfakefs.fake_filesystem_unittest import patchfs
 from starwhale.utils import config
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.base.data_type import Link
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import (
     BytesBuffer,
     HttpBackend,

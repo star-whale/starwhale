@@ -220,3 +220,6 @@ DEFAULT_CONDA_CHANNEL = "conda-forge"
 WHEEL_FILE_EXTENSION = ".whl"
 
 CREATED_AT_KEY = "created_at"
+
+D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
+D_ALIGNMENT_SIZE = 128  # for page cache

@@ -3,7 +3,7 @@ import collections
 
 from torch.utils.data import IterableDataset
 
-import starwhale.core.dataset.type as sw_type
+import starwhale.base.data_type as sw_type
 from starwhale.api._impl.dataset import Dataset
 
 __all__ = ["TorchIterableDataset", "default_transform"]

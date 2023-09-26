@@ -23,8 +23,10 @@ from starwhale.consts import (
     HTTPMethod,
     CREATED_AT_KEY,
     SW_TMP_DIR_NAME,
+    D_ALIGNMENT_SIZE,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
+    D_FILE_VOLUME_SIZE,
     DEFAULT_MANIFEST_NAME,
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
@@ -41,16 +43,11 @@ from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSource
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.data_type import MIMEType
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import (
-    MIMEType,
-    DatasetSummary,
-    D_ALIGNMENT_SIZE,
-    D_FILE_VOLUME_SIZE,
-)
 from starwhale.core.dataset.model import Dataset as CoreDataset
-from starwhale.core.dataset.model import StandaloneDataset
+from starwhale.core.dataset.model import DatasetSummary, StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.base.models.dataset import DatasetListType, LocalDatasetInfo
 from starwhale.api._impl.data_store import TableEmptyException
@@ -1712,7 +1709,7 @@ class Dataset:
             return _meta
 
         def _iter_records() -> t.Iterator[t.Tuple[str, t.Dict]]:
-            from starwhale.core.dataset.type import Audio, Image, Video
+            from starwhale.base.data_type import Audio, Image, Video
 
             _dfst = DatasetFolderSourceType
             file_types_map = {

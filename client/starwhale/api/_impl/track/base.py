@@ -7,7 +7,7 @@ from enum import Enum, unique
 
 from starwhale.utils import now_str
 from starwhale.base.mixin import ASDictMixin
-from starwhale.core.dataset.type import Link
+from starwhale.base.data_type import Link
 
 
 @unique
