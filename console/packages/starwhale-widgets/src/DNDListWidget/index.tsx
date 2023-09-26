@@ -1,5 +1,5 @@
 import Button from '@starwhale/ui/Button'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { DragStartEvent, PanelChartSaveEvent, SectionAddEvent } from '@starwhale/core/events'
 import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '@starwhale/core/types'
 import WidgetPlugin from '@starwhale/core/widget/WidgetPlugin'
@@ -56,9 +56,7 @@ const useStyles = createUseStyles({
         marginLeft: '-15px',
         left: '50%',
         display: 'none',
-        // cursor: 'pointer',
         textAlign: 'center',
-        // cursor: 'move',
         cursor: '-webkit-grabbing',
     },
 })
@@ -71,14 +69,13 @@ function DNDListWidget(props: WidgetRendererProps) {
     const { onLayoutOrderChange, eventBus, children, optionConfig = {} } = props
     const { isSave, isAddPanel } = optionConfig
 
-    const [state, setState] = useState<any[]>([])
-
-    useEffect(() => {
-        setState(
+    const state = React.useMemo(() => {
+        return (
             React.Children.map(children, (child, i) => ({
                 // @ts-ignore
                 id: child?.props?.id ?? i,
                 child,
+                chosen: undefined,
             })) ?? []
         )
     }, [children])
@@ -122,8 +119,8 @@ function DNDListWidget(props: WidgetRendererProps) {
     }
     const dragEnd = () => {
         eventBus.publish(new DragEndEvent())
-        onLayoutOrderChange?.(state)
     }
+
     const [t] = useTranslation()
 
     if (React.Children.count(children) === 0)
@@ -153,7 +150,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                 delay={100}
                 handle='.handle'
                 list={state}
-                setList={setState}
+                setList={onLayoutOrderChange}
                 animation={50}
                 onChoose={(args) => {
                     dragSelect(args.oldIndex as number)
@@ -169,8 +166,8 @@ function DNDListWidget(props: WidgetRendererProps) {
                             key={item.id}
                             className={`${styles.wrapper} item`}
                             style={{
-                                boxShadow: item.chosen ? '0 2px 8px 0 rgba(0,0,0,0.20)' : undefined,
-                                zIndex: item.chosen ? 10 : 0,
+                                boxShadow: item?.chosen ? '0 2px 8px 0 rgba(0,0,0,0.20)' : undefined,
+                                zIndex: item?.chosen ? 10 : 0,
                             }}
                         >
                             <div className={`handle ${styles.handler}`}>
