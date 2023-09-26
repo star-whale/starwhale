@@ -13,6 +13,8 @@ import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { ITableState, useDatasetStore } from '@starwhale/ui/GridTable/store'
 import shallow from 'zustand/shallow'
+import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
+import useTranslation from '@/hooks/useTranslation'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -86,6 +88,7 @@ const selector = (s: ITableState) => ({
 })
 
 export default function DatasetVersionFiles() {
+    const [t] = useTranslation()
     const { projectId } = useParams<{
         projectId: string
     }>()
@@ -154,6 +157,7 @@ export default function DatasetVersionFiles() {
                 page={tablePage}
                 onPageChange={setPage}
                 rowHeight={80}
+                emptyColumnMessage={<BusyPlaceholder type='notfound'>{t('dataset.grid.empty.notice')}</BusyPlaceholder>}
             />
         </div>
     )

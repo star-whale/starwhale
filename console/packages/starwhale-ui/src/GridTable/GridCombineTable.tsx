@@ -57,9 +57,7 @@ function BaseGridCombineTable({
     onSave,
     onChange = () => {},
     emptyMessage,
-    emptyColumnMessage = (
-        <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
-    ),
+    emptyColumnMessage = <BusyPlaceholder type='notfound' />,
     getId = (record: any) => val(record.id),
 }: ITableProps) {
     const styles = useStyles()
