@@ -6,13 +6,13 @@ import yaml
 
 from tests import BaseTestCase
 from starwhale.utils.fs import ensure_file
-from starwhale.api._impl import wrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.job import LocalJobInfo
 from starwhale.base.uri.project import Project
 from starwhale.base.client.client import TypeWrapper
 from starwhale.api._impl.job.model import Job
+from starwhale.api._impl.evaluation.log import EvaluationLogStore
 from starwhale.base.client.models.models import (
     JobVo,
     UserVo,
@@ -45,11 +45,11 @@ class TestJob(BaseTestCase):
             ),
             parents=True,
         )
-        e = wrapper.Evaluation("123456", Project("self"))
-        e.log_summary_metrics({"accuracy": 0.9})
-        e.log("table/1", id=1, output=3)
-        e.log("table/2", id=2, output=4)
-        e.log_result({"id": "1", "output": 3})
+        e = EvaluationLogStore("123456", Project("self"))
+        e.log_summary({"accuracy": 0.9})
+        e.log("table/1", id=1, metrics={"output": 3})
+        e.log("table/2", id=2, metrics={"output": 4})
+        e.log_result(id="1", metrics={"output": 3})
         e.close()
         ensure_file(
             sw.rootdir / "self" / "job" / "12" / "1256789" / "_manifest.yaml",
@@ -66,9 +66,9 @@ class TestJob(BaseTestCase):
             ),
             parents=True,
         )
-        e = wrapper.Evaluation("1256789", Project("self"))
-        e.log_summary_metrics({"accuracy": 0.91})
-        e.log_result({"id": "1", "output": 3})
+        e = EvaluationLogStore("1256789", Project("self"))
+        e.log_summary({"accuracy": 0.91})
+        e.log_result(id="1", metrics={"output": 3})
         e.close()
 
     def test_parse_datetime(self) -> None:

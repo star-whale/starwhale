@@ -31,9 +31,11 @@ from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.model import DatasetSummary
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
-from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
+from starwhale.api._impl.evaluation import log as evaluation_log_module
+from starwhale.api._impl.evaluation import PipelineHandler
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
+from starwhale.api._impl.evaluation.log import get_log_store_from_context
 
 
 class BatchDataHandler(PipelineHandler):
@@ -695,26 +697,26 @@ class TestEvaluationLogStore(BaseTestCase):
             ...
 
         try:
-            EvaluationLogStore._instance_holder.__delattr__("value")
+            evaluation_log_module._log_store_instance_holder.__delattr__("value")
         except AttributeError:
             ...
 
     def test_without_context(self) -> None:
         raise_msg = "Starwhale does not set Context yet"
         with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.log("test", 1, {})
+            evaluation_log_module.log("test", 1, {})
 
         with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.log_summary(loss=0.99)
+            evaluation_log_module.log_summary(loss=0.99)
 
         with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.iter("test")
+            evaluation_log_module.scan("test")
 
         with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore._get_instance()
+            get_log_store_from_context()
 
     def test_log(self) -> None:
-        _log = EvaluationLogStore.log
+        _log = evaluation_log_module.log
 
         Context.set_runtime_context(
             Context(version=self.version, log_project=self.local_project)
@@ -724,14 +726,14 @@ class TestEvaluationLogStore(BaseTestCase):
         _log(category=category, id=1, metrics={"a": 1, "b": 2})
         _log(category=category, id=2, metrics={"a": 2, "b": 3})
 
-        _els = EvaluationLogStore._get_instance()
+        _els = get_log_store_from_context()
         _els._datastore.flush(category)
 
-        rt = list(EvaluationLogStore.iter(category))
+        rt = list(evaluation_log_module.scan(category))
         assert rt == [{"id": 1, "a": 1, "b": 2}, {"id": 2, "a": 2, "b": 3}]
 
     def test_log_summary(self) -> None:
-        _log_s = EvaluationLogStore.log_summary
+        _log_s = evaluation_log_module.log_summary
 
         Context.set_runtime_context(
             Context(version=self.version, log_project=self.local_project)
@@ -740,8 +742,8 @@ class TestEvaluationLogStore(BaseTestCase):
         _log_s(loss=0.99, accuracy=0.98)
         _log_s({"label": "log_summary", "accuracy": 0.99})
 
-        _els = EvaluationLogStore._get_instance()
-        _els._datastore.flush_metrics()
+        _els = get_log_store_from_context()
+        _els._datastore.flush_summary_metrics()
 
         rt = _els._datastore.get_summary_metrics()
         assert rt == {
@@ -752,7 +754,7 @@ class TestEvaluationLogStore(BaseTestCase):
         }
 
     def test_log_summary_no_support(self) -> None:
-        _log_s = EvaluationLogStore.log_summary
+        _log_s = evaluation_log_module.log_summary
 
         Context.set_runtime_context(
             Context(version=self.version, log_project=self.local_project)
@@ -771,10 +773,10 @@ class TestEvaluationLogStore(BaseTestCase):
         Context.set_runtime_context(
             Context(version=self.version, log_project=self.local_project)
         )
-        inst = EvaluationLogStore._get_instance()
+        inst = get_log_store_from_context()
         assert inst.id == self.version
         assert inst.project.id == "self"
         assert inst.project.name == "self"
 
-        inst_another = EvaluationLogStore._get_instance()
+        inst_another = get_log_store_from_context()
         assert inst == inst_another

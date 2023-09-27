@@ -7,7 +7,6 @@ from abc import ABCMeta, abstractmethod
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.fs import move_dir, empty_dir
-from starwhale.api._impl import wrapper
 from starwhale.base.type import JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NotFoundError, NoSupportError
@@ -24,6 +23,7 @@ from starwhale.api._impl.metric import MetricKind
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource
 from starwhale.base.client.api.job import JobApi
+from starwhale.api._impl.evaluation.log import EvaluationLogStore
 from starwhale.base.client.models.models import JobVo, TaskVo
 
 
@@ -68,11 +68,11 @@ class Job(metaclass=ABCMeta):
         raise NotImplementedError
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        evaluation = wrapper.Evaluation(
-            eval_id=self._get_version(),
+        evaluation_store = EvaluationLogStore(
+            id=self._get_version(),
             project=self.uri.project,
         )
-        summary = evaluation.get_summary_metrics()
+        summary = evaluation_store.get_summary()
         kind = summary.get("kind", "")
 
         ret = {
@@ -82,10 +82,12 @@ class Job(metaclass=ABCMeta):
 
         if kind == MetricKind.MultiClassification.value:
             ret["labels"] = {
-                item["id"]: item for item in list(evaluation.get("labels"))
+                item["id"]: item for item in list(evaluation_store.scan("labels"))
             }
             ret["confusion_matrix"] = {
-                "binarylabel": list(evaluation.get("confusion_matrix/binarylabel"))
+                "binarylabel": list(
+                    evaluation_store.scan("confusion_matrix/binarylabel")
+                )
             }
 
         return ret

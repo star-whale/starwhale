@@ -201,14 +201,14 @@ class Evaluation(Logger):
     def flush_results(self) -> None:
         self._flush(self._eval_table_name(self._RESULTS_TABLE))
 
-    def flush_metrics(self) -> None:
+    def flush_summary_metrics(self) -> None:
         self._flush(self._eval_summary_table_name)
 
     def flush(self, table_name: str) -> None:
         self._flush(self._eval_table_name(table_name))
 
     def flush_all(self) -> None:
-        self.flush_metrics()
+        self.flush_summary_metrics()
         with self._stashing_tables_lock:
             for table_name in self._stashing_tables:
                 self.flush(table_name)
