@@ -208,13 +208,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaises(TypeError):
             ds.extend([None])
 
-        assert len(ds) == size
+        assert ds.approximate_size == size
         ds.commit()
         ds.close()
 
         load_ds = dataset(ds.uri)
         assert load_ds.exists()
-        assert len(load_ds) == size
+        assert ds.approximate_size == size
         assert load_ds[0].index == 0  # type: ignore
         assert load_ds[9].index == 9  # type: ignore
 
@@ -230,12 +230,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             index="index-1", features={"data": Binary(), "label": 1}
         )
 
+        assert ds._len_may_changed
         assert len(ds) == 2
+        assert ds._len_cache == 2
+        assert not ds._len_may_changed
         assert ds._dataset_builder is not None
         assert ds._dataset_builder.dataset_uri.name == ds.uri.name
 
         ds["index-4"] = "index-4", {"data": Binary(), "label": 4}
         ds["index-3"] = {"data": Binary(), "label": 3}
+        assert ds._len_may_changed
 
         with self.assertRaises(TypeError):
             ds["index-5"] = (1,)
@@ -244,6 +248,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds["index-6"] = 1
 
         assert len(ds) == 4
+        assert ds._len_cache == 4
         ds.commit()
         ds.close()
 
@@ -324,17 +329,17 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         for i in range(0, 10):
             ds[2] = {"data": Binary(b""), "label": f"2-{i}"}
 
-        # assert len(ds) == 2  TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
+        assert len(ds) == 2
         ds.append(DataRow(3, {"data": Binary(b""), "label": "3-1"}))
 
-        # assert len(ds) == 3 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
+        assert len(ds) == 3
         ds.commit()
         ds.close()
 
         load_ds = dataset(ds.uri)
         assert len(list(load_ds)) == 3
         assert load_ds[2].features["label"] == "2-9"  # type: ignore
-        assert len(load_ds) == 3
+        assert len(load_ds) == 3 == load_ds.approximate_size
 
     def test_readonly(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -358,8 +363,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
         del ds[0]
-        ds.flush()
-
         del ds[0]
         assert len(ds) == 9
         del ds[6:]
@@ -427,9 +430,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.flush()
 
         ds.append(DataRow(index=1, features={"data": Binary(b"101"), "label": 101}))
-        # assert len(ds) == 10 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
+        assert len(ds) == 10
         ds.append(DataRow(index=100, features={"data": Binary(b"100"), "label": 100}))
-        # assert len(ds) == 11 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
+        assert len(ds) == 11
         ds.append(DataRow(index=101, features={"data": Binary(b"101"), "label": 101}))
         version = ds.commit()
         ds.close()
