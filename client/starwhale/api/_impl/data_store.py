@@ -21,17 +21,30 @@ import threading
 import contextlib
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
-from typing import Any, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
+from typing import (
+    Any,
+    cast,
+    Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Iterator,
+    Optional,
+    Sequence,
+)
 from pathlib import Path
-from collections import UserDict, OrderedDict
+from collections import UserDict
 
 import dill
 import numpy as np
 import pyarrow as pa  # type: ignore
+import filelock
 import requests
 import tenacity
 import jsonlines
-from sortedcontainers import SortedDict, SortedList
+from pydantic import validator
+from sortedcontainers import SortedDict, SortedList, SortedValuesView
 from typing_extensions import Protocol
 
 from starwhale.utils import console
@@ -957,17 +970,20 @@ class InnerRecord:
     def __init__(self, key_column: str, record: Optional[Record] = None) -> None:
         self.key: Any = None
         self.key_column = key_column
-        self.records: OrderedDict[int, Record] = OrderedDict()
-        self.ordered = True
+        self.records: SortedDict[int, Record] = SortedDict()
         if record is not None:
             self.append(record)
 
-    def append(self, record: Record) -> str:
+    def append(
+        self,
+        record: Record,
+        tombstones: Sequence[TombstoneDesc] | None = None,
+    ) -> str:
         if not self.key:
             self.key = record[self.key_column]
-        seq = self._get_seq_num()
+        seq = self.gen_seq_num()
         if len(self.records) > 0:
-            last = self.get_record()
+            last = self.get_record(tombstones=tombstones)
             # get diff of the last and record
             # let the record only contains the diff or None
             # TODO support recursive diff
@@ -982,7 +998,6 @@ class InnerRecord:
             if not diff:
                 return str(seq)
             record = Record(diff)
-        self.ordered = False
         self.records[seq] = record
         return str(seq)
 
@@ -991,19 +1006,21 @@ class InnerRecord:
             return
         self.records.update(other.records)
 
-    def _reorder(self) -> None:
-        if not self.ordered:
-            self.records = OrderedDict(sorted(self.records.items()))
-            self.ordered = True
-
     def get_record(
-        self, revision: Optional[str] = None, deep_copy: bool = False
+        self,
+        revision: Optional[str] = None,
+        deep_copy: bool = False,
+        tombstones: Sequence[TombstoneDesc] | None = None,
     ) -> Dict[str, Any] | None:
-        self._reorder()
         ret: Dict[str, Any] = dict()
+        tombstones = [t for t in tombstones or [] if t.within(self.key)]
+        max_tombstone_rev = tombstones and int(tombstones[-1].revision) or None
         had_value = False
         for seq, record in self.records.items():
             if revision is None or revision == "" or seq <= int(revision):
+                if max_tombstone_rev is not None and seq <= max_tombstone_rev:
+                    # skip the record if it is covered by the tombstone
+                    continue
                 if "-" in record and record["-"]:
                     ret = record.data
                 else:
@@ -1019,17 +1036,22 @@ class InnerRecord:
         return ret
 
     def dumps(self) -> Dict[str, Any]:
-        self._reorder()
         return {
             "key": self.key_column,
             "records": {seq: record.dumps() for seq, record in self.records.items()},
         }
 
+    @property
+    def revision_range(self) -> Tuple[int, int]:
+        if len(self.records) == 0:
+            return 0, 0
+        keys = self.records.keys()
+        return keys[0], keys[-1]
+
     @staticmethod
     def loads(data: Dict[str, Any]) -> InnerRecord:
         ret = InnerRecord(data["key"])
-        ret.ordered = False
-        ret.records = OrderedDict(
+        ret.records = SortedDict(
             {int(seq): Record.loads(record) for seq, record in data["records"].items()}
         )
         first = ret.records[next(iter(ret.records))]
@@ -1038,7 +1060,7 @@ class InnerRecord:
         return ret
 
     @staticmethod
-    def _get_seq_num() -> int:
+    def gen_seq_num() -> int:
         return time.monotonic_ns()
 
     def __gt__(self, other: object) -> Any:
@@ -1130,6 +1152,22 @@ def get_compressor(file: Path) -> Compressor:
     raise ValueError(f"Unknown compressor for file {file}")
 
 
+def revision_range_of_items(
+    items: List[InnerRecord] | SortedValuesView[InnerRecord],
+) -> Tuple[int, int]:
+    if len(items) == 0:
+        return 0, 0
+    _min = sys.maxsize
+    _max = 0
+    for item in items:
+        r = item.revision_range
+        if r[0] < _min:
+            _min = r[0]
+        if r[1] > _max:
+            _max = r[1]
+    return _min, _max
+
+
 class MemoryTable:
     def __init__(self, key_column: str) -> None:
         self.key_column = key_column
@@ -1139,6 +1177,8 @@ class MemoryTable:
         self.compressor = ZipCompressor()
         self._key_type: SwType | None = None
         self._max_dirty_records = datastore_max_dirty_records
+        self._min_revision = 0
+        self._max_revision = 0
 
     @property
     def key_type(self) -> SwType | None:
@@ -1185,7 +1225,9 @@ class MemoryTable:
         else:
             ir.update(record)
 
-    def insert_dict(self, record: Dict[str, Any]) -> str:
+    def insert_dict(
+        self, record: Dict[str, Any], tombstones: Sequence[TombstoneDesc] | None
+    ) -> str:
         self.dirty = True
         key = record[self.key_column]
         self._must_valid_key_type(key)
@@ -1193,7 +1235,7 @@ class MemoryTable:
         if ir is None:
             ir = InnerRecord(self.key_column)
             self.records[key] = ir
-        return ir.append(Record(copy.deepcopy(record)))
+        return ir.append(Record(copy.deepcopy(record)), tombstones=tombstones)
 
     def delete(self, keys: List[Union[int, str]]) -> str:
         """
@@ -1217,6 +1259,10 @@ class MemoryTable:
 
     def should_dump(self) -> bool:
         return len(self.records) >= self._max_dirty_records
+
+    @property
+    def revision_range(self) -> Tuple[int, int]:
+        return revision_range_of_items(self.records.values())
 
 
 class DataBlock:
@@ -1310,17 +1356,57 @@ class DataBlockDesc(SwBaseModel):
 
 class TombstoneDesc(SwBaseModel):
     # None means from the beginning
-    min_key: KeyType
+    start: KeyType
     # None means to the end
-    max_key: KeyType
+    end: KeyType
+    end_inclusive: bool
     revision: str
     # Mark the tombstone for the key with the prefix
     # This works only if the key is a string
     key_prefix: Optional[str]
 
+    @validator("end")
+    def end_must_be_greater_than_start(
+        cls, v: KeyType, values: Dict[str, Any]
+    ) -> KeyType:
+        if v is None:
+            return None
+        if values["start"] is not None:
+            if not isinstance(v, type(values["start"])):
+                raise ValueError("end has different type with start")
+            if v <= values["start"]:
+                raise ValueError("end must be greater than start")
+        return v  # type: ignore
+
+    def __gt__(self, other: object) -> Any:
+        if not isinstance(other, TombstoneDesc):
+            raise NotImplementedError
+        return self.revision > other.revision
+
+    def within(self, key: KeyType) -> bool:
+        if self.key_prefix is not None and isinstance(key, str):
+            return key.startswith(self.key_prefix)
+        if self.start is not None and self.start > key:  # type: ignore
+            return False
+        if self.end is not None:
+            if self.end_inclusive:
+                if self.end < key:  # type: ignore
+                    return False
+            else:
+                if self.end <= key:  # type: ignore
+                    return False
+        return True
+
 
 class CheckpointDesc(SwBaseModel):
     revision: str
+    created_at: int  # timestamp in ms
+    count: Optional[int]
+    # last key is the max key in the life cycle of the table
+    # last key won't change if the key is deleted and garbage collected
+    # users can use the (last key + 1) as the next auto increment key
+    # and note that max_key in DataBlockDesc may change if the key is deleted and garbage collected
+    last_key: KeyType
 
 
 class DataBlockConfig(SwBaseModel):
@@ -1331,17 +1417,13 @@ class DataBlockConfig(SwBaseModel):
 class Manifest(SwBaseModel):
     """
                        ┌──────────────┐     ┌──────────────┐      ┌──────────────┐
-                       │              │     │              │      │              │
                        │   DataBlock  │     │   DataBlock  │      │   DataBlock  │
-                       │              │     │              │      │              │
                        └──────────────┘     └──────────────┘      └──────────────┘
     ┌─────────────┐
     │  Tombstone  ├────────────────────────────────────────────────────────────────────
     └─────────────┘
                        ┌──────────────┐     ┌──────────────┐      ┌──────────────┐
-                       │              │     │              │      │              │
                        │   DataBlock  │     │   DataBlock  │      │   DataBlock  │
-                       │              │     │              │      │              │
                        └──────────────┘     └──────────────┘      └──────────────┘
     ┌──────────────┐
     │  Checkpoint  ├────────────────────────────────────────────────────────────────────
@@ -1356,6 +1438,15 @@ class Manifest(SwBaseModel):
     next_block_id: int = 0
     tombstones: List[TombstoneDesc]
     checkpoints: List[CheckpointDesc]
+
+    def get_tombstones(self, max_revision: str | None) -> List[TombstoneDesc]:
+        return sorted(
+            [
+                tombstone
+                for tombstone in self.tombstones
+                if max_revision is None or tombstone.revision <= max_revision
+            ]
+        )
 
 
 class IterWithRangeHint(SwBaseModel):
@@ -1477,7 +1568,7 @@ class LocalTable:
     +-----------------+  +-----------------+  +-----------------+
     |   MemoryTable   |  |   DataBlock 1   |  |   DataBlock 2   |
     +-----------------+  +-----------------+  +-----------------+
-    |  key1: record7  |  |  key1: record1  |  |  key11: record4 |
+    |  key1:  record7 |  |  key1: record1  |  |  key11: record4 |
     |  key12: record8 |  |  key2: record2  |  |  key12: record5 |
     |  key33: record9 |  |  key3: record3  |  |  key13: record6 |
     +-----------------+  +-----------------+  +-----------------+
@@ -1506,9 +1597,21 @@ class LocalTable:
         if self.key_column is not None:
             self.memory_table = MemoryTable(self.key_column)
 
+        # tombstones cache
+        self._tombstones: List[TombstoneDesc] = []
+
+        # ensure the root path exists
+        self.root_path.mkdir(parents=True, exist_ok=True)
+
     @property
     def key_column_type(self) -> SwType | None:
         return self.memory_table and self.memory_table.key_type or self._key_column_type
+
+    @property
+    def tombstones(self) -> List[TombstoneDesc]:
+        if not self._tombstones:
+            self._tombstones = self._load_manifest().get_tombstones(None)
+        return self._tombstones
 
     def _must_get_mem_table(self) -> MemoryTable:
         """
@@ -1543,7 +1646,7 @@ class LocalTable:
     def insert(self, record: Dict[str, Any]) -> str:
         with self.lock:
             mem = self._must_get_mem_table()
-            rv = mem.insert_dict(record)
+            rv = mem.insert_dict(record, tombstones=self.tombstones)
             if self._key_column_type is None:
                 self._key_column_type = mem.key_type
             return rv
@@ -1593,10 +1696,13 @@ class LocalTable:
                             min_key=block.min_key,
                         )
                     )
+                tombstones = self._load_manifest().get_tombstones(revision)
                 for item in _merge_iters_with_hint(iters):
                     if item is None:
                         continue
-                    r = item.get_record(revision=revision, deep_copy=deep_copy)
+                    r = item.get_record(
+                        revision=revision, deep_copy=deep_copy, tombstones=tombstones
+                    )
                     if r is None:
                         continue
                     if columns is None:
@@ -1771,10 +1877,13 @@ class LocalTable:
                 )
                 console.trace(f"dump block {block.file}")
                 block.dump(items, self.compressor, str(root_path))
+                min_rev, max_rev = revision_range_of_items(items)
                 manifest.blocks.append(
                     DataBlockDesc(
                         min_key=block.min_key,
                         max_key=block.max_key,
+                        min_revision=min_rev and str(min_rev) or None,
+                        max_revision=max_rev and str(max_rev) or None,
                         row_count=len(items),
                         block_id=manifest.next_block_id,
                     )
@@ -1804,6 +1913,29 @@ class LocalTable:
             if self.memory_table is not None:
                 self._dump(self.root_path, self.memory_table)
                 self.memory_table = None
+
+    def _dump_manifest(self, manifest: Manifest) -> None:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+            tmp.write(manifest.json())
+            tmp.flush()
+            shutil.move(tmp.name, self.root_path / datastore_manifest_file_name)
+
+    def delete_by_range(
+        self, start: KeyType, end: KeyType, end_inclusive: bool = False
+    ) -> str:
+        rev = str(InnerRecord.gen_seq_num())
+        t = TombstoneDesc(
+            start=start,
+            end=end,
+            end_inclusive=end_inclusive,
+            revision=rev,
+        )
+        with filelock.FileLock(self.root_path / ".lock"):
+            manifest = self._load_manifest()
+            manifest.tombstones.append(t)
+            self._tombstones = manifest.get_tombstones(None)
+            self._dump_manifest(manifest)
+        return rev
 
 
 class TableDesc:
@@ -2040,6 +2172,19 @@ class LocalDataStore:
         for table in list(self.tables.values()):
             table.dump()
 
+    def _must_get_table(self, table_name: str) -> LocalTable:
+        table = self._get_table(table_name, None, create=False)
+        if table is None:
+            raise RuntimeError(f"table {table_name} does not exist")
+        return table
+
+    def delete_by_range(
+        self, table_name: str, start: KeyType, end: KeyType, end_inclusive: bool = False
+    ) -> str:
+        return self._must_get_table(table_name).delete_by_range(
+            start, end, end_inclusive
+        )
+
 
 class RemoteDataStore:
     def __init__(self, instance_uri: str, token: str) -> None:
@@ -2164,6 +2309,11 @@ class RemoteDataStore:
             else:
                 break
 
+    def delete_by_range(
+        self, table_name: str, start: KeyType, end: KeyType, end_inclusive: bool = False
+    ) -> str:
+        return ""
+
 
 class DataStore(Protocol):
     def update_table(
@@ -2196,6 +2346,19 @@ class DataStore(Protocol):
     ) -> List[str]:
         """
         List table names with the given prefixes.
+        """
+        ...
+
+    def delete_by_range(
+        self, table_name: str, start: KeyType, end: KeyType, end_inclusive: bool = False
+    ) -> str:
+        """
+        Delete rows by range.
+        - It deletes all rows with key >= start and key < end if end_inclusive is False,
+            or key <= end if end_inclusive is True.
+        - It will delete all rows if start is None and end is None.
+
+        Return the revision of the table.
         """
         ...
 
