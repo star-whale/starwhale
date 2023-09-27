@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job.template.mapper;
 
 import ai.starwhale.mlops.domain.job.template.po.TemplateEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -33,9 +34,15 @@ public interface TemplateMapper {
     @Options(keyColumn = "id", useGeneratedKeys = true, keyProperty = "id")
     int insert(TemplateEntity template);
 
+    @Delete("DELETE FROM job_template WHERE id = #{id} and project_id = #{projectId}")
+    int delete(@Param("id") Long id, @Param("projectId") Long projectId);
+
+    @Select("SELECT " + COLUMNS + " FROM job_template WHERE id = #{id} ang project_id = #{projectId}")
+    TemplateEntity selectById(@Param("id") Long id, @Param("projectId") Long projectId);
+
     @Select("SELECT " + COLUMNS + " FROM job_template WHERE project_id = #{projectId} order by id desc limit #{limit}")
     List<TemplateEntity> select(@Param("projectId") Long projectId, @Param("limit") int limit);
 
-    @Select("SELECT count(0) FROM job_template WHERE project_id = #{projectId} and job_id = #{jobId}")
-    int selectExists(@Param("projectId") Long projectId, @Param("jobId") Long jobId);
+    @Select("SELECT count(0) FROM job_template WHERE project_id = #{projectId} and name = #{name}")
+    int selectExists(@Param("projectId") Long projectId, @Param("name") String name);
 }

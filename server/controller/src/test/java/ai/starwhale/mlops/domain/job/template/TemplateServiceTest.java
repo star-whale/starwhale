@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.template;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,14 +64,32 @@ public class TemplateServiceTest {
 
 
         // template exists
-        given(mapper.selectExists(11L, 111L)).willReturn(1);
+        given(mapper.selectExists(11L, "t-name")).willReturn(1);
         assertThrows(SwValidationException.class,
-                () -> templateService.add("p-1", "j-11", "desc"));
+                () -> templateService.add("p-1", "j-11", "t-name"));
 
         // normal
-        given(mapper.selectExists(11L, 111L)).willReturn(0);
+        given(mapper.selectExists(11L, "t-name")).willReturn(0);
         given(mapper.insert(any(TemplateEntity.class))).willReturn(1);
-        assertTrue(templateService.add("p-1", "j-11", "desc"));
+        assertTrue(templateService.add("p-1", "j-11", "t-name"));
+    }
+
+    @Test
+    public void testDelete() {
+        given(projectService.findProject(anyString())).willReturn(Project.builder().id(11L).build());
+
+        given(mapper.delete(1L, 11L)).willReturn(1);
+        assertTrue(templateService.delete("p-1", 1L));
+    }
+
+    @Test
+    public void testGet() {
+        given(projectService.findProject(anyString())).willReturn(Project.builder().id(11L).build());
+        given(mapper.selectById(1L, 11L)).willReturn(
+                TemplateEntity.builder().id(1L).projectId(11L).jobId(1L).build()
+        );
+
+        assertNotNull(templateService.get("p-1", 1L));
     }
 
     @Test

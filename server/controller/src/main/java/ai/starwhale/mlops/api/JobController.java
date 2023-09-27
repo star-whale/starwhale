@@ -438,6 +438,25 @@ public class JobController {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
+    @Operation(summary = "Delete Template")
+    @DeleteMapping(value = "/project/{projectUrl}/job/template/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> deleteTemplate(
+            @PathVariable String projectUrl,
+            @PathVariable Long id) {
+        templateService.delete(projectUrl, id);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Operation(summary = "Get Template")
+    @GetMapping(value = "/project/{projectUrl}/job/template/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<JobTemplateVo>> getTemplate(
+            @PathVariable String projectUrl,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(Code.success.asResponse(JobTemplateVo.fromBo(templateService.get(projectUrl, id))));
+    }
+
     @Operation(summary = "Get Templates for project")
     @GetMapping(value = "/project/{projectUrl}/job/template", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")

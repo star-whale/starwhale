@@ -47,8 +47,9 @@ public class TemplateService {
         var currentUser = userService.currentUserDetail();
         var project = projectService.findProject(projectUrl);
         var job = jobDao.findJob(jobUrl);
-        if (mapper.selectExists(project.getId(), job.getId()) > 0) {
-            throw new SwValidationException(SwValidationException.ValidSubject.JOB, "template already exists");
+        if (mapper.selectExists(project.getId(), name) > 0) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.JOB, "template name already exists in this project");
         }
         return mapper.insert(TemplateEntity.builder()
                 .name(name)
@@ -57,6 +58,16 @@ public class TemplateService {
                 .ownerId(currentUser.getId())
                 .build()
         ) > 0;
+    }
+
+    public boolean delete(String projectUrl, Long id) {
+        var project = projectService.findProject(projectUrl);
+        return mapper.delete(id, project.getId()) > 0;
+    }
+
+    public Template get(String projectUrl, Long id) {
+        var project = projectService.findProject(projectUrl);
+        return Template.fromEntity(mapper.selectById(id, project.getId()));
     }
 
     public List<Template> listAll(String projectUrl) {

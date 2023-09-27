@@ -30,6 +30,9 @@ public class JobTemplateVo {
     private Long jobId;
 
     public static JobTemplateVo fromBo(Template jobTemplate) {
+        if (jobTemplate == null) {
+            return null;
+        }
         return new JobTemplateVo(jobTemplate.getId(), jobTemplate.getName(), jobTemplate.getJobId());
     }
 }

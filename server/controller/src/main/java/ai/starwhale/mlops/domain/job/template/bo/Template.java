@@ -32,6 +32,9 @@ public class Template {
     private Long ownerId;
 
     public static TemplateEntity toEntity(Template template) {
+        if  (template == null) {
+            return null;
+        }
         return new TemplateEntity(
                 template.getId(),
                 template.getName(),
@@ -43,6 +46,9 @@ public class Template {
     }
 
     public static Template fromEntity(TemplateEntity templateEntity) {
+        if (null == templateEntity) {
+            return null;
+        }
         return new Template(
                 templateEntity.getId(),
                 templateEntity.getName(),
