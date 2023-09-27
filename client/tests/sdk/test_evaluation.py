@@ -207,7 +207,7 @@ class TestModelPipelineHandler(TestCase):
         m_eval_log_metrics: MagicMock,
         m_eval_get: MagicMock,
     ) -> None:
-        _logdir = JobStorage.local_run_dir(self.local_project.name, self.eval_id)
+        _logdir = JobStorage.local_run_dir(self.local_project.id, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "cmp" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -278,7 +278,7 @@ class TestModelPipelineHandler(TestCase):
                 "storage": {"root": tempfile.gettempdir()},
             }
 
-            _logdir = JobStorage.local_run_dir(self.local_project.name, self.eval_id)
+            _logdir = JobStorage.local_run_dir(self.local_project.id, self.eval_id)
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
             _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -356,7 +356,7 @@ class TestModelPipelineHandler(TestCase):
         ) as m_ds_info, patch(
             "starwhale.api._impl.wrapper.Evaluation.log_result"
         ) as m_log_result:
-            _logdir = JobStorage.local_run_dir(self.local_project.name, self.eval_id)
+            _logdir = JobStorage.local_run_dir(self.local_project.id, self.eval_id)
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
             _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -763,6 +763,7 @@ class TestEvaluationLogStore(BaseTestCase):
         )
         inst = EvaluationLogStore._get_instance()
         assert inst.id == self.version
+        assert inst.project.id == "self"
         assert inst.project.name == "self"
 
         inst_another = EvaluationLogStore._get_instance()

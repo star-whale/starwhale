@@ -328,7 +328,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             return LocalDatasetInfo(
                 name=self.name,
                 uri=str(self.uri),
-                project=str(self.uri.project.name),
+                project=self.uri.project.id,
                 path=str(self.store.bundle_path),
                 version=self.uri.version,
                 tags=StandaloneTag(self.uri).list(),
@@ -512,7 +512,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
 
     def summary(self) -> t.Optional[DatasetSummary]:
         resp = self.do_http_request(
-            f"/project/{self.uri.project.name}/{self.uri.typ.name}/{self.uri.name}",
+            f"/project/{self.uri.project.id}/{self.uri.typ.name}/{self.uri.name}",
             method=HTTPMethod.GET,
             instance=self.uri.instance,
             params={"versionUrl": self.uri.version},

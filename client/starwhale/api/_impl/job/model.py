@@ -70,7 +70,7 @@ class Job:
         else:
             return (
                 JobApi(self.uri.instance)
-                .info(self.uri.project.name, self.uri.name)
+                .info(self.uri.project.id, self.uri.name)
                 .raise_on_error()
                 .response()
                 .data

@@ -102,7 +102,7 @@ class MappingDatasetBuilder(AsyncArtifactWriterBase):
             @http_retry
             def _upload() -> str:
                 r = crm.do_multipart_upload_file(
-                    url_path=f"/project/{self.dataset_uri.project.name}/dataset/{self.dataset_uri.name}/hashedBlob/{sign_name}",
+                    url_path=f"/project/{self.dataset_uri.project.id}/dataset/{self.dataset_uri.name}/hashedBlob/{sign_name}",
                     file_path=bin_path,
                     instance=instance_uri,
                 )

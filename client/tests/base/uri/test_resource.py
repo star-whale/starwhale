@@ -177,7 +177,7 @@ class TestResource(TestCase):
         @dataclass
         class Expect:
             instance: str
-            project: Union[str, int]
+            project: str
             typ: ResourceType
             name: str = ""
             version: str = ""
@@ -185,7 +185,7 @@ class TestResource(TestCase):
             def __eq__(self, other: Resource):
                 return (
                     other.instance.alias == self.instance
-                    and other.project.name == self.project
+                    and other.project.id == self.project
                     and other.typ == self.typ
                     and other.name == self.name
                     and other.version == self.version
@@ -201,23 +201,23 @@ class TestResource(TestCase):
         }
         tests = {
             "http://127.0.0.1:8082/projects/1/models": Expect(
-                "dev", 1, ResourceType.model
+                "dev", "1", ResourceType.model
             ),
-            "https://foo.com/projects/1/models": Expect("foo", 1, ResourceType.model),
+            "https://foo.com/projects/1/models": Expect("foo", "1", ResourceType.model),
             "https://foo.com/projects/2/runtimes": Expect(
-                "foo", 2, ResourceType.runtime
+                "foo", "2", ResourceType.runtime
             ),
             "https://foo.com/projects/3/datasets": Expect(
-                "foo", 3, ResourceType.dataset
+                "foo", "3", ResourceType.dataset
             ),
             "https://foo.com/projects/4/evaluations": Expect(
-                "foo", 4, ResourceType.evaluation
+                "foo", "4", ResourceType.evaluation
             ),
             "https://foo.com/projects/5/models/1/versions": Expect(
-                "foo", 5, ResourceType.model, "1"
+                "foo", "5", ResourceType.model, "1"
             ),
             "https://foo.com/projects/5/models/1/versions/2/files": Expect(
-                "foo", 5, ResourceType.model, "1", "2"
+                "foo", "5", ResourceType.model, "1", "2"
             ),
         }
         get.return_value.json.return_value = {}
@@ -260,12 +260,12 @@ class TestResource(TestCase):
         }
 
         tests = {
-            "bar/project/self/mnist": ("https://bar.com", "mnist", 1, "bar"),
+            "bar/project/self/mnist": ("https://bar.com", "mnist", "1", "bar"),
             "local/project/self/mnist": ("", "mnist", "self", "local"),
             "cloud://bar/project/self/mnist": (
                 "https://bar.com",
                 "mnist",
-                1,
+                "1",
                 "bar",
             ),
         }
@@ -275,7 +275,7 @@ class TestResource(TestCase):
                 rm.get(f"{expect[0]}/api/v1/project/self", json={"data": {"id": 1}})
             p = Resource(uri, typ=ResourceType.runtime, refine=False)
             assert p.name == expect[1]
-            assert p.project.name == expect[2]
+            assert p.project.id == expect[2]
             assert p.instance.alias == expect[3]
 
     @Mocker()
@@ -291,7 +291,8 @@ class TestResource(TestCase):
 
         uri = Resource("cloud://foo/project/starwhale/dataset/mnist", refine=False)
         assert uri.instance.alias == "foo"
-        assert uri.project.name == 1
+        assert uri.project.id == "1"
+        assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == ""
@@ -303,7 +304,8 @@ class TestResource(TestCase):
             refine=False,
         )
         assert uri.instance.alias == "foo"
-        assert uri.project.name == 1
+        assert uri.project.id == "1"
+        assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == ""
@@ -386,7 +388,8 @@ class TestResource(TestCase):
             "cloud://foo/project/starwhale/dataset/mnist/version/123456", refine=True
         )
         assert uri.instance.alias == "foo"
-        assert uri.project.name == 1
+        assert uri.project.id == "1"
+        assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == "123456"

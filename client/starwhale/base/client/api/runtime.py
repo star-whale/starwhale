@@ -16,7 +16,7 @@ class RuntimeApi(Client):
 
     def list(
         self,
-        project: str | int,
+        project: str,
         page: int,
         size: int,
         _filter: ListFilter | None = None,
@@ -26,6 +26,6 @@ class RuntimeApi(Client):
         return TypeWrapper(ResponseMessagePageInfoRuntimeVo, data)
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageRuntimeInfoVo]:
-        uri = f"/api/v1/project/{rc.project.name}/runtime/{rc.name}"
+        uri = f"/api/v1/project/{rc.project.id}/runtime/{rc.name}"
         data = self.http_get(uri, params={"versionName": rc.version})
         return TypeWrapper(ResponseMessageRuntimeInfoVo, data)

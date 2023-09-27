@@ -234,7 +234,8 @@ class TestTracker(BaseTestCase):
             project_uri="http://1.1.1.1/project/test",
             access_token="abcd",
         ) as t:
-            assert t.project_uri.name == 1
+            assert t.project_uri.id == "1"
+            assert t.project_uri.name == "test"
 
         with self.assertRaisesRegex(
             ValueError, "access_token is required for cloud instance"

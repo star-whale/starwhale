@@ -111,7 +111,7 @@ class Evaluation(Logger):
         with self._lock:
             _table_name = self._tables.get(table)
             if _table_name is None:
-                _table_name = table_name_formatter(self.project.name, table)
+                _table_name = table_name_formatter(self.project.id, table)
                 self._tables[table] = _table_name
         return _table_name
 
@@ -214,7 +214,7 @@ class Evaluation(Logger):
                 self.flush(table_name)
 
     def get_tables(self) -> List[str]:
-        prefix = table_name_formatter(self.project.name, self._eval_table_name(""))
+        prefix = table_name_formatter(self.project.id, self._eval_table_name(""))
         prefix = prefix.strip("/")
 
         tables = []
@@ -254,7 +254,7 @@ class Dataset(Logger):
 
         # _current is only holder part of the dataset table name
         self._table_name = table_name_formatter(
-            project.name,
+            project.id,
             f"dataset/{dataset_name}/_current/{kind.value}",
         )
         self._data_store = data_store.get_data_store(

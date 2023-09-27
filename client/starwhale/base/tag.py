@@ -34,7 +34,7 @@ class StandaloneTag:
     def _manifest_path(self) -> Path:
         return (
             SWCliConfigMixed().rootdir
-            / str(self.uri.project.name)
+            / self.uri.project.id
             / self.uri.typ.value
             / self.uri.name
             / DEFAULT_MANIFEST_NAME

@@ -13,7 +13,8 @@ from starwhale.base.uri.exceptions import UriTooShortException
 
 
 class Project:
-    name: Union[str, int]
+    id: str
+    name: str
     instance: Instance
     path: str = ""
 
@@ -56,11 +57,13 @@ class Project:
         # TODO check if project exists for local and remote
         if self.instance.is_cloud:
             # TODO check whether contains namespace in name(like 'sw:project')?
-            self.name = (
-                int(self.name)
+            self.id = (
+                self.name
                 if self.name.isdigit()
-                else get_remote_project_id(self.instance.url, self.name)
+                else str(get_remote_project_id(self.instance.url, self.name))
             )
+        else:
+            self.id = self.name
 
     @classmethod
     def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
@@ -93,7 +96,7 @@ class Project:
 
     @property
     def full_uri(self) -> str:
-        return "/".join([self.instance.url, "project", str(self.name)])
+        return "/".join([self.instance.url, "project", self.id])
 
     def __str__(self) -> str:
         return self.full_uri

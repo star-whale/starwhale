@@ -16,7 +16,7 @@ class ModelApi(Client):
 
     def list(
         self,
-        project: str | int,
+        project: str,
         page: int,
         size: int,
         _filter: ListFilter | None = None,
@@ -26,7 +26,7 @@ class ModelApi(Client):
         return TypeWrapper(ResponseMessagePageInfoModelVo, data)
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageModelInfoVo]:
-        uri = f"/api/v1/project/{rc.project.name}/model/{rc.name}"
+        uri = f"/api/v1/project/{rc.project.id}/model/{rc.name}"
         return TypeWrapper(
             ResponseMessageModelInfoVo,
             self.http_get(uri, params={"versionName": rc.version}),

@@ -34,7 +34,7 @@ class BaseStorage(metaclass=ABCMeta):
     def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self.sw_config = SWCliConfigMixed()
-        self.project_dir = self.sw_config.rootdir / str(self.uri.project.name)
+        self.project_dir = self.sw_config.rootdir / self.uri.project.id
         self.blob_dir = self.sw_config.rootdir / ".swblob"
         self.loc, self.id = self._guess()
 

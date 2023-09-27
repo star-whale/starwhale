@@ -418,7 +418,7 @@ class Dataset:
         if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             r = crm.do_http_request(
-                path=f"/project/{uri.project.name}/dataset/{uri.name}",
+                path=f"/project/{uri.project.id}/dataset/{uri.name}",
                 instance=uri.instance,
                 params={"versionUrl": uri.version},
             ).json()
@@ -543,7 +543,7 @@ class Dataset:
         if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             ok, _ = crm.do_http_request_simple_ret(
-                path=f"/project/{uri.project.name}/{ResourceType.dataset.value}/{uri.name}/version/{uri.version}",
+                path=f"/project/{uri.project.id}/{ResourceType.dataset.value}/{uri.name}/version/{uri.version}",
                 method=HTTPMethod.HEAD,
                 instance=uri.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],
@@ -996,10 +996,10 @@ class Dataset:
             crm = CloudRequestMixed()
             params = {
                 "swds": f"{self._uri.name}:{self._pending_commit_version}",
-                "project": self._uri.project.name,
+                "project": self._uri.project.id,
                 "force": "1",  # stash version is unique, use force=1 to make http retry happy
             }
-            url_path = f"/project/{self._uri.project.name}/dataset/{self._uri.name}/version/{self._pending_commit_version}/file"
+            url_path = f"/project/{self._uri.project.id}/dataset/{self._uri.name}/version/{self._pending_commit_version}/file"
             r = crm.do_multipart_upload_file(
                 url_path=url_path,
                 file_path=manifest_path,

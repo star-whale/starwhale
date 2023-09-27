@@ -21,10 +21,16 @@ class TestProject(TestCase):
     @patch("starwhale.base.uri.project.Instance", MockInstance)
     def test_project(self) -> None:
         p = Project()
+        assert p.id == "foo"
         assert p.name == "foo"
 
         p = Project("bar")
+        assert p.id == "bar"
         assert p.name == "bar"
+
+        p = Project("1")
+        assert p.id == "1"
+        assert p.name == "1"
 
     @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
@@ -36,12 +42,14 @@ class TestProject(TestCase):
 
         p = Project(uri="https://foo.com/project/bar")
         assert p.path == ""
-        assert p.name == 1
+        assert p.id == "1"
+        assert p.name == "bar"
         assert remote_id_mock.call_count == 1
 
         p = Project(uri="https://foo.com/project/bar/dataset/mnist/version/baz")
         assert p.path == "dataset/mnist/version/baz"
-        assert p.name == 1
+        assert p.id == "1"
+        assert p.name == "bar"
         # the cache was hit
         assert remote_id_mock.call_count == 1
 
@@ -52,7 +60,8 @@ class TestProject(TestCase):
 
         p = Project(uri="https://foo.com/project/sw:bar2")
         assert p.path == ""
-        assert p.name == 2
+        assert p.id == "2"
+        assert p.name == "sw:bar2"
         assert remote_id2_mock.call_count == 1
 
     @Mocker()
@@ -71,12 +80,14 @@ class TestProject(TestCase):
 
         for uri, project in tests.items():
             p = Project.parse_from_full_uri(uri, ignore_rc_type=False)
-            assert p.name == 1
+            assert p.id == "1"
+            assert p.name == "myproject"
 
         p = Project.parse_from_full_uri(
             "foo/project/myproject/mnist", ignore_rc_type=True
         )
-        assert p.name == 1
+        assert p.id == "1"
+        assert p.name == "myproject"
 
     def test_parse_from_full_uri_exceptions(self) -> None:
         tests = (

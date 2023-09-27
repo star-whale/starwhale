@@ -18,7 +18,7 @@ class DatasetApi(Client):
 
     def list(
         self,
-        project: str | int,
+        project: str,
         page: int,
         size: int,
         _filter: ListFilter | None = None,
@@ -28,7 +28,7 @@ class DatasetApi(Client):
         return TypeWrapper(ResponseMessagePageInfoDatasetVo, data)
 
     def info(self, rc: Resource) -> TypeWrapper[ResponseMessageDatasetInfoVo]:
-        uri = f"/api/v1/project/{rc.project.name}/dataset/{rc.name}"
+        uri = f"/api/v1/project/{rc.project.id}/dataset/{rc.name}"
         return TypeWrapper(
             ResponseMessageDatasetInfoVo,
             self.http_get(uri, params={"versionName": rc.version}),
@@ -37,7 +37,7 @@ class DatasetApi(Client):
     def consume(
         self, rc: Resource, req: DataConsumptionRequest
     ) -> TypeWrapper[NullableResponseMessageDataIndexDesc]:
-        uri = f"/api/v1/project/{rc.project.name}/dataset/{rc.name}/version/{rc.version}/consume"
+        uri = f"/api/v1/project/{rc.project.id}/dataset/{rc.name}/version/{rc.version}/consume"
         return TypeWrapper(
             NullableResponseMessageDataIndexDesc, self.http_post(uri, json=req)
         )
