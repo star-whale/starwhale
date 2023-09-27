@@ -92,6 +92,7 @@ sw:
     data-root-path: ${SW_DATASTORE_DATA_ROOT_PATH:}
     dump-interval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
     min-no-update-period: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:4h}
+    min-wal-id-gap: ${SW_DATASTORE_MIN_WAL_ID_GAP:1000}
     parquet:
       compression-codec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
       row-group-size: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}

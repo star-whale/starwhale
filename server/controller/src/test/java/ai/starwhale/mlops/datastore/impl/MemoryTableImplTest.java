@@ -834,6 +834,19 @@ public class MemoryTableImplTest {
                                                     })))
                             .collect(Collectors.toList())));
         }
+
+        @Test
+        public void testSave() throws IOException {
+            this.memoryTable.update(
+                    new TableSchemaDesc("k", List.of(
+                            ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                            ColumnSchemaDesc.builder().name("a").type("INT32").build())),
+                    List.of(Map.of("k", "0", "a", "a")));
+            for (int i = 0; i < 100; ++i) {
+                this.memoryTable.save();
+                assertThat(storageAccessService.list("test").count(), is(1L));
+            }
+        }
     }
 
     @Nested

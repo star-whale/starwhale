@@ -98,6 +98,7 @@ public class DataStoreControllerTest {
                         "",
                         "1h",
                         "1d",
+                        1000,
                         "SNAPPY",
                         "1MB",
                         "1KB",

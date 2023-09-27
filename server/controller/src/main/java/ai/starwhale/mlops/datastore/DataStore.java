@@ -68,7 +68,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
     private final StorageAccessService storageAccessService;
 
     private final Map<String, SoftReference<MemoryTable>> tables = new ConcurrentHashMap<>();
-    private final Map<MemoryTable, String> dirtyTables = new ConcurrentHashMap<>();
+    private final Set<MemoryTable> dirtyTables = new HashSet<>();
     private final String snapshotRootPath;
     private final ParquetConfig parquetConfig;
 
@@ -92,6 +92,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             @Value("${sw.datastore.data-root-path:}") String dataRootPath,
             @Value("${sw.datastore.dump-interval:1h}") String dumpInterval,
             @Value("${sw.datastore.min-no-update-period:4h}") String minNoUpdatePeriod,
+            @Value("${sw.datastore.min-wal-id-gap:1000}") int minWalIdGap,
             @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
@@ -111,7 +112,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         this.parquetConfig.setPageSize((int) DataSize.parse(pageSize).toBytes());
         this.parquetConfig.setPageRowCountLimit(pageRowCountLimit);
         this.dumpThread = new DumpThread(DurationStyle.detectAndParse(dumpInterval).toMillis(),
-                DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis());
+                DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis(),
+                minWalIdGap);
     }
 
     public DataStore start() {
@@ -138,7 +140,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 //noinspection ConstantConditions
                 table.updateFromWal(entry);
                 if (table.getFirstWalLogId() >= 0) {
-                    this.dirtyTables.put(table, "");
+                    synchronized (this.dirtyTables) {
+                        this.dirtyTables.add(table);
+                    }
                 }
             }
             log.info("Finished load wal log...");
@@ -200,7 +204,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         table.lock();
         try {
             var ts = table.update(schema, records);
-            this.dirtyTables.put(table, "");
+            synchronized (this.dirtyTables) {
+                this.dirtyTables.add(table);
+            }
             return Long.toString(ts);
         } finally {
             this.updateHandle.poll();
@@ -497,7 +503,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
      * @return true if there is any dirty table.
      */
     public boolean hasDirtyTables() {
-        return !this.dirtyTables.isEmpty();
+        synchronized (this.dirtyTables) {
+            return !this.dirtyTables.isEmpty();
+        }
     }
 
     /**
@@ -586,21 +594,25 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         }
     }
 
-    private boolean saveOneTable(long minNoUpdatePeriodMillis) throws IOException {
-        for (var table : this.dirtyTables.keySet()) {
-            table.lock();
-            try {
-                var now = System.currentTimeMillis();
-                if ((now - table.getLastUpdateTime()) >= minNoUpdatePeriodMillis) {
-                    table.save();
-                    this.dirtyTables.remove(table);
-                    return true;
+    private void saveTables(long minNoUpdatePeriodMillis, int minWalIdGap) throws IOException {
+        var now = System.currentTimeMillis();
+        var maxWalLogId = this.walManager.getMaxEntryId();
+        List<MemoryTable> tables;
+        synchronized (this.dirtyTables) {
+            tables = new ArrayList<>(this.dirtyTables);
+        }
+        for (var table : tables) {
+            if ((now - table.getLastUpdateTime()) >= minNoUpdatePeriodMillis
+                    || maxWalLogId - table.getFirstWalLogId() >= minWalIdGap) {
+                log.info("dumping {}", table.getTableName());
+                table.save();
+                synchronized (this.dirtyTables) {
+                    if (table.getFirstWalLogId() < 0) {
+                        this.dirtyTables.remove(table);
+                    }
                 }
-            } finally {
-                table.unlock();
             }
         }
-        return false;
     }
 
     private void clearWalLogFiles() {
@@ -659,21 +671,19 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
 
         private final long dumpIntervalMillis;
         private final long minNoUpdatePeriodMillis;
-        private transient boolean terminated;
+        private final int minWalIdGap;
+        private volatile boolean terminated;
 
-        public DumpThread(long dumpIntervalMillis, long minNoUpdatePeriodMillis) {
+        public DumpThread(long dumpIntervalMillis, long minNoUpdatePeriodMillis, int minWalIdGap) {
             this.dumpIntervalMillis = dumpIntervalMillis;
             this.minNoUpdatePeriodMillis = minNoUpdatePeriodMillis;
+            this.minWalIdGap = minWalIdGap;
         }
 
         public void run() {
             while (!this.terminated) {
                 try {
-                    while (saveOneTable(minNoUpdatePeriodMillis)) {
-                        if (this.terminated) {
-                            return;
-                        }
-                    }
+                    saveTables(this.minNoUpdatePeriodMillis, this.minWalIdGap);
                     clearWalLogFiles();
                 } catch (Throwable t) {
                     log.error("failed to save table", t);

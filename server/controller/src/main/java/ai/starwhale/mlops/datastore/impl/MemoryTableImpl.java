@@ -49,15 +49,16 @@ import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -81,6 +82,7 @@ public class MemoryTableImpl implements MemoryTable {
 
     static final Pattern ATTRIBUTE_NAME_PATTERN = Pattern.compile("^[\\p{Alnum}_]+$");
 
+    @Getter
     private final String tableName;
 
     private final WalManager walManager;
@@ -95,7 +97,7 @@ public class MemoryTableImpl implements MemoryTable {
     private final Map<String, ColumnStatistics> statisticsMap = new HashMap<>();
 
     @Getter
-    private long firstWalLogId = -1;
+    private volatile long firstWalLogId = -1;
 
     private long lastWalLogId = -1;
 
@@ -103,7 +105,7 @@ public class MemoryTableImpl implements MemoryTable {
     private long lastUpdateTime = 0;
 
     @Getter
-    private transient long lastRevision = 0;
+    private volatile long lastRevision = 0;
 
     @Setter
     private boolean useTimestampAsRevision = false; // unittest only
@@ -191,55 +193,115 @@ public class MemoryTableImpl implements MemoryTable {
     @Override
     public void save() throws IOException {
         String metadata;
-        try {
-            metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
-                    .setLastWalLogId(this.lastWalLogId)
-                    .setLastUpdateTime(this.lastUpdateTime)
-                    .setLastRevision(this.lastRevision)
-                    .build());
-        } catch (InvalidProtocolBufferException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
-        }
         var columnSchema = new HashMap<String, ColumnSchema>();
-        int index = 0;
-        for (var entry : new TreeMap<>(this.statisticsMap).entrySet()) {
-            columnSchema.put(entry.getKey(), entry.getValue().createSchema(entry.getKey(), index++));
-        }
-        var revisionColumnSchema = new ColumnSchema(REVISION_COLUMN_NAME, index++);
-        revisionColumnSchema.setType(ColumnType.INT64);
-        var deletedFlagColumnSchema = new ColumnSchema(DELETED_FLAG_COLUMN_NAME, index);
-        deletedFlagColumnSchema.setType(ColumnType.BOOL);
-        columnSchema.put(REVISION_COLUMN_NAME, revisionColumnSchema);
-        columnSchema.put(DELETED_FLAG_COLUMN_NAME, deletedFlagColumnSchema);
-
+        this.lock();
+        var lastRevision = this.lastRevision;
+        var firstWalLogId = this.firstWalLogId;
+        this.firstWalLogId = -1;
         try {
+            try {
+                try {
+                    metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
+                            .setLastWalLogId(this.lastWalLogId)
+                            .setLastUpdateTime(this.lastUpdateTime)
+                            .setLastRevision(this.lastRevision)
+                            .build());
+                } catch (InvalidProtocolBufferException e) {
+                    throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
+                }
+                int index = 0;
+                for (var entry : new TreeMap<>(this.statisticsMap).entrySet()) {
+                    columnSchema.put(entry.getKey(), entry.getValue().createSchema(entry.getKey(), index++));
+                }
+                var timestampColumnSchema = new ColumnSchema(REVISION_COLUMN_NAME, index++);
+                timestampColumnSchema.setType(ColumnType.INT64);
+                var deletedFlagColumnSchema = new ColumnSchema(DELETED_FLAG_COLUMN_NAME, index);
+                deletedFlagColumnSchema.setType(ColumnType.BOOL);
+                columnSchema.put(REVISION_COLUMN_NAME, timestampColumnSchema);
+                columnSchema.put(DELETED_FLAG_COLUMN_NAME, deletedFlagColumnSchema);
+            } finally {
+                this.unlock();
+            }
+            var currentSnapshots = this.storageAccessService.list(this.dataPathPrefix).collect(Collectors.toList());
+            var path = this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date());
             SwWriter.writeWithBuilder(
                     new SwParquetWriterBuilder(this.storageAccessService,
                             columnSchema,
                             this.schema.toJsonString(),
                             metadata,
-                            this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
+                            path,
                             this.parquetConfig),
-                    this.recordMap.entrySet().stream()
-                            .map(entry -> {
-                                var list = new ArrayList<Map<String, BaseValue>>();
-                                for (var record : entry.getValue()) {
-                                    var recordMap = new HashMap<String, BaseValue>();
-                                    if (record.getValues() != null) {
-                                        recordMap.putAll(record.getValues());
-                                    }
-                                    recordMap.put(this.schema.getKeyColumn(), entry.getKey());
-                                    recordMap.put(REVISION_COLUMN_NAME, new Int64Value(record.getRevision()));
-                                    recordMap.put(DELETED_FLAG_COLUMN_NAME, BaseValue.valueOf(record.isDeleted()));
-                                    list.add(recordMap);
+                    new Iterator<>() {
+                        private final LinkedList<Map<String, BaseValue>> candidates = new LinkedList<>();
+
+                        private BaseValue lastKey;
+
+                        {
+                            getNext();
+                        }
+
+                        @Override
+                        public boolean hasNext() {
+                            return !this.candidates.isEmpty();
+                        }
+
+                        @Override
+                        public Map<String, BaseValue> next() {
+                            var ret = candidates.poll();
+                            if (candidates.isEmpty()) {
+                                this.getNext();
+                            }
+                            return ret;
+                        }
+
+                        private void getNext() {
+                            MemoryTableImpl.this.lock();
+                            try {
+                                NavigableMap<BaseValue, List<MemoryRecord>> target;
+                                if (this.lastKey == null) {
+                                    target = MemoryTableImpl.this.recordMap;
+                                } else {
+                                    target = MemoryTableImpl.this.recordMap.tailMap(this.lastKey, false);
                                 }
-                                return list;
-                            }).flatMap(Collection::stream).iterator());
+                                int count = 0;
+                                for (var entry : target.entrySet()) {
+                                    this.lastKey = entry.getKey();
+                                    for (var record : entry.getValue()) {
+                                        if (record.getRevision() > lastRevision) {
+                                            break;
+                                        }
+                                        var recordMap = new HashMap<String, BaseValue>();
+                                        if (record.getValues() != null) {
+                                            recordMap.putAll(record.getValues());
+                                        }
+                                        recordMap.put(MemoryTableImpl.this.schema.getKeyColumn(), entry.getKey());
+                                        recordMap.put(REVISION_COLUMN_NAME, new Int64Value(record.getRevision()));
+                                        recordMap.put(DELETED_FLAG_COLUMN_NAME, BaseValue.valueOf(record.isDeleted()));
+                                        this.candidates.add(recordMap);
+                                    }
+                                    if (++count == 1000) {
+                                        break;
+                                    }
+                                }
+                            } finally {
+                                MemoryTableImpl.this.unlock();
+                            }
+                        }
+                    });
+            for (var snapshot : currentSnapshots) {
+                try {
+                    if (!snapshot.equals(path)) {
+                        this.storageAccessService.delete(snapshot);
+                    }
+                } catch (IOException e) {
+                    log.warn("fail to delete {}", snapshot, e);
+                }
+            }
         } catch (Throwable e) {
+            this.firstWalLogId = firstWalLogId;
             log.error("fail to save table:{}, error:{}", this.tableName, e.getMessage(), e);
             throw e;
         }
-        this.firstWalLogId = -1;
     }
 
     @Override

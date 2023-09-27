@@ -49,7 +49,7 @@ public class WalManager extends Thread {
     private final LinkedList<WalEntry> entriesToWrite = new LinkedList<>();
     private final int walMaxFileSize;
     private final int walMaxFileSizeNoHeader;
-    private transient boolean terminated;
+    private volatile boolean terminated;
 
     private long maxEntryId;
 

@@ -23,6 +23,8 @@ import java.util.Map;
 
 public interface MemoryTable {
 
+    String getTableName();
+
     TableSchema getSchema();
 
     void updateFromWal(Wal.WalEntry entry);
