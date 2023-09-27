@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import typing as t
 import inspect
-import numbers
 import threading
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -12,7 +11,7 @@ from collections import defaultdict
 
 import yaml
 
-from starwhale.utils import console
+from starwhale.utils import console, convert_to_bytes
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
@@ -43,7 +42,7 @@ class Handler(StepSpecClient):
         resource_names: t.Dict[str, t.List] = {
             "cpu": [int, float],
             "nvidia.com/gpu": [int],
-            "memory": [int, float],
+            "memory": [int, float, str],
         }
 
         results = []
@@ -53,27 +52,28 @@ class Handler(StepSpecClient):
                     f"resources name is illegal, name must in {resource_names.keys()}"
                 )
 
-            if isinstance(_resource, numbers.Number):
-                resources[_name] = {"request": _resource, "limit": _resource}
-            elif isinstance(_resource, dict):
+            if isinstance(_resource, dict):
                 if not all(n in attribute_names for n in _resource):
                     raise RuntimeError(
                         f"resources value is illegal, attribute's name must in {attribute_names}"
                     )
             else:
-                raise RuntimeError(
-                    "resources value is illegal, attribute's type must be number or dict"
-                )
+                resources[_name] = {"request": _resource, "limit": _resource}
 
             for _k, _v in resources[_name].items():
                 if type(_v) not in resource_names[_name]:
                     raise RuntimeError(
                         f"resource:{_name} only support type:{resource_names[_name]}, but now is {type(_v)}"
                     )
-                if _v <= 0:
+
+                if isinstance(_v, (int, float)) and _v < 0:
                     raise RuntimeError(
                         f"{_k} only supports non-negative number, but now is {_v}"
                     )
+
+                if _name == "memory" and isinstance(_v, str):
+                    resources[_name][_k] = convert_to_bytes(_v)
+
             rc = RuntimeResource(
                 type=_name,
                 request=resources[_name]["request"],

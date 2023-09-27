@@ -88,29 +88,39 @@ def fmt_http_server(server: str, https: bool = False) -> str:
         return f"{prefix}://{server}"
 
 
+# 1G = 1 Gigabytes = 1 * 1000 * 1000 * 1000 bytes => 10^3 is power of ten
+# 1Gi = 1 Gibibytes = 1 * 1024 * 1024 * 1024 bytes => 2^10 is power of two
+
 _bytes_map = {
-    "k": 1024,
-    "kb": 1024,
-    "m": 1024 * 1024,
-    "mb": 1024 * 1024,
-    "g": 1024 * 1024 * 1024,
-    "gb": 1024 * 1024 * 1024,
+    "ki": 1024,
+    "kib": 1024,
+    "k": 1000,
+    "kb": 1000,
+    "mi": 1024**2,
+    "mib": 1024**2,
+    "m": 1000**2,
+    "mb": 1000**2,
+    "gi": 1024**3,
+    "gib": 1024**3,
+    "g": 1000**3,
+    "gb": 1000**3,
 }
 
 
-def convert_to_bytes(s: t.Union[str, int]) -> int:
-    if isinstance(s, int):
-        return s
+def convert_to_bytes(s: t.Union[str, int, float]) -> int:
+    if isinstance(s, (int, float)):
+        return int(s)
 
     s = s.strip().lower()
-    for f in ("k", "m", "g"):
-        if s.endswith((f, f"{f}b")):
-            return _bytes_map[f] * int(s.split(f)[0])
+    for k in _bytes_map:
+        if not s.endswith(k):
+            continue
+        return int(_bytes_map[k] * float(s.split(k)[0].strip()))
     else:
         return int(s)
 
 
-_bytes_progress = ("B", "KB", "MB", "GB", "TB", "PB")
+_bytes_progress = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
 
 
 def pretty_bytes(b: t.Union[int, float]) -> str:

@@ -27,9 +27,9 @@ from starwhale.base.uri.resource import Resource
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 MAX_DATA_BLOB_SIZE = convert_to_bytes(
-    os.environ.get("SW_BUNDLE_COPY_DATA_BLOB_SIZE", "8m")
+    os.environ.get("SW_BUNDLE_COPY_DATA_BLOB_SIZE", "8mi")
 )
-MAX_DATA_CHUNK_SIZE = convert_to_bytes("64k")
+MAX_DATA_CHUNK_SIZE = convert_to_bytes("64ki")
 MAX_RETRIES = int(os.environ.get("SW_BUNDLE_COPY_DATA_NET_RETRY", "10"))
 
 _progress: contextvars.ContextVar[Progress] = contextvars.ContextVar("progress")
