@@ -446,16 +446,14 @@ def _recover(model: str, force: bool) -> None:
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-p",
     "--run-project",
-    envvar=SWEnv.project,
     default="",
-    help=f"Project URI, env is {SWEnv.project}.The model run on the specified project. Default is the current selected project.",
+    help=f"Project URI. The model run on the specified project. Default is the current selected project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-lp",
     "--log-project",
-    envvar=SWEnv.project,
     default="",
-    help=f"Project URI, env is {SWEnv.project}.The model run result will store in the specified project. Default is the current selected project.",
+    help=f"Project URI. The model run result will store in the specified project. Default is the current selected project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "datasets",
