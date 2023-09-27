@@ -379,7 +379,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                     is_removed=_bf.is_removed,
                     path=str(_bf.path),
                     tags=_bf.tags,
-                    project=str(project_uri.name),
+                    project=project_uri.id,
                 )
             )
 

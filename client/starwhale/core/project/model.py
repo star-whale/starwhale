@@ -33,7 +33,7 @@ class ProjectObjType:
 class Project(metaclass=ABCMeta):
     def __init__(self, uri: ProjectURI) -> None:
         self.uri = uri
-        self.name = str(uri.name).lower()
+        self.name = uri.name.lower()
         self.sw_config = SWCliConfigMixed()
 
     @abstractmethod
