@@ -363,6 +363,15 @@ class RelatedResource(BaseModel):
     id: int
 
 
+class ResponseMessageMapStringString(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: Dict[str, str]
+
+
 class ConfigRequest(BaseModel):
     class Config:
         allow_population_by_field_name = True
