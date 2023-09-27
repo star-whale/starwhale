@@ -23,12 +23,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.run.bo.Run;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollectorFactory;
-import ai.starwhale.mlops.schedule.log.TaskLogOfflineCollector;
-import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
+import ai.starwhale.mlops.schedule.impl.k8s.log.RunLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.log.RunLogOfflineCollector;
+import ai.starwhale.mlops.schedule.log.RunLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -49,13 +49,13 @@ public class TaskLogK8sCollectorFactoryTest {
 
     K8sJobTemplate k8sJobTemplate;
 
-    TaskLogK8sCollectorFactory taskLogK8sCollector;
+    RunLogK8sCollectorFactory taskLogK8sCollector;
 
     @BeforeEach
     public void setup() {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
-        taskLogK8sCollector = new TaskLogK8sCollectorFactory(k8sClient, k8sJobTemplate);
+        taskLogK8sCollector = new RunLogK8sCollectorFactory(k8sClient, k8sJobTemplate);
     }
 
     @Test
@@ -72,9 +72,14 @@ public class TaskLogK8sCollectorFactoryTest {
         when(response.body()).thenReturn(responseBody);
         when(responseBody.byteStream()).thenReturn(new ByteArrayInputStream(new byte[]{}));
         when(k8sClient.readLog("x", "worker", true)).thenReturn(call);
-        Assertions.assertInstanceOf(TaskLogOfflineCollector.class, taskLogK8sCollector.offlineCollector(new Task()));
-        Assertions.assertInstanceOf(TaskLogStreamingCollector.class,
-                taskLogK8sCollector.streamingCollector(Task.builder().id(1L).build()));
+        Assertions.assertInstanceOf(
+                RunLogOfflineCollector.class,
+                taskLogK8sCollector.offlineCollector(Run.builder().build())
+        );
+        Assertions.assertInstanceOf(
+                RunLogStreamingCollector.class,
+                taskLogK8sCollector.streamingCollector(Run.builder().id(1L).build())
+        );
 
     }
 

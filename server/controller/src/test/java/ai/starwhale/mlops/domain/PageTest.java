@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
@@ -53,20 +54,26 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.executor.RunExecutor;
 import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
-import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
+import ai.starwhale.mlops.schedule.impl.docker.ContainerRunMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
-import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.docker.log.RunLogCollectorFactoryDocker;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration;
+import de.codecentric.boot.admin.server.config.AdminServerProperties;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,10 +81,15 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 
 @MybatisTest
@@ -89,19 +101,20 @@ import org.springframework.context.annotation.Import;
                 "ai.starwhale.mlops.schedule.reporting",
                 "ai.starwhale.mlops.schedule.log",
                 "ai.starwhale.mlops.schedule.impl.docker",
+                "ai.starwhale.mlops.schedule.impl.container",
                 "ai.starwhale.mlops.resulting",
                 "ai.starwhale.mlops.configuration.security"},
         excludeFilters = {
-                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = {ModelServingService.class,
-                        K8sClient.class})
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = {ModelServingService.class}),
+                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test.*")
         }
 )
 @ImportAutoConfiguration(PageHelperAutoConfiguration.class)
 @Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class,
         TaskContainerSpecificationFinder.class,
-        TaskLogCollectorFactoryDocker.class,
+        RunLogCollectorFactoryDocker.class,
         DockerClientFinderSimpleImpl.class,
-        ContainerTaskMapper.class})
+        ContainerRunMapper.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PageTest extends MySqlContainerHolder {
 
@@ -469,5 +482,59 @@ public class PageTest extends MySqlContainerHolder {
                 PageParams.builder().pageNum(2).pageSize(10).build());
         assertEquals(9, page.getSize());
         assertEquals(19, page.getTotal());
+    }
+
+    @TestConfiguration
+    public static class Config {
+
+        @Bean
+        StorageAccessService storageAccessService() {
+            return  new StorageAccessServiceMemory();
+        }
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+
+        @Bean
+        StoragePathCoordinator storagePathCoordinator() {
+            return new StoragePathCoordinator("/tt");
+        }
+
+        @Bean
+        RestTemplate restTemplate() {
+            return new RestTemplate();
+        }
+
+        @Bean
+        AdminServerProperties adminServerProperties() {
+            return new AdminServerProperties();
+        }
+
+        @Bean
+        SecurityProperties securityProperties() {
+            return new SecurityProperties();
+        }
+
+        @Bean
+        HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+            return mock(HandlerMappingIntrospector.class);
+        }
+
+        @Bean
+        SwTaskScheduler swTaskScheduler() {
+            return mock(SwTaskScheduler.class);
+        }
+
+        @Bean
+        ModelServingService modelServingService() {
+            return mock(ModelServingService.class);
+        }
+
+        @Bean
+        RunExecutor runExecutor() {
+            return mock(RunExecutor.class);
+        }
     }
 }

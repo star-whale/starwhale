@@ -28,6 +28,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,8 +58,10 @@ public class HotJobHolderImplTest {
         Assertions.assertEquals(1, jobs1.size());
         Assertions.assertTrue(jobs1.contains(job1));
 
-        Collection<Task> tasks = hotJobHolder.tasksOfIds(
-                List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
+        Collection<Task> tasks = List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L)
+                .stream().map(hotJobHolder::taskWithId)
+                .filter(task -> task != null)
+                .collect(Collectors.toList());
         Assertions.assertEquals(5, tasks.size());
 
         hotJobHolder.remove(job1.getId());
@@ -71,8 +74,10 @@ public class HotJobHolderImplTest {
         jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.CANCELLING));
         Assertions.assertEquals(0, jobs1.size());
 
-        tasks = hotJobHolder.tasksOfIds(
-                List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
+        tasks = List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L)
+                .stream().map(hotJobHolder::taskWithId)
+                .filter(task -> task != null)
+                .collect(Collectors.toList());
         Assertions.assertEquals(3, tasks.size());
 
     }

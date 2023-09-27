@@ -33,7 +33,7 @@ public interface HotJobHolder {
 
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 
-    Collection<Task> tasksOfIds(Collection<Long> taskIds);
+    Task taskWithId(Long taskId);
 
     /**
      * remove job in cache

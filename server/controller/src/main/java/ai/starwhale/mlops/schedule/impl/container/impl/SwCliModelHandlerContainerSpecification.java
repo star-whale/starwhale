@@ -161,6 +161,10 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
 
     @Override
     public ContainerCommand getCmd() {
+        boolean devMode = task.getStep().getJob().isDevMode();
+        if (devMode) {
+            return ContainerCommand.builder().cmd(new String[]{"dev"}).build();
+        }
         return ContainerCommand.builder().cmd(new String[]{"run"}).build();
     }
 

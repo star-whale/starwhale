@@ -1000,6 +1000,7 @@ class StepSpec(BaseModel):
     name: str
     concurrency: Optional[int] = None
     replicas: int
+    back_off_limit: Optional[int] = Field(None, alias='backOffLimit')
     needs: Optional[List[str]] = None
     resources: Optional[List[RuntimeResource]] = None
     env: Optional[List[Env]] = None
@@ -1303,6 +1304,7 @@ class TaskStatus(Enum):
     paused = 'PAUSED'
     preparing = 'PREPARING'
     running = 'RUNNING'
+    retrying = 'RETRYING'
     success = 'SUCCESS'
     cancelling = 'CANCELLING'
     canceled = 'CANCELED'
@@ -1542,6 +1544,7 @@ class Status1(Enum):
     paused = 'PAUSED'
     preparing = 'PREPARING'
     running = 'RUNNING'
+    retrying = 'RETRYING'
     success = 'SUCCESS'
     cancelling = 'CANCELLING'
     canceled = 'CANCELED'

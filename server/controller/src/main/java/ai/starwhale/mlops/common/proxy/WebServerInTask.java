@@ -18,7 +18,6 @@ package ai.starwhale.mlops.common.proxy;
 
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -57,12 +56,11 @@ public class WebServerInTask implements Service {
         var path = parts[2];
 
         // get task from cache
-        var tasks = hotJobHolder.tasksOfIds(List.of(taskId));
-        if (tasks.isEmpty()) {
+        var task = hotJobHolder.taskWithId(taskId);
+        if (null == task) {
             throw new IllegalArgumentException("can not find task " + taskId);
         }
-        var task = tasks.stream().findFirst();
-        var ip = task.get().getIp();
+        var ip = task.getIp();
         if (null == ip) {
             return null;
         }

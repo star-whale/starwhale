@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -32,9 +31,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,16 +50,13 @@ public class JobLoaderTest {
 
     SwTaskScheduler swTaskScheduler;
 
-    TaskReportReceiver taskReportReceiver;
-
     @BeforeEach
     public void setUp() {
         mockJob = new JobMockHolder().mockJob();
         jobHolder = mock(HotJobHolder.class);
         watchableTaskFactory = mock(WatchableTaskFactory.class);
         swTaskScheduler = mock(SwTaskScheduler.class);
-        taskReportReceiver = mock(TaskReportReceiver.class);
-        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler, taskReportReceiver);
+        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler);
     }
 
 
@@ -76,7 +70,7 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, false);
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
-        verify(swTaskScheduler).schedule(Set.of(readyTask), taskReportReceiver);
+        verify(swTaskScheduler).schedule(readyTask);
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
     }
 
@@ -89,8 +83,5 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, true);
         verify(failedTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
         verify(jobHolder).adopt(mockJob);
-        mockJob.getSteps().get(0).getTasks().forEach(t -> {
-            assertNotNull(t.getGeneration());
-        });
     }
 }

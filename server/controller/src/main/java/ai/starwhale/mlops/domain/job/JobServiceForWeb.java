@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -316,21 +317,8 @@ public class JobServiceForWeb {
             String taskId,
             ExecRequest execRequest
     ) {
-        Long jobId = jobDao.getJobId(jobUrl);
-        Job job = jobDao.findJobById(jobId);
-        if (null == job) {
-            throw new SwValidationException(ValidSubject.JOB, "job not exists");
-        }
-        if (job.getStatus() != JobStatus.RUNNING) {
-            throw new SwValidationException(ValidSubject.JOB, "only running job can be executed");
-        }
-        Task task = job.getSteps().stream()
-                .map(Step::getTasks)
-                .flatMap(Collection::stream)
-                .filter(t -> t.getId().equals(Long.valueOf(taskId)))
-                .findAny()
-                .orElseThrow(() -> new SwValidationException(ValidSubject.TASK, "task not exists"));
-        if (task.getStatus() != TaskStatus.RUNNING) {
+        Task task = hotJobHolder.taskWithId(Long.valueOf(taskId));
+        if (null == task || null == task.getCurrentRun() || task.getCurrentRun().getStatus() != RunStatus.RUNNING) {
             throw new SwValidationException(ValidSubject.TASK, "only running task can be executed");
         }
 

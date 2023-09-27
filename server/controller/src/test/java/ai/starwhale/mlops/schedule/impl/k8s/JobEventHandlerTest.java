@@ -16,18 +16,17 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.schedule.reporting.ReportedTask;
-import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
+import ai.starwhale.mlops.schedule.impl.k8s.reporting.JobEventHandler;
+import ai.starwhale.mlops.schedule.reporting.ReportedRun;
+import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -40,11 +39,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 public class JobEventHandlerTest {
 
-    TaskReportReceiver taskReportReceiver;
+    RunReportReceiver runReportReceiver;
     JobEventHandler jobEventHandler;
     private final K8sClient k8sClient = mock(K8sClient.class);
     private final OffsetDateTime startTime = OffsetDateTime.now().minusMinutes(1);
@@ -52,10 +50,8 @@ public class JobEventHandlerTest {
 
     @BeforeEach
     public void setUp() throws ApiException {
-        taskReportReceiver = mock(TaskReportReceiver.class);
-        TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
-        jobEventHandler = new JobEventHandler(
-                taskReportReceiver, taskStatusMachine, k8sClient);
+        runReportReceiver = mock(RunReportReceiver.class);
+        jobEventHandler = new JobEventHandler(runReportReceiver, k8sClient);
 
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
         pod.setStatus(new V1PodStatus().startTime(startTime));
@@ -74,14 +70,13 @@ public class JobEventHandlerTest {
                 List.of(new V1JobCondition().status("True").type("Complete").lastTransitionTime(completeTime)));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        var expected = ReportedTask.builder()
+        var expected = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.SUCCESS)
-                .retryCount(0)
+                .status(RunStatus.FINISHED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(completeTime.toInstant().toEpochMilli())
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected));
+        verify(runReportReceiver).receive(expected);
     }
 
     @Test
@@ -95,29 +90,27 @@ public class JobEventHandlerTest {
                 List.of(new V1JobCondition().status("True").type("Failed").lastTransitionTime(endTime)));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        var expected = ReportedTask.builder()
+        var expected = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.FAIL)
+                .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .retryCount(1)
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected));
+        verify(runReportReceiver).receive(expected);
 
         // test with reason and message
         var con = new V1JobCondition()
                 .status("True").type("Failed").lastTransitionTime(endTime).reason("reason").message("message");
         v1JobStatus.setConditions(List.of(con));
         jobEventHandler.onAdd(v1Job);
-        var expected2 = ReportedTask.builder()
+        var expected2 = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.FAIL)
+                .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .failedReason("job failed: reason, message")
-                .retryCount(1)
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected2));
+        verify(runReportReceiver).receive(expected2);
 
         // prefer using pod status
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
@@ -125,15 +118,14 @@ public class JobEventHandlerTest {
         reset(k8sClient);
         when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod, pod));
         jobEventHandler.onAdd(v1Job);
-        var expected3 = ReportedTask.builder()
+        var expected3 = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.FAIL)
+                .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .failedReason("job failed: reason, message\npod failed: foo, bar\nfoo, bar")
-                .retryCount(1)
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected3));
+        verify(runReportReceiver).receive(expected3);
     }
 
     @Test
@@ -146,15 +138,14 @@ public class JobEventHandlerTest {
                 endTime)));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        var expected = ReportedTask.builder()
+        var expected = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.SUCCESS)
-                .retryCount(0)
+                .status(RunStatus.FINISHED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .ip(null)
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected));
+        verify(runReportReceiver).receive(expected);
     }
 
     @Test
@@ -169,14 +160,13 @@ public class JobEventHandlerTest {
         v1Job.setStatus(v1JobStatus);
 
         jobEventHandler.onUpdate(null, v1Job);
-        var expected = ReportedTask.builder()
+        var expected = ReportedRun.builder()
                 .id(1L)
-                .status(TaskStatus.FAIL)
-                .retryCount(1)
+                .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .build();
-        verify(taskReportReceiver).receive(List.of(expected));
+        verify(runReportReceiver).receive(expected);
         verify(k8sClient, times(2)).getPodsByJobNameQuietly("1");
     }
 
@@ -189,27 +179,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        var expected = ReportedTask.builder()
-                .id(1L)
-                .status(TaskStatus.UNKNOWN)
-                .retryCount(0)
-                .build();
-        verify(taskReportReceiver).receive(List.of(expected));
+        verify(runReportReceiver, times(0)).receive(any());
     }
 
-    @Test
-    public void testOnDelete() {
-        V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
-        v1Job.setStatus(new V1JobStatus().active(1));
-        jobEventHandler.onDelete(v1Job, false);
-        var args = ArgumentCaptor.forClass(List.class);
-        verify(taskReportReceiver).receive(args.capture());
-        assertEquals(1, args.getValue().size());
-        ReportedTask reportedTask = (ReportedTask) args.getValue().get(0);
-        assertEquals(1L, reportedTask.getId());
-        assertEquals(TaskStatus.CANCELED, reportedTask.getStatus());
-        assertEquals(reportedTask.getStartTimeMillis(), startTime.toInstant().toEpochMilli());
-        assertTrue(reportedTask.getStopTimeMillis() > startTime.toInstant().toEpochMilli());
-    }
 }

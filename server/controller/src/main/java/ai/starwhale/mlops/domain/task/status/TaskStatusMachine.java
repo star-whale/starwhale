@@ -24,31 +24,149 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.PAUSED;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.RETRYING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.UNKNOWN;
 
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class TaskStatusMachine {
 
     static final Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
-            new SimpleEntry<>(CREATED, Set.of(ASSIGNING, READY, PREPARING, RUNNING, SUCCESS, FAIL, CANCELED)),
-            new SimpleEntry<>(READY, Set.of(ASSIGNING, PAUSED, PREPARING, RUNNING, SUCCESS, FAIL, CANCELED)),
-            new SimpleEntry<>(PAUSED, Set.of(PREPARING, ASSIGNING, RUNNING, READY, CANCELED, SUCCESS)),
-            new SimpleEntry<>(ASSIGNING, Set.of(CREATED, PREPARING, RUNNING, SUCCESS, FAIL, CANCELLING)),
-            new SimpleEntry<>(PREPARING, Set.of(RUNNING, SUCCESS, FAIL, CANCELLING, CANCELED)),
-            new SimpleEntry<>(RUNNING, Set.of(SUCCESS, FAIL, CANCELLING, CANCELED)),
+            new SimpleEntry<>(CREATED, Set.of(ASSIGNING, READY, PREPARING, RUNNING, RETRYING, SUCCESS, FAIL, CANCELED)),
+            new SimpleEntry<>(READY, Set.of(ASSIGNING, PAUSED, PREPARING, RUNNING, RETRYING, SUCCESS, FAIL, CANCELED)),
+            new SimpleEntry<>(
+                    RETRYING,
+                    Set.of(ASSIGNING, PAUSED, PREPARING, RUNNING, RETRYING, SUCCESS, FAIL, CANCELED)
+            ),
+            new SimpleEntry<>(PAUSED, Set.of(PREPARING, ASSIGNING, RUNNING, RETRYING, READY, CANCELED, SUCCESS)),
+            new SimpleEntry<>(ASSIGNING, Set.of(CREATED, PREPARING, RUNNING, RETRYING, SUCCESS, FAIL, CANCELLING)),
+            new SimpleEntry<>(PREPARING, Set.of(RUNNING, RETRYING, SUCCESS, FAIL, CANCELLING, CANCELED)),
+            new SimpleEntry<>(RUNNING, Set.of(SUCCESS, RETRYING, FAIL, CANCELLING, CANCELED)),
             new SimpleEntry<>(CANCELLING, Set.of(CANCELED, FAIL)),
             new SimpleEntry<>(CANCELED, Set.of()),
             new SimpleEntry<>(SUCCESS, Set.of()),
             new SimpleEntry<>(FAIL, Set.of()),
-            new SimpleEntry<>(UNKNOWN, Set.of(TaskStatus.values())));
+            new SimpleEntry<>(UNKNOWN, Set.of(TaskStatus.values()))
+    );
 
+    static final Map<TaskStatus, Map<RunStatus, TaskStatus>> transferRunMap = Map.ofEntries(
+            new SimpleEntry<>(
+                    CREATED,
+                    Map.of(
+                            RunStatus.PENDING,
+                            PREPARING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    READY,
+                    Map.of(
+                            RunStatus.PENDING,
+                            PREPARING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    PAUSED,
+                    Map.of(
+                            RunStatus.PENDING,
+                            PREPARING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    RETRYING,
+                    Map.of(
+                            RunStatus.PENDING,
+                            RETRYING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    PREPARING,
+                    Map.of(
+                            RunStatus.PENDING,
+                            PREPARING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    RUNNING,
+                    Map.of(
+                            RunStatus.PENDING,
+                            RUNNING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(
+                    CANCELLING,
+                    Map.of(
+                            RunStatus.PENDING,
+                            CANCELLING,
+                            RunStatus.RUNNING,
+                            CANCELLING,
+                            RunStatus.FAILED,
+                            CANCELED,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            ),
+            new SimpleEntry<>(CANCELED, Map.of()),
+            new SimpleEntry<>(SUCCESS, Map.of()),
+            new SimpleEntry<>(FAIL, Map.of()),
+            new SimpleEntry<>(
+                    UNKNOWN,
+                    Map.of(
+                            RunStatus.PENDING,
+                            PREPARING,
+                            RunStatus.RUNNING,
+                            RUNNING,
+                            RunStatus.FAILED,
+                            FAIL,
+                            RunStatus.FINISHED,
+                            SUCCESS
+                    )
+            )
+    );
 
     public boolean couldTransfer(TaskStatus statusNow, TaskStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
@@ -63,6 +181,20 @@ public class TaskStatusMachine {
             }
         }
         return statusNew;
+    }
+
+    public TaskStatus transfer(TaskStatus statusNow, RunStatus runStatus) {
+        Map<RunStatus, TaskStatus> transferMap = transferRunMap.get(statusNow);
+        TaskStatus desiredStatus = transferMap.get(runStatus);
+        if (null == desiredStatus) {
+            log.warn(
+                    "TaskStatusMachine.transfer: there shouldn't be a runStatus: {} for statusNow: {}",
+                    statusNow,
+                    runStatus
+            );
+            return statusNow;
+        }
+        return desiredStatus;
     }
 
     public boolean isFinal(TaskStatus status) {

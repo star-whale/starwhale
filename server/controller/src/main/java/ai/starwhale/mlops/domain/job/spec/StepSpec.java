@@ -67,6 +67,8 @@ public class StepSpec {
     @NotNull
     private Integer replicas = 1;
 
+    private Integer backOffLimit;
+
     private List<String> needs;
 
     private List<RuntimeResource> resources;

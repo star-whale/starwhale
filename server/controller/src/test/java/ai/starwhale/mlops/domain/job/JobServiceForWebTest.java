@@ -55,6 +55,8 @@ import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.run.bo.Run;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -300,14 +302,17 @@ public class JobServiceForWebTest {
 
         assertThrows(SwValidationException.class, () -> service.exec("1", "2", "3", req));
 
-        var task = Task.builder().id(3L).status(TaskStatus.RUNNING).build();
-        var step = Step.builder().id(3L).tasks(List.of(task)).build();
-        var job = Job.builder().id(2L).status(JobStatus.RUNNING).steps(List.of(step)).build();
+        var task = Task.builder()
+                .id(3L)
+                .status(TaskStatus.RUNNING)
+                .currentRun(
+                        Run.builder()
+                                .status(RunStatus.RUNNING)
+                                .build()
+                )
+                .build();
 
-        when(jobDao.findJobById(eq(job.getId()))).thenReturn(job);
-        when(hotJobHolder.ofIds(eq(List.of(job.getId())))).thenReturn(List.of(job));
-        when(hotJobHolder.ofIds(eq(List.of(step.getId())))).thenReturn(List.of(job));
-        when(hotJobHolder.ofIds(eq(List.of(task.getId())))).thenReturn(List.of(job));
+        when(hotJobHolder.taskWithId(3L)).thenReturn(task);
 
         var expected = ExecResponse.builder().stdout("stdout").stderr("stderr").build();
         when(swTaskScheduler.exec(eq(task), any())).thenReturn(new Future<>() {

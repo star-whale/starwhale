@@ -50,6 +50,7 @@ public enum TaskStatus {
      * running
      */
     RUNNING,
+    RETRYING,
 
     /**
      * garbage is cleared task is finished

@@ -57,6 +57,7 @@ sw:
   instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   scheduler:
     impl: ${SW_SCHEDULER:k8s}
+    backOffLimit: ${SW_TASK_BACKOFF_LIMIT:3}
     docker:
       network: ${SW_DOCKER_CONTAINER_NETWORK:host}
       node-ip: ${SW_DOCKER_CONTAINER_NODE_IP:127.0.0.1}

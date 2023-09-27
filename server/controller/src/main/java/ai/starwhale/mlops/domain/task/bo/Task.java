@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.task.bo;
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.run.bo.Run;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -69,7 +70,8 @@ public class Task extends TimeConcern {
 
     // use for task status change checking
     // must be bigger than before when updating
-    Long generation;
+    Run currentRun;
+
 
     public void updateStatus(TaskStatus status) {
         this.status = status;
@@ -91,8 +93,8 @@ public class Task extends TimeConcern {
         this.ip = ip;
     }
 
-    public void setGeneration(Long generation) {
-        this.generation = generation;
+    public void setCurrentRun(Run currentRun) {
+        this.currentRun = currentRun;
     }
 
     @Override

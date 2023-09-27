@@ -19,7 +19,7 @@ package ai.starwhale.mlops.schedule.impl.docker.reporting;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import com.github.dockerjava.api.model.Container;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,15 +32,15 @@ public class ContainerStatusExplainerTest {
         ContainerStatusExplainer containerStatusExplainer = new ContainerStatusExplainer();
         Container c = mock(Container.class);
         when(c.getState()).thenReturn("running");
-        Assertions.assertEquals(TaskStatus.RUNNING, containerStatusExplainer.statusOf(c));
+        Assertions.assertEquals(RunStatus.RUNNING, containerStatusExplainer.statusOf(c));
 
         when(c.getState()).thenReturn("exited");
         when(c.getStatus()).thenReturn("Exited (0) blab-la");
-        Assertions.assertEquals(TaskStatus.SUCCESS, containerStatusExplainer.statusOf(c));
+        Assertions.assertEquals(RunStatus.FINISHED, containerStatusExplainer.statusOf(c));
 
         when(c.getState()).thenReturn("exited");
         when(c.getStatus()).thenReturn("Exited (1) blab-la");
-        Assertions.assertEquals(TaskStatus.FAIL, containerStatusExplainer.statusOf(c));
+        Assertions.assertEquals(RunStatus.FAILED, containerStatusExplainer.statusOf(c));
     }
 
 
