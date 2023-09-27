@@ -95,7 +95,7 @@ public class RuntimeDockerizedContainerSpecificationTest {
                                                                                      .build())
                                                               .build())
                                                 .job(Job.builder()
-                                                             .project(Project.builder().name("p").build())
+                                                             .project(Project.builder().id(1L).name("p").build())
                                                              .virtualJobName(NAME)
                                                              .build()).build());
     }
@@ -105,6 +105,7 @@ public class RuntimeDockerizedContainerSpecificationTest {
         Map<String, String> containerEnvs = rdcs.getContainerEnvs();
         Assertions.assertEquals("10.2.2.3:8080", containerEnvs.get("SW_INSTANCE_URI"));
         Assertions.assertEquals("p", containerEnvs.get("SW_PROJECT"));
+        Assertions.assertEquals(instanceUri + "/project/1", containerEnvs.get("SW_PROJECT_URI"));
         Assertions.assertEquals("aabbcc", containerEnvs.get("SW_TOKEN"));
         Assertions.assertEquals("v", containerEnvs.get("k"));
         Assertions.assertEquals("rph/cache", containerEnvs.get("SW_CACHE_REPO"));

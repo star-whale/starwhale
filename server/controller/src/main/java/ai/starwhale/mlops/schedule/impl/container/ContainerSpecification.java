@@ -19,6 +19,7 @@ package ai.starwhale.mlops.schedule.impl.container;
 import java.util.Map;
 
 public interface ContainerSpecification {
+    String FORMATTER_URI_PROJECT = "%s/project/%s";
 
     Map<String, String> getContainerEnvs();
 

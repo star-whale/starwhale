@@ -71,6 +71,7 @@ public class ContainerSpecificationFinderTest {
             put("SW_ENV", "test");
             put("SW_POD_NAME", "1");
             put("SW_PROJECT", "project");
+            put("SW_PROJECT_URI", "http://instanceUri/project/100");
             put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             put("SW_DATASET_URI", "http://instanceUri/project/103/dataset/swdsN/version/swdsV");
             put("SW_MODEL_URI", "http://instanceUri/project/101/model/swmpN/version/swmpV");

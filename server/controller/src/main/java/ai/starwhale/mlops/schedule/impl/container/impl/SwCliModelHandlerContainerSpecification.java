@@ -127,6 +127,10 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
+        coreContainerEnvs.put("SW_PROJECT_URI", String.format(
+                        FORMATTER_URI_PROJECT,
+                        instanceUri,
+                        swJob.getProject().getId()));
         coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
         coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());

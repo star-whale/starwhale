@@ -78,7 +78,10 @@ public class DatasetBuildContainerSpecificationBuilderTest {
         task = mock(Task.class);
         when(task.getTaskRequest()).thenReturn(TaskRequest.builder().env(List.of(new Env("k", "v"))).build());
         when(task.getStep()).thenReturn(Step.builder()
-                .job(Job.builder().project(Project.builder().name("p").build()).virtualJobName(NAME).build()).build());
+                .job(Job.builder().project(
+                        Project.builder().id(1L).name("p").build()
+                    ).virtualJobName(NAME).build())
+                .build());
     }
 
     @Test
@@ -95,6 +98,7 @@ public class DatasetBuildContainerSpecificationBuilderTest {
         Assertions.assertEquals(null, envs.get("SW_PYPI_TIMEOUT"));
         Assertions.assertEquals(null, envs.get("SW_PYPI_RETRIES"));
         Assertions.assertEquals(instanceUri, envs.get("SW_INSTANCE_URI"));
+        Assertions.assertEquals(instanceUri + "/project/1", envs.get("SW_PROJECT_URI"));
         Assertions.assertEquals("p", envs.get("SW_PROJECT"));
         Assertions.assertEquals("aabbcc", envs.get("SW_TOKEN"));
         Assertions.assertEquals("docker-registry.starwhale.cn/star-whale/starwhale:latest", dsbb.getImage());
@@ -118,6 +122,7 @@ public class DatasetBuildContainerSpecificationBuilderTest {
         Assertions.assertEquals("10", envs.get("SW_PYPI_RETRIES"));
         Assertions.assertEquals(instanceUri, envs.get("SW_INSTANCE_URI"));
         Assertions.assertEquals("p", envs.get("SW_PROJECT"));
+        Assertions.assertEquals(instanceUri + "/project/1", envs.get("SW_PROJECT_URI"));
         Assertions.assertEquals("aabbcc", envs.get("SW_TOKEN"));
         Assertions.assertEquals("abc.com/testImagxe", dsbb.getImage());
         Assertions.assertIterableEquals(List.of("dataset_build"), Arrays.asList(dsbb.getCmd().getCmd()));

@@ -85,6 +85,11 @@ public class RuntimeDockerizedContainerSpecification implements ContainerSpecifi
         Map<String, String> containerEnvs = new HashMap<>();
         containerEnvs.put("SW_INSTANCE_URI", instanceUri);
         containerEnvs.put("SW_PROJECT", job.getProject().getName());
+        // TODO tune dockerize script
+        containerEnvs.put("SW_PROJECT_URI", String.format(
+                FORMATTER_URI_PROJECT,
+                instanceUri,
+                job.getProject().getId()));
         containerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(job.getOwner(), task.getId()));
         updateDockerSettingsEnv(containerEnvs);
         updatePypiSettingsEnv(runTimeProperties, containerEnvs);
