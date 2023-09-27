@@ -447,13 +447,13 @@ def _recover(model: str, force: bool) -> None:
     "-p",
     "--run-project",
     default="",
-    help=f"Project URI. The model run on the specified project. Default is the current selected project.",
+    help="Project URI. The model run on the specified project. Default is the current selected project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-lp",
     "--log-project",
     default="",
-    help=f"Project URI. The model run result will store in the specified project. Default is the current selected project.",
+    help="Project URI. The model run result will store in the specified project. Default is the current selected project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "datasets",

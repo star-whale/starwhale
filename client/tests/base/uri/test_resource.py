@@ -1,5 +1,4 @@
 import os
-from typing import Union
 from pathlib import Path
 from dataclasses import dataclass
 from unittest.mock import patch, MagicMock

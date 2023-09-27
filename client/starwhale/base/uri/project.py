@@ -1,6 +1,6 @@
 import os
 import urllib
-from typing import Any, Union, Optional
+from typing import Any, Optional
 from functools import lru_cache
 
 import requests
