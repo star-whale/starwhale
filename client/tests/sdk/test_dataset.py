@@ -18,7 +18,12 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config
-from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    HTTPMethod,
+    ENV_POD_NAME,
+    DEFAULT_PROJECT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
     NoSupportError,
@@ -36,9 +41,9 @@ from starwhale.base.data_type import (
     BoundingBox,
     COCOObjectAnnotation,
 )
-from starwhale.base.uri.project import Project
+from starwhale.base.uri.project import Project, get_remote_project_id
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
-from starwhale.api._impl.wrapper import DatasetTableKind, _get_remote_project_id
+from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.model import DatasetConfig, StandaloneDataset
@@ -133,6 +138,7 @@ class TestDatasetCopy(BaseTestCase):
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
         cloud_project = "project"
+        cloud_project_id = 1
 
         swds_config = DatasetConfig(
             name=dataset_name, handler=iter_complex_annotations_swds
@@ -145,17 +151,17 @@ class TestDatasetCopy(BaseTestCase):
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/project",
-            json={"data": {"id": 1, "name": "project"}},
+            json={"data": {"id": cloud_project_id, "name": "project"}},
         )
         rm.request(
             HTTPMethod.POST,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}/file",
             json={"data": {"uploadId": 1}},
         )
 
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -174,7 +180,7 @@ class TestDatasetCopy(BaseTestCase):
         rm.register_uri(
             HTTPMethod.HEAD,
             re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+                f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/"
             ),
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -182,7 +188,7 @@ class TestDatasetCopy(BaseTestCase):
         upload_blob_req = rm.register_uri(
             HTTPMethod.POST,
             re.compile(
-                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+                f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/"
             ),
             json={"data": "server_return_uri"},
         )
@@ -324,26 +330,27 @@ class TestDatasetCopy(BaseTestCase):
         dataset_name = "complex_annotations"
         dataset_version = "dataset-version"
         cloud_project = "project"
+        cloud_project_id = 1
 
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/project",
-            json={"data": {"id": 1, "name": "project"}},
+            json={"data": {"id": cloud_project_id, "name": "project"}},
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/111",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/hashedBlob/111",
         )
 
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/tag",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}/version/{dataset_version}/tag",
             json=ResponseMessageListString(
                 code="success",
                 message="success",
@@ -353,7 +360,7 @@ class TestDatasetCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}?versionUrl={dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project_id}/dataset/{dataset_name}?versionUrl={dataset_version}",
             json={
                 "data": {"versionMeta": yaml.safe_dump({"version": dataset_version})}
             },
@@ -494,7 +501,7 @@ class TestDatasetCopy(BaseTestCase):
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-        tdb = TabularDataset(name=dataset_name, project="self")
+        tdb = TabularDataset(name=dataset_name, project=Project(DEFAULT_PROJECT))
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
@@ -509,6 +516,7 @@ class TestDatasetSessionConsumption(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
+    @Mocker()
     @patch.dict(os.environ, {})
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
@@ -520,7 +528,9 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
-    def test_get_consumption(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+    def test_get_consumption(
+        self, rm: Mocker, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -533,6 +543,11 @@ class TestDatasetSessionConsumption(TestCase):
             },
             "storage": {"root": "/root"},
         }
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:8081/api/v1/project/test",
+            json={"data": {"id": 1, "name": ""}},
+        )
         m_scan_id.return_value = [{"id": 0}]
         os.environ["DATASET_CONSUMPTION_BATCH_SIZE"] = "10"
         consumption = get_dataset_consumption(
@@ -564,6 +579,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert isinstance(consumption_cloud, CloudTDSC)
         assert consumption_cloud.instance_token == "123"
 
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
         "starwhale.base.uri.resource.Resource._refine_local_rc_info",
@@ -573,7 +589,16 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
-    def test_standalone_tdsc_multi_thread(self, m_scan_id: MagicMock) -> None:
+    def test_standalone_tdsc_multi_thread(
+        self, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": "/root"},
+        }
         total = 1002
         batch_size = 10
         m_scan_id.return_value = [{"id": f"{i}-{i}"} for i in range(0, total)]
@@ -632,11 +657,12 @@ class TestDatasetSessionConsumption(TestCase):
         MagicMock(),
     )
     def test_cloud_tdsc(self, rm: Mocker, m_conf: MagicMock) -> None:
+        instance_uri = "http://1.1.1.1:8081"
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
                 "test": {
-                    "uri": "http://1.1.1.1:8081",
+                    "uri": instance_uri,
                     "current_project": "p",
                     "sw_token": "token",
                 },
@@ -647,6 +673,11 @@ class TestDatasetSessionConsumption(TestCase):
 
         os.environ[ENV_POD_NAME] = ""
         with self.assertRaises(RuntimeError):
+            rm.request(
+                HTTPMethod.GET,
+                f"{instance_uri}/api/v1/project/p",
+                json={"data": {"id": 1, "name": "p"}},
+            )
             CloudTDSC(
                 Resource(
                     "mnist/version/latest",
@@ -656,6 +687,11 @@ class TestDatasetSessionConsumption(TestCase):
                 "",
             )
 
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/test",
+            json={"data": {"id": 1, "name": "test"}},
+        )
         os.environ[ENV_POD_NAME] = "pod-1"
         tdsc = get_dataset_consumption(
             dataset_uri="cloud://test/project/test/dataset/mnist/version/123",
@@ -670,7 +706,7 @@ class TestDatasetSessionConsumption(TestCase):
 
         mock_request = rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8081/api/v1/project/test/dataset/mnist/version/123/consume",
+            "http://1.1.1.1:8081/api/v1/project/1/dataset/mnist/version/123/consume",
             json={
                 "data": {
                     "start": "path/1",
@@ -687,7 +723,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert range_key == ("path/1", "path/100")
         assert len(mock_request.request_history) == 1  # type: ignore
         request = mock_request.request_history[0]  # type: ignore
-        assert request.path == "/api/v1/project/test/dataset/mnist/version/123/consume"
+        assert request.path == "/api/v1/project/1/dataset/mnist/version/123/consume"
         assert request.json() == {
             "batchSize": 50,
             "sessionId": "123",
@@ -716,6 +752,7 @@ class TestDatasetSessionConsumption(TestCase):
             ],
         }
 
+    @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
@@ -726,7 +763,9 @@ class TestDatasetSessionConsumption(TestCase):
         "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
-    def test_standalone_tdsc(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+    def test_standalone_tdsc(
+        self, rm: Mocker, m_scan_id: MagicMock, m_conf: MagicMock
+    ) -> None:
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -751,6 +790,9 @@ class TestDatasetSessionConsumption(TestCase):
             )
 
         with self.assertRaises(NoSupportError):
+            rm.get(
+                "http://1.1.1.1:8082/api/v1/project/starwhale", json={"data": {"id": 1}}
+            )
             StandaloneTDSC(
                 dataset_uri=Resource(
                     "http://1.1.1.1:8082/project/starwhale/dataset/mnist/version/latest",
@@ -901,7 +943,7 @@ class TestTabularDatasetInfo(BaseTestCase):
     def test_datastore(self) -> None:
         ds_wrapper = DatastoreWrapperDataset(
             "test",
-            "self",
+            Project("self"),
             kind=DatasetTableKind.INFO,
         )
         info = TabularDatasetInfo(
@@ -924,7 +966,7 @@ class TestTabularDatasetInfo(BaseTestCase):
         assert isinstance(load_info["image"], Image)
 
     def test_tabular_dataset_property(self) -> None:
-        td = TabularDataset(name="test", project="self")
+        td = TabularDataset(name="test", project=Project(DEFAULT_PROJECT))
         assert td._info is None
         assert isinstance(td.info, TabularDatasetInfo)
         assert not bool(td.info)
@@ -944,7 +986,7 @@ class TestTabularDatasetInfo(BaseTestCase):
 
         td.close()
 
-        loaded_td = TabularDataset(name="test", project="self")
+        loaded_td = TabularDataset(name="test", project=Project(DEFAULT_PROJECT))
         assert loaded_td.info["a"] == 1
         assert list(loaded_td.info) == ["a", "b", "dict"]
         assert not loaded_td._info_changed
@@ -1000,10 +1042,7 @@ class TestTabularDataset(TestCase):
             assert isinstance(rs[0], TabularDatasetRow)
 
         with self.assertRaises(InvalidObjectName):
-            TabularDataset(name="", project="")
-
-        with self.assertRaisesRegex(RuntimeError, "project is not set"):
-            TabularDataset(name="a123", project="")
+            TabularDataset(name="", project=Project())
 
     def test_encode_decode_feature_types(self) -> None:
         raw_features = {
@@ -1086,7 +1125,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.workdir = Path(self.local_storage) / "test"
-        self.project_name = "self"
+        self.project = Project(DEFAULT_PROJECT)
         self.dataset_name = "mnist"
         self.holder_dataset_version = "_current"
         with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
@@ -1103,12 +1142,12 @@ class TestMappingDatasetBuilder(BaseTestCase):
 
         self.tdb = TabularDataset(
             name=self.dataset_name,
-            project=self.project_name,
+            project=self.project,
         )
 
     def tearDown(self) -> None:
         super().tearDown()
-        _get_remote_project_id.cache_clear()
+        get_remote_project_id.cache_clear()
 
     def test_put(self) -> None:
         mdb = MappingDatasetBuilder(
@@ -1337,6 +1376,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     def test_put_for_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
         instance_uri = "http://1.1.1.1"
+        cloud_project = "cloud_pro"
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -1351,8 +1391,8 @@ class TestMappingDatasetBuilder(BaseTestCase):
         }
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{self.project_name}",
-            json={"data": {"id": 1, "name": "project"}},
+            f"{instance_uri}/api/v1/project/{cloud_project}",
+            json={"data": {"id": 1, "name": ""}},
         )
         update_req = rm.request(
             HTTPMethod.POST,
@@ -1368,7 +1408,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         upload_req = rm.register_uri(
             HTTPMethod.POST,
             re.compile(
-                f"{instance_uri}/api/v1/project/{self.project_name}/dataset/{self.dataset_name}/hashedBlob/",
+                f"{instance_uri}/api/v1/project/1/dataset/{self.dataset_name}/hashedBlob/",
             ),
             json={"data": server_return_uri},
         )
@@ -1377,7 +1417,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
             workdir=self.workdir,
             dataset_uri=Resource(
                 "mnist",
-                project=Project("cloud://foo/project/self"),
+                project=Project(f"cloud://foo/project/{cloud_project}"),
                 typ=ResourceType.dataset,
                 refine=False,
             ),

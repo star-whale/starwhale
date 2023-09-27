@@ -34,7 +34,7 @@ class BaseStorage(metaclass=ABCMeta):
     def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self.sw_config = SWCliConfigMixed()
-        self.project_dir = self.sw_config.rootdir / self.uri.project.name
+        self.project_dir = self.sw_config.rootdir / self.uri.project.id
         self.blob_dir = self.sw_config.rootdir / ".swblob"
         self.loc, self.id = self._guess()
 
@@ -183,7 +183,7 @@ class BaseStorage(metaclass=ABCMeta):
         uri_type: ResourceType,
     ) -> t.Generator[BundleField, None, None]:
         sw = SWCliConfigMixed()
-        _obj_dir = sw.rootdir / project_uri.name / uri_type.value
+        _obj_dir = sw.rootdir / project_uri.id / uri_type.value
         _tags_map = {}
         for _path in _obj_dir.glob(f"**/*{bundle_type}"):
             if not _path.name.endswith(bundle_type):

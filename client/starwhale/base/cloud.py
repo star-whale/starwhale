@@ -227,7 +227,7 @@ class CloudRequestMixed:
     ) -> t.Dict[str, t.Any]:
         _manifest: t.Dict[str, t.Any] = {
             "uri": uri.full_uri,
-            "project": uri.project.name,
+            "project": uri.project.id,
             "name": uri.name,
         }
 
@@ -297,7 +297,7 @@ class CloudRequestMixed:
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _params = {"pageNum": page, "pageSize": size}
         resp = self.do_http_request(
-            f"/project/{project_uri.name}/{uri_typ.value}",
+            f"/project/{project_uri.id}/{uri_typ.value}",
             params=_params,
             instance=project_uri.instance,
         )
@@ -427,4 +427,4 @@ class CloudBundleModelMixin(CloudRequestMixed):
                     raise RuntimeError(msg)
 
     def _get_tag_path_by_rc(self, rc: Resource) -> str:
-        return f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{rc.version}/tag"
+        return f"/project/{rc.project.id}/{rc.typ.value}/{rc.name}/version/{rc.version}/tag"

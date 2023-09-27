@@ -72,7 +72,7 @@ class DatasetCopy(BundleCopy):
         if uri.instance.is_cloud:
             # TODO simplify remote resource request without join uri manually
             ok, _ = self.do_http_request_simple_ret(
-                path=f"/project/{uri.project.name}/dataset/{dataset_name}",
+                path=f"/project/{uri.project.id}/dataset/{dataset_name}",
                 method=HTTPMethod.HEAD,
                 instance=uri.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],
@@ -80,7 +80,7 @@ class DatasetCopy(BundleCopy):
             return ok
         else:
             dataset_dir = (
-                self._sw_config.rootdir / uri.project.name / "dataset" / dataset_name
+                self._sw_config.rootdir / uri.project.id / "dataset" / dataset_name
             )
             return (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
@@ -102,15 +102,11 @@ class DatasetCopy(BundleCopy):
 
         src = TabularDataset(
             name=self.src_uri.name,
-            project=self.src_uri.project.name,
-            instance_name=self.src_uri.instance.url,
-            token=self.src_uri.instance.token,
+            project=self.src_uri.project,
         )
         dest = TabularDataset(
             name=self.dest_uri.name or self.src_uri.name,
-            project=self.dest_uri.project.name,
-            instance_name=self.dest_uri.instance.url,
-            token=self.dest_uri.instance.token,
+            project=self.dest_uri.project,
         )
 
         try:
@@ -216,7 +212,7 @@ class DatasetCopy(BundleCopy):
         self, dataset_revision: str, info_revision: str
     ) -> None:
         r = self.do_http_request(
-            path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}",
+            path=f"/project/{self.src_uri.project.id}/dataset/{self.src_uri.name}",
             instance=self.src_uri.instance,
             params={"versionUrl": self.src_uri.version},
         ).json()
@@ -239,7 +235,7 @@ class DatasetCopy(BundleCopy):
         dataset_name = self.dest_uri.name or self.src_uri.name
         params = {
             "swds": f"{dataset_name}:{self.src_uri.name}",
-            "project": self.dest_uri.project.name,
+            "project": self.dest_uri.project.id,
             "force": "1",  # use force=1 to make http retry happy, we check dataset existence in advance
         }
         url_path = self._get_remote_bundle_api_url()
@@ -287,7 +283,7 @@ class DatasetCopy(BundleCopy):
 
         if not local_blob_path.exists():
             self.do_download_file(
-                url_path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}/hashedBlob/{hash_name}",
+                url_path=f"/project/{self.src_uri.project.id}/dataset/{self.src_uri.name}/hashedBlob/{hash_name}",
                 dest_path=local_blob_path,
                 instance=self.src_uri.instance,
             )
@@ -295,7 +291,7 @@ class DatasetCopy(BundleCopy):
 
     def _do_upload_blob_from_object_store(self, local_hashed_uri: str) -> str:
         local_blob_path = DatasetStorage._get_object_store_path(local_hashed_uri)
-        url_path = f"/project/{self.dest_uri.project.name}/dataset/{self.src_uri.name}/hashedBlob/{local_hashed_uri}"
+        url_path = f"/project/{self.dest_uri.project.id}/dataset/{self.src_uri.name}/hashedBlob/{local_hashed_uri}"
         console.debug(f":up_arrow: upload blob {local_hashed_uri[:SHORT_VERSION_CNT]}")
 
         r = self.do_http_request(

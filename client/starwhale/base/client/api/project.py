@@ -15,7 +15,7 @@ class ProjectApi(Client):
 
     def list(
         self,
-        project_name: str | None = None,
+        project_name: str | int | None = None,
         page_num: int | None = None,
         page_size: int | None = None,
     ) -> TypeWrapper[ResponseMessagePageInfoProjectVo]:
@@ -29,21 +29,21 @@ class ProjectApi(Client):
         )
         return TypeWrapper(ResponseMessagePageInfoProjectVo, data)
 
-    def get(self, project_url: str) -> TypeWrapper[ResponseMessageProjectVo]:
+    def get(self, project_url: str | int) -> TypeWrapper[ResponseMessageProjectVo]:
         data = self.http_get(f"/api/v1/project/{project_url}")
         return TypeWrapper(ResponseMessageProjectVo, data)
 
-    def create(self, project_name: str) -> TypeWrapper[ResponseMessageString]:
+    def create(self, project_name: str | int) -> TypeWrapper[ResponseMessageString]:
         data = self.http_post(
             "/api/v1/project",
             {"projectName": project_name, "privacy": "", "description": ""},
         )
         return TypeWrapper(ResponseMessageString, data)
 
-    def recover(self, project_url: str) -> TypeWrapper[ResponseMessageString]:
+    def recover(self, project_url: str | int) -> TypeWrapper[ResponseMessageString]:
         data = self.http_put(f"/api/v1/project/{project_url}/recover")
         return TypeWrapper(ResponseMessageString, data)
 
-    def delete(self, project_url: str) -> TypeWrapper[ResponseMessageString]:
+    def delete(self, project_url: str | int) -> TypeWrapper[ResponseMessageString]:
         data = self.http_delete(f"/api/v1/project/{project_url}")
         return TypeWrapper(ResponseMessageString, data)

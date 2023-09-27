@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from dataclasses import dataclass
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import yaml
 from requests_mock import Mocker
@@ -28,10 +28,7 @@ class TestResource(TestCase):
 
     def test_resource_base(self) -> None:
         # name with type and project
-        p = Mock(spec=Project)
-        p.instance = MockLocalInstance()
-        p.name = "self"
-        p.path = ""
+        p = Project("self")
         r = Resource(
             uri="mnist",
             typ=ResourceType.dataset,
@@ -137,9 +134,7 @@ class TestResource(TestCase):
         mock_glob.return_value = ["/root/project/self/runtime/mnist/fo/foo"]
 
         # with project
-        project = Mock(spec=Project)
-        project.instance = MockLocalInstance()
-        project.name = "self"
+        project = Project("self")
         r = Resource("foo", project=project)
         assert r.name == "mnist"
         assert r.version == "foo"
@@ -154,11 +149,18 @@ class TestResource(TestCase):
         assert r.full_uri == "local/project/self/runtime/mnist/version/foo"
 
     @patch("starwhale.base.uri.resource.glob")
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.base.uri.resource.Project.parse_from_full_uri")
     def test_version_only_no_match(
-        self, mock_parse: MagicMock, mock_glob: MagicMock
+        self, mock_parse: MagicMock, mock_conf: MagicMock, mock_glob: MagicMock
     ) -> None:
-        p = Mock(spec=Project)
+        mock_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+        }
+        p = Project("self")
         mock_parse.return_value = p
         p.path = ""
         p.name = "self"
@@ -182,7 +184,7 @@ class TestResource(TestCase):
             def __eq__(self, other: Resource):
                 return (
                     other.instance.alias == self.instance
-                    and other.project.name == self.project
+                    and other.project.id == self.project
                     and other.typ == self.typ
                     and other.name == self.name
                     and other.version == self.version
@@ -245,8 +247,9 @@ class TestResource(TestCase):
         with self.assertRaises(Exception):
             Resource("https://foo.com/projects/1/model")  # model missing the tail 's'
 
+    @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
-    def test_short_uri(self, load_conf: MagicMock) -> None:
+    def test_short_uri(self, rm: Mocker, load_conf: MagicMock) -> None:
         load_conf.return_value = {
             "instances": {
                 "foo": {"uri": "https://foo.com"},
@@ -256,27 +259,38 @@ class TestResource(TestCase):
         }
 
         tests = {
-            "bar/project/self/mnist": ("mnist", "self", "bar"),
-            "local/project/self/mnist": ("mnist", "self", "local"),
-            "cloud://bar/project/self/mnist": ("mnist", "self", "bar"),
+            "bar/project/self/mnist": ("https://bar.com", "mnist", "1", "bar"),
+            "local/project/self/mnist": ("", "mnist", "self", "local"),
+            "cloud://bar/project/self/mnist": (
+                "https://bar.com",
+                "mnist",
+                "1",
+                "bar",
+            ),
         }
 
         for uri, expect in tests.items():
+            if expect[0]:
+                rm.get(f"{expect[0]}/api/v1/project/self", json={"data": {"id": 1}})
             p = Resource(uri, typ=ResourceType.runtime, refine=False)
-            assert p.name == expect[0]
-            assert p.project.name == expect[1]
-            assert p.instance.alias == expect[2]
+            assert p.name == expect[1]
+            assert p.project.id == expect[2]
+            assert p.instance.alias == expect[3]
 
+    @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
-    def test_remote_uri_with_type_part(self, m_conf: MagicMock) -> None:
+    def test_remote_uri_with_type_part(self, rm: Mocker, m_conf: MagicMock) -> None:
         m_conf.return_value = {
             "instances": {
                 "foo": {"uri": "https://foo.com"},
                 "local": {"uri": "local"},
             },
         }
+        rm.get("https://foo.com/api/v1/project/starwhale", json={"data": {"id": 1}})
+
         uri = Resource("cloud://foo/project/starwhale/dataset/mnist", refine=False)
         assert uri.instance.alias == "foo"
+        assert uri.project.id == "1"
         assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
@@ -289,6 +303,7 @@ class TestResource(TestCase):
             refine=False,
         )
         assert uri.instance.alias == "foo"
+        assert uri.project.id == "1"
         assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
@@ -356,8 +371,9 @@ class TestResource(TestCase):
                 "local": {"uri": "local"},
             },
         }
+        rm.get("https://foo.com/api/v1/project/starwhale", json={"data": {"id": 1}})
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/dataset/mnist",
+            "https://foo.com/api/v1/project/1/dataset/mnist",
             json={
                 "data": {
                     "id": 1,
@@ -371,6 +387,7 @@ class TestResource(TestCase):
             "cloud://foo/project/starwhale/dataset/mnist/version/123456", refine=True
         )
         assert uri.instance.alias == "foo"
+        assert uri.project.id == "1"
         assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"

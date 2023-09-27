@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
+from requests_mock import Mocker
 
 from starwhale.api import track
 from starwhale.utils import now_str, load_yaml
@@ -211,9 +212,10 @@ class TestTracker(BaseTestCase):
 
         t1.end()
 
+    @Mocker()
     @patch("os.environ", {})
     @patch("starwhale.utils.config.load_swcli_config")
-    def test_start_for_cloud(self, m_conf: MagicMock) -> None:
+    def test_start_for_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
         m_conf.return_value = {
             "current_instance": "local",
             "instances": {
@@ -226,16 +228,19 @@ class TestTracker(BaseTestCase):
             },
             "storage": {"root": "/root"},
         }
+        rm.get("http://1.1.1.1/api/v1/project/test", json={"data": {"id": 1}})
         with Tracker.start(
             saved_dir=self.local_storage,
             project_uri="http://1.1.1.1/project/test",
             access_token="abcd",
         ) as t:
+            assert t.project_uri.id == "1"
             assert t.project_uri.name == "test"
 
         with self.assertRaisesRegex(
             ValueError, "access_token is required for cloud instance"
         ):
+            rm.get("http://0.0.0.0/api/v1/project/test", json={"data": {"id": 2}})
             Tracker.start(
                 saved_dir=self.local_storage,
                 project_uri="http://0.0.0.0/project/test",

@@ -13,6 +13,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.job.view import JobTermView, JobTermViewJson, JobTermViewRich
 from starwhale.base.scheduler import Step, Scheduler, StepResult, TaskResult
 from starwhale.base.models.job import LocalJobInfo
+from starwhale.base.uri.project import Project
 
 
 class JobTestCase(TestCase):
@@ -88,7 +89,7 @@ class JobTestCase(TestCase):
     def test_scheduler_cycle_exception(self):
         with self.assertRaises(RuntimeError):
             Scheduler(
-                project="self",
+                run_project=Project("self"),
                 version="fdsie8rwe",
                 workdir=Path(),
                 dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
@@ -116,7 +117,7 @@ class JobTestCase(TestCase):
         )
 
         _scheduler = Scheduler(
-            project="self",
+            run_project=Project("self"),
             version="fdsie8rwe",
             workdir=Path(),
             dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],

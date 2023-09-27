@@ -1,10 +1,19 @@
-from typing import Optional
+import os
+import urllib
+from typing import Any, Optional
+from functools import lru_cache
 
+import requests
+
+from starwhale.consts.env import SWEnv
+from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.exceptions import UriTooShortException
 
 
 class Project:
+    id: str
     name: str
     instance: Instance
     path: str = ""
@@ -15,6 +24,12 @@ class Project:
         uri: Optional[str] = None,
         instance: Optional[Instance] = None,
     ) -> None:
+        """
+
+        :param name: When uri belongs to standalone, it is the name. When uri belongs to cloud, name is the id.
+        :param uri: project uri, like "local/project/starwhale" "http://127.0.0.1:8000/project/sw:p-1"
+        :param instance: instance object, default is the current selected.
+        """
         if name and uri:
             raise Exception("name and uri can not both set")
         # init instance
@@ -40,6 +55,15 @@ class Project:
             raise Exception("can not init project with empty name")
         self.name = name
         # TODO check if project exists for local and remote
+        if self.instance.is_cloud:
+            # TODO check whether contains namespace in name(like 'sw:project')?
+            self.id = (
+                self.name
+                if self.name.isdigit()
+                else str(get_remote_project_id(self.instance.url, self.name))
+            )
+        else:
+            self.id = self.name
 
     @classmethod
     def parse_from_full_uri(cls, uri: str, ignore_rc_type: bool) -> "Project":
@@ -72,7 +96,7 @@ class Project:
 
     @property
     def full_uri(self) -> str:
-        return "/".join([self.instance.url, "project", self.name])
+        return "/".join([self.instance.url, "project", self.id])
 
     def __str__(self) -> str:
         return self.full_uri
@@ -84,3 +108,21 @@ class Project:
         if not isinstance(other, Project):
             return False
         return self.full_uri == other.full_uri
+
+
+@lru_cache(maxsize=None)
+@http_retry
+def get_remote_project_id(instance_uri: str, project: str) -> Any:
+    resp = requests.get(
+        urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": (
+                SWCliConfigMixed().get_sw_token(instance=instance_uri)
+                or os.getenv(SWEnv.instance_token, "")
+            ),
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.json().get("data", {})["id"]

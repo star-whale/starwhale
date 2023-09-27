@@ -40,17 +40,17 @@ class JobStorage(BaseStorage):
         project_uri: Project,
     ) -> t.Generator[t.Tuple[Path, bool], None, None]:
         sw = SWCliConfigMixed()
-        _job_dir = sw.rootdir / project_uri.name / ResourceType.job.value
+        _job_dir = sw.rootdir / project_uri.id / ResourceType.job.value
         for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _path, RECOVER_DIRNAME in _path.parts
 
     @staticmethod
-    def local_run_dir(project_name: str, version: str) -> Path:
+    def local_run_dir(project_id: str, version: str) -> Path:
         # TODO: tune SWCliConfigMixed
         sw = SWCliConfigMixed()
         return (
             sw.rootdir
-            / project_name
+            / project_id
             / ResourceType.job.value
             / version[:VERSION_PREFIX_CNT]
             / version

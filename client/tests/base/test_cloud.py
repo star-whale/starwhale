@@ -38,9 +38,14 @@ class TestCloudRequestMixed(TestCase):
 
     @Mocker()
     def test_bundle_list(self, rm: Mocker) -> None:
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/sw",
+            json={"data": {"id": 1}},
+        )
         req = rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/sw/model",
+            "http://1.1.1.1/api/v1/project/1/model",
             json={
                 "data": {
                     "list": [

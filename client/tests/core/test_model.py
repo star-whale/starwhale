@@ -674,7 +674,8 @@ class StandaloneModelTestCase(TestCase):
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project=project,
+            run_project=Project(project),
+            log_project=Project(project),
             version=version,
             dataset_uris=["mnist/version/latest"],
             scheduler_run_args={
@@ -699,7 +700,8 @@ class StandaloneModelTestCase(TestCase):
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project=project,
+            run_project=Project(project),
+            log_project=Project(project),
             version=version,
             dataset_uris=["mnist/version/latest"],
             scheduler_run_args={
@@ -721,7 +723,8 @@ class StandaloneModelTestCase(TestCase):
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project=project,
+            run_project=Project(project),
+            log_project=Project(project),
             version=version,
             dataset_uris=["mnist/version/latest"],
             cleanup_snapshot=False,
@@ -776,6 +779,10 @@ class StandaloneModelTestCase(TestCase):
         )
         mock_list.return_value = ([model_foo, model_foo], {})
         # list supports using instance/project uri which is not current_instance/current_project
+        req.get(
+            f"{base_url}/project/whatever",
+            json={"data": {"id": 1}},
+        )
         models, _ = ModelTermView.list("remote/whatever")
         assert len(models) == 2
 
@@ -1039,7 +1046,11 @@ class CloudModelTest(TestCase):
     def test_tag(self, rm: Mocker) -> None:
         uri = "cloud://foo/project/starwhale/model/mnist/version/123456a"
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/model/mnist",
+            "https://foo.com/api/v1/project/starwhale",
+            json={"data": {"id": 1}},
+        )
+        rm.get(
+            "https://foo.com/api/v1/project/1/model/mnist",
             json={
                 "data": {
                     "versionId": "100",
@@ -1048,9 +1059,7 @@ class CloudModelTest(TestCase):
                 }
             },
         )
-        tag_url = (
-            "https://foo.com/api/v1/project/starwhale/model/mnist/version/123456a/tag"
-        )
+        tag_url = "https://foo.com/api/v1/project/1/model/mnist/version/123456a/tag"
         add_tag_request = rm.post(
             tag_url,
             json=ResponseMessageString(
@@ -1101,7 +1110,11 @@ class CloudModelTest(TestCase):
     @Mocker()
     def test_run(self, rm: Mocker) -> None:
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/model/mnist",
+            "https://foo.com/api/v1/project/starwhale2",
+            json={"data": {"id": 2}},
+        )
+        rm.get(
+            "https://foo.com/api/v1/project/2/model/mnist",
             json={
                 "data": {
                     "versionId": "100",
@@ -1111,7 +1124,7 @@ class CloudModelTest(TestCase):
             },
         )
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/dataset/mnist",
+            "https://foo.com/api/v1/project/2/dataset/mnist",
             json={
                 "data": {
                     "versionId": "200",
@@ -1121,7 +1134,7 @@ class CloudModelTest(TestCase):
             },
         )
         rm.get(
-            "https://foo.com/api/v1/project/starwhale/runtime/mnist",
+            "https://foo.com/api/v1/project/2/runtime/mnist",
             json={
                 "data": {
                     "versionId": "300",
@@ -1131,13 +1144,13 @@ class CloudModelTest(TestCase):
             },
         )
         rm.post(
-            "https://foo.com/api/v1/project/starwhale/job",
+            "https://foo.com/api/v1/project/2/job",
             json=ResponseMessageString(
                 code="success", message="success", data="success"
             ).dict(),
         )
         result, data = CloudModel.run(
-            project_uri=Project("https://foo.com/project/starwhale"),
+            project_uri=Project("https://foo.com/project/starwhale2"),
             model_uri="mnist/version/123456a",
             dataset_uris=["mnist/version/223456a"],
             runtime_uri="mnist/version/323456a",
@@ -1146,20 +1159,20 @@ class CloudModelTest(TestCase):
         )
         assert result
         assert data == "success"
-        assert rm.call_count == 4
-        assert rm.request_history[0].qs == {"versionurl": ["123456a"]}
-        assert rm.request_history[0].method == "GET"
-        assert rm.request_history[1].qs == {"versionurl": ["223456a"]}
+        assert rm.call_count == 5
+        assert rm.request_history[1].qs == {"versionurl": ["123456a"]}
         assert rm.request_history[1].method == "GET"
-        assert rm.request_history[2].qs == {"versionurl": ["323456a"]}
+        assert rm.request_history[2].qs == {"versionurl": ["223456a"]}
         assert rm.request_history[2].method == "GET"
-        req = JobRequest(**json.loads(rm.request_history[3].text))
+        assert rm.request_history[3].qs == {"versionurl": ["323456a"]}
+        assert rm.request_history[3].method == "GET"
+        req = JobRequest(**json.loads(rm.request_history[4].text))
         assert req.model_version_url == "100"
         assert req.dataset_version_urls == "200"
         assert req.runtime_version_url == "300"
         assert req.resource_pool == "default"
         assert req.handler == "test:predict"
-        assert rm.request_history[3].method == "POST"
+        assert rm.request_history[4].method == "POST"
 
     def test_cli_list(self) -> None:
         mock_obj = MagicMock()

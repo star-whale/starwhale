@@ -83,6 +83,10 @@ public class DatasetBuildContainerSpecification implements ContainerSpecificatio
         }
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
+        coreContainerEnvs.put("SW_PROJECT_URI", String.format(
+                    FORMATTER_URI_PROJECT,
+                    instanceUri,
+                    swJob.getProject().getId()));
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
         return coreContainerEnvs;
     }

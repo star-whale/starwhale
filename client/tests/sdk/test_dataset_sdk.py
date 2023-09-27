@@ -757,28 +757,30 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     @Mocker()
     def test_cloud_init(self, rm: Mocker) -> None:
+        project_id = 1
         sw = SWCliConfigMixed()
         sw.update_instance(
             uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
         )
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self",
+            json={"data": {"id": project_id, "name": "self"}},
+        )
+
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/not_found/version/1234",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/not_found/version/1234",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
 
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/version/1234",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
-        )
-
-        rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self",
-            json={"data": {"id": 1, "name": "self"}},
         )
 
         scan_table_mock = rm.request(
@@ -789,7 +791,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist",
             json={
                 "data": {
                     "versionMeta": yaml.safe_dump(
@@ -804,7 +806,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.OK,
         )
 
-        ds = dataset("http://1.1.1.1/project/self/dataset/mnist/version/1234")
+        ds = dataset(f"http://1.1.1.1/project/{project_id}/dataset/mnist/version/1234")
         assert ds.exists()
 
         rows = list(ds)
@@ -838,6 +840,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     @Mocker()
     def test_create_for_cloud(self, rm: Mocker) -> None:
+        project_id = 1
         sw = SWCliConfigMixed()
         sw.update_instance(
             uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
@@ -846,7 +849,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         rm.request(
             HTTPMethod.GET,
             "http://1.1.1.1/api/v1/project/self",
-            json={"data": {"id": 1, "name": "self"}},
+            json={"data": {"id": project_id, "name": "self"}},
         )
 
         rm.request(
@@ -867,32 +870,38 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         version_req = rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/latest",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/version/latest",
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist?versionUrl=latest",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist?versionUrl=latest",
             status_code=HTTPStatus.NOT_FOUND,
         )
-        ds = dataset("http://1.1.1.1/projects/self/datasets/mnist/versions/latest")
+        ds = dataset(
+            f"http://1.1.1.1/projects/{project_id}/datasets/mnist/versions/latest"
+        )
         assert version_req.call_count == 1
 
         file_request = rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.pending_commit_version}/file",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/version/{ds.pending_commit_version}/file",
             json={"data": {"uploadId": "123"}},
         )
 
         rm.register_uri(
             HTTPMethod.HEAD,
-            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            re.compile(
+                f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/hashedBlob/"
+            ),
             status_code=HTTPStatus.NOT_FOUND,
         )
 
         rm.register_uri(
             HTTPMethod.POST,
-            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            re.compile(
+                f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/hashedBlob/"
+            ),
             json={"data": "uri"},
         )
 
@@ -1502,6 +1511,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     @Mocker()
     def test_copy(self, rm: Mocker) -> None:
+        project_id = 1
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
 
@@ -1511,8 +1521,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         )
 
         rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self",
+            json={"data": {"id": project_id, "name": "project"}},
+        )
+        rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -1523,27 +1538,25 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             json={"data": "datastore_revision"},
         )
 
-        rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self",
-            json={"data": {"id": 1, "name": "project"}},
-        )
-
         rm.register_uri(
             HTTPMethod.HEAD,
-            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            re.compile(
+                f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/hashedBlob/"
+            ),
             status_code=HTTPStatus.NOT_FOUND,
         )
 
         upload_blob_req = rm.register_uri(
             HTTPMethod.POST,
-            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            re.compile(
+                f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/hashedBlob/"
+            ),
             json={"data": "server_return_uri"},
         )
 
         make_version_req = rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.loading_version}/file",
+            f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/version/{ds.loading_version}/file",
             json={"data": {"uploadId": 1}},
         )
 

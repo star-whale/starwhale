@@ -2,7 +2,7 @@ import os
 import json
 import typing as t
 from pathlib import Path
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 import yaml
 from click.testing import CliRunner
@@ -27,7 +27,6 @@ from starwhale.base.data_type import Link, MIMEType, GrayscaleImage
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
-from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.view import (
     DatasetTermView,
@@ -563,23 +562,31 @@ class CloudDatasetTest(TestCase):
         call_args = mock_obj.list.call_args[0]
         assert len(call_args[5]) == 0
 
+    @Mocker()
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.model.CloudDataset.list")
     @patch("starwhale.core.dataset.model.CloudDataset.info")
-    def test_info_list_view(self, mock_info: MagicMock, mock_list: MagicMock) -> None:
-        dataset_uri = MagicMock(spec=Resource)
-        ins = MagicMock(spec=Instance)
-        type(ins).is_cloud = PropertyMock(return_value=True)
-        type(ins).is_local = PropertyMock(return_value=False)
-        type(ins).url = PropertyMock(return_value="http://example.com")
-        type(ins).alias = PropertyMock(return_value="cloud")
-        dataset_uri.name = "mnist"
-        dataset_uri.typ = ResourceType.dataset
-        dataset_uri.version = "v0"
-        project = Project("starwhale", instance=ins)
-        dataset_uri.project = project
-        type(dataset_uri).instance = PropertyMock(return_value=ins)
-        type(dataset_uri).full_uri = PropertyMock(
-            return_value="http://example.com/project/starwhale"
+    def test_info_list_view(
+        self, rm: Mocker, mock_info: MagicMock, mock_list: MagicMock, m_conf: MagicMock
+    ) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "example": {
+                    "uri": "http://example.com",
+                    "current_project": "starwhale",
+                    "sw_token": "token",
+                },
+            },
+            "storage": {"root": "/root"},
+        }
+        rm.get(
+            "http://example.com/api/v1/project/starwhale",
+            json={"data": {"id": 1, "name": "starwhale"}},
+        )
+        dataset_uri = Resource(
+            uri="cloud://example/project/starwhale/dataset/mnist/version/123",
+            refine=False,
         )
         ds_info = DatasetInfoVo(
             id="1",
@@ -608,7 +615,7 @@ class CloudDatasetTest(TestCase):
             ),
         )
         mock_list.return_value = ([ds], {})
-
-        DatasetTermView.list(project_uri=project)
-        DatasetTermViewRich.list(project_uri=project)
-        DatasetTermViewJson.list(project_uri=project)
+        project_uri = "example/project/starwhale"
+        DatasetTermView.list(project_uri)
+        DatasetTermViewRich.list(project_uri)
+        DatasetTermViewJson.list(project_uri)

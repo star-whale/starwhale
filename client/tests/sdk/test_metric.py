@@ -7,6 +7,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.base.context import Context
 from starwhale.api._impl.metric import multi_classification
+from starwhale.base.uri.project import Project
 
 
 class TestMultiClassificationMetric(TestCase):
@@ -14,7 +15,7 @@ class TestMultiClassificationMetric(TestCase):
         context = Context(
             workdir=Path("/home/starwhale"),
             version="12345",
-            project="self",
+            run_project=Project("self"),
         )
         Context.set_runtime_context(context)
 

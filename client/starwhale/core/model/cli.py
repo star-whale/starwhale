@@ -446,9 +446,14 @@ def _recover(model: str, force: bool) -> None:
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-p",
     "--run-project",
-    envvar=SWEnv.project,
     default="",
-    help=f"Project URI, env is {SWEnv.project}.The model run result will store in the specified project. Default is the current selected project.",
+    help="Project URI. The model run on the specified project. Default is the current selected project.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-lp",
+    "--log-project",
+    default="",
+    help="Project URI. The model run result will store in the specified project. Default is the current selected project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "datasets",
@@ -538,6 +543,7 @@ def _run(
     modules: t.List[str],
     model_yaml: str,
     run_project: str,
+    log_project: str,
     datasets: t.List[str],
     in_container: bool,
     runtime: str,
@@ -581,6 +587,7 @@ def _run(
     """
     # TODO: support run model in cluster mode
     run_project_uri = Project(run_project)
+    log_project_uri = Project(log_project)
     in_server = run_project_uri.instance.is_cloud
 
     if in_container and in_server:
@@ -598,6 +605,14 @@ def _run(
 
         if not uri:
             raise ValueError("uri is required in server mode")
+
+        if (
+            log_project_uri.instance != run_project_uri.instance
+            or log_project_uri.name != run_project_uri.name
+        ):
+            raise RuntimeError(
+                "log project must be consistent with run project in server mode"
+            )
 
         ModelTermView.run_in_server(
             project_uri=run_project_uri,
@@ -633,7 +648,8 @@ def _run(
         ModelTermView.run_in_host(
             model_src_dir=model_src_dir,
             model_config=model_config,
-            project=run_project,
+            run_project=run_project_uri,
+            log_project=log_project_uri,
             version=version,
             run_handler=handler,
             dataset_uris=datasets,

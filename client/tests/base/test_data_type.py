@@ -355,7 +355,12 @@ class TestDataType(TestCase):
 
         rm.request(
             HTTPMethod.GET,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist",
+            "http://127.0.0.1:8081/api/v1/project/test",
+            json={"data": {"id": 1, "name": ""}},
+        )
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:8081/api/v1/project/1/dataset/mnist",
             json={"data": {"id": 1, "versionName": "123456a", "versionId": 100}},
         )
         link.owner = Resource(
@@ -364,7 +369,7 @@ class TestDataType(TestCase):
 
         rm.request(
             HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/uri/sign-links?expTimeMillis=86400000",
+            "http://127.0.0.1:8081/api/v1/project/1/dataset/mnist/uri/sign-links?expTimeMillis=86400000",
             json={
                 "data": {
                     "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"

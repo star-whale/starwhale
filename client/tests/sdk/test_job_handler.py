@@ -10,6 +10,7 @@ from starwhale.utils.error import NoSupportError, ParameterError
 from starwhale.base.context import Context, pass_context
 from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
+from starwhale.base.uri.project import Project
 from starwhale.base.models.model import JobHandlers, StepSpecClient
 from starwhale.base.client.models.models import RuntimeResource, ParameterSignature
 
@@ -17,7 +18,10 @@ from starwhale.base.client.models.models import RuntimeResource, ParameterSignat
 class JobTestCase(unittest.TestCase):
     def test_pass_context(self):
         config_context = Context(
-            workdir=Path(), step="self_test", version="qwertyui", project="self"
+            workdir=Path(),
+            step="self_test",
+            version="qwertyui",
+            run_project=Project("self"),
         )
         Context.set_runtime_context(config_context)
 
@@ -409,14 +413,14 @@ def evaluate_handler(*args, **kwargs): ...
             # without dataset_uri
             context = Context(
                 workdir=self.workdir,
-                project="test",
+                run_project=Project("test"),
                 version="123",
             )
             TaskExecutor(index=1, context=context, workdir=self.workdir, step=steps[0])
 
         context = Context(
             workdir=self.workdir,
-            project="test",
+            run_project=Project("test"),
             version="123",
             dataset_uris=["ds/version/v0"],
         )
@@ -538,7 +542,7 @@ class MockHandler(PipelineHandler):
         )
         context = Context(
             workdir=self.workdir,
-            project="test",
+            run_project=Project("test"),
             version="123",
         )
         task = TaskExecutor(
@@ -647,7 +651,7 @@ class MockHandler:
         )
         assert len(steps) == 2
         results = Scheduler(
-            project="test",
+            run_project=Project("test"),
             version="test",
             workdir=self.workdir,
             dataset_uris=["ds/version/v0"],
@@ -1001,7 +1005,7 @@ class MockReport:
             "mock_user_module:MockReport.report_handler", yaml_path
         )
         scheduler = Scheduler(
-            project="test",
+            run_project=Project("test"),
             version="test",
             workdir=self.workdir,
             dataset_uris=[],
@@ -1349,7 +1353,7 @@ def f_no_args():
         _, steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
         context = Context(
             workdir=self.workdir,
-            project="test",
+            run_project=Project("test"),
             version="123",
         )
         task = TaskExecutor(
@@ -1364,7 +1368,7 @@ def f_no_args():
         _, steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
         context = Context(
             workdir=self.workdir,
-            project="test",
+            run_project=Project("test"),
             version="123",
         )
         task = TaskExecutor(
@@ -1380,7 +1384,7 @@ def f_no_args():
         _, steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
         context = Context(
             workdir=self.workdir,
-            project="test",
+            run_project=Project("test"),
             version="123",
         )
         task = TaskExecutor(

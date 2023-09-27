@@ -57,7 +57,7 @@ class ProjectTermView(BaseTermView):
         try:
             self.select_current_default(
                 instance=self.uri.instance.alias,
-                project=self.uri.name,
+                project=self.uri.id,
             )
         except Exception as e:
             console.print(

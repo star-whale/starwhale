@@ -51,8 +51,7 @@ class Job:
                 eval_id = info.job.uuid
             self._evaluation_store = wrapper.Evaluation(
                 eval_id=eval_id,
-                project=self.uri.project.name,
-                instance=self.uri.instance.url,
+                project=self.uri.project,
             )
         return self._evaluation_store
 
@@ -71,7 +70,7 @@ class Job:
         else:
             return (
                 JobApi(self.uri.instance)
-                .info(self.uri.project.name, self.uri.name)
+                .info(self.uri.project.id, self.uri.name)
                 .raise_on_error()
                 .response()
                 .data

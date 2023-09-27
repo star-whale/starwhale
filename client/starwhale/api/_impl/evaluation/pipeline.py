@@ -58,7 +58,10 @@ class PipelineHandler(metaclass=ABCMeta):
         self.predict_log_mode = PredictLogMode(predict_log_mode)
         self.kwargs = kwargs
 
-        _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
+        # TODO: whether store to the target which point to
+        _logdir = JobStorage.local_run_dir(
+            self.context.run_project.id, self.context.version
+        )
         _run_dir = (
             _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
         )
@@ -70,7 +73,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: use EvaluationLogStore to refactor this?
         self.evaluation_store = wrapper.Evaluation(
-            eval_id=self.context.version, project=self.context.project
+            eval_id=self.context.version, project=self.context.log_project
         )
         self._update_status(RunStatus.START)
 
@@ -290,7 +293,7 @@ class PipelineHandler(metaclass=ABCMeta):
             dataset_info = ds.info
             if _uri.instance.is_local:
                 # avoid confusion with underscores in project names
-                idx_prefix = f"{_uri.project.name}/{_uri.name}"
+                idx_prefix = f"{_uri.project.id}/{_uri.name}"
             else:
                 r_id = _uri.info().get("id")
                 if not r_id:

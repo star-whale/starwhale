@@ -3,6 +3,8 @@ import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from requests_mock import Mocker
+
 from tests import BaseTestCase
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -59,12 +61,17 @@ class ModelBuildTestCase(BaseTestCase):
             m_model_view.build.call_args[1]["workdir"]
         ).resolve().absolute() == workdir.resolve().absolute()
 
+    @Mocker()
     @patch("os.unlink", MagicMock())
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_copy(
-        self, m_model_view: MagicMock, m_check_python: MagicMock, m_conf: MagicMock
+        self,
+        rm: Mocker,
+        m_model_view: MagicMock,
+        m_check_python: MagicMock,
+        m_conf: MagicMock,
     ) -> None:
         m_conf.return_value = {
             "current_instance": "local",
@@ -78,6 +85,10 @@ class ModelBuildTestCase(BaseTestCase):
             },
             "storage": {"root": "/root"},
         }
+        rm.get(
+            "http://localhost:8080/api/v1/project/starwhale", json={"data": {"id": 1}}
+        )
+
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "copy" / "workdir"
         ensure_dir(workdir / "models")
@@ -117,7 +128,7 @@ class ModelBuildTestCase(BaseTestCase):
         )
         assert (
             m_model_view.copy.call_args[1]["dest_uri"]
-            == "http://localhost:8080/project/starwhale"
+            == "http://localhost:8080/project/1"
         )
 
     @patch("starwhale.utils.load.check_python_interpreter_consistency")

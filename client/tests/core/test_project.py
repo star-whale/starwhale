@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import get_predefined_config_yaml
@@ -77,7 +78,11 @@ class ProjectTestCase(TestCase):
             ptv.recover()
             ProjectTermView.list()
 
-    def test_project_select(self):
+    @Mocker()
+    def test_project_select(self, rm: Mocker):
+        rm.get(
+            "http://1.1.1.2:8182/api/v1/project/new_project", json={"data": {"id": 1}}
+        )
         path = get_swcli_config_path()
         self.fs.create_file(path, contents=_existed_config_contents)
 
@@ -89,4 +94,4 @@ class ProjectTestCase(TestCase):
 
         ProjectTermView("new_project").select()
         assert sw.current_instance == "pre-bare2"
-        assert sw.current_project == "new_project"
+        assert sw.current_project == "1"

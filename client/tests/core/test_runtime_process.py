@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME
@@ -166,6 +167,7 @@ class RuntimeProcessTestCase(TestCase):
         assert m_restore.called
         assert m_extract.called
 
+    @Mocker()
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
     @patch("starwhale.core.runtime.process.check_call")
@@ -173,6 +175,7 @@ class RuntimeProcessTestCase(TestCase):
     @patch("starwhale.core.runtime.process.StandaloneRuntime.restore")
     def test_run_exceptions(
         self,
+        rm: Mocker,
         m_restore: MagicMock,
         m_extract: MagicMock,
         m_call: MagicMock,
@@ -187,6 +190,7 @@ class RuntimeProcessTestCase(TestCase):
             },
             "storage": {"root": self.root},
         }
+        rm.get("http://1.1.1.1:8081/api/v1/project/self", json={"data": {"id": 1}})
         with self.assertRaisesRegex(
             FieldTypeOrValueError, "is not a valid uri, only support"
         ):

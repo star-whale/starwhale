@@ -8,6 +8,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from starwhale.utils import console
 from starwhale.consts import RunStatus
 from starwhale.base.context import Context
+from starwhale.base.uri.project import Project
 
 from .dag import DAG
 from .step import Step, StepResult, StepExecutor
@@ -17,16 +18,18 @@ from .task import TaskResult, TaskExecutor
 class Scheduler:
     def __init__(
         self,
-        project: str,
         version: str,
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
         handler_args: t.List[str] | None = None,
+        run_project: t.Optional[Project] = None,
+        log_project: t.Optional[Project] = None,
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
-        self.project = project
+        self.run_project = run_project or Project()
+        self.log_project = log_project or self.run_project
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
@@ -66,7 +69,8 @@ class Scheduler:
             tasks = [
                 StepExecutor(
                     self._steps[v],
-                    project=self.project,
+                    run_project=self.run_project,
+                    log_project=self.log_project,
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
                     version=self.version,
@@ -105,7 +109,8 @@ class Scheduler:
         start_time = time.time()
         result = StepExecutor(
             step=step,
-            project=self.project,
+            run_project=self.run_project,
+            log_project=self.log_project,
             dataset_uris=self.dataset_uris,
             workdir=self.workdir,
             version=self.version,
@@ -131,7 +136,8 @@ class Scheduler:
         _task = TaskExecutor(
             index=task_index,
             context=Context(
-                project=self.project,
+                run_project=self.run_project,
+                log_project=self.log_project,
                 version=self.version,
                 step=_step.name,
                 total=task_num,

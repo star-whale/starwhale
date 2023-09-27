@@ -71,12 +71,20 @@ run() {
     else
         runtime_args="--forbid-packaged-runtime"
     fi
+    if [ -z "${SW_PROJECT_URI}" ]; then
+        echo "-->[Error] There needs an environment variable: SW_PROJECT_URI, now will exit."
+        exit 1
+    else
+        # http://controller:8082/project/starwhale:starwhale
+        log_project="${SW_PROJECT_URI}"
+    fi;
 
-    swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} \
-        --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} \
-        --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} \
+    swcli ${VERBOSE} model run --handler="${HANDLER}" --step="${STEP}" \
+        --task-index="${TASK_INDEX}" --override-task-num="${TASK_NUM}" \
+        --uri="${SW_MODEL_VERSION}" --version="${SW_JOB_VERSION}" \
+        --log-project="${log_project}" \
         --forbid-snapshot \
-        ${runtime_args} -- ${SW_TASK_EXTRA_CMD_ARGS} || exit 1
+        ${runtime_args} -- "${SW_TASK_EXTRA_CMD_ARGS}" || exit 1
 }
 
 serve() {
@@ -101,6 +109,10 @@ run_code_server () {
 }
 
 ds_build_and_upload () {
+    if [ -z "${SW_PROJECT_URI}" ]; then
+        echo "-->[Error] There needs an environment variable: SW_PROJECT_URI, now will exit."
+        exit 1
+    fi;
     echo "-->[Preparing] Downloading files..."
     BUILD_DIR=$DATASET_BUILD_NAME
     mkdir -p "$BUILD_DIR"
@@ -144,7 +156,7 @@ ds_build_and_upload () {
 
     echo "-->[Uploading] Start to upload dataset: $DATASET_BUILD_NAME..."
     swcli instance login --token "$SW_TOKEN" --alias server "$SW_INSTANCE_URI"
-    swcli dataset copy --patch "$DATASET_BUILD_NAME"/version/latest cloud://server/project/"$SW_PROJECT" || exit 1
+    swcli dataset copy --patch "$DATASET_BUILD_NAME"/version/latest "${SW_PROJECT_URI}" || exit 1
 }
 
 welcome "$1"
