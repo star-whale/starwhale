@@ -141,11 +141,6 @@ class Evaluation(Logger):
         _storage_table_name = self._get_storage_table_name(table_name)
         return super()._flush(_storage_table_name)
 
-    def log_result(self, record: Dict) -> None:
-        with self._stashing_tables_lock:
-            self._stashing_tables.add(self._RESULTS_TABLE)
-        self._log(self._eval_table_name(self._RESULTS_TABLE), record)
-
     def log_summary_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:

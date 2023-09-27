@@ -25,7 +25,7 @@ from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 
-from .log import EvaluationLogStore
+from .log import Evaluation
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
@@ -73,7 +73,7 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
-        self.evaluation_store = EvaluationLogStore(
+        self.evaluation_store = Evaluation(
             id=self.context.version, project=self.context.log_project
         )
         self._update_status(RunStatus.START)
@@ -379,7 +379,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         duration_seconds=_duration,
                     )
 
-        self.evaluation_store.flush_all()
+        self.evaluation_store.flush_all(artifacts_flush=True)
 
         console.info(
             f"{self.context.step}-{self.context.index} received {received_rows_cnt} data items for dataset {self.dataset_uris}"

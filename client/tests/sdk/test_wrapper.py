@@ -64,12 +64,17 @@ class TestEvaluation(BaseTestCase):
 
     def test_log_results_and_scan(self) -> None:
         e = wrapper.Evaluation("tt", Project("test"))
-        e.log_result(dict(id="0", output=3))
-        e.log_result(dict(id="1", output=4, _mode=PredictLogMode.PICKLE.value))
-        e.log_result(
-            dict(id="2", output=5, a="0", b="1", _mode=PredictLogMode.PLAIN.value)
+        e.log("results", id="0", output=3)
+        e.log("results", id="1", output=4, _mode=PredictLogMode.PICKLE.value)
+        e.log(
+            "results",
+            id="2",
+            output=5,
+            a="0",
+            b="1",
+            _mode=PredictLogMode.PLAIN.value,
         )
-        e.log_result(dict(id="3", output=6, c=None, _mode="plain"))
+        e.log("results", id="3", output=6, c=None, _mode="plain")
         e.close()
 
         expect_result = [
@@ -95,7 +100,7 @@ class TestEvaluation(BaseTestCase):
             e.log("table/1", id=(1, 2))
 
         with self.assertRaisesRegex(RuntimeError, msg):
-            e.log_result({"id": (1, 2), "a": 1})
+            e.log("results", id=(1, 2), a=1)
 
     def test_log_summary_metrics(self) -> None:
         e = wrapper.Evaluation("tt", Project("test"))
@@ -142,19 +147,19 @@ class TestEvaluation(BaseTestCase):
             status_code=400,
         )
 
-        eval = wrapper.Evaluation("tt", Project("http://1.1.1.1/project/test"))
-        eval.log_result(dict(id="0", mode=PredictLogMode.PICKLE.value, output=3))
-        eval.log_summary_metrics({"a/b": 2})
+        el = wrapper.Evaluation("tt", Project("http://1.1.1.1/project/test"))
+        el.log("results", id="0", mode=PredictLogMode.PICKLE.value, output=3)
+        el.log_summary_metrics({"a/b": 2})
 
-        assert len(eval._writers) == 2
+        assert len(el._writers) == 2
         with self.assertRaises(Exception) as twe:
-            eval.close()
+            el.close()
 
         assert len(twe.exception.args) == 2
         for e in twe.exception.args:
             assert isinstance(e, data_store.TableWriterException)
 
-        for _writer in eval._writers.values():
+        for _writer in el._writers.values():
             assert _writer is not None
             assert not _writer.is_alive()
             assert _writer._stopped

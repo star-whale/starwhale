@@ -23,7 +23,7 @@ from starwhale.api._impl.metric import MetricKind
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource
 from starwhale.base.client.api.job import JobApi
-from starwhale.api._impl.evaluation.log import EvaluationLogStore
+from starwhale.api._impl.evaluation.log import Evaluation
 from starwhale.base.client.models.models import JobVo, TaskVo
 
 
@@ -68,7 +68,7 @@ class Job(metaclass=ABCMeta):
         raise NotImplementedError
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        evaluation_store = EvaluationLogStore(
+        evaluation_store = Evaluation(
             id=self._get_version(),
             project=self.uri.project,
         )

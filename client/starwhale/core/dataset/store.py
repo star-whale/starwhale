@@ -45,6 +45,7 @@ from starwhale.utils.error import (
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.base.data_type import Link
+from starwhale.base.blob.store import LocalFileStore
 from starwhale.base.uri.resource import Resource, ResourceType
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
@@ -333,7 +334,7 @@ class ObjectStore:
         self,
         backend: str,
         bucket: str = "",
-        dataset_uri: Resource | None = None,
+        resource: Resource | None = None,
         key_prefix: str = "",
         **kw: t.Any,
     ) -> None:
@@ -341,12 +342,11 @@ class ObjectStore:
 
         self.backend: StorageBackend
         if backend == SWDSBackendType.S3:
-            conn = kw.get("conn") or S3Connection.from_env()
-            self.backend = S3StorageBackend(conn)
+            self.backend = S3StorageBackend(kw.get("conn") or S3Connection.from_env())
         elif backend == SWDSBackendType.SignedUrl:
-            if not dataset_uri:
-                raise ValueError("dataset_uri is empty")
-            self.backend = SignedUrlBackend(dataset_uri)
+            if not isinstance(resource, Resource):
+                raise FieldTypeOrValueError(f"{resource} is not Resource type")
+            self.backend = SignedUrlBackend(resource)
         elif backend == SWDSBackendType.Http:
             self.backend = HttpBackend()
         else:
@@ -358,19 +358,19 @@ class ObjectStore:
         return f"ObjectStore backend:{self.backend}"
 
     def __repr__(self) -> str:
-        return f"ObjectStored:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
+        return f"ObjectStored backend:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
-    def from_data_link_uri(cls, data_link: Link) -> ObjectStore:
-        if not data_link:
-            raise FieldTypeOrValueError("data_link is empty")
+    def from_link(cls, link: Link) -> ObjectStore:
+        if not link:
+            raise FieldTypeOrValueError("link is empty")
 
         # TODO: support other uri type
-        if data_link.scheme in S3Connection.supported_schemes:
+        if link.scheme in S3Connection.supported_schemes:
             backend = SWDSBackendType.S3
-            conn = S3Connection.from_uri(data_link.uri)
+            conn = S3Connection.from_uri(link.uri)
             bucket = conn.bucket
-        elif data_link.scheme in ["http", "https"]:
+        elif link.scheme in ["http", "https"]:
             backend = SWDSBackendType.Http
             bucket = ""
             conn = None
@@ -382,48 +382,34 @@ class ObjectStore:
         return cls(backend=backend, bucket=bucket, conn=conn)
 
     @classmethod
-    def from_dataset_uri(cls, dataset_uri: Resource) -> ObjectStore:
-        if dataset_uri.typ != ResourceType.dataset:
-            raise NoSupportError(f"{dataset_uri} is not dataset uri")
-        return cls(
-            backend=SWDSBackendType.LocalFS,
-            bucket=str(DatasetStorage(dataset_uri).data_dir.absolute()),
-        )
+    def to_signed_http_backend(cls, resource: Resource) -> ObjectStore:
+        if not resource.instance.is_cloud:
+            raise RuntimeError(f"{resource} is not server/cloud resource")
+
+        return cls(backend=SWDSBackendType.SignedUrl, resource=resource)
 
     @classmethod
-    def to_signed_http_backend(cls, dataset_uri: Resource) -> ObjectStore:
-        if dataset_uri.typ != ResourceType.dataset:
-            raise NoSupportError(f"{dataset_uri} is not dataset uri")
-        return cls(backend=SWDSBackendType.SignedUrl, dataset_uri=dataset_uri)
-
-    @classmethod
-    def get_store(
-        cls, link: Link, owner: t.Optional[t.Union[str, Resource]] = None
-    ) -> ObjectStore:
+    def get_store(cls, link: Link, owner: str | Resource | None = None) -> ObjectStore:
         with cls._store_lock:
-            _up = urlparse(link.uri)
-            _parts = _up.path.lstrip("/").split("/", 1)
-            _cache_key = link.uri.replace(_parts[-1], "")
-            _k = f"{str(owner)}.{_cache_key}"
-            _store = cls._stores.get(_k)
+            key = f"{link.owner}.{link.scheme}"
+            if link.scheme in S3Connection.supported_schemes:
+                _parts = urlparse(link.uri).path.lstrip("/").split("/", 1)
+                key = f"{key}.{link.uri.replace(_parts[-1], '')}"
+
+            _store = cls._stores.get(key)
             if _store:
                 return _store
-            if not owner:
-                _store = ObjectStore.from_data_link_uri(link)
-                cls._stores[_k] = _store
-                return _store
+
             if isinstance(owner, str):
-                owner = Resource(owner, ResourceType.dataset)
-            if owner.instance.is_cloud:
+                owner = Resource(owner)
+
+            if owner and owner.instance.is_cloud:
                 _store = ObjectStore.to_signed_http_backend(owner)
             else:
-                if link.scheme and link.scheme != "fs":
-                    _store = ObjectStore.from_data_link_uri(link)
-                else:
-                    _store = ObjectStore.from_dataset_uri(owner)
+                _store = ObjectStore.from_link(link)
 
-            console.debug(f"new store backend created for key: {_k}")
-            cls._stores[_k] = _store
+            console.debug(f"new store backend{_store} created for key: {key}")
+            cls._stores[key] = _store
             return _store
 
 
@@ -491,33 +477,37 @@ class LocalFSStorageBackend(StorageBackend):
     def __init__(self) -> None:
         super().__init__(kind=SWDSBackendType.LocalFS)
 
+    def _get_file_path(self, link: Link) -> Path:
+        uri = link.uri
+        if Path(uri).exists():
+            return Path(uri)
+
+        dataset_object_store_path = DatasetStorage._get_object_store_path(uri)
+        if dataset_object_store_path.exists():
+            return dataset_object_store_path
+
+        object_store_path = LocalFileStore().get(uri)
+        if object_store_path and object_store_path.exists():
+            return object_store_path.path
+
+        raise NotFoundError(f"file {uri} not found")
+
     def _make_file(
         self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
-        _key_l, _start, _end = key_compose
-        _key = _key_l.uri
+        link, start, end = key_compose
+        fpath = self._get_file_path(link)
+        end = min(end, fpath.stat().st_size)
         # TODO: tune reopen file performance, merge files
-        data_path = DatasetStorage._get_object_store_path(_key)
-        # TODO: remove dataset data_dir
-        if not data_path.exists():
-            bucket = kw["bucket"]
-            bucket_path = (
-                Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
-            )
-            data_path = bucket_path / _key[: DatasetStorage.short_sign_cnt]
-            if not data_path.exists():
-                data_path = bucket_path / _key
-
-        _end = min(_end, data_path.stat().st_size)
-        with data_path.open("rb") as f:
-            f.seek(_start)
-            return io.BytesIO(f.read(_end - _start + 1))  # type: ignore
+        with fpath.open("rb") as f:
+            f.seek(start)
+            return io.BytesIO(f.read(end - start + 1))  # type: ignore
 
 
 class SignedUrlBackend(StorageBackend, CloudRequestMixed):
-    def __init__(self, dataset_uri: Resource) -> None:
+    def __init__(self, resource: Resource) -> None:
         super().__init__(kind=SWDSBackendType.SignedUrl)
-        self.dataset_uri = dataset_uri
+        self.resource = resource
 
     @http_retry
     def _make_file(
@@ -525,21 +515,21 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
         return HttpBufferedFileLike(
-            url=_key.signed_uri or self.sign_uri(_key.uri),
+            url=_key.signed_uri or self._do_sign(_key.uri),
             headers={"Range": f"bytes={_start or 0}-{_end or sys.maxsize}"},
             timeout=90,
         )
 
-    def sign_uri(self, uri: str) -> str:
-        r = sign_dataset_uris(self.dataset_uri, [uri])
+    def _do_sign(self, uri: str) -> str:
+        r = get_signed_urls(self.resource, [uri])
         return r.get(uri, "")
 
 
-def sign_dataset_uris(dataset_uri: Resource, uris: t.List[str]) -> t.Dict[str, str]:
+def get_signed_urls(resource: Resource, uris: t.List[str]) -> t.Dict[str, str]:
     r = CloudRequestMixed.do_http_request(
-        f"/project/{dataset_uri.project.id}/{dataset_uri.typ.name}/{dataset_uri.name}/uri/sign-links",
+        f"/project/{resource.project.id}/{resource.typ.name}/{resource.name}/uri/sign-links",
         method=HTTPMethod.POST,
-        instance=dataset_uri.instance,
+        instance=resource.instance,
         params={
             "expTimeMillis": int(
                 os.environ.get(

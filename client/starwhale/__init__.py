@@ -16,7 +16,7 @@ from starwhale.api.dataset import Dataset
 from starwhale.utils.debug import init_logger
 from starwhale.api.instance import login, logout
 from starwhale.base.context import Context, pass_context
-from starwhale.api.evaluation import PipelineHandler, EvaluationLogStore
+from starwhale.api.evaluation import Evaluation, PipelineHandler
 from starwhale.api.experiment import fine_tune
 from starwhale.base.data_type import (
     Line,
@@ -49,7 +49,7 @@ __all__ = [
     "job",
     "Resource",
     "PipelineHandler",
-    "EvaluationLogStore",
+    "Evaluation",
     "multi_classification",
     "Dataset",
     "dataset",

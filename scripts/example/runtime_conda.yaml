@@ -3,6 +3,7 @@ dependencies:
   - conda:
       - numpy
       - requests
+      - pillow
   - pip:
       - git+https://github.com/star-whale/ci-helper.git@9ece0c94648c2504f3f1bdcd2a49c64aa0b4f2a3#subdirectory=examples/dummy
   - wheels:

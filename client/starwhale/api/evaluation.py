@@ -2,20 +2,18 @@ from ._impl.evaluation import predict, evaluate, PipelineHandler
 from ._impl.evaluation.log import (
     log,
     scan,
+    Evaluation,
     log_result,
     get_summary,
     log_summary,
     scan_results,
-    EvaluationLogStore,
-    get_log_store_from_context,
 )
 
 iter = scan
 
 __all__ = [
-    "EvaluationLogStore",
+    "Evaluation",
     "PipelineHandler",
-    "get_log_store_from_context",
     "predict",
     "evaluate",
     "log",

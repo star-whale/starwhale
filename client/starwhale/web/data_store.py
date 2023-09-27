@@ -9,7 +9,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.web.response import success, SuccessResp
 from starwhale.base.uri.project import Project
 from starwhale.api._impl.data_store import SwType, _get_type, TableDesc, LocalDataStore
-from starwhale.api._impl.evaluation.log import EvaluationLogStore
+from starwhale.api._impl.evaluation.log import Evaluation
 
 router = APIRouter()
 prefix = "datastore"
@@ -103,7 +103,7 @@ def _is_eval_summary(request: QueryTableRequest) -> t.Union[str, None]:
 
 
 def _eval_summary(eval_id: str) -> SuccessResp:
-    evaluation = EvaluationLogStore(
+    evaluation = Evaluation(
         id=eval_id,
         project=Project("self"),
     )

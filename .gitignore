@@ -55,6 +55,7 @@ example/speech_command/data/
 example/speech_command/models/
 example/datasets/*/data
 .starwhale
+scripts/example/*.whl
 
 # UI
 node_modules

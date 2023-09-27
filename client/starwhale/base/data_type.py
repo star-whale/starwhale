@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 import numpy
 
 from starwhale.consts import SHORT_VERSION_CNT
-from starwhale.utils.fs import FilePosition
+from starwhale.utils.fs import DIGEST_SIZE, FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
     NoSupportError,
@@ -214,6 +214,11 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
 
 
 class Binary(BaseArtifact, SwObject):
+    # TODO: use the better way to calculate the min size
+    # Detect if the bytes is too long to encode to Binary for the datastore efficiency
+    # size = DIGEST_SIZE + Binary Struct size + Link Object Struct size
+    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
+
     def __init__(
         self,
         fp: _TArtifactFP = b"",
@@ -671,6 +676,10 @@ class Polygon(ASDictMixin, SwObject):
 
 class Text(BaseArtifact, SwObject):
     DEFAULT_ENCODING = "utf-8"
+    # TODO: use the better way to calculate the min size
+    # Detect if the str is too long to encode to Text for the datastore efficiency
+    # size = DIGEST_SIZE + Text Struct size + Link Object Struct size
+    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
 
     def __init__(
         self,

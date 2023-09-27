@@ -23,9 +23,9 @@ def flatten(
         index = 0
         for _d in data:
             if isinstance(_d, dict):
-                _f_dict(_d, _prefix=f"{_prefix}")
+                _f_dict(_d, _prefix=f"{_prefix}{index}/")
             elif isinstance(_d, (tuple, list)):
-                _f_sequence(_d, _prefix=f"{_prefix}")
+                _f_sequence(_d, _prefix=f"{_prefix}{index}/")
             else:
                 rt[f"{_prefix}{index}"] = _d
             index += 1

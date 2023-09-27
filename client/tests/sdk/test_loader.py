@@ -13,8 +13,9 @@ from starwhale.utils import config
 from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
-from starwhale.utils.error import ParameterError
+from starwhale.utils.error import NotFoundError, ParameterError
 from starwhale.base.data_type import Link, Image, GrayscaleImage
+from starwhale.base.blob.store import LocalFileStore
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.model import DatasetSummary
 from starwhale.core.dataset.store import (
@@ -81,13 +82,14 @@ class TestDataLoader(TestCase):
         assert isinstance(loader, DataLoader)
         assert isinstance(loader.session_consumption, StandaloneTDSC)
 
-        fname = "data"
+        raw_data_fpath = os.path.join(ROOT_DIR, "data", "dataset", "mnist", "data")
+        self.fs.add_real_file(raw_data_fpath)
         m_scan.return_value = [
             TabularDatasetRow(
                 features={
                     "image": GrayscaleImage(
                         link=Link(
-                            fname,
+                            raw_data_fpath,
                             offset=32,
                             size=784,
                             _swds_bin_offset=0,
@@ -99,12 +101,6 @@ class TestDataLoader(TestCase):
                 id="path/0",
             )
         ]
-
-        raw_data_fpath = os.path.join(ROOT_DIR, "data", "dataset", "mnist", "data")
-        self.fs.add_real_file(raw_data_fpath)
-        data_dir = DatasetStorage(self.dataset_uri).data_dir
-        ensure_dir(data_dir)
-        shutil.copy(raw_data_fpath, str(data_dir / fname))
 
         ObjectStore._stores = {}
 
@@ -118,21 +114,11 @@ class TestDataLoader(TestCase):
         assert len(_data["image"].to_bytes()) == 28 * 28
         assert isinstance(_data["image"], Image)
 
-        assert list(ObjectStore._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ]
-        assert ObjectStore._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ].bucket == str(data_dir)
-        assert (
-            ObjectStore._stores[
-                "local/project/self/dataset/mnist/version/1122334455667788."
-            ].backend.kind
-            == SWDSBackendType.LocalFS
-        )
-        assert not ObjectStore._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ].key_prefix
+        key = "local/project/self/dataset/mnist/version/1122334455667788."
+
+        assert list(ObjectStore._stores.keys()) == [key]
+        assert ObjectStore._stores[key].backend.kind == SWDSBackendType.LocalFS
+        assert not ObjectStore._stores[key].key_prefix
 
         loader = get_data_loader("mnist/version/1122334455667788")
         assert isinstance(loader, DataLoader)
@@ -289,13 +275,13 @@ class TestDataLoader(TestCase):
             assert len(ObjectStore._stores) == 4
             assert (
                 ObjectStore._stores[
-                    "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1/starwhale/"
+                    "local/project/self/dataset/mnist/version/1122334455667788.s3.s3://127.0.0.1/starwhale/"
                 ].backend.kind
                 == SWDSBackendType.S3
             )
             assert (
                 ObjectStore._stores[
-                    "local/project/self/dataset/mnist/version/1122334455667788.s3://127.0.0.1:9000/starwhale/"
+                    "local/project/self/dataset/mnist/version/1122334455667788.s3.s3://127.0.0.1:9000/starwhale/"
                 ].bucket
                 == "starwhale"
             )
@@ -423,13 +409,13 @@ class TestDataLoader(TestCase):
         loader = get_data_loader(self.dataset_uri)
         assert isinstance(loader, DataLoader)
 
-        fname = "data_ubyte_0.swds_bin"
+        bf = LocalFileStore().put(os.path.join(self.swds_dir, "data_ubyte_0.swds_bin"))
         m_scan.return_value = [
             TabularDatasetRow(
                 features={
                     "image": GrayscaleImage(
                         link=Link(
-                            fname,
+                            bf.hash,
                             offset=32,
                             size=784,
                             _swds_bin_offset=0,
@@ -444,7 +430,7 @@ class TestDataLoader(TestCase):
                 features={
                     "image": GrayscaleImage(
                         link=Link(
-                            fname,
+                            bf.hash,
                             offset=32,
                             size=784,
                             _swds_bin_offset=0,
@@ -457,9 +443,6 @@ class TestDataLoader(TestCase):
             ),
         ]
 
-        data_dir = DatasetStorage(self.dataset_uri).data_dir
-        ensure_dir(data_dir)
-        shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
         ObjectStore._stores = {}
 
         rows = list(loader)
@@ -473,20 +456,11 @@ class TestDataLoader(TestCase):
         assert len(_data["image"].to_bytes()) == 784
         assert isinstance(_data["image"].to_bytes(), bytes)
 
-        assert list(ObjectStore._stores.keys()) == [
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ]
-        backend = ObjectStore._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ].backend
+        key = "local/project/self/dataset/mnist/version/1122334455667788."
+        assert list(ObjectStore._stores.keys()) == [key]
+        backend = ObjectStore._stores[key].backend
         assert isinstance(backend, LocalFSStorageBackend)
         assert backend.kind == SWDSBackendType.LocalFS
-        assert ObjectStore._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ].bucket == str(data_dir)
-        assert not ObjectStore._stores[
-            "local/project/self/dataset/mnist/version/1122334455667788."
-        ].key_prefix
 
     @Mocker()
     @patch.dict(os.environ, {"SW_TOKEN": "a", "SW_POD_NAME": "b"})
@@ -806,5 +780,5 @@ class TestDataLoader(TestCase):
             )
         ]
         loader = get_data_loader(self.dataset_uri)
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(NotFoundError):
             [d.index for d in loader]

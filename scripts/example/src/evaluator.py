@@ -9,17 +9,23 @@ import numpy
 from starwhale import (
     Text,
     Image,
-    evaluation, multi_classification,
     Context,
     Dataset,
     handler,
     IntInput,
     ListInput,
-    HandlerInput,
+    evaluation,
     ContextInput,
     DatasetInput,
+    HandlerInput,
+    multi_classification,
 )
 from starwhale.utils import in_container
+
+try:
+    from .util import random_image
+except ImportError:
+    from util import random_image
 
 
 def timing(func: t.Callable) -> t.Any:
@@ -53,6 +59,7 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
     return {
         "txt": data["txt"].to_str(),
         "value": numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),
+        "image": random_image(),
     }
 
 
@@ -73,8 +80,11 @@ def evaluate(ppl_result: t.Iterator):
         assert _data["_mode"] == "plain"
         assert "placeholder" not in _data["input"]
         assert isinstance(_data["input"]["img"], Image)
+        assert len(_data["input"]["img"].to_bytes()) > 0
         assert _data["input"]["img"].owner
         assert isinstance(_data["input"]["txt"], Text)
+        assert isinstance(_data["output/image"], Image)
+        assert len(_data["output/image"].to_bytes()) > 0
 
         label.append(_data["input"]["label"])
         result.append(_data["output/txt"])
@@ -84,7 +94,6 @@ def evaluate(ppl_result: t.Iterator):
 
 class MyInput(HandlerInput):
     def parse(self, user_input):
-
         return f"MyInput {user_input}"
 
 

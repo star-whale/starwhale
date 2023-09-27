@@ -22,7 +22,7 @@ class TestMultiClassificationMetric(TestCase):
     @pytest.mark.filterwarnings(
         "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
     )
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
+    @patch("starwhale.api.evaluation.log_summary")
     def test_multi_classification_metric(self, log_metric_mock: MagicMock) -> None:
         def _cmp(handler, data):
             return (
@@ -48,8 +48,8 @@ class TestMultiClassificationMetric(TestCase):
     @pytest.mark.filterwarnings(
         "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
     )
-    @patch("starwhale.api._impl.wrapper.Evaluation.log_summary_metrics")
-    @patch("starwhale.api._impl.wrapper.Evaluation.log")
+    @patch("starwhale.api.evaluation.log_summary")
+    @patch("starwhale.api.evaluation.log")
     def test_multi_classification_metric_with_pa(
         self, log_mock: MagicMock, log_metric_mock: MagicMock
     ) -> None:
@@ -84,7 +84,7 @@ class TestMultiClassificationMetric(TestCase):
         assert metric_call["kind"] == rt["kind"]
         assert "macro avg/f1-score" in metric_call
 
-        log_calls = set([args[1]["table_name"] for args in log_mock.call_args_list])
+        log_calls = set([args[0][0] for args in log_mock.call_args_list])
         assert "labels" in log_calls
         assert "confusion_matrix/binarylabel" in log_calls
         assert "roc_auc/9" in log_calls
@@ -99,9 +99,9 @@ class TestMultiClassificationMetric(TestCase):
 
         roc_1_calls = set(
             [
-                f"{args[1]['table_name']},{args[1]['id']}"
+                f"{args[0][0]},{args[1]['id']}"
                 for args in log_mock.call_args_list
-                if args[1]["table_name"] == "roc_auc/1"
+                if args[0][0] == "roc_auc/1"
             ]
         )
         assert len(roc_1_calls) > 1

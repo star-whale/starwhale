@@ -16,7 +16,7 @@ from starwhale.base.models.job import LocalJobInfo, RemoteJobInfo
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.base.client.api.job import JobApi
-from starwhale.api._impl.evaluation.log import EvaluationLogStore
+from starwhale.api._impl.evaluation.log import Evaluation
 from starwhale.base.client.models.models import JobVo
 
 
@@ -39,17 +39,17 @@ class Job:
     ) -> None:
         self.uri = uri
         self._basic_info: LocalJobInfo | JobVo = basic_info or self._get_basic_info()
-        self._evaluation_store: EvaluationLogStore | None = None
+        self._evaluation_store: Evaluation | None = None
 
     @property
-    def evaluation_store(self) -> EvaluationLogStore:
+    def evaluation_store(self) -> Evaluation:
         if self._evaluation_store is None:
             info = self.info()
             if isinstance(info, LocalJobInfo):
                 eval_id = info.manifest.version
             else:
                 eval_id = info.job.uuid
-            self._evaluation_store = EvaluationLogStore(
+            self._evaluation_store = Evaluation(
                 id=eval_id,
                 project=self.uri.project,
             )
