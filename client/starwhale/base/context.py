@@ -26,7 +26,6 @@ class Context:
         log_project: t.Optional[Project] = None,
     ):
         self.run_project = run_project or Project()
-        self.project = self.run_project.name
         self.log_project = log_project or self.run_project
         self.version = version
         self.step = step
