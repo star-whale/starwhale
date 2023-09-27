@@ -1684,7 +1684,7 @@ class LocalTable:
             manifest.key_column_type = key_type_str
 
         data_blocks = self._load_data_blocks()
-        console.debug(f"load {len(data_blocks)} data blocks")
+        console.trace(f"load {len(data_blocks)} data blocks")
 
         key_column = self.key_column
         if key_column is None:

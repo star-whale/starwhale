@@ -153,6 +153,7 @@ class StepExecutor:
         dataset_uris: t.List[str],
         task_num: int = 0,
         handler_args: t.List[str] | None = None,
+        dataset_head: int = 0,
     ) -> None:
         self.step = step
         self.task_num = step.task_num if task_num <= 0 else task_num
@@ -162,6 +163,7 @@ class StepExecutor:
         self.workdir = workdir
         self.version = version
         self.handler_args = handler_args or []
+        self.dataset_head = dataset_head
 
     def __str__(self) -> str:
         return f"StepExecutor: step-{self.step}, version-{self.version}"
@@ -183,6 +185,7 @@ class StepExecutor:
                     total=self.task_num,
                     index=index,
                     dataset_uris=self.dataset_uris,
+                    dataset_head=self.dataset_head,
                     workdir=self.workdir,
                 ),
                 handler_args=self.handler_args,

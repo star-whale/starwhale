@@ -25,6 +25,7 @@ class Scheduler:
         handler_args: t.List[str] | None = None,
         run_project: t.Optional[Project] = None,
         log_project: t.Optional[Project] = None,
+        dataset_head: int = 0,
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
@@ -34,6 +35,7 @@ class Scheduler:
         self.workdir = workdir
         self.version = version
         self.handler_args = handler_args or []
+        self.dataset_head = dataset_head
 
     def run(
         self,
@@ -75,6 +77,7 @@ class Scheduler:
                     workdir=self.workdir,
                     version=self.version,
                     handler_args=self.handler_args,
+                    dataset_head=self.dataset_head,
                 )
                 for v in vertices_to_run
             ]
@@ -114,6 +117,7 @@ class Scheduler:
             dataset_uris=self.dataset_uris,
             workdir=self.workdir,
             version=self.version,
+            dataset_head=self.dataset_head,
         ).execute()
 
         console.info(
@@ -143,6 +147,7 @@ class Scheduler:
                 total=task_num,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
+                dataset_head=self.dataset_head,
                 workdir=self.workdir,
             ),
             step=_step,
