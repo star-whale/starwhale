@@ -81,7 +81,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
     private static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report)/([^/]+).*$");
+            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report|template)/([^/]+).*$");
 
     public ProjectNameExtractorDataStoreMixed(
             @Value("${sw.controller.api-prefix}") String apiPrefix,
