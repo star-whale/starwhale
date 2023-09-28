@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.template.mapper.TemplateMapper;
 import ai.starwhale.mlops.domain.job.template.po.TemplateEntity;
-import ai.starwhale.mlops.exception.SwValidationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -39,7 +38,7 @@ public class TemplateMapperTest extends MySqlContainerHolder {
     public void testInsertAndFind() {
         var entity = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
         mapper.insert(entity);
-        assertThrows(SwValidationException.class, () -> mapper.insert(entity));
+        assertThrows(DuplicateKeyException.class, () -> mapper.insert(entity));
         Assertions.assertEquals(entity, mapper.selectById(entity.getId()));
         Assertions.assertEquals(entity, mapper.selectByNameForUpdate(entity.getName(), entity.getProjectId()));
     }
