@@ -1424,6 +1424,15 @@ class ResponseMessageListJobTemplateVo(BaseModel):
     data: List[JobTemplateVo]
 
 
+class ResponseMessageJobTemplateVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: JobTemplateVo
+
+
 class AttributeValueVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
