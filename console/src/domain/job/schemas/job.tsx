@@ -96,6 +96,7 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'datasetVer
     devPassword: string
     isTimeToLiveInSec?: boolean
     timeToLiveInSec?: number
+    templateId?: number
 }
 
 export type IJobResultSchema = any
@@ -103,4 +104,14 @@ export type IJobResultSchema = any
 export interface IExecInTaskSchema {
     stdout: string
     stderr: string
+}
+
+export interface IJobTemplateSchema {
+    id: string
+    name: string
+    jobId: number
+}
+export interface ICeateJobTemplateSchema {
+    name: string
+    jobUrl: string
 }

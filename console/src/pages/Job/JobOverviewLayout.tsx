@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
+import JobActionGroup from '@/domain/job/components/JobActionGroup'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -67,7 +68,11 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     }, [projectId, jobId, t])
 
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems}>
+        <BaseSubLayout
+            breadcrumbItems={breadcrumbItems}
+            navItems={navItems}
+            extra={<JobActionGroup hasText hasSaveAs />}
+        >
             {children}
         </BaseSubLayout>
     )

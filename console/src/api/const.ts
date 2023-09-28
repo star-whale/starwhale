@@ -28,6 +28,7 @@ export const Privileges = {
     'job.cancel': true,
     'job.pause': true,
     'job.resume': true,
+    'job.saveas': true,
     // menu
     'project.menu.trash': true,
     // global

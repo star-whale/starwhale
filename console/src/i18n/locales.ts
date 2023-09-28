@@ -557,6 +557,38 @@ const job = {
         en: 'Rerun',
         zh: '重新运行',
     },
+    'job.saveas': {
+        en: 'Save as',
+        zh: '保存为模板',
+    },
+    'job.saveas.title': {
+        en: 'Saved as a model run template',
+        zh: '保存为模型运行模板',
+    },
+    'job.saveas.describe': {
+        en: "Supporting to save this job's running configuration as a model run template",
+        zh: '支持将该任务的运行配置保存为模型运行模板',
+    },
+    'job.saveas.template.name': {
+        en: 'Template Name',
+        zh: '模板名称',
+    },
+    'job.saveas.template.success': {
+        en: 'Save as template success',
+        zh: '模板保存成功',
+    },
+    'job.form.template': {
+        en: 'Template',
+        zh: '运行模板',
+    },
+    'job.form.template.recently': {
+        en: 'Recently used',
+        zh: '最近使用',
+    },
+    'job.form.template.all': {
+        en: 'All',
+        zh: '全部',
+    },
 }
 
 const evaluation = {

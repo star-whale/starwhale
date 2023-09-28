@@ -7,6 +7,8 @@ import {
     JobActionType,
     IJobResultSchema,
     IExecInTaskSchema,
+    IJobTemplateSchema,
+    ICeateJobTemplateSchema,
 } from '../schemas/job'
 
 export async function listJobs(projectId: string, query: IListQuerySchema): Promise<IListSchema<IJobSchema>> {
@@ -57,5 +59,25 @@ export async function pinJob(projectId: string, jobId: string, pinned: boolean):
     const resp = await axios.post<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/pin`, {
         pinned,
     })
+    return resp.data
+}
+
+export async function fetchJobTemplate(projectId: string, templateId: string): Promise<any> {
+    const resp = await axios.get<IJobTemplateSchema>(`/api/v1/project/${projectId}/template/${templateId}`)
+    return resp.data
+}
+
+export async function listJobTemplate(projectId: string): Promise<any> {
+    const resp = await axios.get<IJobTemplateSchema>(`/api/v1/project/${projectId}/template`)
+    return resp.data
+}
+
+export async function listJobRecentTemplate(projectId: string): Promise<any> {
+    const resp = await axios.get<IJobTemplateSchema>(`/api/v1/project/${projectId}/recent-template`)
+    return resp.data
+}
+
+export async function createJobTemplate(projectId: string, data: ICeateJobTemplateSchema): Promise<any> {
+    const resp = await axios.post<ICeateJobTemplateSchema>(`/api/v1/project/${projectId}/template`, data)
     return resp.data
 }
