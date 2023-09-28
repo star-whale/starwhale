@@ -70,7 +70,7 @@ public class TemplateService {
 
     public List<Template> listAll(String projectUrl) {
         var project = projectService.findProject(projectUrl);
-        return mapper.select(project.getId(), -1).stream()
+        return mapper.selectAll(project.getId()).stream()
                 .map(Template::fromEntity).collect(Collectors.toList());
     }
 

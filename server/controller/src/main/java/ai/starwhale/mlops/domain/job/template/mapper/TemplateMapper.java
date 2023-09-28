@@ -53,6 +53,10 @@ public interface TemplateMapper {
     TemplateEntity selectDeletedById(@Param("id") Long id);
 
     @Select("SELECT " + COLUMNS + " FROM job_template "
+            + "WHERE project_id = #{projectId} and deleted_time = 0 order by id desc")
+    List<TemplateEntity> selectAll(@Param("projectId") Long projectId);
+
+    @Select("SELECT " + COLUMNS + " FROM job_template "
             + "WHERE project_id = #{projectId} and deleted_time = 0 order by id desc limit #{limit}")
     List<TemplateEntity> select(@Param("projectId") Long projectId, @Param("limit") int limit);
 

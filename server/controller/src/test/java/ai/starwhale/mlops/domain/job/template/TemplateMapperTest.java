@@ -51,6 +51,7 @@ public class TemplateMapperTest extends MySqlContainerHolder {
         mapper.insert(entity1);
         mapper.insert(entity2);
         Assertions.assertEquals(2, mapper.select(1L, 10).size());
+        Assertions.assertEquals(2, mapper.selectAll(1L).size());
     }
 
     @Test
