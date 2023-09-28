@@ -35,14 +35,13 @@ public class Template {
         if  (template == null) {
             return null;
         }
-        return new TemplateEntity(
-                template.getId(),
-                template.getName(),
-                template.getJobId(),
-                template.getProjectId(),
-                template.getOwnerId(),
-                null
-        );
+        return TemplateEntity.builder()
+                .id(template.getId())
+                .name(template.getName())
+                .jobId(template.getJobId())
+                .projectId(template.getProjectId())
+                .ownerId(template.getOwnerId())
+                .build();
     }
 
     public static Template fromEntity(TemplateEntity templateEntity) {

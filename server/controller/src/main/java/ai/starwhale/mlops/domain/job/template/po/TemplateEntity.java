@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.template.po;
 
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,11 +28,23 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TemplateEntity {
+public class TemplateEntity implements BundleEntity {
     private Long id;
     private String name;
     private Long jobId;
     private Long projectId;
     private Long ownerId;
     private Date createdTime;
+    private Date modifiedTime;
+    private Integer isDeleted;
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public Date getModifiedTime() {
+        return modifiedTime;
+    }
 }

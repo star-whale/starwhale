@@ -76,20 +76,17 @@ public class TemplateServiceTest {
 
     @Test
     public void testDelete() {
-        given(projectService.findProject(anyString())).willReturn(Project.builder().id(11L).build());
-
-        given(mapper.delete(1L, 11L)).willReturn(1);
-        assertTrue(templateService.delete("p-1", 1L));
+        given(mapper.remove(1L)).willReturn(1);
+        assertTrue(templateService.delete(1L));
     }
 
     @Test
     public void testGet() {
-        given(projectService.findProject(anyString())).willReturn(Project.builder().id(11L).build());
-        given(mapper.selectById(1L, 11L)).willReturn(
+        given(mapper.selectById(1L)).willReturn(
                 TemplateEntity.builder().id(1L).projectId(11L).jobId(1L).build()
         );
 
-        assertNotNull(templateService.get("p-1", 1L));
+        assertNotNull(templateService.get(1L));
     }
 
     @Test

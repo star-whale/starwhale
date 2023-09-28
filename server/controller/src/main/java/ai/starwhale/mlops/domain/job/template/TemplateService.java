@@ -60,14 +60,12 @@ public class TemplateService {
         ) > 0;
     }
 
-    public boolean delete(String projectUrl, Long id) {
-        var project = projectService.findProject(projectUrl);
-        return mapper.delete(id, project.getId()) > 0;
+    public boolean delete(Long id) {
+        return mapper.remove(id) > 0;
     }
 
-    public Template get(String projectUrl, Long id) {
-        var project = projectService.findProject(projectUrl);
-        return Template.fromEntity(mapper.selectById(id, project.getId()));
+    public Template get(Long id) {
+        return Template.fromEntity(mapper.selectById(id));
     }
 
     public List<Template> listAll(String projectUrl) {

@@ -26,6 +26,7 @@ import ai.starwhale.mlops.common.util.HttpUtil.Resources;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.template.TemplateDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -72,6 +73,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
     private final ReportDao reportDao;
+    private final TemplateDao templateDao;
 
     static final String PATH_LIST_TABLES = "/datastore/listTables";
     static final String PATH_UPDATE_TABLE = "/datastore/updateTable";
@@ -90,7 +92,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             ModelDao modelDao,
             DatasetDao datasetDao,
             RuntimeDao runtimeDao,
-            ReportDao reportDao) {
+            ReportDao reportDao, TemplateDao templateDao) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
         this.projectService = projectService;
@@ -100,6 +102,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
         this.reportDao = reportDao;
+        this.templateDao = templateDao;
     }
 
     @Override
@@ -210,7 +213,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
                 "job", jobDao,
                 "dataset", datasetDao,
                 "model", modelDao,
-                "report", reportDao
+                "report", reportDao,
+                "template", templateDao
         );
         if (!accessor.containsKey(resourceType)) {
             return;

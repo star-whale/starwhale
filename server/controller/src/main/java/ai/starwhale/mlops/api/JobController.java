@@ -20,13 +20,11 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
-import ai.starwhale.mlops.api.protocol.job.CreateJobTemplateRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobTemplateVo;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
@@ -44,7 +42,6 @@ import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
-import ai.starwhale.mlops.domain.job.template.TemplateService;
 import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -56,10 +53,7 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -92,7 +86,6 @@ public class JobController {
     private final InvokerManager<String, String> jobActions;
     private final FeaturesProperties featuresProperties;
     private final EventService eventService;
-    private final TemplateService templateService;
 
     private final RunService runService;
 
@@ -105,7 +98,6 @@ public class JobController {
             DagQuerier dagQuerier,
             FeaturesProperties featuresProperties,
             EventService eventService,
-            TemplateService templateService,
             RunService runService
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
@@ -116,7 +108,6 @@ public class JobController {
         this.dagQuerier = dagQuerier;
         this.featuresProperties = featuresProperties;
         this.eventService = eventService;
-        this.templateService = templateService;
         this.runService = runService;
         var actions = InvokerManager.<String, String>create()
                 .addInvoker("cancel", jobServiceForWeb::cancelJob);
@@ -426,63 +417,5 @@ public class JobController {
         }
 
         return ResponseEntity.ok(Code.success.asResponse(eventService.getEventsForJob(jobUrl, request)));
-    }
-
-    @Operation(summary = "Add Template for job")
-    @PostMapping(value = "/project/{projectUrl}/job/template", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> addTemplate(
-            @PathVariable String projectUrl,
-            @Valid @RequestBody CreateJobTemplateRequest request) {
-        templateService.add(projectUrl, request.getJobUrl(), request.getName());
-        return ResponseEntity.ok(Code.success.asResponse("success"));
-    }
-
-    @Operation(summary = "Delete Template")
-    @DeleteMapping(value = "/project/{projectUrl}/job/template/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> deleteTemplate(
-            @PathVariable String projectUrl,
-            @PathVariable Long id) {
-        templateService.delete(projectUrl, id);
-        return ResponseEntity.ok(Code.success.asResponse("success"));
-    }
-
-    @Operation(summary = "Get Template")
-    @GetMapping(value = "/project/{projectUrl}/job/template/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<JobTemplateVo>> getTemplate(
-            @PathVariable String projectUrl,
-            @PathVariable Long id) {
-        return ResponseEntity.ok(Code.success.asResponse(JobTemplateVo.fromBo(templateService.get(projectUrl, id))));
-    }
-
-    @Operation(summary = "Get Templates for project")
-    @GetMapping(value = "/project/{projectUrl}/job/template", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<List<JobTemplateVo>>> selectAllInProject(@PathVariable String projectUrl) {
-        return ResponseEntity.ok(Code.success.asResponse(
-                templateService.listAll(projectUrl).stream()
-                        .map(JobTemplateVo::fromBo)
-                        .collect(Collectors.toList())
-        ));
-    }
-
-    @Operation(summary = "Get Recently Templates for project")
-    @GetMapping(value = "/project/{projectUrl}/job/recent-template", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<List<JobTemplateVo>>> selectRecentlyInProject(
-            @PathVariable String projectUrl,
-            @RequestParam(required = false, defaultValue = "5")
-            @Valid
-            @Min(value = 1, message = "limit must be greater than or equal to 1")
-            @Max(value = 50, message = "limit must be less than or equal to 50")
-            Integer limit
-    ) {
-        return ResponseEntity.ok(Code.success.asResponse(
-                templateService.listRecently(projectUrl, limit).stream()
-                        .map(JobTemplateVo::fromBo)
-                        .collect(Collectors.toList())
-        ));
     }
 }

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `job_template`
     job_id          bigint                              NOT NULL,
     project_id      bigint                              NOT NULL,
     owner_id        bigint                              NOT NULL,
+    deleted_time    bigint   DEFAULT 0                  NOT NULL,
     created_time    datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL,
     modified_time   datetime DEFAULT CURRENT_TIMESTAMP  NULL ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX `project_name_UK` (`name`, `project_id`) USING BTREE

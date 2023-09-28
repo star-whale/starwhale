@@ -54,7 +54,6 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
-import ai.starwhale.mlops.domain.job.template.TemplateService;
 import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -99,7 +98,6 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(TemplateService.class),
                 mock(RunService.class));
     }
 
@@ -311,7 +309,6 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(TemplateService.class),
                 mock(RunService.class)
         );
         assertThrows(StarwhaleApiException.class,
@@ -334,7 +331,6 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(TemplateService.class),
                 mock(RunService.class)
         );
         assertThrows(StarwhaleApiException.class,
