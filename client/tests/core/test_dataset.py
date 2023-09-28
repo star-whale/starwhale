@@ -2,14 +2,14 @@ import os
 import json
 import typing as t
 from pathlib import Path
+from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 import yaml
 from click.testing import CliRunner
 from requests_mock import Mocker
-from pyfakefs.fake_filesystem_unittest import TestCase
 
-from tests import ROOT_DIR
+from tests import ROOT_DIR, BaseTestCase
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -45,11 +45,7 @@ _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
 
 
-class StandaloneDatasetTestCase(TestCase):
-    def setUp(self) -> None:
-        self.setUpPyfakefs()
-        sw_config._config = {}
-
+class StandaloneDatasetTestCase(BaseTestCase):
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.api._impl.dataset.model.Dataset.commit")
     @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
@@ -382,7 +378,7 @@ class StandaloneDatasetTestCase(TestCase):
 
         sw = SWCliConfigMixed()
 
-        workdir = "/home/starwhale/myproject"
+        workdir = self.local_storage
         name = "mnist"
 
         ensure_dir(os.path.join(workdir, "data"))
@@ -419,7 +415,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert isinstance(_info, LocalDatasetInfo)
         assert _info.version == build_version
         assert _info.name == name
-        assert _info.path == str(snapshot_workdir.resolve())
+        assert str(Path(_info.path).resolve()) == str(snapshot_workdir.resolve())
 
         tags = sd.tag.list()
         assert set(tags) == {"t0", "t1", "latest", "v0"}
