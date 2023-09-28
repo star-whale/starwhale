@@ -37,7 +37,7 @@ public class TemplateMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testInsertAndFind() {
-        var entity = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).build();
+        var entity = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
         mapper.insert(entity);
         assertThrows(SwValidationException.class, () -> mapper.insert(entity));
         Assertions.assertEquals(entity, mapper.selectById(entity.getId()));
@@ -46,8 +46,8 @@ public class TemplateMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testList() {
-        var entity1 = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).build();
-        var entity2 = TemplateEntity.builder().name("name2").projectId(1L).jobId(2L).build();
+        var entity1 = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
+        var entity2 = TemplateEntity.builder().name("name2").projectId(1L).jobId(2L).ownerId(1L).build();
         mapper.insert(entity1);
         mapper.insert(entity2);
         Assertions.assertEquals(2, mapper.select(1L, 10).size());
@@ -56,10 +56,10 @@ public class TemplateMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testRemoveAndRecover() {
-        var entity1 = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).build();
+        var entity1 = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
         mapper.insert(entity1);
 
-        var duplicate = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).build();
+        var duplicate = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
         assertThrows(DuplicateKeyException.class, () -> mapper.insert(duplicate));
 
         mapper.remove(entity1.getId());

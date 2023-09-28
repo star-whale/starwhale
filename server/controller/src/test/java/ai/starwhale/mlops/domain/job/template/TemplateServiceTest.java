@@ -92,7 +92,7 @@ public class TemplateServiceTest {
     @Test
     public void testList() {
         given(projectService.findProject(anyString())).willReturn(Project.builder().id(11L).build());
-        given(mapper.select(11L, -1)).willReturn(List.of(
+        given(mapper.selectAll(11L)).willReturn(List.of(
                 TemplateEntity.builder().id(1L).projectId(11L).jobId(1L).build(),
                 TemplateEntity.builder().id(2L).projectId(11L).jobId(2L).build(),
                 TemplateEntity.builder().id(3L).projectId(11L).jobId(3L).build()
