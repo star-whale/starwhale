@@ -20,7 +20,10 @@ import ai.starwhale.mlops.domain.run.bo.Run;
 import ai.starwhale.mlops.domain.run.mapper.RunMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class RunDao {
@@ -37,6 +40,14 @@ public class RunDao {
     public Run findById(Long id) {
         RunEntity runEntity = runMapper.get(id);
         return convertEntityToBo(runEntity);
+    }
+
+    public List<Run> findByTaskId(Long taskId) {
+        List<RunEntity> list = runMapper.list(taskId);
+        if (CollectionUtils.isEmpty(list)) {
+            return List.of();
+        }
+        return list.stream().map(this::convertEntityToBo).collect(Collectors.toList());
     }
 
     public Run convertEntityToBo(RunEntity runEntity) {

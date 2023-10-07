@@ -1337,6 +1337,26 @@ class ResponseMessageTaskVo(BaseModel):
     data: TaskVo
 
 
+class Status1(Enum):
+    pending = 'PENDING'
+    running = 'RUNNING'
+    finished = 'FINISHED'
+    failed = 'FAILED'
+
+
+class RunVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    id: Optional[int] = None
+    task_id: Optional[int] = Field(None, alias='taskId')
+    status: Optional[Status1] = None
+    ip: Optional[str] = None
+    start_time: Optional[int] = Field(None, alias='startTime')
+    finish_time: Optional[int] = Field(None, alias='finishTime')
+    failed_reason: Optional[str] = Field(None, alias='failedReason')
+
+
 class EventVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -1537,7 +1557,7 @@ class ResponseMessagePageInfoDatasetVersionVo(BaseModel):
     data: PageInfoDatasetVersionVo
 
 
-class Status1(Enum):
+class Status2(Enum):
     created = 'CREATED'
     ready = 'READY'
     assigning = 'ASSIGNING'
@@ -1566,7 +1586,7 @@ class BuildRecordVo(BaseModel):
     project_id: str = Field(..., alias='projectId')
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
-    status: Status1
+    status: Status2
     type: Type4
     create_time: int = Field(..., alias='createTime')
 
@@ -2012,6 +2032,15 @@ class ResponseMessagePageInfoTaskVo(BaseModel):
     code: str
     message: str
     data: PageInfoTaskVo
+
+
+class ResponseMessageListRunVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: List[RunVo]
 
 
 class Graph(BaseModel):
