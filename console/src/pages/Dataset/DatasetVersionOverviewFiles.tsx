@@ -1,5 +1,4 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
 import { useAuth } from '@/api/Auth'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
@@ -89,9 +88,6 @@ const selector = (s: ITableState) => ({
 
 export default function DatasetVersionFiles() {
     const [t] = useTranslation()
-    const { projectId } = useParams<{
-        projectId: string
-    }>()
     const [page] = usePage()
     const { token } = useAuth()
     const styles = useCardStyles()
@@ -127,16 +123,11 @@ export default function DatasetVersionFiles() {
 
     const options = React.useMemo(
         () => ({
-            parseLink: parseDataSrc(
-                projectId,
-                datasetVersion?.name as string,
-                datasetVersion?.versionInfo.name as string,
-                token as string
-            ),
+            parseLink: parseDataSrc(token as string),
             showPrivate: false,
             showLink: false,
         }),
-        [projectId, datasetVersion, token]
+        [token]
     )
     const $columns = useDatastoreColumns(columnTypes as any, options)
 

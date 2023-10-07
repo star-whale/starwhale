@@ -37,6 +37,7 @@ export function useDatastoreColumns(
         showLink?: boolean
     } = {
         fillWidth: false,
+        parseLink: undefined,
     }
 ): ColumnT[] {
     const columns = React.useMemo(() => {

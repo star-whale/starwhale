@@ -2,24 +2,16 @@ import { tableDataLink } from '@starwhale/core/datastore'
 import _ from 'lodash'
 import { AnnotationType, ArtifactType, ITypeLink, OptionsT, RecordT, SummaryT } from './types'
 
-export const parseDataSrc = _.curry(
-    (
-        projectId: string,
-        datasetVersionName: string,
-        datasetVersionVersionName: string,
-        token: string,
-        link: ITypeLink
-    ) => {
-        const { uri, offset, size } = link ?? {}
-        const src = tableDataLink(projectId, datasetVersionName, datasetVersionVersionName, {
-            uri,
-            offset,
-            size,
-            Authorization: token as string,
-        })
-        return src
-    }
-)
+export const parseDataSrc = _.curry((token: string, link: ITypeLink) => {
+    const { uri, offset, size } = link ?? {}
+    const src = tableDataLink({
+        uri,
+        offset,
+        size,
+        Authorization: token as string,
+    })
+    return src
+})
 
 export const isPrivate = (str: string) => str.startsWith('sys/_') || str.startsWith('_')
 export const isLink = (data: any) => typeof data === 'object' && data?._type && data?._type === ArtifactType.Link
@@ -36,19 +28,13 @@ export const isAnnotationType = (type: string) => {
 export const isAnnotation = (data: any) => (typeof data === 'object' && isAnnotationType(data?._type)) || isMask(data)
 export const isAnnotationHiddenInTable = (data: any) => isAnnotation(data) && !isMask(data)
 
-// from: _owner "http://controller:8082/project/starwhale/dataset/pfp/version/yqpjypceemtxqhk45oy5wjuyfnf3z44gv5pez5tr"
-// to: e2e-20230516/controller/project/1/common-dataset/pfp/03/032e234c996e43a4dbfa1a7936864cc59bafa6465ce1ff6a4a10935c0defb84c375ecc6d32ea78a3ab4451fbed05057899dc66bc2cce1824c8eebc0ce240d7fa
-export function linkWithOwner(data: ITypeLink): string {
-    const matches = data._owner.match(/project\/(.*?)\/dataset\/(.*?)\/version\/(.*)/)
-    const [, projectName, datasetName, datasetVersionName] = matches ?? []
-    const token = (window.localStorage && window.localStorage.getItem('token')) ?? ''
-    return parseDataSrc(projectName, datasetName, datasetVersionName, token, data)
-}
 export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
-    if (data._owner) return linkWithOwner(data)
-    if (data.uri?.startsWith('http')) return data.uri
     if (curryParseLinkFn) return curryParseLinkFn(data)
-    return data.uri
+    if (data.uri?.startsWith('http')) {
+        return data.uri
+    }
+    const token = (window.localStorage && window.localStorage.getItem('token')) ?? ''
+    return parseDataSrc(token, data)
 }
 
 // @FIXME add cache
