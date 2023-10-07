@@ -33,11 +33,6 @@ export async function doJobAction(projectId: string, jobId: string, action: JobA
     return resp.data
 }
 
-export async function fetchJobResult(projectId: string, jobId: string): Promise<IJobResultSchema> {
-    const resp = await axios.get<IJobResultSchema>(`/api/v1/project/${projectId}/job/${jobId}/result`)
-    return resp.data
-}
-
 export async function fetchJobDAG(projectId: string, jobId: string): Promise<IJobResultSchema> {
     const resp = await axios.get<IJobResultSchema>(`/api/v1/project/${projectId}/job/${jobId}/dag`)
     return resp.data

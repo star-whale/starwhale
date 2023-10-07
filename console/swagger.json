@@ -4249,46 +4249,6 @@
                 }
             }
         },
-        "/api/v1/project/{projectUrl}/job/{jobUrl}/result": {
-            "get": {
-                "tags": [
-                    "Job"
-                ],
-                "summary": "Job Evaluation Result",
-                "operationId": "getJobResult",
-                "parameters": [
-                    {
-                        "name": "projectUrl",
-                        "in": "path",
-                        "description": "Project url",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "jobUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageObject"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/project/{projectUrl}/job/{jobUrl}/dag": {
             "get": {
                 "tags": [

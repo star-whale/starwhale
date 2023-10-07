@@ -218,17 +218,6 @@ public class JobController {
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
     }
 
-    @Operation(summary = "Job Evaluation Result")
-    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<Object>> getJobResult(
-            @PathVariable String projectUrl,
-            @PathVariable String jobUrl
-    ) {
-        Object jobResult = jobServiceForWeb.getJobResult(projectUrl, jobUrl);
-        return ResponseEntity.ok(Code.success.asResponse(jobResult));
-    }
-
     @Operation(summary = "Set Job Comment")
     @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")

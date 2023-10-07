@@ -64,7 +64,6 @@ import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,7 +81,6 @@ public class JobServiceForWebTest {
     private JobConverter jobConverter;
     private HotJobHolder hotJobHolder;
     private JobLoader jobLoader;
-    private ResultQuerier resultQuerier;
     private UserService userService;
     private ProjectService projectService;
     private JobDao jobDao;
@@ -97,7 +95,6 @@ public class JobServiceForWebTest {
         given(jobConverter.convert(any(JobEntity.class))).willReturn(JobVo.builder().id("1").build());
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);
-        resultQuerier = mock(ResultQuerier.class);
         userService = mock(UserService.class);
         projectService = mock(ProjectService.class);
         given(projectService.getProjectId(same("1")))
@@ -117,7 +114,7 @@ public class JobServiceForWebTest {
 
         service = new JobServiceForWeb(
                 taskMapper, jobConverter,
-                hotJobHolder, projectService, jobDao, jobLoader, resultQuerier, userService,
+                hotJobHolder, projectService, jobDao, jobLoader, userService,
                 mock(JobUpdateHelper.class),
                 trashService, swTaskScheduler, mock(JobCreator.class));
     }
@@ -142,14 +139,6 @@ public class JobServiceForWebTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.findJob("", "22"));
-    }
-
-    @Test
-    public void testGetJobResult() {
-        given(resultQuerier.resultOfJob(same(1L)))
-                .willReturn("result1");
-        var res = service.getJobResult("", "1");
-        assertThat(res, is("result1"));
     }
 
     @Test

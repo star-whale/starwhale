@@ -207,16 +207,6 @@ public class JobControllerTest {
     }
 
     @Test
-    public void testGetJobResult() {
-        given(jobServiceForWeb.getJobResult(anyString(), anyString()))
-                .willAnswer(invocation -> "result_" + invocation.getArgument(0)
-                        + "_" + invocation.getArgument(1));
-        var resp = controller.getJobResult("project1", "job1");
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), is("result_project1_job1"));
-    }
-
-    @Test
     public void testModifyJobComment() {
         given(jobServiceForWeb.updateJobComment(same("p1"), same("j1"), same("comment1")))
                 .willReturn(true);
