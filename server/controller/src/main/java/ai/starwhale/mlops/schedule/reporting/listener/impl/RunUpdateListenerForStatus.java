@@ -93,7 +93,7 @@ public class RunUpdateListenerForStatus implements RunUpdateListener {
         TaskStatus taskNewStatus;
         Integer retryNum = task.getRetryNum();
         retryNum = null == retryNum ? 0 : retryNum;
-        Integer userRetryLimit = task.getStep().getSpec().getBackOffLimit();
+        Integer userRetryLimit = task.getStep().getSpec().getBackoffLimit();
         Integer backOffLimit = userRetryLimit == null ? this.backOffLimit : userRetryLimit;
         if (
                 run.getStatus() == RunStatus.FAILED

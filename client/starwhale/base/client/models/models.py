@@ -1000,7 +1000,7 @@ class StepSpec(BaseModel):
     name: str
     concurrency: Optional[int] = None
     replicas: int
-    back_off_limit: Optional[int] = Field(None, alias='backOffLimit')
+    backoff_limit: Optional[int] = Field(None, alias='backoffLimit')
     needs: Optional[List[str]] = None
     resources: Optional[List[RuntimeResource]] = None
     env: Optional[List[Env]] = None

@@ -68,8 +68,6 @@ public class Task extends TimeConcern {
     String ip;
     DevWay devWay;
 
-    // use for task status change checking
-    // must be bigger than before when updating
     Run currentRun;
 
 

@@ -75,7 +75,7 @@ public class RunUpdateListenerForStatusTest {
         verify(taskMapper, times(0)).updateTaskStatus(any(), any());
         Task task = Task.builder()
                 .retryNum(0)
-                .step(Step.builder().spec(StepSpec.builder().backOffLimit(3).build()).build())
+                .step(Step.builder().spec(StepSpec.builder().backoffLimit(3).build()).build())
                 .build();
         task = Mockito.spy(task);
         when(hotJobHolder.taskWithId(1L)).thenReturn(task);

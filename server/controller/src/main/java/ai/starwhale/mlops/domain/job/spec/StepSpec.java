@@ -67,7 +67,7 @@ public class StepSpec {
     @NotNull
     private Integer replicas = 1;
 
-    private Integer backOffLimit;
+    private Integer backoffLimit;
 
     private List<String> needs;
 
