@@ -2367,6 +2367,65 @@ class StandaloneRuntimeTestCase(TestCase):
 
         RuntimeTermView.restore(uri)
 
+        m_call.reset_mock()
+        ensure_file(
+            os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+            content=yaml.safe_dump(
+                {
+                    "environment": {
+                        "mode": "conda",
+                        "python": "",
+                        "lock": {"shell": {"python_version": "3.12"}},
+                    },
+                    "dependencies": {
+                        "local_packaged_env": False,
+                        "raw_deps": [],
+                    },
+                }
+            ),
+        )
+        Runtime.restore(Path(workdir))
+        conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
+        assert conda_cmds[0] == [
+            "conda",
+            "create",
+            "--yes",
+            "--quiet",
+            "--prefix",
+            conda_prefix_dir,
+            "-vv",
+            "python=3.12",
+        ]
+
+        m_call.reset_mock()
+        ensure_file(
+            os.path.join(workdir, DEFAULT_MANIFEST_NAME),
+            content=yaml.safe_dump(
+                {
+                    "environment": {
+                        "mode": "conda",
+                        "python": "",
+                    },
+                    "dependencies": {
+                        "local_packaged_env": False,
+                        "raw_deps": [],
+                    },
+                }
+            ),
+        )
+        Runtime.restore(Path(workdir))
+        conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
+        assert conda_cmds[0] == [
+            "conda",
+            "create",
+            "--yes",
+            "--quiet",
+            "--prefix",
+            conda_prefix_dir,
+            "-vv",
+            f"python={get_python_version()}",
+        ]
+
     @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -2380,7 +2439,7 @@ class StandaloneRuntimeTestCase(TestCase):
         sw = SWCliConfigMixed()
         workdir = "/home/starwhale/myproject"
 
-        m_output.return_value = b"3.7"
+        m_output.return_value = get_python_version().encode()
         name = "rttest"
 
         venv_dir = os.path.join(workdir, ".starwhale", "venv")
@@ -2708,7 +2767,7 @@ class StandaloneRuntimeTestCase(TestCase):
         target_dir, yaml_path, _ = self._prepare_conda_runtime_workdir()
         m_call.side_effect = self._render_conda_export
 
-        m_output.side_effect = [b"a", b"3.7.13"]
+        m_output.side_effect = [b"a", get_python_version().encode()]
 
         sw_conda_dir = os.path.join(target_dir, SW_AUTO_DIRNAME, "conda")
         ensure_dir(sw_conda_dir)
@@ -2800,7 +2859,11 @@ class StandaloneRuntimeTestCase(TestCase):
                 "mock @ git+https://abc.com/mock.git@main",
             ]
         )
-        m_output.side_effect = [pip_freeze_content.encode(), conda_dir.encode()]
+        m_output.side_effect = [
+            pip_freeze_content.encode(),
+            get_python_version().encode(),
+            conda_dir.encode(),
+        ]
 
         os.environ[ENV_CONDA_PREFIX] = conda_dir
         StandaloneRuntime.lock(
@@ -2843,7 +2906,7 @@ class StandaloneRuntimeTestCase(TestCase):
     ) -> None:
         target_dir, yaml_path, conda_dir = self._prepare_conda_runtime_workdir()
         m_call.side_effect = self._render_conda_export
-        m_output.side_effect = [b"", conda_dir.encode()]
+        m_output.side_effect = [b"", get_python_version().encode(), conda_dir.encode()]
         m_get_prefix.return_value = conda_dir
 
         StandaloneRuntime.lock(
@@ -2890,7 +2953,11 @@ class StandaloneRuntimeTestCase(TestCase):
                 "mock @ git+https://abc.com/mock.git@main",
             ]
         )
-        m_output.side_effect = [pip_freeze_content.encode(), conda_dir.encode()]
+        m_output.side_effect = [
+            pip_freeze_content.encode(),
+            get_python_version().encode(),
+            conda_dir.encode(),
+        ]
 
         content = load_yaml(yaml_path)
         assert RuntimeLockFileType.CONDA not in content.get("dependencies", {})
