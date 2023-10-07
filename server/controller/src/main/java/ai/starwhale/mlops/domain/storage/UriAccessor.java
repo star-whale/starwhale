@@ -64,8 +64,7 @@ public class UriAccessor {
         return sizeLong > 0 && offsetLong >= 0;
     }
 
-    public byte[] dataOf(String uri, Long offset,
-            Long size) {
+    public byte[] dataOf(String uri, Long offset, Long size) {
         StorageUri storageUri = getStorageUri(uri);
         if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
             try (InputStream is = new URL(uri).openStream()) {

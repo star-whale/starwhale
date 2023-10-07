@@ -22,8 +22,14 @@ import ai.starwhale.mlops.api.protocol.filestorage.ApplySignedUrlRequest;
 import ai.starwhale.mlops.api.protocol.filestorage.FileDeleteRequest;
 import ai.starwhale.mlops.api.protocol.filestorage.SignedUrlResponse;
 import ai.starwhale.mlops.domain.filestorage.FileStorageService;
+import ai.starwhale.mlops.domain.storage.UriAccessor;
+import ai.starwhale.mlops.exception.SwProcessException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +38,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -42,9 +49,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class FileStorageController {
 
     private final FileStorageService service;
+    private final UriAccessor uriAccessor;
 
-    public FileStorageController(FileStorageService service) {
+    public FileStorageController(FileStorageService service, UriAccessor uriAccessor) {
         this.service = service;
+        this.uriAccessor = uriAccessor;
     }
 
     @Operation(summary = "Apply pathPrefix", description = "Apply pathPrefix")
@@ -76,5 +85,24 @@ public class FileStorageController {
     ResponseEntity<ResponseMessage<String>> deletePath(@RequestBody FileDeleteRequest request) {
         service.deleteFiles(request.getPathPrefix(), request.getFiles());
         return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Operation(summary = "Pull file Content", description = "Pull file Content")
+    @GetMapping("/filestorage/file")
+    void pullUriContent(
+            @Parameter(name = "uri", required = true) String uri,
+            @Parameter(name = "offset", description = "offset in the content")
+            @RequestParam(name = "offset", required = false) Long offset,
+            @Parameter(name = "size", description = "data size")
+            @RequestParam(name = "size", required = false) Long size,
+            HttpServletResponse httpResponse
+    ) {
+        try {
+            ServletOutputStream outputStream = httpResponse.getOutputStream();
+            outputStream.write(uriAccessor.dataOf(uri, offset, size));
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new SwProcessException(SwProcessException.ErrorType.NETWORK, "error write data to response", e);
+        }
     }
 }
