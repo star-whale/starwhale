@@ -22,6 +22,7 @@ from starwhale.api._impl.data_store import (
     SwType,
     UNKNOWN,
     SwMapType,
+    LocalTable,
     SwListType,
     InnerRecord,
     SwTupleType,
@@ -2561,6 +2562,74 @@ def test_decode_schema_from_type_encoded_values():
     assert schema == SwTupleType(STRING)
     decoded = schema.decode_from_type_encoded_value(value)
     assert decoded == ("foobar",)
+
+
+def test_local_table_tombstones(tmp_path: Path):
+    idx = 0
+
+    def init_table() -> LocalTable:
+        nonlocal idx
+        idx += 1
+        root = tmp_path / str(idx)
+        ret = LocalTable("foo", root, key_column="k")
+        ret.insert({"k": 1, "v": 1})
+        ret.insert({"k": 2, "v": 2})
+        return ret
+
+    full_rows = [{"*": 1, "k": 1, "v": 1}, {"*": 2, "k": 2, "v": 2}]
+
+    for do_dump in [False, True]:
+        t = init_table()
+        assert list(t.scan()) == full_rows
+        t.delete_by_range(1, 2)
+        do_dump and t.dump()
+        assert list(t.scan()) == [{"*": 2, "k": 2, "v": 2}]
+
+        t = init_table()
+        t.delete_by_range(1, 2, end_inclusive=True)
+        do_dump and t.dump()
+        assert list(t.scan()) == []
+
+        t = init_table()
+        t.delete_by_range(None, None)
+        do_dump and t.dump()
+        assert list(t.scan()) == []
+
+    t = init_table()
+    t.delete_by_range(1, 2)
+    t.dump()
+    t = LocalTable("foo", t.root_path, key_column="k")
+    assert list(t.scan()) == [{"*": 2, "k": 2, "v": 2}]
+
+    t = init_table()
+    t.delete_by_range(None, None)
+    t.dump()
+    t = LocalTable("foo", t.root_path, key_column="k")
+    assert list(t.scan()) == []
+
+    # test with multiple tombstones and scan with revision
+    t = init_table()
+    r1 = t.delete_by_range(None, None)
+    r2 = t.insert({"k": 3, "v": 3})
+    r3 = t.delete_by_range(None, None)
+    t.insert({"k": 4, "v": 4})
+    r4 = t.insert({"k": 5, "v": 5})
+    r5 = t.delete_by_range(4, 5)
+    r6 = t.insert({"k": 1, "v": 2})
+
+    assert list(t.scan()) == [{"*": 1, "k": 1, "v": 2}, {"*": 5, "k": 5, "v": 5}]
+    assert list(t.scan(revision=r1)) == []
+    assert list(t.scan(revision=r2)) == [{"*": 3, "k": 3, "v": 3}]
+    assert list(t.scan(revision=r3)) == []
+    assert list(t.scan(revision=r4)) == [
+        {"*": 4, "k": 4, "v": 4},
+        {"*": 5, "k": 5, "v": 5},
+    ]
+    assert list(t.scan(revision=r5)) == [{"*": 5, "k": 5, "v": 5}]
+    assert list(t.scan(revision=r6)) == [
+        {"*": 1, "k": 1, "v": 2},
+        {"*": 5, "k": 5, "v": 5},
+    ]
 
 
 if __name__ == "__main__":
