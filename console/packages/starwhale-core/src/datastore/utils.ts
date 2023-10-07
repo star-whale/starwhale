@@ -14,7 +14,7 @@ export function tableDataLink(
         Authorization?: string
     }
 ) {
-    return `/api/v1/project/${projectId}/dataset/${datasetName}/uri?${qs.stringify(query)}`
+    return `/api/v1/filestorage/file?${qs.stringify(query)}`
 }
 
 export function tableNameOfDataset(projectName: string, datasetName: string, datasetVersionName: string) {
