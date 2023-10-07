@@ -429,10 +429,7 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(
-            String project, String datasetName, String uri, Long offset,
-            Long size
-    ) {
+    public byte[] dataOf(String uri, Long offset, Long size) {
         return uriAccessor.dataOf(uri, offset, size);
     }
 

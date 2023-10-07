@@ -424,7 +424,7 @@ public class DatasetController {
     ) {
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(datasetService.dataOf(projectName, datasetName, uri, offset, size));
+            outputStream.write(datasetService.dataOf(uri, offset, size));
             outputStream.flush();
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);

@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -216,31 +215,6 @@ public class EvaluationController {
         }
     }
 
-    @Operation(summary = "Pull file contents",
-            description = "Pull file contents ")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/evaluation/{version}/uri",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void pullUriContent(
-            @PathVariable(name = "projectUrl") String projectUrl,
-            @PathVariable(name = "version") String version,
-            @Parameter(name = "uri", required = true) String uri,
-            @Parameter(name = "offset", description = "offset in the content")
-            @RequestParam(name = "offset", required = false) Long offset,
-            @Parameter(name = "size", description = "data size")
-            @RequestParam(name = "size", required = false) Long size,
-            HttpServletResponse httpResponse
-    ) {
-        try {
-            ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(evaluationFileStorage.dataOf(uri, offset, size));
-            outputStream.flush();
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);
-        }
-    }
 
     @Operation(summary = "Sign uris to get a batch of temporarily accessible links",
             description = "Sign uris to get a batch of temporarily accessible links")

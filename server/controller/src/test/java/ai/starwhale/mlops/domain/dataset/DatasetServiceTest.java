@@ -435,7 +435,7 @@ public class DatasetServiceTest {
                 .willReturn(new byte[1]);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
-        var res = service.dataOf("", "", "", 1L, 1L);
+        var res = service.dataOf("", 1L, 1L);
         assertThat(res, notNullValue());
     }
 
