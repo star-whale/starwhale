@@ -78,13 +78,14 @@ import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
+import ai.starwhale.mlops.schedule.executor.RunExecutor;
+import ai.starwhale.mlops.schedule.impl.docker.ContainerRunMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
-import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
+import ai.starwhale.mlops.schedule.impl.docker.log.RunLogCollectorFactoryDocker;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
-import ai.starwhale.mlops.schedule.log.TaskLogSaver;
+import ai.starwhale.mlops.schedule.log.RunLogSaver;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
@@ -143,11 +144,14 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
         "ai.starwhale.mlops.schedule.reporting",
         "ai.starwhale.mlops.resulting",
         "ai.starwhale.mlops.configuration.security"},
-        excludeFilters = {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)})
-@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, TaskLogSaver.class,
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class),
+                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test.*")
+        })
+@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, RunLogSaver.class,
         DockerClientFinderSimpleImpl.class,
-        ContainerTaskMapper.class,
-        TaskLogCollectorFactoryDocker.class})
+        ContainerRunMapper.class,
+        RunLogCollectorFactoryDocker.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModelServiceTest extends MySqlContainerHolder {
 
@@ -205,6 +209,11 @@ public class ModelServiceTest extends MySqlContainerHolder {
         @Bean
         ModelServingService modelServingService() {
             return mock(ModelServingService.class);
+        }
+
+        @Bean
+        RunExecutor runExecutor() {
+            return mock(RunExecutor.class);
         }
     }
 

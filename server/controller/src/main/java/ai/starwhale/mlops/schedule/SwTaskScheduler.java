@@ -17,8 +17,6 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
-import java.util.Collection;
 import java.util.concurrent.Future;
 
 /**
@@ -30,15 +28,14 @@ public interface SwTaskScheduler {
 
 
     /**
-     * @param tasks the tasks to be scheduled
-     * @param taskReportReceiver the report receiver that could process these tasks
+     * @param task the task to be scheduled
      */
-    void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver);
+    void schedule(Task task);
 
     /**
-     * @param tasks tasks to be stopped
+     * @param task task to be stopped
      */
-    void stop(Collection<Task> tasks);
+    void stop(Task task);
 
     /**
      * @param task the tasks to exec on

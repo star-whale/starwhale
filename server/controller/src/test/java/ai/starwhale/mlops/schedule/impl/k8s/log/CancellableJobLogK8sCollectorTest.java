@@ -67,7 +67,7 @@ public class CancellableJobLogK8sCollectorTest {
         when(call.execute()).thenReturn(resp);
 
         when(k8sClient.readLog(eq("running-pod"), anyString(), anyBoolean())).thenReturn(call);
-        var ins = new TaskLogK8sStreamingCollector(k8sClient, "1");
+        var ins = new RunLogK8sStreamingCollector(k8sClient, "1");
 
         assertThat(ins.readLine(1L), is(line));
         verify(k8sClient).getPodsByJobName("1");

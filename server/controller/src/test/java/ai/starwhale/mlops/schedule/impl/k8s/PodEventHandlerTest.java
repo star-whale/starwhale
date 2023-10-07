@@ -22,15 +22,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.schedule.impl.k8s.reporting.PodEventHandler;
-import ai.starwhale.mlops.schedule.log.TaskLogSaver;
-import ai.starwhale.mlops.schedule.reporting.ReportedTask;
-import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import ai.starwhale.mlops.schedule.reporting.ReportedRun;
+import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -49,36 +45,22 @@ public class PodEventHandlerTest {
 
     PodEventHandler podEventHandler;
 
-    TaskLogSaver taskLogSaver;
-    TaskReportReceiver taskReportReceiver;
-
-    HotJobHolder hotJobHolder;
+    RunReportReceiver runReportReceiver;
 
     V1Pod v1Pod;
 
     @BeforeEach
     public void setup() {
-        hotJobHolder = mock(HotJobHolder.class);
-        taskLogSaver = mock(TaskLogSaver.class);
-        taskReportReceiver = mock(TaskReportReceiver.class);
-        podEventHandler = new PodEventHandler(
-                taskLogSaver, taskReportReceiver, hotJobHolder);
+        runReportReceiver = mock(RunReportReceiver.class);
+        podEventHandler = new PodEventHandler(runReportReceiver);
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta()
-                        .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
+                                  .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
                 .status(new V1PodStatus()
-                        .containerStatuses(List.of(
-                                new V1ContainerStatus().state(
-                                        new V1ContainerState().terminated(new V1ContainerStateTerminated()))
-                        )));
-    }
-
-    @Test
-    public void testTerminated() {
-        Task task = mock(Task.class);
-        when(hotJobHolder.tasksOfIds(List.of(3L))).thenReturn(List.of(task));
-        podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogSaver).saveLog(task);
+                                .containerStatuses(List.of(
+                                        new V1ContainerStatus().state(
+                                                new V1ContainerState().terminated(new V1ContainerStateTerminated()))
+                                )));
     }
 
     @Test
@@ -87,20 +69,11 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().phase("Pending");
         v1Pod.getStatus().podIP("127.0.0.1");
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogSaver, times(0)).saveLog(any());
-        verify(taskReportReceiver, times(1)).receive(any());
-        verify(taskReportReceiver).receive(argThat(tasks ->
-                tasks.size() == 1
-                        && tasks.get(0).getId() == 3L
-                        && tasks.get(0).getStatus() == TaskStatus.PREPARING
-                        && Objects.equals(tasks.get(0).getIp(), "127.0.0.1")));
-    }
-
-    @Test
-    public void testTaskNotFound() {
-        when(hotJobHolder.tasksOfIds(List.of(3L))).thenReturn(List.of());
-        podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogSaver, times(0)).saveLog(any());
+        verify(runReportReceiver, times(1)).receive(any());
+        verify(runReportReceiver).receive(argThat(run ->
+                                                          run.getId() == 3L
+                                                                  && run.getStatus() == RunStatus.PENDING
+                                                                  && Objects.equals(run.getIp(), "127.0.0.1")));
     }
 
     @Test
@@ -109,12 +82,11 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().phase("Pending");
         v1Pod.getStatus().conditions(List.of(new V1PodCondition().status("True").type("PodScheduled")));
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogSaver, times(0)).saveLog(any());
-        var expect = ReportedTask.builder()
+        var expect = ReportedRun.builder()
                 .id(3L)
-                .status(TaskStatus.PREPARING)
+                .status(RunStatus.PENDING)
                 .build();
-        verify(taskReportReceiver, times(1)).receive(List.of(expect));
+        verify(runReportReceiver, times(1)).receive(expect);
     }
 
     @Test
@@ -122,7 +94,6 @@ public class PodEventHandlerTest {
         v1Pod.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
         v1Pod.getStatus().setPhase("Running");
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogSaver, never()).saveLog(any());
-        verify(taskReportReceiver, never()).receive(any());
+        verify(runReportReceiver, never()).receive(any());
     }
 }

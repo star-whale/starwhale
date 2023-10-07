@@ -46,11 +46,13 @@ public class JobUpdateHelper {
     final SwTaskScheduler swTaskScheduler;
     final TaskStatusMachine taskStatusMachine;
 
-    public JobUpdateHelper(HotJobHolder jobHolder,
-                           JobStatusCalculator jobStatusCalculator,
-                           JobDao jobDao, JobStatusMachine jobStatusMachine,
-                           SwTaskScheduler swTaskScheduler,
-                           TaskStatusMachine taskStatusMachine) {
+    public JobUpdateHelper(
+            HotJobHolder jobHolder,
+            JobStatusCalculator jobStatusCalculator,
+            JobDao jobDao, JobStatusMachine jobStatusMachine,
+            SwTaskScheduler swTaskScheduler,
+            TaskStatusMachine taskStatusMachine
+    ) {
         this.jobHolder = jobHolder;
         this.jobStatusCalculator = jobStatusCalculator;
         this.jobDao = jobDao;
@@ -70,17 +72,19 @@ public class JobUpdateHelper {
         }
         if (!jobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
             log.warn("job status change unexpectedly from {} to {} of id {} ",
-                    currentStatus, desiredJobStatus, job.getId());
+                     currentStatus, desiredJobStatus, job.getId()
+            );
         }
         log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus,
-                job.getId());
+                 job.getId()
+        );
         job.setStatus(desiredJobStatus);
         jobDao.updateJobStatus(job.getId(), desiredJobStatus);
 
         if (jobStatusMachine.isFinal(desiredJobStatus)) {
             var finishedTime = new Date();
             var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
-            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
+            jobDao.updateJobFinishedTime(job.getId(), finishedTime, duration);
             if (desiredJobStatus == JobStatus.FAIL) {
                 CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
@@ -90,22 +94,28 @@ public class JobUpdateHelper {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
                 });
             }
+            tryRemoveJobFromCache(job);
+        }
+    }
+
+    private void tryRemoveJobFromCache(Job job) {
+        Boolean oneTaskRunning = job.getSteps()
+                .stream()
+                .filter(step -> {
+                    if (job.getStatus() == JobStatus.FAIL || job.getStatus() == JobStatus.CANCELED) {
+                        return step.getStatus() != StepStatus.CREATED;
+                    }
+                    return true;
+                })
+                .map(Step::getTasks)
+                .flatMap(Collection::stream)
+                .map(Task::getStatus)
+                .map(taskStatusMachine::isFinal)
+                .map(f -> !f)
+                .reduce(false, (a, b) -> a || b);
+        if (!oneTaskRunning) {
             jobHolder.remove(job.getId());
         }
     }
 
-
-    private void tryRemoveJobFromCache(Job job) {
-        for (Step step : job.getSteps()) {
-            for (Task task : step.getTasks()) {
-                if (!taskStatusMachine.isFinal(task.getStatus()) && task.getStatus() != TaskStatus.CREATED) {
-                    return;
-                }
-            }
-        }
-        jobHolder.remove(job.getId());
-        log.info("job removed from JobHolder because all task is finished and job status is: {} job id is: {}",
-                job.getStatus(), job.getId());
-
-    }
 }

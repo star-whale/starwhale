@@ -94,7 +94,7 @@ public class JobUpdateHelperTest {
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
         verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
-        verify(hotJobHolder).remove(mockJob.getId());
+        verify(hotJobHolder, times(0)).remove(mockJob.getId());
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                 argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
         Thread.sleep(100); // wait for async status update
@@ -159,13 +159,21 @@ public class JobUpdateHelperTest {
         var mockJob = new JobMockHolder().mockJob();
         var step = Step.builder()
                 .status(StepStatus.CANCELED)
+                .tasks(List.of(Task.builder()
+                        .status(TaskStatus.CANCELED)
+                        .build()))
                 .build();
-        mockJob.setSteps(List.of(step));
-
+        var step2 = Step.builder()
+                .status(StepStatus.CREATED)
+                .tasks(List.of(Task.builder()
+                                       .status(TaskStatus.CREATED)
+                                       .build()))
+                .build();
+        mockJob.setSteps(List.of(step, step2));
         mockJob.setStatus(JobStatus.RUNNING);
-        var desiredStatus = JobStatus.CANCELED;
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(JobStatus.CANCELED, mockJob.getStatus());
-        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), JobStatus.CANCELED);
+        verify(hotJobHolder, times(1)).remove(mockJob.getId());
     }
 }

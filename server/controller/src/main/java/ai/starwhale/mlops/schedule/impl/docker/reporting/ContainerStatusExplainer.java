@@ -16,8 +16,11 @@
 
 package ai.starwhale.mlops.schedule.impl.docker.reporting;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.github.dockerjava.api.model.Container;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +29,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ContainerStatusExplainer {
 
-    static final Map<String, TaskStatus> STATUS_MAP = new HashMap<>() {
+    static final Map<String, RunStatus> STATUS_MAP = new HashMap<>() {
         {
-            put("running", TaskStatus.RUNNING);
-            put("created", TaskStatus.PREPARING);
-            put("dead", TaskStatus.FAIL);
-            put("paused", TaskStatus.RUNNING);
-            put("restarting", TaskStatus.RUNNING);
+            put("running", RunStatus.RUNNING);
+            put("created", RunStatus.PENDING);
+            put("dead", RunStatus.FAILED);
+            put("paused", RunStatus.RUNNING);
+            put("restarting", RunStatus.RUNNING);
         }
     };
 
-    public TaskStatus statusOf(Container c) {
+    public RunStatus statusOf(Container c) {
         String state = c.getState();
         for (var entry : STATUS_MAP.entrySet()) {
             if (entry.getKey().equalsIgnoreCase(state)) {
@@ -45,13 +48,20 @@ public class ContainerStatusExplainer {
         }
         if ("exited".equalsIgnoreCase(state)) {
             if (c.getStatus().toUpperCase().contains("Exited (0)".toUpperCase())) {
-                return TaskStatus.SUCCESS;
+                return RunStatus.FINISHED;
             }
-            return TaskStatus.FAIL;
+            return RunStatus.FAILED;
         }
-
         log.warn("unexpected docker state detected State:{} Status: {}", state, c.getStatus());
-        return TaskStatus.UNKNOWN;
+        throw new SwValidationException(
+                ValidSubject.TASK,
+                MessageFormat.format(
+                        "unexpected docker state detected State:{0} Status: {1}",
+                        state,
+                        c.getStatus()
+                )
+        );
+
     }
 
 }

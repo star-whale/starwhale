@@ -68,11 +68,8 @@ public class HotJobHolderImpl implements HotJobHolder {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Task> tasksOfIds(Collection<Long> taskIds) {
-        return taskIds.stream()
-                .map(id -> taskMap.get(id))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    public Task taskWithId(Long taskId) {
+        return taskMap.get(taskId);
     }
 
     /**

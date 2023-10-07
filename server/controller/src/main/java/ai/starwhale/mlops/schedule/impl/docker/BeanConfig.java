@@ -17,13 +17,13 @@
 package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.ContainerStatusExplainer;
-import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
-import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerExecutorReporter;
+import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 @Configuration("dockerSchedulerBeanConfiguration")
 @ConditionalOnProperty(value = "sw.scheduler.impl", havingValue = "docker")
@@ -35,26 +35,24 @@ public class BeanConfig {
     }
 
     @Bean
-    public ContainerTaskMapper containerTaskMapper(DockerClientFinder dockerClientFinder) {
-        return new ContainerTaskMapper(dockerClientFinder);
+    public ContainerRunMapper containerTaskMapper(DockerClientFinder dockerClientFinder) {
+        return new ContainerRunMapper(dockerClientFinder);
     }
 
     @Bean
-    public DockerTaskReporter taskReporter(
-            TaskReportReceiver taskReportReceiver,
+    public DockerExecutorReporter runReporter(
+            @Lazy RunReportReceiver runReportReceiver,
             SystemSettingService systemSettingService,
             DockerClientFinder dockerClientFinder,
             ContainerStatusExplainer containerStatusExplainer,
-            TaskStatusMachine taskStatusMachine,
-            ContainerTaskMapper containerTaskMapper
+            ContainerRunMapper containerRunMapper
     ) {
-        return new DockerTaskReporter(
-                taskReportReceiver,
+        return new DockerExecutorReporter(
+                runReportReceiver,
                 systemSettingService,
                 dockerClientFinder,
-                containerTaskMapper,
-                containerStatusExplainer,
-                taskStatusMachine
+                containerRunMapper,
+                containerStatusExplainer
         );
     }
 
