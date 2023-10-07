@@ -12,6 +12,7 @@ from click_option_group import (
 )
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.core.runtime.model import Runtime
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
@@ -781,9 +782,9 @@ def _prepare_model_run_args(
             Model.copy(
                 src_uri=model_uri,
                 dest_uri=".",
-                force=False,
-                dest_local_project_uri="local/project/.sw_project_cache", # TODO 是否隐藏该项目？
+                dest_local_project_uri="local/project/.cache",
             )
+            model_uri = Resource(f"local/project/.cache/{model_uri.name}/version/{model_uri.version}", typ=ResourceType.model)
         model_store = ModelStorage(model_uri)
         model_src_dir = model_store.src_dir
 
@@ -801,7 +802,12 @@ def _prepare_model_run_args(
         model_src_dir = Path(workdir)
 
     if runtime_uri.instance.is_cloud:
-
+        Runtime.copy(
+            src_uri=runtime_uri,
+            dest_uri=".",
+            dest_local_project_uri="local/project/.cache",
+        )
+        runtime_uri = Resource(f"local/project/.cache/{runtime_uri.name}/version/{runtime_uri.version}", typ=ResourceType.runtime)
 
     model_src_dir = model_src_dir.absolute().resolve()
     if model_yaml is None:
