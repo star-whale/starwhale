@@ -17,7 +17,7 @@ from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
 from starwhale.base.uri.project import Project
-from starwhale.core.model.model import ModelConfig, ModelInfoFilter
+from starwhale.core.model.model import ModelConfig, ModelInfoFilter, Model
 from starwhale.core.model.store import ModelStorage
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.process import Process
@@ -777,6 +777,13 @@ def _prepare_model_run_args(
 
     if model:
         model_uri = Resource(model, typ=ResourceType.model)
+        if model_uri.instance.is_cloud:
+            Model.copy(
+                src_uri=model_uri,
+                dest_uri=".",
+                force=False,
+                dest_local_project_uri="local/project/.sw_project_cache", # TODO 是否隐藏该项目？
+            )
         model_store = ModelStorage(model_uri)
         model_src_dir = model_store.src_dir
 
@@ -792,6 +799,9 @@ def _prepare_model_run_args(
             runtime_uri = model_uri
     else:
         model_src_dir = Path(workdir)
+
+    if runtime_uri.instance.is_cloud:
+
 
     model_src_dir = model_src_dir.absolute().resolve()
     if model_yaml is None:

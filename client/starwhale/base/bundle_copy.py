@@ -139,7 +139,7 @@ class BundleCopy(CloudRequestMixed):
     def _get_versioned_resource_path(self, uri: Resource) -> Path:
         if not uri.instance.is_local:
             raise NoSupportError(f"{uri} to get target dir path")
-
+        # TODO move it to resource uri or resource store to build up
         return (
             self._sw_config.rootdir
             / uri.project.id

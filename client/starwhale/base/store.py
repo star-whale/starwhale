@@ -34,11 +34,7 @@ class BaseStorage(metaclass=ABCMeta):
     def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self.sw_config = SWCliConfigMixed()
-        if self.uri.instance.is_cloud:
-            self.project_dir = self.sw_config.rootdir / ".cache" / self.uri.project.id
-            # TODO check if exist and download to local?
-        else:
-            self.project_dir = self.sw_config.rootdir / self.uri.project.id
+        self.project_dir = self.sw_config.rootdir / self.uri.project.id
         self.blob_dir = self.sw_config.rootdir / ".swblob"
         self.loc, self.id = self._guess()
 
