@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useState } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import Divider from '@/components/Divider'
@@ -18,6 +18,8 @@ import FormFieldDevMode from './FormFieldDevMode'
 import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
 import { useMachine } from '@xstate/react'
 import { jobCreateMachine } from '../createJobMachine'
+import FormFieldTemplate from './FormFieldTemplate'
+import { fetchJob, fetchJobTemplate } from '../services/job'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -25,6 +27,12 @@ export interface IJobFormProps {
     job?: IJobSchema
     onSubmit: (data: ICreateJobSchema) => Promise<void>
     autoFill?: boolean
+}
+
+async function getJobByTemplate(projectId: string, templateId: string) {
+    const template = await fetchJobTemplate(projectId, templateId)
+    const job = await fetchJob(projectId, template.jobId)
+    return job
 }
 
 export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
@@ -38,6 +46,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     const [t] = useTranslation()
     const history = useHistory()
     const [form] = useForm()
+    const { projectId } = useParams<{ projectId: string }>()
 
     const [, send, service] = useMachine(jobCreateMachine)
 
@@ -125,6 +134,11 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             if ('modelVersionUrl' in _changes) {
                 send('MODELCHANGED')
             }
+            if ('templateId' in _changes) {
+                send('TEMPLATECHANGED', {
+                    data: _changes,
+                })
+            }
             setValues({
                 ...values_,
             })
@@ -164,35 +178,56 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
         })
     }, [send, modelTree, query.modelId, query.modelVersionHandler])
 
+    const doReFilled = useCallback(
+        (_job: IJobSchema, _modelTree: IModelTreeSchema[]) => {
+            const tmp = _job
+            if (!tmp || !_modelTree) return false
+
+            // eslint-disable-next-line
+            let modelVersion: IModelVersionSchema | undefined
+            _modelTree?.forEach((v) =>
+                v.versions.forEach((versionTmp) => {
+                    if (versionTmp.id === tmp.model?.version?.id) {
+                        modelVersion = versionTmp
+                    }
+                })
+            )
+
+            form.setFieldsValue({
+                runtimeType: tmp.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+                runtimeVersionUrl: tmp.runtime?.version?.id,
+                resourcePool: tmp.resourcePool,
+                datasetVersionUrls: tmp.datasetList?.map((v) => v.version?.id) as string[],
+                modelVersionUrl: modelVersion ? tmp.model?.version?.id : undefined,
+                modelVersionHandler: tmp.jobName,
+                stepSpecOverWrites: tmp.stepSpec,
+            })
+            forceUpdate()
+            return true
+        },
+        [form]
+    )
+
     useEffect(() => {
         const subscription = service.subscribe((curr) => {
             const ctx = curr.context
-            // console.log(curr.value, ctx)
+
+            switch (curr.event.type) {
+                case 'TEMPLATECHANGED':
+                    if (!curr.event?.data?.templateId) return
+                    getJobByTemplate(projectId, curr.event?.data?.templateId).then((v) => {
+                        doReFilled(v, ctx.modelTree)
+                    })
+                    break
+                default:
+                    break
+            }
+
             // simple state logging
             switch (curr.value) {
                 case 'rerunFilled': {
                     const tmp = ctx.job
-                    if (!ctx.job || !ctx.modelTree) break
-                    // eslint-disable-next-line
-                    let modelVersion: IModelVersionSchema | undefined
-                    ctx.modelTree?.forEach((v) =>
-                        v.versions.forEach((versionTmp) => {
-                            if (versionTmp.id === tmp.model?.version?.id) {
-                                modelVersion = versionTmp
-                            }
-                        })
-                    )
-
-                    form.setFieldsValue({
-                        runtimeType: tmp.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
-                        runtimeVersionUrl: tmp.runtime?.version?.id,
-                        resourcePool: tmp.resourcePool,
-                        datasetVersionUrls: tmp.datasetList?.map((v) => v.version?.id) as string[],
-                        modelVersionUrl: modelVersion ? tmp.model?.version?.id : undefined,
-                        modelVersionHandler: tmp.jobName,
-                        stepSpecOverWrites: tmp.stepSpec,
-                    })
-                    forceUpdate()
+                    if (!doReFilled(tmp, ctx.modelTree)) break
                     send('USEREDITING')
                     break
                 }
@@ -272,6 +307,8 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+            {/* template */}
+            <FormFieldTemplate {...sharedFormProps} />
             {/* env config */}
             <Divider orientation='top'>{t('Environment')}</Divider>
             <FormFieldResourceExtend {...sharedFormProps} {...getResourcePoolProps()} />

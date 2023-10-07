@@ -139,6 +139,8 @@ export type IconTypesT =
     | 'Restore'
     | 'a-Viewlog'
     | 'a-Pushlocal'
+    | 'save'
+    | 'a-saveas'
 
 interface IIconFontProps {
     style?: React.CSSProperties
