@@ -1,12 +1,13 @@
 import os
 import json
+import tempfile
 from pathlib import Path
 
 import pytest
 
+from tests import ROOT_DIR, BaseTestCase
 from starwhale.core.model.model import StandaloneModel
-
-from .. import ROOT_DIR, BaseTestCase
+from starwhale.api._impl.service import Hijack
 
 
 class ServiceTestCase(BaseTestCase):
@@ -29,8 +30,14 @@ class ServiceTestCase(BaseTestCase):
         assert len(spec["dependencies"]) == 2
 
     def test_default_class(self):
-        svc = StandaloneModel._get_service(["default_class:MyDefaultClass"], self.root)
+        svc = StandaloneModel._get_service(
+            ["default_class:MyDefaultClass"],
+            self.root,
+            hijack=Hijack(True, tempfile.gettempdir()),
+        )
         assert list(svc.apis.keys()) == ["cmp"]
+        spec = svc.get_spec()
+        assert len(spec["dependencies"]) == 2
 
     def test_class_without_api(self):
         svc = StandaloneModel._get_service(["no_api:NoApi"], self.root)
