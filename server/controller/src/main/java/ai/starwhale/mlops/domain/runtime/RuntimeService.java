@@ -497,7 +497,7 @@ public class RuntimeService {
                                             ValidSubject.RUNTIME,
                                             "job's are running on runtime version " + uploadRequest.version()
                                                     + " you can't force push now"),
-                                    HttpStatus.BAD_REQUEST);
+                                    HttpStatus.CONFLICT);
                         }
                     });
         }

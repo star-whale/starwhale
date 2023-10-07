@@ -182,10 +182,11 @@ public class DatasetUploader {
                             .map(DataSet::getId)
                             .collect(Collectors.toSet());
                     if (runningDataSets.contains(datasetVersionEntity.getId())) {
-                        throw new SwValidationException(
+                        throw new StarwhaleApiException(
+                                new SwValidationException(
                                 ValidSubject.DATASET,
                                 " dataset version is being hired by running job, force push is not allowed now"
-                        );
+                        ), HttpStatus.CONFLICT);
                     } else {
                         datasetVersionEntity.setVersionMeta(yamlContent);
                         datasetVersionMapper.update(datasetVersionEntity);
@@ -195,10 +196,10 @@ public class DatasetUploader {
                         );
                     }
                 } else {
-                    throw new SwValidationException(
+                    throw new StarwhaleApiException(new SwValidationException(
                             ValidSubject.DATASET,
                             " same dataset version can't be uploaded twice without force option"
-                    );
+                    ), HttpStatus.CONFLICT);
                 }
             } else {
                 // dataset is being created
