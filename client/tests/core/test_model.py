@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import yaml
+import respx
 from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -798,12 +799,40 @@ class StandaloneModelTestCase(TestCase):
             )
             m_call.assert_called_once_with("hi", shell=True)
 
+    @Mocker()
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch(
         "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
-    def test_prepare_model_run_args(self, *args: t.Any) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    @patch("starwhale.core.model.model.Model.copy")
+    @patch("starwhale.core.runtime.model.Runtime.copy")
+    @respx.mock
+    def test_prepare_model_run_args(
+        self,
+        rm: Mocker,
+        rt_cp: MagicMock,
+        m_cp: MagicMock,
+        m_conf: MagicMock,
+        *args: t.Any,
+    ) -> None:
+        m_conf.return_value = {
+            "instances": {
+                "server": {"uri": "http://localhost", "sw_token": "token"},
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "current_instance": "local",
+            "storage": {"root": self.sw.rootdir},
+        }
+        rm.get(
+            "http://localhost/api/v1/project/sw",
+            json={"data": {"id": 1, "name": "self"}},
+        )
+        rm.get(
+            "http://localhost/api/v1/project/1/model/model-test?versionUrl=1234",
+            json={"data": {"id": 1, "name": "model-test"}},
+        )
         user_workdir = Path("/home/user/workdir")
 
         ensure_file(
@@ -841,6 +870,31 @@ class StandaloneModelTestCase(TestCase):
             parents=True,
         )
 
+        model_cache_snapshot_dir = (
+            self.sw.rootdir / ".cache/model/model-test/12/1234.swmp"
+        )
+        model_cache_snapshot_src_dir = model_cache_snapshot_dir / "src"
+        model_cache_snapshot_manifest_path = model_cache_snapshot_dir / "_manifest.yaml"
+        model_cache_snapshot_model_yaml_path = (
+            model_cache_snapshot_src_dir / "model.yaml"
+        )
+
+        ensure_file(
+            model_cache_snapshot_model_yaml_path,
+            content=yaml.safe_dump(
+                ModelConfig(name="cache-model", run={"modules": ["x.y.z"]}).asdict()
+            ),
+            parents=True,
+        )
+
+        ensure_file(
+            model_cache_snapshot_manifest_path,
+            content=yaml.safe_dump(
+                {"packaged_runtime": {"name": "cache-packaged-runtime"}}
+            ),
+            parents=True,
+        )
+
         cases = [
             (
                 {
@@ -856,6 +910,8 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "default",
                     "config_modules": ["a.b.c"],
                     "runtime_uri": None,
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -872,6 +928,8 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "default",
                     "config_modules": ["a.b.c"],
                     "runtime_uri": None,
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -888,6 +946,8 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "custom",
                     "config_modules": ["a.b.c", "d.e.f"],
                     "runtime_uri": None,
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -907,6 +967,8 @@ class StandaloneModelTestCase(TestCase):
                         "model-test/version/1234",
                         typ=ResourceType.model,
                     ),
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -926,6 +988,8 @@ class StandaloneModelTestCase(TestCase):
                         "runtime-test/version/1234",
                         typ=ResourceType.runtime,
                     ),
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -942,6 +1006,27 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "built-model",
                     "config_modules": ["x.y.z"],
                     "runtime_uri": None,
+                    "model_copy_count": 0,
+                    "runtime_copy_count": 0,
+                },
+            ),
+            (
+                {
+                    "model": "cloud://server/project/sw/model-test/version/1234",
+                    "runtime": "",
+                    "workdir": "",
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": True,
+                },
+                {
+                    "model_src_dir": self.sw.rootdir
+                    / ".cache/model/model-test/12/1234.swmp/src",
+                    "config_name": "cache-model",
+                    "config_modules": ["x.y.z"],
+                    "runtime_uri": None,
+                    "model_copy_count": 1,
+                    "runtime_copy_count": 0,
                 },
             ),
         ]
@@ -951,6 +1036,8 @@ class StandaloneModelTestCase(TestCase):
             assert expect["model_src_dir"] == model_src_dir
             assert expect["config_name"] == config.name
             assert expect["config_modules"] == config.run.modules
+            assert m_cp.call_count == expect["model_copy_count"]
+            assert rt_cp.call_count == expect["runtime_copy_count"]
             if runtime_uri is None:
                 assert expect["runtime_uri"] is None
             else:
