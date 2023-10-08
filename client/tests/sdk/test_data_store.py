@@ -27,6 +27,7 @@ from starwhale.api._impl.data_store import (
     SwTupleType,
     IterWithRangeHint,
     TableWriterException,
+    datastore_max_dirty_records,
 )
 
 
@@ -2608,6 +2609,19 @@ def test_local_table_tombstones(tmp_path: Path):
         {"*": 1, "k": 1, "v": 2},
         {"*": 5, "k": 5, "v": 5},
     ]
+
+
+def test_local_table_dump(tmp_path: Path):
+    table = LocalTable("foo", tmp_path, key_column="k")
+    # put amount of rows to trigger auto dump
+    for i in range(datastore_max_dirty_records + 500):
+        table.insert({"k": i, "v": i})
+    # call dump manually
+    table.dump()
+
+    # open table again
+    table = LocalTable("foo", tmp_path, key_column="k")
+    assert len(list(table.scan())) == datastore_max_dirty_records + 500
 
 
 if __name__ == "__main__":

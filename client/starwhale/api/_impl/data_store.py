@@ -1894,13 +1894,12 @@ class LocalTable:
         mem_table.records.clear()
 
     def dump(self) -> None:
-        with self.lock:
-            if self._immutable_memory_table is not None:
-                self._dump(self.root_path, self._immutable_memory_table)
-                self._immutable_memory_table = None
-            if self.memory_table is not None:
-                self._dump(self.root_path, self.memory_table)
-                self.memory_table = None
+        if self._immutable_memory_table is not None:
+            self._dump(self.root_path, self._immutable_memory_table)
+            self._immutable_memory_table = None
+        if self.memory_table is not None:
+            self._dump(self.root_path, self.memory_table)
+            self.memory_table = None
 
     def _dump_manifest(self, manifest: Manifest) -> None:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
