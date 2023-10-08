@@ -30,6 +30,7 @@ import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.job.RuntimeSuggestionVo;
+import ai.starwhale.mlops.api.protocol.run.RunVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
@@ -41,6 +42,7 @@ import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
+import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -85,6 +87,8 @@ public class JobController {
     private final FeaturesProperties featuresProperties;
     private final EventService eventService;
 
+    private final RunService runService;
+
     public JobController(
             JobServiceForWeb jobServiceForWeb,
             TaskService taskService,
@@ -93,7 +97,8 @@ public class JobController {
             IdConverter idConvertor,
             DagQuerier dagQuerier,
             FeaturesProperties featuresProperties,
-            EventService eventService
+            EventService eventService,
+            RunService runService
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
         this.taskService = taskService;
@@ -103,6 +108,7 @@ public class JobController {
         this.dagQuerier = dagQuerier;
         this.featuresProperties = featuresProperties;
         this.eventService = eventService;
+        this.runService = runService;
         var actions = InvokerManager.<String, String>create()
                 .addInvoker("cancel", jobServiceForWeb::cancelJob);
         if (featuresProperties.isJobPauseEnabled()) {
@@ -170,6 +176,18 @@ public class JobController {
             @PathVariable String taskUrl
     ) {
         return ResponseEntity.ok(Code.success.asResponse(taskService.getTask(taskUrl)));
+    }
+
+    @Operation(summary = "Get runs info")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task/{taskId}/run",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<List<RunVo>>> getRuns(
+            @PathVariable String projectUrl,
+            @PathVariable String jobUrl,
+            @PathVariable Long taskId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(runService.runOfTask(taskId)));
     }
 
     @Operation(summary = "Create a new job")

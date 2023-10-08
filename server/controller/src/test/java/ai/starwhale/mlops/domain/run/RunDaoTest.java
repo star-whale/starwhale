@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.run.bo.Run;
 import ai.starwhale.mlops.domain.run.mapper.RunMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,13 @@ class RunDaoTest {
         when(runMapper.get(1L)).thenReturn(RunEntity.builder().id(1L).build());
         Run run = runDao.findById(1L);
         assertEquals(1L, run.getId());
+    }
+
+    @Test
+    void findByTaskId() {
+        when(runMapper.list(1L)).thenReturn(List.of(RunEntity.builder().id(2L).build()));
+        List<Run> runs = runDao.findByTaskId(1L);
+        assertEquals(2L, runs.get(0).getId());
     }
 
     @Test
