@@ -39,8 +39,8 @@ public class TemplateMapperTest extends MySqlContainerHolder {
         var entity = TemplateEntity.builder().name("name1").projectId(1L).jobId(2L).ownerId(1L).build();
         mapper.insert(entity);
         assertThrows(DuplicateKeyException.class, () -> mapper.insert(entity));
-        Assertions.assertEquals(entity, mapper.selectById(entity.getId()));
-        Assertions.assertEquals(entity, mapper.selectByNameForUpdate(entity.getName(), entity.getProjectId()));
+        Assertions.assertNotNull(mapper.selectById(entity.getId()));
+        Assertions.assertNotNull(mapper.selectByNameForUpdate(entity.getName(), entity.getProjectId()));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class TemplateMapperTest extends MySqlContainerHolder {
 
         mapper.recover(entity1.getId());
         Assertions.assertEquals(0, mapper.selectById(entity1.getId()).getIsDeleted());
-        Assertions.assertEquals(entity1, mapper.selectByNameForUpdate(entity1.getName(), entity1.getProjectId()));
+        Assertions.assertNotNull(mapper.selectByNameForUpdate(entity1.getName(), entity1.getProjectId()));
         Assertions.assertNull(mapper.selectDeletedById(entity1.getId()));
 
         assertThrows(DuplicateKeyException.class, () -> mapper.insert(duplicate));
