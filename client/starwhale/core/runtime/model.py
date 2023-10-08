@@ -1734,7 +1734,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         runtime_yaml = load_yaml(yaml_path)
 
         mode = runtime_yaml.get("mode", PythonRunEnv.VENV)
-        expected_pyver = str(runtime_yaml.get("environment", {}).get("python", ""))
+        expected_pyver = (
+            str(runtime_yaml.get("environment", {}).get("python", ""))
+            or get_python_version()
+        )
+
         _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
         console.print(f":butterfly: lock dependencies at mode {mode}")
 
@@ -1963,11 +1967,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         _env = _manifest["environment"]
-        _starwhale_version = (
-            _manifest.get("environment", {})
-            .get("lock", {})
-            .get("starwhale_version", "")
+        _lock = _manifest.get("environment", {}).get("lock", {})
+        expected_pyver = (
+            _env["python"]
+            or _lock.get("shell", {}).get("python_version")
+            or get_python_version()
         )
+        _starwhale_version = _lock.get("starwhale_version", "")
         isolated_env_dir = isolated_env_dir or workdir / "export" / _env["mode"]
 
         operations: t.List[t.Any] = [
@@ -2011,7 +2017,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                             env_dir=isolated_env_dir
                             or (workdir / "export" / _env["mode"]),
                             mode=_env["mode"],
-                            python_version=_env["python"],
+                            python_version=expected_pyver,
                         ),
                     ),
                     (
@@ -2176,6 +2182,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         mode: str,
         python_version: str,
     ) -> None:
+        if not python_version:
+            raise NoSupportError("python version is required")
+
         console.print(f":abacus: setup python({python_version}) env with {mode}...")
         if mode == PythonRunEnv.CONDA:
             conda_setup(python_version, prefix=env_dir)
