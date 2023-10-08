@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface BundleAccessor {
 
-    BundleEntity findById(Long id);
-
-    BundleEntity findByNameForUpdate(String name, Long projectId);
-
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE
-    }
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CreateJobTemplateRequest {
+    @NotNull
+    private String name;
+    @NotNull
+    private String jobUrl;
 }

@@ -178,6 +178,14 @@ class CreateModelVersionRequest(BaseModel):
     force: Optional[bool] = None
 
 
+class CreateJobTemplateRequest(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    name: str
+    job_url: str = Field(..., alias='jobUrl')
+
+
 class ModelServingRequest(BaseModel):
     class Config:
         allow_population_by_field_name = True
@@ -793,6 +801,33 @@ class TrashVo(BaseModel):
     trashed_by: Optional[str] = Field(None, alias='trashedBy')
     last_updated_time: Optional[int] = Field(None, alias='lastUpdatedTime')
     retention_time: Optional[int] = Field(None, alias='retentionTime')
+
+
+class JobTemplateVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    id: Optional[int] = None
+    name: Optional[str] = None
+    job_id: Optional[int] = Field(None, alias='jobId')
+
+
+class ResponseMessageListJobTemplateVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: List[JobTemplateVo]
+
+
+class ResponseMessageJobTemplateVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    code: str
+    message: str
+    data: JobTemplateVo
 
 
 class RuntimeVersionVo(BaseModel):

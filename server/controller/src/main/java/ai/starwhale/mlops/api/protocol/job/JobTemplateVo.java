@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.job.template.bo.Template;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface BundleAccessor {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class JobTemplateVo {
+    private Long id;
+    private String name;
+    private Long jobId;
 
-    BundleEntity findById(Long id);
-
-    BundleEntity findByNameForUpdate(String name, Long projectId);
-
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE
+    public static JobTemplateVo fromBo(Template jobTemplate) {
+        if (jobTemplate == null) {
+            return null;
+        }
+        return new JobTemplateVo(jobTemplate.getId(), jobTemplate.getName(), jobTemplate.getJobId());
     }
 }
