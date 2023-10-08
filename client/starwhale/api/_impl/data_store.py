@@ -2089,7 +2089,8 @@ class LocalDataStore:
                 if t.name == table_name:
                     table_root = Path(self.root_path) / t.dir
                     break
-            if table_root is None:
+            existing = table_root is not None
+            if table_root is None:  # make mypy happy
                 if not create:
                     return None
                 uuid = uuid4().hex
@@ -2103,13 +2104,14 @@ class LocalDataStore:
                 key_column=key_column and key_column.name or None,
                 create_if_missing=create,
             )
-            manifest.tables.append(
-                LocalTableDesc(
-                    name=table_name,
-                    dir=str(table_root.relative_to(self.root_path)),
-                    created_at=int(time.time() * 1000),
+            if not existing:
+                manifest.tables.append(
+                    LocalTableDesc(
+                        name=table_name,
+                        dir=str(table_root.relative_to(self.root_path)),
+                        created_at=int(time.time() * 1000),
+                    )
                 )
-            )
             self._dump_manifest(manifest)
             self.tables[table_name] = table
             return table
