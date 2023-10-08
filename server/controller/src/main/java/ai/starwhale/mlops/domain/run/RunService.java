@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.run;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.api.protocol.run.RunVo;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
-public interface BundleAccessor {
+@Service
+public class RunService {
 
-    BundleEntity findById(Long id);
+    private final RunDao runDao;
 
-    BundleEntity findByNameForUpdate(String name, Long projectId);
+    public RunService(RunDao runDao) {
+        this.runDao = runDao;
+    }
 
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE
+    public List<RunVo> runOfTask(Long taskId) {
+        return runDao.findByTaskId(taskId).stream().map(r -> new RunVo(r)).collect(Collectors.toList());
     }
 }

@@ -13,7 +13,6 @@ from requests_mock import Mocker
 
 from tests import BaseTestCase
 from starwhale.consts import HTTPMethod
-from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
 from starwhale.api._impl.data_store import (
     INT32,
@@ -28,24 +27,11 @@ from starwhale.api._impl.data_store import (
     SwTupleType,
     IterWithRangeHint,
     TableWriterException,
+    datastore_max_dirty_records,
 )
 
 
 class TestBasicFunctions(BaseTestCase):
-    def test_get_table_path(self) -> None:
-        self.assertEqual(
-            Path("a") / "b.sw-datastore",
-            data_store._get_table_path("a", "b"),
-        )
-        self.assertEqual(
-            Path("a") / "b" / "c.sw-datastore",
-            data_store._get_table_path("a", "b/c"),
-        )
-        self.assertEqual(
-            Path("a") / "b" / "c" / "d.sw-datastore",
-            data_store._get_table_path("a", "b/c/d"),
-        )
-
     def test_merge_scan(self) -> None:
         self.assertEqual([], list(data_store._merge_scan([], False)), "no iter")
         self.assertEqual(
@@ -1160,25 +1146,19 @@ class TestLocalDataStore(BaseTestCase):
     def test_list_tables(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
 
-        prefix = "project/self/eval/test-0/"
+        prefix = "project/self/eval/test-0"
 
         tables = ds.list_tables([prefix])
         assert tables == []
 
-        root = Path(self.datastore_root) / prefix.strip("/")
-
-        ensure_file(root / "labels.sw-datastore.zip", "abc", parents=True)
-        ensure_file(root / "results.sw-datastore.zip", "abc", parents=True)
-        for i in range(0, 3):
-            ensure_file(root / "roc" / f"{i}.sw-datastore.zip", "abc", parents=True)
-
-        ensure_dir(root / "mock-dir.sw-datastore.zip")
-        ensure_file(root / "dummy.file", "abc", parents=True)
-
-        m_table_name = f"{prefix}memory-test-table"
-        ds.tables[m_table_name] = data_store.LocalTable(
-            m_table_name, self.datastore_root, "k"
+        schema = data_store.TableSchema(
+            "k", [data_store.ColumnSchema("k", data_store.INT64)]
         )
+        ds.update_table(f"{prefix}/labels", schema, [{"k": 0}])
+        ds.update_table(f"{prefix}/results", schema, [{"k": 0}])
+
+        for i in range(0, 3):
+            ds.update_table(f"{prefix}/roc/{i}", schema, [{"k": 0}])
 
         tables = ds.list_tables([prefix])
         assert set(tables) == {
@@ -1189,7 +1169,6 @@ class TestLocalDataStore(BaseTestCase):
                 "roc/0",
                 "roc/1",
                 "roc/2",
-                "memory-test-table",
             }
         }
 
@@ -2630,6 +2609,19 @@ def test_local_table_tombstones(tmp_path: Path):
         {"*": 1, "k": 1, "v": 2},
         {"*": 5, "k": 5, "v": 5},
     ]
+
+
+def test_local_table_dump(tmp_path: Path):
+    table = LocalTable("foo", tmp_path, key_column="k")
+    # put amount of rows to trigger auto dump
+    for i in range(datastore_max_dirty_records + 500):
+        table.insert({"k": i, "v": i})
+    # call dump manually
+    table.dump()
+
+    # open table again
+    table = LocalTable("foo", tmp_path, key_column="k")
+    assert len(list(table.scan())) == datastore_max_dirty_records + 500
 
 
 if __name__ == "__main__":

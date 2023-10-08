@@ -14,19 +14,37 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.job.template.po;
 
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface BundleAccessor {
 
-    BundleEntity findById(Long id);
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TemplateEntity implements BundleEntity {
+    private Long id;
+    private String name;
+    private Long jobId;
+    private Long projectId;
+    private Long ownerId;
+    private Date createdTime;
+    private Date modifiedTime;
+    private Integer isDeleted;
 
-    BundleEntity findByNameForUpdate(String name, Long projectId);
+    @Override
+    public String getName() {
+        return name;
+    }
 
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE
+    @Override
+    public Date getModifiedTime() {
+        return modifiedTime;
     }
 }

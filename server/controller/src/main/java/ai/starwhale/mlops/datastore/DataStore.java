@@ -260,7 +260,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 --skipCount;
             }
             while (iterator.hasNext() && limitCount > 0) {
-                results.add(iterator.next());
+                var r = iterator.next();
+                if (r.isDeleted()) {
+                    continue;
+                }
+                results.add(r);
                 --limitCount;
             }
             String lastKey;
@@ -290,7 +294,6 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 columnSchemaMap = null;
             }
             var records = results.stream()
-                    .filter(r -> !r.isDeleted())
                     .map(r -> RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType()))
                     .collect(Collectors.toList());
             return new RecordList(columnSchemaMap,

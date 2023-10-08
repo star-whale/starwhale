@@ -538,14 +538,14 @@ public class ModelService {
                                                 "job's are running on model version " + version
                                                         + " you can't force push now"
                                         ),
-                                        HttpStatus.BAD_REQUEST
+                                        HttpStatus.CONFLICT
                                 );
                             }
                         });
             } else {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.MODEL, "model version duplicate" + version),
-                        HttpStatus.BAD_REQUEST
+                        HttpStatus.CONFLICT
                 );
             }
         }

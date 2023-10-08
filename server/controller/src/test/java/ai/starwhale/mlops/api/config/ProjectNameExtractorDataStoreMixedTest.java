@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.template.TemplateDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -62,6 +63,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
     DatasetDao datasetDao = mock(DatasetDao.class);
     RuntimeDao runtimeDao = mock(RuntimeDao.class);
     ReportDao reportDao = mock(ReportDao.class);
+    TemplateDao templateDao = mock(TemplateDao.class);
 
     @BeforeEach
     public void setup() {
@@ -74,7 +76,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 modelDao,
                 datasetDao,
                 runtimeDao,
-                reportDao);
+                reportDao,
+                templateDao);
     }
 
     @Test

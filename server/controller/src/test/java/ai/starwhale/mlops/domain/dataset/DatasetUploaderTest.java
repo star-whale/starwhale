@@ -46,7 +46,7 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
@@ -248,14 +248,14 @@ public class DatasetUploaderTest {
         when(httpResponse.getOutputStream()).thenReturn(mockOutPutStream);
         datasetUploader.pull("project", dsName, dsVersion, "index.jsonl", httpResponse);
 
-        Assertions.assertThrowsExactly(SwValidationException.class,
+        Assertions.assertThrowsExactly(StarwhaleApiException.class,
                 () -> datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest));
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
         hotJobHolder.adopt(mockJob);
         uploadRequest.setForce("1");
-        Assertions.assertThrowsExactly(SwValidationException.class,
+        Assertions.assertThrowsExactly(StarwhaleApiException.class,
                 () -> datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest));
         hotJobHolder.remove(mockJob.getId());
         datasetUploader.create(MANIFEST, "_manifest.yaml", uploadRequest);

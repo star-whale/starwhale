@@ -21,6 +21,7 @@ import threading
 import contextlib
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
+from uuid import uuid4
 from typing import (
     Any,
     cast,
@@ -894,19 +895,6 @@ class TableSchema:
             and self.key_column == other.key_column
             and self.columns == other.columns
         )
-
-
-def _get_table_path(root_path: str | Path, table_name: str) -> Path:
-    """
-    get table path from table name, return the matched file path if there is only one file match the table name
-    """
-    expect_prefix = Path(root_path) / (table_name.strip("/") + datastore_table_file_ext)
-    paths = list(expect_prefix.parent.glob(f"{expect_prefix.name}*"))
-    if len(paths) > 1:
-        raise RuntimeError(f"can not find table {table_name}, get files {paths}")
-    if len(paths) == 1:
-        return paths[0]
-    return expect_prefix
 
 
 def _merge_scan(
@@ -1906,13 +1894,12 @@ class LocalTable:
         mem_table.records.clear()
 
     def dump(self) -> None:
-        with self.lock:
-            if self._immutable_memory_table is not None:
-                self._dump(self.root_path, self._immutable_memory_table)
-                self._immutable_memory_table = None
-            if self.memory_table is not None:
-                self._dump(self.root_path, self.memory_table)
-                self.memory_table = None
+        if self._immutable_memory_table is not None:
+            self._dump(self.root_path, self._immutable_memory_table)
+            self._immutable_memory_table = None
+        if self.memory_table is not None:
+            self._dump(self.root_path, self.memory_table)
+            self.memory_table = None
 
     def _dump_manifest(self, manifest: Manifest) -> None:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
@@ -1983,6 +1970,17 @@ class TableDesc:
         return ret
 
 
+class LocalTableDesc(SwBaseModel):
+    name: str
+    dir: str
+    created_at: int  # timestamp in milliseconds
+
+
+class LocalDataStoreManifest(SwBaseModel):
+    version: str = "0.1"
+    tables: List[LocalTableDesc]
+
+
 class LocalDataStore:
     _instance = None
     _lock = threading.Lock()
@@ -2012,24 +2010,12 @@ class LocalDataStore:
         self,
         prefixes: List[str],
     ) -> List[str]:
-        table_names = set()
-
-        for prefix in prefixes:
-            prefix_path = Path(self.root_path) / prefix.strip("/")
-            for fpath in prefix_path.rglob(f"*{datastore_table_file_ext}*"):
-                if not fpath.is_file():
-                    continue
-
-                table_name = str(fpath.relative_to(self.root_path)).split(
-                    datastore_table_file_ext
-                )[0]
-                table_names.add(table_name)
-
-            for table in self.tables:
-                if table.startswith(prefix):
-                    table_names.add(table)
-
-        return list(table_names)
+        manifest = self._load_manifest()
+        return [
+            table.name
+            for table in manifest.tables
+            if any(table.name.startswith(prefix) for prefix in prefixes)
+        ]
 
     def update_table(
         self,
@@ -2074,25 +2060,59 @@ class LocalDataStore:
         # revision will never be None or empty (len(records) > 0), makes mypy happy
         return revision or ""
 
+    def _load_manifest(self) -> LocalDataStoreManifest:
+        manifest_file = Path(self.root_path) / datastore_manifest_file_name
+        if manifest_file.exists():
+            with manifest_file.open() as f:
+                return LocalDataStoreManifest.parse_raw(f.read())
+        return LocalDataStoreManifest(tables=[])
+
+    def _dump_manifest(self, manifest: LocalDataStoreManifest) -> None:
+        manifest_file = Path(self.root_path) / datastore_manifest_file_name
+        with filelock.FileLock(str(Path(self.root_path) / ".lock")):
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+                tmp.write(manifest.json(indent=2))
+                tmp.flush()
+                shutil.move(tmp.name, manifest_file)
+
     def _get_table(
         self, table_name: str, key_column: ColumnSchema | None, create: bool = True
     ) -> LocalTable | None:
         with self.lock:
             table = self.tables.get(table_name, None)
-            if table is None:
-                try:
-                    table = LocalTable(
-                        table_name=table_name,
-                        root_path=Path(self.root_path) / table_name,
-                        key_column=key_column and key_column.name or None,
-                        create_if_missing=create,
-                    )
-                    self.tables[table_name] = table
-                except TableEmptyException:
-                    if create:
-                        raise
+            if table is not None:
+                return table
+            # open or create
+            manifest = self._load_manifest()
+            table_root: Path | None = None
+            for t in manifest.tables:
+                if t.name == table_name:
+                    table_root = Path(self.root_path) / t.dir
+                    break
+            if table_root is None:
+                if not create:
                     return None
-        return table
+                uuid = uuid4().hex
+                table_root = Path(self.root_path) / uuid[:2] / uuid[2:-1]
+
+            table_root.mkdir(parents=True, exist_ok=True)
+            # no try, let it raise
+            table = LocalTable(
+                table_name=table_name,
+                root_path=table_root,
+                key_column=key_column and key_column.name or None,
+                create_if_missing=create,
+            )
+            manifest.tables.append(
+                LocalTableDesc(
+                    name=table_name,
+                    dir=str(table_root.relative_to(self.root_path)),
+                    created_at=int(time.time() * 1000),
+                )
+            )
+            self._dump_manifest(manifest)
+            self.tables[table_name] = table
+            return table
 
     def scan_tables(
         self,

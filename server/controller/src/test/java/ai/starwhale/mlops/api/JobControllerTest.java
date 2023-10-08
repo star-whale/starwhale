@@ -54,6 +54,7 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
+import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
@@ -96,8 +97,8 @@ public class JobControllerTest {
                 new IdConverter(),
                 dagQuerier,
                 featuresProperties,
-                mock(EventService.class)
-        );
+                mock(EventService.class),
+                mock(RunService.class));
     }
 
     @Test
@@ -297,7 +298,8 @@ public class JobControllerTest {
                 new IdConverter(),
                 dagQuerier,
                 featuresProperties,
-                mock(EventService.class)
+                mock(EventService.class),
+                mock(RunService.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "pause"));
@@ -318,7 +320,8 @@ public class JobControllerTest {
                 new IdConverter(),
                 dagQuerier,
                 featuresProperties,
-                mock(EventService.class)
+                mock(EventService.class),
+                mock(RunService.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "resume"));
