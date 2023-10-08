@@ -245,6 +245,17 @@ public class DataStoreTest {
                         .columnValueHints(List.of("1", "2", "3", "4", "5"))
                         .build())));
 
+        // query with limit without deleted rows
+        this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "-", "1")));
+        recordList = this.dataStore.query(DataStoreQueryRequest.builder().tableName("t1").limit(2).build());
+        assertThat("test",
+                   recordList.getRecords(),
+                   is(List.of(Map.of("k", "1", "a", "00000004"),
+                              Map.of("k", "2", "a", "00000003"))));
+
+        // revert deleted rows
+        this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "5")));
+
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
                 .filter(TableQueryFilter.builder()
