@@ -8,7 +8,7 @@ export const parseDataSrc = _.curry((token: string, link: ITypeLink) => {
         uri,
         offset,
         size,
-        Authorization: token as string,
+        Authorization: token,
     })
     return src
 })
@@ -28,12 +28,11 @@ export const isAnnotationType = (type: string) => {
 export const isAnnotation = (data: any) => (typeof data === 'object' && isAnnotationType(data?._type)) || isMask(data)
 export const isAnnotationHiddenInTable = (data: any) => isAnnotation(data) && !isMask(data)
 
-export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
+export function linkToData(data: ITypeLink, curryParseLinkFn: any, token: string): string {
     if (curryParseLinkFn) return curryParseLinkFn(data)
     if (data.uri?.startsWith('http')) {
         return data.uri
     }
-    const token = (window.localStorage && window.localStorage.getItem('token')) ?? ''
     return parseDataSrc(token, data)
 }
 
@@ -41,7 +40,7 @@ export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
 export function getSummary(record: RecordT, options: OptionsT) {
     const summaryTmp = new Map<string, SummaryT>()
     const summaryTypesTmp = new Set<string>()
-
+    const token = (window.localStorage && window.localStorage.getItem('token')) ?? ''
     Object.entries(record).forEach(([key, value]: [string, any]) => {
         if (!options.showPrivate && isPrivate(key)) return
         function flatObjectWithPaths(anno: any, path: any[] = []) {
@@ -60,7 +59,7 @@ export function getSummary(record: RecordT, options: OptionsT) {
                     summaryTmp.set([...path].join('.'), {
                         ...anno,
                         _extendPath: [...path].join('.'),
-                        _extendSrc: anno.link ? linkToData(anno.link, options.parseLink) : undefined,
+                        _extendSrc: anno.link ? linkToData(anno.link, options.parseLink, token) : undefined,
                         _extendType: isMask(anno) ? AnnotationType.MASK : anno._type,
                     })
                 }
