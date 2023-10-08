@@ -80,9 +80,9 @@ public class DataStoreTest {
         @Default
         String dataRootPath = "";
         @Default
-        String dumpInterval = "1h";
+        String dumpInterval = "1s";
         @Default
-        String minNoUpdatePeriod = "1d";
+        String minNoUpdatePeriod = "1s";
         @Default
         int minWalIdGap = 10;
         @Default
@@ -152,20 +152,32 @@ public class DataStoreTest {
         var desc = new TableSchemaDesc("k",
                 List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
                         ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("x").type("INT32").build()));
+                        ColumnSchemaDesc.builder().name("x").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("u").type("LIST")
+                                .elementType(
+                                        ColumnSchemaDesc.builder().name("v").type("OBJECT").pythonType("test-py")
+                                                .attributes(List.of(
+                                                        ColumnSchemaDesc.builder().name("property").type("STRING")
+                                                                .build()
+                                                )).build()
+                                ).build()));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "1")));
+        this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "u", List.of(Map.of("property", "0")))));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "1", "a", "2")));
+        this.dataStore.update("t1", desc, List.of(Map.of("k", "1", "u", List.of(Map.of("property", "1")))));
         this.dataStore.update("t2", desc, List.of(Map.of("k", "3", "x", "2")));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "5"), Map.of("k", "4", "-", "1")));
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                                         .tableName("t1")
-                                        .columns(Map.of("k", "k", "a", "a"))
+                                        .columns(Map.of("k", "k", "a", "a", "u", "u"))
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "0", "a", "00000005"), Map.of("k", "1", "a", "00000002"))));
+                is(List.of(
+                        Map.of("k", "0", "a", "00000005", "u", List.of(Map.of("property", "0"))),
+                        Map.of("k", "1", "a", "00000002", "u", List.of(Map.of("property", "1"))))));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "-", "anyString"), Map.of("k", "4", "-", "1")));
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
@@ -192,11 +204,11 @@ public class DataStoreTest {
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                                         .tableName("t1")
-                                        .columns(Map.of("k", "k", "a", "a"))
+                                        .columns(Map.of("k", "k", "a", "a", "u", "u"))
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "1", "a", "00000002"))));
+                is(List.of(Map.of("k", "1", "a", "00000002", "u", List.of(Map.of("property", "1"))))));
         assertThat("t2",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -249,9 +261,9 @@ public class DataStoreTest {
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "-", "1")));
         recordList = this.dataStore.query(DataStoreQueryRequest.builder().tableName("t1").limit(2).build());
         assertThat("test",
-                   recordList.getRecords(),
-                   is(List.of(Map.of("k", "1", "a", "00000004"),
-                              Map.of("k", "2", "a", "00000003"))));
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "1", "a", "00000004"),
+                        Map.of("k", "2", "a", "00000003"))));
 
         // revert deleted rows
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "5")));
@@ -1402,7 +1414,8 @@ public class DataStoreTest {
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t").build())).build());
         assertThat(result.getColumnSchemaMap().entrySet().stream()
                         .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(new HashMap<>() {{
+                is(new HashMap<>() {
+                    {
                         put("key", ColumnType.INT32);
                         put("a", ColumnType.BOOL);
                         put("b", ColumnType.INT8);
@@ -1418,8 +1431,8 @@ public class DataStoreTest {
                         put("l", ColumnType.TUPLE);
                         put("m", ColumnType.MAP);
                         put("complex", ColumnType.OBJECT);
-                    }}
-                ));
+                    }
+                }));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")

@@ -33,10 +33,9 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
@@ -54,71 +53,196 @@ public class ParquetReadWriteTest {
 
     @Test
     public void testReadWrite() throws Exception {
-        var schema = new TableSchema(new TableSchemaDesc("key", List.of(
-                ColumnSchemaDesc.builder().name("key").type("STRING").build(),
-                ColumnSchemaDesc.builder().name("a").type("BOOL").build(),
-                ColumnSchemaDesc.builder().name("b").type("INT8").build(),
-                ColumnSchemaDesc.builder().name("c").type("INT16").build(),
-                ColumnSchemaDesc.builder().name("d").type("INT32").build(),
-                ColumnSchemaDesc.builder().name("e").type("INT64").build(),
-                ColumnSchemaDesc.builder().name("f").type("FLOAT32").build(),
-                ColumnSchemaDesc.builder().name("g").type("FLOAT64").build(),
-                ColumnSchemaDesc.builder().name("h").type("BYTES").build(),
-                ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build(),
-                ColumnSchemaDesc.builder().name("j")
+        var schema = new TableSchema(new TableSchemaDesc("string", List.of(
+                ColumnSchemaDesc.builder().name("string").type("STRING").build(),
+                ColumnSchemaDesc.builder().name("bool").type("BOOL").build(),
+                ColumnSchemaDesc.builder().name("int8").type("INT8").build(),
+                ColumnSchemaDesc.builder().name("int16").type("INT16").build(),
+                ColumnSchemaDesc.builder().name("int32").type("INT32").build(),
+                ColumnSchemaDesc.builder().name("int64").type("INT64").build(),
+                ColumnSchemaDesc.builder().name("float32").type("FLOAT32").build(),
+                ColumnSchemaDesc.builder().name("float64").type("FLOAT64").build(),
+                ColumnSchemaDesc.builder().name("bytes").type("BYTES").build(),
+                ColumnSchemaDesc.builder().name("unknown").type("UNKNOWN").build(),
+                ColumnSchemaDesc.builder().name("list")
                         .type("LIST")
                         .elementType(ColumnSchemaDesc.builder().type("INT32").build())
                         .build(),
-                ColumnSchemaDesc.builder().name("jj")
+                ColumnSchemaDesc.builder().name("list_object")
+                        .type("LIST")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("OBJECT")
+                                .pythonType("placeholder")
+                                .attributes(List.of(
+                                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                        ColumnSchemaDesc.builder().name("b").type("STRING").build()
+                                ))
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("list_list")
+                        .type("LIST")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("list_tuple")
+                        .type("LIST")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("TUPLE")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("list_map")
+                        .type("LIST")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("tuple")
+                        .type("TUPLE")
+                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("tuple_object")
+                        .type("TUPLE")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("OBJECT")
+                                .pythonType("placeholder")
+                                .attributes(List.of(
+                                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                        ColumnSchemaDesc.builder().name("b").type("STRING").build()
+                                ))
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("tuple_list")
+                        .type("TUPLE")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("tuple_tuple")
+                        .type("TUPLE")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("TUPLE")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("tuple_map")
+                        .type("TUPLE")
+                        .elementType((ColumnSchemaDesc.builder()
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("map")
                         .type("MAP")
                         .keyType(ColumnSchemaDesc.builder().type("STRING").build())
                         .valueType(ColumnSchemaDesc.builder().type("INT32").build())
                         .build(),
-                ColumnSchemaDesc.builder().name("k")
-                        .type("OBJECT")
-                        .pythonType("placeholder")
-                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                                ColumnSchemaDesc.builder().name("b").type("INT32").build(),
-                                ColumnSchemaDesc.builder().name("aa").type("STRING").build()))
-                        .build(),
-                ColumnSchemaDesc.builder().name("l")
-                        .type("LIST")
-                        .elementType(ColumnSchemaDesc.builder()
-                                .type("LIST")
-                                .elementType(ColumnSchemaDesc.builder()
-                                        .type("OBJECT")
-                                        .pythonType("v")
-                                        .attributes(List.of(
-                                                ColumnSchemaDesc.builder().name("a")
-                                                        .type("OBJECT")
-                                                        .pythonType("t")
-                                                        .attributes(List.of(
-                                                                ColumnSchemaDesc.builder().name("a")
-                                                                        .type("INT32")
-                                                                        .build(),
-                                                                ColumnSchemaDesc.builder().name("b")
-                                                                        .type("INT32")
-                                                                        .build()))
-                                                        .build(),
-                                                ColumnSchemaDesc.builder().name("b")
-                                                        .type("LIST")
-                                                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
-                                                        .build()
-                                        ))
-                                        .build())
-                                .build())
-                        .build(),
-                ColumnSchemaDesc.builder().name("m")
+                ColumnSchemaDesc.builder().name("map_object")
                         .type("MAP")
-                        .keyType(ColumnSchemaDesc.builder().type("TUPLE")
-                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .keyType(ColumnSchemaDesc.builder()
+                                .type("OBJECT")
+                                .pythonType("placeholder")
+                                .attributes(List.of(
+                                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                        ColumnSchemaDesc.builder().name("b").type("STRING").build()
+                                ))
                                 .build())
                         .valueType(ColumnSchemaDesc.builder()
                                 .type("OBJECT")
                                 .pythonType("placeholder")
-                                .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                                        ColumnSchemaDesc.builder().name("b").type("INT32").build()))
+                                .attributes(List.of(
+                                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                        ColumnSchemaDesc.builder().name("b").type("STRING").build()
+                                ))
                                 .build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("map_list")
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .valueType(ColumnSchemaDesc.builder()
+                                .type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("map_tuple")
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder()
+                                .type("TUPLE")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .valueType(ColumnSchemaDesc.builder()
+                                .type("TUPLE")
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("map_map")
+                        .type("MAP")
+                        .keyType(ColumnSchemaDesc.builder()
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .valueType(ColumnSchemaDesc.builder()
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("object")
+                        .type("OBJECT")
+                        .pythonType("placeholder")
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("b").type("STRING").build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("object_object")
+                        .type("OBJECT")
+                        .pythonType("placeholder")
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("b")
+                                        .type("OBJECT")
+                                        .pythonType("placeholder")
+                                        .attributes(List.of(
+                                                ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                                ColumnSchemaDesc.builder().name("b").type("STRING").build()
+                                        ))
+                                        .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("object_list")
+                        .type("OBJECT")
+                        .pythonType("placeholder")
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("b")
+                                        .type("LIST")
+                                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                        .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("object_tuple")
+                        .type("OBJECT")
+                        .pythonType("placeholder")
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("b")
+                                        .type("TUPLE")
+                                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                        .build()))
+                        .build(),
+                ColumnSchemaDesc.builder().name("object_map")
+                        .type("OBJECT")
+                        .pythonType("placeholder")
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("b")
+                                        .type("MAP")
+                                        .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                        .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                        .build()))
                         .build())));
         var parquetConfig = new ParquetConfig();
         parquetConfig.setCompressionCodec(CompressionCodec.SNAPPY);
@@ -126,82 +250,234 @@ public class ParquetReadWriteTest {
         parquetConfig.setPageSize(4096);
         parquetConfig.setPageRowCountLimit(1000);
         List<Map<String, BaseValue>> records = List.of(
-                new HashMap<>() {
-                    {
-                        put("key", BaseValue.valueOf("0"));
-                        put("a", BaseValue.valueOf(true));
-                        put("b", BaseValue.valueOf((byte) 2));
-                        put("c", BaseValue.valueOf((short) 3));
-                        put("d", BaseValue.valueOf(4));
-                        put("e", BaseValue.valueOf(5L));
-                        put("f", BaseValue.valueOf(1.1f));
-                        put("g", BaseValue.valueOf(1.2));
-                        put("h", BaseValue.valueOf(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))));
-                        put("i", null);
-                        put("j", BaseValue.valueOf(List.of(10)));
-                        put("jj", BaseValue.valueOf(Map.of("a", 0, "b", 1)));
-                        put("k", ObjectValue.valueOf("t", Map.of("b", 11, "a", 12, "aa", "13")));
-                        put("l", BaseValue.valueOf(List.of(List.of(
-                                ObjectValue.valueOf("v",
-                                        Map.of("a", ObjectValue.valueOf("t", Map.of("b", 3, "a", 4)),
-                                                "b", List.of(100)))))));
-                        put("m", BaseValue.valueOf(
-                                Map.of(TupleValue.valueOf(List.of(1, 2, 3)),
-                                        ObjectValue.valueOf("t", Map.of("a", 1, "b", 2)))));
+                new TreeMap<>() {
+                    { // values that match the schema
+                        put("string", BaseValue.valueOf("0"));
+                        put("bool", BaseValue.valueOf(true));
+                        put("int8", BaseValue.valueOf((byte) 2));
+                        put("int16", BaseValue.valueOf((short) 3));
+                        put("int32", BaseValue.valueOf(4));
+                        put("int64", BaseValue.valueOf(5L));
+                        put("float32", BaseValue.valueOf(1.1f));
+                        put("float64", BaseValue.valueOf(1.2));
+                        put("bytes", BaseValue.valueOf(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))));
+                        put("unknown", null);
+                        put("list", BaseValue.valueOf(List.of(1, 2, 3)));
+                        put("list_object", BaseValue.valueOf(List.of(
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                ObjectValue.valueOf("v", Map.of("b", "12", "a", 22)),
+                                ObjectValue.valueOf("v", Map.of("b", "13", "a", 23)))));
+                        put("list_list", BaseValue.valueOf(List.of(
+                                BaseValue.valueOf(List.of(1, 2)),
+                                BaseValue.valueOf(List.of(3, 4, 5)),
+                                BaseValue.valueOf(List.of(6)))));
+                        put("list_tuple", BaseValue.valueOf(List.of(
+                                TupleValue.valueOf(List.of(1, 2)),
+                                TupleValue.valueOf(List.of(3, 4, 5)),
+                                TupleValue.valueOf(List.of(6)))));
+                        put("list_map", BaseValue.valueOf(List.of(
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                BaseValue.valueOf(Map.of("a", 1, "b", 2)),
+                                BaseValue.valueOf(Map.of("a", 2, "b", 3)))));
+                        put("tuple", TupleValue.valueOf(List.of(1, 2, 3)));
+                        put("tuple_object", TupleValue.valueOf(List.of(
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                ObjectValue.valueOf("v", Map.of("b", "12", "a", 22)),
+                                ObjectValue.valueOf("v", Map.of("b", "13", "a", 23)))));
+                        put("tuple_list", TupleValue.valueOf(List.of(
+                                BaseValue.valueOf(List.of(1, 2)),
+                                BaseValue.valueOf(List.of(3, 4, 5)),
+                                BaseValue.valueOf(List.of(6)))));
+                        put("tuple_tuple", TupleValue.valueOf(List.of(
+                                TupleValue.valueOf(List.of(1, 2)),
+                                TupleValue.valueOf(List.of(3, 4, 5)),
+                                TupleValue.valueOf(List.of(6)))));
+                        put("tuple_map", TupleValue.valueOf(List.of(
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                BaseValue.valueOf(Map.of("a", 1, "b", 2)),
+                                BaseValue.valueOf(Map.of("a", 2, "b", 3)))));
+                        put("map", BaseValue.valueOf(Map.of("a", 0, "b", 1)));
+                        put("map_object", BaseValue.valueOf(Map.of(
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                ObjectValue.valueOf("v", Map.of("b", "12", "a", 22)),
+                                ObjectValue.valueOf("v", Map.of("b", "13", "a", 23)),
+                                ObjectValue.valueOf("v", Map.of("b", "14", "a", 24)))));
+                        put("map_list", BaseValue.valueOf(Map.of(
+                                BaseValue.valueOf(List.of(1, 2)), BaseValue.valueOf(List.of(3, 4, 5)),
+                                BaseValue.valueOf(List.of(6)), BaseValue.valueOf(List.of(7, 8, 9)))));
+                        put("map_tuple", BaseValue.valueOf(Map.of(
+                                TupleValue.valueOf(List.of(1, 2)), TupleValue.valueOf(List.of(3, 4, 5)),
+                                TupleValue.valueOf(List.of(6)), TupleValue.valueOf(List.of(7, 8, 9)))));
+                        put("map_map", BaseValue.valueOf(Map.of(
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                BaseValue.valueOf(Map.of("a", 1, "b", 2)),
+                                BaseValue.valueOf(Map.of("a", 2, "b", 3)),
+                                BaseValue.valueOf(Map.of("a", 3, "b", 4)))));
+                        put("object", ObjectValue.valueOf("o1", Map.of("a", 1, "b", "2")));
+                        put("object_object", ObjectValue.valueOf("o2", Map.of("a", 1,
+                                "b", ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)))));
+                        put("object_list", ObjectValue.valueOf("o3", Map.of("a", 1, "b", List.of(1, 2, 3))));
+                        put("object_tuple",
+                                ObjectValue.valueOf("o4", Map.of("a", 1, "b", TupleValue.valueOf(List.of(1, 2, 3)))));
+                        put("object_map", ObjectValue.valueOf("o5", Map.of("a", 1, "b", Map.of("a", 0, "b", 1))));
                     }
                 },
-                Map.of("key", BaseValue.valueOf("1"), "a", BaseValue.valueOf(false)),
-                Map.of("key", BaseValue.valueOf("2"), "j", BaseValue.valueOf(List.of(1, 2))),
-                Map.of("key", BaseValue.valueOf("3"), "k", ObjectValue.valueOf("t", Map.of("a", 1))),
-                Map.of("key", BaseValue.valueOf("4")),
-                Map.of("key", BaseValue.valueOf("5"),
-                        "j", BaseValue.valueOf(new ArrayList<>() {
-                            {
-                                add(3);
-                                add(null);
-                                add(4);
-                            }
-                        }),
-                        "jj", BaseValue.valueOf(new HashMap<>() {
-                            {
-                                put("a", 0);
-                                put("b", 1);
-                                put("x", null);
-                                put(null, 3);
-                                put(null, null);
-                            }
-                        })),
-                Map.of("key", BaseValue.valueOf("6"),
-                        "j", BaseValue.valueOf(List.of()),
-                        "jj", BaseValue.valueOf(Map.of()),
-                        "k", ObjectValue.valueOf("t", Map.of())),
-                Map.of("key", BaseValue.valueOf(7),
-                        "j", BaseValue.valueOf(8),
-                        "jj", BaseValue.valueOf(new HashMap<>() {
-                            {
-                                put("a", "0");
-                                put(0, 1);
-                                put(null, "1");
-                                put(3, null);
-                                put("x", 4);
-                            }
-                        }),
-                        "k", ObjectValue.valueOf("tt", Map.of("a", 0)),
-                        "m", BaseValue.valueOf(
-                                Map.of(TupleValue.valueOf(List.of(1, "2", 3)),
-                                        ObjectValue.valueOf("xx", Map.of("c", 1, "d", 2L)))),
-                        "extra_field", BaseValue.valueOf(0)),
-                Map.of("key", BaseValue.valueOf(8L),
-                        "j", BaseValue.valueOf(new ArrayList<>() {
-                            {
-                                add("0");
-                                add(null);
-                                add(4);
-                                add(Map.of());
-                            }
-                        }),
-                        "k", ObjectValue.valueOf("tt", Map.of("a", "0")),
-                        "l", BaseValue.valueOf(List.of(List.of(Map.of("a", Map.of("a", "b")))))));
+                new TreeMap<>() {
+                    { // values with different types
+                        put("string", BaseValue.valueOf(1));
+                        put("bool", BaseValue.valueOf(1));
+                        put("int8", BaseValue.valueOf(1));
+                        put("int16", BaseValue.valueOf(1));
+                        put("int32", BaseValue.valueOf("1"));
+                        put("int64", BaseValue.valueOf(1));
+                        put("float32", BaseValue.valueOf(1));
+                        put("float64", BaseValue.valueOf(1));
+                        put("bytes", BaseValue.valueOf(1));
+                        put("unknown", BaseValue.valueOf(1));
+                        put("list", BaseValue.valueOf(1));
+                        put("list_object", BaseValue.valueOf(1));
+                        put("list_list", BaseValue.valueOf(1));
+                        put("list_tuple", BaseValue.valueOf(1));
+                        put("list_map", BaseValue.valueOf(1));
+                        put("tuple", BaseValue.valueOf(1));
+                        put("tuple_object", BaseValue.valueOf(1));
+                        put("tuple_list", BaseValue.valueOf(1));
+                        put("tuple_tuple", BaseValue.valueOf(1));
+                        put("tuple_map", BaseValue.valueOf(1));
+                        put("map", BaseValue.valueOf(1));
+                        put("map_object", BaseValue.valueOf(1));
+                        put("map_list", BaseValue.valueOf(1));
+                        put("map_tuple", BaseValue.valueOf(1));
+                        put("map_map", BaseValue.valueOf(1));
+                        put("object", BaseValue.valueOf(1));
+                        put("object_object", BaseValue.valueOf(1));
+                        put("object_list", BaseValue.valueOf(1));
+                        put("object_tuple", BaseValue.valueOf(1));
+                        put("object_map", BaseValue.valueOf(1));
+                    }
+                },
+                new TreeMap<>() {
+                    { // null values
+                        put("string", null);
+                        put("bool", null);
+                        put("int8", null);
+                        put("int16", null);
+                        put("int32", null);
+                        put("int64", null);
+                        put("float32", null);
+                        put("float64", null);
+                        put("bytes", null);
+                        put("unknown", null);
+                        put("list", null);
+                        put("list_object", null);
+                        put("list_list", null);
+                        put("list_tuple", null);
+                        put("list_map", null);
+                        put("tuple", null);
+                        put("tuple_object", null);
+                        put("tuple_list", null);
+                        put("tuple_tuple", null);
+                        put("tuple_map", null);
+                        put("map", null);
+                        put("map_object", null);
+                        put("map_list", null);
+                        put("map_tuple", null);
+                        put("map_map", null);
+                        put("object", null);
+                        put("object_object", null);
+                        put("object_list", null);
+                        put("object_tuple", null);
+                        put("object_map", null);
+                    }
+                },
+                new TreeMap<>() {
+                    { // replace scalar with list
+                        put("string", BaseValue.valueOf(List.of(1)));
+                        put("bool", BaseValue.valueOf(List.of(1)));
+                        put("int8", BaseValue.valueOf(List.of(1)));
+                        put("int16", BaseValue.valueOf(List.of(1)));
+                        put("int32", BaseValue.valueOf(List.of(1)));
+                        put("int64", BaseValue.valueOf(List.of(1)));
+                        put("float32", BaseValue.valueOf(List.of(1)));
+                        put("float64", BaseValue.valueOf(List.of(1)));
+                        put("bytes", BaseValue.valueOf(List.of(1)));
+                        put("unknown", BaseValue.valueOf(List.of(1)));
+                    }
+                },
+                new TreeMap<>() {
+                    { // mixed types
+                        put("list", BaseValue.valueOf(List.of("1", 1, 1.0)));
+                        put("list_object",
+                                BaseValue.valueOf(List.of(
+                                        ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                        "1",
+                                        ObjectValue.valueOf("v", Map.of("c", "11", "a", 21)))));
+                        put("list_list", BaseValue.valueOf(List.of(
+                                BaseValue.valueOf(List.of(1)),
+                                "1",
+                                BaseValue.valueOf(List.of("1", 1)),
+                                TupleValue.valueOf(List.of(1)))));
+                        put("list_tuple", BaseValue.valueOf(List.of(
+                                TupleValue.valueOf(List.of(1)),
+                                "1",
+                                TupleValue.valueOf(List.of("1", 1)),
+                                BaseValue.valueOf(List.of(1)))));
+                        put("list_map", BaseValue.valueOf(List.of(
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                "1",
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1, 0, "0")))));
+                        put("tuple", TupleValue.valueOf(List.of("1", 1, 1.0)));
+                        put("tuple_object", TupleValue.valueOf(List.of(
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                "1",
+                                ObjectValue.valueOf("v", Map.of("c", "11", "a", 21)))));
+                        put("tuple_list", TupleValue.valueOf(List.of(
+                                BaseValue.valueOf(List.of(1)),
+                                "1",
+                                BaseValue.valueOf(List.of("1", 1)),
+                                TupleValue.valueOf(List.of(1)))));
+                        put("tuple_tuple", TupleValue.valueOf(List.of(
+                                TupleValue.valueOf(List.of(1)),
+                                "1",
+                                TupleValue.valueOf(List.of("1", 1)),
+                                BaseValue.valueOf(List.of(1)))));
+                        put("tuple_map", TupleValue.valueOf(List.of(
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                "1",
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1, 0, "0")))));
+                        put("map", BaseValue.valueOf(Map.of("0", 1, 0, "1")));
+                        put("map_object", BaseValue.valueOf(Map.of(
+                                0, "1",
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                ObjectValue.valueOf("v", Map.of("b", "11", "a", 21)),
+                                ObjectValue.valueOf("v", Map.of("c", "11", "a", 21)),
+                                "1",
+                                1,
+                                ObjectValue.valueOf("v", Map.of("c", "11", "a", 21))
+                        )));
+                        put("map_list", BaseValue.valueOf(Map.of(
+                                0, "1",
+                                BaseValue.valueOf(List.of(1)), BaseValue.valueOf(List.of(1)),
+                                BaseValue.valueOf(List.of(1, "1")), BaseValue.valueOf(List.of(1, "1")),
+                                TupleValue.valueOf(List.of(1)), TupleValue.valueOf(List.of(1)))));
+                        put("map_tuple", BaseValue.valueOf(Map.of(
+                                0, "1",
+                                BaseValue.valueOf(List.of(1)), BaseValue.valueOf(List.of(1)),
+                                BaseValue.valueOf(List.of(1, "1")), BaseValue.valueOf(List.of(1, "1")),
+                                TupleValue.valueOf(List.of(1)), TupleValue.valueOf(List.of(1)))));
+                        put("map_map", BaseValue.valueOf(Map.of(
+                                0, "1",
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1)),
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1, 0, "0")),
+                                BaseValue.valueOf(Map.of("a", 0, "b", 1, 0, "0")))));
+                        put("object", ObjectValue.valueOf("v", Map.of("b", 1, "a", "0")));
+                        put("object_object", ObjectValue.valueOf("v", Map.of("b", 1, "a", "0")));
+                        put("object_list", ObjectValue.valueOf("v", Map.of("b", 1, "a", "0")));
+                        put("object_tuple", ObjectValue.valueOf("v", Map.of("b", 1, "a", "0")));
+                        put("object_map", ObjectValue.valueOf("v", Map.of("b", 1, "a", "0")));
+                    }
+                });
         SwWriter.writeWithBuilder(
                 new SwParquetWriterBuilder(this.storageAccessService,
                         schema.getColumnSchemaList().stream()
@@ -213,16 +489,11 @@ public class ParquetReadWriteTest {
                 records.iterator());
         var conf = new Configuration();
         var reader = new SwParquetReaderBuilder(this.storageAccessService, "test").withConf(conf).build();
-        assertThat(new HashMap<>(reader.read()), is(records.get(0)));
+        assertThat(new TreeMap<>(reader.read()), is(records.get(0)));
         assertThat(conf.get(SwReadSupport.META_DATA_KEY), is("meta"));
-        assertThat(new HashMap<>(reader.read()), is(records.get(1)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(2)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(3)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(4)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(5)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(6)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(7)));
-        assertThat(new HashMap<>(reader.read()), is(records.get(8)));
+        for (int i = 1; i < records.size(); ++i) {
+            assertThat(new TreeMap<>(reader.read()), is(records.get(i)));
+        }
         assertThat(reader.read(), nullValue());
         reader.close();
     }

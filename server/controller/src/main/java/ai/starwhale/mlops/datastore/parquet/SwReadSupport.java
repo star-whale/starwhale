@@ -155,7 +155,28 @@ public class SwReadSupport extends ReadSupport<Map<String, BaseValue>> {
 
                     private void mergeList(ListValue value, Wal.Column wal) {
                         wal.getListValueList()
-                                .forEach(col -> value.add(col.getIndex(), WalRecordDecoder.decodeValue(null, col)));
+                                .forEach(col -> {
+                                    if (col.getIndex() >= 0) {
+                                        value.add(col.getIndex(), WalRecordDecoder.decodeValue(null, col));
+                                    } else {
+                                        var element = value.get(-col.getIndex() - 1);
+                                        switch (element.getColumnType()) {
+                                            case LIST:
+                                            case TUPLE:
+                                                this.mergeList((ListValue) element, col);
+                                                break;
+                                            case MAP:
+                                                this.mergeMap((MapValue) element, col);
+                                                break;
+                                            case OBJECT:
+                                                this.mergeObject((ObjectValue) element, col);
+                                                break;
+                                            default:
+                                                throw new RuntimeException(
+                                                        "can not merge :" + col + " " + element.toString());
+                                        }
+                                    }
+                                });
                     }
 
                     private void mergeMap(MapValue value, Wal.Column wal) {
