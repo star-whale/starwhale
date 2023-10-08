@@ -1,14 +1,16 @@
 import { tableDataLink } from '@starwhale/core/datastore'
 import _ from 'lodash'
 import { AnnotationType, ArtifactType, ITypeLink, OptionsT, RecordT, SummaryT } from './types'
+import { useAuth } from '@/api/Auth'
 
-export const parseDataSrc = _.curry((token: string, link: ITypeLink) => {
+export const parseDataSrc = _.curry((link: ITypeLink) => {
+    const { token } = useAuth()
     const { uri, offset, size } = link ?? {}
     const src = tableDataLink({
         uri,
         offset,
         size,
-        Authorization: token,
+        Authorization: token as string,
     })
     return src
 })
@@ -28,19 +30,17 @@ export const isAnnotationType = (type: string) => {
 export const isAnnotation = (data: any) => (typeof data === 'object' && isAnnotationType(data?._type)) || isMask(data)
 export const isAnnotationHiddenInTable = (data: any) => isAnnotation(data) && !isMask(data)
 
-export function linkToData(data: ITypeLink, curryParseLinkFn: any, token: string): string {
-    if (curryParseLinkFn) return curryParseLinkFn(data)
+export function linkToData(data: ITypeLink): string {
     if (data.uri?.startsWith('http')) {
         return data.uri
     }
-    return parseDataSrc(token, data)
+    return parseDataSrc(data)
 }
 
 // @FIXME add cache
 export function getSummary(record: RecordT, options: OptionsT) {
     const summaryTmp = new Map<string, SummaryT>()
     const summaryTypesTmp = new Set<string>()
-    const token = (window.localStorage && window.localStorage.getItem('token')) ?? ''
     Object.entries(record).forEach(([key, value]: [string, any]) => {
         if (!options.showPrivate && isPrivate(key)) return
         function flatObjectWithPaths(anno: any, path: any[] = []) {
@@ -59,7 +59,7 @@ export function getSummary(record: RecordT, options: OptionsT) {
                     summaryTmp.set([...path].join('.'), {
                         ...anno,
                         _extendPath: [...path].join('.'),
-                        _extendSrc: anno.link ? linkToData(anno.link, options.parseLink, token) : undefined,
+                        _extendSrc: anno.link ? linkToData(anno.link) : undefined,
                         _extendType: isMask(anno) ? AnnotationType.MASK : anno._type,
                     })
                 }

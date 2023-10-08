@@ -32,12 +32,10 @@ export function useDatastoreColumns(
     columnTypes?: { name: string; type: string }[],
     options: {
         fillWidth?: boolean
-        parseLink?: (link: string) => (str: any) => string
         showPrivate?: boolean
         showLink?: boolean
     } = {
         fillWidth: false,
-        parseLink: undefined,
     }
 ): ColumnT[] {
     const columns = React.useMemo(() => {
@@ -58,7 +56,7 @@ export function useDatastoreColumns(
                         fillWidth: options.fillWidth,
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
-                            return RecordAttr.decode(record, column.name, options)
+                            return RecordAttr.decode(record, column.name)
                         },
                     })
                 )
@@ -66,7 +64,7 @@ export function useDatastoreColumns(
 
         return columnsWithAttrs
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [columnTypes, options.fillWidth, options.showLink, options.fillWidth, options.parseLink, options.showPrivate])
+    }, [columnTypes, options.fillWidth, options.showLink, options.fillWidth, options.showPrivate])
 
     return columns
 }
