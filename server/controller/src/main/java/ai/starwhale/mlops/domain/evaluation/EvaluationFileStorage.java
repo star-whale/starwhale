@@ -75,12 +75,6 @@ public class EvaluationFileStorage {
 
     public Map<String, String> signLinks(Set<String> uris, Long expTimeMillis) {
         return uris.stream()
-                .collect(Collectors.toMap(u -> u, u -> {
-                    try {
-                        return uriAccessor.linkOf(u, expTimeMillis);
-                    } catch (Exception e) {
-                        return "";
-                    }
-                }));
+                .collect(Collectors.toMap(u -> u, u -> uriAccessor.linkOf(u, expTimeMillis)));
     }
 }
