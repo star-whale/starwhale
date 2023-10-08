@@ -13,6 +13,6 @@ class MyDefaultClass(PipelineHandler):
     def handler_foo(self, data: t.Any) -> t.Any:
         return
 
-    @service.api(gradio.Text(), gradio.Json())
+    @service.api(gradio.Text(), gradio.Json(), examples=["foo", "bar", __file__])
     def cmp(self, ppl_result: t.Iterator) -> t.Any:
         pass

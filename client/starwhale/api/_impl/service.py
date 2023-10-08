@@ -97,7 +97,7 @@ class Service:
 
     def _render_api(self, _api: Api, _inst: t.Any) -> None:
         import gradio
-        from gradio.components import File, Image, Video, IOComponent
+        from gradio.components import IOComponent
 
         js_func: t.Optional[str] = None
         if self.hijack and self.hijack.submit:
@@ -116,25 +116,21 @@ class Service:
                         examples=_api.examples,
                         inputs=[i for i in _api.input if isinstance(i, IOComponent)],
                     )
-                    if any(
-                        isinstance(i, (File, Image, Video))
-                        for i in example.dataset.components
-                    ):
-                        # examples should be a list of file path
-                        # use flatten list
-                        to_copy = [i for j in example.examples for i in j]
-                        self.example_resources.extend(to_copy)
-                        # change example resource path for online evaluation
-                        # e.g. /path/to/example.png -> /workdir/src/.starwhale/examples/example.png
-                        if self.hijack and self.hijack.resource_path:
-                            for i in range(len(example.dataset.samples)):
-                                for j in range(len(example.dataset.samples[i])):
-                                    origin = example.dataset.samples[i][j]
-                                    if origin in to_copy:
-                                        name = os.path.basename(origin)
-                                        example.dataset.samples[i][j] = os.path.join(
-                                            self.hijack.resource_path, name
-                                        )
+                    # examples should be a list of file path
+                    # use flatten list
+                    to_copy = [i for j in example.examples for i in j]
+                    self.example_resources.extend(to_copy)
+                    # change example resource path for online evaluation
+                    # e.g. /path/to/example.png -> /workdir/src/.starwhale/examples/example.png
+                    if self.hijack and self.hijack.resource_path:
+                        for i in range(len(example.dataset.samples)):
+                            for j in range(len(example.dataset.samples[i])):
+                                origin = example.dataset.samples[i][j]
+                                if origin in to_copy:
+                                    name = os.path.basename(origin)
+                                    example.dataset.samples[i][j] = os.path.join(
+                                        self.hijack.resource_path, name
+                                    )
             with gradio.Column():
                 for i in _api.output:
                     gradio.components.get_component_instance(i, render=False).render()
