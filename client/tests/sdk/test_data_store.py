@@ -1155,6 +1155,13 @@ class TestLocalDataStore(BaseTestCase):
             "k", [data_store.ColumnSchema("k", data_store.INT64)]
         )
         ds.update_table(f"{prefix}/labels", schema, [{"k": 0}])
+        assert ds.list_tables([prefix]) == [f"{prefix.strip('/')}/labels"]
+
+        # release tables in memory and reload
+        ds.tables.clear()
+        ds.update_table(f"{prefix}/labels", schema, [{"k": 1}])
+        assert ds.list_tables([prefix]) == [f"{prefix.strip('/')}/labels"]
+
         ds.update_table(f"{prefix}/results", schema, [{"k": 0}])
 
         for i in range(0, 3):
