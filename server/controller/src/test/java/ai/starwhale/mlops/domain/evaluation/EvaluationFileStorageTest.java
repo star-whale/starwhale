@@ -60,15 +60,15 @@ public class EvaluationFileStorageTest {
 
     @Test
     public void testLinksOf() {
-        given(uriAccessor.linkOf(eq("a"), anyLong()))
-                .willReturn("link1");
-        given(uriAccessor.linkOf(eq("b"), anyLong()))
-                .willReturn("link2");
-        given(uriAccessor.linkOf(eq("x"), anyLong()))
-                .willThrow(SwValidationException.class);
+        given(uriAccessor.linkOf(eq("a"), anyLong())).willReturn("link1");
+        given(uriAccessor.linkOf(eq("b"), anyLong())).willReturn("link2");
+        given(uriAccessor.linkOf(eq("x"), anyLong())).willThrow(SwValidationException.class);
 
+        Assertions.assertThrows(SwValidationException.class, () -> fileStorage.signLinks(Set.of("a", "b", "x"), 1L));
+
+        given(uriAccessor.linkOf(eq("x"), anyLong())).willReturn("link3");
         Assertions.assertEquals(
-                Map.of("a", "link1", "b", "link2", "x", ""),
+                Map.of("a", "link1", "b", "link2", "x", "link3"),
                 fileStorage.signLinks(Set.of("a", "b", "x"), 1L)
         );
     }
