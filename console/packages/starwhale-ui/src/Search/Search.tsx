@@ -1,6 +1,6 @@
 import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useReducer } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
 import { SearchFieldSchemaT, ValueT } from './types'
