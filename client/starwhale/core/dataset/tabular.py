@@ -6,6 +6,7 @@ import typing as t
 import threading
 from copy import deepcopy
 from enum import Enum, unique
+from uuid import uuid1
 from queue import Queue
 from types import TracebackType
 from functools import partial
@@ -584,7 +585,7 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         self.session_end = session_end
         self.dataset_uri = dataset_uri
         self.run_env = _RunEnvType.POD
-        self.consumer_id = os.environ.get(ENV_POD_NAME)
+        self.consumer_id = os.environ.get(ENV_POD_NAME) or uuid1().hex
 
         self._do_validate()
 

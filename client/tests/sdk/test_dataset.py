@@ -672,20 +672,19 @@ class TestDatasetSessionConsumption(TestCase):
         }
 
         os.environ[ENV_POD_NAME] = ""
-        with self.assertRaises(RuntimeError):
-            rm.request(
-                HTTPMethod.GET,
-                f"{instance_uri}/api/v1/project/p",
-                json={"data": {"id": 1, "name": "p"}},
-            )
-            CloudTDSC(
-                Resource(
-                    "mnist/version/latest",
-                    typ=ResourceType.dataset,
-                    project=Project("cloud://test/project/p"),
-                ),
-                "",
-            )
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/p",
+            json={"data": {"id": 1, "name": "p"}},
+        )
+        CloudTDSC(
+            Resource(
+                "mnist/version/latest",
+                typ=ResourceType.dataset,
+                project=Project("cloud://test/project/p"),
+            ),
+            "",
+        )
 
         rm.request(
             HTTPMethod.GET,
