@@ -43,7 +43,10 @@ class Logger:
             if writer is None:
                 _store = getattr(self, "_data_store", None)
                 writer = data_store.TableWriter(
-                    table_name, data_store=_store, key_column=self._ID_KEY
+                    table_name,
+                    data_store=_store,
+                    key_column=self._ID_KEY,
+                    run_exceptions_limits=0,
                 )
                 self._writers[table_name] = writer
         return writer
