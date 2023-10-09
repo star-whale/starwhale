@@ -16,18 +16,25 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import ai.starwhale.mlops.ObjectMockHolder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
+import ai.starwhale.mlops.domain.run.RunDao;
+import ai.starwhale.mlops.domain.run.bo.Run;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,10 +44,17 @@ public class TaskBoConverterTest {
 
     Model model = Model.builder().build();
 
+    RunDao runDao;
+    TaskBoConverter taskBoConverter;
+
+    @BeforeEach
+    public void setup() {
+        runDao = mock(RunDao.class);
+        taskBoConverter = new TaskBoConverter(runDao);
+    }
+
     @Test
     public void testTaskBoConverter() {
-        TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
-
         Step step = Step.builder()
                 .job(Job.builder()
                         .model(model)
@@ -60,6 +74,11 @@ public class TaskBoConverterTest {
                 .startedTime(new Date())
                 .taskUuid(UUID.randomUUID().toString())
                 .build();
+        when(runDao.findByTaskId(1L)).thenReturn(List.of(
+                Run.builder().id(1L).status(RunStatus.FAILED).build(),
+                Run.builder().id(2L).status(RunStatus.FAILED).build(),
+                Run.builder().id(3L).status(RunStatus.RUNNING).build()
+        ));
         TaskEntity cmpTask = TaskEntity.builder()
                 .id(2L)
                 .taskStatus(TaskStatus.CREATED)
@@ -69,8 +88,13 @@ public class TaskBoConverterTest {
                                 + "\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
                 .taskUuid(UUID.randomUUID().toString())
                 .build();
+        when(runDao.findByTaskId(2L)).thenReturn(List.of(
+                Run.builder().id(6L).status(RunStatus.FAILED).build()
+        ));
         Task task1 = taskBoConverter.transformTask(step, pplTask);
+        Assertions.assertEquals(3L, task1.getCurrentRun().getId());
         Task task2 = taskBoConverter.transformTask(step, cmpTask);
+        Assertions.assertNull(task2.getCurrentRun());
 
         compareEntityAndTask(step, pplTask, task1);
         compareEntityAndTask(step, cmpTask, task2);
