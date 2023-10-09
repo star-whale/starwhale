@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import yaml
-import respx
 from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -808,7 +807,6 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.model.model.Model.copy")
     @patch("starwhale.core.runtime.model.Runtime.copy")
-    @respx.mock
     def test_prepare_model_run_args(
         self,
         rm: Mocker,
