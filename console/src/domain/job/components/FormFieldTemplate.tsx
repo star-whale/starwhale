@@ -11,7 +11,7 @@ function FormFieldTemplate({ FormItem }: { FormItem: (props_: FormItemProps<ICre
 
     return (
         <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
-            <FormItem label={t('job.form.template')} name='templateId' required>
+            <FormItem label={t('job.form.template')} name='templateId'>
                 <JobTemplateSelector projectId={projectId} />
             </FormItem>
         </div>
