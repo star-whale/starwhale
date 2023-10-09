@@ -1338,7 +1338,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_check_call.side_effect = subprocess.CalledProcessError(
             1, "cmd", output="test"
         )
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(subprocess.CalledProcessError):
             sr.build_from_python_env(runtime_name=name, mode="conda")
 
     @patch("os.environ", {})

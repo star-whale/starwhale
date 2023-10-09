@@ -12,7 +12,6 @@ from starwhale.utils import console
 def wrap_sw_error_resp(
     r: requests.Response,
     header: str,
-    exit: bool = False,
     use_raise: bool = False,
     silent: bool = False,
     ignore_status_codes: t.List[int] = [],
@@ -40,8 +39,6 @@ def wrap_sw_error_resp(
             return
 
         _print(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
-        if exit:
-            sys.exit(1)
 
         if use_raise:
             r.raise_for_status()
