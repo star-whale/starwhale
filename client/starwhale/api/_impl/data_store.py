@@ -2655,7 +2655,7 @@ class TableWriter(threading.Thread):
         table_name: str,
         key_column: str = "id",
         data_store: Optional[DataStore] = None,
-        run_exceptions_limits: int = 100,
+        run_exceptions_limits: int = 0,
     ) -> None:
         super().__init__(name=f"TableWriter-{table_name}")
         self.table_name = table_name
