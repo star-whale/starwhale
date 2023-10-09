@@ -50,6 +50,7 @@ const isValueExist = (value: any) => {
 export default function FilterRenderer({
     value: rawValues = {},
     onChange = () => {},
+    onBlur = () => {},
     onRemove = () => {},
     isFocus = false,
     isEditing = false,
@@ -68,17 +69,25 @@ export default function FilterRenderer({
     const inputRef = useRef<HTMLInputElement>(null)
     const $columns = fields
 
+    const [cached, setCached] = useState<any>({})
+    // only rawValues all exist then cached
+    useEffect(() => {
+        if (isValueExist(rawValues.property) && isValueExist(rawValues.op) && isValueExist(rawValues.value)) {
+            setCached(rawValues)
+        }
+    }, [rawValues])
+
     const origins = React.useMemo(
         () => [
             { type: 'property', value: rawValues.property },
             { type: 'op', value: rawValues.op },
             { type: 'value', value: rawValues.value },
         ],
-        [rawValues.property, rawValues.op, rawValues.value]
+        [rawValues]
     )
     const [machine, send, service] = useMachine(filterMachine, {
         context: {
-            origins,
+            origins: cached,
             values: origins,
         },
     })
@@ -86,6 +95,8 @@ export default function FilterRenderer({
     const property = values[0]?.value
     const op = values[1]?.value
     const value = values[2]?.value
+
+    console.log('[filter]:', values, rawValues, cached)
 
     const { FilterOperator, FilterField, FilterValue, FilterFieldValue, filter } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
@@ -179,12 +190,16 @@ export default function FilterRenderer({
     // esc
     const reset = () => {
         send({ type: 'RESET' })
+        // curr blur then select the lastest one
+        onBlur()
     }
     const submit = () => {
         const hasSearchInput = isValueExist(input)
         if (!property) return
         if (!op) return
+        // has input then reset default value
         if (hasSearchInput) confirm(input, 2)
+        // has no input then use default value
         if (value) confirm(value, 2)
     }
 
@@ -271,7 +286,7 @@ export default function FilterRenderer({
         return () => subscription.unsubscribe()
     }, [service, send])
 
-    const Remove = () => (
+    const Remove = (
         <div className={styles.label}>
             {/* {Array.isArray(item.value) ? item.value.join(', ') : item.value} */}
             <div
@@ -280,7 +295,7 @@ export default function FilterRenderer({
                 onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    onRemove()
+                    onRemove(true)
                 }}
                 tabIndex={0}
             >
@@ -300,7 +315,31 @@ export default function FilterRenderer({
         </div>
     )
 
-    const attrs = [
+    const Input = (
+        <div
+            className='autosize-input inline-block relative flex-1'
+            style={{
+                minWidth: focused ? '50px' : 0,
+                flexBasis: focused ? '100px' : 0,
+                width: focused ? '160px' : 0,
+                maxWidth: '100%',
+                height: '100%',
+            }}
+        >
+            {/* @ts-ignore */}
+            <AutosizeInput
+                inputRef={inputRef as any}
+                value={input}
+                onChange={handleInputChange}
+                overrides={{
+                    Input: FilterValue as any,
+                }}
+                $style={{ width: '100%', height: '100%' }}
+            />
+        </div>
+    )
+
+    const $attrs = [
         {
             type: 'property',
             value: property,
@@ -318,18 +357,20 @@ export default function FilterRenderer({
             inputRef,
             valid: () => (op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true),
         },
-    ]
-        .filter((item) => item.valid())
-        .map((item, index) => {
-            return {
-                ...item,
-                isEditing: focusTarget === index && focused,
-                // value: focusTarget === index ? undefined : item.value,
-                // after: index === attrs.length - 1 && editing ? <Remove /> : undefined,
-                onChange: (v: any) => confirm(v, index),
-                onClick: () => focusOnTarget(index),
-            }
-        })
+    ].filter((item) => item.valid())
+
+    const attrs = $attrs.map((item, index) => {
+        return {
+            ...item,
+            isEditing: focusTarget === index && focused,
+            value: focusTarget === index && focused ? undefined : item.value,
+            renderInput: () => Input,
+            renderAfter: () => (index === $attrs.length - 1 ? Remove : undefined),
+            // after: index === attrs.length - 1 && editing ? <Remove /> : undefined,
+            onChange: (v: any) => confirm(v, index),
+            onClick: () => focusOnTarget(index),
+        }
+    })
 
     console.log('[filter]: ', {
         focused,
@@ -353,27 +394,6 @@ export default function FilterRenderer({
                 if (!other.renderer) return null
                 return <other.renderer key={type} {...other} />
             })}
-            <div
-                className='autosize-input inline-block relative flex-1'
-                style={{
-                    minWidth: focused ? '50px' : 0,
-                    flexBasis: focused ? '100px' : 0,
-                    width: focused ? '100%' : 0,
-                    maxWidth: '100%',
-                    height: '100%',
-                }}
-            >
-                {/* @ts-ignore */}
-                <AutosizeInput
-                    inputRef={inputRef as any}
-                    value={input}
-                    onChange={handleInputChange}
-                    overrides={{
-                        Input: FilterValue as any,
-                    }}
-                    $style={{ width: '100%', height: '100%' }}
-                />
-            </div>
         </div>
     )
 }

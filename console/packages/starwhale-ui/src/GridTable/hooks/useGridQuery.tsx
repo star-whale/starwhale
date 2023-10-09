@@ -33,25 +33,28 @@ function useGridQuery() {
 
     const renderConfigQuery = React.useCallback(() => {
         return (
-            <div className='flex justify-between items-center gap-20px'>
-                <div className='flex flex-1'>
-                    {isSimpleQuery ? (
-                        <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
-                    ) : (
-                        <ConfigQuery
-                            value={queries}
-                            onChange={onChange}
-                            columnTypes={sortedColumnTypes}
-                            columnHints={columnHints}
-                        />
+            <>
+                <div className='flex justify-between items-center gap-20px'>
+                    <div className='flex flex-1'>
+                        {isSimpleQuery ? (
+                            <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
+                        ) : (
+                            <ConfigQuery
+                                value={queries}
+                                onChange={onChange}
+                                columnTypes={sortedColumnTypes}
+                                columnHints={columnHints}
+                            />
+                        )}
+                    </div>
+                    {hasFilter && (
+                        <Button as='link' onClick={() => setIsSimpleQuery(!isSimpleQuery)}>
+                            {!isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
+                        </Button>
                     )}
                 </div>
-                {hasFilter && (
-                    <Button as='link' onClick={() => setIsSimpleQuery(!isSimpleQuery)}>
-                        {!isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
-                    </Button>
-                )}
-            </div>
+                {JSON.stringify(queries)}
+            </>
         )
     }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
 

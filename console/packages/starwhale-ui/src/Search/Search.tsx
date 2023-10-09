@@ -104,6 +104,20 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
         setIsEditing(false)
     })
 
+    const focusToEnd = React.useCallback(() => {
+        if (editingItem?.index === -1) return
+        setEditingItem({ index: -1 })
+    }, [editingItem])
+
+    // const onValueUpdate = React.useCallback(
+    //     (index: number, value: any) => {
+    //         const next = [...items]
+    //         next[index].value = value
+    //         onChange?.(next)
+    //     },
+    //     [items, onChange]
+    // )
+
     console.log('[Search]: ', editingItem, value[0], value[1], value)
 
     const count = React.useRef(100)
@@ -123,12 +137,15 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                     }}
                     // @ts-ignore
                     containerRef={ref}
-                    onRemove={() => {
+                    onBlur={() => {
+                        setEditingItem({ index: -1 })
+                    }}
+                    onRemove={(blur = false) => {
                         const next = [...items]
                         next.splice(index, 1)
                         onChange?.(next)
-                        console.log('next: ', index, next)
-                        setEditingItem({ index: next.length - 1 < 0 ? 0 : next.length - 1 })
+                        if (!blur) return
+                        setIsEditing(false)
                     }}
                     onChange={(newValue: any) => {
                         let newItems: any[] = []
@@ -153,14 +170,11 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                 isFocus={editingItem?.index === -1}
                 fields={fields}
                 style={{ flex: 1 }}
-                onClick={() => {
-                    if (editingItem?.index !== -1) setEditingItem({ index: -1 })
-                }}
+                onClick={focusToEnd}
                 // @ts-ignore
                 containerRef={ref}
                 onRemove={() => {
                     const index = items.length - 1 < 0 ? 0 : items.length - 1
-                    console.log('index: ', index)
                     setEditingItem({ index })
                 }}
                 onChange={(newValue: any) => {

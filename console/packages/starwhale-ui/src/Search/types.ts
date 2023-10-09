@@ -199,6 +199,8 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
     options?: any[]
     mountNode?: HTMLElement
     inputRef?: React.RefObject<any>
+    renderInput?: () => React.ReactNode
+    renderAfter?: () => React.ReactNode
 }
 
 export type FilterT = {

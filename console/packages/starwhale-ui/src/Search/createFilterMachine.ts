@@ -173,7 +173,7 @@ export const filterMachine = createMachine(
             focusForword: assign({
                 focused: true,
                 focusTarget: (context) => {
-                    return Math.min(context.focusTarget + 1, context.origins.length - 1)
+                    return Math.min(context.focusTarget + 1, context.values.length - 1)
                 },
             }),
             focusConfirm: assign((context, { index, value, callback }) => {

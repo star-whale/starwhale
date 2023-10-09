@@ -86,19 +86,25 @@ function PopoverContainer(props: {
                 />
             )}
         >
-            <div>
-                <p
-                    // eslint-disable-next-line
-                    role='button'
-                    tabIndex={0}
-                    onClick={props.onClick}
-                    className={props.children ? styles.label : styles.labelEmpty}
-                    title={typeof props.value === 'string' ? props.value : ''}
-                >
-                    {props.children}
-                </p>
-            </div>
+            <div>{props.children}</div>
         </Popover>
+    )
+}
+
+function Label(props) {
+    const styles = useStyles()
+    if (!props.value) return null
+    return (
+        <p
+            // eslint-disable-next-line
+            role='button'
+            tabIndex={0}
+            onClick={props.onClick}
+            className={props.children ? styles.label : styles.labelEmpty}
+            title={typeof props.value === 'string' ? props.value : ''}
+        >
+            {props.children}
+        </p>
     )
 }
 
@@ -114,7 +120,10 @@ function Filter(options: FilterT): FilterT {
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
-                    {typeof rest.value === 'string' ? normalize(rest.value) : rest.value}
+                    {isEditing && rest.renderInput?.()}
+                    {!isEditing && (
+                        <Label {...rest}>{typeof rest.value === 'string' ? normalize(rest.value) : rest.value}</Label>
+                    )}
                 </PopoverContainer>
             )
         },
@@ -126,7 +135,12 @@ function Filter(options: FilterT): FilterT {
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
-                    {renderOptions.find((v) => v.id === rest.value)?.label ?? ''}
+                    {isEditing && rest.renderInput?.()}
+                    {!isEditing && (
+                        <Label {...rest}>
+                            {renderOptions.find((v) => v.id === rest.value)?.label} {rest.renderAfter?.()}
+                        </Label>
+                    )}
                 </PopoverContainer>
             )
         },
@@ -138,7 +152,12 @@ function Filter(options: FilterT): FilterT {
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
-                    {rest.value}
+                    {isEditing && rest.renderInput?.()}
+                    {!isEditing && (
+                        <Label {...rest}>
+                            {rest.value} {rest.renderAfter?.()}
+                        </Label>
+                    )}
                 </PopoverContainer>
             )
         },
