@@ -117,6 +117,15 @@ public class StoragePathCoordinator {
      */
     static final String STORAGE_PATH_FORMATTER_DATASET_POOL = "%s/project/%s/common-dataset/%s";
 
+    /**
+     * {prefix}/project/{projectId}/common-eval/{evalVersion}
+     */
+    static final String STORAGE_PATH_FORMATTER_EVAL_POOL = "%s/project/%s/common-eval/%s";
+
+    public String allocateEvalStoragePath(Long projectId, String evalVersion) {
+        return String.format(STORAGE_PATH_FORMATTER_EVAL_POOL, prefix, projectId, evalVersion);
+    }
+
     public String allocateBundlePath(Long projectId, String bundleType, String bundleName,
             String bundleVersion) {
         return String.format(STORAGE_PATH_FORMATTER_BUNDLE, prefix, projectId, bundleType, bundleName,

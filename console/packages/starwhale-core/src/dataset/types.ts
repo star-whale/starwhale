@@ -114,7 +114,6 @@ export type OptionsT = {
     showPrivate?: boolean
     showAnnotationInTable?: boolean
     showLink?: boolean
-    parseLink?: () => any
 }
 export type DatasetT = {
     record: RecordT

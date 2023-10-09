@@ -257,7 +257,7 @@ public class DatasetControllerTest {
                         str.append(b);
                     }
                 });
-        given(datasetService.dataOf(any(), any(), any(), any(), any()))
+        given(datasetService.dataOf(any(), any(), any()))
                 .willReturn(new byte[]{100});
 
         controller.pullUriContent("p1", "d1", "v1", 1L, 1L, response);

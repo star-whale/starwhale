@@ -3,18 +3,8 @@ import { DataTypes } from './constants'
 
 const VERSION_PREFIX_CNT = 2
 
-export function tableDataLink(
-    projectId: string,
-    datasetName: string,
-    datasetVersionName: string,
-    query: {
-        uri: string
-        offset: string
-        size: string
-        Authorization?: string
-    }
-) {
-    return `/api/v1/project/${projectId}/dataset/${datasetName}/uri?${qs.stringify(query)}`
+export function tableDataLink(query: { uri: string; offset: string; size: string; Authorization?: string }) {
+    return `/api/v1/filestorage/file?${qs.stringify(query)}`
 }
 
 export function tableNameOfDataset(projectName: string, datasetName: string, datasetVersionName: string) {

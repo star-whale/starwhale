@@ -1,10 +1,7 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
-import { useAuth } from '@/api/Auth'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { createUseStyles } from 'react-jss'
-import { parseDataSrc } from '@starwhale/core/dataset'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import { getMeta } from '@/domain/dataset/utils'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
@@ -89,11 +86,7 @@ const selector = (s: ITableState) => ({
 
 export default function DatasetVersionFiles() {
     const [t] = useTranslation()
-    const { projectId } = useParams<{
-        projectId: string
-    }>()
     const [page] = usePage()
-    const { token } = useAuth()
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
     const { revision } = React.useMemo(() => {
@@ -125,20 +118,10 @@ export default function DatasetVersionFiles() {
         !!datasetVersion?.versionInfo.indexTable
     )
 
-    const options = React.useMemo(
-        () => ({
-            parseLink: parseDataSrc(
-                projectId,
-                datasetVersion?.name as string,
-                datasetVersion?.versionInfo.name as string,
-                token as string
-            ),
-            showPrivate: false,
-            showLink: false,
-        }),
-        [projectId, datasetVersion, token]
-    )
-    const $columns = useDatastoreColumns(columnTypes as any, options)
+    const $columns = useDatastoreColumns(columnTypes as any, {
+        showPrivate: false,
+        showLink: false,
+    })
 
     return (
         <div className={styles.wrapper}>

@@ -431,31 +431,31 @@ public class DatasetServiceTest {
 
     @Test
     public void testDataOf() {
-        given(uriAccessor.dataOf(same(1L), anyString(), anyString(), any(), any()))
+        given(uriAccessor.dataOf(anyString(), any(), any()))
                 .willReturn(new byte[1]);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
-        var res = service.dataOf("", "", "", 1L, 1L);
+        var res = service.dataOf("", 1L, 1L);
         assertThat(res, notNullValue());
     }
 
     @Test
     public void testLinkOf() {
-        given(uriAccessor.linkOf(same(1L), anyString(), anyString(), anyLong()))
+        given(uriAccessor.linkOf(anyString(), anyLong()))
                 .willReturn("link");
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
-        assertThat(service.signLink("", "", "", 1L), is("link"));
+        assertThat(service.signLink("", 1L), is("link"));
     }
 
     @Test
     public void testLinksOf() {
-        given(uriAccessor.linkOf(same(1L), anyString(), eq("a"), anyLong()))
+        given(uriAccessor.linkOf(eq("a"), anyLong()))
                 .willReturn("link1");
 
-        given(uriAccessor.linkOf(same(1L), anyString(), eq("b"), anyLong()))
+        given(uriAccessor.linkOf(eq("b"), anyLong()))
                 .willReturn("link2");
-        given(uriAccessor.linkOf(same(1L), anyString(), eq("x"), anyLong()))
+        given(uriAccessor.linkOf(eq("x"), anyLong()))
                 .willThrow(SwValidationException.class);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());

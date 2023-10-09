@@ -43,7 +43,7 @@ public class UriAccessorTest {
         when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
         UriAccessor fileGetter = new UriAccessor(storageAccessParser);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "uri/abc", 1L, 1L);
+        byte[] bytes = fileGetter.dataOf("uri/abc", 1L, 1L);
         Assertions.assertEquals("abc", new String(bytes));
 
     }
@@ -51,16 +51,16 @@ public class UriAccessorTest {
     @Test
     public void testDataOfHttp() {
         UriAccessor fileGetter = new UriAccessor(null);
-        byte[] bytes = fileGetter.dataOf(1L, "ds",
+        byte[] bytes = fileGetter.dataOf(
                 "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpg",
                 -1L, -1L);
         Assertions.assertEquals(4253, bytes.length);
 
-        Assertions.assertThrows(SwProcessException.class, () -> fileGetter.dataOf(1L, "ds",
+        Assertions.assertThrows(SwProcessException.class, () -> fileGetter.dataOf(
                 "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpgasfa",
                 -1L, -1L));
 
-        Assertions.assertThrows(SwValidationException.class, () -> fileGetter.dataOf(1L, "ds",
+        Assertions.assertThrows(SwValidationException.class, () -> fileGetter.dataOf(
                 "https://abcd:adg",
                 -1L, -1L));
     }
@@ -76,8 +76,8 @@ public class UriAccessorTest {
         when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
         UriAccessor fileGetter = new UriAccessor(storageAccessParser);
-        Assertions.assertEquals("ABC", fileGetter.linkOf(1L, "bdc", "/uri/1", 1L));
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "ds", "s3://host:9080/bucket/bdc/bdcsd", 1L));
+        Assertions.assertEquals("ABC", fileGetter.linkOf("/uri/1", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf("s3://host:9080/bucket/bdc/bdcsd", 1L));
     }
 
 }

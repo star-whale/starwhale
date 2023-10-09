@@ -429,21 +429,18 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(
-            String project, String datasetName, String uri, Long offset,
-            Long size
-    ) {
-        return uriAccessor.dataOf(projectService.findProject(project).getId(), datasetName, uri, offset, size);
+    public byte[] dataOf(String uri, Long offset, Long size) {
+        return uriAccessor.dataOf(uri, offset, size);
     }
 
-    public String signLink(String project, String datasetName, String uri, Long expTimeMillis) {
-        return uriAccessor.linkOf(projectService.findProject(project).getId(), datasetName, uri, expTimeMillis);
+    public String signLink(String uri, Long expTimeMillis) {
+        return uriAccessor.linkOf(uri, expTimeMillis);
     }
 
     public Map<String, String> signLinks(String project, String datasetName, Set<String> uris, Long expTimeMillis) {
         return uris.stream().collect(Collectors.toMap(u -> u, u -> {
             try {
-                return signLink(project, datasetName, u, expTimeMillis);
+                return signLink(u, expTimeMillis);
             } catch (Exception e) {
                 return "";
             }

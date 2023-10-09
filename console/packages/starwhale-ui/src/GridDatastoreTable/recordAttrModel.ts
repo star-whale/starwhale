@@ -40,7 +40,7 @@ export class RecordAttr {
         return this.decode?.summaryTypes
     }
 
-    static decode(record: Record<string, RecordSchemaT>, key: string, options: any = {}) {
+    static decode(record: Record<string, RecordSchemaT>, key: string) {
         const data = record?.[key]
         const type = data?.type
         const tmp: Record<string, any> = {}
@@ -50,7 +50,6 @@ export class RecordAttr {
 
         if (isComplexType(type)) {
             const decode = getSummary(tmp, {
-                parseLink: options.parseLink,
                 showPrivate: false,
                 showLink: false,
             })
