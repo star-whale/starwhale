@@ -118,7 +118,17 @@ class Service:
                     )
                     # examples should be a list of file path
                     # use flatten list
-                    to_copy = [i for j in example.examples for i in j]
+
+                    def need_copy(x: t.Any) -> bool:
+                        return (
+                            isinstance(x, str)
+                            and os.path.exists(x)
+                            and os.path.isfile(x)
+                            and os.path.isabs(x)
+                            and x not in self.example_resources
+                        )
+
+                    to_copy = [i for j in example.examples for i in j if need_copy(i)]
                     self.example_resources.extend(to_copy)
                     # change example resource path for online evaluation
                     # e.g. /path/to/example.png -> /workdir/src/.starwhale/examples/example.png
