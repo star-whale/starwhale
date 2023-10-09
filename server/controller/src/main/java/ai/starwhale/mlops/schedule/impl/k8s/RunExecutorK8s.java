@@ -93,7 +93,7 @@ public class RunExecutorK8s implements RunExecutor {
 
         k8sJobTemplate.renderJob(
                 k8sJob,
-                run.getId().toString(),
+                runToK8sJobName(run),
                 this.restartPolicy,
                 containerSpecMap,
                 nodeSelector,
@@ -104,7 +104,7 @@ public class RunExecutorK8s implements RunExecutor {
 
         log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
         try {
-            k8sClient.deleteJob(run.getId().toString());
+            k8sClient.deleteJob(runToK8sJobName(run));
             log.info("existing k8s job {} deleted  before start it", run.getId());
         } catch (ApiException e) {
             log.debug("try to delete existing k8s job {} before start it, however it doesn't exist", run.getId());
@@ -124,10 +124,17 @@ public class RunExecutorK8s implements RunExecutor {
         }
     }
 
+    static final String JOB_NAME_FORMATTER = "starwhale-run-%s";
+
+    @NotNull
+    public static String runToK8sJobName(Run run) {
+        return String.format(JOB_NAME_FORMATTER, run.getId().toString());
+    }
+
     @Override
     public void stop(Run run) {
         try {
-            k8sClient.deleteJob(run.getId().toString());
+            k8sClient.deleteJob(runToK8sJobName(run));
         } catch (ApiException e) {
             if (e.getCode() == 404) {
                 log.debug("delete run {} not found in k8s", run.getId());
@@ -146,7 +153,7 @@ public class RunExecutorK8s implements RunExecutor {
     @Override
     public Future<String[]> exec(Run run, String... command) {
         try {
-            var pods = k8sClient.getPodsByJobName(run.getId().toString());
+            var pods = k8sClient.getPodsByJobName(runToK8sJobName(run));
             if (CollectionUtils.isEmpty(pods.getItems())) {
                 throw new SwProcessException(ErrorType.K8S, "no pod found for run " + run.getId());
             }
@@ -160,7 +167,7 @@ public class RunExecutorK8s implements RunExecutor {
         }
     }
 
-    static final String ANNOTATION_KEY_RUN_ID = "starwhale.ai/run-id";
+    public static final String ANNOTATION_KEY_RUN_ID = "starwhale.ai/run-id";
 
     @NotNull
     private static Map<String, String> generateAnnotations(Run run) {

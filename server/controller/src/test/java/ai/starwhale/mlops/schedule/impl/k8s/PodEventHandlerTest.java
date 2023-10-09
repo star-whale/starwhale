@@ -55,7 +55,7 @@ public class PodEventHandlerTest {
         podEventHandler = new PodEventHandler(runReportReceiver);
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta()
-                                  .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
+                                  .annotations(Map.of("starwhale.ai/run-id", "3", "job-type", "eval")).name("3-xxx"))
                 .status(new V1PodStatus()
                                 .containerStatuses(List.of(
                                         new V1ContainerStatus().state(

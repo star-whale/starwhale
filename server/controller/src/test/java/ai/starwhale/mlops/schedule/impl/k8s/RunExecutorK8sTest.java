@@ -162,7 +162,7 @@ public class RunExecutorK8sTest {
         var run = Run.builder().id(7L).build();
         var podList = new V1PodList();
         podList.setItems(List.of());
-        when(client.getPodsByJobName("7")).thenReturn(podList);
+        when(client.getPodsByJobName("starwhale-run-7")).thenReturn(podList);
 
         // exec will throw exception if pod not found
         assertThrows(SwProcessException.class, () -> scheduler.exec(run, "ls"));
@@ -172,7 +172,7 @@ public class RunExecutorK8sTest {
         pod.getMetadata().setName("7");
         podList.setItems(List.of(pod));
 
-        when(client.getPodsByJobName("7")).thenReturn(podList);
+        when(client.getPodsByJobName("starwhale-run-7")).thenReturn(podList);
         when(client.execInPod("7", null, "ls")).thenReturn(new String[]{"stdout", "stderr"});
         var resp = scheduler.exec(run, "ls").get();
         verify(client).execInPod("7", null, "ls");
@@ -198,6 +198,6 @@ public class RunExecutorK8sTest {
         var run = Run.builder().id(7L).build();
         scheduler.stop(run);
         // make sure the job is deleted even if exception occurs when collecting logs
-        verify(client).deleteJob("7");
+        verify(client).deleteJob("starwhale-run-7");
     }
 }

@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,16 +54,18 @@ public class JobEventHandlerTest {
         runReportReceiver = mock(RunReportReceiver.class);
         jobEventHandler = new JobEventHandler(runReportReceiver, k8sClient);
 
-        var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
+        var pod = new V1Pod().metadata(new V1ObjectMeta().name("abc")
+                                               .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         pod.setStatus(new V1PodStatus().startTime(startTime));
-        when(k8sClient.getPodsByJobName("1")).thenReturn(new V1PodList().addItemsItem(pod));
-        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod));
+        when(k8sClient.getPodsByJobName("abc")).thenReturn(new V1PodList().addItemsItem(pod));
+        when(k8sClient.getPodsByJobNameQuietly("abc")).thenReturn(List.of(pod));
     }
 
     @Test
     public void testOnAddSuccess() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("abc")
+                                  .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         var completeTime = OffsetDateTime.now();
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
@@ -82,7 +85,8 @@ public class JobEventHandlerTest {
     @Test
     public void testOnAddFail() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("abc")
+                                  .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
@@ -113,10 +117,11 @@ public class JobEventHandlerTest {
         verify(runReportReceiver).receive(expected2);
 
         // prefer using pod status
-        var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
+        var pod = new V1Pod().metadata(new V1ObjectMeta().name("abc")
+                                               .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         pod.setStatus(new V1PodStatus().startTime(startTime).reason("foo").message("bar").phase("Failed"));
         reset(k8sClient);
-        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod, pod));
+        when(k8sClient.getPodsByJobNameQuietly("abc")).thenReturn(List.of(pod, pod));
         jobEventHandler.onAdd(v1Job);
         var expected3 = ReportedRun.builder()
                 .id(1L)
@@ -131,7 +136,8 @@ public class JobEventHandlerTest {
     @Test
     public void testOnUpdateSuccess() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("abc")
+                                  .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete").lastTransitionTime(
@@ -151,7 +157,8 @@ public class JobEventHandlerTest {
     @Test
     public void testOnUpdateFail() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("abc")
+                                  .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setActive(null);
         v1JobStatus.setFailed(1);
@@ -167,13 +174,14 @@ public class JobEventHandlerTest {
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .build();
         verify(runReportReceiver).receive(expected);
-        verify(k8sClient, times(2)).getPodsByJobNameQuietly("1");
+        verify(k8sClient, times(2)).getPodsByJobNameQuietly("abc");
     }
 
     @Test
     public void testOnUpdateUnknown() {
         V1Job v1Job = new V1Job();
-        v1Job.setMetadata(new V1ObjectMeta().name("1"));
+        v1Job.setMetadata(new V1ObjectMeta().name("abc")
+                                  .annotations(Map.of(RunExecutorK8s.ANNOTATION_KEY_RUN_ID, "1")));
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
