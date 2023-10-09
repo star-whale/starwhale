@@ -192,7 +192,8 @@ public class SwWriteSupport extends WriteSupport<Map<String, BaseValue>> {
                             if (wal == null) {
                                 wal = Wal.Column.newBuilder().setType(schema.getType().getIndex());
                             }
-                            wal.addListValue(result.getRight().setIndex(i));
+                            // non-negative->insert, negative->merge
+                            wal.addListValue(result.getRight().setIndex(result.getLeft() == null ? i : -(i + 1)));
                         }
                     }
                 }
@@ -212,8 +213,8 @@ public class SwWriteSupport extends WriteSupport<Map<String, BaseValue>> {
                     if (entry.getValue() != null) {
                         resultValue = SwWriteSupport.createWal(schema.getValueSchema(), entry.getValue());
                     }
-                    if ((resultKey == null || resultKey.getLeft() != null)
-                            && (resultValue == null || resultValue.getLeft() != null)) {
+                    if ((resultKey == null || resultKey.getRight() == null)
+                            && (resultValue == null || resultValue.getRight() == null)) {
                         newMapValue.put(resultKey == null ? null : resultKey.getLeft(),
                                 resultValue == null ? null : resultValue.getLeft());
                     } else {
@@ -236,8 +237,7 @@ public class SwWriteSupport extends WriteSupport<Map<String, BaseValue>> {
                 if (result.getLeft() != null) {
                     newObjectValue.putAll(result.getLeft());
                 }
-                if (result.getRight() != null
-                        || !((ObjectValue) value).getPythonType().equals(schema.getPythonType())) {
+                if (result.getRight() != null) {
                     wal = Wal.Column.newBuilder()
                             .setStringValue(((ObjectValue) value).getPythonType())
                             .setType(schema.getType().getIndex());
