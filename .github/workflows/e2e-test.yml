@@ -8,8 +8,6 @@ on:
         description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
         required: false
         default: false
-  schedule:
-    - cron: "34 10,13 * * *"
   pull_request:
     branches:
       - main
@@ -58,7 +56,6 @@ jobs:
       - filter
     if: ${{ github.event_name == 'push'
             || github.event_name == 'workflow_dispatch'
-            || github.event_name == 'schedule'
             || (github.event_name == 'pull_request'
                && (needs.filter.outputs.client == 'true'
                   || needs.filter.outputs.server == 'true'
