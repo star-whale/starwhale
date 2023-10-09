@@ -103,15 +103,6 @@ function PopoverContainer(props: {
 }
 
 function Filter(options: FilterT): FilterT {
-    const operatorOptions = options.operators.map((key: string) => {
-        const operator = Operators[key]
-        return {
-            id: operator.key,
-            type: operator.key,
-            label: operator.label,
-        }
-    })
-
     return {
         kind: options.kind,
         operators: options.operators,
@@ -127,15 +118,15 @@ function Filter(options: FilterT): FilterT {
                 </PopoverContainer>
             )
         },
-        renderOperator: function RenderOperator({ isEditing = false, ...rest }) {
+        renderOperator: function RenderOperator({ options: renderOptions = [], isEditing = false, ...rest }) {
             return (
                 <PopoverContainer
                     {...rest}
-                    options={operatorOptions}
+                    options={renderOptions}
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
-                    {operatorOptions.find((v) => v.type === rest.value)?.label ?? ''}
+                    {renderOptions.find((v) => v.id === rest.value)?.label ?? ''}
                 </PopoverContainer>
             )
         },

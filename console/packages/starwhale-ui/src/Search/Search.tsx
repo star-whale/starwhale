@@ -94,17 +94,17 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
-    const [editingItem, setEditingItem] = useState<{ index: any; value: ValueT } | null>(null)
+    const [editingItem, setEditingItem] = useState<{ index: any } | null>(null)
 
     const items = value
 
-    // useClickAway(ref, (e) => {
-    //     if (containsNode(ref.current, e.target)) return
-    //     if (containsNode(document.querySelector('.filter-popover'), e.target)) return
-    //     setIsEditing(false)
-    // })
+    useClickAway(ref, (e) => {
+        if (containsNode(ref.current, e.target)) return
+        if (containsNode(document.querySelector('.filter-popover'), e.target)) return
+        setIsEditing(false)
+    })
 
-    // console.log(value, fields)
+    console.log('[Search]: ', editingItem, value[0], value[1], value)
 
     const count = React.useRef(100)
     const filters = React.useMemo(() => {
@@ -119,10 +119,17 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                     isFocus={editingItem?.index === index}
                     fields={fields}
                     onClick={() => {
-                        if (editingItem?.index !== index) setEditingItem({ index, value: item })
+                        if (editingItem?.index !== index) setEditingItem({ index })
                     }}
                     // @ts-ignore
                     containerRef={ref}
+                    onRemove={() => {
+                        const next = [...items]
+                        next.splice(index, 1)
+                        onChange?.(next)
+                        console.log('next: ', index, next)
+                        setEditingItem({ index: next.length - 1 < 0 ? 0 : next.length - 1 })
+                    }}
                     onChange={(newValue: any) => {
                         let newItems: any[] = []
                         if (!newValue) {
@@ -132,7 +139,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                         }
                         newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
                         onChange?.(newItems)
-                        setEditingItem({ index: -1, value: {} })
+                        setEditingItem({ index: -1 })
                     }}
                 />
             )
@@ -143,25 +150,22 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                 value={{}}
                 isEditing={isEditing}
                 isDisabled={false}
-                isFocus={editingItem ? editingItem.index === -1 : false}
+                isFocus={editingItem?.index === -1}
                 fields={fields}
                 style={{ flex: 1 }}
                 onClick={() => {
-                    if (editingItem?.index !== -1) setEditingItem({ index: -1, value: {} })
+                    if (editingItem?.index !== -1) setEditingItem({ index: -1 })
                 }}
                 // @ts-ignore
                 containerRef={ref}
+                onRemove={() => {
+                    const index = items.length - 1 < 0 ? 0 : items.length - 1
+                    console.log('index: ', index)
+                    setEditingItem({ index })
+                }}
                 onChange={(newValue: any) => {
-                    console.log('----', items, newValue)
                     let newItems = [...items]
-                    // remove prev item
-                    if (!newValue) {
-                        // newItems.splice(-1)
-                        // edit prev item
-                        setEditingItem({ index: newItems.length - 1, value: newItems[newItems.length - 1] })
-                    } else {
-                        newItems.push(newValue)
-                    }
+                    newItems.push(newValue)
                     newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
                     onChange?.(newItems)
                 }}

@@ -1,6 +1,10 @@
-import { createMachine, assign } from 'xstate'
+import { IF_KEY } from '@rjsf/utils'
+import { OPERATOR } from '@starwhale/core'
+import { createMachine, assign, send, actions } from 'xstate'
+const { choose, log } = actions
 
 export type filterEvent =
+    | { type: 'FOCUSONLASTEDIT' }
     | { type: 'RESET' }
     | { type: 'BLUR' }
     | { type: 'FOCUS' }
@@ -9,17 +13,40 @@ export type filterEvent =
     | { type: 'REMOVE'; index: number }
     | { type: 'INIT'; origins: any[] }
 
+const $context = {
+    values: [] as { type: string; value: any; editable?: boolean }[],
+    origins: [] as { type: string; value: any; editable?: boolean }[],
+    focusTarget: 0,
+    focused: false,
+}
+
+type ContextT = typeof $context
+
+const reset = (context: ContextT) => {
+    console.log('reset', context.values, context.origins)
+    if (context.values[0]?.value !== context.origins[0]?.value) {
+        return [...context.values]
+    }
+    return [...context.origins]
+}
+
+const focusOnLastEdit = (context: ContextT) => {
+    const index = context.values.findIndex((v) => !v.value)
+    if (index !== -1) return index
+    return context.values.length - 1
+}
+
 export const filterMachine = createMachine(
     {
-        /** @xstate-layout N4IgpgJg5mDOIC5QDMCWAbALmATgOgAccwA3VMAdwGIAxAeQGEBVAZQBUBBAJQHEBRNgG0ADAF1EoAgHtYqTKikA7CSAAeiALQBmAIwAmPABYAHCa0BOXQFZhprYYA0IAJ6ItAdmN5zANktbjdy09Y2FbKwBfCKc0LFw8SDlURSgqLj4WARFxJBBpWXklFXUEDRstPD1PHR1hdz93PV8fJ1cEc3c8Gw6fQ3thHUMmvSiYjGx8RPkUqgY6ADkaAEkuAFlslXykotyS7UNhPC1ggI7jH1rDRxdNHXdDrWFDT2O6vT9I6JBYiYSIJJmc0WK3WOhykhk22Uu00WisXmMeiu5nOwjhNiRrU0VS8A1sV1M52M5y0o2+43iU2SqQAQgAZJhcDa5LaFaGgEqWSrmcxNKw6Kw+YnPa5tLQ+CrucwHYy1SyyvyGMk-Sn-aapejMdjcfhCMSbSFs4q3Kp4O48vQ2A4yvpYhAeAwowVC3ruHQ+CVKr4qyZq6m0RisZkQgoKdlqRB6AJHN5Wd6GKyNd4tG7285dAVXYRxnxo2o+ZUU30AqB-ORUYN5Q1h42lELmPC2GoDYnHULmO36HR4ILlJtWHPCcyFuLF9WEHBSAi4TDOPh+mbpVZ0ABqfErrJrMNKwTNHsTemEvRRVQTnfcnTqudsUeElp0w+9RbL46IU5nc4XqSXq-XYINoY7BytyGEcVwWLK5y5vYIR2hYeAevUhjus8VTZsYnxfIoUgQHAKg+gBUK1hoQS4uYibuIY5j6OYd7GHa2g+FYRzHPUwRRoenxjKOE6kOQFCEUa24aH4hxDhRVE0XRDEYXgGH6NUVhUbRzwjr8VIpIJW7ATu8G9DY+gWIMJjnAxzwIQOVQ+I0jQJp4XrcepX4vlpQERnW1EIQmAxRtRBKmamPgGNmTxBe6Sm0S6amqiWE7vjgs7ziWrnhns9beO61mGZRyEYeePg9h4Jh9DoFiJo+jkxa+xBcGAAC2UgkGAKW1lGFRhPo-LUUFFr0amdwFUElF2KV5FSl6URAA */
+        /** @xstate-layout N4IgpgJg5mDOIC5QDMCWAbALmATgOgAccwA3VMAdwGIAxAeQGEBVAZToDkAZAQRYBUAogBEAknwDaABgC6iUAQD2sVJlQKAdnJAAPRAFoALJIDMeAJwB2AIzGzdswYMWLZgDQgAnogPGreAGySZibGkhYAHP4ATFH+BgC+8e5oWLh4kCqo6lBUAEoCLAISMlqKyqoaWroIegCsJnhREVZWYf6WUWb+-u5eCJZ49ZZxxkZWBp1RickY2PgZqtlUDBw0IrkAslKySCBlmZW71Xqj4YNR4RYG-uG1ERa+vfpRvng2l7VxUT5WtS-TIBSc3SEEySwAQpwmLltqUlAdNEdEGYonhJOFjJEolYLGEjFFak8ED8AkEQmEsbEEklAbM0gssjl6Mx+NxcgBxIqw3b7CqI0DHHGmAxmVrRfy1EUSz5Enz+PDhFqY2r1UbtfwAoH00GLJmMVjc+TwvlVRAvM6hCwEql3GLdWWvQLBYyWylxTV0+Y6xkglRUQ17Y1qfk6Z7hMxoxWtKzhDGYoJEqzYvAPVXo35-J0e1JesFQQg4BQEXCYDwCb1LfIbOgANQEAd5wdNNW+eCMcXsdosn0JnjNBlqCtj2Imv0kTkc2eBDOyBaLJbLFZyVdr9asOyN5SbSJq4zwox8ZkVkUCowuRNsAX8FjiVjiVtxtVuU+1eYLYFyYAAtgoSGA8gI1Z1g2QaHAKZotG8kjXsYfzOBiZguheEbdDekoPOiliSJ8iQ0uoCgQHAWhajgcJbmBoY1A8ZxBHcVyip0kjnn2NS+Gc1x3lcLixr4Go0iR75kJQZEIs2ejtJIaJmHRIpJsEzF9HotwKrUSbNJKdjjhYL65rqIkmjuJyXnE9RJrY4wGLGPQsYYFgBCqTTXk03x3OEOm+rqHn6du4EtqKAQDpIZmio4VlEtEaL1Nc2ISiK0GRO5M75kQ844KW5Z5t5FHHBcEaiqhZlXAYMa9n0OLyg8VzhD8th3GYiVLu+n4-n+WUhtUBIGIM452MY3zGLiTFErEkn1MO4Yhb8fGJEAA */
         id: 'filter',
         initial: 'preview',
         states: {
             preview: {
                 on: {
-                    FOCUSTARGET: {
+                    FOCUSONLASTEDIT: {
                         target: 'editing',
-                        actions: 'setFocusTarget',
+                        actions: 'focusOnLastEdit',
                     },
                 },
             },
@@ -36,17 +63,27 @@ export const filterMachine = createMachine(
                                 {
                                     target: 'preRemove',
                                     cond: 'isAllNone',
+                                    actions: 'focusBackword',
                                 },
                                 {
                                     target: 'propertyEditing',
                                     internal: true,
-                                    actions: 'focusRemove',
+                                    actions: ['focusRemove', 'focusBackword'],
                                 },
                             ],
                         },
                     },
 
-                    preRemove: {},
+                    preRemove: {
+                        on: {
+                            REMOVE: [
+                                {
+                                    internal: true,
+                                    actions: 'focusBackword',
+                                },
+                            ],
+                        },
+                    },
                 },
 
                 initial: 'edit',
@@ -54,18 +91,15 @@ export const filterMachine = createMachine(
                 on: {
                     RESET: {
                         target: 'editing',
-                        actions: 'reset',
+                        actions: ['reset', 'focusOnLastEdit', 'blur'],
                         internal: true,
                     },
 
-                    CONFIRM: [
-                        {
-                            target: 'editing',
-                            actions: 'focusConfirm',
-                            internal: true,
-                        },
-                        { target: 'preview', cond: 'isNextNotEditable', actions: 'submit' },
-                    ],
+                    CONFIRM: {
+                        target: 'editing',
+                        actions: ['focusConfirm', 'focusForword'],
+                        internal: true,
+                    },
 
                     BLUR: {
                         target: 'editing',
@@ -90,26 +124,13 @@ export const filterMachine = createMachine(
         schema: {
             events: {} as filterEvent,
         },
-        context: {
-            values: [] as { type: string; value: any; editable?: boolean }[],
-            origins: [] as { type: string; value: any; editable?: boolean }[],
-            focusTarget: 0,
-            focused: false,
-        },
+        context: $context,
         on: {},
         predictableActionArguments: true,
         preserveActionOrder: true,
     },
     {
         guards: {
-            isNextNotEditable: (context) => {
-                return false
-
-                // return (
-                //     // context.focusTarget === context.options.length - 1
-                //     // || context.options[context.focusTarget + 1]?.editable === false
-                // )
-            },
             isAllNone: (context) => {
                 return context.values.every((option) => option.value === undefined)
             },
@@ -125,6 +146,10 @@ export const filterMachine = createMachine(
                 focused: true,
                 focusTarget: (context, event) => event.index,
             }),
+            focusOnLastEdit: assign({
+                focused: true,
+                focusTarget: focusOnLastEdit,
+            }),
             focusRemove: assign({
                 focused: true,
                 values: (context) => {
@@ -138,41 +163,52 @@ export const filterMachine = createMachine(
                     }
                     return values
                 },
+            }),
+            focusBackword: assign({
+                focused: true,
                 focusTarget: (context) => {
                     return Math.max(context.focusTarget - 1, 0)
                 },
             }),
-            focusConfirm: assign({
+            focusForword: assign({
                 focused: true,
-                values: (context, event) => {
-                    return context.values.map((option, index) => {
-                        if (index === event.index) {
-                            return { ...option, value: event.value }
-                        }
-                        return option
-                    })
-                },
                 focusTarget: (context) => {
                     return Math.min(context.focusTarget + 1, context.origins.length - 1)
                 },
             }),
-            submit: assign({
-                focused: false,
-                values: (context) => {
-                    return context.values.map((option, index) => {
-                        if (index === context.focusTarget) {
-                            return { ...option, value: option.value }
-                        }
-                        return option
+            focusConfirm: assign((context, { index, value, callback }) => {
+                const next = context.values.map((option, curr) => {
+                    if (curr === index) {
+                        return { ...option, value }
+                    }
+                    return option
+                })
+                // remove value if op does not have value
+                const op = next[1].value
+                const hasValue = op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true
+                if (!hasValue) {
+                    next.splice(-1)
+                }
+
+                // submit
+                if (next.every((option) => !!option.value)) {
+                    console.log('submit', next)
+                    callback?.({
+                        property: next[0].value,
+                        op: next[1].value,
+                        value: next[2].value,
                     })
-                },
+                }
+
+                return {
+                    focused: true,
+                    values: next,
+                }
             }),
             reset: assign({
                 focused: false,
                 focusTarget: 0,
-                values: (context) => {
-                    return [...context.origins]
-                },
+                values: reset,
             }),
         },
     }
