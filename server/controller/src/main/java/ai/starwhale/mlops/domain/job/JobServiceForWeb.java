@@ -47,7 +47,6 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -77,7 +76,6 @@ public class JobServiceForWeb {
     private final HotJobHolder hotJobHolder;
     private final JobLoader jobLoader;
     private final SwTaskScheduler swTaskScheduler;
-    private final ResultQuerier resultQuerier;
     private final UserService userService;
     private final ProjectService projectService;
     private final JobDao jobDao;
@@ -91,7 +89,6 @@ public class JobServiceForWeb {
             TaskMapper taskMapper, JobConverter jobConvertor,
             HotJobHolder hotJobHolder,
             ProjectService projectService, JobDao jobDao, JobLoader jobLoader,
-            ResultQuerier resultQuerier,
             UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
             SwTaskScheduler swTaskScheduler, JobCreator jobCreator) {
         this.taskMapper = taskMapper;
@@ -100,7 +97,6 @@ public class JobServiceForWeb {
         this.projectService = projectService;
         this.jobDao = jobDao;
         this.jobLoader = jobLoader;
-        this.resultQuerier = resultQuerier;
         this.userService = userService;
         this.jobUpdateHelper = jobUpdateHelper;
         this.trashService = trashService;
@@ -124,11 +120,6 @@ public class JobServiceForWeb {
         }
 
         return jobConvertor.convert(entity);
-    }
-
-    public Object getJobResult(String projectUrl, String jobUrl) {
-        Long jobId = jobDao.getJobId(jobUrl);
-        return resultQuerier.resultOfJob(jobId);
     }
 
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {

@@ -41,5 +41,4 @@ export interface IEvaluationSchema extends IResourceSchema {
     attributes: IEvaluationAttributeValue[]
 }
 
-export type IEvaluationResultSchema = any
 export type IEvaluationViewSchema = any
