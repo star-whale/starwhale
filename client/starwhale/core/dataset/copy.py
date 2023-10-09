@@ -50,12 +50,7 @@ class DatasetCopy(BundleCopy):
         workers: int = 12,
         **kw: t.Any,
     ) -> None:
-        super().__init__(
-            src_uri,
-            dest_uri,
-            typ=ResourceType.dataset,
-            **kw,
-        )
+        super().__init__(src_uri, dest_uri, typ=ResourceType.dataset, **kw)
 
         self._workers = workers
         self._copy_mode = kw.get("mode", DatasetChangeMode.PATCH)
@@ -119,26 +114,35 @@ class DatasetCopy(BundleCopy):
         console.print(f":tea: console url of the remote bundle: {remote_url}")
 
     def _do_row_update(
-        self, progress: Progress, task_id: TaskID, dest: TabularDataset
+        self,
+        progress: Progress,
+        task_id: TaskID,
+        dest: TabularDataset,
+        exceptions: t.List[Exception],
     ) -> None:
-        while True:
-            row = self._processing_queue.get(block=True)
-            if row is None:
-                break
+        try:
+            while True:
+                row = self._processing_queue.get(block=True)
+                if row is None:
+                    break
 
-            if not isinstance(row, TabularDatasetRow):
-                console.warn(f"row is not TabularDatasetRow: {row} - {type(row)}")
-                continue
-
-            for artifact in row.artifacts:
-                link = artifact.link
-                if not link or link.scheme not in _LOCAL_STORAGE_SCHEMES:
+                if not isinstance(row, TabularDatasetRow):
+                    console.warn(f"row is not TabularDatasetRow: {row} - {type(row)}")
                     continue
 
-                link.uri = self._do_copy_blob(link.uri)
+                for artifact in row.artifacts:
+                    link = artifact.link
+                    if not link or link.scheme not in _LOCAL_STORAGE_SCHEMES:
+                        continue
 
-            dest.put(row)
-            progress.update(task_id, advance=1, refresh=True)
+                    link.uri = self._do_copy_blob(link.uri)
+
+                dest.put(row)
+                progress.update(task_id, advance=1, refresh=True)
+        except Exception as e:
+            console.print_exception()
+            exceptions.append(e)
+            raise
 
     def _do_dataset_copy(
         self,
@@ -168,12 +172,13 @@ class DatasetCopy(BundleCopy):
                 ":cookie: update rows and copy artifacts...", total=None
             )
 
+            row_updater_exceptions: t.List[Exception] = []
             row_updater_threads = []
             for i in range(0, self._workers):
                 _t = threading.Thread(
                     name=f"row-updater-{i}",
                     target=self._do_row_update,
-                    args=(progress, task_id, dest),
+                    args=(progress, task_id, dest, row_updater_exceptions),
                     daemon=True,
                 )
                 _t.start()
@@ -190,6 +195,11 @@ class DatasetCopy(BundleCopy):
 
             for _t in row_updater_threads:
                 _t.join()
+
+            if row_updater_exceptions:
+                raise RuntimeError(
+                    f"row updater threads raise exceptions({len(row_updater_exceptions)}): {row_updater_exceptions}"
+                )
 
             progress.update(
                 task_id,

@@ -1567,6 +1567,19 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert make_version_req.call_count == 2
         assert upload_blob_req.call_count == 1
 
+        upload_blob_req = rm.register_uri(
+            HTTPMethod.POST,
+            re.compile(
+                f"http://1.1.1.1/api/v1/project/{project_id}/dataset/mnist/hashedBlob/"
+            ),
+            status_code=HTTPStatus.BAD_REQUEST,
+            json={"message": "error", "code": 400},
+        )
+        with self.assertRaisesRegex(
+            RuntimeError, "row updater threads raise exceptions"
+        ):
+            ds.copy("cloud://test/project/self", force=True)
+
     def test_commit_from_empty(self) -> None:
         dataset_name = "mnist"
         commit_msg = "test"
