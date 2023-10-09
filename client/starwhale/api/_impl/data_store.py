@@ -1649,7 +1649,7 @@ class LocalTable:
 
     @property
     def tombstones(self) -> List[TombstoneDesc]:
-        if not self._tombstones:
+        if self._tombstones is None:
             self._tombstones = self._load_manifest().get_tombstones(None)
         return self._tombstones
 
