@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import shutil
 import typing as t
 import platform
@@ -1034,7 +1033,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 f":skull: failed to verify compatible dependencies for the {pybin} environment: \n{e.output.strip()}",
                 style="bold red",
             )
-            sys.exit(1)
+            raise
 
         python_version = get_python_version_by_bin(pybin)
         workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
