@@ -22,6 +22,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.RunExecutorK8s;
 import ai.starwhale.mlops.schedule.log.RunLogOfflineCollector;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -52,7 +53,7 @@ public class RunLogOfflineCollectorK8S implements RunLogOfflineCollector {
         log.debug("logging for task {} begins...", run.getId());
         try {
             V1Pod v1Pod = k8sClient.podOfJob(K8sClient.toV1LabelSelector(Map.of(
-                    K8sJobTemplate.JOB_IDENTITY_LABEL, run.getId().toString())));
+                    K8sJobTemplate.JOB_IDENTITY_LABEL, RunExecutorK8s.runToK8sJobName(run))));
             if (null == v1Pod) {
                 log.error("pod not exists for task {}", run.getId());
                 return null;

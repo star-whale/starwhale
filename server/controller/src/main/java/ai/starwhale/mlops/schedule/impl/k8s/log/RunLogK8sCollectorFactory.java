@@ -22,6 +22,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.RunExecutorK8s;
 import ai.starwhale.mlops.schedule.log.RunLogCollectorFactory;
 import ai.starwhale.mlops.schedule.log.RunLogOfflineCollector;
 import ai.starwhale.mlops.schedule.log.RunLogStreamingCollector;
@@ -52,7 +53,7 @@ public class RunLogK8sCollectorFactory implements RunLogCollectorFactory {
     @Override
     public RunLogStreamingCollector streamingCollector(Run run) throws StarwhaleException {
         try {
-            return new RunLogK8sStreamingCollector(this.k8sClient, String.valueOf(run.getId()));
+            return new RunLogK8sStreamingCollector(this.k8sClient, RunExecutorK8s.runToK8sJobName(run));
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK,
                     MessageFormat.format("read k8s api exception {0}", e.getMessage()),

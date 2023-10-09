@@ -42,10 +42,10 @@ public class RunLogK8sStreamingCollector implements RunLogStreamingCollector {
         bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
     }
 
-    private String getPodName(String runId) throws ApiException {
-        var podList = k8sClient.getPodsByJobName(runId);
+    private String getPodName(String jobName) throws ApiException {
+        var podList = k8sClient.getPodsByJobName(jobName);
         if (podList.getItems().isEmpty()) {
-            throw new ApiException("get empty pod list by job name " + runId);
+            throw new ApiException("get empty pod list by job name " + jobName);
         }
         // returns the running pod
         var thePod = podList.getItems().stream().filter(pod -> {
@@ -58,7 +58,7 @@ public class RunLogK8sStreamingCollector implements RunLogStreamingCollector {
             return pod.getStatus().getPhase().equals("Running");
         }).findFirst();
         if (thePod.isEmpty()) {
-            throw new ApiException("get empty running pod by job name " + runId);
+            throw new ApiException("get empty running pod by job name " + jobName);
         }
         return thePod.get().getMetadata().getName();
     }

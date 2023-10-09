@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
 import ai.starwhale.mlops.domain.run.bo.RunStatus;
+import ai.starwhale.mlops.schedule.impl.k8s.RunExecutorK8s;
 import ai.starwhale.mlops.schedule.impl.k8s.Util;
 import ai.starwhale.mlops.schedule.reporting.ReportedRun;
 import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
@@ -52,16 +53,16 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     }
 
     private Long getJobNameAsId(V1Pod pod) {
-        String jobName = pod.getMetadata().getLabels().get("job-name");
-        if (null == jobName || jobName.isBlank()) {
-            log.info("no id found for pod {}", jobName);
+        String rid = pod.getMetadata().getAnnotations().get(RunExecutorK8s.ANNOTATION_KEY_RUN_ID);
+        if (null == rid || rid.isBlank()) {
+            log.info("no run id found for pod {}", rid);
             return null;
         }
         Long id;
         try {
-            id = Long.valueOf(jobName);
+            id = Long.valueOf(rid);
         } catch (Exception e) {
-            log.warn("id is not number {}", jobName);
+            log.warn("id is not number {}", rid);
             id = null;
         }
         return id;

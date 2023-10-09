@@ -18,6 +18,7 @@ package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
 import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.RunExecutorK8s;
 import ai.starwhale.mlops.schedule.impl.k8s.Util;
 import ai.starwhale.mlops.schedule.reporting.ReportedRun;
 import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
@@ -73,6 +74,21 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     }
 
     private void reportRunStatus(V1Job job) {
+        String runIdStr = job.getMetadata().getAnnotations().get(RunExecutorK8s.ANNOTATION_KEY_RUN_ID);
+        if (!StringUtils.hasText(runIdStr)) {
+            log.warn(
+                    "Legacy or illegal job found in the namespace, run ID annotation not found on job {}",
+                    jobName(job)
+            );
+            return;
+        }
+        long runId;
+        try {
+            runId = Long.parseLong(runIdStr);
+        } catch (Throwable e) {
+            log.error("illegal run id annotation found on k8s job annotation {}", runIdStr);
+            return;
+        }
         V1JobStatus status = job.getStatus();
         if (status == null) {
             return;
@@ -145,7 +161,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
 
         var report = ReportedRun.builder()
-                .id(Long.parseLong(jobName))
+                .id(runId)
                 .status(runStatus)
                 .startTimeMillis(startTime)
                 .stopTimeMillis(stopTime)
