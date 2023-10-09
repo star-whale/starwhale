@@ -1051,6 +1051,40 @@ class InnerRecord:
     def gen_seq_num() -> int:
         return time.monotonic_ns()
 
+    def compact(self, revisions: Sequence[str]) -> None:
+        """
+        merge the records that between the revisions
+        e.g.
+        records = {1: {"a": 1}, 2: {"a": 2}, 3: {"b": 3}, 4: {"c": 4}, 5: {"d": 5}}
+        revisions = ["1", "5"]
+        result = {1: {"a": 1}, 5: {"a": 2, "b": 3, "c": 4, "d": 5}}
+        """
+        revs = sorted([int(rev) for rev in revisions])
+        # add 0 for the first revision
+        revs.insert(0, 0)
+
+        rev_idx = 0
+        seq_idx = 0
+        prev_seq = 0
+        seqs = list(self.records.keys())
+        while True:
+            seq = seqs[seq_idx]
+            if revs[rev_idx] < seq <= revs[rev_idx + 1]:
+                # merge the records between the revisions
+                if prev_seq != 0:
+                    self.records[prev_seq].update(self.records[seq])
+                    self.records[seq] = self.records[prev_seq]
+                    del self.records[prev_seq]
+                prev_seq = seq
+                seq_idx += 1
+                if seq_idx >= len(seqs):
+                    break
+            else:
+                rev_idx += 1
+                prev_seq = 0
+                if rev_idx >= len(revs):
+                    break
+
     def __gt__(self, other: object) -> Any:
         if not isinstance(other, InnerRecord):
             return NotImplemented
@@ -1314,7 +1348,7 @@ class DataBlock:
 
     def dump(
         self,
-        records: List[InnerRecord],
+        records: List[InnerRecord] | SortedValuesView[InnerRecord],
         compressor: Compressor,
         tmp_dir: str | None = None,
     ) -> None:
@@ -1390,11 +1424,21 @@ class CheckpointDesc(SwBaseModel):
     revision: str
     created_at: int  # timestamp in ms
     count: Optional[int]
-    # last key is the max key in the life cycle of the table
-    # last key won't change if the key is deleted and garbage collected
-    # users can use the (last key + 1) as the next auto increment key
-    # and note that max_key in DataBlockDesc may change if the key is deleted and garbage collected
-    last_key: KeyType
+
+    def to_checkpoint(self) -> Checkpoint:
+        return Checkpoint(
+            revision=self.revision,
+            created_at=self.created_at,
+        )
+
+    def __gt__(self, other: object) -> Any:
+        if not isinstance(other, CheckpointDesc):
+            raise NotImplementedError
+        return self.revision > other.revision
+
+
+class GarbageCollectionDesc(SwBaseModel):
+    revision: str  # the data before this revision(contain) has been garbage collected
 
 
 class DataBlockConfig(SwBaseModel):
@@ -1418,12 +1462,20 @@ class Manifest(SwBaseModel):
     └──────────────┘
     """
 
-    version: str = "0.1.1"
+    version: str = "0.1.2"
     block_config: DataBlockConfig
     blocks: List[DataBlockDesc]
     key_column: str
     key_column_type: Optional[Dict[str, Any]]  # SwType.encode_schema
     next_block_id: int = 0
+    # last key is the max key in the life cycle of the table
+    # last key won't change if the key is deleted and garbage collected
+    # users can use the (last key + 1) as the next auto increment key
+    # and note that max_key in DataBlockDesc may change if the key is deleted and garbage collected
+    last_key: KeyType
+    # TODO record the last revision
+    last_revision = "0"
+    garbage_collection: Optional[GarbageCollectionDesc]
     tombstones: List[TombstoneDesc]
     checkpoints: List[CheckpointDesc]
 
@@ -1924,6 +1976,153 @@ class LocalTable:
             self._dump_manifest(manifest)
         return rev
 
+    def list_checkpoints(self) -> List[Checkpoint]:
+        manifest = self._load_manifest()
+        return [cp.to_checkpoint() for cp in manifest.checkpoints]
+
+    def add_checkpoint(self, revision: str) -> None:
+        with filelock.FileLock(self.root_path / ".lock"):
+            cp = CheckpointDesc(revision=revision, created_at=int(time.time() * 1000))
+            manifest = self._load_manifest()
+            # check if checkpoint exists
+            for c in manifest.checkpoints:
+                if c.revision == revision:
+                    return
+            # TODO: do not allow to add checkpoint if the revision is between two checkpoints
+            # because the revisions between two checkpoints may be garbage collected
+            cp.count = self._get_size(revision=revision)
+            manifest.checkpoints.append(cp)
+            self._dump_manifest(manifest)
+
+    def remove_checkpoint(self, cp: Checkpoint) -> None:
+        with filelock.FileLock(self.root_path / ".lock"):
+            manifest = self._load_manifest()
+            manifest.checkpoints = [
+                c for c in manifest.checkpoints if c.revision != cp.revision
+            ]
+            self._dump_manifest(manifest)
+
+    def _get_size(self, revision: str | None) -> int:
+        return sum(
+            1 for _ in self.scan(revision=revision, keep_none=True, deep_copy=False)
+        )
+
+    def get_size(self, cp: Checkpoint | None) -> int:
+        manifest = self._load_manifest()
+        if cp is not None:
+            # find the checkpoint in manifest
+            for c in manifest.checkpoints:
+                if c.revision == cp.revision and c.count is not None:
+                    return c.count
+        return self._get_size(revision=None)
+
+    def _dump_items(
+        self,
+        items: List[InnerRecord] | SortedValuesView[InnerRecord],
+        dest_manifest: Manifest,
+    ) -> None:
+        assert self.key_column is not None
+        block = DataBlock(
+            min_key=items[0].key,
+            max_key=items[-1].key,
+            key_column=self.key_column,
+            block_id=dest_manifest.next_block_id,
+            file=self._get_block_file_name(
+                self.root_path,
+                dest_manifest.block_config.block_name_prefix,
+                dest_manifest.next_block_id,
+            ),
+        )
+        dest_manifest.next_block_id += 1
+        console.trace(f"dump block {block.file}")
+        tmp_path = self.root_path / ".tmp"
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        block.dump(items, self.compressor, str(tmp_path))
+        min_rev, max_rev = revision_range_of_items(items)
+        dest_manifest.blocks.append(
+            DataBlockDesc(
+                min_key=block.min_key,
+                max_key=block.max_key,
+                min_revision=min_rev and str(min_rev) or None,
+                max_revision=max_rev and str(max_rev) or None,
+                row_count=len(items),
+                block_id=block.block_id,
+            )
+        )
+
+    def gc(self) -> None:
+        """
+        Garbage collect the revisions and tombstones.
+        It does the following things:
+        - remove the data blocks that are not referenced by the manifest
+        - merge the tombstones that between two checkpoints
+        - compact the revisions between two checkpoints
+        """
+
+        # we do not support do gc for tables with memory table
+        if self.memory_table is not None or self._immutable_memory_table is not None:
+            console.error("can not do gc for tables with memory table, dump first")
+            return
+
+        manifest = self._load_manifest()
+        last_gc_revision = (
+            manifest.garbage_collection and manifest.garbage_collection.revision or None
+        )
+        if last_gc_revision == manifest.last_revision:
+            console.trace("no need to do gc")
+            return
+
+        revisions = [cp.revision for cp in sorted(manifest.checkpoints)]
+
+        new_manifest = Manifest(
+            version=manifest.version,
+            block_config=manifest.block_config,
+            blocks=[],
+            key_column=manifest.key_column,
+            key_column_type=manifest.key_column_type,
+            next_block_id=manifest.next_block_id,
+            last_key=None,
+            last_revision="0",
+            garbage_collection=GarbageCollectionDesc(revision=manifest.last_revision),
+            tombstones=manifest.tombstones,
+            checkpoints=manifest.checkpoints,
+        )
+
+        with self._data_block_lock:
+            data_blocks = self._load_data_blocks()
+            iters: List[IterWithRangeHint] = [
+                IterWithRangeHint(
+                    iter=block.scan(start=None, end=None),
+                    min_key=block.min_key,
+                )
+                for block in data_blocks
+            ]
+
+            assert self.key_column is not None
+            mem_table = MemoryTable(self.key_column)
+            for item in _merge_iters_with_hint(iters):
+                if item is None:
+                    continue
+                item.compact(revisions=revisions)
+                mem_table.insert_record(item)
+                if item.key is not None:
+                    new_manifest.last_key = item.key
+                if mem_table.should_dump():
+                    items: SortedValuesView[InnerRecord] = mem_table.records.values()  # type: ignore[assignment]
+                    self._dump_items(items, new_manifest)
+                    mem_table.records.clear()
+
+            if len(mem_table.records) > 0:
+                items = mem_table.records.values()  # type: ignore[assignment]
+                self._dump_items(items, new_manifest)
+                mem_table.records.clear()
+
+            self._dump_manifest(new_manifest)
+            # remove the old data files
+            for f in data_blocks:
+                console.trace(f"remove block {f.file}")
+                f.file.unlink()
+
 
 class TableDesc:
     def __init__(
@@ -2207,6 +2406,18 @@ class LocalDataStore:
             start, end, end_inclusive
         )
 
+    def list_table_checkpoints(self, table_name: str) -> List[Checkpoint]:
+        return self._must_get_table(table_name).list_checkpoints()
+
+    def add_checkpoint(self, table_name: str, revision: str) -> None:
+        self._must_get_table(table_name).add_checkpoint(revision)
+
+    def remove_checkpoint(self, table_name: str, cp: Checkpoint) -> None:
+        self._must_get_table(table_name).remove_checkpoint(cp)
+
+    def get_table_size(self, table_name: str, cp: Checkpoint | None = None) -> int:
+        return self._must_get_table(table_name).get_size(cp)
+
 
 class RemoteDataStore:
     def __init__(self, instance_uri: str, token: str) -> None:
@@ -2336,6 +2547,23 @@ class RemoteDataStore:
     ) -> str:
         return ""
 
+    def list_table_checkpoints(self, table_name: str) -> List[Checkpoint]:
+        return []
+
+    def add_checkpoint(self, table_name: str, revision: str) -> None:
+        ...
+
+    def remove_checkpoint(self, table_name: str, cp: Checkpoint) -> None:
+        ...
+
+    def get_table_size(self, table_name: str, cp: Checkpoint | None = None) -> int:
+        return 0
+
+
+class Checkpoint(SwBaseModel):
+    revision: str
+    created_at: int  # timestamp in milliseconds
+
 
 class DataStore(Protocol):
     def update_table(
@@ -2381,6 +2609,22 @@ class DataStore(Protocol):
         - It will delete all rows if start is None and end is None.
 
         Return the revision of the table.
+        """
+        ...
+
+    def list_table_checkpoints(self, table_name: str) -> List[Checkpoint]:
+        ...
+
+    def add_checkpoint(self, table_name: str, revision: str) -> None:
+        ...
+
+    def remove_checkpoint(self, table_name: str, cp: Checkpoint) -> None:
+        ...
+
+    def get_table_size(self, table_name: str, cp: Checkpoint | None = None) -> int:
+        """
+        Get the size of the table.
+        Provide a checkpoint to get the size of the table at the checkpoint.
         """
         ...
 

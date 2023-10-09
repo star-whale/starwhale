@@ -2631,5 +2631,59 @@ def test_local_table_dump(tmp_path: Path):
     assert len(list(table.scan())) == datastore_max_dirty_records + 500
 
 
+def test_inner_record_compact():
+    r = InnerRecord(key_column="k")
+    v1 = r.append(Record({"k": 1, "v": 1}))
+    v2 = r.append(Record({"k": 1, "v": 2}))
+    v3 = r.append(Record({"k": 1, "v": 3}))
+
+    r.compact([v1, v2, v3])
+    assert r.get_record(v1) == {"k": 1, "v": 1}
+    assert r.get_record(v2) == {"k": 1, "v": 2}
+    assert r.get_record(v3) == {"k": 1, "v": 3}
+
+    r.compact([v1, v3])
+    assert r.records[int(v1)] == {"k": 1, "v": 1}
+    assert int(v2) not in r.records
+    assert r.records[int(v3)] == {"v": 3}
+    assert r.get_record(v1) == {"k": 1, "v": 1}
+    # v2 is compacted, so getting v2 will return v1
+    assert r.get_record(v2) == {"k": 1, "v": 1}
+    assert r.get_record(v3) == {"k": 1, "v": 3}
+
+    r.compact([v3])
+    assert r.records == {int(v3): {"k": 1, "v": 3}}
+
+
+def test_local_table_checkpoint_and_gc(tmp_path: Path):
+    table = LocalTable("foo", tmp_path, key_column="k")
+    r1 = table.insert({"k": 1, "v": 1})
+    r2 = table.insert({"k": 1, "v": 2})
+    table.add_checkpoint(r2)
+    cps = table.list_checkpoints()
+    assert len(cps) == 1
+    assert cps[0].revision == r2
+
+    sz = table.get_size(cp=None)
+    sz_cp = table.get_size(cp=cps[0])
+    assert sz_cp == sz
+
+    table.remove_checkpoint(cps[0])
+    cps = table.list_checkpoints()
+    assert len(cps) == 0
+
+    # add the checkpoint again for gc test
+    table.add_checkpoint(r2)
+
+    table.dump()
+    table.gc()
+
+    rows = table.scan(revision=r1)
+    assert len(list(rows)) == 0
+
+    rows = table.scan(revision=r2)
+    assert len(list(rows)) == 1
+
+
 if __name__ == "__main__":
     unittest.main()
