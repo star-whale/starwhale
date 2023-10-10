@@ -10,7 +10,7 @@ from starwhale.utils import console
 from starwhale.utils.error import ParameterError
 from starwhale.utils.dict_util import transform_dict
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.store import sign_dataset_uris
+from starwhale.core.dataset.store import get_signed_urls
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
@@ -253,7 +253,7 @@ class DataLoader:
                                 at.owner = self.dataset_uri
                                 if at.link:
                                     _links.append(at.link)
-                        uri_dict = sign_dataset_uris(
+                        uri_dict = get_signed_urls(
                             self.dataset_uri, [lk.uri for lk in _links]
                         )
                         for lk in _links:

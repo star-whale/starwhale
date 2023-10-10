@@ -90,7 +90,7 @@ class Resource:
         :return: Resource instance
         """
         self._remote_info: Dict[str, Any] = {}
-        self.name = ""  # job has no name, init with empty string
+        self.name = ""  # job/evaluation has no name, init with empty string
         self.version = ""  # some resource has no version, init with empty string
 
         # check if it is url from console
@@ -179,7 +179,7 @@ class Resource:
         if len(parts) == 1:
             try:
                 # try version first
-                self._parse_by_version(parts[0])
+                self._parse_by_version(parts[0], detect_typ=False)
             except NoMatchException:
                 self.name = parts[0]
                 self.version = ""
@@ -199,11 +199,11 @@ class Resource:
         if len(p) == 1:
             # version only (we do not support name without type parsing)
             # there is no scenario for 'name without type' for now
-            return self._parse_by_version(uri)
+            return self._parse_by_version(uri, detect_typ=True)
         typ = ResourceType[p[0]]
         return self._parse_with_type(typ, p[1])
 
-    def _parse_by_version(self, ver: str) -> None:
+    def _parse_by_version(self, ver: str, detect_typ: bool = False) -> None:
         if self.instance.is_local:
             root = Path(load_swcli_config()["storage"]["root"]) / self.project.id
             # storage-root/project/type/name/prefix/full-version
@@ -212,16 +212,19 @@ class Resource:
             if len(m) == 1:
                 _, typ, self.name, _, version = m[0].rsplit("/", 4)
                 self.version = self.path_to_version(version)
-                self.typ = ResourceType[typ]
+                if detect_typ:
+                    self.typ = ResourceType[typ]
             elif len(m) > 1:
                 raise MultipleMatchException(ver, m)
             else:
-                # job list has no name
+                # job/evaluation list has no name
+                # evaluations are stored in job dir
                 m = glob(f"{root.absolute()}/job/*/{ver}*")
                 if len(m) == 1:
                     _, typ, _, version = m[0].rsplit("/", 3)
                     self.version = self.path_to_version(version)
-                    self.typ = ResourceType[typ]
+                    if detect_typ:
+                        self.typ = ResourceType[typ]
                 elif len(m) > 1:
                     raise MultipleMatchException(ver, m)
                 else:
@@ -234,7 +237,7 @@ class Resource:
     def _refine_remote_rc_info(self) -> None:
         if self.project.instance.is_local:
             raise VerifyException("only used for remote resources")
-        if not self.name or self.typ in {ResourceType.job, ResourceType.evaluation}:
+        if not self.name or self.typ in (ResourceType.job, ResourceType.evaluation):
             return
         ver = self.version or "latest"
         if self._remote_info:
@@ -254,7 +257,7 @@ class Resource:
     def _refine_local_rc_info(self) -> None:
         root = Path(load_swcli_config()["storage"]["root"]) / self.project.id
 
-        if self.typ == ResourceType.job:
+        if self.typ in (ResourceType.job, ResourceType.evaluation):
             p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
             m = glob(p)
             if len(m) == 1:
@@ -333,13 +336,13 @@ class Resource:
             self.typ.value,
         ]
 
-        if self.typ == ResourceType.job:
+        if self.typ in (ResourceType.job, ResourceType.evaluation):
             if self.name:
                 parts.append(self.name)
             elif self.version:
                 parts.append(self.version)
             else:
-                raise RuntimeError("job uri must have version or name")
+                raise RuntimeError("job/evaluation uri must have version or name")
         else:
             parts.extend(
                 [

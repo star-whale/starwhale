@@ -1,7 +1,7 @@
 import time
 import random
 
-from starwhale import Context, dataset, evaluation
+from starwhale import Context, dataset, evaluation, Evaluation
 from starwhale.utils.debug import console
 
 try:
@@ -47,9 +47,7 @@ def evaluation_results() -> None:
         with dataset(dataset_uri) as ds:
             dataset_rows += len(ds)
 
-    from starwhale.api.evaluation import EvaluationLogStore
-
-    e_store = EvaluationLogStore._get_instance()
+    e_store = Evaluation.from_context()
     table_names = e_store._datastore.get_tables()
 
     received_data_tasks = 0

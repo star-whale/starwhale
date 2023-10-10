@@ -6,6 +6,7 @@ configs:
 dependencies:
   - pip:
       - numpy
+      - pillow
   - requirements-sw-lock.txt
   - wheels:
       - starwhale-0.0.0.dev0-py3-none-any.whl # generate by make build-wheel in the cli_test.sh script

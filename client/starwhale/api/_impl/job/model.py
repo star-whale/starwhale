@@ -12,11 +12,11 @@ from starwhale.consts import (
     MINI_FMT_DATETIME,
     FMT_DATETIME_NO_TZ,
 )
-from starwhale.api._impl import wrapper
 from starwhale.base.models.job import LocalJobInfo, RemoteJobInfo
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.base.client.api.job import JobApi
+from starwhale.api._impl.evaluation.log import Evaluation
 from starwhale.base.client.models.models import JobVo
 
 
@@ -39,18 +39,18 @@ class Job:
     ) -> None:
         self.uri = uri
         self._basic_info: LocalJobInfo | JobVo = basic_info or self._get_basic_info()
-        self._evaluation_store: wrapper.Evaluation | None = None
+        self._evaluation_store: Evaluation | None = None
 
     @property
-    def evaluation_store(self) -> wrapper.Evaluation:
+    def evaluation_store(self) -> Evaluation:
         if self._evaluation_store is None:
             info = self.info()
             if isinstance(info, LocalJobInfo):
                 eval_id = info.manifest.version
             else:
                 eval_id = info.job.uuid
-            self._evaluation_store = wrapper.Evaluation(
-                eval_id=eval_id,
+            self._evaluation_store = Evaluation(
+                id=eval_id,
                 project=self.uri.project,
             )
         return self._evaluation_store
@@ -185,7 +185,7 @@ class Job:
     @property
     def summary(self) -> t.Dict[str, t.Any]:
         """Get job summary row of datastore."""
-        return self.evaluation_store.get_summary_metrics()
+        return self.evaluation_store.get_summary()
 
     def get_table_rows(
         self,
@@ -219,8 +219,8 @@ class Job:
         rows = list(j.get_table_rows(table_name, start=0, end=100))
         ```
         """
-        return self.evaluation_store.get(
-            table_name=name,
+        return self.evaluation_store.scan(
+            category=name,
             start=start,
             end=end,
             keep_none=keep_none,

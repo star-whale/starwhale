@@ -5,7 +5,7 @@ import typing as t
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.base.type import PredictLogMode
 
-from .log import EvaluationLogStore
+from .log import Evaluation
 from .pipeline import PipelineHandler
 
 
@@ -176,4 +176,4 @@ def _register_evaluate(
     )(func)
 
 
-__all__ = ["EvaluationLogStore", "PipelineHandler", "predict", "evaluate"]
+__all__ = ["Evaluation", "PipelineHandler", "predict", "evaluate"]

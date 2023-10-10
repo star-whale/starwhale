@@ -192,9 +192,7 @@ class TestDatasetBackend(TestCase):
             file = backend._make_file((Link(uri=uri), 0, _end))
             assert file.read(-1) == _content
 
-            file = backend._make_file(
-                (Link(uri="test.file"), 0, _end), bucket="/home/test"
-            )
+            file = backend._make_file((Link(uri="/home/test/test.file"), 0, _end))
             assert file.read(-1) == _content
 
 

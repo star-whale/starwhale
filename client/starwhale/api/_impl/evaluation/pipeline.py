@@ -15,7 +15,6 @@ import jsonlines
 from starwhale.utils import console, now_str
 from starwhale.consts import RunStatus, CURRENT_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.api._impl import wrapper
 from starwhale.base.type import RunSubDirType, PredictLogMode
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
@@ -25,6 +24,8 @@ from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
+
+from .log import Evaluation
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
@@ -72,9 +73,8 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
-        # TODO: use EvaluationLogStore to refactor this?
-        self.evaluation_store = wrapper.Evaluation(
-            eval_id=self.context.version, project=self.context.log_project
+        self.evaluation_store = Evaluation(
+            id=self.context.version, project=self.context.log_project
         )
         self._update_status(RunStatus.START)
 
@@ -275,7 +275,7 @@ class PipelineHandler(metaclass=ABCMeta):
             )
 
         if self.predict_auto_log:
-            func(self._iter_predict_result(self.evaluation_store.get_results()))
+            func(self._iter_predict_result(self.evaluation_store.scan_results()))
         else:
             func()
 
@@ -379,7 +379,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         duration_seconds=_duration,
                     )
 
-        self.evaluation_store.flush_all()
+        self.evaluation_store.flush_all(artifacts_flush=True)
 
         console.info(
             f"{self.context.step}-{self.context.index} received {received_rows_cnt} data items for dataset {self.dataset_uris}"
@@ -448,12 +448,11 @@ class PipelineHandler(metaclass=ABCMeta):
             output = dill.dumps(output)
 
         # for plain mode: if the output is dict type, we(datastore) will log each key-value pair as a column
-        record = {
-            "id": idx_with_ds,
+        metrics = {
             "_mode": self.predict_log_mode.value,
             "_index": idx,
             "output": output,
             "duration_seconds": duration_seconds,
             **input_features,
         }
-        self.evaluation_store.log_result(record)
+        self.evaluation_store.log_result(id=idx_with_ds, metrics=metrics)

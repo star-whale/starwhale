@@ -15,7 +15,6 @@ from typing_extensions import Protocol
 
 from starwhale.utils import console, gen_uniq_version, validate_obj_name
 from starwhale.consts import ENV_POD_NAME
-from starwhale.utils.fs import DIGEST_SIZE
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.utils.error import (
     NoSupportError,
@@ -110,9 +109,6 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
     _FEATURES_PREFIX = "features/"
-    # encode min size = DIGEST_SIZE + Text/Binary + Link Object size
-    # TODO: use the better way to calculate the min size
-    _ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
 
     def __init__(
         self,
@@ -194,18 +190,22 @@ class TabularDatasetRow(ASDictMixin):
         """Encode some feature types for the efficient storage.
 
         Supported types:
-            string(>_ENCODE_MIN_SIZE) -> Text
-            bytes(>_ENCODE_MIN_SIZE)  -> Binary
+            string(>Text.AUTO_ENCODE_MIN_SIZE) -> Text
+            bytes(>Binary.AUTO_ENCODE_MIN_SIZE)  -> Binary
             mixed types of list or tuple -> Sequence
         """
 
         def _transform(data: t.Any) -> t.Any:
             from starwhale.base.data_type import Text, Binary
 
-            if isinstance(data, str) and sys.getsizeof(data) > self._ENCODE_MIN_SIZE:
+            if (
+                isinstance(data, str)
+                and sys.getsizeof(data) > Text.AUTO_ENCODE_MIN_SIZE
+            ):
                 return Text(content=data, auto_convert_to_str=True)
             elif (
-                isinstance(data, bytes) and sys.getsizeof(data) > self._ENCODE_MIN_SIZE
+                isinstance(data, bytes)
+                and sys.getsizeof(data) > Binary.AUTO_ENCODE_MIN_SIZE
             ):
                 return Binary(fp=data, auto_convert_to_bytes=True)
             elif isinstance(data, dict):

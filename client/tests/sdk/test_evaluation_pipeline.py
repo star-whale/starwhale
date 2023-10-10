@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import uuid
 import errno
 import shutil
 import typing as t
@@ -17,7 +16,7 @@ import jsonlines
 import requests_mock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from tests import ROOT_DIR, BaseTestCase
+from tests import ROOT_DIR
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_PROJECT
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -31,7 +30,7 @@ from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.model import DatasetSummary
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
-from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
+from starwhale.api._impl.evaluation import PipelineHandler
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
 
@@ -263,7 +262,7 @@ class TestModelPipelineHandler(TestCase):
         ) as m_ds, patch(
             "starwhale.api._impl.dataset.Dataset.info"
         ) as m_ds_info, patch(
-            "starwhale.api._impl.wrapper.Evaluation.log_result"
+            "starwhale.api._impl.evaluation.log.Evaluation.log_result",
         ) as m_log_result, patch(
             "starwhale.utils.config.load_swcli_config"
         ) as m_config, patch.dict(
@@ -354,7 +353,7 @@ class TestModelPipelineHandler(TestCase):
         ) as m_ds, patch(
             "starwhale.api._impl.dataset.Dataset.info"
         ) as m_ds_info, patch(
-            "starwhale.api._impl.wrapper.Evaluation.log_result"
+            "starwhale.api._impl.evaluation.log.Evaluation.log_result",
         ) as m_log_result:
             _logdir = JobStorage.local_run_dir(self.local_project.id, self.eval_id)
             _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
@@ -441,15 +440,15 @@ class TestModelPipelineHandler(TestCase):
             with PlainHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
-            log_result = m_log_result.call_args[0][0]
+            log_result = m_log_result.call_args[1]
             assert log_result["id"].startswith("self/mnist_")
-            assert log_result["_mode"] == "plain"
-            assert log_result["_index"] == 99
-            assert log_result["output"] == {"result": "ok"}
-            assert isinstance(log_result["input/image"], GrayscaleImage)
-            assert log_result["input/label"] == 99
+            assert log_result["metrics"]["_mode"] == "plain"
+            assert log_result["metrics"]["_index"] == 99
+            assert log_result["metrics"]["output"] == {"result": "ok"}
+            assert isinstance(log_result["metrics"]["input/image"], GrayscaleImage)
+            assert log_result["metrics"]["input/label"] == 99
             assert "input/annotation" not in log_result
-            assert log_result["duration_seconds"] >= 0
+            assert log_result["metrics"]["duration_seconds"] >= 0
 
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
@@ -460,15 +459,15 @@ class TestModelPipelineHandler(TestCase):
             with PlainHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
-            log_result = m_log_result.call_args[0][0]
+            log_result = m_log_result.call_args[1]
             assert log_result["id"].startswith("11_")
-            assert log_result["_mode"] == "plain"
-            assert log_result["_index"] == 0
-            assert log_result["output"] == {"result": "ok"}
-            assert isinstance(log_result["input/image"], GrayscaleImage)
-            assert log_result["input/label"] == 0
-            assert "input/annotation" not in log_result
-            assert log_result["duration_seconds"] >= 0
+            assert log_result["metrics"]["_mode"] == "plain"
+            assert log_result["metrics"]["_index"] == 0
+            assert log_result["metrics"]["output"] == {"result": "ok"}
+            assert isinstance(log_result["metrics"]["input/image"], GrayscaleImage)
+            assert log_result["metrics"]["input/label"] == 0
+            assert "input/annotation" not in log_result["metrics"]
+            assert log_result["metrics"]["duration_seconds"] >= 0
 
     def test_ppl(self) -> None:
         with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
@@ -524,12 +523,9 @@ class TestModelPipelineHandler(TestCase):
                 assert x == builtin_data
                 assert np.array_equal(y, np_data)
                 assert torch.equal(z, tensor_data)
-
                 assert label_data == data[0]["input"]["label"]
 
-        m_summary.return_value = DatasetSummary(
-            rows=1,
-        )
+        m_summary.return_value = DatasetSummary(rows=1)
 
         fname = "data_ubyte_0.swds_bin"
         sign, _ = DatasetStorage.save_data_file(Path(self.swds_dir) / fname)
@@ -675,106 +671,3 @@ class TestModelPipelineHandler(TestCase):
             "predict or ppl must be defined, predict function is recommended",
         ):
             DummyWithoutAny()._do_predict({}, 1, "1", TabularDatasetInfo(), uri)
-
-
-class TestEvaluationLogStore(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        self.version = str(uuid.uuid4())
-        self.local_project = Project(DEFAULT_PROJECT)
-        self._cleanup_context()
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        self._cleanup_context()
-
-    def _cleanup_context(self) -> None:
-        try:
-            Context._context_holder.__delattr__("value")
-        except AttributeError:
-            ...
-
-        try:
-            EvaluationLogStore._instance_holder.__delattr__("value")
-        except AttributeError:
-            ...
-
-    def test_without_context(self) -> None:
-        raise_msg = "Starwhale does not set Context yet"
-        with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.log("test", 1, {})
-
-        with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.log_summary(loss=0.99)
-
-        with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore.iter("test")
-
-        with self.assertRaisesRegex(RuntimeError, raise_msg):
-            EvaluationLogStore._get_instance()
-
-    def test_log(self) -> None:
-        _log = EvaluationLogStore.log
-
-        Context.set_runtime_context(
-            Context(version=self.version, log_project=self.local_project)
-        )
-        category = "test"
-
-        _log(category=category, id=1, metrics={"a": 1, "b": 2})
-        _log(category=category, id=2, metrics={"a": 2, "b": 3})
-
-        _els = EvaluationLogStore._get_instance()
-        _els._datastore.flush(category)
-
-        rt = list(EvaluationLogStore.iter(category))
-        assert rt == [{"id": 1, "a": 1, "b": 2}, {"id": 2, "a": 2, "b": 3}]
-
-    def test_log_summary(self) -> None:
-        _log_s = EvaluationLogStore.log_summary
-
-        Context.set_runtime_context(
-            Context(version=self.version, log_project=self.local_project)
-        )
-        _log_s(loss=0.98)
-        _log_s(loss=0.99, accuracy=0.98)
-        _log_s({"label": "log_summary", "accuracy": 0.99})
-
-        _els = EvaluationLogStore._get_instance()
-        _els._datastore.flush_metrics()
-
-        rt = _els._datastore.get_summary_metrics()
-        assert rt == {
-            "id": self.version,
-            "loss": 0.99,
-            "accuracy": 0.99,
-            "label": "log_summary",
-        }
-
-    def test_log_summary_no_support(self) -> None:
-        _log_s = EvaluationLogStore.log_summary
-
-        Context.set_runtime_context(
-            Context(version=self.version, log_project=self.local_project)
-        )
-
-        with self.assertRaisesRegex(ParameterError, "are specified at the same time"):
-            _log_s({"a": 1}, b=2)
-
-        with self.assertRaisesRegex(ParameterError, "is greater than one"):
-            _log_s({"a": 1}, {"b": 2})
-
-        with self.assertRaisesRegex(ParameterError, "is not dict type"):
-            _log_s(1)
-
-    def test_get_instance(self) -> None:
-        Context.set_runtime_context(
-            Context(version=self.version, log_project=self.local_project)
-        )
-        inst = EvaluationLogStore._get_instance()
-        assert inst.id == self.version
-        assert inst.project.id == "self"
-        assert inst.project.name == "self"
-
-        inst_another = EvaluationLogStore._get_instance()
-        assert inst == inst_another
