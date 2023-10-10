@@ -1,12 +1,14 @@
 import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useState, useRef, useReducer } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
 import { SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
 import useTranslation from '@/hooks/useTranslation'
+import { useDeepEffect, useTrace } from '@starwhale/core'
+import useSearchState from './SearchState'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -57,10 +59,6 @@ export const useStyles = createUseStyles({
 const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
-const isValueExist = (value: any) => {
-    if (value === 0) return true
-    return !!value
-}
 
 export interface ISearchProps {
     fields: SearchFieldSchemaT[]
@@ -68,33 +66,36 @@ export interface ISearchProps {
     onChange?: (args: ValueT[]) => void
 }
 
-function useSearchColumns(columnTypes: { name: string; type: string }[]) {
-    const searchColumns = React.useMemo(() => {
-        if (!columnTypes) return []
-        const arr: SearchFieldSchemaT[] = []
-        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
-        columns.forEach((column) => {
-            arr.push({
-                ...column,
-                path: column.name,
-                label: column.name,
-            })
-        })
-
-        return arr
-    }, [columnTypes])
-
-    return searchColumns
-}
-
-//   [ { value: [ 'SUCCESS' ], op: 'IN', property: 'sys/job_status' } ]
-
 export default function Search({ value = [], onChange, fields }: ISearchProps) {
+    const trace = useTrace('grid-search')
     const styles = useStyles()
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
-    const [isEditing, setIsEditing] = useState(false)
-    const [editingItem, setEditingItem] = useState<{ index: any } | null>(null)
+
+    const state = useSearchState({ onChange })
+    const {
+        isEditing,
+        editingIndex,
+        focusToEnd,
+        focusToPrevItem,
+        onFocus,
+        checkIsFocus,
+        setIsEditing,
+        onRemove,
+        onRemoveThenBlur,
+        onItemCreate,
+        onItemChange,
+        setItems,
+    } = state
+
+    useDeepEffect(() => {
+        setItems(value)
+    }, [value])
+
+    useEffect(() => {
+        onChange?.(state.items)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.items])
 
     const items = value
 
@@ -104,22 +105,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
         setIsEditing(false)
     })
 
-    const focusToEnd = React.useCallback(() => {
-        if (editingItem?.index === -1) return
-        setEditingItem({ index: -1 })
-    }, [editingItem])
-
-    // const onValueUpdate = React.useCallback(
-    //     (index: number, value: any) => {
-    //         const next = [...items]
-    //         next[index].value = value
-    //         onChange?.(next)
-    //     },
-    //     [items, onChange]
-    // )
-
-    console.log('[Search]: ', editingItem, value[0], value[1], value)
-
     const count = React.useRef(100)
     const filters = React.useMemo(() => {
         count.current += 1
@@ -128,65 +113,43 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                 <FilterRenderer
                     key={[index, item.property].join('-')}
                     value={item}
-                    isEditing={isEditing}
-                    isDisabled={false}
-                    isFocus={editingItem?.index === index}
+                    isFocus={checkIsFocus(index)}
                     fields={fields}
-                    onClick={() => {
-                        if (editingItem?.index !== index) setEditingItem({ index })
-                    }}
-                    // @ts-ignore
                     containerRef={ref}
-                    onBlur={() => {
-                        setEditingItem({ index: -1 })
-                    }}
-                    onRemove={(blur = false) => {
-                        const next = [...items]
-                        next.splice(index, 1)
-                        onChange?.(next)
-                        if (!blur) return
-                        setIsEditing(false)
-                    }}
-                    onChange={(newValue: any) => {
-                        let newItems: any[] = []
-                        if (!newValue) {
-                            newItems = items.filter((key, i) => i !== index)
-                        } else {
-                            newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
-                        }
-                        newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                        onChange?.(newItems)
-                        setEditingItem({ index: -1 })
-                    }}
+                    onBlur={focusToEnd}
+                    onClick={() => onFocus(index)}
+                    onRemove={(blur) => (blur ? onRemoveThenBlur(index) : onRemove(index))}
+                    onChange={(value) => onItemChange(index, value)}
                 />
             )
         })
         tmps.push(
             <FilterRenderer
-                // key={count.current}
                 value={{}}
-                isEditing={isEditing}
-                isDisabled={false}
-                isFocus={editingItem?.index === -1}
+                isFocus={checkIsFocus(-1)}
                 fields={fields}
                 style={{ flex: 1 }}
                 onClick={focusToEnd}
-                // @ts-ignore
                 containerRef={ref}
-                onRemove={() => {
-                    const index = items.length - 1 < 0 ? 0 : items.length - 1
-                    setEditingItem({ index })
-                }}
-                onChange={(newValue: any) => {
-                    let newItems = [...items]
-                    newItems.push(newValue)
-                    newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                    onChange?.(newItems)
-                }}
+                onRemove={focusToPrevItem}
+                onChange={onItemCreate}
             />
         )
         return tmps
-    }, [items, isEditing, editingItem, onChange, fields])
+    }, [
+        isEditing,
+        editingIndex,
+        items,
+        checkIsFocus,
+        fields,
+        focusToEnd,
+        focusToPrevItem,
+        onItemCreate,
+        onFocus,
+        onRemove,
+        onItemChange,
+        onRemoveThenBlur,
+    ])
 
     return (
         <div
@@ -220,9 +183,22 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
 }
 
 export function DatastoreMixedTypeSearch({
-    fields,
+    fields: columnTypes,
     ...props
 }: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
-    const searchColumns = useSearchColumns(fields)
+    const searchColumns = React.useMemo(() => {
+        if (!columnTypes) return []
+        const arr: SearchFieldSchemaT[] = []
+        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
+        columns.forEach((column) => {
+            arr.push({
+                ...column,
+                path: column.name,
+                label: column.name,
+            })
+        })
+
+        return arr
+    }, [columnTypes])
     return <Search {...props} fields={searchColumns} />
 }

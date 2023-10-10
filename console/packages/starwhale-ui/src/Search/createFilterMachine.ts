@@ -1,7 +1,6 @@
 import { IF_KEY } from '@rjsf/utils'
 import { OPERATOR } from '@starwhale/core'
-import { createMachine, assign, send, actions } from 'xstate'
-const { choose, log } = actions
+import { createMachine, assign } from 'xstate'
 
 export type filterEvent =
     | { type: 'FOCUSONLASTEDIT' }
@@ -22,12 +21,10 @@ const $context = {
 
 type ContextT = typeof $context
 
-const reset = (context: ContextT) => {
-    console.log('reset', context.values, context.origins)
-    if (context.values[0]?.value !== context.origins[0]?.value) {
-        return [...context.values]
-    }
-    return [...context.origins]
+const reset = (context: ContextT, { cached }) => {
+    console.log(cached)
+    if (cached) return [...cached]
+    return [...context.values]
 }
 
 const focusOnLastEdit = (context: ContextT) => {
@@ -38,7 +35,7 @@ const focusOnLastEdit = (context: ContextT) => {
 
 export const filterMachine = createMachine(
     {
-        /** @xstate-layout N4IgpgJg5mDOIC5QDMCWAbALmATgOgAccwA3VMAdwGIAxAeQGEBVAZToDkAZAQRYBUAogBEAknwDaABgC6iUAQD2sVJlQKAdnJAAPRAFoALJIDMeAJwB2AIzGzdswYMWLZgDQgAnogPGreAGySZibGkhYAHP4ATFH+BgC+8e5oWLh4kCqo6lBUAEoCLAISMlqKyqoaWroIegCsJnhREVZWYf6WUWb+-u5eCJZ49ZZxxkZWBp1RickY2PgZqtlUDBw0IrkAslKySCBlmZW71Xqj4YNR4RYG-uG1ERa+vfpRvng2l7VxUT5WtS-TIBSc3SEEySwAQpwmLltqUlAdNEdEGYonhJOFjJEolYLGEjFFak8ED8AkEQmEsbEEklAbM0gssjl6Mx+NxcgBxIqw3b7CqI0DHHGmAxmVrRfy1EUSz5Enz+PDhFqY2r1UbtfwAoH00GLJmMVjc+TwvlVRAvM6hCwEql3GLdWWvQLBYyWylxTV0+Y6xkglRUQ17Y1qfk6Z7hMxoxWtKzhDGYoJEqzYvAPVXo35-J0e1JesFQQg4BQEXCYDwCb1LfIbOgANQEAd5wdNNW+eCMcXsdosn0JnjNBlqCtj2Imv0kTkc2eBDOyBaLJbLFZyVdr9asOyN5SbSJq4zwox8ZkVkUCowuRNsAX8FjiVjiVtxtVuU+1eYLYFyYAAtgoSGA8gI1Z1g2QaHAKZotG8kjXsYfzOBiZguheEbdDekoPOiliSJ8iQ0uoCgQHAWhajgcJbmBoY1A8ZxBHcVyip0kjnn2NS+Gc1x3lcLixr4Go0iR75kJQZEIs2ejtJIaJmHRIpJsEzF9HotwKrUSbNJKdjjhYL65rqIkmjuJyXnE9RJrY4wGLGPQsYYFgBCqTTXk03x3OEOm+rqHn6du4EtqKAQDpIZmio4VlEtEaL1Nc2ISiK0GRO5M75kQ844KW5Z5t5FHHBcEaiqhZlXAYMa9n0OLyg8VzhD8th3GYiVLu+n4-n+WUhtUBIGIM452MY3zGLiTFErEkn1MO4Yhb8fGJEAA */
+        /** @xstate-layout N4IgpgJg5mDOIC5QDMCWAbALmATgOgAccwA3VMAdwGIAxAeQGEBVAZToDkAZAQRYBUAogBEAknwDaABgC6iUAQD2sVJlQKAdnJAAPRAFoALJIDMeAJwB2AIzGzdswYMWLZgDQgAnogPGreAGySZibGkhYAHP4ATFH+BgC+8e5oWLh4kCqo6lBUAEoCLAISMlqKyqoaWroIegCsJnhREVZWYf6WUWb+-u5eCJZ49ZZxxkZWBp1RickY2PgZqtlUDBw0IrkAslKySCBlmZW71XrGtbWNlrXdtWajnbW9+k0WeOHGFqH+kR-+1rXTIBSc3SEEySwAQpwmLltqUlAdNEdEGYonhJG9IlErBYwkYog9PN5fAEgiEwpjYgkkoDZmkFlkcvRmPxuLkAOJFWG7fYVRGgY7Y0wGMytaL+WrC8VXR4IHz+V4tYzhM4mAztfwAoF00GLRmMVhc+Tw3lVRBRJV4UIWfGU2rW2I9Qmy4mBYLGK0UuKa2nzHUMkEqKiGvbGtR8nRPcJmNHhFqSKzhN5KoIyqxYvAfeqhWNnWJBb2pX1gqCEHAKAi4TAeAR+pb5DZ0ABqAmDPLDppqafMRjOOOVrTTVjcTr0sVeUUTUQMQ4ckjaxkS1PUCggcC0WpwcPK7aRNQ+4TRZjtFmFaeCE5lJ3FeCsgRiiaHV3a-2pG9LpHIFC3CI7enakkPY9T06SQLxHZVXlqNNmglOxJCcAtgXpbJvxNXcTlsAIDHqNNbHGAxE0dPo9BaAwbygk84k6AjhSmV8fQDXVGNQnd+SeEUsJw80RUcQiZWiNF6jVLFxWFSQvg1ejC0Y-0iHLStq1rKAWMONiagnaMRW6axzRPadlVTCx5Q+E9wh8GwjxcRd4iAA */
         id: 'filter',
         initial: 'preview',
         states: {
@@ -59,29 +56,9 @@ export const filterMachine = createMachine(
 
                     propertyEditing: {
                         on: {
-                            REMOVE: [
-                                {
-                                    target: 'preRemove',
-                                    cond: 'isAllNone',
-                                    actions: 'focusBackword',
-                                },
-                                {
-                                    target: 'propertyEditing',
-                                    internal: true,
-                                    actions: ['focusRemove', 'focusBackword'],
-                                },
-                            ],
-                        },
-                    },
-
-                    preRemove: {
-                        on: {
-                            REMOVE: [
-                                {
-                                    internal: true,
-                                    actions: 'focusBackword',
-                                },
-                            ],
+                            REMOVE: {
+                                actions: ['focusRemove', 'focusBackword'],
+                            },
                         },
                     },
                 },
@@ -134,10 +111,14 @@ export const filterMachine = createMachine(
             isAllNone: (context) => {
                 return context.values.every((option) => option.value === undefined)
             },
+            isSomeNone: (context) => {
+                return context.values.some((option) => option.value)
+            },
         },
         actions: {
             blur: assign({
                 focused: false,
+                values: reset,
             }),
             focus: assign({
                 focused: true,

@@ -95,7 +95,7 @@ function Label(props) {
     const styles = useStyles()
     if (!props.value) return null
     return (
-        <p
+        <div
             // eslint-disable-next-line
             role='button'
             tabIndex={0}
@@ -104,7 +104,7 @@ function Label(props) {
             title={typeof props.value === 'string' ? props.value : ''}
         >
             {props.children}
-        </p>
+        </div>
     )
 }
 

@@ -1,4 +1,4 @@
-import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
+import { DataTypeT, OPERATOR, useCombine } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
@@ -8,6 +8,8 @@ import { dataStoreToFilter } from './utils'
 import { createUseStyles } from 'react-jss'
 import { filterMachine } from './createFilterMachine'
 import { useMachine } from '@xstate/react'
+import { useTrace } from '@starwhale/core'
+import _ from 'lodash'
 
 export const useStyles = createUseStyles({
     filters: {
@@ -53,7 +55,6 @@ export default function FilterRenderer({
     onBlur = () => {},
     onRemove = () => {},
     isFocus = false,
-    isEditing = false,
     style = {},
     fields,
     ...rest
@@ -63,19 +64,14 @@ export default function FilterRenderer({
     onClick?: () => void
     containerRef?: React.RefObject<HTMLDivElement>
 }) {
+    const trace = useTrace('grid-search-filter-render')
+
     const [input, setInput] = useState<any>('')
     const styles = useStyles()
     const ref = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const $columns = fields
-
-    const [cached, setCached] = useState<any>({})
-    // only rawValues all exist then cached
-    useEffect(() => {
-        if (isValueExist(rawValues.property) && isValueExist(rawValues.op) && isValueExist(rawValues.value)) {
-            setCached(rawValues)
-        }
-    }, [rawValues])
+    const [cached, setCached] = useState<any>(undefined)
 
     const origins = React.useMemo(
         () => [
@@ -83,11 +79,19 @@ export default function FilterRenderer({
             { type: 'op', value: rawValues.op },
             { type: 'value', value: rawValues.value },
         ],
-        [rawValues]
+        [rawValues.property, rawValues.op, rawValues.value]
     )
+
+    // if origins value exists then cached it
+    useEffect(() => {
+        if (origins.every((item) => isValueExist(item.value))) {
+            setCached(_.cloneDeep(origins))
+        }
+    }, [origins])
+
     const [machine, send, service] = useMachine(filterMachine, {
         context: {
-            origins: cached,
+            origins,
             values: origins,
         },
     })
@@ -95,8 +99,6 @@ export default function FilterRenderer({
     const property = values[0]?.value
     const op = values[1]?.value
     const value = values[2]?.value
-
-    console.log('[filter]:', values, rawValues, cached)
 
     const { FilterOperator, FilterField, FilterValue, FilterFieldValue, filter } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
@@ -189,7 +191,8 @@ export default function FilterRenderer({
 
     // esc
     const reset = () => {
-        send({ type: 'RESET' })
+        send({ type: 'RESET', cached })
+
         // curr blur then select the lastest one
         onBlur()
     }
@@ -204,6 +207,7 @@ export default function FilterRenderer({
     }
 
     const blur = () => {
+        if (!focused) return
         send({ type: 'BLUR' })
     }
 
@@ -227,11 +231,18 @@ export default function FilterRenderer({
         send({ type: 'CONFIRM', value: v, index, callback: onSubmit })
     }
 
+    const [removing, setRemoving] = useState(false)
+
+    const checkRemove = () => {
+        if (removing) onRemove()
+        else if (values.every((v) => !isValueExist(v.value))) setRemoving(true)
+    }
     const focusRemove = () => {
         const hasSearchInput = isValueExist(input)
         if (hasSearchInput) return
 
         send({ type: 'REMOVE', index: focusTarget })
+        checkRemove()
     }
 
     const onSubmit = (tmp) => {
@@ -239,7 +250,7 @@ export default function FilterRenderer({
         blur()
     }
 
-    const handleClick = () => {
+    const handleClick = (e) => {
         rest.onClick?.()
         focus()
     }
@@ -252,39 +263,39 @@ export default function FilterRenderer({
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
         if (containsNode(document.querySelector('.filter-popover'), e.target)) return
-        blur()
+        reset()
     })
 
     // keep focus by parent component
     useEffect(() => {
-        if (isFocus && isEditing) {
+        if (isFocus) {
             focusOnLastEdit()
         } else {
             blur()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isFocus, isEditing])
+    }, [isFocus])
 
     useEffect(() => {
         const subscription = service.subscribe((curr) => {
             const ctx = curr.context
-            console.log('>>>>>>>>>>>>>', curr.value, curr.event, property, op, value, {
-                focusTarget: ctx.focusTarget,
-                focused: ctx.focused,
-            })
+            trace('>>>>>>>>>>>>>', curr.value, curr.event, property, op, value, ctx)
 
-            switch (curr.value.editing) {
-                case 'preRemove':
-                    if (curr.event.type === 'REMOVE') {
-                        onRemove()
-                    }
-                    break
-                default:
-                    break
-            }
+            // switch (curr.event.type) {
+            //     case 'REMOVE':
+            //         if (ctx.values.every((v) => !isValueExist(v.value))) onRemove()
+            //         break
+            //     default:
+            //         break
+            // }
+
+            // switch (curr.value.editing) {
+            //     default:
+            //         break
+            // }
         })
         return () => subscription.unsubscribe()
-    }, [service, send])
+    }, [service, send, trace])
 
     const Remove = (
         <div className={styles.label}>
@@ -370,12 +381,6 @@ export default function FilterRenderer({
             onChange: (v: any) => confirm(v, index),
             onClick: () => focusOnTarget(index),
         }
-    })
-
-    console.log('[filter]: ', {
-        focused,
-        focusTarget,
-        input,
     })
 
     return (
