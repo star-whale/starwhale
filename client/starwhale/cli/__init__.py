@@ -4,6 +4,7 @@ import random
 import click
 
 from starwhale.version import STARWHALE_VERSION
+from starwhale.cli.deubg import debug_cmd
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
 from starwhale.core.job.cli import job_cmd
@@ -51,6 +52,7 @@ def create_sw_cli() -> click.core.Group:
     cli.add_command(completion_cmd)
     cli.add_command(config_cmd)
     cli.add_command(assistance_cmd)
+    cli.add_command(debug_cmd)
     add_mngt_command(cli)
 
     return cli
