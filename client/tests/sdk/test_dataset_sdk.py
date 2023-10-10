@@ -291,6 +291,22 @@ class TestDatasetSDK(_DatasetSDKTestBase):
                 "d": {"a": 1, "b": "2", "c": [1, "3", 1.1]},
                 "e": (1, "a", [1, "2"], [1, 2]),
             },
+            "empty_list": {
+                "program": [
+                    {"function": "FindAll", "dependencies": [], "inputs": []},
+                    {
+                        "function": "FilterStr",
+                        "dependencies": [0],
+                        "inputs": ["aaa", "aaa" * 200],
+                    },
+                    {
+                        "function": "FilterConcept",
+                        "dependencies": [1],
+                        "inputs": ["written work"],
+                    },
+                    {"function": "What", "dependencies": [2], "inputs": []},
+                ],
+            },
         }
         ds.append(raw_features)
         ds.commit()

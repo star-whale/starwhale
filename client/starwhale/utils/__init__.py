@@ -88,6 +88,10 @@ def fmt_http_server(server: str, https: bool = False) -> str:
         return f"{prefix}://{server}"
 
 
+def check_python_scalar_type(typ: t.Type) -> bool:
+    return typ in (int, float, str, bool, bytes, complex, type(None))
+
+
 # 1G = 1 Gigabytes = 1 * 1000 * 1000 * 1000 bytes => 10^3 is power of ten
 # 1Gi = 1 Gibibytes = 1 * 1024 * 1024 * 1024 bytes => 2^10 is power of two
 
