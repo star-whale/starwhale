@@ -42,30 +42,21 @@ prepare(){
         $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
     fi
 
-    if [ "${SW_INSTANCE_URI}" == "local" ]; then
-        if [ -z "${SW_MODEL_URI}" ]; then
-            SW_MODEL_URI="local/project/${SW_PROJECT}/model/${SW_MODEL_VERSION}"
-        fi
-        if [ -z "${SW_RUNTIME_URI}" ]; then
-            SW_RUNTIME_URI="local/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION}"
-        fi
-    else
-        echo '-->[Preparing] login...'
-        swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
-        if [ -z "${SW_MODEL_URI}" ]; then
-            SW_MODEL_URI="cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION}"
-        fi
-        if [ -z "${SW_RUNTIME_URI}" ]; then
-            SW_RUNTIME_URI="cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION}"
-        fi
+    if [ "${SW_INSTANCE_URI}" != "local" ]; then
+        echo '-->[Preparing] login to server...'
+        swcli instance login --token "${SW_TOKEN}" --alias server "${SW_INSTANCE_URI}"
     fi
 }
 
-run() {
-    if [ -z "${SW_PROJECT_URI}" ]; then
-        echo "-->[Error] There needs an environment variable: SW_PROJECT_URI, now will exit."
+# since 0.6.0
+compatibility_check() {
+    if [ -z "${SW_PROJECT_URI}" ] || [ -z "${SW_MODEL_URI}" ] || { [ -z "${SW_RUNTIME_URI}" ] && [ "${RUNTIME_RESTORED}" != "1" ];}; then
+        echo "-->[Error] The following variables are missing: SW_PROJECT_URI or SW_MODEL_URI or SW_RUNTIME_URI, possible reason: your server version is lower, please upgrade the server to at least 0.6.0, now will exit."
         exit 1
     fi;
+}
+
+run() {
     if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
         echo "-->[Preparing] debug config ..."
         VERBOSE="-v"
@@ -160,10 +151,10 @@ ds_build_and_upload () {
 welcome "$1"
 case "$1" in
     run|evaluation|fine_tune)
-        prepare && run
+        compatibility_check && prepare && run
         ;;
     serve|serving)
-        prepare && serve
+        compatibility_check && prepare && serve
         ;;
     dev)
         prepare && run_code_server
