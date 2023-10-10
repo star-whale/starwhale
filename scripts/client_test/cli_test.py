@@ -25,7 +25,7 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 from starwhale.utils import config
 from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.debug import init_logger
-from starwhale.base.uri.resource import Resource
+from starwhale.base.uri.resource import Resource, ResourceType
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -344,6 +344,25 @@ class TestCli:
                 runtime_uris=[conda_runtime_uri]
                 if "simple" not in BUILT_IN_EXAMPLES
                 else [None],
+                run_handler=run_handler,
+            )
+            self.run_model_in_standalone(
+                dataset_uris=[
+                    Resource(
+                        f"{self.cloud_target_project_uri}/{dataset_uri.name}/version/{dataset_uri.version}",
+                        typ=ResourceType.dataset,
+                    )
+                ],
+                model_uri=Resource(
+                    f"{self.cloud_target_project_uri}/{model_uri.name}/version/{model_uri.version}",
+                    typ=ResourceType.model,
+                ),
+                runtime_uris=[
+                    Resource(
+                        f"{self.cloud_target_project_uri}/{venv_runtime_uri.name}/version/{venv_runtime_uri.version}",
+                        typ=ResourceType.runtime,
+                    )
+                ],
                 run_handler=run_handler,
             )
 

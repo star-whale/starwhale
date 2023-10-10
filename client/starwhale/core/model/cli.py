@@ -17,9 +17,10 @@ from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
 from starwhale.base.uri.project import Project
-from starwhale.core.model.model import ModelConfig, ModelInfoFilter
+from starwhale.core.model.model import Model, ModelConfig, ModelInfoFilter
 from starwhale.core.model.store import ModelStorage
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.runtime.model import Runtime
 from starwhale.core.runtime.process import Process
 
 
@@ -760,6 +761,9 @@ def _serve(
     )
 
 
+_cache_project_uri = "local/project/.cache"
+
+
 def _prepare_model_run_args(
     model: str,
     runtime: str,
@@ -777,6 +781,16 @@ def _prepare_model_run_args(
 
     if model:
         model_uri = Resource(model, typ=ResourceType.model)
+        if model_uri.instance.is_cloud:
+            Model.copy(
+                src_uri=model_uri,
+                dest_uri=".",
+                dest_local_project_uri=_cache_project_uri,
+            )
+            model_uri = Resource(
+                f"{_cache_project_uri}/{model_uri.name}/version/{model_uri.version}",
+                typ=ResourceType.model,
+            )
         model_store = ModelStorage(model_uri)
         model_src_dir = model_store.src_dir
 
@@ -792,6 +806,17 @@ def _prepare_model_run_args(
             runtime_uri = model_uri
     else:
         model_src_dir = Path(workdir)
+
+    if runtime_uri and runtime_uri.instance.is_cloud:
+        Runtime.copy(
+            src_uri=runtime_uri,
+            dest_uri=".",
+            dest_local_project_uri=_cache_project_uri,
+        )
+        runtime_uri = Resource(
+            f"{_cache_project_uri}/{runtime_uri.name}/version/{runtime_uri.version}",
+            typ=ResourceType.runtime,
+        )
 
     model_src_dir = model_src_dir.absolute().resolve()
     if model_yaml is None:

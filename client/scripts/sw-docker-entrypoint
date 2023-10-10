@@ -22,8 +22,10 @@ welcome() {
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Version: `swcli --version`"
     echo "Run: $1 "
-    echo "Model Version: ${SW_MODEL_VERSION}"
-    echo "Runtime Version: ${SW_RUNTIME_VERSION}"
+    echo "Instance: ${SW_INSTANCE_URI}"
+    echo "Project: ${SW_PROJECT_URI}, ${SW_PROJECT}"
+    echo "Model Version: ${SW_MODEL_URI}, ${SW_MODEL_VERSION}"
+    echo "Runtime Version: ${SW_RUNTIME_URI}, ${SW_RUNTIME_VERSION}"
     echo "Runtime Restored: ${SW_USER_RUNTIME_RESTORED}"
     echo "Local User: ${SW_USER:-root}"
     echo "===================================="
@@ -36,28 +38,22 @@ welcome() {
 
 prepare(){
     if [ "${RUNTIME_RESTORED}" == "1" ]; then
+        echo '-->[Preparing] Runtime has been restored, activate it...'
         $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
     fi
 
-    if [ "${SW_INSTANCE_URI}" != "local" ]
-    then
-        # only remote
-        echo '-->[Preparing] pulling model ...'
-        swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
-        if [ -z "${SW_MODEL_URI}" ]; then
-            swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
-        else
-            swcli model copy ${SW_MODEL_URI} .
-        fi
-        if [ "${RUNTIME_RESTORED}" != "1" ]; then
-            echo '-->[Preparing] pulling runtime ...'
-            if [ -z "${SW_RUNTIME_URI}" ]; then
-                swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
-            else
-                swcli runtime copy ${SW_RUNTIME_URI} .
-            fi
-        fi
+    if [ "${SW_INSTANCE_URI}" != "local" ]; then
+        echo '-->[Preparing] login to server...'
+        swcli instance login --token "${SW_TOKEN}" --alias server "${SW_INSTANCE_URI}"
     fi
+}
+
+# since 0.6.0
+compatibility_check() {
+    if [ -z "${SW_PROJECT_URI}" ] || [ -z "${SW_MODEL_URI}" ] || { [ -z "${SW_RUNTIME_URI}" ] && [ "${RUNTIME_RESTORED}" != "1" ];}; then
+        echo "-->[Error] The following variables are missing: SW_PROJECT_URI or SW_MODEL_URI or SW_RUNTIME_URI, possible reason: your server version is lower, please upgrade the server to at least 0.6.0, now will exit."
+        exit 1
+    fi;
 }
 
 run() {
@@ -67,22 +63,15 @@ run() {
     fi
     echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        runtime_args="--runtime ${SW_RUNTIME_VERSION}"
+        runtime_args="--runtime ${SW_RUNTIME_URI}"
     else
         runtime_args="--forbid-packaged-runtime"
     fi
-    if [ -z "${SW_PROJECT_URI}" ]; then
-        echo "-->[Error] There needs an environment variable: SW_PROJECT_URI, now will exit."
-        exit 1
-    else
-        # http://controller:8082/project/starwhale:starwhale
-        log_project="${SW_PROJECT_URI}"
-    fi;
 
     swcli ${VERBOSE} model run --handler="${HANDLER}" --step="${STEP}" \
         --task-index="${TASK_INDEX}" --override-task-num="${TASK_NUM}" \
-        --uri="${SW_MODEL_VERSION}" --version="${SW_JOB_VERSION}" \
-        --log-project="${log_project}" \
+        --uri="${SW_MODEL_URI}" --version="${SW_JOB_VERSION}" \
+        --log-project="${SW_PROJECT_URI}" \
         --forbid-snapshot \
         ${runtime_args} -- "${SW_TASK_EXTRA_CMD_ARGS}" || exit 1
 }
@@ -91,9 +80,9 @@ serve() {
     echo "-->[Serving] start to serve, use $(which swcli) cli ..."
     export
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        swcli ${VERBOSE} model serve --uri "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
+        swcli ${VERBOSE} model serve --uri "${SW_MODEL_URI}" --runtime "${SW_RUNTIME_URI}" --host 0.0.0.0 || exit 1
     else
-        swcli ${VERBOSE} model serve --uri "${SW_MODEL_VERSION}" --host 0.0.0.0 --forbid-packaged-runtime || exit 1
+        swcli ${VERBOSE} model serve --uri "${SW_MODEL_URI}" --host 0.0.0.0 --forbid-packaged-runtime || exit 1
     fi
 }
 
@@ -162,10 +151,10 @@ ds_build_and_upload () {
 welcome "$1"
 case "$1" in
     run|evaluation|fine_tune)
-        prepare && run
+        compatibility_check && prepare && run
         ;;
     serve|serving)
-        prepare && serve
+        compatibility_check && prepare && serve
         ;;
     dev)
         prepare && run_code_server

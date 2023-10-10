@@ -13,7 +13,7 @@ from collections import UserDict, defaultdict
 
 from typing_extensions import Protocol
 
-from starwhale.utils import console, validate_obj_name
+from starwhale.utils import console, gen_uniq_version, validate_obj_name
 from starwhale.consts import ENV_POD_NAME
 from starwhale.utils.fs import DIGEST_SIZE
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
@@ -584,7 +584,7 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         self.session_end = session_end
         self.dataset_uri = dataset_uri
         self.run_env = _RunEnvType.POD
-        self.consumer_id = os.environ.get(ENV_POD_NAME)
+        self.consumer_id = os.environ.get(ENV_POD_NAME) or gen_uniq_version()
 
         self._do_validate()
 
