@@ -566,7 +566,7 @@ class TestHandler(BaseTestCase):
         assert "artifacts/user" in h._table_writers
 
         ds = LocalDataStore(str(workdir))
-        assert ds.list_tables(["m"]) == ["metrics/user", "metrics/_system"]
+        assert set(ds.list_tables(["m"])) == {"metrics/user", "metrics/_system"}
 
         assert (workdir / "artifacts" / "_files").exists()
         assert len(list((workdir / "artifacts" / "_files").iterdir())) != 0
