@@ -38,6 +38,7 @@ from starwhale.consts import (
     RESOURCE_FILES_NAME,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_RESOURCE_POOL,
     DEFAULT_JOBS_FILE_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
     DEFAULT_STARWHALE_API_VERSION,
@@ -376,14 +377,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         log_project: Project,
         version: str = "",
         run_handler: str = "",
-        dataset_uris: t.Optional[t.List[str]] = None,
+        dataset_uris: t.List[str] | None = None,
         dataset_head: int = 0,
-        scheduler_run_args: t.Optional[t.Dict[str, t.Any]] = None,
+        scheduler_run_args: t.Dict[str, t.Any] | None = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
         force_generate_jobs_yaml: bool = False,
         handler_args: t.List[str] | None = None,
-    ) -> None:
+    ) -> Resource:
         dataset_uris = dataset_uris or []
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
@@ -467,6 +468,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             if not forbid_snapshot and cleanup_snapshot:
                 empty_dir(snapshot_dir, ignore_errors=True)
+
+        return Resource(version, typ=ResourceType.job, project=log_project)
 
     def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         """
@@ -945,43 +948,80 @@ class CloudModel(CloudBundleModelMixin, Model):
     def run(
         cls,
         project_uri: Project,
-        model_uri: str,
-        dataset_uris: t.List[str],
-        runtime_uri: str,
-        run_handler: str,
-        resource_pool: str = "default",
+        model_uri: str | Resource,
+        run_handler: str | None,
+        dataset_uris: t.Sequence[str | Resource] | None = None,
+        runtime_uri: str | Resource | None = None,
+        resource_pool: str = DEFAULT_RESOURCE_POOL,
+        ttl: int = 0,
+        dev_mode: bool = False,
+        dev_mode_password: str = "",
+        overwrite_specs: t.Dict[str, t.Any] | None = None,
     ) -> t.Tuple[bool, str]:
-        _model_uri = Resource(
-            model_uri, ResourceType.model, project=project_uri, refine=True
-        )
-        _dataset_uris = [
-            Resource(i, ResourceType.dataset, project=project_uri, refine=True)
-            for i in dataset_uris
-        ]
-        _runtime_uri = (
-            Resource(
-                runtime_uri,
-                ResourceType.runtime,
-                project=project_uri,
-                refine=True,
-            )
-            if runtime_uri
-            else None
-        )
-        runtime_version_url = ""
-        if _runtime_uri:
-            runtime_version_url = (
-                _runtime_uri.info().get("versionId") or _runtime_uri.version
-            )
+        if isinstance(model_uri, str):
+            model_uri = Resource(model_uri, ResourceType.model)
+        model_info = ModelInfoVo(**model_uri.info())
 
-        req = JobRequest(
-            model_version_url=_model_uri.info().get("versionId") or _model_uri.version,
-            dataset_version_urls=",".join(
-                [str(i.info().get("versionId") or i.version) for i in _dataset_uris]
-            ),
-            runtime_version_url=runtime_version_url,
-            resource_pool=resource_pool,
-            handler=run_handler,
+        # TODO: When we have a better way to handle this, we can remove this.
+        overwrite_specs_str = ""
+        if overwrite_specs:
+            # overwrite specs format example:
+            # {"handler_name": {"replicas": 1, "resources": {"memory": "1GiB"}}}
+            job_specs = {
+                s.name: s
+                for s in model_info.version_info.step_specs
+                if s.job_name == run_handler
+            }
+
+            for handler_name, overwrite_spec in overwrite_specs.items():
+                if handler_name not in job_specs:
+                    raise ValueError(f"run_handler {handler_name} not found")
+
+                spec = job_specs[handler_name]
+                if "replicas" in overwrite_spec:
+                    spec.replicas = overwrite_spec["replicas"]
+
+                if "resources" in overwrite_spec:
+                    spec.resources = Handler._transform_resource(
+                        overwrite_spec["resources"]
+                    )
+
+            # Server api only accepts spec yaml dump str format.
+            # When we config overwrite_specs, we should not config run_handler, if not, server will raise Exception.
+            overwrite_specs_str = yaml.dump([s.dict() for s in job_specs.values()])
+            if overwrite_specs_str:
+                run_handler = None
+
+        dataset_ids = []
+        for _uri in dataset_uris or []:
+            if isinstance(_uri, str):
+                _uri = Resource(_uri, ResourceType.dataset)
+            dataset_ids.append(_uri.info()["versionId"])
+
+        if runtime_uri and isinstance(runtime_uri, str):
+            runtime_uri = Resource(runtime_uri, ResourceType.runtime)
+        runtime_id = (
+            runtime_uri.info()["versionId"] if isinstance(runtime_uri, Resource) else ""
         )
+
+        kwargs: t.Dict = dict(
+            model_version_url=model_info.version_id,
+            dataset_version_urls=",".join(dataset_ids),
+            runtime_version_url=runtime_id,
+            resource_pool=resource_pool,
+            dev_mode=dev_mode,
+            dev_password=dev_mode_password,
+        )
+
+        if ttl > 0:
+            # if want to live forever, do not set this field for server api
+            kwargs["time_to_live_in_sec"] = ttl
+
+        if run_handler is None:
+            kwargs["step_spec_over_writes"] = overwrite_specs_str
+        else:
+            kwargs["handler"] = run_handler
+
+        req = JobRequest(**kwargs)  # type: ignore
         resp = JobApi(project_uri.instance).create(project_uri.id, req)
         return resp.is_success(), resp.response().data

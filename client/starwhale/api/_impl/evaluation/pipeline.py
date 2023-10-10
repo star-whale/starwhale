@@ -44,7 +44,7 @@ class PipelineHandler(metaclass=ABCMeta):
         predict_auto_log: bool = True,
         predict_log_mode: str = PredictLogMode.PICKLE.value,
         predict_log_dataset_features: t.Optional[t.List[str]] = None,
-        dataset_uris: t.Optional[t.List[str]] = None,
+        dataset_uris: t.Optional[t.List[str | Resource]] = None,
         **kwargs: t.Any,
     ) -> None:
         self.predict_batch_size = predict_batch_size
@@ -287,8 +287,9 @@ class PipelineHandler(metaclass=ABCMeta):
 
         received_rows_cnt = 0
         # TODO: user custom config batch size, max_retries
-        for uri_str in self.dataset_uris:
-            _uri = Resource(uri_str, typ=ResourceType.dataset)
+        for _uri in self.dataset_uris:
+            if isinstance(_uri, str):
+                _uri = Resource(_uri, typ=ResourceType.dataset)
             ds = Dataset.dataset(_uri, readonly=True)
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info

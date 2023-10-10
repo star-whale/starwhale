@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
-from dataclasses import field, dataclass
 
 from starwhale.utils import NoSupportError
 from starwhale.consts import (
     FMT_DATETIME,
+    DEFAULT_PROJECT,
+    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     MINI_FMT_DATETIME,
     FMT_DATETIME_NO_TZ,
+    DEFAULT_RESOURCE_POOL,
 )
 from starwhale.base.models.job import LocalJobInfo, RemoteJobInfo
+from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.base.client.api.job import JobApi
@@ -20,25 +23,9 @@ from starwhale.api._impl.evaluation.log import Evaluation
 from starwhale.base.client.models.models import JobVo
 
 
-@dataclass
-class _BundleInfo:
-    name: str
-    version: str = ""
-    tags: list[str] = field(default_factory=list)
-
-    def __str__(self) -> str:
-        r = self.name
-        if self.version:
-            r = f"{r}/version/{self.version}"
-        return r
-
-
 class Job:
-    def __init__(
-        self, uri: Resource, basic_info: LocalJobInfo | JobVo | None = None
-    ) -> None:
+    def __init__(self, uri: Resource) -> None:
         self.uri = uri
-        self._basic_info: LocalJobInfo | JobVo = basic_info or self._get_basic_info()
         self._evaluation_store: Evaluation | None = None
 
     @property
@@ -56,8 +43,16 @@ class Job:
         return self._evaluation_store
 
     @property
+    def status(self) -> str:
+        info = self.basic_info
+        if isinstance(info, LocalJobInfo):
+            return info.manifest.status.upper()
+        else:
+            return info.job_status.value.upper()
+
+    @property
     def basic_info(self) -> LocalJobInfo | JobVo:
-        return self._basic_info
+        return self._get_basic_info()
 
     def _get_basic_info(self) -> LocalJobInfo | JobVo:
         if self.uri.instance.is_local:
@@ -141,7 +136,7 @@ class Job:
                 uri = Resource(i.uuid, typ=ResourceType.job, project=Project(project))
             else:
                 raise NoSupportError
-            jobs.append(cls(uri, basic_info=i))
+            jobs.append(cls(uri))
 
         return jobs, page
 
@@ -226,3 +221,192 @@ class Job:
             keep_none=keep_none,
             end_inclusive=end_inclusive,
         )
+
+    @classmethod
+    def create(
+        cls,
+        project: Project | str,
+        model: Resource | str,
+        run_handler: str,
+        datasets: t.List[str | Resource] | None = None,
+        runtime: Resource | str | None = None,
+        resource_pool: str = DEFAULT_RESOURCE_POOL,
+        ttl: int = 0,
+        dev_mode: bool = False,
+        dev_mode_password: str = "",
+        dataset_head: int = 0,
+        overwrite_specs: t.Dict[str, t.Any] | None = None,
+    ) -> Job:
+        """Create a job for Evaluation, Fine-tuning, Online Serving or Developing.
+
+        We use `project` argument to determine which instance to create job.
+            - For Server and Cloud instance, create process will be async, so you can get job object.
+            - For Standalone instance, create process will be sync, so you can get job object after job finished.
+
+        When `project` is related to a server/cloud instance, the model, runtime and dataset must be in the same instance.
+        When `project` is related to a standalone instance, the model and dataset accepts both standalone and server/cloud instance.
+
+        For the Standalone instance, the runtime use the python environment of the current process.
+
+        For all instances arguments:
+            project: (Project | str, required): project object or project uri str.
+            model: (Resource | str, required): model object or model uri str.
+            run_handler: (str, required): run handler name.
+            datasets: (List[str | Resource], optional): dataset object list or dataset uri str list. Default is None.
+
+        Only for Standalone instance arguments:
+            dataset_head: (int, optional): dataset head size for debugging. Default is 0, means no head.
+
+        Only for Server/Cloud instance arguments:
+            runtime: (Resource | str, optional): runtime object or runtime uri str. Default is None.
+                When runtime is None, will try the model built-in runtime first.
+            resource_pool: (str, optional): resource pool name. Default is "default" pool.
+            ttl: (int, optional): job time to live seconds. Default is 0, means no ttl.
+            dev_mode: (bool, optional): dev mode or not. Default is False.
+            dev_mode_password: (str, optional): dev mode password. Default is "".
+            overwrite_specs: (Dict[str, Any], optional): overwrite handler specs, currently only support `replicas` and `resources` fields.
+                Default is None. `replicas` and `resources` follow the @starwhale.handler specs. If the field is omitted, will use the model package defined value.
+
+        Examples:
+
+        - create a cloud job
+        ```python
+        from starwhale import Job
+        project = "https://cloud.starwhale.cn/project/starwhale:public"
+        job = Job.create(
+            project=project,
+            model=f"{project}/model/mnist/version/v0",
+            run_handler="mnist.evaluator:MNISTInference.evaluate",
+            datasets=[f"{project}/dataset/mnist/version/v0"],
+            runtime=f"{project}/runtime/pytorch",
+        )
+        print(job.status)
+        ```
+
+        - create a standalone job
+        ```python
+        from starwhale import Job
+        job = Job.create(
+            project="self",
+            model="mnist",
+            run_handler="mnist.evaluator:MNISTInference.evaluate",
+            datasets=["mnist"],
+            runtime="pytorch",
+        )
+        print(job.status)
+        ```
+        Returns:
+            Job Object
+        """
+        if isinstance(project, str):
+            project = Project(project)
+
+        if project.instance.is_local:
+            return cls.create_local(
+                project=project,
+                model=model,
+                run_handler=run_handler,
+                datasets=datasets,
+                dataset_head=dataset_head,
+            )
+        else:
+            return cls.create_remote(
+                project=project,
+                model=model,
+                run_handler=run_handler,
+                datasets=datasets,
+                runtime=runtime,
+                resource_pool=resource_pool,
+                ttl=ttl,
+                dev_mode=dev_mode,
+                dev_mode_password=dev_mode_password,
+                overwrite_specs=overwrite_specs,
+            )
+
+    @classmethod
+    def create_local(
+        cls,
+        model: Resource | str,
+        run_handler: str,
+        project: Project | str = DEFAULT_PROJECT,
+        datasets: t.List[str | Resource] | None = None,
+        dataset_head: int = 0,
+    ) -> Job:
+        """Create a standalone job."""
+        if isinstance(project, str):
+            project = Project(project)
+
+        if not project.instance.is_local:
+            raise ValueError("project must be a standalone instance")
+
+        if isinstance(model, str):
+            model = Resource(model, typ=ResourceType.model)
+
+        if model.instance.is_cloud:
+            model = BundleCopy.download_for_cache(model)
+
+        from starwhale.core.model.model import ModelConfig, StandaloneModel
+        from starwhale.core.model.store import ModelStorage
+
+        model_src_dir = ModelStorage(model).src_dir
+        model_config = ModelConfig.create_by_yaml(model_src_dir / DefaultYAMLName.MODEL)
+        dataset_uris = []
+        for d in datasets or []:
+            if isinstance(d, Resource):
+                dataset_uris.append(d.full_uri)
+            else:
+                dataset_uris.append(d)
+
+        job_uri = StandaloneModel.run(
+            model_src_dir=model_src_dir,
+            model_config=model_config,
+            run_project=project,
+            log_project=project,
+            run_handler=run_handler,
+            dataset_uris=dataset_uris,
+            dataset_head=dataset_head,
+        )
+        return cls(job_uri)
+
+    @classmethod
+    def create_remote(
+        cls,
+        project: Project | str,
+        model: Resource | str,
+        run_handler: str,
+        datasets: t.List[str | Resource] | None = None,
+        runtime: Resource | str | None = None,
+        resource_pool: str = DEFAULT_RESOURCE_POOL,
+        ttl: int = 0,
+        dev_mode: bool = False,
+        dev_mode_password: str = "",
+        overwrite_specs: t.Dict[str, t.Any] | None = None,
+    ) -> Job:
+        """Create a server/cloud job."""
+        if isinstance(project, str):
+            project = Project(project)
+
+        if not project.instance.is_cloud:
+            raise ValueError("project must be a server/cloud instance")
+
+        # TODO: support overwrite specs
+        from starwhale.core.model.model import CloudModel
+
+        status, job_id = CloudModel.run(
+            project_uri=project,
+            model_uri=model,
+            run_handler=run_handler,
+            dataset_uris=datasets,
+            runtime_uri=runtime,
+            resource_pool=resource_pool,
+            ttl=ttl,
+            dev_mode=dev_mode,
+            dev_mode_password=dev_mode_password,
+            overwrite_specs=overwrite_specs,
+        )
+
+        if not status:
+            raise RuntimeError(f"create job failed: {job_id}")
+
+        job_uri = Resource(job_id, typ=ResourceType.job, project=project)
+        return cls(job_uri)
