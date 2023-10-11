@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-from starwhale.utils import load_yaml
+from starwhale.utils import console, now_str, load_yaml
 from starwhale.consts import (
     UserRoleType,
     SW_CLI_CONFIG,
@@ -23,11 +23,9 @@ from starwhale.consts import (
     OBJECT_STORE_DIRNAME,
     DEFAULT_SW_LOCAL_STORAGE,
 )
-from starwhale.consts.env import SWEnv
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import NotFoundError, NoSupportError
-
-from . import console, now_str, fmt_http_server
-from .fs import ensure_dir, ensure_file
+from starwhale.base.uri.instance import Instance
 
 _config: t.Dict[str, t.Any] = {}
 _CURRENT_SHELL_USERNAME = getpass.getuser()
@@ -125,30 +123,8 @@ class SWCliConfigMixed:
         return self.rootdir / OBJECT_STORE_DIRNAME
 
     @property
-    def sw_remote_addr(self) -> str:
-        addr: str = self._current_instance_obj.get("uri", "")
-        if addr == "local":
-            return addr
-        else:
-            return fmt_http_server(addr)
-
-    @property
-    def user_name(self) -> str:
-        return self._current_instance_obj.get("user_name", "")
-
-    @property
-    def _sw_token(self) -> str:
-        return self._current_instance_obj.get("sw_token", "") or os.environ.get(
-            SWEnv.instance_token, ""
-        )
-
-    @property
     def _current_instance_obj(self) -> t.Dict[str, t.Any]:
         return self._config.get("instances", {}).get(self.current_instance) or {}
-
-    @property
-    def user_role(self) -> str:
-        return self._current_instance_obj.get("user_role", "")
 
     @property
     def current_instance(self) -> str:
@@ -162,12 +138,9 @@ class SWCliConfigMixed:
     def docker_builtin_image_repo(self) -> str:
         return self._config.get("docker", {}).get("builtin_image_repo", "")  # type: ignore[no-any-return]
 
-    def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
-        instance = self._get_instance_alias(instance)
-        return self._config["instances"].get(instance) or {}
-
-    def get_sw_token(self, instance: str) -> str:
-        return self.get_sw_instance_config(instance).get("sw_token", "")
+    @staticmethod
+    def get_sw_token(instance: str) -> str:
+        return Instance(instance).token
 
     def _get_instance_alias(self, instance: str) -> str:
         if not instance:
@@ -191,7 +164,7 @@ class SWCliConfigMixed:
 
     @property
     def current_project(self) -> str:
-        return self._current_instance_obj.get("current_project", "")
+        return self._current_instance_obj.get("current_project", "")  # type: ignore[no-any-return]
 
     def select_current_default(self, instance: str, project: str = "") -> None:
         instance = self._get_instance_alias(instance)

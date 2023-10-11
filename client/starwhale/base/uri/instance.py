@@ -6,11 +6,11 @@ from starwhale.base.uri.exceptions import NoMatchException
 
 
 def _get_instances() -> Dict[str, Dict]:
-    return config.load_swcli_config().get("instances", {})
+    return config.load_swcli_config().get("instances", {})  # type: ignore[no-any-return]
 
 
 def _get_default_instance_alias() -> str:
-    return config.load_swcli_config().get("current_instance", "")
+    return config.load_swcli_config().get("current_instance", "")  # type: ignore[no-any-return]
 
 
 def _find_alias_by_url(url: str, token: Optional[str] = None) -> Tuple[str, str]:
