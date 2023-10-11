@@ -68,7 +68,7 @@ export default function JobListCard() {
         <WithCurrentAuth id='job.cancel'>
             <ConfirmButton
                 tooltip={t('Cancel')}
-                icon='Cancel'
+                icon='cancel'
                 as='link'
                 onClick={() => handleAction(jobId, JobActionType.CANCEL)}
                 title={t('Cancel.Confirm')}

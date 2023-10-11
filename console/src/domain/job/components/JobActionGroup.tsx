@@ -140,7 +140,7 @@ export default function JobActionGroup({
         <WithCurrentAuth id='job.cancel'>
             <ConfirmButton
                 tooltip={t('Cancel')}
-                icon='Cancel'
+                icon='cancel'
                 {...sharedProps}
                 onClick={() => handleAction(jobId, JobActionType.CANCEL)}
                 title={t('Cancel.Confirm')}

@@ -135,7 +135,7 @@ export type IconTypesT =
     | 'Resume'
     | 'report'
     | 'blog'
-    | 'Cancel'
+    | 'cancel'
     | 'Restore'
     | 'a-Viewlog'
     | 'a-Pushlocal'
