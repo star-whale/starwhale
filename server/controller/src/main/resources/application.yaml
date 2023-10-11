@@ -158,6 +158,9 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 server:
+  tomcat:
+    threads:
+      max: ${SW_CONTROLLER_MAX_THREADS:500}
   port: ${SW_CONTROLLER_PORT:8082}
   shutdown: graceful
   compression:
