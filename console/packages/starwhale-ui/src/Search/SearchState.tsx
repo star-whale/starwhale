@@ -1,4 +1,4 @@
-import { traceCreator } from '@starwhale/core'
+import { traceCreator, useEventCallback } from '@starwhale/core'
 import React, { useReducer } from 'react'
 import { ValueT } from './types'
 
@@ -14,36 +14,24 @@ enum ActionType {
     reset = 'reset',
 }
 
-type FilterValueT = { type: string; value: any }
-
-const initialFocusState = {
-    focusedRemoving: false,
-    focusedTarget: 0,
-    focusedValues: [] as FilterValueT[],
-    focusedResetValues: [] as FilterValueT[],
-}
+// type FilterValueT = { type: string; value: any }
+// const initialFocusState = {
+//     focusedRemoving: false,
+//     focusedTarget: 0,
+//     focusedValues: [] as FilterValueT[],
+//     focusedResetValues: [] as FilterValueT[],
+// }
 
 const initialState = {
     isEditing: false,
     items: [] as ValueT,
     // editing item status
     editingIndex: null,
-    ...initialFocusState,
 }
 
 const isValueExist = (value: any) => {
     if (value === 0) return true
     return !!value
-}
-
-const isFocusedAllNone = (focusedValues: FilterValueT[]) => {
-    return focusedValues.every((v) => isValueExist(v.value))
-}
-
-const getFocusTargetOnLastestEdit = (focusedValues: FilterValueT[]) => {
-    const index = focusedValues.findIndex((v) => !v.value)
-    if (index !== -1) return index
-    return focusedValues.length - 1
 }
 
 const trace = traceCreator('search-state')
@@ -82,7 +70,7 @@ const reducer = (state, action) => {
             }
             break
         case ActionType.createItem: {
-            const { value } = action.payload
+            const { value, onChange } = action.payload
             let newItems = [...state.items]
             newItems.push(value)
             newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
@@ -90,11 +78,12 @@ const reducer = (state, action) => {
                 ...state,
                 items: newItems,
             }
+            onChange?.(newItems)
             break
         }
         // confirm then move to lastest edit
         case ActionType.updateItem: {
-            const { index, value } = action.payload
+            const { index, value, onChange } = action.payload
             let newItems: any[] = []
             if (!value) {
                 newItems = state.items.filter((key, i) => i !== index)
@@ -107,11 +96,12 @@ const reducer = (state, action) => {
                 items: newItems,
                 editingIndex: -1,
             }
+            onChange?.(newItems)
             break
         }
         // remove
         case ActionType.removeItem: {
-            const { index, blur } = action.payload
+            const { index, blur, onChange } = action.payload
             const newItems = [...state.items]
             newItems.splice(index, 1)
             next = {
@@ -120,6 +110,7 @@ const reducer = (state, action) => {
                 editingIndex: state.editingIndex - 1,
                 isEditing: !blur,
             }
+            onChange?.(newItems)
             break
         }
         case ActionType.reset: {
@@ -178,44 +169,48 @@ function useSearchState({ onChange }) {
         dispatch({ type: ActionType.setEditingIndex, payload: { index } })
     }, [])
 
-    const onRemove = React.useCallback((index) => {
+    const onRemove = useEventCallback((index) => {
         dispatch({
             type: ActionType.removeItem,
             payload: {
                 index,
                 blur: false,
+                onChange,
             },
         })
-    }, [])
+    })
 
-    const onRemoveThenBlur = React.useCallback((index) => {
+    const onRemoveThenBlur = useEventCallback((index) => {
         dispatch({
             type: ActionType.removeItem,
             payload: {
                 index,
                 blur: true,
+                onChange,
             },
         })
-    }, [])
+    })
 
-    const onItemCreate = React.useCallback((newValue: any) => {
+    const onItemCreate = useEventCallback((newValue: any) => {
         dispatch({
             type: ActionType.createItem,
             payload: {
                 value: newValue,
+                onChange,
             },
         })
-    }, [])
+    })
 
-    const onItemChange = React.useCallback((index, newValue: any) => {
+    const onItemChange = useEventCallback((index, newValue: any) => {
         dispatch({
             type: ActionType.updateItem,
             payload: {
                 index,
                 value: newValue,
+                onChange,
             },
         })
-    }, [])
+    })
 
     const setItems = React.useCallback((items) => {
         dispatch({

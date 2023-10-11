@@ -235,7 +235,7 @@ export default function FilterRenderer({
         }
     }
 
-    const handleClick = (e) => {
+    const handleClick = () => {
         rest.onClick?.()
         focus()
     }

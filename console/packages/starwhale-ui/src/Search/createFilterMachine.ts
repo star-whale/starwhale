@@ -12,8 +12,8 @@ export type FilterEventT =
     | { type: 'INIT'; origins: any[] }
 
 const $context = {
-    values: [] as { type: string; value: any; editable?: boolean }[],
-    origins: [] as { type: string; value: any; editable?: boolean }[],
+    values: [] as { type: string; value: any }[],
+    origins: [] as { type: string; value: any }[],
     focusTarget: 0,
     focused: false,
 }
@@ -117,7 +117,7 @@ export const filterMachine = createMachine(
             }),
             focusRemove: assign({
                 focused: true,
-                values: (context) => {
+                values: (context: ContextT) => {
                     // truncate value from end, find the last value that exist then set it to undefined
                     const values = [...context.values]
                     for (let i = values.length - 1; i >= 0; i--) {
@@ -131,18 +131,18 @@ export const filterMachine = createMachine(
             }),
             focusBackword: assign({
                 focused: true,
-                focusTarget: (context) => {
+                focusTarget: (context: ContextT) => {
                     return Math.max(context.focusTarget - 1, 0)
                 },
             }),
             focusForword: assign({
                 focused: true,
-                focusTarget: (context) => {
+                focusTarget: (context: ContextT) => {
                     return Math.min(context.focusTarget + 1, context.values.length - 1)
                 },
             }),
             // @ts-ignore
-            focusConfirm: assign((context, { index, value }) => {
+            focusConfirm: assign((context: ContextT, { index, value }) => {
                 const next = context.values.map((option, curr) => {
                     if (curr === index) {
                         return { ...option, value }

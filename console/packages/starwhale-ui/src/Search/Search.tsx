@@ -1,6 +1,6 @@
 import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useRef, useEffect } from 'react'
+import React, { useRef } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
 import { SearchFieldSchemaT, ValueT } from './types'
@@ -91,11 +91,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
     useDeepEffect(() => {
         setItems(value)
     }, [value])
-
-    useEffect(() => {
-        onChange?.(state.items)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.items])
 
     const items = value
 

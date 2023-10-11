@@ -71,7 +71,7 @@ function EvalProjectList({
         tableName: summaryTableName,
     })
 
-    const { columnTypes, records } = useFetchDatastoreByTable(params, !!projectId)
+    const { columnTypes, records, columnHints } = useFetchDatastoreByTable(params, !!projectId)
 
     const recordById = React.useMemo(() => {
         return _.keyBy(records, (r) => r.id?.value)
@@ -97,6 +97,7 @@ function EvalProjectList({
                 summaryTableName,
                 records: rows,
                 columnTypes,
+                columnHints,
             } as any,
         })
     })
@@ -123,6 +124,7 @@ function EvalProjectList({
             store={useStore}
             records={records}
             columnTypes={columnTypes}
+            columnHints={columnHints}
             columns={$columns}
             onRowSelectedChange={handelRowSelectedChange}
         />

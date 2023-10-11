@@ -60,9 +60,17 @@ function useGridQuery() {
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {
-            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />
+            return (
+                <ConfigQueryInline
+                    {...props}
+                    value={queries}
+                    onChange={onChange}
+                    columnHints={columnHints}
+                    columnTypes={sortedColumnTypes}
+                />
+            )
         },
-        [sortedColumnTypes, queries, onChange]
+        [sortedColumnTypes, columnHints, queries, onChange]
     )
 
     return {

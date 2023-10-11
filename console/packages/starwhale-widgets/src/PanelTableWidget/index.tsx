@@ -54,6 +54,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
         <>
             <GridTable
                 columnTypes={data.columnTypes}
+                columnHints={data.columnHints}
                 records={data.records}
                 storeKey={id}
                 queryinline={num === 1 && !readonly}

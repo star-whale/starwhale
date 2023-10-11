@@ -11,6 +11,7 @@ export type RecordSchemaT = {
     type: DataTypes
     name: string
     value: any
+    getHints: () => any[] | undefined
 }
 export type DataTypeT = keyof typeof DataTypes
 export type DataNameT = 'unknown' | 'int' | 'float' | 'bool' | 'string' | 'bytes'
