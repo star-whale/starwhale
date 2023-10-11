@@ -188,43 +188,41 @@ class DataLoader:
 
         # Current server side implementation only supports the original key range as the processedData parameter,
         # so we need to wait for all the keys in the original key range to be processed.
-        while not self._key_processed_queue.empty():
-            key = self._key_processed_queue.get(block=True)
+        while True:
+            try:
+                key = self._key_processed_queue.get(block=False)
+            except queue.Empty:
+                break
 
             # TODO: tune performance for find key range
-            with self._lock:
-                for rk in self._key_range_dict:
-                    if (rk[0] is None or rk[0] <= key) and (
-                        rk[1] is None or key < rk[1]
-                    ):
-                        self._key_range_dict[rk]["processed_cnt"] += 1
-                        break
-                else:
-                    raise RuntimeError(
-                        f"key({key}) not found in key range dict:{self._key_range_dict}"
-                    )
+            for rk in self._key_range_dict:
+                if (rk[0] is None or rk[0] <= key) and (rk[1] is None or key < rk[1]):
+                    self._key_range_dict[rk]["processed_cnt"] += 1
+                    break
+            else:
+                raise RuntimeError(
+                    f"key({key}) not found in key range dict:{self._key_range_dict}"
+                )
 
         processed_range_keys = []
-        with self._lock:
-            for rk in list(self._key_range_dict.keys()):
-                if (
-                    self._key_range_dict[rk]["processed_cnt"]
-                    == self._key_range_dict[rk]["rows_cnt"]
-                ):
-                    processed_range_keys.append(rk)
-                    del self._key_range_dict[rk]
+        for rk in list(self._key_range_dict.keys()):
+            if (
+                self._key_range_dict[rk]["processed_cnt"]
+                == self._key_range_dict[rk]["rows_cnt"]
+            ):
+                processed_range_keys.append(rk)
+                del self._key_range_dict[rk]
 
         return processed_range_keys
 
     def _check_all_processed_done(self) -> bool:
-        with self._lock:
-            unfinished = self._expected_rows_cnt - self._processed_rows_cnt
-            if unfinished < 0:
-                raise ValueError(
-                    f"unfinished rows cnt({unfinished}) < 0, processed rows cnt has been called more than expected"
-                )
-            else:
-                return unfinished == 0
+        unfinished = self._expected_rows_cnt - self._processed_rows_cnt
+        if unfinished < 0:
+            raise ValueError(
+                f"unfinished rows cnt({unfinished}) < 0, processed rows cnt has been called more than expected"
+            )
+        else:
+            return unfinished == 0
 
     def _iter_meta(self) -> t.Generator[TabularDatasetRow, None, None]:
         if not self.session_consumption:
@@ -233,14 +231,15 @@ class DataLoader:
                 yield row
         else:
             while True:
-                pk = self._get_processed_key_range()
-                rt = self.session_consumption.get_scan_range(pk)
-                if rt is None:
-                    if self._check_all_processed_done():
+                with self._lock:
+                    pk = self._get_processed_key_range()
+                    rt = self.session_consumption.get_scan_range(pk)
+                    if rt is None and self._check_all_processed_done():
                         break
-                    else:
-                        time.sleep(1)
-                        continue
+
+                if rt is None:
+                    time.sleep(1)
+                    continue
 
                 rows_cnt = 0
                 if self.dataset_uri.instance.is_cloud:
@@ -379,10 +378,9 @@ class DataLoader:
             else:
                 yield row
                 with self._lock:
+                    if self._key_processed_queue is not None:
+                        self._key_processed_queue.put(row.index)
                     self._processed_rows_cnt += 1
-
-                if self._key_processed_queue is not None:
-                    self._key_processed_queue.put(row.index)
 
         console.debug(
             "queue details:"
