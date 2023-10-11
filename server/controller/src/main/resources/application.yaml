@@ -160,7 +160,7 @@ mybatis:
 server:
   tomcat:
     threads:
-      max: ${SW_CONTROLLER_MAX_THREADS:500}
+      max: ${SW_CONTROLLER_TOMCAT_MAX_THREADS:500}
   port: ${SW_CONTROLLER_PORT:8082}
   shutdown: graceful
   compression:
