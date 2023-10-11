@@ -76,6 +76,14 @@ const basic = {
         en: 'Collapse details',
         zh: '收起视图',
     },
+    'grid.view.saveas': {
+        en: 'Save as',
+        zh: '保存为模板',
+    },
+    'grid.view.save': {
+        en: 'Save',
+        zh: '保存',
+    },
     'yes': {
         en: 'Yes',
         zh: '是',

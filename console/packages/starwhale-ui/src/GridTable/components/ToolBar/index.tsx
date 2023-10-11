@@ -4,6 +4,7 @@ import ConfigViews from '../ConfigViews/ConfigViews'
 import React from 'react'
 import useGrid from '../../hooks/useGrid'
 import Button from '@starwhale/ui/Button'
+import useTranslation from '@/hooks/useTranslation'
 
 type IToolBarProps = {
     viewable?: boolean
@@ -37,6 +38,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
     const query = React.useMemo(() => {
         return queryable && renderConfigQuery()
     }, [queryable, renderConfigQuery])
+    const [t] = useTranslation()
 
     return (
         <div
@@ -65,12 +67,12 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                             <div>
                                 {!isAllRuns && (
                                     <>
-                                        <Button onClick={() => onSave?.(currentView)}>Save</Button>
+                                        <Button onClick={() => onSave?.(currentView)}> {t('grid.view.save')}</Button>
                                         &nbsp;&nbsp;
                                     </>
                                 )}
 
-                                <Button onClick={() => onSaveAs?.(currentView)}>Save As</Button>
+                                <Button onClick={() => onSaveAs?.(currentView)}> {t('grid.view.saveas')}</Button>
                             </div>
                         )}
                     </div>

@@ -109,8 +109,8 @@ export default function DatasetVersionListCard() {
                                     onRemoveTag={(tag) => handelTagRemove(datasetVersion.id, tag)}
                                 />,
                                 <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
-                                datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 counts,
+                                datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <ButtonGroup key='action'>
                                     <CopyToClipboard
