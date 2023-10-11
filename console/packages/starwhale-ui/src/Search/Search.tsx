@@ -7,7 +7,7 @@ import { SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
 import useTranslation from '@/hooks/useTranslation'
-import { useDeepEffect, useTrace } from '@starwhale/core'
+import { useDeepEffect } from '@starwhale/core'
 import useSearchState from './SearchState'
 
 export const useStyles = createUseStyles({
@@ -67,7 +67,7 @@ export interface ISearchProps {
 }
 
 export default function Search({ value = [], onChange, fields }: ISearchProps) {
-    const trace = useTrace('grid-search')
+    // const trace = useTrace('grid-search')
     const styles = useStyles()
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
@@ -116,10 +116,10 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                     isFocus={checkIsFocus(index)}
                     fields={fields}
                     containerRef={ref}
-                    onBlur={focusToEnd}
+                    focusToEnd={focusToEnd}
                     onClick={() => onFocus(index)}
                     onRemove={(blur) => (blur ? onRemoveThenBlur(index) : onRemove(index))}
-                    onChange={(value) => onItemChange(index, value)}
+                    onChange={(_value) => onItemChange(index, _value)}
                 />
             )
         })
@@ -136,20 +136,8 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
             />
         )
         return tmps
-    }, [
-        isEditing,
-        editingIndex,
-        items,
-        checkIsFocus,
-        fields,
-        focusToEnd,
-        focusToPrevItem,
-        onItemCreate,
-        onFocus,
-        onRemove,
-        onItemChange,
-        onRemoveThenBlur,
-    ])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing, editingIndex, items, fields])
 
     return (
         <div

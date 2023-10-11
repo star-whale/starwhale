@@ -1,8 +1,7 @@
-import { IF_KEY } from '@rjsf/utils'
-import { OPERATOR } from '@starwhale/core'
+import { OPERATOR } from '@starwhale/core/datastore/constants'
 import { createMachine, assign } from 'xstate'
 
-export type filterEvent =
+export type FilterEventT =
     | { type: 'FOCUSONLASTEDIT' }
     | { type: 'RESET' }
     | { type: 'BLUR' }
@@ -20,18 +19,6 @@ const $context = {
 }
 
 type ContextT = typeof $context
-
-const reset = (context: ContextT, { cached }) => {
-    console.log(cached)
-    if (cached) return [...cached]
-    return [...context.values]
-}
-
-const focusOnLastEdit = (context: ContextT) => {
-    const index = context.values.findIndex((v) => !v.value)
-    if (index !== -1) return index
-    return context.values.length - 1
-}
 
 export const filterMachine = createMachine(
     {
@@ -99,7 +86,7 @@ export const filterMachine = createMachine(
             },
         },
         schema: {
-            events: {} as filterEvent,
+            events: {} as FilterEventT,
         },
         context: $context,
         on: {},
@@ -107,29 +94,26 @@ export const filterMachine = createMachine(
         preserveActionOrder: true,
     },
     {
-        guards: {
-            isAllNone: (context) => {
-                return context.values.every((option) => option.value === undefined)
-            },
-            isSomeNone: (context) => {
-                return context.values.some((option) => option.value)
-            },
-        },
         actions: {
             blur: assign({
                 focused: false,
-                values: reset,
+                // values: reset,
             }),
             focus: assign({
                 focused: true,
             }),
             setFocusTarget: assign({
                 focused: true,
-                focusTarget: (context, event) => event.index,
+                // @ts-ignore
+                focusTarget: (context, { index }) => index,
             }),
             focusOnLastEdit: assign({
                 focused: true,
-                focusTarget: focusOnLastEdit,
+                focusTarget: (context: ContextT) => {
+                    const index = context.values.findIndex((v) => !v.value)
+                    if (index !== -1) return index
+                    return context.values.length - 1
+                },
             }),
             focusRemove: assign({
                 focused: true,
@@ -157,7 +141,8 @@ export const filterMachine = createMachine(
                     return Math.min(context.focusTarget + 1, context.values.length - 1)
                 },
             }),
-            focusConfirm: assign((context, { index, value, callback }) => {
+            // @ts-ignore
+            focusConfirm: assign((context, { index, value }) => {
                 const next = context.values.map((option, curr) => {
                     if (curr === index) {
                         return { ...option, value }
@@ -171,16 +156,6 @@ export const filterMachine = createMachine(
                     next.splice(-1)
                 }
 
-                // submit
-                if (next.every((option) => !!option.value)) {
-                    console.log('submit', next)
-                    callback?.({
-                        property: next[0].value,
-                        op: next[1].value,
-                        value: next[2].value,
-                    })
-                }
-
                 return {
                     focused: true,
                     values: next,
@@ -189,7 +164,11 @@ export const filterMachine = createMachine(
             reset: assign({
                 focused: false,
                 focusTarget: 0,
-                values: reset,
+                // @ts-ignore
+                values: (context: ContextT, { cached }) => {
+                    if (cached) return [...cached]
+                    return [...context.values]
+                },
             }),
         },
     }

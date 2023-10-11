@@ -1,4 +1,4 @@
-import { DataTypeT, OPERATOR, useCombine } from '@starwhale/core/datastore'
+import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
@@ -8,7 +8,7 @@ import { dataStoreToFilter } from './utils'
 import { createUseStyles } from 'react-jss'
 import { filterMachine } from './createFilterMachine'
 import { useMachine } from '@xstate/react'
-import { useTrace } from '@starwhale/core'
+import { useTrace } from '@starwhale/core/utils'
 import _ from 'lodash'
 
 export const useStyles = createUseStyles({
@@ -52,7 +52,7 @@ const isValueExist = (value: any) => {
 export default function FilterRenderer({
     value: rawValues = {},
     onChange = () => {},
-    onBlur = () => {},
+    focusToEnd = () => {},
     onRemove = () => {},
     isFocus = false,
     style = {},
@@ -62,16 +62,18 @@ export default function FilterRenderer({
     fields: SearchFieldSchemaT[]
     style?: React.CSSProperties
     onClick?: () => void
+    focusToEnd?: () => void
+    onRemove?: (blur?: boolean) => void
     containerRef?: React.RefObject<HTMLDivElement>
 }) {
-    const trace = useTrace('grid-search-filter-render')
-
-    const [input, setInput] = useState<any>('')
+    const $columns = fields
     const styles = useStyles()
+    const [input, setInput] = useState<any>('')
     const ref = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
-    const $columns = fields
     const [cached, setCached] = useState<any>(undefined)
+    const trace = useTrace('grid-search-filter-render')
+    const [removing, setRemoving] = useState(false)
 
     const origins = React.useMemo(
         () => [
@@ -79,36 +81,27 @@ export default function FilterRenderer({
             { type: 'op', value: rawValues.op },
             { type: 'value', value: rawValues.value },
         ],
-        [rawValues.property, rawValues.op, rawValues.value]
+        [rawValues]
     )
 
-    // if origins value exists then cached it
-    useEffect(() => {
-        if (origins.every((item) => isValueExist(item.value))) {
-            setCached(_.cloneDeep(origins))
-        }
-    }, [origins])
-
-    const [machine, send, service] = useMachine(filterMachine, {
+    const [machine, send] = useMachine(filterMachine, {
         context: {
             origins,
             values: origins,
         },
     })
     const { values, focusTarget, focused } = machine.context
-    const property = values[0]?.value
-    const op = values[1]?.value
-    const value = values[2]?.value
+    const [property, op, value] = values.map((tmp) => tmp.value)
 
     const { FilterOperator, FilterField, FilterValue, FilterFieldValue, filter } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
-        const filter = dataStoreToFilter(field?.type as DataTypeT)()
+        const _filter = dataStoreToFilter(field?.type as DataTypeT)()
         return {
-            filter,
-            FilterOperator: filter.renderOperator,
-            FilterField: filter.renderField,
-            FilterFieldValue: filter.renderFieldValue,
-            FilterValue: filter.renderValue,
+            filter: _filter,
+            FilterOperator: _filter.renderOperator,
+            FilterField: _filter.renderField,
+            FilterFieldValue: _filter.renderFieldValue,
+            FilterValue: _filter.renderValue,
         }
     }, [property, $columns])
 
@@ -125,77 +118,75 @@ export default function FilterRenderer({
     )
 
     const $fieldOptions = React.useMemo(() => {
-        return $columns.filter(isCurrentOptionMatch(0)).map((tmp) => {
+        return $columns.map((tmp) => {
             return {
                 id: tmp.path,
                 type: tmp.path,
                 label: tmp.label,
             }
         })
-    }, [$columns, isCurrentOptionMatch])
+    }, [$columns])
 
     const $operatorOptions = React.useMemo(() => {
-        return filter.operators
-            .map((key: string) => {
-                const operator = Operators[key]
-                return {
-                    id: operator.key,
-                    type: operator.key,
-                    label: operator.label,
-                }
-            })
-            .filter(isCurrentOptionMatch(1))
-    }, [filter, isCurrentOptionMatch])
+        return filter.operators.map((key: string) => {
+            const operator = Operators[key]
+            return {
+                id: operator.key,
+                type: operator.key,
+                label: operator.label,
+            }
+        })
+    }, [filter])
 
     const $valueOptions = React.useMemo(() => {
         const column = $columns.find((tmp) => tmp.name === property)
         if (!column) return []
-        return column
-            .getHints()
-            ?.map((tmp) => {
-                return {
-                    id: tmp,
-                    type: tmp,
-                    label: tmp,
-                }
-            })
-            .filter(isCurrentOptionMatch(2))
-    }, [$columns, property, isCurrentOptionMatch])
+        return column.getHints()?.map((tmp) => {
+            return {
+                id: tmp,
+                type: tmp,
+                label: tmp,
+            }
+        })
+    }, [$columns, property])
 
-    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement> | any) => {
-        if (typeof event === 'object' && 'target' in event) {
-            setInput((event.target as any).value)
-        } else {
-            setInput(event ?? '')
-        }
-        focus()
-    }
+    const isAllValusExist = (_values) => _values.every((option) => isValueExist(option.value))
+    const isAllValueNone = (_values) => _values.every((option) => !isValueExist(option.value))
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        switch (event.keyCode) {
-            case 27:
-                reset()
-                break
-            case 9: // tab
-            case 13: // enter
-                submit()
-                break
-            case 8: // backspace
-                event.stopPropagation()
-                focusRemove()
-                break
-            default:
-                break
+    const cache = (_values) => {
+        if (_values.every((item) => isValueExist(item.value))) {
+            setCached(_.cloneDeep(_values))
         }
     }
-
     // esc
     const reset = () => {
-        send({ type: 'RESET', cached })
-
-        // curr blur then select the lastest one
-        onBlur()
+        setRemoving(false)
+        // @ts-ignore
+        send({ type: 'RESET', cached: _.cloneDeep(cached) })
     }
+
+    const blur = () => {
+        if (!focused) return
+        send({ type: 'BLUR' })
+    }
+
+    const onSubmit = (_values) => {
+        cache(_values)
+        const tmp = _values.reduce((acc, curr) => {
+            return _.set(acc, curr.type, curr.value)
+        }, {})
+        blur()
+        onChange(tmp)
+    }
+
+    const confirm = (v, index) => {
+        setInput('')
+        const next = send({ type: 'CONFIRM', value: v, index })
+        if (isAllValusExist(next.context.values)) {
+            onSubmit(next.context.values)
+        }
+    }
+
     const submit = () => {
         const hasSearchInput = isValueExist(input)
         if (!property) return
@@ -204,11 +195,6 @@ export default function FilterRenderer({
         if (hasSearchInput) confirm(input, 2)
         // has no input then use default value
         if (value) confirm(value, 2)
-    }
-
-    const blur = () => {
-        if (!focused) return
-        send({ type: 'BLUR' })
     }
 
     const focus = () => {
@@ -226,28 +212,27 @@ export default function FilterRenderer({
         send({ type: 'FOCUSONLASTEDIT' })
     }
 
-    const confirm = (v, index) => {
-        setInput('')
-        send({ type: 'CONFIRM', value: v, index, callback: onSubmit })
-    }
-
-    const [removing, setRemoving] = useState(false)
-
-    const checkRemove = () => {
-        if (removing) onRemove()
-        else if (values.every((v) => !isValueExist(v.value))) setRemoving(true)
-    }
     const focusRemove = () => {
         const hasSearchInput = isValueExist(input)
-        if (hasSearchInput) return
-
-        send({ type: 'REMOVE', index: focusTarget })
-        checkRemove()
-    }
-
-    const onSubmit = (tmp) => {
-        onChange(tmp)
-        blur()
+        // has input cancel remove
+        if (hasSearchInput) {
+            trace('focusRemove', 'cancel')
+            return
+        }
+        // confirm removing
+        if (removing || isAllValueNone(values)) {
+            trace('focusRemove', 'removed')
+            onRemove()
+            setRemoving(false)
+            return
+        }
+        trace('focusRemove', 'do remove', focusTarget)
+        const next = send({ type: 'REMOVE', index: focusTarget })
+        if (next.context.focusTarget === 0) {
+            setRemoving(true)
+        } else {
+            setRemoving(false)
+        }
     }
 
     const handleClick = (e) => {
@@ -255,10 +240,39 @@ export default function FilterRenderer({
         focus()
     }
 
+    const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement> | any) => {
+        if (typeof event === 'object' && 'target' in event) {
+            setInput((event.target as any).value)
+        } else {
+            setInput(event ?? '')
+        }
+        focus()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent | any) => {
+        switch (event.keyCode) {
+            case 27:
+                reset()
+                // esc trigger focus to last edit
+                focusToEnd()
+                break
+            case 9: // tab
+            case 13: // enter
+                trace('enter/tab')
+                submit()
+                break
+            case 8: // backspace
+                event.stopPropagation()
+                focusRemove()
+                break
+            default:
+                break
+        }
+    }
+
+    // click away
     const fieldDropdownRef = useRef(null)
     const opDropdownRef = useRef(null)
-
-    // reset to raw status
     useClickAway(ref, (e) => {
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
@@ -276,30 +290,16 @@ export default function FilterRenderer({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isFocus])
 
+    // if origins value exists then cached it
     useEffect(() => {
-        const subscription = service.subscribe((curr) => {
-            const ctx = curr.context
-            trace('>>>>>>>>>>>>>', curr.value, curr.event, property, op, value, ctx)
+        cache(origins)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [origins])
 
-            // switch (curr.event.type) {
-            //     case 'REMOVE':
-            //         if (ctx.values.every((v) => !isValueExist(v.value))) onRemove()
-            //         break
-            //     default:
-            //         break
-            // }
-
-            // switch (curr.value.editing) {
-            //     default:
-            //         break
-            // }
-        })
-        return () => subscription.unsubscribe()
-    }, [service, send, trace])
+    // trace('cached', origins, cached, rawValues)
 
     const Remove = (
         <div className={styles.label}>
-            {/* {Array.isArray(item.value) ? item.value.join(', ') : item.value} */}
             <div
                 className='filter-remove'
                 role='button'
@@ -328,13 +328,11 @@ export default function FilterRenderer({
 
     const Input = (
         <div
-            className='autosize-input inline-block relative flex-1'
+            className='autosize-input inline-block relative flex-1 h-full max-w-full'
             style={{
                 minWidth: focused ? '50px' : 0,
                 flexBasis: focused ? '100px' : 0,
                 width: focused ? '160px' : 0,
-                maxWidth: '100%',
-                height: '100%',
             }}
         >
             {/* @ts-ignore */}
@@ -350,6 +348,8 @@ export default function FilterRenderer({
         </div>
     )
 
+    const isValueMulti = op ? op === OPERATOR.IN || op === OPERATOR.NOT_IN : false
+    const isValueValid = op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true
     const $attrs = [
         {
             type: 'property',
@@ -357,40 +357,62 @@ export default function FilterRenderer({
             options: $fieldOptions,
             renderer: FilterField,
             inputRef,
-            valid: () => true,
+            valid: true,
+            multi: false,
+            optionFilter: isCurrentOptionMatch(0),
         },
-        { type: 'op', value: op, options: $operatorOptions, renderer: FilterOperator, inputRef, valid: () => true },
+        {
+            type: 'op',
+            value: op,
+            options: $operatorOptions,
+            renderer: FilterOperator,
+            inputRef,
+            valid: true,
+            multi: false,
+            optionFilter: isCurrentOptionMatch(1),
+        },
         {
             type: 'value',
             value,
             options: $valueOptions,
             renderer: FilterFieldValue,
             inputRef,
-            valid: () => (op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true),
+            valid: isValueValid,
+            multi: isValueMulti,
+            onActive: () => {
+                // only single input value need to reset input value
+                if (isValueMulti) return
+                setInput(value)
+            },
+            // input used for value not for search when type == value
+            optionFilter: () => true,
         },
-    ].filter((item) => item.valid())
+    ].filter((item) => item.valid)
 
     const attrs = $attrs.map((item, index) => {
         return {
             ...item,
             isEditing: focusTarget === index && focused,
-            value: focusTarget === index && focused ? undefined : item.value,
+            value: item.value,
             renderInput: () => Input,
             renderAfter: () => (index === $attrs.length - 1 ? Remove : undefined),
-            // after: index === attrs.length - 1 && editing ? <Remove /> : undefined,
             onChange: (v: any) => confirm(v, index),
             onClick: () => focusOnTarget(index),
         }
     })
 
+    // if target active trigger onActive
+    useEffect(() => {
+        attrs[focusTarget]?.onActive?.()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusTarget])
+
     return (
-        // @ts-ignore
         <div
             className={styles.filters}
             ref={ref}
             role='button'
             tabIndex={0}
-            // @ts-ignore
             onKeyDown={handleKeyDown}
             onClick={handleClick}
             style={style}

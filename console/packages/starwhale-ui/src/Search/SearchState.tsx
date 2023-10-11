@@ -133,7 +133,7 @@ const reducer = (state, action) => {
         default:
             throw new Error('Unexpected action')
     }
-    trace('✅', { type: action.type }, action.payload, next)
+    trace('✅', { type: action.type }, action.payload, { next })
     return next
 }
 
@@ -166,10 +166,13 @@ function useSearchState({ onChange }) {
         [state]
     )
 
-    const setIsEditing = React.useCallback((isEditing) => {
-        if (state.isEditing === isEditing) return
-        dispatch({ type: ActionType.setIsEditing, payload: isEditing })
-    }, [])
+    const setIsEditing = React.useCallback(
+        (isEditing) => {
+            if (state.isEditing === isEditing) return
+            dispatch({ type: ActionType.setIsEditing, payload: isEditing })
+        },
+        [state]
+    )
 
     const setEditingIndex = React.useCallback((index) => {
         dispatch({ type: ActionType.setEditingIndex, payload: { index } })

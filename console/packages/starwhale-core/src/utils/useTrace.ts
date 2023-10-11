@@ -24,7 +24,7 @@ export const traceCreator = (key: string, id = '0', color = getRandomColor()) =>
 }
 
 export function useTrace(key) {
-    const ref = useRef(() => {})
+    const ref = useRef<typeof trace>(() => {})
     const id = useUID()
 
     useEffect(() => {
