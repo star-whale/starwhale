@@ -59,7 +59,7 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
             sys.exit(1)
 
     def info(self, uri: str = "") -> t.Dict:
-        instance = Instance(uri or self.current_instance)
+        instance = Instance(uri)
 
         if instance.is_local:
             return {

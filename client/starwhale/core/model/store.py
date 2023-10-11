@@ -50,7 +50,7 @@ class ModelStorage(BaseStorage):
     @property
     def resource_files(self) -> t.List[File]:
         if not self.resource_files_path.exists():
-            return self.manifest.get("resources", [])
+            return self.manifest.get("resources", [])  # type: ignore[no-any-return]
         else:
             data = load_yaml(self.resource_files_path)
             return Files.parse_obj(data).__root__

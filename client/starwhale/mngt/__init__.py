@@ -14,13 +14,13 @@ from starwhale.consts import (
     SW_TMP_DIR_NAME,
     DATA_STORE_DIRNAME,
     VERSION_PREFIX_CNT,
-    STANDALONE_INSTANCE,
     OBJECT_STORE_DIRNAME,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import empty_dir
 from starwhale.utils.venv import get_conda_bin
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 
 
@@ -117,16 +117,12 @@ def _gc_special_dirs(root: Path, dry_run: bool, yes: bool) -> None:
 
 
 def open_web(instance_uri: str = "") -> None:
-    sw = SWCliConfigMixed()
+    ins = Instance(instance_uri)
 
-    instance_uri = instance_uri.strip().strip("/")
-    instance_uri = instance_uri or sw.current_instance
-
-    if instance_uri == STANDALONE_INSTANCE:
+    if ins.is_local:
         console.print(":see_no_evil: standalone web ui is coming soon.")
     else:
-        _config = sw.get_sw_instance_config(instance_uri)
-        _uri = _config.get("uri", "")
+        _uri = ins.url
         if not _uri:
             console.print(
                 f":rotating_light: sw cannot find instance [red]{instance_uri}[/], please [bold red]swcli instance login[/] first."
