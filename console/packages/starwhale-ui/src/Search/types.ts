@@ -201,7 +201,7 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
     inputRef?: React.RefObject<any>
     renderInput?: () => React.ReactNode
     renderAfter?: () => React.ReactNode
-    optionFilter?: () => boolean
+    optionFilter?: (tmp: any) => boolean
 }
 
 export type FilterT = {

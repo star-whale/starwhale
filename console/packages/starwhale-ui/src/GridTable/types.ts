@@ -79,6 +79,7 @@ export type IGridExtenalState = Pick<
     | 'page'
     | 'records'
     | 'columnTypes'
+    | 'columnHints'
     | 'rowSelectedIds'
     | 'currentView'
     // inline set
