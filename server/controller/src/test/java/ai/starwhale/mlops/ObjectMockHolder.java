@@ -20,28 +20,13 @@ import static org.mockito.Mockito.mock;
 
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.system.agent.AgentConverter;
-import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ObjectMockHolder {
     public static JobDao jobDao = mock(JobDao.class);
 
     public static StoragePathCoordinator storagePathCoordinator() {
         return new StoragePathCoordinator("/test/sys/starwhale");
-    }
-
-    public static ObjectMapper jsonMapper() {
-        return new ObjectMapper();
-    }
-
-    public static AgentConverter agentConverter() {
-        return new AgentConverter(jsonMapper());
-    }
-
-    public static TaskBoConverter taskBoConverter() {
-        return new TaskBoConverter(agentConverter());
     }
 
     public static StorageAccessService storageAccessService() {

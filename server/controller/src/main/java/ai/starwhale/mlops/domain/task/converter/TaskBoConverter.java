@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.system.agent.AgentConverter;
+import ai.starwhale.mlops.domain.run.RunDao;
+import ai.starwhale.mlops.domain.run.bo.Run;
+import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * convert task objects
@@ -35,10 +38,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskBoConverter {
 
-    final AgentConverter agentConverter;
+    final RunDao runDao;
 
-    public TaskBoConverter(AgentConverter agentConverter) {
-        this.agentConverter = agentConverter;
+    public TaskBoConverter(RunDao runDao) {
+        this.runDao = runDao;
     }
 
 
@@ -56,6 +59,7 @@ public class TaskBoConverter {
                 .resultRootPath(new ResultPath(entity.getOutputPath()))
                 .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))
                 .ip(entity.getIp())
+                .currentRun(currentRun(entity.getId()))
                 .devWay(entity.getDevWay())
                 .build();
         Long start = entity.getStartedTime() == null ? null : entity.getStartedTime().getTime();
@@ -63,6 +67,19 @@ public class TaskBoConverter {
         task.setStartTime(start);
         task.setFinishTime(finish);
         return task;
+    }
+
+    private Run currentRun(Long taskId) {
+        List<Run> runs = runDao.findByTaskId(taskId);
+        if (CollectionUtils.isEmpty(runs)) {
+            return null;
+        }
+        for (var r : runs) {
+            if (r.getStatus() == RunStatus.RUNNING || r.getStatus() == RunStatus.PENDING) {
+                return r;
+            }
+        }
+        return null;
     }
 
 }
