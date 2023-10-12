@@ -48,7 +48,9 @@ export function useDatastoreSummaryColumns(
             if (column.key === 'sys/dev_mode')
                 return CustomColumn<RecordAttr, any>({
                     ...column,
-                    renderCell: ({ value }) => <p title={value.toString()}>{value.value ? t('yes') : t('no')}</p>,
+                    renderCell: ({ value }) => (
+                        <p title={value.toString()}>{value.value !== '0' ? t('yes') : t('no')}</p>
+                    ),
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn<RecordAttr, any>({
