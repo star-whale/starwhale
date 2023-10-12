@@ -58,9 +58,9 @@ public class DataReadLogDao {
         return mapper.updateToUnAssignedForConsumer(consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
 
-    public DataReadLog selectTop1UnAssignedData(Long sid) {
-        var entity = mapper.selectTop1UnAssigned(sid, Status.DataStatus.UNPROCESSED.name());
-        return entity == null ? null : converter.revert(entity);
+    public List<DataReadLog> selectTopsUnAssignedData(Long sid, Integer limit) {
+        var entities = mapper.selectTopsUnAssigned(sid, Status.DataStatus.UNPROCESSED.name(), limit);
+        return entities.stream().map(converter::revert).collect(Collectors.toList());
     }
 
     public DataReadLog selectTop1TimeoutData(Long sid, long secondTimeout) {

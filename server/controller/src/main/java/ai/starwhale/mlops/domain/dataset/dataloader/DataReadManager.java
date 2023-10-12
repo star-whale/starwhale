@@ -24,10 +24,14 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import com.google.common.collect.Iterables;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,13 +41,17 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
+    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> dataReadLogQueue = new ConcurrentHashMap<>();
+    private final Integer cacheSize;
 
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
-                           DataIndexProvider dataIndexProvider) {
+                           DataIndexProvider dataIndexProvider,
+                           @Value("${sw.dataset.load.read.log-cache-size}") int cacheSize) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
+        this.cacheSize = cacheSize;
     }
 
     public Session getSession(DataReadRequest request) {
@@ -110,9 +118,21 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
-
-        // get first
-        var dataRange = dataReadLogDao.selectTop1UnAssignedData(sid);
+        var sessionCache = dataReadLogQueue.computeIfAbsent(String.valueOf(sid), (id) -> new ConcurrentLinkedQueue<>());
+        var dataRange = sessionCache.poll();
+        if (dataRange == null) {
+            synchronized (this) {
+                dataRange = sessionCache.poll();
+                if  (dataRange == null) {
+                    // get tops
+                    var dataRanges = dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize);
+                    sessionCache.addAll(dataRanges);
+                }
+            }
+        }
+        if (dataRange == null) {
+            dataRange = sessionCache.poll();
+        }
 
         if (Objects.nonNull(dataRange)) {
             dataRange.setConsumerId(consumerId);

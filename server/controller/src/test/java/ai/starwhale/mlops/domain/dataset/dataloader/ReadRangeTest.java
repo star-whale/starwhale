@@ -45,6 +45,7 @@ public class ReadRangeTest {
     private static DataStore dataStore;
     private static SessionDao sessionDao;
     private static DataReadLogDao dataReadLogDao;
+    private final Integer cacheSize = 1;
 
     @BeforeEach
     public void setup() {
@@ -53,7 +54,7 @@ public class ReadRangeTest {
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
-                sessionDao, dataReadLogDao, dataRangeProvider);
+                sessionDao, dataReadLogDao, dataRangeProvider, cacheSize);
         dataLoader = new DataLoader(dataReadManager);
     }
 
@@ -169,14 +170,14 @@ public class ReadRangeTest {
             session.setId(sid);
             return true;
         });
-        given(dataReadLogDao.selectTop1UnAssignedData(sid))
-                .willReturn(DataReadLog.builder()
+        given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
+                .willReturn(List.of(DataReadLog.builder()
                         .id(1L)
                         .sessionId(sid)
                         .start("0000-000").startInclusive(true)
                         .end("0000-001").endInclusive(true)
                         .size(2)
-                        .build());
+                        .build()));
 
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
@@ -246,15 +247,15 @@ public class ReadRangeTest {
                 .build();
 
         given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(session);
-        given(dataReadLogDao.selectTop1UnAssignedData(sid))
-                .willReturn(DataReadLog.builder()
+        given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
+                .willReturn(List.of(DataReadLog.builder()
                         .id(2L)
                         .sessionId(sid)
                         .start("0000-002").startInclusive(true)
                         .end("0000-003").endInclusive(true)
                         .size(2)
                         .assignedNum(0)
-                        .build());
+                        .build()));
 
         dataRange = dataLoader.next(request);
 
