@@ -13,6 +13,7 @@ from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from cmds import DatasetExpl
+from pydantic import BaseModel
 from tenacity import retry
 from cmds.job_cmd import Job
 from tenacity.stop import stop_after_attempt
@@ -22,6 +23,7 @@ from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
+from starwhale import dataset
 from starwhale.utils import config
 from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.debug import init_logger
@@ -43,80 +45,88 @@ random_pytorch_runtime: t.Callable[[], str] = lambda: random.choice(
     ["pytorch37", "pytorch38", "pytorch39", "pytorch310"]
 )
 
-CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
-    "mnist": {
-        "run_handler": "mnist.evaluator:MNISTInference.evaluate",
-        "workdir": f"{ROOT_DIR}/example/mnist",
-        "datasets": [
+
+class ExampleDesc(BaseModel):
+    run_handler: str
+    workdir: str
+    datasets: t.List[DatasetExpl]
+    runtime: str
+    is_standalone: bool
+
+
+CPU_EXAMPLES: t.Dict[str, ExampleDesc] = {
+    "mnist": ExampleDesc(
+        run_handler="mnist.evaluator:MNISTInference.evaluate",
+        workdir=f"{ROOT_DIR}/example/mnist",
+        datasets=[
             DatasetExpl("mnist_bin", "mnist.dataset:iter_mnist_item"),
             DatasetExpl(
                 "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
             ),
         ],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "cifar10": {
-        "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
-        "workdir": f"{ROOT_DIR}/example/cifar10",
-        "datasets": [DatasetExpl("cifar10", "")],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "nmt": {
-        "run_handler": "nmt.evaluator:NMTPipeline.cmp",
-        "workdir": f"{ROOT_DIR}/example/nmt",
-        "datasets": [DatasetExpl("nmt", "")],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "ag_news": {
-        "run_handler": "tcan.evaluator:TextClassificationHandler.cmp",
-        "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
-        "datasets": [DatasetExpl("ag_news", "")],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "ucf101": {
-        "run_handler": "ucf101.evaluator:UCF101PipelineHandler.cmp",
-        "workdir": f"{ROOT_DIR}/example/ucf101",
-        "datasets": [DatasetExpl("ucf101", "")],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "huge-tasks": {
-        "run_handler": "evaluation:evaluation_results",
-        "workdir": f"{ROOT_DIR}/example/huge-tasks",
-        "datasets": [DatasetExpl("huge-tasks-random-text", "")],
-        "runtime": "huge-tasks",
-        "is_standalone": False,
-    },
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "cifar10": ExampleDesc(
+        run_handler="cifar.evaluator:CIFAR10Inference.evaluate",
+        workdir=f"{ROOT_DIR}/example/cifar10",
+        datasets=[DatasetExpl("cifar10", "")],
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "nmt": ExampleDesc(
+        run_handler="nmt.evaluator:NMTPipeline.cmp",
+        workdir=f"{ROOT_DIR}/example/nmt",
+        datasets=[DatasetExpl("nmt", "")],
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "ag_news": ExampleDesc(
+        run_handler="tcan.evaluator:TextClassificationHandler.cmp",
+        workdir=f"{ROOT_DIR}/example/text_cls_AG_NEWS",
+        datasets=[DatasetExpl("ag_news", "")],
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "ucf101": ExampleDesc(
+        run_handler="ucf101.evaluator:UCF101PipelineHandler.cmp",
+        workdir=f"{ROOT_DIR}/example/ucf101",
+        datasets=[DatasetExpl("ucf101", "")],
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "huge-tasks": ExampleDesc(
+        run_handler="evaluation:evaluation_results",
+        workdir=f"{ROOT_DIR}/example/huge-tasks",
+        datasets=[DatasetExpl("huge-tasks-random-text", "")],
+        runtime="huge-tasks",
+        is_standalone=True,
+    ),
 }
 
-GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
-    "pfp": {
-        "run_handler": "pfp.evaluator:cmp",
-        "workdir": f"{ROOT_DIR}/example/PennFudanPed",
-        "datasets": [DatasetExpl("pfp", "")],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
-    "speech_command": {
-        "run_handler": "sc.evaluator:evaluate_speech",
-        "workdir": f"{ROOT_DIR}/example/speech_command",
-        "datasets": [
+GPU_EXAMPLES: t.Dict[str, ExampleDesc] = {
+    "pfp": ExampleDesc(
+        run_handler="pfp.evaluator:cmp",
+        workdir=f"{ROOT_DIR}/example/PennFudanPed",
+        datasets=[DatasetExpl("pfp", "")],
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
+    "speech_command": ExampleDesc(
+        run_handler="sc.evaluator:evaluate_speech",
+        workdir=f"{ROOT_DIR}/example/speech_command",
+        datasets=[
             DatasetExpl("speech_command", ""),
             DatasetExpl(
                 "speech_command_link", "sc.dataset:LinkRawDatasetBuildExecutor"
             ),
         ],
-        "runtime": random_pytorch_runtime(),
-        "is_standalone": True,
-    },
+        runtime=random_pytorch_runtime(),
+        is_standalone=True,
+    ),
 }
 
-ALL_EXAMPLES = {**CPU_EXAMPLES, **GPU_EXAMPLES}
-
+ALL_EXAMPLES: t.Dict[str, ExampleDesc] = {**CPU_EXAMPLES, **GPU_EXAMPLES}
 
 # TODO: add conda mode runtime
 
@@ -195,7 +205,25 @@ class TestCli:
         self.datasets.update({name: dss_})
         assert len(self.dataset_api.list())
         assert self.dataset_api.info(ret_uri.full_uri)
+        if self.server_url:
+            self.compare_local_and_remote_dataset(
+                ret_uri,
+                Resource(
+                    f"{self.cloud_target_project_uri}/{ret_uri.typ.value}/{ret_uri.name}/version/{ret_uri.version}"
+                ),
+            )
         return ret_uri
+
+    @staticmethod
+    def compare_local_and_remote_dataset(local: Resource, remote: Resource) -> None:
+        local_ds = dataset(local).with_loader_config(num_workers=1)
+        remote_ds = dataset(remote).with_loader_config(num_workers=1)
+        for local_item, remote_item in zip(local_ds, remote_ds):
+            # TODO compare the whole item when every type has implemented __eq__
+            if local_item.index != remote_item.index:
+                raise RuntimeError(
+                    f"local item {local_item!r} is not equal to remote item {remote_item!r}"
+                )
 
     def build_model(self, workdir: str, name: str, runtime: str) -> t.Any:
         self.select_local_instance()
@@ -398,14 +426,14 @@ class TestCli:
 
     def test_all(self) -> None:
         for name, example in ALL_EXAMPLES.items():
-            if not os.path.exists(os.path.join(example["workdir"], "Makefile")):
+            if not os.path.exists(os.path.join(example.workdir, "Makefile")):
                 logger.info("no Makefile found, skip prepare data")
                 continue
 
             logger.info(f"preparing data for {example}")
             process = subprocess.Popen(
                 ["make", "CN=1", "prepare"],
-                cwd=example["workdir"],
+                cwd=example.workdir,
             )
             rc = process.wait()
             if rc != 0:
@@ -417,18 +445,18 @@ class TestCli:
             self.build_runtime(rt["workdir"], rt["yaml"])
 
         for name, example in ALL_EXAMPLES.items():
-            for d_type in example["datasets"]:
-                self.build_dataset(name, example["workdir"], d_type)
-            self.build_model(example["workdir"], name, example["runtime"])
+            for d_type in example.datasets:
+                self.build_dataset(name, example.workdir, d_type)
+            self.build_model(example.workdir, name, example.runtime)
 
         if self.server_url:
             # model run on server
             res = [
                 self.run_example(
                     name,
-                    example["run_handler"],
+                    example.run_handler,
                     in_standalone=False,
-                    runtime=example["runtime"],
+                    runtime=example.runtime,
                 )
                 for name, example in ALL_EXAMPLES.items()
             ]
@@ -457,14 +485,14 @@ class TestCli:
 
         # model run on standalone
         for name, example in CPU_EXAMPLES.items():
-            if not example["is_standalone"]:
+            if not example.is_standalone:
                 continue
 
             self.run_example(
                 name,
-                example["run_handler"],
+                example.run_handler,
                 in_standalone=True,
-                runtime=example["runtime"],
+                runtime=example.runtime,
             )
 
         if self.server_url:
@@ -493,7 +521,7 @@ class TestCli:
         rt_uri = self.build_runtime(rt["workdir"], rt["yaml"])
 
         example = ALL_EXAMPLES[name]
-        workdir = str(example["workdir"])
+        workdir = str(example.workdir)
 
         process = subprocess.Popen(
             ["make", "CN=1", "prepare"],
@@ -507,12 +535,12 @@ class TestCli:
             logger.error(process.stderr.read().decode("utf-8"))  # type: ignore
             raise
 
-        for ds in example["datasets"]:
+        for ds in example.datasets:
             self.build_dataset(name, workdir, ds)
         self.build_model(workdir, name, rt_uri.full_uri)
 
         self.run_example(
-            name, example["run_handler"], in_standalone=True, runtime=example["runtime"]
+            name, example.run_handler, in_standalone=True, runtime=example.runtime
         )
 
     def run_example(
@@ -550,7 +578,7 @@ class TestCli:
 
     def debug(self) -> None:
         for name, example in ALL_EXAMPLES.items():
-            self.build_model(str(example["workdir"]), name, str(example["runtime"]))
+            self.build_model(str(example.workdir), name, str(example.runtime))
 
     def smoke_commands(self) -> None:
         commands = [
