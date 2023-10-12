@@ -50,10 +50,6 @@ public class DataReadLogDao {
         return mapper.updateToProcessed(sid, consumerId, start, end, Status.DataStatus.PROCESSED.name()) > 0;
     }
 
-    public boolean updateUnProcessedToUnAssigned(Long sid, String consumerId) {
-        return mapper.updateToUnAssigned(sid, consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
-    }
-
     public boolean updateUnProcessedToUnAssigned(String consumerId) {
         return mapper.updateToUnAssignedForConsumer(consumerId, Status.DataStatus.UNPROCESSED.name()) > 0;
     }
@@ -61,19 +57,5 @@ public class DataReadLogDao {
     public List<DataReadLog> selectTopsUnAssignedData(Long sid, Integer limit) {
         var entities = mapper.selectTopsUnAssigned(sid, Status.DataStatus.UNPROCESSED.name(), limit);
         return entities.stream().map(converter::revert).collect(Collectors.toList());
-    }
-
-    public DataReadLog selectTop1TimeoutData(Long sid, long secondTimeout) {
-        var entity = mapper.selectTop1TimeoutData(sid, Status.DataStatus.UNPROCESSED.name(), secondTimeout);
-        return entity == null ? null : converter.revert(entity);
-    }
-
-    public DataReadLog selectTop1UnProcessedDataBelongToOtherConsumers(Long sid, String consumerId) {
-        var entity = mapper.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
-        return entity == null ? null : converter.revert(entity);
-    }
-
-    public Long getMaxProcessedMicrosecondTime(Long sid) {
-        return mapper.selectMaxProcessedMicrosecondTime(sid, Status.DataStatus.PROCESSED.name());
     }
 }

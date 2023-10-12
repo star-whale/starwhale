@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
@@ -119,22 +118,12 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
-        DataReadLog readLog;
+        var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
 
-        var lock = new KeyLock<>(String.format("dl-assignment-%s", sid));
-        try {
-            lock.lock();
-            var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
-            readLog = queue.poll();
-            if (readLog == null) {
-                // get tops
-                queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));
-                readLog = queue.poll();
-            }
-        } finally {
-            lock.unlock();
+        if (queue.isEmpty()) {
+            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));
         }
-
+        DataReadLog readLog = queue.poll();
         if (Objects.nonNull(readLog)) {
             readLog.setConsumerId(consumerId);
             readLog.setAssignedNum(readLog.getAssignedNum() + 1);
