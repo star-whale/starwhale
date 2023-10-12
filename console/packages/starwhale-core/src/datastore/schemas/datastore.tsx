@@ -58,6 +58,7 @@ export interface TableDesc {
 
 export interface ColumnHintsDesc {
     typeHints?: string[]
+    columnValueHints?: string[]
     elementHints?: ColumnHintsDesc
     keyHints?: ColumnHintsDesc
     valueHints?: ColumnHintsDesc
@@ -71,9 +72,9 @@ export interface RecordListVo {
 }
 
 export interface ResponseMessageRecordListVo {
-    code?: string
-    message?: string
-    data?: RecordListVo
+    code: string
+    message: string
+    data: RecordListVo
 }
 
 export interface OrderByDesc {
@@ -117,6 +118,7 @@ export interface TableQueryOperandDesc {
 
 export interface ListTablesRequest {
     prefix?: string
+    prefixes?: string[]
 }
 
 export interface ResponseMessageTableNameListVo {

@@ -72,6 +72,7 @@ export function useDatastoreMixedSchema(data?: RecordListVo) {
     return {
         records: $recordsWithSchema,
         columnTypes: $columnTypes,
+        columnHints,
         getSchema,
         lastKey,
     }

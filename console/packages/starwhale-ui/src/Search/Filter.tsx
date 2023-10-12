@@ -19,15 +19,18 @@ export const useStyles = createUseStyles({
         display: 'flex',
         alignItems: 'center',
         position: 'relative',
+        userSelect: 'none',
     },
     labelEmpty: {
         display: 'flex',
         height: '22px',
         lineHeight: '22px',
         position: 'relative',
+        userSelect: 'none',
     },
 })
 function PopoverContainer(props: {
+    onClick?: () => void
     onItemSelect?: (props: { item: { label: string; type: string } }) => void
     options: any[]
     isOpen: boolean
@@ -83,12 +86,18 @@ function PopoverContainer(props: {
                 />
             )}
         >
-            <p
-                className={props.children ? styles.label : styles.labelEmpty}
-                title={typeof props.value === 'string' ? props.value : ''}
-            >
-                {props.children}
-            </p>
+            <div>
+                <p
+                    // eslint-disable-next-line
+                    role='button'
+                    tabIndex={0}
+                    onClick={props.onClick}
+                    className={props.children ? styles.label : styles.labelEmpty}
+                    title={typeof props.value === 'string' ? props.value : ''}
+                >
+                    {props.children}
+                </p>
+            </div>
         </Popover>
     )
 }
@@ -127,6 +136,18 @@ function Filter(options: FilterT): FilterT {
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
                     {operatorOptions.find((v) => v.type === rest.value)?.label ?? ''}
+                </PopoverContainer>
+            )
+        },
+        renderFieldValue: function RenderField({ options: renderOptions = [], isEditing = false, ...rest }) {
+            return (
+                <PopoverContainer
+                    {...rest}
+                    options={renderOptions}
+                    isOpen={isEditing}
+                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
+                >
+                    {rest.value}
                 </PopoverContainer>
             )
         },

@@ -7,6 +7,7 @@ export type IGridState = ITableState & IGridExtenalState
 export interface ITableProps extends IToolBarProps, IPaginationProps {
     records?: RecordListVo['records']
     columnTypes?: RecordListVo['columnTypes']
+    columnHints?: RecordListVo['columnHints']
     rows?: RowT[]
     batchActions?: BatchActionT[]
     rowActions?: RowActionT[]

@@ -61,6 +61,7 @@ const StoreUpdater = ({
     onCurrentViewChange,
     onSave,
     columnTypes,
+    columnHints,
     records,
     getId = globalGetId,
     queryable,
@@ -107,6 +108,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
+    useDirectStoreUpdater('columnHints', columnHints, store.setState)
     useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
 
     useStoreEmptyUpdater<ConfigT>(currentView, setCurrentView)

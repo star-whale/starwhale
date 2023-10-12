@@ -17,7 +17,7 @@ const selector = (state: IGridState) => ({
 
 function useGridQuery() {
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
-    const { columnTypes } = useStoreApi().getState()
+    const { columnTypes, columnHints } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
     const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
@@ -33,24 +33,17 @@ function useGridQuery() {
 
     const renderConfigQuery = React.useCallback(() => {
         return (
-            <div
-                className='flex'
-                style={{
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '20px',
-                }}
-            >
-                <div
-                    className='flex'
-                    style={{
-                        flex: 1,
-                    }}
-                >
+            <div className='flex justify-between items-center gap-20px'>
+                <div className='flex flex-1'>
                     {isSimpleQuery ? (
                         <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
                     ) : (
-                        <ConfigQuery value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />
+                        <ConfigQuery
+                            value={queries}
+                            onChange={onChange}
+                            columnTypes={sortedColumnTypes}
+                            columnHints={columnHints}
+                        />
                     )}
                 </div>
                 {hasFilter && (
@@ -60,7 +53,7 @@ function useGridQuery() {
                 )}
             </div>
         )
-    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, t])
+    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {

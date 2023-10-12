@@ -1,4 +1,4 @@
-import { DataTypeT } from '@starwhale/core/datastore'
+import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
@@ -6,6 +6,8 @@ import { FilterPropsT, SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { dataStoreToFilter } from './utils'
 import { createUseStyles } from 'react-jss'
+import { filterMachine } from './createFilterMachine'
+import { useMachine } from '@xstate/react'
 
 export const useStyles = createUseStyles({
     filters: {
@@ -59,10 +61,10 @@ export default function FilterRenderer({
     onClick?: () => void
     containerRef?: React.RefObject<HTMLDivElement>
 }) {
-    const [values, setValues] = useState<ValueT>(rawValues)
-    const [value, setValue] = useState<any>(rawValues?.value)
-    const [property, setProperty] = useState<string | undefined>(rawValues?.property)
-    const [op, setOp] = useState<string | undefined>(rawValues?.op)
+    // const [values, setValues] = useState<ValueT>(rawValues)
+    const [input, setInput] = useState<any>('')
+    // const [property, setProperty] = useState<string | undefined>(rawValues?.property)
+    const [, setOp] = useState<string | undefined>(rawValues?.op)
     const [editing, setEditing] = useState(false)
     const [removing, setRemoving] = useState(false)
     const styles = useStyles()
@@ -70,11 +72,29 @@ export default function FilterRenderer({
     const inputRef = useRef<HTMLInputElement>(null)
     const $columns = fields
 
+    const origins = React.useMemo(
+        () => [
+            { type: 'property', value: rawValues.property },
+            { type: 'op', value: rawValues.op },
+            { type: 'value', value: rawValues.value },
+        ],
+        [rawValues.property, rawValues.op, rawValues.value]
+    )
+    const [machine, send, service] = useMachine(filterMachine, {
+        context: {
+            origins,
+            values: origins,
+        },
+    })
+    const property = machine.context.values[0]?.value
+    const op = machine.context.values[1]?.value
+    const value = machine.context.values[2]?.value
+
     const $fieldOptions = React.useMemo(() => {
         return $columns
             .filter((tmp) => {
                 try {
-                    return tmp.label?.match(value)
+                    return tmp.label?.match(input)
                 } catch {
                     return false
                 }
@@ -86,71 +106,71 @@ export default function FilterRenderer({
                     label: tmp.label,
                 }
             })
-    }, [$columns, value])
+    }, [$columns, input])
 
-    const { FilterOperator, FilterField, FilterValue } = useMemo(() => {
+    const $valueOptions = React.useMemo(() => {
+        const column = $columns.find((tmp) => tmp.name === property)
+        if (!column) return []
+        return column
+            .getHints()
+            ?.map((tmp) => {
+                return {
+                    id: tmp,
+                    type: tmp,
+                    label: tmp,
+                }
+            })
+            .filter((tmp) => {
+                try {
+                    return tmp.label?.match(input)
+                } catch {
+                    return false
+                }
+            })
+    }, [$columns, property, input])
+
+    const { FilterOperator, FilterField, FilterValue, FilterFieldValue } = useMemo(() => {
         const field = $columns.find((tmp) => tmp.name === property)
         const filter = dataStoreToFilter(field?.type as DataTypeT)()
         return {
             filter,
             FilterOperator: filter.renderOperator,
             FilterField: filter.renderField,
+            FilterFieldValue: filter.renderFieldValue,
             FilterValue: filter.renderValue,
         }
     }, [property, $columns])
 
     const handleInputChange = (event: React.SyntheticEvent<HTMLInputElement> | any) => {
         if (typeof event === 'object' && 'target' in event) {
-            setValue((event.target as any).value)
+            setInput((event.target as any).value)
         } else {
-            setValue(event ?? '')
+            setInput(event ?? '')
         }
-    }
-
-    const handleReset = () => {
-        setProperty(values?.property)
-        setOp(values?.op)
-        setValue(values.value)
-        setRemoving(false)
+        focus()
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        const valueExists = isValueExist(value)
+        const valueExists = isValueExist(input)
 
         switch (event.keyCode) {
             case 27:
-                handleReset()
+                reset()
                 break
             case 9: // tab
             case 13: // enter
                 if (valueExists && op && property) {
-                    const newValues = {
-                        value,
+                    submit({
+                        value: input,
                         op,
                         property,
-                    }
-                    setValues(newValues)
-                    onChange?.(newValues)
-                    setEditing(false)
+                    })
                 }
                 break
             case 8: // backspace
                 event.stopPropagation()
-
-                if (removing && !valueExists) {
-                    // first remove op
-                    if (op) {
-                        setOp(undefined)
-                        return
-                    }
-                    // second remove property
-                    if (property) setProperty(undefined)
-                    setRemoving(false)
-                    // remove prev item when there is no label value to delete
-                    if (!op && !property && !valueExists) onChange?.(undefined)
-                }
                 if (!valueExists) {
-                    setRemoving(true)
+                    focusRemove()
                 }
                 break
             default:
@@ -158,10 +178,52 @@ export default function FilterRenderer({
         }
     }
 
-    const handleFocus = () => {
-        rest.onClick?.()
-        setEditing(true)
+    const { values, focusTarget, focused } = machine.context
+
+    // esc
+    const reset = () => {
+        send({ type: 'RESET' })
+    }
+    const submit = (tmp) => {
+        setInput('')
+        blur()
+        onChange?.(tmp)
+    }
+
+    const blur = () => {
+        send({ type: 'BLUR' })
+    }
+
+    const focus = (index = 0) => {
         inputRef.current?.focus()
+        send({ type: 'FOCUS', index })
+    }
+
+    const focusOnTarget = (index = 0) => {
+        focus()
+        send({ type: 'FOCUSTARGET', index })
+    }
+
+    const focusLatest = () => {
+        const index = values.findLastIndex((v) => v.value)
+        focusOnTarget(Math.max(index, 0))
+    }
+
+    const confirm = (v, index) => {
+        send({ type: 'CONFIRM', value: v, index })
+    }
+
+    const focusRemove = () => {
+        send({ type: 'REMOVE', index: focusTarget })
+    }
+
+    const onRemove = () => {
+        onChange?.(undefined)
+    }
+
+    const handleClick = () => {
+        rest.onClick?.()
+        focus()
     }
 
     const fieldDropdownRef = useRef(null)
@@ -172,34 +234,113 @@ export default function FilterRenderer({
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
         if (containsNode(document.querySelector('.filter-popover'), e.target)) return
-
-        handleReset()
+        blur()
     })
-
-    // keep focus when editing
-    useEffect(() => {
-        if (editing && op) {
-            inputRef.current?.focus()
-        }
-    }, [editing, op])
 
     // keep focus by parent component
     useEffect(() => {
         if (isFocus && isEditing) {
-            setEditing(true)
-            inputRef.current?.focus()
+            console.log('------------')
+            focusLatest()
+        } else {
+            blur()
         }
     }, [isFocus, isEditing])
 
     // truncate values when first item is empty but with the same react key
+    // useEffect(() => {
+    //     if (!rawValues.op && !rawValues.property && !rawValues.value) {
+    //         setValues({})
+    //         setOp(undefined)
+    //         setProperty(undefined)
+    //         setValue(undefined)
+    //     }
+    // }, [rawValues])
+
     useEffect(() => {
-        if (!rawValues.op && !rawValues.property && !rawValues.value) {
-            setValues({})
-            setOp(undefined)
-            setProperty(undefined)
-            setValue(undefined)
-        }
-    }, [rawValues])
+        const subscription = service.subscribe((curr) => {
+            const ctx = curr.context
+            console.log(curr.value, curr.event, property, op, value, {
+                focusTarget: ctx.focusTarget,
+                focused: ctx.focused,
+            })
+
+            switch (curr.value.editing) {
+                case 'preRemove':
+                    if (curr.event.type === 'REMOVE') {
+                        onRemove()
+                    }
+                    break
+                default:
+                    break
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [service, send])
+
+    const Remove = () => (
+        <div className={styles.label}>
+            {/* {Array.isArray(item.value) ? item.value.join(', ') : item.value} */}
+            <div
+                className='filter-remove'
+                role='button'
+                onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onRemove()
+                }}
+                tabIndex={0}
+            >
+                <IconFont
+                    type='close'
+                    style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: ' rgba(2,16,43,0.20)',
+                        color: '#FFF',
+                        marginLeft: '6px',
+                    }}
+                    size={12}
+                />
+            </div>
+        </div>
+    )
+
+    const attrs = [
+        {
+            type: 'property',
+            value: property,
+            options: $fieldOptions,
+            renderer: FilterField,
+            inputRef,
+            valid: () => true,
+        },
+        { type: 'op', value: op, renderer: FilterOperator, inputRef, valid: () => true },
+        {
+            type: 'value',
+            value,
+            options: $valueOptions,
+            renderer: FilterFieldValue,
+            inputRef,
+            valid: () => (op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true),
+        },
+    ]
+        .filter((item) => item.valid())
+        .map((item, index) => {
+            return {
+                ...item,
+                isEditing: focusTarget === index && focused,
+                // value: focusTarget === index ? undefined : item.value,
+                // after: index === attrs.length - 1 && editing ? <Remove /> : undefined,
+                onChange: (v: any) => {
+                    confirm(v, index)
+                },
+                onClick: () => {
+                    focusOnTarget(index)
+                },
+            }
+        })
 
     return (
         // @ts-ignore
@@ -210,79 +351,27 @@ export default function FilterRenderer({
             tabIndex={0}
             // @ts-ignore
             onKeyDown={handleKeyDown}
-            onClick={handleFocus}
+            onClick={handleClick}
             style={style}
         >
-            {FilterField && (
-                <FilterField
-                    isEditing={editing && !property}
-                    value={property as any}
-                    onChange={(item: any) => {
-                        setProperty(item)
-                        setValue(undefined)
-                        inputRef.current?.focus()
-                    }}
-                    options={$fieldOptions}
-                    inputRef={inputRef as any}
-                />
-            )}
-            {FilterOperator && (
-                <FilterOperator
-                    isEditing={!!(editing && property && !op)}
-                    value={op as any}
-                    onChange={(item: any) => {
-                        setOp(item)
-                        setValue(undefined)
-                        inputRef.current?.focus()
-                    }}
-                    inputRef={inputRef as any}
-                />
-            )}
-            {!editing && isValueExist(value) && (
-                <div className={styles.label} title={value}>
-                    {Array.isArray(value) ? value.join(', ') : value}
-                    <div
-                        className='filter-remove'
-                        role='button'
-                        onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            onChange?.(undefined)
-                        }}
-                        tabIndex={0}
-                    >
-                        <IconFont
-                            type='close'
-                            style={{
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '50%',
-                                backgroundColor: ' rgba(2,16,43,0.20)',
-                                color: '#FFF',
-                                marginLeft: '6px',
-                            }}
-                            size={12}
-                        />
-                    </div>
-                </div>
-            )}
+            {attrs.map(({ valid, type, ...other }) => {
+                if (!other.renderer) return null
+                return <other.renderer key={type} {...other} />
+            })}
             <div
-                className='autosize-input'
+                className='autosize-input inline-block relative flex-1'
                 style={{
-                    minWidth: editing ? '100px' : 0,
-                    display: 'inline-block',
+                    minWidth: focused ? '50px' : 0,
+                    flexBasis: focused ? '100px' : 0,
+                    width: focused ? '100%' : 0,
                     maxWidth: '100%',
-                    position: 'relative',
-                    flex: 1,
-                    flexBasis: editing ? '100px' : 0,
-                    width: editing ? '100%' : 0,
                     height: '100%',
                 }}
             >
                 {/* @ts-ignore */}
                 <AutosizeInput
                     inputRef={inputRef as any}
-                    value={value}
+                    value={input}
                     onChange={handleInputChange}
                     overrides={{
                         Input: FilterValue as any,

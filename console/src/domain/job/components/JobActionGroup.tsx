@@ -49,7 +49,7 @@ function JobSaveAsTemplateButton({ hasText = false }) {
                     {t('job.saveas.title')}
                 </ModalHeader>
                 <ModalBody>
-                    <div className='flex items-center gap-12px py-47px px-37px '>
+                    <div className='flex items-center gap-12px py-47px px-37px'>
                         {t('job.saveas.template.name')} *
                         <div
                             style={{

@@ -87,6 +87,8 @@ function useSearchColumns(columnTypes: { name: string; type: string }[]) {
     return searchColumns
 }
 
+//   [ { value: [ 'SUCCESS' ], op: 'IN', property: 'sys/job_status' } ]
+
 export default function Search({ value = [], onChange, fields }: ISearchProps) {
     const styles = useStyles()
     const [t] = useTranslation()
@@ -96,11 +98,13 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
 
     const items = value
 
-    useClickAway(ref, (e) => {
-        if (containsNode(ref.current, e.target)) return
-        if (containsNode(document.querySelector('.filter-popover'), e.target)) return
-        setIsEditing(false)
-    })
+    // useClickAway(ref, (e) => {
+    //     if (containsNode(ref.current, e.target)) return
+    //     if (containsNode(document.querySelector('.filter-popover'), e.target)) return
+    //     setIsEditing(false)
+    // })
+
+    // console.log(value, fields)
 
     const count = React.useRef(100)
     const filters = React.useMemo(() => {
@@ -135,7 +139,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
         })
         tmps.push(
             <FilterRenderer
-                key={count.current}
+                // key={count.current}
                 value={{}}
                 isEditing={isEditing}
                 isDisabled={false}
@@ -148,10 +152,13 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                 // @ts-ignore
                 containerRef={ref}
                 onChange={(newValue: any) => {
+                    console.log('----', items, newValue)
                     let newItems = [...items]
                     // remove prev item
                     if (!newValue) {
-                        newItems.splice(-1)
+                        // newItems.splice(-1)
+                        // edit prev item
+                        setEditingItem({ index: newItems.length - 1, value: newItems[newItems.length - 1] })
                     } else {
                         newItems.push(newValue)
                     }
