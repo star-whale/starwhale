@@ -1,8 +1,13 @@
 import os
+import time
 import queue
+import random
 import shutil
 import typing as t
 import tempfile
+import threading
+from itertools import chain
+from collections import defaultdict
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
@@ -732,6 +737,80 @@ class TestDataLoader(TestCase):
         with self.assertRaisesRegex(RuntimeError, "not found in key range"):
             loader._key_processed_queue.put(30)
             loader._get_processed_key_range()
+
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    def test_session_consumption(self, mock_scan: MagicMock) -> None:
+        mock_sc = MagicMock()
+        mock_sc.session_start = None
+        mock_sc.session_end = None
+        mock_sc.batch_size = 1
+
+        start_key, end_key = 0, 5002
+        chunk_size = 10
+        count = end_key - start_key
+
+        def _chunk(start: int, end: int, size: int) -> t.Iterator[t.Tuple[int, int]]:
+            full_range = range(start, end)
+            for i in range(0, len(full_range), size):
+                slice = full_range[i : i + size]
+                yield (slice[0], slice[-1] + 1)
+
+        allocated_keys = list(_chunk(start_key, end_key, chunk_size))
+        mock_sc.get_scan_range.side_effect = allocated_keys + [None] * 20
+
+        def _mock_scan(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            _s, _e = args
+            if _s is None:
+                _s = start_key
+            if _e is None:
+                _e = end_key
+
+            for i in range(_s, _e):
+                # simulate data unpacking
+                time.sleep(random.randint(0, 2) / 1000)
+                yield TabularDatasetRow(id=i, features={"label": i})
+
+        mock_scan.side_effect = _mock_scan
+
+        exceptions = []
+
+        def _consume_loader(consumed_ids: t.Dict[str, list], name: str) -> None:
+            try:
+                loader = get_data_loader(
+                    dataset_uri=self.dataset_uri, session_consumption=mock_sc
+                )
+                for item in loader:
+                    consumed_ids[name].append(item.index)
+                    # simulate data processing(predicting, etc.)
+                    time.sleep(random.randint(1, 3) / 1000)
+            except Exception as e:
+                exceptions.append(e)
+                raise
+
+        consumed_ids = defaultdict(list)
+        loader_threads = []
+        for i in range(0, 10):
+            _n = f"loader-{i}"
+            _t = threading.Thread(
+                name=_n,
+                target=_consume_loader,
+                args=(consumed_ids, _n),
+                daemon=True,
+            )
+            _t.start()
+            loader_threads.append(_t)
+
+        for _t in loader_threads:
+            _t.join()
+
+        assert len(exceptions) == 0
+        assert len(list(consumed_ids.values())[0]) < count
+        assert len(list(chain(*consumed_ids.values()))) == count
+
+        submit_processed_keys = sorted(
+            chain(*[s[0][0] for s in mock_sc.get_scan_range.call_args_list if s[0][0]])
+        )
+        assert submit_processed_keys == allocated_keys
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
