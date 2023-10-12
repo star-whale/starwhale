@@ -8,6 +8,7 @@ import useGirdData from './useGridData'
 import ConfigSimpleQuery from '../components/Query/ConfigSimpleQuery'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
+import { useTrace } from '@starwhale/core'
 
 const non: any = []
 const selector = (state: IGridState) => ({
@@ -16,10 +17,11 @@ const selector = (state: IGridState) => ({
 })
 
 function useGridQuery() {
+    const trace = useTrace('grid-table-user-grid-query')
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
     const { columnTypes, columnHints } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
-    const [isSimpleQuery, setIsSimpleQuery] = React.useState(false)
+    const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
 
     const sortedColumnTypes = React.useMemo(() => {
@@ -32,6 +34,8 @@ function useGridQuery() {
     }, [originalColumns])
 
     const renderConfigQuery = React.useCallback(() => {
+        trace({ queries })
+
         return (
             <>
                 <div className='flex justify-between items-center gap-20px'>
@@ -53,10 +57,9 @@ function useGridQuery() {
                         </Button>
                     )}
                 </div>
-                {JSON.stringify(queries)}
             </>
         )
-    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
+    }, [trace, originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {

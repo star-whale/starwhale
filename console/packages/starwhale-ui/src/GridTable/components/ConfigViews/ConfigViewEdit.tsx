@@ -73,13 +73,6 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     onChange={(event) => setName((event.target as HTMLInputElement).value)}
                 />
             </div>
-            {/* <CategoricalFilter
-                ref={filterRef}
-                isInline
-                columns={props.columns}
-                rows={props.rows}
-                filters={props.view?.filters ?? []}
-            /> */}
             <div
                 className={css({
                     display: 'flex',

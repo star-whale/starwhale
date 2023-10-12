@@ -147,8 +147,13 @@ export const filterMachine = createMachine(
                     if (curr === index) {
                         return { ...option, value }
                     }
+                    // if edit property then reset others value to empty
+                    if (index === 0) {
+                        return { ...option, value: undefined }
+                    }
                     return option
                 })
+
                 // remove value if op does not have value
                 const op = next[1].value
                 const hasValue = op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true

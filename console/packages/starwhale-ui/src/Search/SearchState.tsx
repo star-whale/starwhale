@@ -137,7 +137,7 @@ function useSearchState({ onChange }) {
     }, [state.editingIndex])
 
     const focusToPrevItem = React.useCallback(() => {
-        const index = state.items.length - 1 < 0 ? 0 : state.items.length - 1
+        const index = state.items.length - 1
         dispatch({ type: ActionType.setEditingIndex, payload: { index } })
     }, [state.items])
 

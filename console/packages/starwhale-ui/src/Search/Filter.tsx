@@ -5,6 +5,7 @@ import { createUseStyles } from 'react-jss'
 import { StatefulFilterMenu } from './StatefulFilterMenu'
 import Checkbox from '../Checkbox'
 import { useSelections } from 'ahooks'
+import { useTrace } from '@starwhale/core'
 
 const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
 
@@ -49,8 +50,6 @@ function SingleSelectMenu(props: any) {
                         className: 'filter-popover',
                     },
                     style: {
-                        minHeight: '150px',
-                        minWidth: '150px',
                         maxHeight: '500px',
                     },
                 },
@@ -63,31 +62,43 @@ function MultiSelectMenu(props: any) {
     const items = React.useMemo(() => props.options.map((v) => v.id), [props.options])
     const defaultSelected = React.useMemo(() => {
         if (!props.value) return []
-        return props.value.split(',')
+        if (Array.isArray(props.value)) return props.value
+        return props.value?.split(',')
     }, [props.value])
     const { selected, isSelected, toggle } = useSelections(items, defaultSelected)
-    const $items = React.useMemo(
-        () =>
-            props.options.map((v) => {
-                return {
-                    id: v.type,
-                    label: <Checkbox checked={isSelected(v.id)}>{v.label}</Checkbox>,
-                }
-            }),
-        [props.options, isSelected]
-    )
+    const $items = React.useMemo(() => {
+        const next = props.options.map((v) => {
+            return {
+                id: v.type,
+                label: <Checkbox checked={isSelected(v.id)}>{v.label}</Checkbox>,
+            }
+        })
+        next.push({
+            id: 'submit',
+            label: (
+                <div className='text-center'>
+                    <p className='font-bold'>Done</p>
+                    <i style={{ fontSize: '12px' }}>(Ctrl + Enter)</i>
+                </div>
+            ),
+        })
 
-    // input auto focus
-    useEffect(() => {
-        if (props.inputRef?.current) {
-            props.inputRef.current.focus()
-        }
-    }, [props.inputRef])
+        return next
+    }, [props.options, isSelected])
 
     const submit = () => {
         props.onClose()
         props.onItemIdsChange?.(selected)
     }
+
+    const focus = () => {
+        if (props.inputRef?.current) {
+            props.inputRef.current.focus()
+        }
+    }
+
+    const trace = useTrace('multi-select-menu')
+    trace({ selected, defaultSelected })
 
     return (
         <StatefulFilterMenu
@@ -96,6 +107,16 @@ function MultiSelectMenu(props: any) {
             items={$items}
             handleEnterKey
             onItemSelect={({ item, event: e }) => {
+                if (item.id === 'submit') {
+                    submit()
+                    return
+                }
+
+                if (props.inputRef?.current) {
+                    setTimeout(() => {
+                        focus()
+                    }, 100)
+                }
                 toggle(item.id)
                 // @ts-ignore
                 if (e?.key === 'Enter') {
@@ -104,9 +125,6 @@ function MultiSelectMenu(props: any) {
                     if (!e?.ctrlKey) return
                     submit()
                 }
-                if (props.inputRef?.current) {
-                    props.inputRef.current.focus()
-                }
             }}
             overrides={{
                 List: {
@@ -114,13 +132,11 @@ function MultiSelectMenu(props: any) {
                         className: 'filter-popover',
                     },
                     style: {
-                        minHeight: '150px',
                         minWidth: '150px',
                         maxHeight: '500px',
                     },
                 },
             }}
-            extra={<> ctrl + click to select multiple</>}
         />
     )
 }
@@ -241,6 +257,7 @@ function Filter(options: FilterT): FilterT {
                 <PopoverContainer
                     {...rest}
                     options={renderOptions.filter(optionFilter)}
+                    // only option exsit will show popover
                     isOpen={isEditing}
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                     onItemIdsChange={(ids = []) => rest.onChange?.(ids.join(','))}
@@ -248,7 +265,7 @@ function Filter(options: FilterT): FilterT {
                     {isEditing && rest.renderInput?.()}
                     {!isEditing && (
                         <Label {...rest}>
-                            {rest.value} {rest.renderAfter?.()}
+                            {Array.isArray(rest.value) ? rest.value.join(',') : rest.value} {rest.renderAfter?.()}
                         </Label>
                     )}
                 </PopoverContainer>

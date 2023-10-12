@@ -180,8 +180,14 @@ export default function FilterRenderer({
     }
 
     const confirm = (v, index) => {
+        const hasSearchInput = isValueExist(input)
+        let next
+        if (index === 2 && hasSearchInput) {
+            next = send({ type: 'CONFIRM', value: input, index })
+        } else {
+            next = send({ type: 'CONFIRM', value: v, index })
+        }
         setInput('')
-        const next = send({ type: 'CONFIRM', value: v, index })
         if (isAllValusExist(next.context.values)) {
             onSubmit(next.context.values)
         }
@@ -191,8 +197,12 @@ export default function FilterRenderer({
         const hasSearchInput = isValueExist(input)
         if (!property) return
         if (!op) return
+        trace('submit', { hasSearchInput, value })
         // has input then reset default value
-        if (hasSearchInput) confirm(input, 2)
+        if (hasSearchInput) {
+            confirm(input, 2)
+            return
+        }
         // has no input then use default value
         if (value) confirm(value, 2)
     }
@@ -360,6 +370,9 @@ export default function FilterRenderer({
             valid: true,
             multi: false,
             optionFilter: isCurrentOptionMatch(0),
+            onActive: () => {
+                setInput('')
+            },
         },
         {
             type: 'op',
@@ -370,6 +383,9 @@ export default function FilterRenderer({
             valid: true,
             multi: false,
             optionFilter: isCurrentOptionMatch(1),
+            onActive: () => {
+                setInput('')
+            },
         },
         {
             type: 'value',
@@ -380,9 +396,11 @@ export default function FilterRenderer({
             valid: isValueValid,
             multi: isValueMulti,
             onActive: () => {
+                // trace('value active', { isValueMulti, value })
                 // only single input value need to reset input value
-                if (isValueMulti) return
-                setInput(value)
+                // if (isValueMulti) return
+                // setInput(value)
+                setInput('')
             },
             // input used for value not for search when type == value
             optionFilter: () => true,
@@ -401,11 +419,13 @@ export default function FilterRenderer({
         }
     })
 
+    // trace('filter', { isFocus, focusTarget, property })
+
     // if target active trigger onActive
     useEffect(() => {
         attrs[focusTarget]?.onActive?.()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [focusTarget])
+    }, [focusTarget, isFocus])
 
     return (
         <div

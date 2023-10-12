@@ -72,24 +72,30 @@ class TableQueryFilter {
     static fromUI(operand: TableQueryOperandT) {
         const { value, type, columnName, operator } = operand
         if (!value) return undefined
-        const v = Array.isArray(value) ? value : String(value as string).split(',')
-
-        const operands = TableQueryFilter.convertOperand(type, v, columnName)
 
         switch (operator) {
-            case OPERATOR.NOT_IN:
+            case OPERATOR.NOT_IN: {
+                const v = Array.isArray(value) ? value : String(value as string).split(',')
+                const operands = TableQueryFilter.convertOperand(type, v, columnName)
                 if (v.length === 1) {
                     return new TableQueryFilter(OPERATOR.NOT, new TableQueryFilter(OPERATOR.EQUAL, operands))
                 }
                 return new TableQueryFilter(OPERATOR.NOT, new TableQueryFilter(OPERATOR.OR, operands))
-            case OPERATOR.IN:
+            }
+            case OPERATOR.IN: {
+                const v = Array.isArray(value) ? value : String(value as string).split(',')
+                const operands = TableQueryFilter.convertOperand(type, v, columnName)
                 if (v.length === 1) {
                     return new TableQueryFilter(OPERATOR.EQUAL, operands)
                 }
                 return new TableQueryFilter(OPERATOR.OR, operands)
-            default:
+            }
+            default: {
                 break
+            }
         }
+
+        const operands = TableQueryFilter.convertOperand(type, value, columnName)
         return new TableQueryFilter(operator, operands)
     }
 
