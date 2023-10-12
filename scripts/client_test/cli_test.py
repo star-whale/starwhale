@@ -347,12 +347,7 @@ class TestCli:
                 run_handler=run_handler,
             )
             self.run_model_in_standalone(
-                dataset_uris=[
-                    Resource(
-                        f"{self.cloud_target_project_uri}/{dataset_uri.name}/version/{dataset_uri.version}",
-                        typ=ResourceType.dataset,
-                    )
-                ],
+                dataset_uris=[dataset_uri],
                 model_uri=Resource(
                     f"{self.cloud_target_project_uri}/{model_uri.name}/version/{model_uri.version}",
                     typ=ResourceType.model,
