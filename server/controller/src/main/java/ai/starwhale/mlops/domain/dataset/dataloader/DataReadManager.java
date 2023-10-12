@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
@@ -41,7 +42,7 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
-    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> dataReadLogQueue = new ConcurrentHashMap<>();
+    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> sessionCache = new ConcurrentHashMap<>();
     private final Integer cacheSize;
 
     public DataReadManager(SessionDao sessionDao,
@@ -118,29 +119,29 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
-        var sessionCache = dataReadLogQueue.computeIfAbsent(String.valueOf(sid), (id) -> new ConcurrentLinkedQueue<>());
-        var dataRange = sessionCache.poll();
-        if (dataRange == null) {
-            synchronized (this) {
-                dataRange = sessionCache.poll();
-                if  (dataRange == null) {
-                    // get tops
-                    var dataRanges = dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize);
-                    sessionCache.addAll(dataRanges);
-                }
+        DataReadLog readLog;
+
+        var lock = new KeyLock<>(String.format("dl-assignment-%s", sid));
+        try {
+            lock.lock();
+            var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
+            readLog = queue.poll();
+            if (readLog == null) {
+                // get tops
+                queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));
+                readLog = queue.poll();
             }
-        }
-        if (dataRange == null) {
-            dataRange = sessionCache.poll();
+        } finally {
+            lock.unlock();
         }
 
-        if (Objects.nonNull(dataRange)) {
-            dataRange.setConsumerId(consumerId);
-            dataRange.setAssignedNum(dataRange.getAssignedNum() + 1);
-            dataReadLogDao.updateToAssigned(dataRange);
-            log.info("Assignment data id: {} to consumer:{}", dataRange.getId(), dataRange.getConsumerId());
+        if (Objects.nonNull(readLog)) {
+            readLog.setConsumerId(consumerId);
+            readLog.setAssignedNum(readLog.getAssignedNum() + 1);
+            dataReadLogDao.updateToAssigned(readLog);
+            log.info("Assignment data id: {} to consumer:{}", readLog.getId(), readLog.getConsumerId());
         }
-        return dataRange;
+        return readLog;
     }
 
     @Transactional

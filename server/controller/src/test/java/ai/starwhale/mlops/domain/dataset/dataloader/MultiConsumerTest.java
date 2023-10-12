@@ -151,7 +151,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                         assertEquals(dataRange.getEndType(), "STRING");
 
                         try {
-                            Thread.sleep(random.nextInt(10));
+                            Thread.sleep(random.nextInt(100));
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
