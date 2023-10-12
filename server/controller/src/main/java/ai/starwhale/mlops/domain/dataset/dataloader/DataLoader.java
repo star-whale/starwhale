@@ -51,14 +51,7 @@ public class DataLoader {
 
         dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
 
-        // this lock can be replaced by select fot update in future
-        var lock = new KeyLock<>(String.format("dl-assignment-%s", session.getId()));
-        try {
-            lock.lock();
-            return dataReadManager.assignmentData(consumerId, session);
-        } finally {
-            lock.unlock();
-        }
+        return dataReadManager.assignmentData(consumerId, session);
     }
 
     /**

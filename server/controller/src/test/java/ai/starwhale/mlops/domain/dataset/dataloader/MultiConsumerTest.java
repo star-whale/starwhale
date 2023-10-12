@@ -320,8 +320,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         ));
 
         // select top 1 unassigned
-        var top1UnAssigned = dataReadLogMapper.selectTopsUnAssigned(
-                result.getId(), Status.DataStatus.UNPROCESSED.name(), 1).get(0);
+        var top1UnAssigned = dataReadLogMapper.selectTop1UnAssigned(
+                result.getId(), Status.DataStatus.UNPROCESSED.name());
 
         assertNotNull(top1UnAssigned.getId());
         assertEquals(dataReadLog1.getSessionId(), top1UnAssigned.getSessionId());

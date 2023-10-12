@@ -88,9 +88,8 @@ public interface DataReadLogMapper {
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and (consumer_id is null or consumer_id = '') and status=#{status} "
             + "ORDER BY id "
-            + "LIMIT #{limit}")
-    List<DataReadLogEntity> selectTopsUnAssigned(
-            @Param("sessionId") Long sessionId, @Param("status") String status, @Param("limit") Integer limit);
+            + "LIMIT 1 FOR UPDATE")
+    DataReadLogEntity selectTop1UnAssigned(@Param("sessionId") Long sessionId, @Param("status") String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id in "
