@@ -40,6 +40,11 @@ public class ColumnSchemaDesc {
     private String name;
 
     /**
+     * When the type is LIST, TUPLE or MAP, the index field is used to indicate the order of the elements.
+     */
+    private Integer index;
+
+    /**
      * The type of the column or the attribute.
      * <p>
      * It can be one of the following values:
@@ -87,6 +92,7 @@ public class ColumnSchemaDesc {
 
     /**
      * This field describes the attributes of object type.
+     * Or it describes the columns of list/tuple type.
      */
     private List<ColumnSchemaDesc> attributes;
 }

@@ -489,6 +489,7 @@ class ColumnSchemaDesc(BaseModel):
         allow_population_by_field_name = True
 
     name: Optional[str] = None
+    index: Optional[int] = None
     type: Optional[str] = None
     python_type: Optional[str] = Field(None, alias='pythonType')
     element_type: Optional[ColumnSchemaDesc] = Field(None, alias='elementType')

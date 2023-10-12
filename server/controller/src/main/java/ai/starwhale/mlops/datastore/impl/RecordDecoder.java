@@ -127,17 +127,26 @@ public class RecordDecoder {
 
     private static ListValue decodeList(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var ret = new ListValue();
-        for (var element : (List<?>) value) {
-            ret.add(RecordDecoder.decodeValue(columnSchema.getElementType(), element));
+        var elements = (List<?>) value;
+        var sparse = new HashMap<Integer, ColumnSchemaDesc>();
+        if (columnSchema.getAttributes() != null) {
+            for (var attr : columnSchema.getAttributes()) {
+                sparse.put(attr.getIndex(), attr);
+            }
+        }
+        for (var i = 0; i < elements.size(); i++) {
+            var type = sparse.get(i);
+            if (type == null) {
+                type = columnSchema.getElementType();
+            }
+            ret.add(RecordDecoder.decodeValue(type, elements.get(i)));
         }
         return ret;
     }
 
     private static TupleValue decodeTuple(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var ret = new TupleValue();
-        for (var element : (List<?>) value) {
-            ret.add(RecordDecoder.decodeValue(columnSchema.getElementType(), element));
-        }
+        ret.addAll(RecordDecoder.decodeList(columnSchema, value));
         return ret;
     }
 

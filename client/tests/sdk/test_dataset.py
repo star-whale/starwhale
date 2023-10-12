@@ -277,9 +277,10 @@ class TestDatasetCopy(BaseTestCase):
                         {"name": "display_name", "type": "STRING"},
                         {"name": "_mime_type", "type": "STRING"},
                         {
-                            "elementType": {"type": "INT64"},
-                            "name": "shape",
                             "type": "LIST",
+                            "name": "shape",
+                            "elementType": {"type": "UNKNOWN"},
+                            "attributes": [{"index": 2, "type": "INT64"}],
                         },
                         {"name": "_dtype_name", "type": "STRING"},
                         {"name": "encoding", "type": "STRING"},

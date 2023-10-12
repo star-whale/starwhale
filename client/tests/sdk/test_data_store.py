@@ -307,12 +307,12 @@ class TestBasicFunctions(BaseTestCase):
             "[int64] 1",
         )
         self.assertEqual(
-            data_store.SwListType(data_store.INT64),
+            data_store.SwListType([data_store.INT64, data_store.UNKNOWN]),
             data_store._get_type([0, None]),
             "[int64] 2",
         )
         self.assertEqual(
-            data_store.SwListType(data_store.INT64),
+            data_store.SwListType([data_store.UNKNOWN, data_store.INT64]),
             data_store._get_type([None, 0]),
             "[int64] 3",
         )
@@ -332,12 +332,12 @@ class TestBasicFunctions(BaseTestCase):
             "(int64) 1",
         )
         self.assertEqual(
-            data_store.SwTupleType(data_store.INT64),
+            data_store.SwTupleType([data_store.INT64, data_store.UNKNOWN]),
             data_store._get_type((0, None)),
             "(int64) 2",
         )
         self.assertEqual(
-            data_store.SwTupleType(data_store.INT64),
+            data_store.SwTupleType([data_store.UNKNOWN, data_store.INT64]),
             data_store._get_type((None, 0)),
             "(int64) 3",
         )
@@ -432,158 +432,6 @@ class TestBasicFunctions(BaseTestCase):
             ),
             data_store._get_type({"t": data_store.Link("1", "2", "3")}),
             "{" ":{}}",
-        )
-
-    def test_type_merge(self) -> None:
-        self.assertEqual(
-            data_store.INT32,
-            data_store.UNKNOWN.merge(data_store.INT32),
-            "unknown and int",
-        )
-        self.assertEqual(
-            data_store.INT32,
-            data_store.INT32.merge(data_store.UNKNOWN),
-            "int and unknown",
-        )
-        self.assertEqual(
-            data_store.INT64,
-            data_store.INT64.merge(data_store.INT64),
-            "int and unknown",
-        )
-        with self.assertRaises(RuntimeError, msg="scalar conflict"):
-            data_store.INT32.merge(data_store.INT64)
-        self.assertEqual(
-            data_store.SwListType(data_store.UNKNOWN),
-            data_store.SwListType(data_store.UNKNOWN).merge(
-                data_store.SwListType(data_store.UNKNOWN)
-            ),
-            "[unknown] and [unknown]",
-        )
-        self.assertEqual(
-            data_store.SwListType(data_store.INT64),
-            data_store.SwListType(data_store.UNKNOWN).merge(
-                data_store.SwListType(data_store.INT64)
-            ),
-            "[unknown] and [int64]",
-        )
-        self.assertEqual(
-            data_store.SwListType(data_store.INT64),
-            data_store.SwListType(data_store.INT64).merge(
-                data_store.SwListType(data_store.UNKNOWN)
-            ),
-            "[int64] and [unknown]",
-        )
-        with self.assertRaises(RuntimeError, msg="list conflict"):
-            data_store.SwListType(data_store.INT32).merge(
-                data_store.SwListType(data_store.INT64)
-            )
-        with self.assertRaises(RuntimeError, msg="list and scalar"):
-            data_store.SwListType(data_store.INT64).merge(data_store.INT64)
-        with self.assertRaises(RuntimeError, msg="scalar and list"):
-            data_store.INT64.merge(data_store.SwListType(data_store.INT64))
-        self.assertEqual(
-            data_store.SwTupleType(data_store.UNKNOWN),
-            data_store.SwTupleType(data_store.UNKNOWN).merge(
-                data_store.SwTupleType(data_store.UNKNOWN)
-            ),
-            "(unknown) and (unknown)",
-        )
-        self.assertEqual(
-            data_store.SwTupleType(data_store.INT64),
-            data_store.SwTupleType(data_store.UNKNOWN).merge(
-                data_store.SwTupleType(data_store.INT64)
-            ),
-            "(unknown) and (int64)",
-        )
-        self.assertEqual(
-            data_store.SwTupleType(data_store.INT64),
-            data_store.SwTupleType(data_store.INT64).merge(
-                data_store.SwTupleType(data_store.UNKNOWN)
-            ),
-            "(int64) and (unknown)",
-        )
-        with self.assertRaises(RuntimeError, msg="list conflict"):
-            data_store.SwTupleType(data_store.INT32).merge(
-                data_store.SwTupleType(data_store.INT64)
-            )
-        with self.assertRaises(RuntimeError, msg="tuple and scalar"):
-            data_store.SwTupleType(data_store.INT64).merge(data_store.INT64)
-        with self.assertRaises(RuntimeError, msg="scalar and tuple"):
-            data_store.INT64.merge(data_store.SwTupleType(data_store.INT64))
-        self.assertEqual(
-            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN),
-            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
-                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
-            ),
-            "{unknown:unknown} and {unknown:unknown}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
-            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
-                data_store.SwMapType(data_store.UNKNOWN, data_store.INT64)
-            ),
-            "{unknown:unknown} and {unknown:int64}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
-            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64).merge(
-                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
-            ),
-            "{unknown:int64} and {unknown:unknown}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64),
-            data_store.SwMapType(data_store.UNKNOWN, data_store.INT64).merge(
-                data_store.SwMapType(data_store.UNKNOWN, data_store.INT64)
-            ),
-            "{unknown:int64} and {unknown:int64}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
-            data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN).merge(
-                data_store.SwMapType(data_store.INT64, data_store.UNKNOWN)
-            ),
-            "{unknown:unknown} and {int64:unknown}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
-            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN).merge(
-                data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN)
-            ),
-            "{int64:unknown} and {unknown:unknown}",
-        )
-        self.assertEqual(
-            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN),
-            data_store.SwMapType(data_store.INT64, data_store.UNKNOWN).merge(
-                data_store.SwMapType(data_store.INT64, data_store.UNKNOWN)
-            ),
-            "{int64:unknown} and {int64:unknown}",
-        )
-        with self.assertRaises(RuntimeError, msg="map and scalar"):
-            data_store.SwMapType(data_store.INT64, data_store.INT64).merge(
-                data_store.INT64
-            )
-        with self.assertRaises(RuntimeError, msg="scalar and map"):
-            data_store.INT64.merge(
-                data_store.SwMapType(data_store.INT64, data_store.INT64)
-            )
-        self.assertEqual(
-            data_store.SwObjectType(
-                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
-            ),
-            data_store.SwObjectType(data_store.Link, {"a": data_store.STRING}).merge(
-                data_store.SwObjectType(data_store.Link, {"b": data_store.INT64})
-            ),
-            "{}",
-        )
-        self.assertEqual(
-            data_store.SwObjectType(
-                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
-            ),
-            data_store.SwObjectType(
-                data_store.Link, {"a": data_store.STRING, "b": data_store.INT64}
-            ).merge(data_store.UNKNOWN),
-            "{}",
         )
 
     def test_update_schema(self) -> None:
