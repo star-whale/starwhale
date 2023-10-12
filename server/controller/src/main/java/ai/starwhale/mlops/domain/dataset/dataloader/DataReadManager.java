@@ -24,10 +24,14 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import com.google.common.collect.Iterables;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,13 +41,17 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
+    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> sessionCache = new ConcurrentHashMap<>();
+    private final Integer cacheSize;
 
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
-                           DataIndexProvider dataIndexProvider) {
+                           DataIndexProvider dataIndexProvider,
+                           @Value("${sw.dataset.load.read.log-cache-size}") int cacheSize) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
+        this.cacheSize = cacheSize;
     }
 
     public Session getSession(DataReadRequest request) {
@@ -110,17 +118,19 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
+        var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
 
-        // get first
-        var dataRange = dataReadLogDao.selectTop1UnAssignedData(sid);
-
-        if (Objects.nonNull(dataRange)) {
-            dataRange.setConsumerId(consumerId);
-            dataRange.setAssignedNum(dataRange.getAssignedNum() + 1);
-            dataReadLogDao.updateToAssigned(dataRange);
-            log.info("Assignment data id: {} to consumer:{}", dataRange.getId(), dataRange.getConsumerId());
+        if (queue.isEmpty()) {
+            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));
         }
-        return dataRange;
+        DataReadLog readLog = queue.poll();
+        if (Objects.nonNull(readLog)) {
+            readLog.setConsumerId(consumerId);
+            readLog.setAssignedNum(readLog.getAssignedNum() + 1);
+            dataReadLogDao.updateToAssigned(readLog);
+            log.info("Assignment data id: {} to consumer:{}", readLog.getId(), readLog.getConsumerId());
+        }
+        return readLog;
     }
 
     @Transactional

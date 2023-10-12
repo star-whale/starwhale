@@ -151,7 +151,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                         assertEquals(dataRange.getEndType(), "STRING");
 
                         try {
-                            Thread.sleep(random.nextInt(10));
+                            Thread.sleep(random.nextInt(100));
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -302,28 +302,37 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         assertNotNull(session.getCreatedTime());
 
         // insert a read log
-        var dataReadLog = DataReadLog.builder()
+        var dataReadLog1 = DataReadLog.builder()
                 .sessionId(result.getId())
                 .start("s-start")
                 .end("e-end")
                 .size(10)
                 .build();
-        dataReadLogMapper.batchInsert(List.of(dataReadLogConverter.convert(dataReadLog)));
+        var dataReadLog2 = DataReadLog.builder()
+                .sessionId(result.getId())
+                .start("s-start2")
+                .end("e-end2")
+                .size(10)
+                .build();
+        dataReadLogMapper.batchInsert(List.of(
+                dataReadLogConverter.convert(dataReadLog1),
+                dataReadLogConverter.convert(dataReadLog2)
+        ));
 
         // select top 1 unassigned
-        var top1UnAssigned = dataReadLogMapper.selectTop1UnAssigned(
-                result.getId(), Status.DataStatus.UNPROCESSED.name());
+        var top1UnAssigned = dataReadLogMapper.selectTopsUnAssigned(
+                result.getId(), Status.DataStatus.UNPROCESSED.name(), 1).get(0);
 
         assertNotNull(top1UnAssigned.getId());
-        assertEquals(dataReadLog.getSessionId(), top1UnAssigned.getSessionId());
-        assertEquals(dataReadLog.getStart(), top1UnAssigned.getStart());
-        assertEquals(dataReadLog.isStartInclusive(), top1UnAssigned.isStartInclusive());
-        assertEquals(dataReadLog.getEnd(), top1UnAssigned.getEnd());
-        assertEquals(dataReadLog.isEndInclusive(), top1UnAssigned.isEndInclusive());
-        assertEquals(dataReadLog.getStatus(), top1UnAssigned.getStatus());
+        assertEquals(dataReadLog1.getSessionId(), top1UnAssigned.getSessionId());
+        assertEquals(dataReadLog1.getStart(), top1UnAssigned.getStart());
+        assertEquals(dataReadLog1.isStartInclusive(), top1UnAssigned.isStartInclusive());
+        assertEquals(dataReadLog1.getEnd(), top1UnAssigned.getEnd());
+        assertEquals(dataReadLog1.isEndInclusive(), top1UnAssigned.isEndInclusive());
+        assertEquals(dataReadLog1.getStatus(), top1UnAssigned.getStatus());
         assertEquals(Status.DataStatus.UNPROCESSED, top1UnAssigned.getStatus());
-        assertEquals(dataReadLog.getAssignedNum(), top1UnAssigned.getAssignedNum());
-        assertEquals(dataReadLog.getSize(), top1UnAssigned.getSize());
+        assertEquals(dataReadLog1.getAssignedNum(), top1UnAssigned.getAssignedNum());
+        assertEquals(dataReadLog1.getSize(), top1UnAssigned.getSize());
         assertNull(top1UnAssigned.getConsumerId());
         assertNull(top1UnAssigned.getFinishedTime());
         assertNull(top1UnAssigned.getAssignedTime());

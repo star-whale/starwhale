@@ -71,51 +71,36 @@ public interface DataReadLogMapper {
     }
 
     @UpdateProvider(value = UpdateToProcessedSqlProvider.class, method = "updateToProcessedSql")
-    int updateToProcessed(Long sessionId, String consumerId, String start,
-                          String end, String status);
+    int updateToProcessed(@Param("sessionId") Long sessionId, @Param("consumerId") String consumerId,
+                          @Param("start") String start, @Param("end") String end, @Param("status") String status);
 
     @Update("UPDATE dataset_read_log SET "
             + "consumer_id=null "
             + "WHERE session_id=#{sessionId} and consumer_id=#{consumerId} and status=#{status}")
-    int updateToUnAssigned(Long sessionId, String consumerId, String status);
+    int updateToUnAssigned(
+            @Param("sessionId") Long sessionId, @Param("consumerId") String consumerId, @Param("status") String status);
 
     @Update("UPDATE dataset_read_log SET "
             + "consumer_id=null "
             + "WHERE consumer_id=#{consumerId} and status=#{status}")
-    int updateToUnAssignedForConsumer(String consumerId, String status);
+    int updateToUnAssignedForConsumer(@Param("consumerId") String consumerId, @Param("status") String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id=#{sessionId} and (consumer_id is null or consumer_id = '') and status=#{status} "
-            + "ORDER BY start "
-            + "LIMIT 1 for update")
-    DataReadLogEntity selectTop1UnAssigned(Long sessionId, String status);
-
-    @Select("SELECT * from dataset_read_log "
-            + "WHERE session_id=#{sessionId} and status=#{status} and consumer_id is not null "
-            + "and TIMESTAMPDIFF(MICROSECOND, assigned_time, SYSDATE()) > #{microsecondTimeout} "
             + "ORDER BY id "
-            + "LIMIT 1")
-    DataReadLogEntity selectTop1TimeoutData(Long sessionId, String status, long microsecondTimeout);
-
-    @Select("SELECT * from dataset_read_log "
-            + "WHERE session_id=#{sessionId} and status='UNPROCESSED' and consumer_id !=#{consumerId} "
-            + "ORDER BY id "
-            + "LIMIT 1")
-    DataReadLogEntity selectTop1UnProcessedDataBelongToOtherConsumers(Long sessionId, String consumerId);
-
-    @Select("SELECT MAX(TIMESTAMPDIFF(MICROSECOND, assigned_time, finished_time)) from dataset_read_log "
-            + "WHERE session_id=#{sessionId} and status=#{status} ")
-    Long selectMaxProcessedMicrosecondTime(Long sessionId, String status);
+            + "LIMIT #{limit}")
+    List<DataReadLogEntity> selectTopsUnAssigned(
+            @Param("sessionId") Long sessionId, @Param("status") String status, @Param("limit") Integer limit);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id in "
             + "(SELECT id from dataset_read_session where session_id=#{sessionId}) and status=#{status} ")
-    List<DataReadLogEntity> selectByStatus(String sessionId, String status);
+    List<DataReadLogEntity> selectByStatus(@Param("sessionId") String sessionId, @Param("status") String status);
 
     @Select("SELECT * from dataset_read_log WHERE id=#{id} ")
-    DataReadLogEntity selectOne(Long id);
+    DataReadLogEntity selectOne(@Param("id") Long id);
 
     @Select("SELECT sum(assigned_num) from dataset_read_log "
             + "WHERE session_id in (SELECT id from dataset_read_session where session_id=#{sessionId})")
-    int totalAssignedNum(String sessionId);
+    int totalAssignedNum(@Param("sessionId") String sessionId);
 }

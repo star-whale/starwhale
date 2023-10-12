@@ -45,6 +45,8 @@ sw:
       gc-rate: ${DATASET_BUILD_FILES_GC_RATE:0 0 0 * * ?}
     load:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
+      read:
+        log-cache-size: ${DATASET_CONSUMPTION_BATCH_SIZE:1000}
   task:
     dev-port: ${SW_TASK_DEV_PORT:8000}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
