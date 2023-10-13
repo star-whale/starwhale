@@ -49,7 +49,7 @@ sw:
         log-cache-capacity: ${DATASET_CONSUMPTION_LOG_CACHE_CAPACITY:1000}
         log-cache-size: ${DATASET_CONSUMPTION_LOG_CACHE_SIZE:1000}
         log-cache-timeout: ${DATASET_CONSUMPTION_LOG_CACHE_TIMEOUT:24h}
-        lock-wait-seconds: ${DATASET_CONSUMPTION_LOCK_WAIT_SECONDS:2}
+        lock-wait-seconds: ${DATASET_CONSUMPTION_LOCK_WAIT_SECONDS:10}
   task:
     dev-port: ${SW_TASK_DEV_PORT:8000}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
