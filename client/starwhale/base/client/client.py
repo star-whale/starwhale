@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import os
+import sys
 import typing
 
 import requests
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, wait_random_exponential
+from requests import exceptions
+from tenacity import (
+    retry,
+    stop_never,
+    stop_after_attempt,
+    retry_if_exception_type,
+    wait_random_exponential,
+)
 from pydantic.tools import parse_obj_as
 from fastapi.encoders import jsonable_encoder
 
@@ -14,6 +23,25 @@ from starwhale.base.client.models.base import ResponseCode
 
 T = typing.TypeVar("T")
 RespType = typing.TypeVar("RespType", bound=BaseModel)
+CLIENT_DEFAULT_RETRY_ATTEMPTS = 10
+
+
+def _get_client_retry_attempts() -> int:
+    """
+    Get retry attempts from env, default to 10
+    Set env SW_CLIENT_RETRY_ATTEMPTS to override, e.g. SW_CLIENT_RETRY_ATTEMPTS=5,
+    and if you want to disable retry, set to 0 or empty string
+    """
+    env = os.getenv("SW_CLIENT_RETRY_ATTEMPTS")
+    if env is None:
+        if "pytest" in sys.modules:
+            # we do not want to wait too long in pytest
+            console.warn("retry limit to 2 in pytest")
+            return 2
+        return CLIENT_DEFAULT_RETRY_ATTEMPTS
+    if env == "":
+        return 0
+    return int(env)
 
 
 class ClientException(Exception):
@@ -61,9 +89,16 @@ class Client:
         self.session.headers.update({"Authorization": token})
 
     @retry(
-        retry=retry_if_exception_type(RetryableException),
+        # https://requests.readthedocs.io/en/latest/user/quickstart/#errors-and-exceptions
+        retry=retry_if_exception_type(
+            (RetryableException, exceptions.ConnectionError, exceptions.Timeout)
+        ),
         # retry for every 1s, 2s, 4s, 8s, 16s, 32s, 60s, 60s, ...
         wait=wait_random_exponential(multiplier=1, max=60),
+        stop=_get_client_retry_attempts() > 0
+        and stop_after_attempt(_get_client_retry_attempts())
+        or stop_never,
+        reraise=True,
     )
     def http_request(
         self,
