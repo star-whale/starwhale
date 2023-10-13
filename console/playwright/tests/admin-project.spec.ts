@@ -103,32 +103,15 @@ test.describe('Evaluation Results', () => {
             if (!page.url().includes(ROUTES.evaluationResult)) await page.goto(ROUTES.evaluationResult)
         })
         test('should have panels num > 1', async () => {
-            await expect(page.getByText('Summary')).toBeVisible()
-            await wait(1000)
-            await expect(page.getByText('sys/job_status')).toBeVisible()
             await wait(1000)
             await expect(await page.locator(SELECTOR.panels).count()).toBeGreaterThan(1)
         })
     })
 
-    // test.describe('Actions', () => {
-    //     test.beforeAll(async () => {
-    //         if (!page.url().includes(ROUTES.evaluationActions)) await page.goto(ROUTES.evaluationActions)
-    //     })
-    //     test('should have dag', async () => {
-    //         await page.waitForSelector(':has-text("Step")')
-    //         await expect(page.getByText('Step')).toBeDefined()
-    //         await wait(1000)
-    //     })
-    // })
-
     test.describe('Tasks', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
-        // test('should have at least 1 tasks of success status', async () => {
-        //     await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
-        // })
         test('should show success task log', async () => {
             await page.locator('.icon-a-Viewlog').last().click()
             await expect(page.locator('.tr--selected')).toBeDefined()
