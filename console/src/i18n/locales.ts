@@ -464,7 +464,7 @@ const project = {
     },
     'project.filter.only': {
         zh: '只看“我的项目”',
-        en: 'Only show "My Projects"',
+        en: 'My Projects only',
     },
     'project.filter.only.tooltip': {
         zh: '我的项目：您作为项目成员参与的项目',
