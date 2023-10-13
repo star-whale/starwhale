@@ -117,12 +117,11 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             }
             try {
                 await onSubmit(tmp)
-                history.goBack()
             } finally {
                 setLoading(false)
             }
         },
-        [send, onSubmit, history, checkStepSource, resource]
+        [send, onSubmit, checkStepSource, resource]
     )
 
     const handleValuesChange = useCallback(
