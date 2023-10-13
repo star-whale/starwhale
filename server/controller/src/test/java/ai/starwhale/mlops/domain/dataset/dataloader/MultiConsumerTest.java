@@ -37,6 +37,7 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.DataReadLogMapper;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.SessionMapper;
 import ai.starwhale.mlops.exception.SwRequestFrequentException;
+import cn.hutool.json.JSONUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -45,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,6 +58,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+@Slf4j
 @MybatisTest(properties = {
     "logging.level.root=error",
     "logging.level.ai.starwhale.mlops=error",
@@ -176,6 +179,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                                 ));
                             }
                         } catch (SwRequestFrequentException ignored) {
+                            log.info("request frequently, retry {}", JSONUtil.toJsonStr(request));
                         }
                     }
                 }
