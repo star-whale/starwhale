@@ -47,6 +47,7 @@ public class DataReadManager {
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
                            DataIndexProvider dataIndexProvider,
+                           @Value("${sw.dataset.load.read.log-cache-capacity:1000}") int capacity,
                            @Value("${sw.dataset.load.read.log-cache-size:1000}") int cacheSize,
                            @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout
     ) {
@@ -54,7 +55,7 @@ public class DataReadManager {
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
         this.cacheSize = cacheSize;
-        this.sessionCache = new LRUCache<>(16, DurationStyle.detectAndParse(cacheTimeout).toMillis());
+        this.sessionCache = new LRUCache<>(capacity, DurationStyle.detectAndParse(cacheTimeout).toMillis());
     }
 
     public Session getSession(DataReadRequest request) {
