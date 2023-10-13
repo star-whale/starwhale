@@ -67,15 +67,19 @@ public class DataLoader {
 
     private <T> T lockOrThrow(String lockKey, Supplier<T> supplier, String errorMessage) {
         var lock = new KeyLock<>(lockKey);
+        boolean lockResult = false;
         try {
-            if (!lock.tryLock(lockWaitSeconds, TimeUnit.SECONDS)) {
+            lockResult = lock.tryLock(lockWaitSeconds, TimeUnit.SECONDS);
+            if (!lockResult) {
                 throw new SwRequestFrequentException(DATASET_LOAD, errorMessage);
             }
             return supplier.get();
         } catch (InterruptedException e) {
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, errorMessage);
         } finally {
-            lock.unlock();
+            if (lockResult) {
+                lock.unlock();
+            }
         }
     }
 

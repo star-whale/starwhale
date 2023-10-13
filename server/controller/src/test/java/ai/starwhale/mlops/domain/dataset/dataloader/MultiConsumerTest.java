@@ -64,7 +64,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     "logging.level.ai.starwhale.mlops=error",
     "logging.level.ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager=debug",
     "mybatis.configuration.map-underscore-to-camel-case=true",
-    "sw.dataset.processed.timeout.tolerance=100"
+    "sw.dataset.processed.timeout.tolerance=100",
+    "sw.dataset.load.read.log-cache-timeout=1s",
 })
 @Import({DataLoader.class, DataReadManager.class,
         SessionDao.class, SessionConverter.class,
