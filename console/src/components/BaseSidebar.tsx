@@ -11,6 +11,8 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import TextLink from './Link/TextLink'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
+const EXPANDED_PADDING = '24px'
+const FOLDED_PADDING = '0px'
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
         display: 'flex',
@@ -35,6 +37,7 @@ const useBaseSideBarStyles = createUseStyles({
         overflow: 'hidden',
         textDecoration: 'none',
         marginBottom: '5px',
+        paddingLeft: EXPANDED_PADDING,
     },
     siderNavLink: {
         display: 'flex',
@@ -71,14 +74,11 @@ export interface IBaseSideBarProps extends IComposedSidebarProps {
     navItems: INavItem[]
 }
 
-const EXPANDED_PADDING = '24px'
-const FOLDED_PADDING = '0px'
-
 export default function BaseSidebar({ navItems, style, title, icon, titleLink }: IBaseSideBarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
-    const [css, theme] = themedUseStyletron()
+    const [, theme] = themedUseStyletron()
     const styles = useBaseSideBarStyles({ theme })
 
     const history = useHistory()
@@ -157,22 +157,9 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             placement: 'bottomRight',
                         }}
                     >
-                        <div
-                            className={styles.siderTitle}
-                            style={{
-                                paddingLeft: EXPANDED_PADDING,
-                            }}
-                        >
-                            {icon}
-                            {ctx.expanded && (
-                                <span
-                                    className={css({
-                                        fontWeight: 'bold',
-                                    })}
-                                >
-                                    {title}
-                                </span>
-                            )}
+                        <div className={styles.siderTitle}>
+                            <span className='flex-shrink-0'>{icon}</span>
+                            {ctx.expanded && <span className='font-bold overflow-hidden text-ellipsis'>{title}</span>}
                         </div>
                     </TextLink>
                 </div>

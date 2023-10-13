@@ -1,12 +1,14 @@
 import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import React, { useState, useRef } from 'react'
+import React, { useRef } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
 import { SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
 import useTranslation from '@/hooks/useTranslation'
+import { useDeepEffect } from '@starwhale/core'
+import useSearchState from './SearchState'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -57,10 +59,6 @@ export const useStyles = createUseStyles({
 const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
-const isValueExist = (value: any) => {
-    if (value === 0) return true
-    return !!value
-}
 
 export interface ISearchProps {
     fields: SearchFieldSchemaT[]
@@ -68,31 +66,31 @@ export interface ISearchProps {
     onChange?: (args: ValueT[]) => void
 }
 
-function useSearchColumns(columnTypes: { name: string; type: string }[]) {
-    const searchColumns = React.useMemo(() => {
-        if (!columnTypes) return []
-        const arr: SearchFieldSchemaT[] = []
-        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
-        columns.forEach((column) => {
-            arr.push({
-                ...column,
-                path: column.name,
-                label: column.name,
-            })
-        })
-
-        return arr
-    }, [columnTypes])
-
-    return searchColumns
-}
-
 export default function Search({ value = [], onChange, fields }: ISearchProps) {
+    // const trace = useTrace('grid-search')
     const styles = useStyles()
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
-    const [isEditing, setIsEditing] = useState(false)
-    const [editingItem, setEditingItem] = useState<{ index: any; value: ValueT } | null>(null)
+
+    const state = useSearchState({ onChange })
+    const {
+        isEditing,
+        editingIndex,
+        focusToEnd,
+        focusToPrevItem,
+        onFocus,
+        checkIsFocus,
+        setIsEditing,
+        onRemove,
+        onRemoveThenBlur,
+        onItemCreate,
+        onItemChange,
+        setItems,
+    } = state
+
+    useDeepEffect(() => {
+        setItems(value)
+    }, [value])
 
     const items = value
 
@@ -110,58 +108,31 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                 <FilterRenderer
                     key={[index, item.property].join('-')}
                     value={item}
-                    isEditing={isEditing}
-                    isDisabled={false}
-                    isFocus={editingItem?.index === index}
+                    isFocus={checkIsFocus(index)}
                     fields={fields}
-                    onClick={() => {
-                        if (editingItem?.index !== index) setEditingItem({ index, value: item })
-                    }}
-                    // @ts-ignore
                     containerRef={ref}
-                    onChange={(newValue: any) => {
-                        let newItems: any[] = []
-                        if (!newValue) {
-                            newItems = items.filter((key, i) => i !== index)
-                        } else {
-                            newItems = items.map((tmp, i) => (i === index ? newValue : tmp))
-                        }
-                        newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                        onChange?.(newItems)
-                        setEditingItem({ index: -1, value: {} })
-                    }}
+                    focusToEnd={focusToEnd}
+                    onClick={() => onFocus(index)}
+                    onRemove={(blur) => (blur ? onRemoveThenBlur(index) : onRemove(index))}
+                    onChange={(_value) => onItemChange(index, _value)}
                 />
             )
         })
         tmps.push(
             <FilterRenderer
-                key={count.current}
                 value={{}}
-                isEditing={isEditing}
-                isDisabled={false}
-                isFocus={editingItem ? editingItem.index === -1 : false}
+                isFocus={checkIsFocus(-1)}
                 fields={fields}
                 style={{ flex: 1 }}
-                onClick={() => {
-                    if (editingItem?.index !== -1) setEditingItem({ index: -1, value: {} })
-                }}
-                // @ts-ignore
+                onClick={focusToEnd}
                 containerRef={ref}
-                onChange={(newValue: any) => {
-                    let newItems = [...items]
-                    // remove prev item
-                    if (!newValue) {
-                        newItems.splice(-1)
-                    } else {
-                        newItems.push(newValue)
-                    }
-                    newItems = newItems.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                    onChange?.(newItems)
-                }}
+                onRemove={focusToPrevItem}
+                onChange={onItemCreate}
             />
         )
         return tmps
-    }, [items, isEditing, editingItem, onChange, fields])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing, editingIndex, items, fields])
 
     return (
         <div
@@ -195,9 +166,22 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
 }
 
 export function DatastoreMixedTypeSearch({
-    fields,
+    fields: columnTypes,
     ...props
 }: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
-    const searchColumns = useSearchColumns(fields)
+    const searchColumns = React.useMemo(() => {
+        if (!columnTypes) return []
+        const arr: SearchFieldSchemaT[] = []
+        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
+        columns.forEach((column) => {
+            arr.push({
+                ...column,
+                path: column.name,
+                label: column.name,
+            })
+        })
+
+        return arr
+    }, [columnTypes])
     return <Search {...props} fields={searchColumns} />
 }

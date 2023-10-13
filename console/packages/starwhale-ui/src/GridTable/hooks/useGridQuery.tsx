@@ -8,6 +8,7 @@ import useGirdData from './useGridData'
 import ConfigSimpleQuery from '../components/Query/ConfigSimpleQuery'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
+import { useTrace } from '@starwhale/core'
 
 const non: any = []
 const selector = (state: IGridState) => ({
@@ -16,8 +17,9 @@ const selector = (state: IGridState) => ({
 })
 
 function useGridQuery() {
+    const trace = useTrace('grid-table-user-grid-query')
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
-    const { columnTypes } = useStoreApi().getState()
+    const { columnTypes, columnHints } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
     const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
@@ -32,41 +34,46 @@ function useGridQuery() {
     }, [originalColumns])
 
     const renderConfigQuery = React.useCallback(() => {
+        trace({ queries })
+
         return (
-            <div
-                className='flex'
-                style={{
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '20px',
-                }}
-            >
-                <div
-                    className='flex'
-                    style={{
-                        flex: 1,
-                    }}
-                >
-                    {isSimpleQuery ? (
-                        <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
-                    ) : (
-                        <ConfigQuery value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />
+            <>
+                <div className='flex justify-between items-center gap-20px'>
+                    <div className='flex flex-1'>
+                        {isSimpleQuery ? (
+                            <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
+                        ) : (
+                            <ConfigQuery
+                                value={queries}
+                                onChange={onChange}
+                                columnTypes={sortedColumnTypes}
+                                columnHints={columnHints}
+                            />
+                        )}
+                    </div>
+                    {hasFilter && (
+                        <Button as='link' onClick={() => setIsSimpleQuery(!isSimpleQuery)}>
+                            {!isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
+                        </Button>
                     )}
                 </div>
-                {hasFilter && (
-                    <Button as='link' onClick={() => setIsSimpleQuery(!isSimpleQuery)}>
-                        {!isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
-                    </Button>
-                )}
-            </div>
+            </>
         )
-    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, t])
+    }, [trace, originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {
-            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />
+            return (
+                <ConfigQueryInline
+                    {...props}
+                    value={queries}
+                    onChange={onChange}
+                    columnHints={columnHints}
+                    columnTypes={sortedColumnTypes}
+                />
+            )
         },
-        [sortedColumnTypes, queries, onChange]
+        [sortedColumnTypes, columnHints, queries, onChange]
     )
 
     return {

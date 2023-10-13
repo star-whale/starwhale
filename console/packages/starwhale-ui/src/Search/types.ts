@@ -29,18 +29,6 @@ export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
 }
 
 export const Operators: Record<string, OperatorT> = {
-    // [OPERATOR.IS]: {
-    //     key: OPERATOR.IS,
-    //     label: 'is',
-    //     value: '=',
-    //     buildFilter: () => () => true,
-    // },
-    // [OPERATOR.IS_NOT]: {
-    //     key: OPERATOR.IS_NOT,
-    //     label: 'is not',
-    //     value: '!=',
-    //     buildFilter: () => () => true,
-    // },
     [OPERATOR.EQUAL]: {
         key: OPERATOR.EQUAL,
         label: '=',
@@ -180,6 +168,7 @@ export type SearchFieldSchemaT = {
     type: string
     path: string
     label: string
+    getHints: () => any[] | undefined
 }
 
 export type FilterSharedPropsT = {
@@ -210,6 +199,9 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
     options?: any[]
     mountNode?: HTMLElement
     inputRef?: React.RefObject<any>
+    renderInput?: () => React.ReactNode
+    renderAfter?: () => React.ReactNode
+    optionFilter?: (tmp: any) => boolean
 }
 
 export type FilterT = {

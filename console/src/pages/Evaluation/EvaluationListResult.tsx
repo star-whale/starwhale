@@ -50,7 +50,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
         pageSize: 50,
     })
 
-    const { lastKey, records, columnTypes, recordInfo } = useFetchDatastoreByTables(getScanParams(tables))
+    const { lastKey, records, columnTypes, recordInfo, columnHints } = useFetchDatastoreByTables(getScanParams(tables))
     const handlePageChange = useEventCallback((tmp: any) => setPage(tmp, lastKey))
 
     return (
@@ -73,6 +73,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 fillable
                 records={records}
                 columnTypes={columnTypes}
+                columnHints={columnHints}
                 getId={getId}
                 previewable
                 paginationable

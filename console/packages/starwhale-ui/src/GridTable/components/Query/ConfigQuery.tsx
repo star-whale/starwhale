@@ -4,12 +4,13 @@ import Button from '@starwhale/ui/Button'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import IconFont from '@starwhale/ui/IconFont'
 import { QueryT } from '@starwhale/ui/base/data-table/types'
-import { ColumnSchemaDesc } from '@starwhale/core'
+import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
 import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import _ from 'lodash'
 
 type PropsT = {
     columnTypes?: ColumnSchemaDesc[]
+    columnHints?: Record<string, ColumnHintsDesc>
     value: QueryT[]
     onChange: (args: QueryT[]) => void
 }
@@ -29,10 +30,11 @@ function ConfigQuery(props: PropsT) {
                 return {
                     name: column.name,
                     type: column.type,
+                    getHints: () => props.columnHints?.[column.name as string]?.columnValueHints,
                 }
             })
             .sort(sortColumn as any)
-    }, [props.columnTypes])
+    }, [props.columnTypes, props.columnHints])
 
     return <DatastoreMixedTypeSearch fields={fields as any} value={props.value} onChange={props.onChange} />
 }

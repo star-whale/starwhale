@@ -113,7 +113,7 @@ export default function DatasetVersionFiles() {
         sortDirection: currentView?.sortDirection || 'DESC',
     })
 
-    const { records, columnTypes } = useFetchDatastoreByTable(
+    const { records, columnTypes, columnHints } = useFetchDatastoreByTable(
         getQueryParams(datasetVersion?.versionInfo.indexTable, extra),
         !!datasetVersion?.versionInfo.indexTable
     )
@@ -135,6 +135,7 @@ export default function DatasetVersionFiles() {
                 previewable
                 records={records}
                 columnTypes={columnTypes}
+                columnHints={columnHints}
                 columns={$columns}
                 paginationable
                 page={tablePage}

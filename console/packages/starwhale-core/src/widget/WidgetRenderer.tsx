@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import _ from 'lodash'
-import { ErrorBoundary } from '@starwhale/ui'
+import { ErrorBoundary } from '@starwhale/ui/ErrorBoundary'
 import { WidgetRendererProps } from '../types'
 import { useWidget } from './WidgetFactory'
 
