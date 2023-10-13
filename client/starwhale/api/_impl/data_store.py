@@ -2671,8 +2671,8 @@ class TableWriter(threading.Thread):
         self._run_exceptions_limits = max(run_exceptions_limits, 0)
 
         self.daemon = True
-        atexit.register(self.close)
         self.start()
+        atexit.register(self.close)
 
     def __enter__(self) -> Any:
         return self
@@ -2681,6 +2681,7 @@ class TableWriter(threading.Thread):
         self.close()
 
     def close(self) -> None:
+        self.flush()
         with self._cond:
             if not self._stopped:
                 atexit.unregister(self.close)

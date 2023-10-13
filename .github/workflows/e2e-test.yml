@@ -105,6 +105,18 @@ jobs:
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
+      # Github default free runner provides 14GB of disk space, we should release some useless files for workarounds.
+      - name: Release disk space
+        run: |
+            echo "cleanup useless files..."
+            df -hT
+            sudo rm -rf /usr/share/dotnet
+            sudo rm -rf /opt/ghc
+            sudo rm -rf "/usr/local/share/boost"
+            sudo rm -rf "$AGENT_TOOLSDIRECTORY"/{CodeQL,Ruby,go,node}
+            echo "cleanup done."
+            df -hT
+
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
