@@ -47,6 +47,7 @@ sw:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
       read:
         log-cache-size: ${DATASET_CONSUMPTION_BATCH_SIZE:1000}
+        lock-wait-seconds: ${DATASET_CONSUMPTION_LOCK_WAIT_SECONDS:2}
   task:
     dev-port: ${SW_TASK_DEV_PORT:8000}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}

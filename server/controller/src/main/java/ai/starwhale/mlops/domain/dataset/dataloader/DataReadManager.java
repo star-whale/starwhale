@@ -23,11 +23,11 @@ import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import com.google.common.collect.Iterables;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,7 +41,7 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
-    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> sessionCache = new ConcurrentHashMap<>();
+    private final Map<String, LinkedList<DataReadLog>> sessionCache = new HashMap<>();
     private final Integer cacheSize;
 
     public DataReadManager(SessionDao sessionDao,
@@ -118,7 +118,7 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
-        var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
+        var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new LinkedList<>());
 
         if (queue.isEmpty()) {
             queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));

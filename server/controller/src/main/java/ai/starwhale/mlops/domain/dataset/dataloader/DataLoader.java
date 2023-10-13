@@ -16,17 +16,27 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import static ai.starwhale.mlops.exception.SwRequestFrequentException.RequestType.DATASET_LOAD;
+
 import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwRequestFrequentException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DataLoader {
     private final DataReadManager dataReadManager;
+    private final Integer lockWaitSeconds;
 
-    public DataLoader(DataReadManager dataReadManager) {
+    public DataLoader(DataReadManager dataReadManager,
+                      @Value("${sw.dataset.load.read.lock-wait-seconds}") int lockWaitSeconds) {
         this.dataReadManager = dataReadManager;
+        this.lockWaitSeconds = lockWaitSeconds;
     }
 
     public DataReadLog next(DataReadRequest request) {
@@ -37,25 +47,33 @@ public class DataLoader {
         if (session == null) {
             // ensure serially in the same session with the same dataset version
             // this lock should wrap the transaction and use double check
-            var sessionLock = new KeyLock<>(String.format("dl-session-generate-%s-%s", sessionId, datasetVersionId));
-            try {
-                sessionLock.lock();
-                session = dataReadManager.getSession(request);
-                if (session == null) {
-                    session = dataReadManager.generateSession(request);
+            session = lockOrThrow(String.format("dl-session-generate-%s-%s", sessionId, datasetVersionId), () -> {
+                var s = dataReadManager.getSession(request);
+                if (s == null) {
+                    s = dataReadManager.generateSession(request);
                 }
-            } finally {
-                sessionLock.unlock();
-            }
+                return s;
+            }, "data load: session init");
         }
 
         dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
 
         // this lock can be replaced by select fot update in future
-        var lock = new KeyLock<>(String.format("dl-assignment-%s", session.getId()));
+        Session finalSession = session;
+        return lockOrThrow(String.format("dl-assignment-%s", session.getId()), () ->
+                dataReadManager.assignmentData(consumerId, finalSession), "data load: assignment data"
+        );
+    }
+
+    private <T> T lockOrThrow(String lockKey, Supplier<T> supplier, String errorMessage) {
+        var lock = new KeyLock<>(lockKey);
         try {
-            lock.lock();
-            return dataReadManager.assignmentData(consumerId, session);
+            if (!lock.tryLock(lockWaitSeconds, TimeUnit.SECONDS)) {
+                throw new SwRequestFrequentException(DATASET_LOAD, errorMessage);
+            }
+            return supplier.get();
+        } catch (InterruptedException e) {
+            throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, errorMessage);
         } finally {
             lock.unlock();
         }

@@ -55,7 +55,7 @@ public class ReadRangeTest {
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
                 sessionDao, dataReadLogDao, dataRangeProvider, cacheSize);
-        dataLoader = new DataLoader(dataReadManager);
+        dataLoader = new DataLoader(dataReadManager, 1);
     }
 
     @Test
