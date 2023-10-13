@@ -756,7 +756,12 @@ class TestDataLoader(TestCase):
                 yield (slice[0], slice[-1] + 1)
 
         allocated_keys = list(_chunk(start_key, end_key, chunk_size))
-        mock_sc.get_scan_range.side_effect = allocated_keys + [None] * 20
+
+        def _iter_none() -> t.Iterable:
+            while True:
+                yield None
+
+        mock_sc.get_scan_range.side_effect = chain(allocated_keys, _iter_none())
 
         def _mock_scan(*args: t.Any, **kwargs: t.Any) -> t.Any:
             _s, _e = args
