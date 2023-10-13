@@ -949,7 +949,7 @@ class CloudModel(CloudBundleModelMixin, Model):
         cls,
         project_uri: Project,
         model_uri: str | Resource,
-        run_handler: str | None,
+        run_handler: str,
         dataset_uris: t.Sequence[str | Resource] | None = None,
         runtime_uri: str | Resource | None = None,
         resource_pool: str = DEFAULT_RESOURCE_POOL,
@@ -958,6 +958,9 @@ class CloudModel(CloudBundleModelMixin, Model):
         dev_mode_password: str = "",
         overwrite_specs: t.Dict[str, t.Any] | None = None,
     ) -> t.Tuple[bool, str]:
+        if not run_handler:
+            raise ValueError("run_handler is empty")
+
         if isinstance(model_uri, str):
             model_uri = Resource(model_uri, ResourceType.model)
         model_info = ModelInfoVo(**model_uri.info())
@@ -990,7 +993,7 @@ class CloudModel(CloudBundleModelMixin, Model):
             # When we config overwrite_specs, we should not config run_handler, if not, server will raise Exception.
             overwrite_specs_str = yaml.dump([s.dict() for s in job_specs.values()])
             if overwrite_specs_str:
-                run_handler = None
+                run_handler = ""
 
         dataset_ids = []
         for _uri in dataset_uris or []:
@@ -1017,10 +1020,10 @@ class CloudModel(CloudBundleModelMixin, Model):
             # if want to live forever, do not set this field for server api
             kwargs["time_to_live_in_sec"] = ttl
 
-        if run_handler is None:
-            kwargs["step_spec_over_writes"] = overwrite_specs_str
-        else:
+        if run_handler:
             kwargs["handler"] = run_handler
+        else:
+            kwargs["step_spec_over_writes"] = overwrite_specs_str
 
         req = JobRequest(**kwargs)  # type: ignore
         resp = JobApi(project_uri.instance).create(project_uri.id, req)
