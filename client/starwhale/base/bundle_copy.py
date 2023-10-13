@@ -401,3 +401,22 @@ class BundleCopy(CloudRequestMixed):
             )
             progress.update(task_id, completed=file_path.stat().st_size)
         return rt_version
+
+    @classmethod
+    def download_for_cache(cls, uri: Resource) -> Resource:
+        if not uri.instance.is_cloud:
+            raise NoSupportError(
+                f"only support download from server/cloud instance:{uri}"
+            )
+
+        _cache_project_uri = "local/project/.cache"
+        cls(
+            src_uri=uri,
+            dest_uri=".",
+            typ=uri.typ,
+            dest_local_project_uri=_cache_project_uri,
+        ).do()
+
+        return Resource(
+            f"{_cache_project_uri}/{uri.name}/version/{uri.version}", typ=uri.typ
+        )

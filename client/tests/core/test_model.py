@@ -805,13 +805,11 @@ class StandaloneModelTestCase(TestCase):
         MagicMock(),
     )
     @patch("starwhale.utils.config.load_swcli_config")
-    @patch("starwhale.core.model.model.Model.copy")
-    @patch("starwhale.core.runtime.model.Runtime.copy")
+    @patch("starwhale.base.bundle_copy.BundleCopy.download_for_cache")
     def test_prepare_model_run_args(
         self,
         rm: Mocker,
-        rt_cp: MagicMock,
-        m_cp: MagicMock,
+        m_download: MagicMock,
         m_conf: MagicMock,
         *args: t.Any,
     ) -> None:
@@ -823,6 +821,9 @@ class StandaloneModelTestCase(TestCase):
             "current_instance": "local",
             "storage": {"root": self.sw.rootdir},
         }
+        m_download.return_value = Resource(
+            "local/project/.cache/model/model-test/version/1234", typ=ResourceType.model
+        )
         rm.get(
             "http://localhost/api/v1/project/sw",
             json={"data": {"id": 1, "name": "self"}},
@@ -908,8 +909,6 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "default",
                     "config_modules": ["a.b.c"],
                     "runtime_uri": None,
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -926,8 +925,6 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "default",
                     "config_modules": ["a.b.c"],
                     "runtime_uri": None,
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -944,8 +941,6 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "custom",
                     "config_modules": ["a.b.c", "d.e.f"],
                     "runtime_uri": None,
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -965,8 +960,6 @@ class StandaloneModelTestCase(TestCase):
                         "model-test/version/1234",
                         typ=ResourceType.model,
                     ),
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -986,8 +979,6 @@ class StandaloneModelTestCase(TestCase):
                         "runtime-test/version/1234",
                         typ=ResourceType.runtime,
                     ),
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -1004,8 +995,6 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "built-model",
                     "config_modules": ["x.y.z"],
                     "runtime_uri": None,
-                    "model_copy_count": 0,
-                    "runtime_copy_count": 0,
                 },
             ),
             (
@@ -1023,8 +1012,7 @@ class StandaloneModelTestCase(TestCase):
                     "config_name": "cache-model",
                     "config_modules": ["x.y.z"],
                     "runtime_uri": None,
-                    "model_copy_count": 1,
-                    "runtime_copy_count": 0,
+                    "cache_download_count": 1,
                 },
             ),
         ]
@@ -1034,8 +1022,7 @@ class StandaloneModelTestCase(TestCase):
             assert expect["model_src_dir"] == model_src_dir
             assert expect["config_name"] == config.name
             assert expect["config_modules"] == config.run.modules
-            assert m_cp.call_count == expect["model_copy_count"]
-            assert rt_cp.call_count == expect["runtime_copy_count"]
+            assert m_download.call_count == expect.get("cache_download_count", 0)
             if runtime_uri is None:
                 assert expect["runtime_uri"] is None
             else:
@@ -1203,8 +1190,64 @@ class CloudModelTest(TestCase):
             json={
                 "data": {
                     "versionId": "100",
+                    "versionInfo": {
+                        "latest": True,
+                        "tags": ["t1"],
+                        "id": "1",
+                        "name": "123456a",
+                        "alias": "v1",
+                        "size": 4898098,
+                        "createdTime": 1697042331000,
+                        "owner": None,
+                        "shared": True,
+                        "stepSpecs": [
+                            {
+                                "name": "mnist.evaluator:MNISTInference.predict",
+                                "concurrency": 1,
+                                "replicas": 1,
+                                "needs": [],
+                                "resources": [
+                                    {
+                                        "type": "memory",
+                                        "request": 1.07374182e9,
+                                        "limit": 8.5899346e9,
+                                    }
+                                ],
+                                "expose": 0,
+                                "job_name": "mnist.evaluator:MNISTInference.evaluate",
+                                "show_name": "predict",
+                                "require_dataset": True,
+                                "ext_cmd_args": "",
+                                "parameters_sig": [],
+                            },
+                            {
+                                "name": "mnist.evaluator:MNISTInference.evaluate",
+                                "concurrency": 1,
+                                "replicas": 1,
+                                "needs": ["mnist.evaluator:MNISTInference.predict"],
+                                "resources": [
+                                    {
+                                        "type": "memory",
+                                        "request": 1.07374182e9,
+                                        "limit": 8.5899346e9,
+                                    }
+                                ],
+                                "expose": 0,
+                                "job_name": "mnist.evaluator:MNISTInference.evaluate",
+                                "show_name": "evaluate",
+                                "require_dataset": False,
+                                "ext_cmd_args": "",
+                                "parameters_sig": [],
+                            },
+                        ],
+                    },
                     "name": "mnist",
                     "versionName": "123456a",
+                    "versionAlias": "v1",
+                    "versionTag": "t1",
+                    "createdTime": 1697042331000,
+                    "shared": 1,
+                    "id": "1",
                 }
             },
         )
@@ -1234,11 +1277,12 @@ class CloudModelTest(TestCase):
                 code="success", message="success", data="success"
             ).dict(),
         )
+        project = "https://foo.com/project/starwhale2"
         result, data = CloudModel.run(
-            project_uri=Project("https://foo.com/project/starwhale2"),
-            model_uri="mnist/version/123456a",
-            dataset_uris=["mnist/version/223456a"],
-            runtime_uri="mnist/version/323456a",
+            project_uri=Project(project),
+            model_uri=f"{project}/model/mnist/version/123456a",
+            dataset_uris=[f"{project}/dataset/mnist/version/223456a"],
+            runtime_uri=f"{project}/runtime/mnist/version/323456a",
             resource_pool="default",
             run_handler="test:predict",
         )

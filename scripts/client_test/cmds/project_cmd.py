@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+from starwhale.core.project.view import ProjectTermView
+
 from . import CLI
 from .base.invoke import invoke_output, invoke_ret_code
 
@@ -84,11 +86,5 @@ class Project:
         return _code == 0 and bool(_p)
 
     def select(self, project: str) -> bool:
-        """
-        :param project:
-        :return:
-            res is:select instance:local, project:self successfully
-                or:failed to select self2, reason: need to create project self2
-        """
-        _ret_code = invoke_ret_code([CLI, self.project_cmd, "select", project])
-        return _ret_code == 0
+        ProjectTermView(project).select()
+        return True
