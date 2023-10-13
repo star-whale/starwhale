@@ -55,6 +55,11 @@ export default function JobStatusSelector({
                 {t('job.status.running')}
             </p>
         ),
+        [JobStatusType.CANCELLING]: (
+            <p className={cls} style={{ color: '#E67F17', backgroundColor: '#FFF3E8' }}>
+                {t('job.status.cancelling')}
+            </p>
+        ),
         [JobStatusType.CANCELED]: (
             <p className={cls} style={{ color: '#4D576A', backgroundColor: '#EBF1FF' }}>
                 {t('job.status.cancelled')}
@@ -68,6 +73,11 @@ export default function JobStatusSelector({
         [JobStatusType.FAIL]: (
             <p className={cls} style={{ color: '#CC3D3D', backgroundColor: '#FFEDED' }}>
                 {t('job.status.fail')}
+            </p>
+        ),
+        [JobStatusType.READY]: (
+            <p className={cls} style={{ color: '#4D576A', backgroundColor: '#EBF1FF' }}>
+                {t('job.status.ready')}
             </p>
         ),
     }
