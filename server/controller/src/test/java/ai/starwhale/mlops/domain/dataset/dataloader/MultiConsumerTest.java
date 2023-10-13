@@ -36,6 +36,8 @@ import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.DataReadLogMapper;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.SessionMapper;
+import ai.starwhale.mlops.exception.SwRequestFrequentException;
+import cn.hutool.json.JSONUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -44,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,12 +58,14 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+@Slf4j
 @MybatisTest(properties = {
     "logging.level.root=error",
     "logging.level.ai.starwhale.mlops=error",
     "logging.level.ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager=debug",
     "mybatis.configuration.map-underscore-to-camel-case=true",
-    "sw.dataset.processed.timeout.tolerance=100"
+    "sw.dataset.processed.timeout.tolerance=100",
+    "sw.dataset.load.read.log-cache-timeout=1s",
 })
 @Import({DataLoader.class, DataReadManager.class,
         SessionDao.class, SessionConverter.class,
@@ -142,38 +147,41 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                     request.setDatasetVersionId(i);
                     request.setProcessedData(null);
                     for (; ; ) {
-                        var dataRange = dataLoader.next(request);
-                        if (dataRange == null) {
-                            break;
-                        }
-
-                        assertEquals(dataRange.getStartType(), "STRING");
-                        assertEquals(dataRange.getEndType(), "STRING");
-
                         try {
-                            Thread.sleep(random.nextInt(100));
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        // mock error
-                        if (retryNum < errorNum) {
-                            // mock error
-                            retryNum++;
-                            request.setProcessedData(null);
-                        } else {
-                            indexCount.addAndGet(1);
-                            count.addAndGet(dataRange.getSize());
-                            // data processed
-                            request.setProcessedData(List.of(
-                                    DataIndexDesc.builder()
-                                            .start(dataRange.getStart())
-                                            .startType(dataRange.getStartType())
-                                            .end(dataRange.getEnd())
-                                            .endType(dataRange.getEndType())
-                                            .build()
-                            ));
-                        }
+                            var dataRange = dataLoader.next(request);
+                            if (dataRange == null) {
+                                break;
+                            }
 
+                            assertEquals(dataRange.getStartType(), "STRING");
+                            assertEquals(dataRange.getEndType(), "STRING");
+
+                            try {
+                                Thread.sleep(random.nextInt(100));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            // mock error
+                            if (retryNum < errorNum) {
+                                // mock error
+                                retryNum++;
+                                request.setProcessedData(null);
+                            } else {
+                                indexCount.addAndGet(1);
+                                count.addAndGet(dataRange.getSize());
+                                // data processed
+                                request.setProcessedData(List.of(
+                                        DataIndexDesc.builder()
+                                                .start(dataRange.getStart())
+                                                .startType(dataRange.getStartType())
+                                                .end(dataRange.getEnd())
+                                                .endType(dataRange.getEndType())
+                                                .build()
+                                ));
+                            }
+                        } catch (SwRequestFrequentException ignored) {
+                            log.info("request frequently, retry {}", JSONUtil.toJsonStr(request));
+                        }
                     }
                 }
             }

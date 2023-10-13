@@ -22,16 +22,16 @@ import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
+import cn.hutool.cache.impl.LRUCache;
 import com.google.common.collect.Iterables;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,17 +41,21 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
-    private final Map<String, ConcurrentLinkedQueue<DataReadLog>> sessionCache = new ConcurrentHashMap<>();
+    private final LRUCache<String, LinkedList<DataReadLog>> sessionCache;
     private final Integer cacheSize;
 
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
                            DataIndexProvider dataIndexProvider,
-                           @Value("${sw.dataset.load.read.log-cache-size}") int cacheSize) {
+                           @Value("${sw.dataset.load.read.log-cache-capacity:1000}") int capacity,
+                           @Value("${sw.dataset.load.read.log-cache-size:1000}") int cacheSize,
+                           @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout
+    ) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
         this.cacheSize = cacheSize;
+        this.sessionCache = new LRUCache<>(capacity, DurationStyle.detectAndParse(cacheTimeout).toMillis());
     }
 
     public Session getSession(DataReadRequest request) {
@@ -118,7 +122,7 @@ public class DataReadManager {
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
-        var queue = sessionCache.computeIfAbsent(String.valueOf(sid), id -> new ConcurrentLinkedQueue<>());
+        var queue = sessionCache.get(String.valueOf(sid), LinkedList::new);
 
         if (queue.isEmpty()) {
             queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));

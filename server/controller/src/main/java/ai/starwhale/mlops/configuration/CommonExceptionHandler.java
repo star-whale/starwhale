@@ -23,6 +23,7 @@ import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwRequestFrequentException;
 import ai.starwhale.mlops.exception.SwUnavailableException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -131,6 +132,8 @@ public class CommonExceptionHandler {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         } else if (ex instanceof SwUnavailableException) {
             httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
+        } else if (ex instanceof SwRequestFrequentException) {
+            httpStatus = HttpStatus.TOO_MANY_REQUESTS;
         } else {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         }

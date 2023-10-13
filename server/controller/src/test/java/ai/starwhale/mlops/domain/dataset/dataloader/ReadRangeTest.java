@@ -54,8 +54,8 @@ public class ReadRangeTest {
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
-                sessionDao, dataReadLogDao, dataRangeProvider, cacheSize);
-        dataLoader = new DataLoader(dataReadManager);
+                sessionDao, dataReadLogDao, dataRangeProvider, 1, cacheSize, "10s");
+        dataLoader = new DataLoader(dataReadManager, 1);
     }
 
     @Test
