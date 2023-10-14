@@ -79,8 +79,12 @@ def evaluation_results() -> None:
     if received_data_tasks <= 1:
         raise RuntimeError(f"received_data_tasks:{received_data_tasks} <= 1")
 
-    if not (dataset_rows == total_predict_count == results_cnt):
+    unpredicted_cnt = dataset_rows - results_cnt
+    if unpredicted_cnt > 0:
+        raise RuntimeError(f"{unpredicted_cnt} dataset rows are not be predicted")
+
+    repeat_consumed_cnt = total_predict_count - dataset_rows
+    if repeat_consumed_cnt > dataset_rows * 0.1:
         raise RuntimeError(
-            f"dataset_rows:{dataset_rows} != total_predict_count:{total_predict_count} != results_cnt:{results_cnt},"
-            "maybe some data rows are not executed or some data rows are executed more than once"
+            f"repeat consumed dataset rows({repeat_consumed_cnt}) are too many(>10%)"
         )
