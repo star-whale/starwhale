@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -68,8 +69,8 @@ public class TaskServiceTest {
                 stepMapper,
                 8000,
                 mock(WebServerInTask.class),
-                mock(JobSpecParser.class)
-        );
+                mock(JobSpecParser.class),
+                mock(RunService.class));
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobDao = mock(JobDao.class);
@@ -99,9 +100,11 @@ public class TaskServiceTest {
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid1")
+                        .runs(List.of())
                         .taskStatus(TaskStatus.RUNNING).resourcePool("a").stepName("ppl").build(),
                 TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid2")
+                        .runs(List.of())
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("a").stepName("ppl").build()));
     }
 
@@ -136,9 +139,11 @@ public class TaskServiceTest {
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid1")
+                        .runs(List.of())
                         .taskStatus(TaskStatus.RUNNING).resourcePool("job from step").stepName("ppl").build(),
                 TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid2")
+                        .runs(List.of())
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("job from step").stepName("ppl").build()));
     }
 
@@ -162,6 +167,7 @@ public class TaskServiceTest {
                 .finishedTime(finishedTime.getTime())
                 .taskStatus(TaskStatus.RUNNING)
                 .uuid("uuid1")
+                .runs(List.of())
                 .stepName("ppl")
                 .resourcePool("")
                 .build();

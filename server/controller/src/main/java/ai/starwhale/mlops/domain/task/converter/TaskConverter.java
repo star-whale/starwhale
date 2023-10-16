@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -45,18 +46,22 @@ public class TaskConverter {
     private final WebServerInTask webServerInTask;
     private final JobSpecParser jobSpecParser;
 
+    private final RunService runService;
+
 
     public TaskConverter(
             IdConverter idConvertor, StepMapper stepMapper,
             @Value("${sw.task.dev-port}") int devPort,
             WebServerInTask webServerInTask,
-            JobSpecParser jobSpecParser
+            JobSpecParser jobSpecParser,
+            RunService runService
     ) {
         this.idConvertor = idConvertor;
         this.stepMapper = stepMapper;
         this.devPort = devPort;
         this.webServerInTask = webServerInTask;
         this.jobSpecParser = jobSpecParser;
+        this.runService = runService;
     }
 
     public TaskVo convert(TaskEntity entity) {
@@ -110,6 +115,7 @@ public class TaskConverter {
                 .startedTime(entity.getStartedTime() == null ? null : entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .failedReason(entity.getFailedReason())
+                .runs(runService.runOfTask(entity.getId()))
                 .build();
     }
 

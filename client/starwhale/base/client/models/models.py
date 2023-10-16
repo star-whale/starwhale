@@ -1341,6 +1341,26 @@ class ResponseMessageJobVo(BaseModel):
     data: JobVo
 
 
+class Status1(Enum):
+    pending = 'PENDING'
+    running = 'RUNNING'
+    finished = 'FINISHED'
+    failed = 'FAILED'
+
+
+class RunVo(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+
+    id: Optional[int] = None
+    task_id: Optional[int] = Field(None, alias='taskId')
+    status: Optional[Status1] = None
+    ip: Optional[str] = None
+    start_time: Optional[int] = Field(None, alias='startTime')
+    finish_time: Optional[int] = Field(None, alias='finishTime')
+    failed_reason: Optional[str] = Field(None, alias='failedReason')
+
+
 class TaskStatus(Enum):
     created = 'CREATED'
     ready = 'READY'
@@ -1370,6 +1390,7 @@ class TaskVo(BaseModel):
     step_name: str = Field(..., alias='stepName')
     exposed_links: Optional[List[ExposedLinkVo]] = Field(None, alias='exposedLinks')
     failed_reason: Optional[str] = Field(None, alias='failedReason')
+    runs: Optional[List[RunVo]] = None
 
 
 class ResponseMessageTaskVo(BaseModel):
@@ -1381,24 +1402,13 @@ class ResponseMessageTaskVo(BaseModel):
     data: TaskVo
 
 
-class Status1(Enum):
-    pending = 'PENDING'
-    running = 'RUNNING'
-    finished = 'FINISHED'
-    failed = 'FAILED'
-
-
-class RunVo(BaseModel):
+class ResponseMessageListRunVo(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    id: Optional[int] = None
-    task_id: Optional[int] = Field(None, alias='taskId')
-    status: Optional[Status1] = None
-    ip: Optional[str] = None
-    start_time: Optional[int] = Field(None, alias='startTime')
-    finish_time: Optional[int] = Field(None, alias='finishTime')
-    failed_reason: Optional[str] = Field(None, alias='failedReason')
+    code: str
+    message: str
+    data: List[RunVo]
 
 
 class EventVo(BaseModel):
@@ -2076,15 +2086,6 @@ class ResponseMessagePageInfoTaskVo(BaseModel):
     code: str
     message: str
     data: PageInfoTaskVo
-
-
-class ResponseMessageListRunVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
-    code: str
-    message: str
-    data: List[RunVo]
 
 
 class Graph(BaseModel):

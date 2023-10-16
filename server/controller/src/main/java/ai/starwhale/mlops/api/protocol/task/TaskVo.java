@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api.protocol.task;
 
 import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protocol.run.RunVo;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -58,4 +59,6 @@ public class TaskVo implements Serializable {
     private List<ExposedLinkVo> exposedLinks;
 
     private String failedReason;
+
+    private List<RunVo> runs;
 }
