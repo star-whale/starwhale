@@ -38,8 +38,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 public class PodEventHandlerTest {
 
@@ -90,9 +92,19 @@ public class PodEventHandlerTest {
     }
 
     @Test
-    public void testTerminating() {
+    public void testTerminatingWhenRunning() {
         v1Pod.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
         v1Pod.getStatus().setPhase("Running");
+        podEventHandler.onUpdate(null, v1Pod);
+        ArgumentCaptor<ReportedRun> rr = ArgumentCaptor.forClass(ReportedRun.class);
+        verify(runReportReceiver).receive(rr.capture());
+        Assertions.assertEquals(RunStatus.FAILED, rr.getValue().getStatus());
+    }
+
+    @Test
+    public void testTerminatingWhenComplete() {
+        v1Pod.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
+        v1Pod.getStatus().setPhase("Succeeded");
         podEventHandler.onUpdate(null, v1Pod);
         verify(runReportReceiver, never()).receive(any());
     }
