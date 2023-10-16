@@ -51,6 +51,7 @@ function SingleSelectMenu(props: any) {
                     },
                     style: {
                         maxHeight: '500px',
+                        maxWidth: '500px',
                     },
                 },
             }}
@@ -70,7 +71,21 @@ function MultiSelectMenu(props: any) {
         const next = props.options.map((v) => {
             return {
                 id: v.type,
-                label: <Checkbox checked={isSelected(v.id)}>{v.label}</Checkbox>,
+                label: (
+                    <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    wordBreak: 'break-word',
+                                },
+                            },
+                        }}
+                        isFullWidth
+                        checked={isSelected(v.id)}
+                    >
+                        {v.label}
+                    </Checkbox>
+                ),
             }
         })
         next.push({
@@ -132,6 +147,7 @@ function MultiSelectMenu(props: any) {
                         className: 'filter-popover',
                     },
                     style: {
+                        maxWidth: '500px',
                         minWidth: '150px',
                         maxHeight: '500px',
                     },

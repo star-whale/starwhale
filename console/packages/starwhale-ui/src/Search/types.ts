@@ -9,8 +9,6 @@ export enum KIND {
     STRING = 'STRING',
 }
 
-export type KindT = keyof typeof KIND
-
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
     [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN, OPERATOR.NOT_IN],
@@ -207,7 +205,7 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
 export type FilterT = {
     key?: string
     label?: string
-    kind: KindT
+    kind: KIND
     operators: OPERATOR[]
 
     renderField?: React.FC<FilterRenderPropsT>
