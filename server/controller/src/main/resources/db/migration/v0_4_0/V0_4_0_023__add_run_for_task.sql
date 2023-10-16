@@ -24,8 +24,8 @@ create table run
     `run_spec`      JSON         not null,
     `ip`            varchar(255),
     `failed_reason` text,
-    `start_time`    timestamp(6),
-    `finish_time`   timestamp(6),
+    `start_time`    timestamp(6) NULL DEFAULT NULL,
+    `finish_time`   timestamp(6) NULL DEFAULT NULL,
     `created_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX           `idx_run_task` (`task_id`) USING BTREE
