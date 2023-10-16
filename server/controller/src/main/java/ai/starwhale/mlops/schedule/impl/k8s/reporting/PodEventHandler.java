@@ -73,11 +73,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             return;
         }
 
-        // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
-        if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
-            log.info("pod {} is being deleted", pod.getMetadata().getName());
-            return;
-        }
         Long rid = getJobNameAsId(pod);
         if (rid == null) {
             return;
@@ -86,6 +81,12 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         RunStatus runStatus;
         var phase = pod.getStatus().getPhase();
         if (StringUtils.hasText(phase)) {
+            boolean podBeingDeleted = false;
+            // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+            if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
+                log.info("pod {} is being deleted", pod.getMetadata().getName());
+                podBeingDeleted = true;
+            }
             switch (phase) {
                 /*
                 Pending The Pod has been accepted by the Kubernetes cluster,
@@ -94,14 +95,14 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 as well as the time spent downloading container images over the network.
                  */
                 case "Pending":
-                    runStatus = RunStatus.PENDING;
+                    runStatus = podBeingDeleted ? RunStatus.FAILED : RunStatus.PENDING;
                     break;
                 /*
                 Running The Pod has been bound to a node, and all the containers have been created.
                 At least one container is still running, or is in the process of starting or restarting.
                  */
                 case "Running":
-                    runStatus = RunStatus.RUNNING;
+                    runStatus = podBeingDeleted ? RunStatus.FAILED : RunStatus.RUNNING;
                     break;
                 default:
                     return;
