@@ -2469,7 +2469,7 @@ class RemoteDataStore:
         return self._do_request(data, "/api/v1/datastore/updateTable")  # type: ignore
 
     def list_tables(self, prefixes: List[str]) -> List[str]:
-        prefixes = [prefix.strip("/") for prefix in prefixes]
+        prefixes = [prefix.lstrip("/") for prefix in prefixes]
         resp = self._do_request({"prefixes": prefixes}, "/api/v1/datastore/listTables")
         return resp["tables"]  # type: ignore
 

@@ -1978,7 +1978,7 @@ class TestRemoteDataStore(unittest.TestCase):
             "http://test/api/v1/datastore/listTables",
             data=json.dumps(
                 {
-                    "prefixes": ["project1", "project2"],
+                    "prefixes": ["project1", "project2/"],
                 },
                 separators=(",", ":"),
             ),
