@@ -61,14 +61,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class MemoryTableImplTest {
 
-    private static List<RecordResult> scanAll(MemoryTable memoryTable,
+    private static List<RecordResult> scanAll(
+            MemoryTable memoryTable,
             List<String> columns,
-            boolean keepNone) {
+            boolean keepNone,
+            Long revision
+    ) {
         return ImmutableList.copyOf(
-                memoryTable.scan(Long.MAX_VALUE,
+                memoryTable.scan(revision,
                         columns.stream().collect(Collectors.toMap(Function.identity(), Function.identity())),
                         null,
                         null,
@@ -77,6 +82,14 @@ public class MemoryTableImplTest {
                         null,
                         false,
                         keepNone));
+    }
+
+    private static List<RecordResult> scanAll(
+            MemoryTable memoryTable,
+            List<String> columns,
+            boolean keepNone
+    ) {
+        return scanAll(memoryTable, columns, keepNone, Long.MAX_VALUE);
     }
 
     private FileSystem fs;
@@ -635,8 +648,9 @@ public class MemoryTableImplTest {
             assertThat("records", scanAll(this.memoryTable, List.of("k"), false), empty());
         }
 
-        @Test
-        public void testUpdateFromWal() throws IOException {
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        public void testUpdateFromWal(Boolean scanWithMaxRevision) throws IOException {
             this.memoryTable.setUseTimestampAsRevision(true);
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
@@ -790,9 +804,13 @@ public class MemoryTableImplTest {
             while (it.hasNext()) {
                 this.memoryTable.updateFromWal(it.next());
             }
+            // the timestamp based revision will be negative
+            // we use 0 as the revision and scan these records
+            // the records contains ('000'-'049') in snapshot and ('050'-'099', 1, 2) in wal
+            var revision = scanWithMaxRevision ? Long.MAX_VALUE : 0L;
             assertThat(scanAll(this.memoryTable,
                             List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"),
-                            true),
+                            true, revision),
                     is(Stream.concat(Stream.of(new RecordResult(BaseValue.valueOf(1), false,
                                                     Map.of("key", BaseValue.valueOf(1),
                                                             "d", BaseValue.valueOf("0"),

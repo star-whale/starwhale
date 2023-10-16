@@ -169,7 +169,7 @@ public class MemoryTableImpl implements MemoryTable {
                         var deletedFlag = (BoolValue) record.remove(DELETED_FLAG_COLUMN_NAME);
                         this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
                                 .add(MemoryRecord.builder()
-                                        .revision(revision.getValue())
+                                        .revision(this.normalizeRevision(revision.getValue()))
                                         .deleted(deletedFlag.isValue())
                                         .values(record)
                                         .build());
