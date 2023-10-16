@@ -18,11 +18,13 @@ package ai.starwhale.mlops.domain.task;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protocol.run.RunVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
@@ -31,11 +33,13 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwProcessException;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +51,8 @@ public class TaskConverterTest {
     private WebServerInTask webServerInTask;
     private JobSpecParser jobSpecParser;
 
+    private RunService runService;
+
     @BeforeEach
     public void setup() {
         stepMapper = mock(StepMapper.class);
@@ -57,7 +63,15 @@ public class TaskConverterTest {
             }
         });
         webServerInTask = mock(WebServerInTask.class);
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, webServerInTask, jobSpecParser);
+        runService = mock(RunService.class);
+        when(runService.runOfTask(any())).thenReturn(List.of(new RunVo() {
+            {
+                setId(3L);
+            }
+        }));
+        taskConvertor = new TaskConverter(
+                new IdConverter(), stepMapper, 8000, webServerInTask, jobSpecParser, runService
+        );
     }
 
 
@@ -105,6 +119,7 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getStartedTime(), taskEntity.getStartedTime().getTime());
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
+        Assertions.assertEquals(3L, taskVo.getRuns().get(0).getId());
 
         var expectedExposedLink = ExposedLinkVo.builder()
                 .type(ExposedType.DEV_MODE)
