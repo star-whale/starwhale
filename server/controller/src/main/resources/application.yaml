@@ -168,7 +168,7 @@ mybatis:
 server:
   tomcat:
     mbeanregistry:
-      enabled: ${SW_CONTROLLER_TOMCAT_MBEANREGISTRY_ENABLED:true}}
+      enabled: ${SW_CONTROLLER_TOMCAT_MBEANREGISTRY_ENABLED:true}
     threads:
       max: ${SW_CONTROLLER_TOMCAT_MAX_THREADS:500}
   port: ${SW_CONTROLLER_PORT:8082}
