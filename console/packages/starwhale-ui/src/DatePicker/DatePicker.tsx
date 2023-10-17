@@ -3,12 +3,15 @@ import type { DatepickerProps } from 'baseui/datepicker'
 import React from 'react'
 import { mergeOverrides } from '../utils'
 import moment from 'moment'
+import zh from 'date-fns/locale/zh-CN'
+import useTranslation from '@/hooks/useTranslation'
 
 export interface IDatePickerProps extends DatepickerProps {
     overrides?: DatepickerProps['overrides']
 }
 
 export function DatePicker({ size = 'compact', value, ...rest }: IDatePickerProps) {
+    const [, i18n] = useTranslation()
     const overrides = mergeOverrides(
         {
             QuickSelect: {
@@ -40,7 +43,16 @@ export function DatePicker({ size = 'compact', value, ...rest }: IDatePickerProp
     }, [value])
 
     // @ts-ignore
-    return <BaseDatePicker size={size} density='high' overrides={overrides} value={$value} {...rest} />
+    return (
+        <BaseDatePicker
+            locale={i18n.language === 'zh' ? zh : undefined}
+            size={size}
+            density='high'
+            overrides={overrides}
+            value={$value}
+            {...rest}
+        />
+    )
 }
 
 export default DatePicker

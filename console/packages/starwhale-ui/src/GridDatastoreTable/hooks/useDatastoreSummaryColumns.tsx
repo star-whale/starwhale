@@ -10,6 +10,7 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
+import FieldDatatime from '@starwhale/ui/Search/components/FieldDatetime'
 
 export function useDatastoreSummaryColumns(
     columnTypes?: { name: string; type: string }[],
@@ -68,6 +69,7 @@ export function useDatastoreSummaryColumns(
             if (column.key?.endsWith('time')) {
                 return CustomColumn<RecordAttr, any>({
                     ...column,
+                    renderFieldValue: FieldDatatime,
                     renderCell: ({ value }) => {
                         return (
                             <span className='line-clamp line-clamp-2' title={value.toString()}>

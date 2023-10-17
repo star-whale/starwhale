@@ -1,7 +1,6 @@
 import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
-import AutosizeInput from '../base/select/autosize-input'
 import { FilterPropsT, SearchFieldSchemaT, Operators } from './types'
 import IconFont from '../IconFont'
 import { dataStoreToFilter } from './utils'
@@ -10,6 +9,8 @@ import { filterMachine } from './createFilterMachine'
 import { useMachine } from '@xstate/react'
 import { useTrace } from '@starwhale/core/utils'
 import _ from 'lodash'
+import FieldDatatime from './components/FieldDatetime'
+import FieldInput from './components/FieldInput'
 
 export const useStyles = createUseStyles({
     filters: {
@@ -100,7 +101,7 @@ export default function FilterRenderer({
             filter: _filter,
             FilterOperator: _filter.renderOperator,
             FilterField: _filter.renderField,
-            FilterFieldValue: _filter.renderFieldValue,
+            FilterFieldValue: FieldDatatime, //_filter.renderFieldValue,
             FilterValue: _filter.renderValue,
         }
     }, [property, $columns])
@@ -208,7 +209,7 @@ export default function FilterRenderer({
     }
 
     const focus = () => {
-        inputRef.current?.focus()
+        setTimeout(() => inputRef.current?.focus(), 100)
         send({ type: 'FOCUS' })
     }
 
@@ -245,7 +246,9 @@ export default function FilterRenderer({
         }
     }
 
-    const handleClick = () => {
+    const handleClick = (e) => {
+        if (containsNode(document.querySelector('.filter-popover'), e.target)) return
+
         rest.onClick?.()
         focus()
     }
@@ -287,6 +290,7 @@ export default function FilterRenderer({
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
         if (containsNode(document.querySelector('.filter-popover'), e.target)) return
+        console.log('reset')
         reset()
     })
 
@@ -337,25 +341,15 @@ export default function FilterRenderer({
     )
 
     const Input = (
-        <div
-            className='autosize-input inline-block relative flex-1 h-full max-w-full'
-            style={{
-                minWidth: focused ? '50px' : 0,
-                flexBasis: focused ? '100px' : 0,
-                width: focused ? '160px' : 0,
+        <FieldInput
+            focused={focused}
+            inputRef={inputRef}
+            value={input}
+            onChange={handleInputChange}
+            overrides={{
+                Input: FilterValue as any,
             }}
-        >
-            {/* @ts-ignore */}
-            <AutosizeInput
-                inputRef={inputRef as any}
-                value={input}
-                onChange={handleInputChange}
-                overrides={{
-                    Input: FilterValue as any,
-                }}
-                $style={{ width: '100%', height: '100%' }}
-            />
-        </div>
+        />
     )
 
     const isValueMulti = op ? op === OPERATOR.IN || op === OPERATOR.NOT_IN : false
@@ -416,10 +410,15 @@ export default function FilterRenderer({
             renderAfter: () => (index === $attrs.length - 1 ? Remove : undefined),
             onChange: (v: any) => confirm(v, index),
             onClick: () => focusOnTarget(index),
+            sharedInputProps: {
+                value: input,
+                inputRef,
+                onChange: handleInputChange,
+            },
         }
     })
 
-    // trace('filter', { isFocus, focusTarget, property })
+    trace('filter', { isFocus, focusTarget, property, inputRef })
 
     // if target active trigger onActive
     useEffect(() => {

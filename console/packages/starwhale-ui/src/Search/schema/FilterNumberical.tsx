@@ -1,5 +1,5 @@
 import Filter from './Filter'
-import { FilterT, KIND, FilterTypeOperators } from './types'
+import { FilterT, KIND, FilterTypeOperators } from '../types'
 
 function FilterNumberical(): FilterT {
     return Filter({

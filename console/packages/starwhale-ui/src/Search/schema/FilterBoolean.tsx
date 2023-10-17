@@ -1,5 +1,5 @@
 import Filter from './Filter'
-import { FilterT, FilterTypeOperators, KIND } from './types'
+import { FilterT, FilterTypeOperators, KIND } from '../types'
 
 function FilterBoolean(): FilterT {
     return Filter({

@@ -21,7 +21,7 @@ function useGridQuery() {
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
     const { columnTypes, columnHints } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
-    const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
+    const [isSimpleQuery, setIsSimpleQuery] = React.useState(false)
     const [t] = useTranslation()
 
     const sortedColumnTypes = React.useMemo(() => {
