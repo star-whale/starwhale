@@ -1507,10 +1507,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         head = ds.head(n=0)
         assert len(head) == 0
 
-        head = ds.head(n=4, skip_fetch_data=True)
+        head = ds.head(n=4)
         assert len(head) == 4
-        assert not head[0].features.data._BaseArtifact__cache_bytes
-        assert not head[1].features.data._BaseArtifact__cache_bytes
+        assert head[0].features.data._BaseArtifact__cache_bytes
+        assert head[1].features.data._BaseArtifact__cache_bytes
 
         head = ds.head(n=1)
         assert len(head) == 1
