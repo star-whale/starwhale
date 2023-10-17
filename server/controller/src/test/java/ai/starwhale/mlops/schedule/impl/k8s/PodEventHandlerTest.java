@@ -99,6 +99,7 @@ public class PodEventHandlerTest {
         ArgumentCaptor<ReportedRun> rr = ArgumentCaptor.forClass(ReportedRun.class);
         verify(runReportReceiver).receive(rr.capture());
         Assertions.assertEquals(RunStatus.FAILED, rr.getValue().getStatus());
+        Assertions.assertNotNull(rr.getValue().getStopTimeMillis());
     }
 
     @Test
