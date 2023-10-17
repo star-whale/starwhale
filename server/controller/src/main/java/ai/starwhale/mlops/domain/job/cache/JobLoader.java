@@ -79,10 +79,8 @@ public class JobLoader {
                         || t.getStatus() == TaskStatus.FAIL
                         || t.getStatus() == TaskStatus.CANCELED)
                 .forEach(t -> {
-                    // FAIL -> ready is forbidden by status machine, so make it to CREATED at first
-                    ((WatchableTask) t).unwrap().updateStatus(TaskStatus.CREATED);
+                    ((WatchableTask) t).unwrap().updateStatus(TaskStatus.READY);
                     t.setRetryNum(0);
-                    t.updateStatus(TaskStatus.READY);
                 });
     }
 
