@@ -167,6 +167,8 @@ mybatis:
 
 server:
   tomcat:
+    mbeanregistry:
+      enabled: ${SW_CONTROLLER_TOMCAT_MBEANREGISTRY_ENABLED:true}}
     threads:
       max: ${SW_CONTROLLER_TOMCAT_MAX_THREADS:500}
   port: ${SW_CONTROLLER_PORT:8082}
@@ -188,7 +190,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics}
+        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics,prometheus}
   server:
     port: ${SW_MANAGEMENT_PORT:9082}
   metrics:
