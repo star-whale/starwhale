@@ -62,8 +62,8 @@ from starwhale.utils.retry import (
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.dict_util import flatten as flatten_dict
 from starwhale.base.models.base import SwBaseModel
+from starwhale.base.client.models.models import ColumnSchemaDesc, KeyValuePairSchema
 
-datastore_table_file_ext = ".sw-datastore"
 datastore_manifest_file_name = "manifest.json"
 datastore_max_dirty_records = int(os.getenv("DATASTORE_MAX_DIRTY_RECORDS", "10000"))
 
@@ -80,72 +80,85 @@ class SwType(metaclass=ABCMeta):
         return value
 
     @staticmethod
-    def encode_schema(type: "SwType") -> Dict[str, Any]:
+    def encode_schema(type: "SwType", **kwargs: Any) -> ColumnSchemaDesc:
         if isinstance(type, SwScalarType):
-            return {"type": str(type)}
+            return ColumnSchemaDesc(type=str(type), **kwargs)
         if isinstance(type, SwTupleType):
-            ret: Dict[str, Any] = {
-                "type": "TUPLE",
-                "elementType": SwType.encode_schema(type.main_type),
-            }
+            ret = ColumnSchemaDesc(
+                type="TUPLE",
+                element_type=SwType.encode_schema(type.main_type),
+                **kwargs,
+            )
             if type.sparse_types:
-                ret["attributes"] = [
-                    # TODO use model in client api.models
-                    dict(SwType.encode_schema(t), index=i)
+                ret.attributes = [
+                    SwType.encode_schema(t, index=i)
                     for i, t in type.sparse_types.items()
                 ]
             return ret
         if isinstance(type, SwListType):
-            ret = {
-                "type": "LIST",
-                "elementType": SwType.encode_schema(type.main_type),
-            }
+            ret = ColumnSchemaDesc(
+                type="LIST", element_type=SwType.encode_schema(type.main_type), **kwargs
+            )
             if type.sparse_types:
-                ret["attributes"] = [
-                    dict(SwType.encode_schema(t), index=i)
+                ret.attributes = [
+                    SwType.encode_schema(t, index=i)
                     for i, t in type.sparse_types.items()
                 ]
             return ret
         if isinstance(type, SwMapType):
-            return {
-                "type": "MAP",
-                "keyType": SwType.encode_schema(type.key_type),
-                "valueType": SwType.encode_schema(type.value_type),
-            }
+            ret = ColumnSchemaDesc(
+                type="MAP",
+                key_type=SwType.encode_schema(type.key_type),
+                value_type=SwType.encode_schema(type.value_type),
+                **kwargs,
+            )
+            if type.sparse_pair_types:
+                ret.sparse_key_value_pair_schema = {
+                    str(i): KeyValuePairSchema(
+                        key_type=SwType.encode_schema(k),
+                        value_type=SwType.encode_schema(v),
+                    )
+                    for i, (k, v) in type.sparse_pair_types.items()
+                }
+            return ret
         if isinstance(type, SwObjectType):
-            ret = {
-                "type": "OBJECT",
-                "attributes": [
-                    dict(SwType.encode_schema(v), name=k) for k, v in type.attrs.items()
+            ret = ColumnSchemaDesc(
+                type="OBJECT",
+                attributes=[
+                    SwType.encode_schema(v, name=k) for k, v in type.attrs.items()
                 ],
-            }
+                **kwargs,
+            )
             if type.raw_type is Link:
-                ret["pythonType"] = "LINK"
+                ret.python_type = "LINK"
             else:
-                ret["pythonType"] = (
+                ret.python_type = (
                     type.raw_type.__module__ + "." + type.raw_type.__name__
                 )
             return ret
         raise RuntimeError(f"invalid type {type}")
 
     @staticmethod
-    def decode_schema(schema: Dict[str, Any]) -> "SwType":
-        type_name = schema.get("type", None)
+    def decode_schema(schema: ColumnSchemaDesc | None = None) -> "SwType":
+        if schema is None:
+            return UNKNOWN
+
+        type_name = schema.type
 
         def decode_list_types(
-            _schema: Dict[str, Any]
+            _schema: ColumnSchemaDesc,
         ) -> Tuple[SwType, Dict[int, SwType] | None]:
-            element_type = _schema.get("elementType", None)
+            element_type = _schema.element_type
             if element_type is None:
                 raise RuntimeError(f"no element type found for type {type_name}")
-            _attrs = _schema.get("attributes", None)
+            _attrs = _schema.attributes
             sparse_types: Dict[int, SwType] | None = None
             if _attrs is not None:
                 if not isinstance(_attrs, list):
                     raise RuntimeError("attributes should be a list")
                 sparse_types = {}
                 for _attr in _attrs:
-                    index = _attr.get("index", None)
+                    index = _attr.index
                     if index is None:
                         raise RuntimeError("no index found for attribute")
                     sparse_types[index] = SwType.decode_schema(_attr)
@@ -158,17 +171,29 @@ class SwType(metaclass=ABCMeta):
         if type_name == "TUPLE":
             return SwTupleType(*decode_list_types(schema))
         if type_name == "MAP":
-            key_type = schema.get("keyType", None)
-            value_type = schema.get("valueType", None)
+            key_type = schema.key_type
+            value_type = schema.value_type
             if key_type is None:
                 raise RuntimeError("no key type found for type MAP")
             if value_type is None:
                 raise RuntimeError("no value type found for type MAP")
+
+            sparse_key_value_pair_schema = schema.sparse_key_value_pair_schema
+            sparse_pair_types: Dict[int, Tuple[SwType, SwType]] = {}
+            if sparse_key_value_pair_schema is not None:
+                for idx, item in sparse_key_value_pair_schema.items():
+                    sparse_pair_types[int(idx)] = (
+                        SwType.decode_schema(item.key_type),
+                        SwType.decode_schema(item.value_type),
+                    )
+
             return SwMapType(
-                SwType.decode_schema(key_type), SwType.decode_schema(value_type)
+                SwType.decode_schema(key_type),
+                SwType.decode_schema(value_type),
+                sparse_pair_types=sparse_pair_types,
             )
         if type_name == "OBJECT":
-            raw_type_name = schema.get("pythonType", None)
+            raw_type_name = schema.python_type
             if raw_type_name is None:
                 raise RuntimeError("no python type found for type OBJECT")
             if raw_type_name == "LINK":
@@ -179,17 +204,16 @@ class SwType(metaclass=ABCMeta):
                     importlib.import_module(".".join(parts[:-1])), parts[-1]
                 )
             attrs = {}
-            attr_schemas = schema.get("attributes", None)
+            attr_schemas = schema.attributes
             if attr_schemas is not None:
                 if not isinstance(attr_schemas, list):
                     raise RuntimeError("attributes should be a list")
                 for attr in attr_schemas:
-                    name: str = attr["name"]
-                    if not isinstance(name, str):
+                    if attr.name is None:
                         raise RuntimeError(
-                            f"invalid schema, attributes should use strings as names, actual {type(name)}"
+                            f"invalid schema, attributes should use strings as names, actual {type(attr.name)}"
                         )
-                    attrs[name] = SwType.decode_schema(attr)
+                    attrs[attr.name] = SwType.decode_schema(attr)
             return SwObjectType(raw_type, attrs)
         ret = _TYPE_NAME_DICT.get(type_name, None)
         if ret is None:
@@ -211,7 +235,6 @@ class SwType(metaclass=ABCMeta):
             # }
             element_types: List[SwType] = [UNKNOWN]
             v = value.get("value", [])
-            # TODO: support more than one item types
             if isinstance(v, (list, tuple)) and len(v) != 0:
                 element_types = [
                     SwType.decode_schema_from_type_encoded_value(i) for i in v
@@ -235,15 +258,14 @@ class SwType(metaclass=ABCMeta):
             # 	}]
             # }
             items = value.get("value", [])
-            if len(items) == 0:
-                return SwMapType(UNKNOWN, UNKNOWN)
-            # TODO: support more than one item types
-            k = items[0]["key"]
-            v = items[0]["value"]
-
-            key_type = SwType.decode_schema_from_type_encoded_value(k)
-            value_type = SwType.decode_schema_from_type_encoded_value(v)
-            return SwMapType(key_type, value_type)
+            pair_types = [
+                (
+                    SwType.decode_schema_from_type_encoded_value(item["key"]),
+                    SwType.decode_schema_from_type_encoded_value(item["value"]),
+                )
+                for item in items
+            ]
+            return SwMapType(key_value_types=pair_types)
         if type_name == "OBJECT":
             # {
             # 	"type": "OBJECT",
@@ -415,6 +437,39 @@ class SwScalarType(SwType):
         return hash((self.name, self.nbits))
 
 
+UNKNOWN = SwScalarType("unknown", None, 1, None)
+INT8 = SwScalarType("int", pa.int8(), 8, 0)
+INT16 = SwScalarType("int", pa.int16(), 16, 0)
+INT32 = SwScalarType("int", pa.int32(), 32, 0)
+INT64 = SwScalarType("int", pa.int64(), 64, 0)
+FLOAT16 = SwScalarType("float", pa.float16(), 16, 0.0)
+FLOAT32 = SwScalarType("float", pa.float32(), 32, 0.0)
+FLOAT64 = SwScalarType("float", pa.float64(), 64, 0.0)
+BOOL = SwScalarType("bool", pa.bool_(), 1, 0)
+STRING = SwScalarType("string", pa.string(), 32, "")
+BYTES = SwScalarType("bytes", pa.binary(), 32, b"")
+
+_TYPE_DICT: Dict[Any, SwScalarType] = {
+    type(None): UNKNOWN,
+    np.byte: INT8,
+    np.int8: INT8,
+    np.int16: INT16,
+    np.int32: INT32,
+    np.int64: INT64,
+    int: INT64,
+    np.float16: FLOAT16,
+    np.float32: FLOAT32,
+    np.float_: FLOAT64,
+    float: FLOAT64,
+    np.bool_: BOOL,
+    bool: BOOL,
+    str: STRING,
+    bytes: BYTES,
+}
+
+_TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
+
+
 class SwCompositeType(SwType):
     def __init__(self, name: str) -> None:
         super().__init__(name, pa.binary())
@@ -582,32 +637,115 @@ class SwTupleType(SwListType):
 
 
 class SwMapType(SwCompositeType):
-    def __init__(self, key_type: SwType, value_type: SwType) -> None:
+    def __init__(
+        self,
+        key_type: SwType = UNKNOWN,
+        value_type: SwType = UNKNOWN,
+        sparse_pair_types: Dict[int, Tuple[SwType, SwType]] | None = None,
+        key_value_types: List[Tuple[SwType, SwType]] | None = None,
+    ) -> None:
         super().__init__("map")
+
+        if key_value_types is not None and (
+            key_type is not UNKNOWN or value_type is not UNKNOWN
+        ):
+            raise RuntimeError(
+                "type_value_types and (key_type, value_type) can not both set"
+            )
+
         self.key_type = key_type
         self.value_type = value_type
+        self.sparse_pair_types = sparse_pair_types or {}
+
+        if key_value_types is not None and len(key_value_types) > 0:
+
+            class PairSchema(SwBaseModel):
+                key: SwType
+                value: SwType
+
+                def __hash__(self) -> int:
+                    return hash(self.key) ^ hash(self.value)
+
+                def __eq__(self, other: object) -> bool:
+                    if not isinstance(other, PairSchema):
+                        raise RuntimeError(f"invalid type {other}")
+                    return self.key == other.key and self.value == other.value
+
+                def __gt__(self, other: object) -> bool:
+                    if not isinstance(other, PairSchema):
+                        raise RuntimeError(f"invalid type {other}")
+                    if self.key > other.key:
+                        return True
+                    elif self.key == other.key:
+                        return self.value > other.value
+                    else:
+                        return False
+
+            pair_counts: Dict[PairSchema, int] = {}
+            # update the main and sparse types
+            for (kt, vt) in key_value_types:
+                p = PairSchema(key=kt, value=vt)
+                if p in pair_counts:
+                    pair_counts[p] += 1
+                else:
+                    pair_counts[p] = 1
+
+            # find the most common type
+            sorted_pairs_counts = sorted(pair_counts.items(), reverse=True)
+            most_common_pair = sorted_pairs_counts[0][0]
+            self.key_type = most_common_pair.key
+            self.value_type = most_common_pair.value
+            self.sparse_pair_types = {}
+
+            for idx, (kt, vt) in enumerate(key_value_types):
+                if kt != self.key_type or vt != self.value_type:
+                    self.sparse_pair_types[idx] = (kt, vt)
+                idx += 1
 
     def encode(self, value: Any) -> Any:
         if value is None:
             return None
-        if isinstance(value, dict):
-            return {
-                self.key_type.encode(k): self.value_type.encode(v)
-                for k, v in value.items()
-            }
-        raise RuntimeError(f"value should be a dict: {value}")
+        if not isinstance(value, dict):
+            raise RuntimeError(f"value should be a dict: {value}")
+
+        # the iterate order of dict is guaranteed if python >= 3.7
+        # https://docs.python.org/3/library/stdtypes.html#dict
+        # so the value item order will match the order of the map sparse types schema
+        ret: List[Tuple[Any, Any]] = []
+        count = 0
+        for k, v in value.items():
+            pair_type = self._get_pair_type(count)
+            ret.append((pair_type[0].encode(k), pair_type[1].encode(v)))
+            count += 1
+        return ret
+
+    def _get_pair_type(self, index: int) -> Tuple[SwType, SwType]:
+        if index not in self.sparse_pair_types:
+            return self.key_type, self.value_type
+        return self.sparse_pair_types[index]
 
     def decode(self, value: Any) -> Any:
         if value is None:
             return None
         if isinstance(value, dict):
+            # old version dumps
             return {
                 self.key_type.decode(k): self.value_type.decode(v)
                 for k, v in value.items()
             }
-        raise RuntimeError(f"value should be a dict: {value}")
+        if isinstance(value, list):
+            ret = {}
+            for idx, item in enumerate(value):
+                pair_type = self._get_pair_type(idx)
+                k = item[0]
+                v = item[1]
+                ret[pair_type[0].decode(k)] = pair_type[1].decode(v)
+            return ret
+
+        raise RuntimeError(f"value should be a dict or list: {value}")
 
     def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        # TODO encode without type schema
         if value is None:
             return {"type": str(self), "value": None}
         if isinstance(value, dict):
@@ -629,24 +767,35 @@ class SwMapType(SwCompositeType):
         value = value["value"]
         if value is None:
             return None
-        if isinstance(value, list):
-            return {
-                self.key_type.decode_from_type_encoded_value(
-                    item["key"]
-                ): self.value_type.decode_from_type_encoded_value(item["value"])
-                for item in value
-            }
-        raise RuntimeError(f"value should be a dict: {value}")
+        if not isinstance(value, list):
+            raise RuntimeError(f"value should be a list: {value}")
+
+        ret = {}
+        for idx, item in enumerate(value):
+            pair_type = self._get_pair_type(idx)
+            k = pair_type[0].decode_from_type_encoded_value(item["key"])
+            v = pair_type[1].decode_from_type_encoded_value(item["value"])
+            ret[k] = v
+        return ret
 
     def __str__(self) -> str:
-        return f"{{{self.key_type}:{self.value_type}}}"
+        ret = f"{{{self.key_type}:{self.value_type}}}"
+        if self.sparse_pair_types:
+            ret += "-{"
+            ret += ",".join(
+                [f"{i}:{k}:{v}" for i, (k, v) in self.sparse_pair_types.items()]
+            )
+            ret += "}"
+        return ret
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, SwMapType):
-            return (
-                self.key_type == other.key_type and self.value_type == other.value_type
-            )
-        return False
+        if not isinstance(other, SwMapType):
+            return False
+        return (
+            self.key_type == other.key_type
+            and self.value_type == other.value_type
+            and self.sparse_pair_types == other.sparse_pair_types
+        )
 
 
 class SwObjectType(SwCompositeType):
@@ -732,39 +881,6 @@ class SwObjectType(SwCompositeType):
         return hash(str(self))
 
 
-UNKNOWN = SwScalarType("unknown", None, 1, None)
-INT8 = SwScalarType("int", pa.int8(), 8, 0)
-INT16 = SwScalarType("int", pa.int16(), 16, 0)
-INT32 = SwScalarType("int", pa.int32(), 32, 0)
-INT64 = SwScalarType("int", pa.int64(), 64, 0)
-FLOAT16 = SwScalarType("float", pa.float16(), 16, 0.0)
-FLOAT32 = SwScalarType("float", pa.float32(), 32, 0.0)
-FLOAT64 = SwScalarType("float", pa.float64(), 64, 0.0)
-BOOL = SwScalarType("bool", pa.bool_(), 1, 0)
-STRING = SwScalarType("string", pa.string(), 32, "")
-BYTES = SwScalarType("bytes", pa.binary(), 32, b"")
-
-_TYPE_DICT: Dict[Any, SwScalarType] = {
-    type(None): UNKNOWN,
-    np.byte: INT8,
-    np.int8: INT8,
-    np.int16: INT16,
-    np.int32: INT32,
-    np.int64: INT64,
-    int: INT64,
-    np.float16: FLOAT16,
-    np.float32: FLOAT32,
-    np.float_: FLOAT64,
-    float: FLOAT64,
-    np.bool_: BOOL,
-    bool: BOOL,
-    str: STRING,
-    bytes: BYTES,
-}
-
-_TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
-
-
 def _get_type(obj: Any) -> SwType:
     if isinstance(obj, list):
         types = [_get_type(element) for element in obj]
@@ -773,27 +889,8 @@ def _get_type(obj: Any) -> SwType:
         types = [_get_type(element) for element in obj]
         return SwTupleType(types)
     if isinstance(obj, dict):
-        key_type: SwType = UNKNOWN
-        value_type: SwType = UNKNOWN
-        for k, v in obj.items():
-            # TODO: support more than one key types
-            new_key_type = _get_type(k)
-            if key_type is UNKNOWN:
-                key_type = new_key_type
-            else:
-                if key_type != new_key_type and new_key_type != UNKNOWN:
-                    raise RuntimeError(
-                        f"conflicting key types, expected {key_type}, actual {new_key_type}"
-                    )
-            new_value_type = _get_type(v)
-            if value_type is UNKNOWN:
-                value_type = new_value_type
-            else:
-                if value_type != new_value_type and new_value_type != UNKNOWN:
-                    raise RuntimeError(
-                        f"conflicting value types, expected {value_type}, actual {new_value_type}"
-                    )
-        return SwMapType(key_type, value_type)
+        pair_types = [(_get_type(k), _get_type(v)) for k, v in obj.items()]
+        return SwMapType(key_value_types=pair_types)
     if isinstance(obj, SwObject):
         attrs = {}
         for k, v in obj.__dict__.items():
@@ -863,7 +960,10 @@ class TableEmptyException(Exception):
 class Record(UserDict):
     def dumps(self) -> Dict[str, Dict]:
         return {
-            "schema": {k: SwType.encode_schema(_get_type(v)) for k, v in self.items()},
+            "schema": {
+                k: json.loads(SwType.encode_schema(_get_type(v)).json())
+                for k, v in self.items()
+            },
             "data": {k: _get_type(v).encode(v) for k, v in self.items()},
         }
 
@@ -873,7 +973,7 @@ class Record(UserDict):
         data = obj["data"]
         record = Record()
         for k, v in schema.items():
-            record[k] = SwType.decode_schema(v).decode(data[k])
+            record[k] = SwType.decode_schema(ColumnSchemaDesc(**v)).decode(data[k])
         return record
 
 
@@ -927,9 +1027,8 @@ class TableSchema:
     def __str__(self) -> str:
         columns = []
         for col in self.columns.values():
-            d = SwType.encode_schema(col.type)
-            d["name"] = col.name
-            columns.append(d)
+            d = SwType.encode_schema(col.type, name=col.name)
+            columns.append(json.loads(d.json(exclude_unset=True)))
         return json.dumps(
             {
                 "key": self.key_column,
@@ -1516,7 +1615,7 @@ class Manifest(SwBaseModel):
     block_config: DataBlockConfig
     blocks: List[DataBlockDesc]
     key_column: str
-    key_column_type: Optional[Dict[str, Any]]  # SwType.encode_schema
+    key_column_type: Optional[ColumnSchemaDesc]  # SwType.encode_schema
     next_block_id: int = 0
     # last key is the max key in the life cycle of the table
     # last key won't change if the key is deleted and garbage collected
@@ -2500,9 +2599,8 @@ class RemoteDataStore:
         data: Dict[str, Any] = {"tableName": table_name}
         column_schemas = []
         for col in schema.columns.values():
-            d = SwType.encode_schema(col.type)
-            d["name"] = col.name
-            column_schemas.append(d)
+            s = SwType.encode_schema(col.type, name=col.name)
+            column_schemas.append(s.to_dict())
         data["tableSchemaDesc"] = {
             "keyColumn": schema.key_column,
             "columnSchemaList": column_schemas,
@@ -2540,7 +2638,7 @@ class RemoteDataStore:
     def _do_request(self, post_data: Dict[str, Any], path: str) -> Any:
         resp = requests.post(
             urllib.parse.urljoin(self.instance_uri, path),
-            data=json.dumps(post_data, separators=(",", ":")),
+            json=post_data,
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": self.token,  # type: ignore
@@ -2585,6 +2683,7 @@ class RemoteDataStore:
             for record in records:
                 r: Dict[str, Any] = {}
                 for k, v in record.items():
+                    # TODO do not decode the type, just return the encoded value
                     col_type = SwType.decode_schema_from_type_encoded_value(v)
                     if col_type is None:
                         raise RuntimeError(
@@ -2839,7 +2938,7 @@ class TableWriter(threading.Thread):
                         can_merge = True
                         try:
                             last_schema.merge(schema)
-                        except Exception:
+                        except RuntimeError:
                             can_merge = False
                         if not can_merge:
                             console.trace(f"schema changed, {last_schema} -> {schema}")

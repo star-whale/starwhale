@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.datastore.impl;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
@@ -152,9 +153,26 @@ public class RecordDecoder {
 
     private static MapValue decodeMap(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var ret = new MapValue();
-        for (var entry : ((Map<?, ?>) value).entrySet()) {
-            ret.put(RecordDecoder.decodeValue(columnSchema.getKeyType(), entry.getKey()),
-                    RecordDecoder.decodeValue(columnSchema.getValueType(), entry.getValue()));
+
+        if (value instanceof List) {
+            var items = (List<?>) value;
+            for (int i = 0; i < items.size(); i++) {
+                var item = (List<?>) items.get(i);
+                ColumnSchemaDesc.KeyValuePairSchema pairType = null;
+                if (columnSchema.getSparseKeyValuePairSchema() != null) {
+                    pairType = columnSchema.getSparseKeyValuePairSchema().get(i);
+                }
+                if (pairType == null) {
+                    pairType = new KeyValuePairSchema(columnSchema.getKeyType(), columnSchema.getValueType());
+                }
+                ret.put(RecordDecoder.decodeValue(pairType.getKeyType(), item.get(0)),
+                        RecordDecoder.decodeValue(pairType.getValueType(), item.get(1)));
+            }
+        } else {
+            for (var entry : ((Map<?, ?>) value).entrySet()) {
+                ret.put(RecordDecoder.decodeValue(columnSchema.getKeyType(), entry.getKey()),
+                        RecordDecoder.decodeValue(columnSchema.getValueType(), entry.getValue()));
+            }
         }
         return ret;
     }

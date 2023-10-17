@@ -72,7 +72,9 @@ def _encode_with_type(rows: t.Any, raw_result: bool) -> SuccessResp:
     if not rows:
         return success({"records": [], "columnHints": {}})
     ret = []
-    column_hints = {k: SwType.encode_schema(_get_type(v)) for k, v in rows[0].items()}
+    column_hints = {
+        k: SwType.encode_schema(_get_type(v)).to_dict() for k, v in rows[0].items()
+    }
     for row in rows:
         for k, v in row.items():
             typ = _get_type(v)
@@ -122,6 +124,7 @@ def _rows_to_type_and_records(rows: t.Union[list, dict]) -> t.Tuple[list, list]:
         return [], []
     if not isinstance(rows, list):
         rows = [rows]
-    encoders = {k: SwType.encode_schema(_get_type(v)) for k, v in rows[0].items()}
-    column_types = [v.update({"name": k}) or v for k, v in encoders.items()]
+    column_types = [
+        SwType.encode_schema(_get_type(v), name=k).to_dict() for k, v in rows[0].items()
+    ]
     return column_types, [{k: str(v) for k, v in row.items()} for row in rows]

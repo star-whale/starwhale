@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.NonNull;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Data
 public class ColumnSchema {
@@ -43,6 +44,10 @@ public class ColumnSchema {
     private ColumnSchema valueSchema;
     private Map<String, ColumnSchema> attributesSchema;
     private boolean singleType = true;
+
+    // key is the offset of the map.entry list
+    // value is the pair of key and value schema
+    private Map<Integer, Pair<ColumnSchema, ColumnSchema>> sparseKeyValueSchema;
 
     public ColumnSchema(@NonNull String name, int index) {
         this.name = name;
@@ -72,6 +77,12 @@ public class ColumnSchema {
             this.attributesSchema = schema.attributesSchema.entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey, entry -> new ColumnSchema(entry.getValue())));
         }
+        if (schema.sparseKeyValueSchema != null) {
+            this.sparseKeyValueSchema = schema.sparseKeyValueSchema.entrySet().stream()
+                    .collect(Collectors.toMap(Entry::getKey, entry ->
+                            Pair.of(new ColumnSchema(entry.getValue().getLeft()),
+                                    new ColumnSchema(entry.getValue().getRight()))));
+        }
         this.singleType = schema.singleType;
     }
 
@@ -99,6 +110,12 @@ public class ColumnSchema {
                 this.keySchema.setName("key");
                 this.valueSchema = new ColumnSchema(schema.getValueType(), 0);
                 this.valueSchema.setName("value");
+                if (schema.getSparseKeyValuePairSchema() != null) {
+                    this.sparseKeyValueSchema = schema.getSparseKeyValuePairSchema().entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey,
+                                    entry -> Pair.of(new ColumnSchema(entry.getValue().getKeyType(), 0),
+                                            new ColumnSchema(entry.getValue().getValueType(), 0))));
+                }
                 break;
             case OBJECT:
                 this.pythonType = schema.getPythonType();
@@ -137,6 +154,16 @@ public class ColumnSchema {
                 this.keySchema.setName("key");
                 this.valueSchema = new ColumnSchema(schema.getValueType());
                 this.valueSchema.setName("value");
+                if (schema.getSparseKeyValueTypesCount() > 0) {
+                    this.sparseKeyValueSchema = new HashMap<>();
+                    var entrySet = schema.getSparseKeyValueTypesMap().entrySet();
+                    for (var entry : entrySet) {
+                        var i = entry.getKey();
+                        var item = schema.getSparseKeyValueTypesMap().get(i);
+                        var schemaPair = Pair.of(new ColumnSchema(item.getKey()), new ColumnSchema(item.getValue()));
+                        this.sparseKeyValueSchema.put(i, schemaPair);
+                    }
+                }
                 break;
             case OBJECT:
                 this.pythonType = schema.getPythonType();
@@ -170,6 +197,13 @@ public class ColumnSchema {
             case MAP:
                 builder.keyType(this.keySchema.toColumnSchemaDesc());
                 builder.valueType(this.valueSchema.toColumnSchemaDesc());
+                if (this.sparseKeyValueSchema != null) {
+                    builder.sparseKeyValuePairSchema(this.sparseKeyValueSchema.entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey,
+                                    entry -> new ColumnSchemaDesc.KeyValuePairSchema(
+                                            entry.getValue().getLeft().toColumnSchemaDesc(),
+                                            entry.getValue().getRight().toColumnSchemaDesc()))));
+                }
                 break;
             case OBJECT:
                 builder.pythonType(this.pythonType)
@@ -201,6 +235,13 @@ public class ColumnSchema {
             case MAP:
                 builder.setKeyType(this.keySchema.toWal());
                 builder.setValueType(this.valueSchema.toWal());
+                if (this.sparseKeyValueSchema != null) {
+                    this.sparseKeyValueSchema.forEach((key, value) -> builder.putSparseKeyValueTypes(key,
+                            Wal.ColumnSchema.KeyValuePair.newBuilder()
+                                    .setKey(value.getLeft().toWal())
+                                    .setValue(value.getRight().toWal())
+                                    .build()));
+                }
                 break;
             case OBJECT:
                 builder.setPythonType(this.pythonType);
@@ -218,7 +259,7 @@ public class ColumnSchema {
         var type = ColumnType.valueOf(schema.getType());
         Wal.ColumnSchema.Builder ret = null;
         if (this.type != type) {
-            var cs =  new ColumnSchema(schema, this.index);
+            var cs = new ColumnSchema(schema, this.index);
             // update column name for list, tuple, map
             cs.setName(this.name);
             return cs.toWal();
@@ -268,6 +309,29 @@ public class ColumnSchema {
                     }
                     if (valueWal != null) {
                         ret.setValueType(valueWal);
+                    }
+                }
+                if (schema.getSparseKeyValuePairSchema() != null) {
+                    for (var entry : schema.getSparseKeyValuePairSchema().entrySet()) {
+                        var index = entry.getKey();
+                        var pairDesc = entry.getValue();
+                        var pair = this.sparseKeyValueSchema.get(index);
+                        if (pair == null) {
+                            pair = Pair.of(new ColumnSchema(pairDesc.getKeyType(), 0),
+                                    new ColumnSchema(pairDesc.getValueType(), 0));
+                        }
+                        var keyDiff = pair.getLeft().getDiff(pairDesc.getKeyType());
+                        var valueDiff = pair.getRight().getDiff(pairDesc.getValueType());
+                        if (keyDiff != null || valueDiff != null) {
+                            if (ret == null) {
+                                ret = Wal.ColumnSchema.newBuilder();
+                            }
+                            ret.putSparseKeyValueTypes(index,
+                                    Wal.ColumnSchema.KeyValuePair.newBuilder()
+                                            .setKey(keyDiff)
+                                            .setValue(valueDiff)
+                                            .build());
+                        }
                     }
                 }
                 break;
@@ -361,6 +425,23 @@ public class ColumnSchema {
                 if (schema.hasValueType()) {
                     this.valueSchema.update(schema.getValueType());
                 }
+                if (schema.getSparseKeyValueTypesCount() > 0) {
+                    if (this.sparseKeyValueSchema == null) {
+                        this.sparseKeyValueSchema = new HashMap<>();
+                    }
+                    for (var item : schema.getSparseKeyValueTypesMap().entrySet()) {
+                        var index = item.getKey();
+                        var existPair = this.sparseKeyValueSchema.get(index);
+                        if (existPair == null) {
+                            existPair = Pair.of(new ColumnSchema(item.getValue().getKey()),
+                                    new ColumnSchema(item.getValue().getValue()));
+                            this.sparseKeyValueSchema.put(index, existPair);
+                        } else {
+                            existPair.getLeft().update(item.getValue().getKey());
+                            existPair.getRight().update(item.getValue().getValue());
+                        }
+                    }
+                }
                 break;
             case OBJECT:
                 if (!schema.getPythonType().isEmpty()) {
@@ -410,7 +491,33 @@ public class ColumnSchema {
                 }
                 break;
             case MAP:
-                return this.keySchema.isSameType(other.keySchema) && this.valueSchema.isSameType(other.valueSchema);
+                if (!this.keySchema.isSameType(other.keySchema)) {
+                    return false;
+                }
+                if (!this.valueSchema.isSameType(other.valueSchema)) {
+                    return false;
+                }
+                if (this.sparseKeyValueSchema != null) {
+                    if (other.sparseKeyValueSchema == null) {
+                        return false;
+                    }
+                    if (!this.sparseKeyValueSchema.keySet().equals(other.sparseKeyValueSchema.keySet())) {
+                        return false;
+                    }
+                    for (var key : this.sparseKeyValueSchema.keySet()) {
+                        if (!this.sparseKeyValueSchema.get(key).getLeft()
+                                .isSameType(other.sparseKeyValueSchema.get(key).getLeft())) {
+                            return false;
+                        }
+                        if (!this.sparseKeyValueSchema.get(key).getRight()
+                                .isSameType(other.sparseKeyValueSchema.get(key).getRight())) {
+                            return false;
+                        }
+                    }
+                } else {
+                    return other.sparseKeyValueSchema == null;
+                }
+                break;
             case OBJECT:
                 if (!this.pythonType.equals(other.pythonType)
                         || !this.attributesSchema.keySet().equals(other.attributesSchema.keySet())) {

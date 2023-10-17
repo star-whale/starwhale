@@ -33,7 +33,11 @@ from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.api._impl.data_store import SwType, _get_type, TableEmptyException
 from starwhale.base.client.api.dataset import DatasetApi
-from starwhale.base.client.models.models import DataIndexDesc, DataConsumptionRequest
+from starwhale.base.client.models.models import (
+    DataIndexDesc,
+    ColumnSchemaDesc,
+    DataConsumptionRequest,
+)
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
 
@@ -643,8 +647,10 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         if r is None:
             return None
         else:
-            start = SwType.decode_schema({"type": r.start_type}).decode(r.start)
-            end = SwType.decode_schema({"type": r.end_type}).decode(r.end)
+            start = SwType.decode_schema(ColumnSchemaDesc(type=r.start_type)).decode(
+                r.start
+            )
+            end = SwType.decode_schema(ColumnSchemaDesc(type=r.end_type)).decode(r.end)
             return (start, end)
 
     def __str__(self) -> str:

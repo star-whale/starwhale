@@ -13,6 +13,11 @@ message ColumnSchema {
   repeated ColumnSchema attributes = 6;
   ColumnSchema key_type = 7;
   ColumnSchema value_type = 8;
+  message KeyValuePair {
+    ColumnSchema key = 1;
+    ColumnSchema value = 2;
+  }
+  map<int32, KeyValuePair> sparse_key_value_types = 9;
 }
 
 message TableSchema {

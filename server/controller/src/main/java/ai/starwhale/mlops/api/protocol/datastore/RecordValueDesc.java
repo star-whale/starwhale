@@ -34,9 +34,10 @@ public class RecordValueDesc {
     /**
      * The column/attribute value.
      * <p>
-     * If the column/attribute type is SCALAR, the value type should be String.
-     * If the column/attribute type is LIST/TUPLE, the value type should be List&lt;Object&gt;.
-     * If the column/attribute type is MAP/OBJECT, the value type should be Map&lt;String, Object&gt;.
+     * If the column/attribute type is SCALAR, the value type should be String.<br>
+     * If the column/attribute type is LIST/TUPLE, the value type should be List&lt;Object&gt;.<br>
+     * If the column/attribute type is OBJECT, the value type should be Map&lt;String, Object&gt;.<br>
+     * If the column/attribute type is MAP, the value type should be List&lt;Pair&lt;Object, Object&gt;&gt;.
      */
     private Object value;
 }

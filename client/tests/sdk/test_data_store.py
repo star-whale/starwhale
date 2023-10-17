@@ -373,14 +373,31 @@ class TestBasicFunctions(BaseTestCase):
             "{int64:int64} 1",
         )
         self.assertEqual(
-            data_store.SwMapType(data_store.INT64, data_store.INT64),
+            data_store.SwMapType(
+                data_store.INT64,
+                data_store.INT64,
+                sparse_pair_types={0: (data_store.INT64, data_store.UNKNOWN)},
+            ),
             data_store._get_type({0: None, 1: 2}),
             "{int64:int64} 2",
         )
         self.assertEqual(
-            data_store.SwMapType(data_store.INT64, data_store.INT64),
+            data_store.SwMapType(
+                data_store.INT64,
+                data_store.INT64,
+                sparse_pair_types={1: (data_store.INT64, data_store.UNKNOWN)},
+            ),
             data_store._get_type({0: 1, 1: None}),
             "{int64:int64} 3",
+        )
+        self.assertEqual(
+            data_store.SwMapType(
+                data_store.INT64,
+                data_store.INT64,
+                sparse_pair_types={1: (data_store.STRING, data_store.INT64)},
+            ),
+            data_store._get_type({0: 1, "foo": 2, 3: 4}),
+            "{int64:int64}-{1, string: int64}",
         )
         self.assertEqual(
             data_store.SwObjectType(
@@ -1475,52 +1492,49 @@ class TestRemoteDataStore(unittest.TestCase):
         assert revision == "fake revision"
         mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
-            data=json.dumps(
-                {
-                    "tableName": "t1",
-                    "tableSchemaDesc": {
-                        "keyColumn": "k",
-                        "columnSchemaList": [
-                            {"type": "INT64", "name": "k"},
-                            {"type": "STRING", "name": "a"},
-                            {"type": "FLOAT64", "name": "z"},
-                        ],
-                    },
-                    "records": [
-                        {
-                            "values": [
-                                {"key": "k", "value": "0000000000000001"},
-                                {"key": "a", "value": "1"},
-                            ]
-                        },
-                        {
-                            "values": [
-                                {"key": "k", "value": "0000000000000002"},
-                                {"key": "a", "value": "2"},
-                            ]
-                        },
-                        {
-                            "values": [
-                                {"key": "k", "value": "0000000000000003"},
-                                {"key": "-", "value": "1"},
-                            ]
-                        },
-                        {
-                            "values": [
-                                {"key": "k", "value": "0000000000000004"},
-                                {"key": "a", "value": None},
-                            ]
-                        },
-                        {
-                            "values": [
-                                {"key": "k", "value": "0000000000000005"},
-                                {"key": "z", "value": "0000000000000000"},
-                            ]
-                        },
+            json={
+                "tableName": "t1",
+                "tableSchemaDesc": {
+                    "keyColumn": "k",
+                    "columnSchemaList": [
+                        {"name": "k", "type": "INT64"},
+                        {"name": "a", "type": "STRING"},
+                        {"name": "z", "type": "FLOAT64"},
                     ],
                 },
-                separators=(",", ":"),
-            ),
+                "records": [
+                    {
+                        "values": [
+                            {"key": "k", "value": "0000000000000001"},
+                            {"key": "a", "value": "1"},
+                        ]
+                    },
+                    {
+                        "values": [
+                            {"key": "k", "value": "0000000000000002"},
+                            {"key": "a", "value": "2"},
+                        ]
+                    },
+                    {
+                        "values": [
+                            {"key": "k", "value": "0000000000000003"},
+                            {"key": "-", "value": "1"},
+                        ]
+                    },
+                    {
+                        "values": [
+                            {"key": "k", "value": "0000000000000004"},
+                            {"key": "a", "value": None},
+                        ]
+                    },
+                    {
+                        "values": [
+                            {"key": "k", "value": "0000000000000005"},
+                            {"key": "z", "value": "0000000000000000"},
+                        ]
+                    },
+                ],
+            },
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
@@ -1539,19 +1553,16 @@ class TestRemoteDataStore(unittest.TestCase):
         )
         mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
-            data=json.dumps(
-                {
-                    "tableName": "t1",
-                    "tableSchemaDesc": {
-                        "keyColumn": "k",
-                        "columnSchemaList": [
-                            {"type": "INT64", "name": "k"},
-                        ],
-                    },
-                    "records": [],
+            json={
+                "tableName": "t1",
+                "tableSchemaDesc": {
+                    "keyColumn": "k",
+                    "columnSchemaList": [
+                        {"name": "k", "type": "INT64"},
+                    ],
                 },
-                separators=(",", ":"),
-            ),
+                "records": [],
+            },
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
@@ -1632,6 +1643,16 @@ class TestRemoteDataStore(unittest.TestCase):
                             ),
                         ),
                     ),
+                    data_store.ColumnSchema(
+                        "m",
+                        data_store.SwMapType(
+                            data_store.FLOAT64,
+                            data_store.INT64,
+                            sparse_pair_types={
+                                0: (data_store.STRING, data_store.INT64)
+                            },
+                        ),
+                    ),
                 ],
             ),
             [
@@ -1660,43 +1681,55 @@ class TestRemoteDataStore(unittest.TestCase):
                         data_store.Link("3", "3", "3"),
                     ),
                     "lll": {"t": data_store.Link("1", "1", "1")},
+                    "m": {"foo": 1, 2.0: 2, 3.0: 3},
                 }
             ],
         )
         mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
-            data=json.dumps(
-                {
-                    "tableName": "t1",
-                    "tableSchemaDesc": {
-                        "keyColumn": "key",
-                        "columnSchemaList": [
-                            {"type": "INT64", "name": "key"},
-                            {"type": "BOOL", "name": "b"},
-                            {"type": "INT8", "name": "c"},
-                            {"type": "INT16", "name": "d"},
-                            {"type": "INT32", "name": "e"},
-                            {"type": "FLOAT16", "name": "f"},
-                            {"type": "FLOAT32", "name": "g"},
-                            {"type": "FLOAT64", "name": "h"},
-                            {"type": "BYTES", "name": "i"},
-                            {
-                                "type": "LIST",
-                                "elementType": {"type": "INT64"},
-                                "name": "j",
-                            },
-                            {
-                                "type": "TUPLE",
-                                "elementType": {"type": "INT64"},
-                                "name": "jj",
-                            },
-                            {
-                                "type": "MAP",
-                                "keyType": {"type": "STRING"},
-                                "valueType": {"type": "INT64"},
-                                "name": "jjj",
-                            },
-                            {
+            json={
+                "tableName": "t1",
+                "tableSchemaDesc": {
+                    "keyColumn": "key",
+                    "columnSchemaList": [
+                        {"type": "INT64", "name": "key"},
+                        {"type": "BOOL", "name": "b"},
+                        {"type": "INT8", "name": "c"},
+                        {"type": "INT16", "name": "d"},
+                        {"type": "INT32", "name": "e"},
+                        {"type": "FLOAT16", "name": "f"},
+                        {"type": "FLOAT32", "name": "g"},
+                        {"type": "FLOAT64", "name": "h"},
+                        {"type": "BYTES", "name": "i"},
+                        {
+                            "type": "LIST",
+                            "elementType": {"type": "INT64"},
+                            "name": "j",
+                        },
+                        {
+                            "type": "TUPLE",
+                            "elementType": {"type": "INT64"},
+                            "name": "jj",
+                        },
+                        {
+                            "type": "MAP",
+                            "keyType": {"type": "STRING"},
+                            "valueType": {"type": "INT64"},
+                            "name": "jjj",
+                        },
+                        {
+                            "type": "OBJECT",
+                            "attributes": [
+                                {"type": "STRING", "name": "uri"},
+                                {"type": "STRING", "name": "display_text"},
+                                {"type": "STRING", "name": "mime_type"},
+                            ],
+                            "pythonType": "LINK",
+                            "name": "k",
+                        },
+                        {
+                            "type": "LIST",
+                            "elementType": {
                                 "type": "OBJECT",
                                 "attributes": [
                                     {"type": "STRING", "name": "uri"},
@@ -1704,149 +1737,158 @@ class TestRemoteDataStore(unittest.TestCase):
                                     {"type": "STRING", "name": "mime_type"},
                                 ],
                                 "pythonType": "LINK",
-                                "name": "k",
                             },
-                            {
-                                "type": "LIST",
-                                "elementType": {
-                                    "type": "OBJECT",
-                                    "attributes": [
-                                        {"type": "STRING", "name": "uri"},
-                                        {"type": "STRING", "name": "display_text"},
-                                        {"type": "STRING", "name": "mime_type"},
-                                    ],
-                                    "pythonType": "LINK",
-                                },
-                                "name": "l",
-                            },
-                            {
-                                "type": "TUPLE",
-                                "elementType": {
-                                    "type": "OBJECT",
-                                    "attributes": [
-                                        {"type": "STRING", "name": "uri"},
-                                        {"type": "STRING", "name": "display_text"},
-                                        {"type": "STRING", "name": "mime_type"},
-                                    ],
-                                    "pythonType": "LINK",
-                                },
-                                "name": "ll",
-                            },
-                            {
-                                "type": "MAP",
-                                "keyType": {"type": "STRING"},
-                                "valueType": {
-                                    "type": "OBJECT",
-                                    "attributes": [
-                                        {"type": "STRING", "name": "uri"},
-                                        {"type": "STRING", "name": "display_text"},
-                                        {"type": "STRING", "name": "mime_type"},
-                                    ],
-                                    "pythonType": "LINK",
-                                },
-                                "name": "lll",
-                            },
-                        ],
-                    },
-                    "records": [
+                            "name": "l",
+                        },
                         {
-                            "values": [
-                                {"key": "key", "value": "0000000000000001"},
-                                {"key": "b", "value": "1"},
-                                {"key": "c", "value": "01"},
-                                {"key": "d", "value": "0001"},
-                                {"key": "e", "value": "00000001"},
-                                {"key": "f", "value": "3c00"},
-                                {"key": "g", "value": "3f800000"},
-                                {"key": "h", "value": "3ff0000000000000"},
-                                {"key": "i", "value": "MQ=="},
-                                {
-                                    "key": "j",
-                                    "value": [
-                                        "0000000000000001",
-                                        "0000000000000002",
-                                        "0000000000000003",
-                                    ],
-                                },
-                                {
-                                    "key": "jj",
-                                    "value": [
-                                        "0000000000000001",
-                                        "0000000000000002",
-                                        "0000000000000003",
-                                    ],
-                                },
-                                {
-                                    "key": "jjj",
-                                    "value": {
-                                        "a": "0000000000000001",
-                                        "b": "0000000000000002",
-                                    },
-                                },
-                                {
-                                    "key": "k",
-                                    "value": {
-                                        "uri": "a",
-                                        "display_text": "b",
-                                        "mime_type": "c",
-                                    },
-                                },
-                                {
-                                    "key": "l",
-                                    "value": [
-                                        {
-                                            "uri": "1",
-                                            "display_text": "1",
-                                            "mime_type": "1",
-                                        },
-                                        {
-                                            "uri": "2",
-                                            "display_text": "2",
-                                            "mime_type": "2",
-                                        },
-                                        {
-                                            "uri": "3",
-                                            "display_text": "3",
-                                            "mime_type": "3",
-                                        },
-                                    ],
-                                },
-                                {
-                                    "key": "ll",
-                                    "value": [
-                                        {
-                                            "uri": "1",
-                                            "display_text": "1",
-                                            "mime_type": "1",
-                                        },
-                                        {
-                                            "uri": "2",
-                                            "display_text": "2",
-                                            "mime_type": "2",
-                                        },
-                                        {
-                                            "uri": "3",
-                                            "display_text": "3",
-                                            "mime_type": "3",
-                                        },
-                                    ],
-                                },
-                                {
-                                    "key": "lll",
-                                    "value": {
-                                        "t": {
-                                            "uri": "1",
-                                            "display_text": "1",
-                                            "mime_type": "1",
-                                        }
-                                    },
-                                },
-                            ]
-                        }
+                            "type": "TUPLE",
+                            "elementType": {
+                                "type": "OBJECT",
+                                "attributes": [
+                                    {"type": "STRING", "name": "uri"},
+                                    {"type": "STRING", "name": "display_text"},
+                                    {"type": "STRING", "name": "mime_type"},
+                                ],
+                                "pythonType": "LINK",
+                            },
+                            "name": "ll",
+                        },
+                        {
+                            "type": "MAP",
+                            "keyType": {"type": "STRING"},
+                            "valueType": {
+                                "type": "OBJECT",
+                                "attributes": [
+                                    {"type": "STRING", "name": "uri"},
+                                    {"type": "STRING", "name": "display_text"},
+                                    {"type": "STRING", "name": "mime_type"},
+                                ],
+                                "pythonType": "LINK",
+                            },
+                            "name": "lll",
+                        },
+                        {
+                            "name": "m",
+                            "type": "MAP",
+                            "keyType": {"type": "FLOAT64"},
+                            "valueType": {"type": "INT64"},
+                            "sparseKeyValuePairSchema": {
+                                "0": {
+                                    "keyType": {"type": "STRING"},
+                                    "valueType": {"type": "INT64"},
+                                }
+                            },
+                        },
                     ],
                 },
-                separators=(",", ":"),
-            ),
+                "records": [
+                    {
+                        "values": [
+                            {"key": "key", "value": "0000000000000001"},
+                            {"key": "b", "value": "1"},
+                            {"key": "c", "value": "01"},
+                            {"key": "d", "value": "0001"},
+                            {"key": "e", "value": "00000001"},
+                            {"key": "f", "value": "3c00"},
+                            {"key": "g", "value": "3f800000"},
+                            {"key": "h", "value": "3ff0000000000000"},
+                            {"key": "i", "value": "MQ=="},
+                            {
+                                "key": "j",
+                                "value": [
+                                    "0000000000000001",
+                                    "0000000000000002",
+                                    "0000000000000003",
+                                ],
+                            },
+                            {
+                                "key": "jj",
+                                "value": (
+                                    "0000000000000001",
+                                    "0000000000000002",
+                                    "0000000000000003",
+                                ),
+                            },
+                            {
+                                "key": "jjj",
+                                "value": [
+                                    ("a", "0000000000000001"),
+                                    ("b", "0000000000000002"),
+                                ],
+                            },
+                            {
+                                "key": "k",
+                                "value": {
+                                    "uri": "a",
+                                    "display_text": "b",
+                                    "mime_type": "c",
+                                },
+                            },
+                            {
+                                "key": "l",
+                                "value": [
+                                    {
+                                        "uri": "1",
+                                        "display_text": "1",
+                                        "mime_type": "1",
+                                    },
+                                    {
+                                        "uri": "2",
+                                        "display_text": "2",
+                                        "mime_type": "2",
+                                    },
+                                    {
+                                        "uri": "3",
+                                        "display_text": "3",
+                                        "mime_type": "3",
+                                    },
+                                ],
+                            },
+                            {
+                                "key": "ll",
+                                "value": (
+                                    {
+                                        "uri": "1",
+                                        "display_text": "1",
+                                        "mime_type": "1",
+                                    },
+                                    {
+                                        "uri": "2",
+                                        "display_text": "2",
+                                        "mime_type": "2",
+                                    },
+                                    {
+                                        "uri": "3",
+                                        "display_text": "3",
+                                        "mime_type": "3",
+                                    },
+                                ),
+                            },
+                            {
+                                "key": "lll",
+                                "value": [
+                                    (
+                                        "t",
+                                        {
+                                            "uri": "1",
+                                            "display_text": "1",
+                                            "mime_type": "1",
+                                        },
+                                    )
+                                ],
+                            },
+                            {
+                                "key": "m",
+                                "value": [
+                                    ("foo", "0000000000000001"),
+                                    ("4000000000000000", "0000000000000002"),
+                                    ("4008000000000000", "0000000000000003"),
+                                ],
+                            },
+                        ]
+                    }
+                ],
+            },
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
@@ -1870,12 +1912,9 @@ class TestRemoteDataStore(unittest.TestCase):
         assert tables == ["/project1/table", "/project2/table"]
         mock_post.assert_called_with(
             "http://test/api/v1/datastore/listTables",
-            data=json.dumps(
-                {
-                    "prefixes": ["project1", "project2/"],
-                },
-                separators=(",", ":"),
-            ),
+            json={
+                "prefixes": ["project1", "project2/"],
+            },
             headers={
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
@@ -2402,13 +2441,19 @@ def test_decode_schema_from_type_encoded_values():
             {
                 "key": {"type": "INT32", "value": "00000001"},
                 "value": {"type": "STRING", "value": "foobar"},
-            }
+            },
+            {
+                "key": {"type": "STRING", "value": "baz"},
+                "value": {"type": "FLOAT64", "value": data_store.FLOAT64.encode(0.42)},
+            },
         ],
     }
     schema = SwType.decode_schema_from_type_encoded_value(value)
-    assert schema == SwMapType(INT32, STRING)
+    assert schema == SwMapType(
+        INT32, STRING, sparse_pair_types={1: (data_store.STRING, data_store.FLOAT64)}
+    )
     decoded = schema.decode_from_type_encoded_value(value)
-    assert decoded == {1: "foobar"}
+    assert decoded == {1: "foobar", "baz": 0.42}
 
     value = {
         "type": "MAP",
