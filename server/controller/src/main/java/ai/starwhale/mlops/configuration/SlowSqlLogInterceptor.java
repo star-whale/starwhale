@@ -58,8 +58,8 @@ public class SlowSqlLogInterceptor implements Interceptor {
     private final int maxSqlLength;
 
     public SlowSqlLogInterceptor(
-            @Value("sw.sql.slow-sql-millis:100") int slowSqlMillis,
-            @Value("sw.sql.max-print-length:200") int maxSqlLength
+            @Value("${sw.sql.slow-sql-millis:100}") int slowSqlMillis,
+            @Value("${sw.sql.max-print-length:200}") int maxSqlLength
     ) {
         this.slowSqlMillis = slowSqlMillis;
         this.maxSqlLength = maxSqlLength;
