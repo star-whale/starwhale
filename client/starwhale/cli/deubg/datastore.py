@@ -2,6 +2,7 @@ import click
 
 from starwhale.utils import console
 from starwhale.utils.cli import AliasedGroup
+from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
 from starwhale.api._impl.data_store import (
     DataStore,
@@ -25,8 +26,13 @@ def _get_datastore() -> DataStore:
 
 
 @datastore.command("tables", help="list tables")
-def _tables() -> None:
-    for table in _get_datastore().list_tables([""]):
+@click.option("-p", "--project", default="", help="project name or id")
+def _tables(project: str) -> None:
+    project_id = Project(project).id
+    console.info(f"list tables in project {project_id}")
+
+    prefix = f"project/{project_id}/"
+    for table in _get_datastore().list_tables([prefix]):
         click.echo(table)
 
 
