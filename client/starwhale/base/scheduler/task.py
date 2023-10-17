@@ -22,7 +22,7 @@ class TaskResult:
         self.exception = exception
 
     def __repr__(self) -> str:
-        return f"id:{self.id}, status:{self.status}, exception:{self.exception}"
+        return f"<TaskResult id:{self.id}, status:{self.status}, exception:{self.exception}>"
 
 
 class TaskExecutor:
