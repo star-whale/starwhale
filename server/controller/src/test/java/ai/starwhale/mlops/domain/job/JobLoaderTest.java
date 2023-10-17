@@ -78,10 +78,11 @@ public class JobLoaderTest {
     public void testJobLoaderResume() {
         WatchableTask failedTask = mock(WatchableTask.class);
         when(failedTask.getStatus()).thenReturn(TaskStatus.FAIL);
-        when(failedTask.unwrap()).thenReturn(new Task());
+        Task mockTask = mock(Task.class);
+        when(failedTask.unwrap()).thenReturn(mockTask);
         when(watchableTaskFactory.wrapTasks(anyCollection())).thenReturn(List.of(failedTask));
         jobLoader.load(mockJob, true);
-        verify(failedTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
+        verify(mockTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
         verify(jobHolder).adopt(mockJob);
     }
 }
