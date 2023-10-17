@@ -117,12 +117,19 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             startTime = Util.k8sTimeToMs(pod.getStatus().getStartTime());
         }
         log.debug("run:{} status changed to {}.", rid, runStatus);
+        Long stopTime = null;
+        if (runStatus == RunStatus.FAILED) {
+            stopTime = System.currentTimeMillis();
+            if (startTime == null) {
+                startTime = stopTime;
+            }
+        }
         var report = ReportedRun.builder()
                 .id(rid)
                 .status(runStatus)
                 .ip(pod.getStatus().getPodIP())
                 .startTimeMillis(startTime)
-                .stopTimeMillis(null)
+                .stopTimeMillis(stopTime)
                 .build();
         runReportReceiver.receive(report);
     }
