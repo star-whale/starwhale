@@ -6,13 +6,11 @@ import inspect
 import threading
 from abc import ABCMeta
 from types import TracebackType
-from pathlib import Path
 from functools import wraps
 
 import dill
-import jsonlines
 
-from starwhale.utils import console, now_str
+from starwhale.utils import console
 from starwhale.consts import RunStatus, CURRENT_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType, PredictLogMode
@@ -25,10 +23,6 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 
 from .log import Evaluation
-
-_jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
-    str((p).resolve()), mode="w"
-)
 
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -69,9 +63,6 @@ class PipelineHandler(metaclass=ABCMeta):
         self.status_dir = _run_dir / RunSubDirType.STATUS
         ensure_dir(self.status_dir)
 
-        # TODO: split status/result files
-        self._timeline_writer = _jl_writer(self.status_dir / "timeline")
-
         self.evaluation_store = Evaluation(
             id=self.context.version, project=self.context.log_project
         )
@@ -92,8 +83,6 @@ class PipelineHandler(metaclass=ABCMeta):
         console.debug(f"execute {self.context.step}-{self.context.index} exit func...")
         if value:  # pragma: no cover
             console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
-
-        self._timeline_writer.close()
 
     @classmethod
     def run(
@@ -187,17 +176,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_evaluate(self) -> None:
-        now = now_str()
-        try:
-            self._do_evaluate()
-        except Exception as e:
-            console.exception(f"evaluate exception: {e}")
-            self._timeline_writer.write(
-                {"time": now, "status": False, "exception": str(e)}
-            )
-            raise
-        else:
-            self._timeline_writer.write({"time": now, "status": True, "exception": ""})
+        self._do_evaluate()
 
     def _do_predict(
         self,
@@ -313,7 +292,6 @@ class PipelineHandler(metaclass=ABCMeta):
                 dataset_consumed_rows += rows_cnt
                 received_rows_cnt += rows_cnt
                 _start = time.time()
-                _exception = None
                 _results: t.Any = b""
                 try:
                     if self.predict_batch_size > 1:
@@ -336,16 +314,13 @@ class PipelineHandler(metaclass=ABCMeta):
                                 dataset_uri=_uri,
                             )
                         ]
-                except Exception as e:
-                    _exception = e
+                except Exception:
                     console.exception(
                         f"[{[r.index for r in rows]}] data handle -> failed"
                     )
                     if not self.ignore_error:
                         self._update_status(RunStatus.FAILED)
                         raise
-                else:
-                    _exception = None
 
                 if len(rows) != len(_results):
                     console.warn(
@@ -358,17 +333,6 @@ class PipelineHandler(metaclass=ABCMeta):
                     _duration = time.time() - _start
                     console.debug(
                         f"[{_idx_with_ds}] use {_duration:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
-                    )
-
-                    self._timeline_writer.write(
-                        {
-                            "time": now_str(),
-                            "status": _exception is None,
-                            "exception": str(_exception),
-                            "index": _idx,
-                            "index_with_dataset": _idx_with_ds,
-                            "duration_seconds": _duration,
-                        }
                     )
 
                     self._log_predict_result(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 import errno
 import shutil
 import typing as t
@@ -12,7 +13,6 @@ from contextlib import contextmanager
 from unittest.mock import patch, MagicMock
 
 import dill
-import jsonlines
 import requests_mock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
@@ -133,6 +133,7 @@ class SimpleHandler(PipelineHandler):
         }
 
 
+@patch("atexit.register", MagicMock())
 class TestModelPipelineHandler(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
@@ -234,19 +235,10 @@ class TestModelPipelineHandler(TestCase):
         status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
-        timeline_path = os.path.join(_status_dir, "timeline")
-        assert os.path.exists(timeline_path)
-
-        os.unlink(timeline_path)
 
         with self.assertRaisesRegex(Exception, "evaluate test exception"):
             with ExceptionHandler() as handler:
                 handler._starwhale_internal_run_evaluate()
-
-        with jsonlines.open(timeline_path) as reader:
-            assert len(list(reader)) == 1
-            for r in reader:
-                assert r["status"] == "failed"
 
         with NoLogHandler() as handler:
             handler._starwhale_internal_run_evaluate()
@@ -478,7 +470,6 @@ class TestModelPipelineHandler(TestCase):
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
             assert "success" in open(status_file_path).read()
-            assert os.path.exists(os.path.join(status_dir, "timeline"))
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
@@ -518,7 +509,7 @@ class TestModelPipelineHandler(TestCase):
 
             def cmp(self, _data_loader: t.Any) -> t.Any:
                 data = [i for i in _data_loader]
-                assert len(data) == 1
+                assert len(data) == 10
                 (x, y, z) = data[0]["output"]
                 assert x == builtin_data
                 assert np.array_equal(y, np_data)
@@ -530,7 +521,7 @@ class TestModelPipelineHandler(TestCase):
         fname = "data_ubyte_0.swds_bin"
         sign, _ = DatasetStorage.save_data_file(Path(self.swds_dir) / fname)
         m_scan.side_effect = [
-            [{"id": 0, "value": 1}],
+            [{"id": 0, "value": 0}],
             [
                 TabularDatasetRow(
                     features={
@@ -545,11 +536,12 @@ class TestModelPipelineHandler(TestCase):
                         ),
                         "label": label_data,
                     },
-                    id=0,
-                ).asdict(),
+                    id=i,
+                ).asdict()
+                for i in range(10)
             ],
         ]
-        m_scan_id.return_value = [{"id": 0}]
+        m_scan_id.return_value = [{"id": i} for i in range(10)]
 
         datastore_dir = DatasetStorage(
             Resource(
@@ -571,6 +563,7 @@ class TestModelPipelineHandler(TestCase):
         with Dummy() as _handler:
             _handler._starwhale_internal_run_predict()
 
+        time.sleep(1)
         context = Context(
             workdir=Path(),
             run_project=self.local_project,
