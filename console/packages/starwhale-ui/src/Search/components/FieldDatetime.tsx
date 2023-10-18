@@ -4,8 +4,9 @@ import { StatefulCalendar } from 'baseui/datepicker'
 import { useTrace } from '@starwhale/core'
 import FieldInput from './FieldInput'
 import moment from 'moment'
-import { useControllableValue, useCreation, useKeyPress } from 'ahooks'
+import { useControllableValue, useCreation, useKeyPress, useUpdateEffect } from 'ahooks'
 import { DATETIME_DELIMITER } from '@starwhale/core/datastore/schemas/TableQueryFilter'
+import { useEffectOnce, useMount } from 'react-use'
 
 export const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD hh:mm:ss'
 
@@ -63,10 +64,9 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
             return (
                 <StatefulCalendar
                     initialState={{
-                        value: initialValue,
+                        value: initialValue as any,
                     }}
                     range={multi}
-                    // value={multi ? (Array.isArray(value) ? value : [value, undefined]) : value}
                     quickSelect={multi}
                     timeSelectStart
                     timeSelectEnd
@@ -97,6 +97,11 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
             target: ref,
         }
     )
+
+    useUpdateEffect(() => {
+        trace('useUpdateEffect')
+        if (!input && isEditing) setInput(formatDate(new Date()))
+    }, [isEditing])
 
     if (!isEditing) return <Label {...rest}>{rest.value}</Label>
 

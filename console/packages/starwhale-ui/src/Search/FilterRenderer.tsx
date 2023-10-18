@@ -333,10 +333,8 @@ export default function FilterRenderer({
             valid: isValueValid,
             multi: isValueMulti,
             onActive: () => {
-                // trace('value active', { isValueMulti, value })
-                // only single input value need to reset input value
-                // if (isValueMulti) return
-                // setInput(value)
+                // re edit current value
+                if (!value) return
                 setInput(value)
             },
             // input used for value not for search when type == value
