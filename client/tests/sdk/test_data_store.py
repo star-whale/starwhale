@@ -317,6 +317,14 @@ class TestBasicFunctions(BaseTestCase):
             "[int64] 3",
         )
         self.assertEqual(
+            data_store.SwListType(
+                data_store.INT64,
+                sparse_types={1: data_store.STRING, 4: data_store.FLOAT64},
+            ),
+            data_store._get_type([0, "", 1, 2, 3.0, 4]),
+            "multi types in list",
+        )
+        self.assertEqual(
             data_store.SwTupleType(data_store.UNKNOWN),
             data_store._get_type(()),
             "(unknown) 1",
@@ -340,6 +348,14 @@ class TestBasicFunctions(BaseTestCase):
             data_store.SwTupleType([data_store.UNKNOWN, data_store.INT64]),
             data_store._get_type((None, 0)),
             "(int64) 3",
+        )
+        self.assertEqual(
+            data_store.SwTupleType(
+                data_store.INT64,
+                sparse_types={1: data_store.STRING, 4: data_store.FLOAT64},
+            ),
+            data_store._get_type((0, "", 1, 2, 3.0, 4)),
+            "multi types in tuple",
         )
         self.assertEqual(
             data_store.SwMapType(data_store.UNKNOWN, data_store.UNKNOWN),
@@ -405,6 +421,21 @@ class TestBasicFunctions(BaseTestCase):
             "[{}]",
         )
         self.assertEqual(
+            data_store.SwListType(
+                data_store.SwObjectType(
+                    data_store.Link,
+                    {
+                        "uri": data_store.STRING,
+                        "display_text": data_store.STRING,
+                        "mime_type": data_store.STRING,
+                    },
+                ),
+                sparse_types={0: data_store.INT64},
+            ),
+            data_store._get_type([1, data_store.Link("1", "2", "3")]),
+            "[int64, {}]",
+        )
+        self.assertEqual(
             data_store.SwTupleType(
                 data_store.SwObjectType(
                     data_store.Link,
@@ -417,6 +448,21 @@ class TestBasicFunctions(BaseTestCase):
             ),
             data_store._get_type((data_store.Link("1", "2", "3"),)),
             "({})",
+        )
+        self.assertEqual(
+            data_store.SwTupleType(
+                data_store.SwObjectType(
+                    data_store.Link,
+                    {
+                        "uri": data_store.STRING,
+                        "display_text": data_store.STRING,
+                        "mime_type": data_store.STRING,
+                    },
+                ),
+                sparse_types={0: data_store.INT64},
+            ),
+            data_store._get_type((1, data_store.Link("1", "2", "3"))),
+            "(int64, {})",
         )
         self.assertEqual(
             data_store.SwMapType(

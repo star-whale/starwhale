@@ -131,36 +131,32 @@ class SwType(metaclass=ABCMeta):
     @staticmethod
     def decode_schema(schema: Dict[str, Any]) -> "SwType":
         type_name = schema.get("type", None)
+
+        def decode_list_types(
+            _schema: Dict[str, Any]
+        ) -> Tuple[SwType, Dict[int, SwType] | None]:
+            element_type = _schema.get("elementType", None)
+            if element_type is None:
+                raise RuntimeError(f"no element type found for type {type_name}")
+            _attrs = _schema.get("attributes", None)
+            sparse_types: Dict[int, SwType] | None = None
+            if _attrs is not None:
+                if not isinstance(_attrs, list):
+                    raise RuntimeError("attributes should be a list")
+                sparse_types = {}
+                for _attr in _attrs:
+                    index = _attr.get("index", None)
+                    if index is None:
+                        raise RuntimeError("no index found for attribute")
+                    sparse_types[index] = SwType.decode_schema(_attr)
+            return SwType.decode_schema(element_type), sparse_types
+
         if type_name is None:
             raise RuntimeError("no type in schema")
         if type_name == "LIST":
-            element_type = schema.get("elementType", None)
-            if element_type is None:
-                raise RuntimeError(f"no element type found for type {type_name}")
-            attrs = schema.get("attributes", None)
-            sparse_types: Dict[int, SwType] | None = None
-            if attrs is not None:
-                if not isinstance(attrs, list):
-                    raise RuntimeError("attributes should be a list")
-                sparse_types = {}
-                for attr in attrs:
-                    index = attr.get("index", None)
-                    if index is None:
-                        raise RuntimeError("no index found for attribute")
-                    sparse_types[index] = SwType.decode_schema(attr)
-            return SwListType(
-                element_types=SwType.decode_schema(element_type),
-                sparse_types=sparse_types,
-            )
+            return SwListType(*decode_list_types(schema))
         if type_name == "TUPLE":
-            element_types = schema.get("elementTypes", None)
-            if element_types is None:
-                element_type = schema.get("elementType", None)
-                if element_type is None:
-                    raise RuntimeError(f"no element type found for type {type_name}")
-                element_types = [element_type]
-            decoded_element_types = [SwType.decode_schema(t) for t in element_types]
-            return SwTupleType(decoded_element_types)
+            return SwTupleType(*decode_list_types(schema))
         if type_name == "MAP":
             key_type = schema.get("keyType", None)
             value_type = schema.get("valueType", None)
