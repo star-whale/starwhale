@@ -63,7 +63,8 @@ def _invoke(
         line = p.stdout.readline()  # type: ignore
         if line:
             if log:
-                console.debug(line)
+                # remove \n at the end to avoid double \n
+                console.debug(line[:-1])
 
             if record_output:
                 output.append(line)
