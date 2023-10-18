@@ -44,6 +44,13 @@ class Job:
 
     @property
     def status(self) -> str:
+        """Get job real-time status.
+
+        status is one of: `CREATED`, `READY`, `PAUSED`, `RUNNING`, `CANCELLING`, `CANCELED`, `SUCCESS`, `FAIL` and `UNKNOWN`.
+
+        Returns:
+            str
+        """
         info = self.basic_info
         if isinstance(info, LocalJobInfo):
             return info.manifest.status.upper()
@@ -269,7 +276,7 @@ class Job:
 
         Examples:
 
-        - create a cloud job
+        - create a Cloud Instance job
         ```python
         from starwhale import Job
         project = "https://cloud.starwhale.cn/project/starwhale:public"
@@ -279,11 +286,15 @@ class Job:
             run_handler="mnist.evaluator:MNISTInference.evaluate",
             datasets=[f"{project}/dataset/mnist/version/v0"],
             runtime=f"{project}/runtime/pytorch",
+            overwrite_specs={
+                "mnist.evaluator:MNISTInference.evaluate": {"resources": "4GiB"},
+                "mnist.evaluator:MNISTInference.predict": {"resources": "8GiB", "replicas": 10}
+            }
         )
         print(job.status)
         ```
 
-        - create a standalone job
+        - create a Standalone Instance job
         ```python
         from starwhale import Job
         job = Job.create(
@@ -291,7 +302,6 @@ class Job:
             model="mnist",
             run_handler="mnist.evaluator:MNISTInference.evaluate",
             datasets=["mnist"],
-            runtime="pytorch",
         )
         print(job.status)
         ```
