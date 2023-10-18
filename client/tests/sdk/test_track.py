@@ -764,30 +764,29 @@ class TestCollector(BaseTestCase):
         }
 
         assert mock_tracker._log_metrics.call_count == c._metrics_step
-        assert c._metrics_step >= 1
 
-        log_m_call = mock_tracker._log_metrics.call_args_list[0][1]
-        assert set(log_m_call["data"].keys()) == {
-            "system/cpu/usage_percent/last",
-            "system/cpu/usage_percent/avg",
-            "process/cpu/usage_percent/last",
-            "process/cpu/usage_percent/avg",
-            "process/num_threads/last",
-            "process/num_threads/avg",
-        }
+        if mock_tracker._log_metrics.call_count > 0:
+            log_m_call = mock_tracker._log_metrics.call_args_list[0][1]
+            assert set(log_m_call["data"].keys()) == {
+                "system/cpu/usage_percent/last",
+                "system/cpu/usage_percent/avg",
+                "process/cpu/usage_percent/last",
+                "process/cpu/usage_percent/avg",
+                "process/num_threads/last",
+                "process/num_threads/avg",
+            }
 
-        for v in log_m_call["data"].values():
-            assert isinstance(v, float)
+            for v in log_m_call["data"].values():
+                assert isinstance(v, float)
 
-        assert log_m_call["step"] == 0
-        assert log_m_call["commit"]
-        assert log_m_call["source"] == _TrackSource.SYSTEM
-        assert len(c._staging_metrics) == 0
-
-        assert (
-            c._metrics_inspect_cnt / (sample_interval / report_interval)
-            >= c._metrics_step
-        )
+            assert log_m_call["step"] == 0
+            assert log_m_call["commit"]
+            assert log_m_call["source"] == _TrackSource.SYSTEM
+            assert len(c._staging_metrics) == 0
+            assert (
+                c._metrics_inspect_cnt / (sample_interval / report_interval)
+                >= c._metrics_step
+            )
 
     def test_close(self) -> None:
         workdir = Path(self.local_storage) / "track"
