@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.event;
 
+import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
@@ -80,7 +81,7 @@ public class EventService {
 
     @NotNull
     public List<EventVo> getEvents(EventRequest.RelatedResource related) {
-        var events = eventMapper.listEvents(related.getEventResource(), related.getId());
+        var events = eventMapper.listEvents(related.getEventResourceType(), related.getId());
         if (events == null) {
             return List.of();
         }
@@ -98,7 +99,7 @@ public class EventService {
         validateOwnership(jobId, related);
         if (related == null) {
             related = new EventRequest.RelatedResource();
-            related.setEventResource(EventRequest.EventResource.JOB);
+            related.setEventResourceType(EventResourceType.JOB);
             related.setId(jobId);
         }
         return getEvents(related);
@@ -116,7 +117,7 @@ public class EventService {
         }
 
         Long actualJobId;
-        switch (related.getEventResource()) {
+        switch (related.getEventResourceType()) {
             case JOB:
                 actualJobId = related.getId();
                 break;

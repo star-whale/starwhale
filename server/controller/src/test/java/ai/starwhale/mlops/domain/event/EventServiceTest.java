@@ -26,7 +26,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.event.Event.EventResource;
+import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
@@ -59,7 +59,7 @@ class EventServiceTest {
     @Test
     void testAddEvent() {
         var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.JOB, 2L));
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
         eventService.addEvent(req);
         verify(eventMapper).insert(any());
     }
@@ -67,17 +67,17 @@ class EventServiceTest {
     @Test
     void testGetEvents() {
         var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.JOB, 2L));
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
         var resp = eventService.getEvents(req.getRelatedResource());
-        verify(eventMapper).listEvents(EventResource.JOB, 2L);
+        verify(eventMapper).listEvents(EventResourceType.JOB, 2L);
         assertEquals(resp, List.of());
 
-        when(eventMapper.listEvents(EventResource.JOB, 2L)).thenReturn(
+        when(eventMapper.listEvents(EventResourceType.JOB, 2L)).thenReturn(
                 List.of(EventEntity.builder()
                         .id(1L)
                         .type(EventType.INFO)
                         .source(EventSource.CLIENT)
-                        .resource(EventResource.JOB)
+                        .resourceType(EventResourceType.JOB)
                         .resourceId(2L)
                         .message("message")
                         .data("data")
@@ -97,7 +97,7 @@ class EventServiceTest {
     @Test
     void testAddEventForJob() {
         var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.JOB, 2L));
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
         when(jobDao.getJobId("1")).thenReturn(1L);
         // the job id is not equal to the related resource id
         assertThrows(SwNotFoundException.class, () -> eventService.addEventForJob("1", req));
@@ -107,7 +107,7 @@ class EventServiceTest {
         verify(eventMapper).insert(any());
 
         // the related resource is task of job
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.TASK, 3L));
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.TASK, 3L));
         when(taskMapper.findTaskById(3L)).thenReturn(TaskEntity.builder().stepId(4L).build());
         when(stepMapper.findById(4L)).thenReturn(StepEntity.builder().jobId(5L).build());
         when(jobDao.getJobId("5")).thenReturn(5L);
@@ -116,7 +116,7 @@ class EventServiceTest {
         verify(eventMapper).insert(any());
 
         // the related resource is run of task
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.RUN, 71L));
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.RUN, 71L));
         when(runMapper.get(71L)).thenReturn(RunEntity.builder().id(71L).taskId(3L).build());
         reset(eventMapper);
         eventService.addEventForJob("5", req);
@@ -157,39 +157,39 @@ class EventServiceTest {
 
     @Test
     void testGetEventForJob() {
-        var related = new EventRequest.RelatedResource(EventResource.JOB, 2L);
+        var related = new EventRequest.RelatedResource(EventResourceType.JOB, 2L);
         when(jobDao.getJobId("1")).thenReturn(1L);
         assertThrows(SwNotFoundException.class,
-                () -> eventService.getEventsForJob("1", new RelatedResource(EventResource.JOB, 2L)));
+                () -> eventService.getEventsForJob("1", new RelatedResource(EventResourceType.JOB, 2L)));
 
         // use job if related is null
         eventService.getEventsForJob("1", null);
-        verify(eventMapper).listEvents(EventResource.JOB, 1L);
+        verify(eventMapper).listEvents(EventResourceType.JOB, 1L);
 
         // normal case
         when(jobDao.getJobId("2")).thenReturn(2L);
         eventService.getEventsForJob("2", related);
-        verify(eventMapper).listEvents(EventResource.JOB, 2L);
+        verify(eventMapper).listEvents(EventResourceType.JOB, 2L);
 
         // the related resource is task of job
         when(taskMapper.findTaskById(3L)).thenReturn(TaskEntity.builder().stepId(4L).build());
         when(stepMapper.findById(4L)).thenReturn(StepEntity.builder().jobId(5L).build());
         when(jobDao.getJobId("5")).thenReturn(5L);
         reset(eventMapper);
-        related = new EventRequest.RelatedResource(EventResource.TASK, 3L);
+        related = new EventRequest.RelatedResource(EventResourceType.TASK, 3L);
         eventService.getEventsForJob("5", related);
-        verify(eventMapper).listEvents(EventResource.TASK, 3L);
+        verify(eventMapper).listEvents(EventResourceType.TASK, 3L);
 
         reset(eventMapper);
         // the related resource is task, but the task is not found
         when(taskMapper.findTaskById(4L)).thenReturn(null);
         assertThrows(SwNotFoundException.class,
-                () -> eventService.getEventsForJob("5", new RelatedResource(EventResource.TASK, 4L)));
+                () -> eventService.getEventsForJob("5", new RelatedResource(EventResourceType.TASK, 4L)));
 
         // the related resource is run of task
         when(runMapper.get(71L)).thenReturn(RunEntity.builder().id(71L).taskId(3L).build());
         reset(eventMapper);
-        eventService.getEventsForJob("5", new RelatedResource(EventResource.RUN, 71L));
-        verify(eventMapper).listEvents(EventResource.RUN, 71L);
+        eventService.getEventsForJob("5", new RelatedResource(EventResourceType.RUN, 71L));
+        verify(eventMapper).listEvents(EventResourceType.RUN, 71L);
     }
 }

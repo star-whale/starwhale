@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
@@ -401,7 +402,7 @@ public class JobController {
         EventRequest.RelatedResource request = null;
         if (taskId != null) {
             request = new EventRequest.RelatedResource();
-            request.setEventResource(EventRequest.EventResource.TASK);
+            request.setEventResourceType(EventResourceType.TASK);
             request.setId(taskId);
         }
 

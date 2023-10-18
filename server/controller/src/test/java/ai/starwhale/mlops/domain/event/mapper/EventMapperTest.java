@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.event.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ai.starwhale.mlops.api.protocol.event.Event.EventResource;
+import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
@@ -44,7 +44,7 @@ public class EventMapperTest extends MySqlContainerHolder {
         var entity = EventEntity.builder()
                 .type(EventType.INFO)
                 .source(EventSource.CLIENT)
-                .resource(EventResource.JOB)
+                .resourceType(EventResourceType.JOB)
                 .resourceId(1L)
                 .message("foo")
                 .data("{}")
@@ -54,7 +54,7 @@ public class EventMapperTest extends MySqlContainerHolder {
         var entity2 = EventEntity.builder()
                 .type(EventType.INFO)
                 .source(EventSource.CLIENT)
-                .resource(EventResource.TASK)
+                .resourceType(EventResourceType.TASK)
                 .resourceId(2L)
                 .message("bar")
                 .data("{}")
@@ -64,11 +64,11 @@ public class EventMapperTest extends MySqlContainerHolder {
         eventMapper.insert(entity);
         eventMapper.insert(entity2);
 
-        events = eventMapper.listEvents(EventResource.JOB, 1L);
+        events = eventMapper.listEvents(EventResourceType.JOB, 1L);
         assertEquals(1, events.size());
         assertEquals(entity, events.get(0));
 
-        events = eventMapper.listEvents(EventResource.TASK, 2L);
+        events = eventMapper.listEvents(EventResourceType.TASK, 2L);
         assertEquals(1, events.size());
         assertEquals(entity2, events.get(0));
     }

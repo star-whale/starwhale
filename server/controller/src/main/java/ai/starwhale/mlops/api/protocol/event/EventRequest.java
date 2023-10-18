@@ -34,7 +34,7 @@ public class EventRequest extends Event {
     @AllArgsConstructor
     public static class RelatedResource {
         @NotNull
-        private EventResource eventResource;
+        private EventResourceType eventResourceType;
         @NotNull
         private Long id;
     }

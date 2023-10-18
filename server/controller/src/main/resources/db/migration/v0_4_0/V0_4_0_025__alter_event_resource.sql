@@ -14,27 +14,5 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.event.po;
-
-import ai.starwhale.mlops.api.protocol.event.Event;
-import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
-import java.util.Date;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-
-@Data
-@SuperBuilder
-@NoArgsConstructor
-@AllArgsConstructor
-public class EventEntity {
-    Long id;
-    Event.EventType type;
-    Event.EventSource source;
-    EventResourceType resourceType;
-    Long resourceId;
-    String message;
-    String data;
-    Date createdTime;
-}
+alter table event
+    change resource resource_type varchar(255) not null comment 'the related resource, e.g. job, task ';
