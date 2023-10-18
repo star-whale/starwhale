@@ -474,7 +474,7 @@ class TestModelPipelineHandler(TestCase):
             with SimpleHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
-            m_log_result.call_count == 100
+            assert m_log_result.call_count == 100
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
             assert "success" in open(status_file_path).read()
