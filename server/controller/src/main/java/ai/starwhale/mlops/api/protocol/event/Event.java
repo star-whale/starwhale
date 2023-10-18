@@ -47,7 +47,7 @@ public class Event implements Serializable {
 
 
     public enum EventResource {
-        JOB, TASK
+        JOB, TASK, RUN
     }
 
     @NotNull

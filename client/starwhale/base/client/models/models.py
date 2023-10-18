@@ -358,16 +358,17 @@ class Source(Enum):
     server = 'SERVER'
 
 
-class Resource1(Enum):
+class EventResource(Enum):
     job = 'JOB'
     task = 'TASK'
+    run = 'RUN'
 
 
 class RelatedResource(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    resource: Resource1
+    event_resource: EventResource = Field(..., alias='eventResource')
     id: int
 
 

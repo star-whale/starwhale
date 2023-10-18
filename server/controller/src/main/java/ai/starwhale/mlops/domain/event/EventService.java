@@ -21,43 +21,53 @@ import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.run.mapper.RunMapper;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ConcurrentLruCache;
 
 @Slf4j
 @Service
 public class EventService {
-    // task to job cache
-    // TODO use LRU cache
-    private final ConcurrentHashMap<Long, Long> taskToJobMap = new ConcurrentHashMap<>();
+    private final ConcurrentLruCache<Long, Long> taskToJobMap;
+    private final ConcurrentLruCache<Long, Long> runToJobMap;
 
     private final TaskMapper taskMapper;
     private final StepMapper stepMapper;
+    private final RunMapper runMapper;
     private final EventMapper eventMapper;
     private final EventConverter eventConverter;
     private final JobDao jobDao;
 
+    private static final long INVALID_JOB_ID = -1L;
+
     public EventService(
             TaskMapper taskMapper,
             StepMapper stepMapper,
+            RunMapper runMapper,
             EventMapper eventMapper,
             EventConverter eventConverter,
-            JobDao jobDao
+            JobDao jobDao,
+            @Value("${sw.job.event.task-to-job-cache-capacity}") int taskToJobCacheSizeLimit,
+            @Value("${sw.job.event.run-to-job-cache-capacity}") int runToJobCacheSizeLimit
     ) {
         this.taskMapper = taskMapper;
         this.stepMapper = stepMapper;
+        this.runMapper = runMapper;
         this.eventMapper = eventMapper;
         this.eventConverter = eventConverter;
         this.jobDao = jobDao;
+        this.taskToJobMap = new ConcurrentLruCache<>(taskToJobCacheSizeLimit, this::getJobIdByTask);
+        this.runToJobMap = new ConcurrentLruCache<>(runToJobCacheSizeLimit, this::getJobIdByRun);
     }
 
     public void addEvent(EventRequest event) {
@@ -70,7 +80,7 @@ public class EventService {
 
     @NotNull
     public List<EventVo> getEvents(EventRequest.RelatedResource related) {
-        var events = eventMapper.listEvents(related.getResource(), related.getId());
+        var events = eventMapper.listEvents(related.getEventResource(), related.getId());
         if (events == null) {
             return List.of();
         }
@@ -88,43 +98,59 @@ public class EventService {
         validateOwnership(jobId, related);
         if (related == null) {
             related = new EventRequest.RelatedResource();
-            related.setResource(EventRequest.EventResource.JOB);
+            related.setEventResource(EventRequest.EventResource.JOB);
             related.setId(jobId);
         }
         return getEvents(related);
     }
 
     private void validateOwnership(Long jobId, EventRequest.RelatedResource related) {
-        if (!taskBelongsToTheJob(jobId, related)) {
+        if (!resourceBelongsToTheJob(jobId, related)) {
             throw new SwNotFoundException(ResourceType.BUNDLE, "related resource is not found");
         }
     }
 
-    private boolean taskBelongsToTheJob(Long jobId, @Nullable EventRequest.RelatedResource related) {
+    private boolean resourceBelongsToTheJob(Long jobId, @Nullable EventRequest.RelatedResource related) {
         if (related == null) {
             return true;
         }
 
-        if (related.getResource().equals(EventRequest.EventResource.JOB)) {
-            return related.getId().equals(jobId);
+        Long actualJobId;
+        switch (related.getEventResource()) {
+            case JOB:
+                actualJobId = related.getId();
+                break;
+            case TASK:
+                actualJobId = taskToJobMap.get(related.getId());
+                break;
+            case RUN:
+                actualJobId = runToJobMap.get(related.getId());
+                break;
+            default:
+                return false;
         }
+        return jobId.equals(actualJobId);
+    }
 
-        if (related.getResource().equals(EventRequest.EventResource.TASK)) {
-            var job = taskToJobMap.computeIfAbsent(related.getId(), id -> {
-                var task = taskMapper.findTaskById(id);
-                if (task == null) {
-                    return null;
-                }
-                var stepId = task.getStepId();
-                var step = stepMapper.findById(stepId);
-                if (step == null) {
-                    return null;
-                }
-                return step.getJobId();
-            });
-            return jobId.equals(job);
+    private long getJobIdByTask(Long taskId) {
+        var task = taskMapper.findTaskById(taskId);
+        if (task == null) {
+            return INVALID_JOB_ID;
         }
+        var stepId = task.getStepId();
+        var step = stepMapper.findById(stepId);
+        if (step == null) {
+            return INVALID_JOB_ID;
+        }
+        return step.getJobId();
+    }
 
-        return false;
+    private long getJobIdByRun(Long runId) {
+        var run = runMapper.get(runId);
+        if (run == null) {
+            return INVALID_JOB_ID;
+        }
+        var taskId = run.getTaskId();
+        return getJobIdByTask(taskId);
     }
 }

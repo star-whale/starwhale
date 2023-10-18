@@ -401,7 +401,7 @@ public class JobController {
         EventRequest.RelatedResource request = null;
         if (taskId != null) {
             request = new EventRequest.RelatedResource();
-            request.setResource(EventRequest.EventResource.TASK);
+            request.setEventResource(EventRequest.EventResource.TASK);
             request.setId(taskId);
         }
 

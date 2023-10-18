@@ -36,6 +36,8 @@ import ai.starwhale.mlops.domain.event.po.EventEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.run.RunEntity;
+import ai.starwhale.mlops.domain.run.mapper.RunMapper;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
@@ -49,8 +51,9 @@ class EventServiceTest {
     private final JobDao jobDao = mock(JobDao.class);
     private final TaskMapper taskMapper = mock(TaskMapper.class);
     private final StepMapper stepMapper = mock(StepMapper.class);
+    private final RunMapper runMapper = mock(RunMapper.class);
     private final EventService eventService =
-            new EventService(taskMapper, stepMapper, eventMapper, eventConverter, jobDao);
+            new EventService(taskMapper, stepMapper, runMapper, eventMapper, eventConverter, jobDao, 100, 100);
 
 
     @Test
@@ -108,6 +111,13 @@ class EventServiceTest {
         when(taskMapper.findTaskById(3L)).thenReturn(TaskEntity.builder().stepId(4L).build());
         when(stepMapper.findById(4L)).thenReturn(StepEntity.builder().jobId(5L).build());
         when(jobDao.getJobId("5")).thenReturn(5L);
+        reset(eventMapper);
+        eventService.addEventForJob("5", req);
+        verify(eventMapper).insert(any());
+
+        // the related resource is run of task
+        req.setRelatedResource(new EventRequest.RelatedResource(EventResource.RUN, 71L));
+        when(runMapper.get(71L)).thenReturn(RunEntity.builder().id(71L).taskId(3L).build());
         reset(eventMapper);
         eventService.addEventForJob("5", req);
         verify(eventMapper).insert(any());
@@ -176,5 +186,10 @@ class EventServiceTest {
         assertThrows(SwNotFoundException.class,
                 () -> eventService.getEventsForJob("5", new RelatedResource(EventResource.TASK, 4L)));
 
+        // the related resource is run of task
+        when(runMapper.get(71L)).thenReturn(RunEntity.builder().id(71L).taskId(3L).build());
+        reset(eventMapper);
+        eventService.getEventsForJob("5", new RelatedResource(EventResource.RUN, 71L));
+        verify(eventMapper).listEvents(EventResource.RUN, 71L);
     }
 }
