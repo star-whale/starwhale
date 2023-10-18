@@ -1,15 +1,12 @@
-import { DataTypeT, OPERATOR } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
-import { FilterPropsT, SearchFieldSchemaT, Operators } from './types'
+import { FilterPropsT, FilterT, OPERATOR } from './types'
 import IconFont from '../IconFont'
-import { dataStoreToFilter } from './utils'
 import { createUseStyles } from 'react-jss'
 import { filterMachine } from './createFilterMachine'
 import { useMachine } from '@xstate/react'
 import { useTrace } from '@starwhale/core/utils'
 import _ from 'lodash'
-import FieldDatatime from './components/FieldDatetime'
 import FieldInput from './components/FieldInput'
 
 export const useStyles = createUseStyles({
@@ -57,17 +54,16 @@ export default function FilterRenderer({
     onRemove = () => {},
     isFocus = false,
     style = {},
-    fields,
+    getFilters,
     ...rest
 }: FilterPropsT & {
-    fields: SearchFieldSchemaT[]
     style?: React.CSSProperties
     onClick?: () => void
     focusToEnd?: () => void
     onRemove?: (blur?: boolean) => void
     containerRef?: React.RefObject<HTMLDivElement>
+    getFilters: (name: string) => FilterT | undefined
 }) {
-    const $columns = fields
     const styles = useStyles()
     const [input, setInput] = useState<any>('')
     const ref = useRef<HTMLDivElement>(null)
@@ -94,17 +90,7 @@ export default function FilterRenderer({
     const { values, focusTarget, focused } = machine.context
     const [property, op, value] = values.map((tmp) => tmp.value)
 
-    const { FilterOperator, FilterField, FilterValue, FilterFieldValue, filter } = useMemo(() => {
-        const field = $columns.find((tmp) => tmp.name === property)
-        const _filter = dataStoreToFilter(field?.type as DataTypeT)()
-        return {
-            filter: _filter,
-            FilterOperator: _filter.renderOperator,
-            FilterField: _filter.renderField,
-            FilterFieldValue: FieldDatatime, //_filter.renderFieldValue,
-            FilterValue: _filter.renderValue,
-        }
-    }, [property, $columns])
+    const filter = useMemo(() => getFilters?.(property), [property, getFilters])
 
     const isCurrentOptionMatch = React.useCallback(
         (index) => (tmp) => {
@@ -117,39 +103,6 @@ export default function FilterRenderer({
         },
         [focusTarget, input]
     )
-
-    const $fieldOptions = React.useMemo(() => {
-        return $columns.map((tmp) => {
-            return {
-                id: tmp.path,
-                type: tmp.path,
-                label: tmp.label,
-            }
-        })
-    }, [$columns])
-
-    const $operatorOptions = React.useMemo(() => {
-        return filter.operators.map((key: string) => {
-            const operator = Operators[key]
-            return {
-                id: operator.key,
-                type: operator.key,
-                label: operator.label,
-            }
-        })
-    }, [filter])
-
-    const $valueOptions = React.useMemo(() => {
-        const column = $columns.find((tmp) => tmp.name === property)
-        if (!column) return []
-        return column.getHints()?.map((tmp) => {
-            return {
-                id: tmp,
-                type: tmp,
-                label: tmp,
-            }
-        })
-    }, [$columns, property])
 
     const isAllValusExist = (_values) => _values.every((option) => isValueExist(option.value))
     const isAllValueNone = (_values) => _values.every((option) => !isValueExist(option.value))
@@ -209,6 +162,7 @@ export default function FilterRenderer({
     }
 
     const focus = () => {
+        // trace('focus', { inputRef })
         setTimeout(() => inputRef.current?.focus(), 100)
         send({ type: 'FOCUS' })
     }
@@ -290,7 +244,6 @@ export default function FilterRenderer({
         if (containsNode(fieldDropdownRef.current, e.target)) return
         if (containsNode(opDropdownRef.current, e.target)) return
         if (containsNode(document.querySelector('.filter-popover'), e.target)) return
-        console.log('reset')
         reset()
     })
 
@@ -309,8 +262,6 @@ export default function FilterRenderer({
         cache(origins)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [origins])
-
-    // trace('cached', origins, cached, rawValues)
 
     const Remove = (
         <div className={styles.label}>
@@ -340,17 +291,7 @@ export default function FilterRenderer({
         </div>
     )
 
-    const Input = (
-        <FieldInput
-            focused={focused}
-            inputRef={inputRef}
-            value={input}
-            onChange={handleInputChange}
-            overrides={{
-                Input: FilterValue as any,
-            }}
-        />
-    )
+    const Input = <FieldInput focused={focused} inputRef={inputRef} value={input} onChange={handleInputChange} />
 
     const isValueMulti = op ? op === OPERATOR.IN || op === OPERATOR.NOT_IN : false
     const isValueValid = op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true
@@ -358,8 +299,8 @@ export default function FilterRenderer({
         {
             type: 'property',
             value: property,
-            options: $fieldOptions,
-            renderer: FilterField,
+            options: filter?.fieldOptions,
+            renderer: filter?.renderField,
             inputRef,
             valid: true,
             multi: false,
@@ -371,8 +312,8 @@ export default function FilterRenderer({
         {
             type: 'op',
             value: op,
-            options: $operatorOptions,
-            renderer: FilterOperator,
+            options: filter?.operatorOptions,
+            renderer: filter?.renderOperator,
             inputRef,
             valid: true,
             multi: false,
@@ -384,8 +325,8 @@ export default function FilterRenderer({
         {
             type: 'value',
             value,
-            options: $valueOptions,
-            renderer: FilterFieldValue,
+            options: filter?.valueOptions,
+            renderer: filter?.renderFieldValue,
             inputRef,
             valid: isValueValid,
             multi: isValueMulti,
@@ -394,7 +335,7 @@ export default function FilterRenderer({
                 // only single input value need to reset input value
                 // if (isValueMulti) return
                 // setInput(value)
-                setInput('')
+                setInput(value)
             },
             // input used for value not for search when type == value
             optionFilter: () => true,
@@ -418,7 +359,7 @@ export default function FilterRenderer({
         }
     })
 
-    trace('filter', { isFocus, focusTarget, property, inputRef })
+    trace('filter', { isFocus, focusTarget, property, inputRef, filter, attrs })
 
     // if target active trigger onActive
     useEffect(() => {

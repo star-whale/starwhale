@@ -28,7 +28,7 @@ function FieldInput({
     inputRef: React.RefObject<HTMLInputElement>
     value: string
     onChange: (e: any) => void
-    overrides: any
+    overrides?: any
     width?: number
 }) {
     return (

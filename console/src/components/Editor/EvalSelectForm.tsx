@@ -81,8 +81,10 @@ function EvalProjectList({
         return _.keyBy(cachedSelectRecords, (r) => r.id?.value)
     }, [cachedSelectRecords])
 
-    const $columns = useDatastoreSummaryColumns(columnTypes as any, {
+    const $columns = useDatastoreSummaryColumns({
         projectId,
+        columnTypes,
+        columnHints,
     })
 
     const handelRowSelectedChange = useEventCallback((ids: any[]) => {

@@ -31,6 +31,9 @@ export const useStyles = createUseStyles({
 })
 
 function SingleSelectMenu(props: any) {
+    // const trace = useTrace('single-select-menu')
+    // trace({ inputRef: props.inputRef })
+
     return (
         <StatefulFilterMenu
             // @ts-ignore cascade keydown event with input
@@ -106,8 +109,8 @@ function MultiSelectMenu(props: any) {
         }
     }
 
-    const trace = useTrace('multi-select-menu')
-    trace({ selected, defaultSelected })
+    // const trace = useTrace('multi-select-menu')
+    // trace({ selected, defaultSelected, inputRef: props.inputRef })
 
     return (
         <StatefulFilterMenu
@@ -171,7 +174,6 @@ function PopoverContainer(props: {
 
     return (
         <Popover
-            autoFocus={false}
             placement={PLACEMENT.bottomLeft}
             isOpen={isOpen}
             innerRef={ref}
@@ -185,7 +187,7 @@ function PopoverContainer(props: {
                     },
                 },
             }}
-            content={() => <Content {...rest} onClose={handleClose} />}
+            content={<Content {...rest} inputRef={inputRef} onClose={handleClose} />}
         >
             <div>{props.children}</div>
         </Popover>

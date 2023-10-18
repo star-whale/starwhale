@@ -19,15 +19,9 @@ const selector = (state: IGridState) => ({
 function useGridQuery() {
     const trace = useTrace('grid-table-user-grid-query')
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
-    const { columnTypes, columnHints } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
     const [isSimpleQuery, setIsSimpleQuery] = React.useState(false)
     const [t] = useTranslation()
-
-    const sortedColumnTypes = React.useMemo(() => {
-        // @FIXME why columnTypes is frozen?
-        return [...(columnTypes ?? [])]?.sort(sortColumn)
-    }, [columnTypes])
 
     const hasFilter = React.useMemo(() => {
         return originalColumns?.find((column) => column.filterable)
@@ -43,12 +37,7 @@ function useGridQuery() {
                         {isSimpleQuery ? (
                             <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
                         ) : (
-                            <ConfigQuery
-                                value={queries}
-                                onChange={onChange}
-                                columnTypes={sortedColumnTypes}
-                                columnHints={columnHints}
-                            />
+                            <ConfigQuery value={queries} onChange={onChange} columns={originalColumns} />
                         )}
                     </div>
                     {hasFilter && (
@@ -59,21 +48,13 @@ function useGridQuery() {
                 </div>
             </>
         )
-    }, [trace, originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, columnHints, t])
+    }, [trace, originalColumns, queries, onChange, isSimpleQuery, hasFilter, t])
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {
-            return (
-                <ConfigQueryInline
-                    {...props}
-                    value={queries}
-                    onChange={onChange}
-                    columnHints={columnHints}
-                    columnTypes={sortedColumnTypes}
-                />
-            )
+            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columns={originalColumns} />
         },
-        [sortedColumnTypes, columnHints, queries, onChange]
+        [originalColumns, queries, onChange]
     )
 
     return {

@@ -11,7 +11,6 @@ import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
-import { RecordSchemaT } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { Button } from '@starwhale/ui'
 import { ConfirmButton } from '@starwhale/ui/Modal'
@@ -22,6 +21,7 @@ import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -64,7 +64,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         pageNum: 1,
         pageSize: 1,
     })
-    const { columnTypes } = useFetchDatastoreByTable(getQueryParams(datasetVersion?.versionInfo.indexTable), true)
+    const datatore = useFetchDatastoreByTable(getQueryParams(datasetVersion?.versionInfo.indexTable), true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -83,6 +83,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const pageParams = useMemo(() => {
         return { ...page, ...query }
     }, [page, query])
+
+    const $columns = useDatastoreColumns(datatore as any)
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
@@ -162,7 +164,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 {datasetVersionId && (
                     <div style={{ marginBottom: '10px' }}>
                         <DatastoreMixedTypeSearch
-                            fields={columnTypes as RecordSchemaT[]}
+                            columns={$columns}
                             value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
                             onChange={(items) => {
                                 updateQuery({ filter: items.filter((v) => v.value) as any })

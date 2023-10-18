@@ -10,16 +10,16 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import FieldDatatime from '@starwhale/ui/Search/components/FieldDatetime'
+import { FilterDatatime } from '@starwhale/ui/Search'
 
 export function useDatastoreSummaryColumns(
-    columnTypes?: { name: string; type: string }[],
     options: {
         projectId: string
         fillWidth?: boolean
         parseLink?: (link: string) => (str: any) => string
         showPrivate?: boolean
         showLink?: boolean
+        columnTypes?: { name: string; type: string }[]
     } = {
         fillWidth: false,
         projectId: '',
@@ -28,7 +28,7 @@ export function useDatastoreSummaryColumns(
     const [t] = useTranslation()
     const { projectId } = options
 
-    const $columns = useDatastoreColumns(columnTypes, options)
+    const $columns = useDatastoreColumns(options)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
@@ -69,7 +69,6 @@ export function useDatastoreSummaryColumns(
             if (column.key?.endsWith('time')) {
                 return CustomColumn<RecordAttr, any>({
                     ...column,
-                    renderFieldValue: FieldDatatime,
                     renderCell: ({ value }) => {
                         return (
                             <span className='line-clamp line-clamp-2' title={value.toString()}>
@@ -77,6 +76,7 @@ export function useDatastoreSummaryColumns(
                             </span>
                         )
                     },
+                    getFilters: () => column.buildFilters(FilterDatatime),
                 })
             }
             if (column.key === 'sys/model_name') {
