@@ -1,1 +1,0 @@
-../../docs/i18n/zh/docusaurus-plugin-content-docs/current/tutorials/mnist.md

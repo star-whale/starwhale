@@ -421,6 +421,18 @@ class Evaluation(AsyncArtifactWriterBase):
 
     @classmethod
     def from_context(cls) -> Evaluation:
+        """Get the Evaluation instance from the current Context.
+
+        Examples:
+        ```python
+        from starwhale import Evaluation
+
+        with Evaluation.from_context() as e:
+            e.log("label/1", 1, {"loss": 0.99, "accuracy": 0.98})
+        ```
+        Returns:
+            The Evaluation object.
+        """
         return _get_log_store_from_context()
 
 
