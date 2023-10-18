@@ -8,6 +8,9 @@ type TableQueryOperandT = {
     operator?: OPERATOR
 }
 
+export const DATETIME_DELIMITER = '~'
+export const INPUT_DELIMITER = ','
+
 class TableQueryFilter {
     public operator: string
 
@@ -52,16 +55,13 @@ class TableQueryFilter {
         }
     }
 
-    static convertOperand(type, value, columnName) {
+    static convertOperand(type, value, columnName, operator = OPERATOR.EQUAL) {
         if (value instanceof TableQueryFilter) return value
         if (Array.isArray(value)) {
             if (value.length > 1) {
                 return value.map(
                     (v) =>
-                        new TableQueryFilter(OPERATOR.EQUAL, [
-                            { columnName },
-                            TableQueryFilter.convertOperandType(type, v),
-                        ])
+                        new TableQueryFilter(operator, [{ columnName }, TableQueryFilter.convertOperandType(type, v)])
                 )
             }
             return [{ columnName }, TableQueryFilter.convertOperandType(type, value[0])]
@@ -74,8 +74,56 @@ class TableQueryFilter {
         if (!value) return undefined
 
         switch (operator) {
+            case OPERATOR.BEFORE: {
+                const [before] = (Array.isArray(value) ? value : String(value as string).split(DATETIME_DELIMITER)).map(
+                    (v) => (v ? Date.parse(v) : undefined)
+                )
+                return new TableQueryFilter(OPERATOR.LESS, TableQueryFilter.convertOperand(type, before, columnName))
+            }
+            case OPERATOR.AFTER: {
+                const [before] = (Array.isArray(value) ? value : String(value as string).split(DATETIME_DELIMITER)).map(
+                    (v) => (v ? Date.parse(v) : undefined)
+                )
+                return new TableQueryFilter(OPERATOR.GREATER, TableQueryFilter.convertOperand(type, before, columnName))
+            }
+            case OPERATOR.BETWEEN: {
+                const [before, after] = (
+                    Array.isArray(value) ? value : String(value as string).split(DATETIME_DELIMITER)
+                ).map((v) => (v ? Date.parse(v) : undefined))
+                const beforeFitler = new TableQueryFilter(
+                    OPERATOR.GREATER_EQUAL,
+                    TableQueryFilter.convertOperand(type, before, columnName)
+                )
+                const afterFilter = new TableQueryFilter(
+                    OPERATOR.LESS_EQUAL,
+                    TableQueryFilter.convertOperand(type, after, columnName)
+                )
+                if (!after) {
+                    return beforeFitler
+                }
+
+                return new TableQueryFilter(OPERATOR.AND, [beforeFitler, afterFilter])
+            }
+            case OPERATOR.NOT_BETWEEN: {
+                const [before, after] = (
+                    Array.isArray(value) ? value : String(value as string).split(DATETIME_DELIMITER)
+                ).map((v) => (v ? Date.parse(v) : undefined))
+                const beforeFitler = new TableQueryFilter(
+                    OPERATOR.LESS_EQUAL,
+                    TableQueryFilter.convertOperand(type, before, columnName)
+                )
+                const afterFilter = new TableQueryFilter(
+                    OPERATOR.GREATER_EQUAL,
+                    TableQueryFilter.convertOperand(type, after, columnName)
+                )
+                if (!after) {
+                    return beforeFitler
+                }
+
+                return new TableQueryFilter(OPERATOR.OR, [beforeFitler, afterFilter])
+            }
             case OPERATOR.NOT_IN: {
-                const v = Array.isArray(value) ? value : String(value as string).split(',')
+                const v = Array.isArray(value) ? value : String(value as string).split(INPUT_DELIMITER)
                 const operands = TableQueryFilter.convertOperand(type, v, columnName)
                 if (v.length === 1) {
                     return new TableQueryFilter(OPERATOR.NOT, new TableQueryFilter(OPERATOR.EQUAL, operands))
@@ -83,7 +131,7 @@ class TableQueryFilter {
                 return new TableQueryFilter(OPERATOR.NOT, new TableQueryFilter(OPERATOR.OR, operands))
             }
             case OPERATOR.IN: {
-                const v = Array.isArray(value) ? value : String(value as string).split(',')
+                const v = Array.isArray(value) ? value : String(value as string).split(INPUT_DELIMITER)
                 const operands = TableQueryFilter.convertOperand(type, v, columnName)
                 if (v.length === 1) {
                     return new TableQueryFilter(OPERATOR.EQUAL, operands)

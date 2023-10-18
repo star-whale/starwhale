@@ -1,9 +1,8 @@
-import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useRef } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
-import { FilterT, SearchFieldSchemaT, ValueT } from './types'
+import { FilterT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
 import useTranslation from '@/hooks/useTranslation'
@@ -171,7 +170,6 @@ export function DatastoreMixedTypeSearch({ columns, ...props }: ISearchProps & {
         (name: string) => {
             const column = columns?.find((tmp) => tmp.key === name) || columns?.[0]
             if (!column) return undefined
-            console.log(column)
             return column.getFilters()
         },
         [columns]

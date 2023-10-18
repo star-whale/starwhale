@@ -293,7 +293,9 @@ export default function FilterRenderer({
 
     const Input = <FieldInput focused={focused} inputRef={inputRef} value={input} onChange={handleInputChange} />
 
-    const isValueMulti = op ? op === OPERATOR.IN || op === OPERATOR.NOT_IN : false
+    const isValueMulti = op
+        ? op === OPERATOR.IN || op === OPERATOR.NOT_IN || op === OPERATOR.BETWEEN || op === OPERATOR.NOT_BETWEEN
+        : false
     const isValueValid = op ? op !== OPERATOR.EXISTS || op !== OPERATOR.NOT_EXISTS : true
     const $attrs = [
         {
@@ -359,7 +361,7 @@ export default function FilterRenderer({
         }
     })
 
-    trace('filter', { isFocus, focusTarget, property, inputRef, filter, attrs })
+    // trace('filter', { isFocus, focusTarget, property, inputRef, filter, attrs })
 
     // if target active trigger onActive
     useEffect(() => {

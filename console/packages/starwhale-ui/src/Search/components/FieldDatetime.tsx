@@ -1,14 +1,15 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import PopoverContainer, { Label } from './PopoverContainer'
-import { Calendar, StatefulCalendar } from 'baseui/datepicker'
-import { useIfChanged, useTrace } from '@starwhale/core'
+import { StatefulCalendar } from 'baseui/datepicker'
+import { useTrace } from '@starwhale/core'
 import FieldInput from './FieldInput'
 import moment from 'moment'
 import { useControllableValue, useCreation, useKeyPress } from 'ahooks'
+import { DATETIME_DELIMITER } from '@starwhale/core/datastore/schemas/TableQueryFilter'
 
 export const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD hh:mm:ss'
 
-const INPUT_DELIMITER = '~'
+const INPUT_DELIMITER = DATETIME_DELIMITER
 
 export function formatTimestampDateTime(s: Date | null | undefined, format = 'YYYY-MM-DD HH:mm:ss'): string {
     return moment.tz(s, moment.tz.guess()).format(format)
@@ -50,22 +51,23 @@ function stringToDate(value: string, formatString: string = DEFAULT_DATE_FORMAT)
     return moment(value, formatString).toDate()
 }
 
-function FieldDatetime({ options: renderOptions = [], optionFilter = () => true, isEditing = false, ...rest }) {
+function FieldDatetime({ options: renderOptions = [], optionFilter = () => true, isEditing = false, multi, ...rest }) {
     const trace = useTrace('field-datatime')
     const [value, setValue] = React.useState(() => stringToDate(rest.value))
     const [input, setInput] = useControllableValue<string>(rest.sharedInputProps)
 
     const Content = useCreation(
         () => () => {
-            trace('render')
+            // eslint-disable-next-line
+            const initialValue = multi ? (Array.isArray(value) ? value : [value, undefined]) : value
             return (
                 <StatefulCalendar
                     initialState={{
-                        value,
+                        value: initialValue,
                     }}
-                    range
-                    value={value}
-                    quickSelect
+                    range={multi}
+                    // value={multi ? (Array.isArray(value) ? value : [value, undefined]) : value}
+                    quickSelect={multi}
                     timeSelectStart
                     timeSelectEnd
                     onChange={({ date }: any) => {
@@ -76,12 +78,12 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
                 />
             )
         },
-        [rest.value]
+        [rest.value, multi]
     )
 
     const ref = React.useRef<any>(null)
 
-    trace('render', { rest, Content }, { isEditing, value, input, ref: ref.current })
+    // trace('render', { rest, Content }, { isEditing, value, input, ref: ref.current })
 
     useKeyPress(
         'enter',

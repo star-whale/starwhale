@@ -29,4 +29,9 @@ export enum OPERATOR {
     AND = 'AND',
     EXISTS = 'EXISTS',
     NOT_EXISTS = 'NOT_EXISTS',
+    // EXTENDS
+    BETWEEN = 'BETWEEN',
+    NOT_BETWEEN = 'NOT_BETWEEN',
+    BEFORE = 'BEFORE',
+    AFTER = 'AFTER',
 }

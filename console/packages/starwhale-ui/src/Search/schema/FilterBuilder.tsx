@@ -2,7 +2,6 @@ import React from 'react'
 import { PopoverContainer, Label } from '../components/PopoverContainer'
 import FieldDefault from '../components/FieldDefault'
 import { FilterT, FilterTypeOperators, KIND, Operators } from '../types'
-import { name } from '../../../../../../client/starwhale/web/ui/assets/ReportEdit-31b28d25'
 import FieldDatetime from '../components/FieldDatetime'
 
 const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
