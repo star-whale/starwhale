@@ -170,7 +170,7 @@ export function DatastoreMixedTypeSearch({ columns, ...props }: ISearchProps & {
         (name: string) => {
             const column = columns?.find((tmp) => tmp.key === name) || columns?.[0]
             if (!column) return undefined
-            return column.getFilters()
+            return column.getFilters?.()
         },
         [columns]
     )

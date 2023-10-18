@@ -4,7 +4,6 @@ import { createUseStyles } from 'react-jss'
 import { StatefulFilterMenu } from '../StatefulFilterMenu'
 import Checkbox from '../../Checkbox'
 import { useSelections } from 'ahooks'
-import { useTrace } from '@starwhale/core'
 
 export const useStyles = createUseStyles({
     label: {

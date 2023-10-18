@@ -28,15 +28,7 @@ const selector = (s: ITableState) => ({
 function ConfigViews() {
     const store = useStoreApi()
     const { currentView, views, viewModelShow, viewEditing } = useStore(selector, shallow)
-    const {
-        onShowViewModel,
-        onCurrentViewIdChange,
-        checkDuplicateViewName,
-        onViewUpdate,
-        setViews,
-        columnTypes,
-        columnHints,
-    } = store.getState()
+    const { onShowViewModel, onCurrentViewIdChange, checkDuplicateViewName, onViewUpdate, setViews } = store.getState()
     const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
@@ -139,13 +131,7 @@ function ConfigViews() {
                         paddingRight: '12px',
                     }}
                 >
-                    <ViewsEdit
-                        ref={viewRef}
-                        columns={originalColumns as any}
-                        view={viewEditing}
-                        columnTypes={columnTypes}
-                        columnHints={columnHints}
-                    />
+                    <ViewsEdit ref={viewRef} columns={originalColumns as any} view={viewEditing} />
                 </ModalBody>
                 <ModalFooter>
                     <Button

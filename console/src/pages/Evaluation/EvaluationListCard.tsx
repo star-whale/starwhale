@@ -25,7 +25,6 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
-import { StatefulCalendar } from 'baseui/datepicker'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,

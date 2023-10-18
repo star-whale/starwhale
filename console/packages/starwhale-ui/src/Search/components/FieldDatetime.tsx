@@ -6,7 +6,6 @@ import FieldInput from './FieldInput'
 import moment from 'moment'
 import { useControllableValue, useCreation, useKeyPress, useUpdateEffect } from 'ahooks'
 import { DATETIME_DELIMITER } from '@starwhale/core/datastore/schemas/TableQueryFilter'
-import { useEffectOnce, useMount } from 'react-use'
 
 export const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD hh:mm:ss'
 
@@ -99,7 +98,6 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
     )
 
     useUpdateEffect(() => {
-        trace('useUpdateEffect')
         if (!input && isEditing) setInput(formatDate(new Date()))
     }, [isEditing])
 

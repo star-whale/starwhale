@@ -1,16 +1,10 @@
 import React from 'react'
-import {
-    ColumnDesc,
-    ColumnHintsDesc,
-    ColumnSchemaDesc,
-    RecordSchemaT,
-    isSearchColumns,
-} from '@starwhale/core/datastore'
+import { ColumnHintsDesc, ColumnSchemaDesc, RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { ColumnT } from '../../base/data-table/types'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { RecordAttr } from '../recordAttrModel'
 import CustomColumn from '@starwhale/ui/base/data-table/column-custom'
-import { FilterBuilder, FilterBuilderByColumnType, SearchFieldSchemaT } from '@starwhale/ui/Search'
+import { FilterBuilderByColumnType, SearchFieldSchemaT } from '@starwhale/ui/Search'
 
 export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
@@ -40,8 +34,8 @@ export function useDatastoreColumns(
         fillWidth?: boolean
         showPrivate?: boolean
         showLink?: boolean
-        columnTypes?: { name: string; type: string }[]
-        columnHint?: Record<string, ColumnHintsDesc>
+        columnTypes?: ColumnSchemaDesc[]
+        columnHints?: Record<string, ColumnHintsDesc>
     } = {
         fillWidth: false,
     }
@@ -51,13 +45,14 @@ export function useDatastoreColumns(
     const searchColumns = React.useMemo(() => {
         if (!columnTypes) return []
         const arr: SearchFieldSchemaT[] = []
-        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
-        columns.forEach((column) => {
+        const columns = columnTypes.filter((column) => isSearchColumns(column.name as string))
+        columns.forEach(({ name }) => {
+            if (!name) return
             arr.push({
-                id: column.name,
-                type: column.name,
-                label: column.name,
-                name: column.name,
+                id: name,
+                type: name,
+                label: name,
+                name,
             })
         })
 
@@ -68,13 +63,17 @@ export function useDatastoreColumns(
         const columnsWithAttrs: ColumnT[] = []
 
         columnTypes
-            ?.filter((column) => !!column)
+            ?.filter((column) => !!column?.name)
             .filter((column) => {
-                return isSearchColumns(column.name)
+                return isSearchColumns(column?.name as string)
             })
             .sort(sortColumn)
             .forEach((column) => {
-                const { columnValueHints } = columnHints?.[column.name]
+                if (!column?.type) return
+                if (!column?.name) return
+                const { name, type } = column
+
+                const { columnValueHints } = columnHints?.[name] || {}
                 const fieldOptions = searchColumns
                 const valueOptions = columnValueHints?.map((v) => {
                     return {
@@ -84,7 +83,7 @@ export function useDatastoreColumns(
                     }
                 })
                 const getFilters = () =>
-                    FilterBuilderByColumnType(column.type, {
+                    FilterBuilderByColumnType(type, {
                         fieldOptions,
                         valueOptions,
                     })
@@ -96,13 +95,14 @@ export function useDatastoreColumns(
 
                 columnsWithAttrs.push(
                     CustomColumn<RecordAttr, any>({
+                        // @ts-ignore
                         columnType: column,
-                        key: column.name,
-                        title: column.name,
+                        key: name,
+                        title: name,
                         fillWidth: options.fillWidth,
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
-                            return RecordAttr.decode(record, column.name)
+                            return RecordAttr.decode(record, name)
                         },
                         // search bar
                         getFilters,

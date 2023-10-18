@@ -70,8 +70,8 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
     buildFilter: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, value: ValueT) => boolean
     sortFn: (valueA: ValueT, valueB: ValueT) => number
-    getFilters: () => FilterT
-    buildFilters: (builder, args?: FilterT) => FilterT
+    getFilters?: () => FilterT
+    buildFilters?: (builder, args?: FilterT) => FilterT
 } & SharedColumnOptionsT<ValueT>
 
 export type RowT = {

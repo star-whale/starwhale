@@ -14,7 +14,7 @@ type OptionsT<ValueT, FilterParamsT> = {
     buildFilter?: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, args: ValueT) => boolean
     sortFn?: (valueA: ValueT, valueB: ValueT) => number
-    getFilters?: () => FilterT
+    getFilters?: () => FilterT | undefined
     buildFilters?: (builder, args: FilterT) => FilterT
 } & SharedColumnOptionsT<ValueT>
 

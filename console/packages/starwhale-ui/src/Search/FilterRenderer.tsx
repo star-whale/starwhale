@@ -62,7 +62,7 @@ export default function FilterRenderer({
     focusToEnd?: () => void
     onRemove?: (blur?: boolean) => void
     containerRef?: React.RefObject<HTMLDivElement>
-    getFilters: (name: string) => FilterT | undefined
+    getFilters?: (name: string) => FilterT | undefined
 }) {
     const styles = useStyles()
     const [input, setInput] = useState<any>('')
