@@ -358,7 +358,7 @@ class Source(Enum):
     server = 'SERVER'
 
 
-class EventResource(Enum):
+class EventResourceType(Enum):
     job = 'JOB'
     task = 'TASK'
     run = 'RUN'
@@ -368,7 +368,7 @@ class RelatedResource(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    event_resource: EventResource = Field(..., alias='eventResource')
+    event_resource_type: EventResourceType = Field(..., alias='eventResourceType')
     id: int
 
 
