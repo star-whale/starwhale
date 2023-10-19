@@ -25,6 +25,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwRequestFrequentException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -51,17 +52,20 @@ public class DataLoader {
                 var s = dataReadManager.getSession(request);
                 if (s == null) {
                     s = dataReadManager.generateSession(request);
+                    // async to generate data read log
+                    dataReadManager.generateDataReadLog(s.getId());
                 }
                 return s;
             }, "data load: session init");
         }
-
-        dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
+        if (CollectionUtils.isNotEmpty(request.getProcessedData())) {
+            dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session.getId());
+        }
 
         // this lock can be replaced by select fot update in future
         Session finalSession = session;
         return lockOrThrow(String.format("dl-assignment-%s", session.getId()), () ->
-                dataReadManager.assignmentData(consumerId, finalSession), "data load: assignment data"
+                dataReadManager.assignmentData(consumerId, finalSession.getId()), "data load: assignment data"
         );
     }
 

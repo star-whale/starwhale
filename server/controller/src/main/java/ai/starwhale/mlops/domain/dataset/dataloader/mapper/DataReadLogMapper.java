@@ -100,6 +100,9 @@ public interface DataReadLogMapper {
     @Select("SELECT * from dataset_read_log WHERE id=#{id} ")
     DataReadLogEntity selectOne(@Param("id") Long id);
 
+    @Select("SELECT * from dataset_read_log WHERE session_id=#{sessionId} ORDER BY id DESC LIMIT 1")
+    DataReadLogEntity selectLast(@Param("sessionId") Long sessionId);
+
     @Select("SELECT sum(assigned_num) from dataset_read_log "
             + "WHERE session_id in (SELECT id from dataset_read_session where session_id=#{sessionId})")
     int totalAssignedNum(@Param("sessionId") String sessionId);

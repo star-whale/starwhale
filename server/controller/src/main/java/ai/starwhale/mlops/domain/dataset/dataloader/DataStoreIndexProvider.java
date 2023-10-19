@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import static ai.starwhale.mlops.datastore.DataStore.QUERY_LIMIT;
+
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
@@ -26,7 +28,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "sw.dataset.range.provider", havingValue = "datastore", matchIfMissing = true)
 public class DataStoreIndexProvider implements DataIndexProvider {
 
-    private Integer maxBatchSize = 1000;
+    private Integer maxScanSize = QUERY_LIMIT;
 
     private static final String KeyColumn = "id";
 
@@ -44,8 +45,8 @@ public class DataStoreIndexProvider implements DataIndexProvider {
         this.dataStore = dataStore;
     }
 
-    public void setMaxBatchSize(@Value("sw.datastore.scan.maxSize: 1000") Integer maxBatchSize) {
-        this.maxBatchSize = maxBatchSize;
+    public void setMaxScanSize(Integer maxScanSize) {
+        this.maxScanSize = maxScanSize;
     }
 
     @Override
@@ -77,7 +78,7 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                                     .columns(Map.of(KeyColumn, KeyColumn))
                                     .build()
                     ))
-                    .limit(maxBatchSize)
+                    .limit(maxScanSize)
                     // return the key and value
                     .encodeWithType(true)
                     .build()
@@ -94,7 +95,7 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                                 )
                                 .collect(Collectors.toList())
                 );
-                if (result.getRecords().size() < maxBatchSize) {
+                if (result.getRecords().size() < maxScanSize) {
                     break;
                 }
                 start = result.getLastKey();

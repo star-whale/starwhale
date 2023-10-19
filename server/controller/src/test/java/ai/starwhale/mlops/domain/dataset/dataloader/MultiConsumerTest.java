@@ -56,6 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Slf4j
@@ -70,6 +71,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Import({DataLoader.class, DataReadManager.class,
         SessionDao.class, SessionConverter.class,
         DataReadLogDao.class, DataReadLogConverter.class})
+@EnableAsync
 @EnableTransactionManagement
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class MultiConsumerTest extends MySqlContainerHolder {
@@ -179,8 +181,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                                                 .build()
                                 ));
                             }
-                        } catch (SwRequestFrequentException ignored) {
-                            log.info("request frequently, retry {}", JSONUtil.toJsonStr(request));
+                        } catch (SwRequestFrequentException e) {
+                            log.error("request frequently, retry {}", JSONUtil.toJsonStr(request), e);
                         }
                     }
                 }

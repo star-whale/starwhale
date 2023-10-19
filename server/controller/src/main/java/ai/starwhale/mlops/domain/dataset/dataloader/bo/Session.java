@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader.bo;
 
+import ai.starwhale.mlops.domain.dataset.dataloader.Status;
 import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +36,9 @@ public class Session {
     private boolean startInclusive = true;
     private String end;
     private boolean endInclusive;
+
+    @Builder.Default
+    private Status.SessionStatus status = Status.SessionStatus.UNFINISHED;
 
     @Builder.Default
     private Date createdTime = new Date(-1);

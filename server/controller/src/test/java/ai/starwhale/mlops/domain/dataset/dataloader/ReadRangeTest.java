@@ -60,7 +60,7 @@ public class ReadRangeTest {
 
     @Test
     public void testGenerateRange() {
-        dataRangeProvider.setMaxBatchSize(9);
+        dataRangeProvider.setMaxScanSize(9);
 
         var request = QueryDataIndexRequest.builder()
                 .tableName("test-table-name")
@@ -166,10 +166,21 @@ public class ReadRangeTest {
         // case 1: generate
         given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
         given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
-            var session = invocation.getArgument(0, Session.class);
-            session.setId(sid);
+            var s = invocation.getArgument(0, Session.class);
+            s.setId(sid);
             return true;
         });
+        given(sessionDao.selectOne(sid)).willReturn(Session.builder()
+                        .id(sid)
+                        .datasetName(datasetName)
+                        .datasetVersion(String.valueOf(datasetVersion))
+                        .tableName(datasetName)
+                        .start("0000-000").startInclusive(true)
+                        .end("0000-008").endInclusive(true)
+                        .batchSize(2)
+                        .status(Status.SessionStatus.UNFINISHED)
+                        .build());
+
         given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
                 .willReturn(List.of(DataReadLog.builder()
                         .id(1L)
@@ -238,12 +249,13 @@ public class ReadRangeTest {
         ));
         var session = Session.builder()
                 .id(sid)
-                .datasetName("test-name")
-                .datasetVersion("test-version")
-                .tableName("test-table-name")
+                .datasetName(datasetName)
+                .datasetVersion(String.valueOf(datasetVersion))
+                .tableName(tableName)
                 .start("0000-000").startInclusive(true)
                 .end("0000-008").endInclusive(true)
                 .batchSize(2)
+                .status(Status.SessionStatus.FINISHED)
                 .build();
 
         given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(session);
