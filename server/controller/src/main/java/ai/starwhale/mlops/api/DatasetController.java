@@ -431,12 +431,16 @@ public class DatasetController {
         }
     }
 
+    /**
+     * legacy sign links api, use {@link FileStorageController} instead
+     */
     @Operation(summary = "Sign SWDS uris to get a batch of temporarily accessible links",
             description = "Sign SWDS uris to get a batch of temporarily accessible links")
     @PostMapping(
             value = "/project/{projectName}/dataset/{datasetName}/uri/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    @Deprecated(since = "0.6.2")
     ResponseEntity<ResponseMessage<Map>> signLinks(
             @PathVariable String projectName,
             @PathVariable String datasetName,
