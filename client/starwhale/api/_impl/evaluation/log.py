@@ -226,13 +226,12 @@ class Evaluation(AsyncArtifactWriterBase):
             Text(encoded) -> string
             Binary(encoded) -> bytes
         """
-        if isinstance(data, BaseArtifact):
-            data.owner = self._resource
-            data.fetch_data()
-
         if isinstance(data, Text) and data.auto_convert_to_str:
+            # TODO: remove the owner assignment
+            data.owner = self._resource
             return data.content
         elif isinstance(data, Binary) and data.auto_convert_to_bytes:
+            data.owner = self._resource
             return data.to_bytes()
         elif isinstance(data, dict):
             return {k: self._auto_decode_types(v) for k, v in data.items()}
