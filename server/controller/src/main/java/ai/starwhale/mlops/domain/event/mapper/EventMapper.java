@@ -27,17 +27,17 @@ import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface EventMapper {
-    String COLUMNS = "id, type, source, resource, resource_id, message, data, created_time";
+    String COLUMNS = "id, type, source, resource_type, resource_id, message, data, created_time";
     String TABLE = "event";
 
     @Insert("insert into " + TABLE
-            + " (type, source, resource, resource_id, message, data, created_time)"
+            + " (type, source, resource_type, resource_id, message, data, created_time)"
             + " values"
-            + " (#{type}, #{source}, #{resource}, #{resourceId}, #{message}, #{data}, #{createdTime})")
+            + " (#{type}, #{source}, #{resourceType}, #{resourceId}, #{message}, #{data}, #{createdTime})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(@NotNull EventEntity event);
 
     @Select("select " + COLUMNS + " from " + TABLE
-            + " where resource = #{resource} and resource_id = #{resourceId} order by created_time asc")
-    List<EventEntity> listEvents(@NotNull Event.EventResource resource, @NotNull Long resourceId);
+            + " where resource_type = #{resourceType} and resource_id = #{resourceId} order by created_time asc")
+    List<EventEntity> listEvents(@NotNull Event.EventResourceType resourceType, @NotNull Long resourceId);
 }

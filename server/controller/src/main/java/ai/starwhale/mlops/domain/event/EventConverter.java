@@ -27,7 +27,7 @@ public class EventConverter {
         return EventEntity.builder()
                 .type(request.getEventType())
                 .source(request.getSource())
-                .resource(request.getRelatedResource().getResource())
+                .resourceType(request.getRelatedResource().getEventResourceType())
                 .resourceId(request.getRelatedResource().getId())
                 .message(request.getMessage())
                 .data(request.getData())

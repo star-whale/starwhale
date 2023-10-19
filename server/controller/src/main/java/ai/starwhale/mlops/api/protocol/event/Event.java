@@ -46,8 +46,8 @@ public class Event implements Serializable {
     private EventSource source;
 
 
-    public enum EventResource {
-        JOB, TASK
+    public enum EventResourceType {
+        JOB, TASK, RUN
     }
 
     @NotNull

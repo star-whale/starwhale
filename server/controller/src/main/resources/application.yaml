@@ -55,6 +55,9 @@ sw:
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
   job:
     virtual-specs: ${SW_JOB_VIRTUAL_SPECS_PATH:}
+    event:
+      task-to-job-cache-capacity: ${SW_JOB_EVENT_TASK_TO_JOB_CACHE_CAPACITY:1000}
+      run-to-job-cache-capacity: ${SW_JOB_EVENT_RUN_TO_JOB_CACHE_CAPACITY:1000}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
     max-time-to-wait-in-seconds: ${SW_ONLINE_EVAL_MAX_WAIT_SECS:10} # 10s
