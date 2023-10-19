@@ -16,7 +16,7 @@ sudo ln -s which swcli /usr/local/bin/
 **Step2: Log in Starwhale Cloud Instance**
 
 ```
-swcli instance login --username <您的用户名> --password <您的密码> --alias swcloud https://cloud.starwhale.cn
+swcli instance login --username <your username> --password <your password> --alias swcloud https://cloud.starwhale.cn
 ```
 
 **Step3: Build a new model**
