@@ -500,21 +500,20 @@ class StandaloneDatasetTestCase(BaseTestCase):
         results = ds.head(0)
         assert len(results) == 0
 
-        results = ds.head(1, show_raw_data=True)
-        assert results[0]["id"] == 0
-        assert results[0]["index"] == "label-0"
-        assert results[0]["features"]["label"] == 0
-        assert results[0]["features"]["img"].mime_type == MIMEType.GRAYSCALE
-        assert len(results[0]["features"]["img"].to_bytes()) == 3
+        results = ds.head(1)
+        assert results[0].index == "label-0"
+        assert results[0].features["label"] == 0
+        assert results[0].features["img"].mime_type == MIMEType.GRAYSCALE
+        assert len(results[0].features["img"].to_bytes()) == 3
         assert len(results) == 1
 
-        results = ds.head(5, show_raw_data=True)
+        results = ds.head(5)
         assert len(results) == 2
-        DatasetTermView(dataset_uri).head(1, show_raw_data=True)
-        DatasetTermView(dataset_uri).head(2, show_raw_data=True)
-        DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
-        DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
-        DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
+        DatasetTermView(dataset_uri).head(1)
+        DatasetTermView(dataset_uri).head(2)
+        DatasetTermView(dataset_uri).head(2, show_types=True)
+        DatasetTermViewJson(dataset_uri).head(1)
+        DatasetTermViewJson(dataset_uri).head(2)
 
 
 class CloudDatasetTest(TestCase):

@@ -650,19 +650,24 @@ class Dataset:
     def manifest(self) -> LocalDatasetInfo | DatasetInfoVo | None:
         return self.__loading_core_dataset.info()
 
-    def head(self, n: int = 5, skip_fetch_data: bool = False) -> t.List[DataRow]:
-        # TODO: render artifact in JupyterNotebook
-        ret = []
-        loader = self._get_data_loader(disable_consumption=True)
-        for idx, td_row in enumerate(loader.tabular_dataset.scan()):
-            if idx >= n:
-                break
-            data_row = loader._unpack_row(td_row, skip_fetch_data=skip_fetch_data)
-            ret.append(data_row)
-        return ret
+    def head(self, n: int = 5) -> t.List[DataRow]:
+        if n <= 0:
+            return []
+        return list(self.scan(limit=n))
 
-    def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
-        return self.head(1, skip_fetch_data)[0]
+    def scan(self, limit: int | None = None) -> t.Iterator[DataRow]:
+        count = 0
+        # TODO: render artifact in JupyterNotebook
+        loader = self._get_data_loader(disable_consumption=True)
+        for td_row in loader.tabular_dataset.scan():
+            if limit is not None and count >= limit:
+                return
+            count += 1
+            data_row = loader._unpack_row(td_row, skip_fetch_data=False)
+            yield data_row
+
+    def fetch_one(self) -> DataRow:
+        return next(self.scan(limit=1))
 
     def to_pytorch(
         self,

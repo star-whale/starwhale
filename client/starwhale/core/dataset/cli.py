@@ -757,12 +757,6 @@ def _tag(
     help="Print the first NUM rows of the dataset",
 )
 @click.option(
-    "-srd",
-    "--show-raw-data",
-    is_flag=True,
-    help="Fetch raw data content",
-)
-@click.option(
     "-st",
     "--show-types",
     is_flag=True,
@@ -773,7 +767,6 @@ def _head(
     view: t.Type[DatasetTermView],
     dataset: str,
     rows: int,
-    show_raw_data: bool,
     show_types: bool,
 ) -> None:
     """Print the first n rows of the dataset
@@ -785,10 +778,6 @@ def _head(
         \b
         - print the first 5 rows of the mnist dataset
         swcli dataset head -n 5 mnist
-
-        \b
-        - print the first 10 rows of the mnist(v0 version) dataset and show raw data
-        swcli dataset head -n 10 mnist/v0 --show-raw-data
 
         \b
         - print the data types of the mnist dataset
@@ -803,4 +792,4 @@ def _head(
         swcli -o json dataset head -n 5 mnist
 
     """
-    view(dataset).head(rows, show_raw_data, show_types)
+    view(dataset).head(rows, show_types)

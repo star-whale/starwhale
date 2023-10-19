@@ -14,7 +14,6 @@ from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSource
 from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.bundle import BaseBundle
-from starwhale.base.data_type import Text
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.model import Dataset, DatasetConfig
@@ -302,22 +301,18 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         console.print(":clap: copy done")
 
     @BaseTermView._header
-    def head(
-        self, rows: int, show_raw_data: bool = False, show_types: bool = False
-    ) -> None:
+    def head(self, rows: int, show_types: bool = False) -> None:
         from starwhale.api._impl.data_store import _get_type
 
-        for row in self.dataset.head(rows, show_raw_data):
-            console.rule(f"row [{row['index']}]", align="left")
-            output = f":deciduous_tree: id: {row['index']} \n" ":cyclone: features:\n"
-            for _k, _v in row["features"].items():
-                if show_raw_data and isinstance(_v, Text):
-                    _v = _v.link_to_content()
+        for row in self.dataset.head(rows):
+            console.rule(f"row [{row.index}]", align="left")
+            output = f":deciduous_tree: id: {row.index} \n" ":cyclone: features:\n"
+            for _k, _v in row.features.items():
                 output += f"\t :dim_button: [bold green]{_k}[/] : {_v} \n"
 
             if show_types:
                 output += ":school_satchel: features types:\n"
-                for _k, _v in row["features"].items():
+                for _k, _v in row.features.items():
                     ds_type: t.Any
                     try:
                         ds_type = _get_type(_v)
@@ -412,14 +407,17 @@ class DatasetTermViewJson(DatasetTermView):
     def info(self) -> None:
         self.pretty_json(self.dataset.info())
 
-    def head(
-        self, rows: int, show_raw_data: bool = False, show_types: bool = False
-    ) -> None:
+    def head(self, rows: int, show_types: bool = False) -> None:
         from starwhale.base.mixin import _do_asdict_convert
 
         # TODO: support show_types in the json format output
-
-        info = self.dataset.head(rows, show_raw_data)
+        info: t.List[t.Dict] = [
+            {
+                "index": row.index,
+                "features": row.features,
+            }
+            for row in self.dataset.head(rows)
+        ]
         self.pretty_json(_do_asdict_convert(info))
 
     def diff(self, compare_uri: Resource, show_details: bool = False) -> None:

@@ -181,23 +181,10 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     def summary(self) -> t.Optional[DatasetSummary]:
         raise NotImplementedError
 
-    def head(
-        self, rows: int = 5, show_raw_data: bool = False
-    ) -> t.List[t.Dict[str, t.Any]]:
+    def head(self, limit: int) -> t.List[DataRow]:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
-        ret = []
-        sds = SDKDataset.dataset(self.uri, readonly=True)
-        for idx, row in enumerate(sds.head(n=rows, skip_fetch_data=not show_raw_data)):
-            ret.append(
-                {
-                    "index": row.index,
-                    "features": row.features,
-                    "id": idx,
-                }
-            )
-
-        return ret
+        return SDKDataset.dataset(self.uri, readonly=True).head(limit)
 
     def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         # TODO: standalone or cloud dataset diff by datastore diff feature
