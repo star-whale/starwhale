@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
+import { FilterT } from '@starwhale/ui/Search'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -69,6 +70,8 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
     buildFilter: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, value: ValueT) => boolean
     sortFn: (valueA: ValueT, valueB: ValueT) => number
+    getFilters?: () => FilterT
+    buildFilters?: (builder, args?: FilterT) => FilterT
 } & SharedColumnOptionsT<ValueT>
 
 export type RowT = {

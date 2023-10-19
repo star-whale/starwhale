@@ -40,7 +40,43 @@ const datatable = {
     columnQuery: '筛选',
     columnConfig: '管理列',
 }
+const datepicker = {
+    ariaLabel: '选择日期。',
+    ariaLabelRange: '选择日期范围。',
+    ariaLabelCalendar: '日历。',
+    ariaRoleDescriptionCalendarMonth: '日历月份',
+    previousMonth: '上个月。',
+    nextMonth: '下个月。',
+    pastWeek: '过去一周',
+    pastMonth: '过去一个月',
+    pastThreeMonths: '过去三个月',
+    pastSixMonths: '过去六个月',
+    pastYear: '过去一年',
+    pastTwoYears: '过去两年',
+    // eslint-disable-next-line
+    screenReaderMessageInput: '日期格式为${formatString}。按下箭头或回车键与日历交互并选择日期。按下Esc键关闭日历。',
+    // eslint-disable-next-line
+    selectedDate: '选择的日期为${date}。',
+    // eslint-disable-next-line
+    selectedDateRange: '选择的日期范围为从${startDate}到${endDate}。',
+    selectSecondDatePrompt: '选择第二个日期。',
+    quickSelectLabel: '选择日期范围',
+    quickSelectAriaLabel: '选择日期范围',
+    quickSelectPlaceholder: '无',
+    timeSelectEndLabel: '结束时间',
+    timeSelectStartLabel: '开始时间',
+    timePickerAriaLabel12Hour: '选择时间，12小时制。',
+    timePickerAriaLabel24Hour: '选择时间，24小时制。',
+    timezonePickerAriaLabel: '选择时区。',
+    selectedStartDateLabel: '已选择的开始日期。',
+    selectedEndDateLabel: '已选择的结束日期。',
+    dateNotAvailableLabel: '不可用。',
+    dateAvailableLabel: '可用。',
+    selectedLabel: '已选择。',
+    chooseLabel: '选择',
+}
 
 export default {
     datatable,
+    datepicker,
 }

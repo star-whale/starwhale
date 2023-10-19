@@ -27,10 +27,11 @@ export enum OPERATOR {
     NOT_IN = 'NOT_IN',
     OR = 'OR',
     AND = 'AND',
-    // CONTAINS = 'CONTAINS',
-    // NOT_CONTAINS = 'NOT_CONTAINS',
-    // IS = 'IS',
-    // IS_NOT = 'IS_NOT',
     EXISTS = 'EXISTS',
     NOT_EXISTS = 'NOT_EXISTS',
+    // EXTENDS
+    BETWEEN = 'BETWEEN',
+    NOT_BETWEEN = 'NOT_BETWEEN',
+    BEFORE = 'BEFORE',
+    AFTER = 'AFTER',
 }

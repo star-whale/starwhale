@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+import { FilterT } from '@starwhale/ui/Search'
 import Column from './column'
 import { COLUMNS } from './constants'
 import type { ColumnT, RenderCellT, RenderFilterT, SharedColumnOptionsT } from './types'
@@ -13,6 +14,8 @@ type OptionsT<ValueT, FilterParamsT> = {
     buildFilter?: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, args: ValueT) => boolean
     sortFn?: (valueA: ValueT, valueB: ValueT) => number
+    getFilters?: () => FilterT | undefined
+    buildFilters?: (builder, args: FilterT) => FilterT
 } & SharedColumnOptionsT<ValueT>
 
 function CustomColumn<ValueT, FilterParamsT>(options: OptionsT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {

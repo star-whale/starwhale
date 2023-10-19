@@ -1,0 +1,25 @@
+import React from 'react'
+import PopoverContainer, { Label, MultiSelectMenu, SingleSelectMenu } from './PopoverContainer'
+
+function FieldDefault({ options: renderOptions = [], optionFilter = () => true, isEditing = false, ...rest }) {
+    return (
+        <PopoverContainer
+            {...rest}
+            options={renderOptions.filter(optionFilter)}
+            // only option exsit will show popover
+            isOpen={isEditing}
+            Content={!rest.multi ? SingleSelectMenu : MultiSelectMenu}
+            onItemSelect={({ item }) => rest.onChange?.(item.type)}
+            onItemIdsChange={(ids = []) => rest.onChange?.(ids.join(','))}
+        >
+            {isEditing && rest.renderInput?.()}
+            {!isEditing && (
+                <Label {...rest}>
+                    {Array.isArray(rest.value) ? rest.value.join(',') : rest.value} {rest.renderAfter?.()}
+                </Label>
+            )}
+        </PopoverContainer>
+    )
+}
+
+export default FieldDefault

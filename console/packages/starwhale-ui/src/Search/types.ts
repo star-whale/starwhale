@@ -1,5 +1,3 @@
-import { OPERATOR } from '@starwhale/core/datastore'
-
 export enum KIND {
     BOOLEAN = 'BOOLEAN',
     CATEGORICAL = 'CATEGORICAL',
@@ -7,9 +5,32 @@ export enum KIND {
     DATETIME = 'DATETIME',
     NUMERICAL = 'NUMERICAL',
     STRING = 'STRING',
+    DATATIME = 'DATATIME',
 }
 
-export type KindT = keyof typeof KIND
+export enum OPERATOR {
+    EQUAL = 'EQUAL',
+    GREATER = 'GREATER',
+    GREATER_EQUAL = 'GREATER_EQUAL',
+    LESS = 'LESS',
+    LESS_EQUAL = 'LESS_EQUAL',
+    NOT = 'NOT',
+    IN = 'IN',
+    NOT_IN = 'NOT_IN',
+    OR = 'OR',
+    AND = 'AND',
+    // CONTAINS = 'CONTAINS',
+    // NOT_CONTAINS = 'NOT_CONTAINS',
+    // IS = 'IS',
+    // IS_NOT = 'IS_NOT',
+    EXISTS = 'EXISTS',
+    NOT_EXISTS = 'NOT_EXISTS',
+    // datatime
+    BEFORE = 'BEFORE',
+    AFTER = 'AFTER',
+    BETWEEN = 'BETWEEN',
+    NOT_BETWEEN = 'NOT_BETWEEN',
+}
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
@@ -23,6 +44,7 @@ export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
         OPERATOR.IN,
         OPERATOR.NOT_IN,
     ],
+    [KIND.DATATIME]: [OPERATOR.EQUAL, OPERATOR.BEFORE, OPERATOR.AFTER, OPERATOR.BETWEEN, OPERATOR.NOT_BETWEEN],
     BOOLEAN: [OPERATOR.EQUAL],
     CUSTOM: [],
     DATETIME: [],
@@ -161,14 +183,57 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
+    [OPERATOR.BEFORE]: {
+        key: OPERATOR.BEFORE,
+        label: 'before',
+        value: 'before',
+        // @ts-ignore
+        buildFilter: ({ value = '' }) => {
+            return (data: string) => {
+                return data < value
+            }
+        },
+    },
+    [OPERATOR.AFTER]: {
+        key: OPERATOR.AFTER,
+        label: 'after',
+        value: 'after',
+        // @ts-ignore
+        buildFilter: ({ value = '' }) => {
+            return (data: string) => {
+                return data > value
+            }
+        },
+    },
+    [OPERATOR.BETWEEN]: {
+        key: OPERATOR.BETWEEN,
+        label: 'between',
+        value: 'between',
+        // @ts-ignore
+        buildFilter: ({ value = [] }) => {
+            return (data: string) => {
+                return data > value[0] && data < value[1]
+            }
+        },
+    },
+    [OPERATOR.NOT_BETWEEN]: {
+        key: OPERATOR.NOT_BETWEEN,
+        label: 'not between',
+        value: 'not between',
+        // @ts-ignore
+        buildFilter: ({ value = [] }) => {
+            return (data: string) => {
+                return data < value[0] || data > value[1]
+            }
+        },
+    },
 }
 
 export type SearchFieldSchemaT = {
-    name: string
+    id: string
     type: string
-    path: string
     label: string
-    getHints: () => any[] | undefined
+    name: string
 }
 
 export type FilterSharedPropsT = {
@@ -207,8 +272,10 @@ export interface FilterRenderPropsT extends FilterSharedPropsT {
 export type FilterT = {
     key?: string
     label?: string
-    kind: KindT
-    operators: OPERATOR[]
+    kind?: KIND
+    operatorOptions?: any[]
+    fieldOptions?: any[]
+    valueOptions?: any[]
 
     renderField?: React.FC<FilterRenderPropsT>
     renderFieldValue?: React.FC<FilterRenderPropsT>

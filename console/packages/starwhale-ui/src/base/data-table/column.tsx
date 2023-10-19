@@ -109,6 +109,8 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         pin: options.pin,
         filterType: options.filterType,
         columnType: options.columnType,
+        getFilters: options.getFilters,
+        buildFilters: options.buildFilters,
     }
 }
 

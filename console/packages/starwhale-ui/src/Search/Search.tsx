@@ -1,14 +1,14 @@
-import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useRef } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
-import { SearchFieldSchemaT, ValueT } from './types'
+import { FilterT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
 import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@starwhale/core'
 import useSearchState from './SearchState'
+import { ColumnT } from '../base/data-table/types'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -61,12 +61,12 @@ const containsNode = (parent, child) => {
 }
 
 export interface ISearchProps {
-    fields: SearchFieldSchemaT[]
     value?: ValueT[]
     onChange?: (args: ValueT[]) => void
+    getFilters?: (name: string) => FilterT | undefined
 }
 
-export default function Search({ value = [], onChange, fields }: ISearchProps) {
+export default function Search({ value = [], onChange, getFilters }: ISearchProps) {
     // const trace = useTrace('grid-search')
     const styles = useStyles()
     const [t] = useTranslation()
@@ -109,7 +109,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                     key={[index, item.property].join('-')}
                     value={item}
                     isFocus={checkIsFocus(index)}
-                    fields={fields}
+                    getFilters={getFilters}
                     containerRef={ref}
                     focusToEnd={focusToEnd}
                     onClick={() => onFocus(index)}
@@ -122,7 +122,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
             <FilterRenderer
                 value={{}}
                 isFocus={checkIsFocus(-1)}
-                fields={fields}
+                getFilters={getFilters}
                 style={{ flex: 1 }}
                 onClick={focusToEnd}
                 containerRef={ref}
@@ -132,7 +132,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
         )
         return tmps
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEditing, editingIndex, items, fields])
+    }, [isEditing, editingIndex, items, getFilters])
 
     return (
         <div
@@ -165,23 +165,15 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
     )
 }
 
-export function DatastoreMixedTypeSearch({
-    fields: columnTypes,
-    ...props
-}: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
-    const searchColumns = React.useMemo(() => {
-        if (!columnTypes) return []
-        const arr: SearchFieldSchemaT[] = []
-        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
-        columns.forEach((column) => {
-            arr.push({
-                ...column,
-                path: column.name,
-                label: column.name,
-            })
-        })
+export function DatastoreMixedTypeSearch({ columns, ...props }: ISearchProps & { columns?: ColumnT[] }) {
+    const getFilters = React.useCallback(
+        (name: string) => {
+            const column = columns?.find((tmp) => tmp.key === name) || columns?.[0]
+            if (!column) return undefined
+            return column.getFilters?.()
+        },
+        [columns]
+    )
 
-        return arr
-    }, [columnTypes])
-    return <Search {...props} fields={searchColumns} />
+    return <Search {...props} getFilters={getFilters} />
 }

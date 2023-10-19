@@ -1,5 +1,5 @@
-import { OPERATOR } from '@starwhale/core/datastore/constants'
 import { createMachine, assign } from 'xstate'
+import { OPERATOR } from './types'
 
 export type FilterEventT =
     | { type: 'FOCUSONLASTEDIT' }

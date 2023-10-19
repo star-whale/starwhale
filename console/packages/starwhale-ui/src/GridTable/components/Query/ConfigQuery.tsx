@@ -3,14 +3,11 @@ import { StatefulPopover } from 'baseui/popover'
 import Button from '@starwhale/ui/Button'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import IconFont from '@starwhale/ui/IconFont'
-import { QueryT } from '@starwhale/ui/base/data-table/types'
-import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
-import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
+import { ColumnT, QueryT } from '@starwhale/ui/base/data-table/types'
 import _ from 'lodash'
 
 type PropsT = {
-    columnTypes?: ColumnSchemaDesc[]
-    columnHints?: Record<string, ColumnHintsDesc>
+    columns?: ColumnT[]
     value: QueryT[]
     onChange: (args: QueryT[]) => void
 }
@@ -24,19 +21,7 @@ export type ExtraPropsT = {
 }
 
 function ConfigQuery(props: PropsT) {
-    const fields = React.useMemo(() => {
-        return (props.columnTypes ?? [])
-            .map((column) => {
-                return {
-                    name: column.name,
-                    type: column.type,
-                    getHints: () => props.columnHints?.[column.name as string]?.columnValueHints,
-                }
-            })
-            .sort(sortColumn as any)
-    }, [props.columnTypes, props.columnHints])
-
-    return <DatastoreMixedTypeSearch fields={fields as any} value={props.value} onChange={props.onChange} />
+    return <DatastoreMixedTypeSearch columns={props.columns} value={props.value} onChange={props.onChange} />
 }
 
 function ConfigQueryInline(props: ExtraPropsT & PropsT) {
@@ -69,7 +54,6 @@ function ConfigQueryInline(props: ExtraPropsT & PropsT) {
                         },
                     }}
                     dismissOnEsc={false}
-                    // dismissOnClickOutside={false}
                     placement='topLeft'
                     content={() => <ConfigQuery {...props} />}
                     onClose={() => {

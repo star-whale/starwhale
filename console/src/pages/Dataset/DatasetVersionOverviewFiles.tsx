@@ -118,9 +118,11 @@ export default function DatasetVersionFiles() {
         !!datasetVersion?.versionInfo.indexTable
     )
 
-    const $columns = useDatastoreColumns(columnTypes as any, {
+    const $columns = useDatastoreColumns({
         showPrivate: false,
         showLink: false,
+        columnTypes,
+        columnHints,
     })
 
     return (

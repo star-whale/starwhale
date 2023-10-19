@@ -9,13 +9,10 @@ import Select from '../../../Select'
 import useTranslation from '@/hooks/useTranslation'
 import ConfigColumns from '../ConfigColumns'
 import { ConfigQuery } from '../Query'
-import { ColumnSchemaDesc, ColumnHintsDesc } from '@starwhale/core'
 
 type ViewListPropsT = {
     view: ConfigT
     columns: ColumnT[]
-    columnTypes?: ColumnSchemaDesc[]
-    columnHints?: Record<string, ColumnHintsDesc>
 }
 function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     const [css] = useStyletron()
@@ -81,12 +78,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 })}
             >
                 <LabelSmall>{t('table.filter.add')}</LabelSmall>
-                <ConfigQuery
-                    value={queries}
-                    columnTypes={props.columnTypes}
-                    columnHints={props.columnHints}
-                    onChange={setQueries}
-                />
+                <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
             </div>
             <div className='inherit-height' style={{ minHeight: '300px' }}>
                 <ConfigColumns

@@ -3,7 +3,7 @@ import { useStoreApi } from './useStore'
 import React, { useMemo } from 'react'
 
 function useGirdData() {
-    const { getId, getColumns, columnTypes, records, fillable } = useStoreApi().getState()
+    const { getId, getColumns, columnTypes, columnHints, records, fillable } = useStoreApi().getState()
 
     const $tablePropsColumns = React.useMemo(() => {
         if (!getColumns || typeof getColumns !== 'function') return undefined
@@ -11,8 +11,10 @@ function useGirdData() {
         return getColumns?.() ?? []
     }, [getColumns])
 
-    const $columns = useDatastoreColumns(columnTypes as any, {
+    const $columns = useDatastoreColumns({
         fillWidth: !!fillable,
+        columnTypes,
+        columnHints,
     })
 
     const $originalColumns = React.useMemo(() => {

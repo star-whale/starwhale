@@ -10,15 +10,19 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
+import { FilterDatatime } from '@starwhale/ui/Search'
+import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
 
 export function useDatastoreSummaryColumns(
-    columnTypes?: { name: string; type: string }[],
     options: {
-        projectId: string
+        // @ts-ignore
+        projectId?: string
         fillWidth?: boolean
         parseLink?: (link: string) => (str: any) => string
         showPrivate?: boolean
         showLink?: boolean
+        columnTypes?: ColumnSchemaDesc[]
+        columnHints?: Record<string, ColumnHintsDesc>
     } = {
         fillWidth: false,
         projectId: '',
@@ -27,7 +31,7 @@ export function useDatastoreSummaryColumns(
     const [t] = useTranslation()
     const { projectId } = options
 
-    const $columns = useDatastoreColumns(columnTypes, options)
+    const $columns = useDatastoreColumns(options)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
@@ -75,6 +79,7 @@ export function useDatastoreSummaryColumns(
                             </span>
                         )
                     },
+                    getFilters: () => column.buildFilters?.(FilterDatatime),
                 })
             }
             if (column.key === 'sys/model_name') {
@@ -82,6 +87,7 @@ export function useDatastoreSummaryColumns(
                     ...column,
                     filterable: true,
                     renderFilter: function RenderFilter() {
+                        if (!projectId) return <></>
                         return <ModelSelector projectId={projectId} clearable getId={(v) => v.name} />
                     },
                 }
@@ -91,6 +97,7 @@ export function useDatastoreSummaryColumns(
                     ...column,
                     filterable: true,
                     renderFilter: function RenderFilter() {
+                        if (!projectId) return <></>
                         return (
                             <ModelTreeSelector
                                 placeholder={t('model.selector.version.placeholder')}

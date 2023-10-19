@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { PLACEMENT, Popover } from 'baseui/popover'
-import { FilterT } from './types'
 import { createUseStyles } from 'react-jss'
-import { StatefulFilterMenu } from './StatefulFilterMenu'
-import Checkbox from '../Checkbox'
+import { StatefulFilterMenu } from '../StatefulFilterMenu'
+import Checkbox from '../../Checkbox'
 import { useSelections } from 'ahooks'
-import { useTrace } from '@starwhale/core'
-
-const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
 
 export const useStyles = createUseStyles({
     label: {
@@ -34,6 +30,9 @@ export const useStyles = createUseStyles({
 })
 
 function SingleSelectMenu(props: any) {
+    // const trace = useTrace('single-select-menu')
+    // trace({ inputRef: props.inputRef })
+
     return (
         <StatefulFilterMenu
             // @ts-ignore cascade keydown event with input
@@ -46,11 +45,9 @@ function SingleSelectMenu(props: any) {
             }}
             overrides={{
                 List: {
-                    props: {
-                        className: 'filter-popover',
-                    },
                     style: {
                         maxHeight: '500px',
+                        maxWidth: '500px',
                     },
                 },
             }}
@@ -70,7 +67,21 @@ function MultiSelectMenu(props: any) {
         const next = props.options.map((v) => {
             return {
                 id: v.type,
-                label: <Checkbox checked={isSelected(v.id)}>{v.label}</Checkbox>,
+                label: (
+                    <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    wordBreak: 'break-word',
+                                },
+                            },
+                        }}
+                        isFullWidth
+                        checked={isSelected(v.id)}
+                    >
+                        {v.label}
+                    </Checkbox>
+                ),
             }
         })
         next.push({
@@ -97,8 +108,8 @@ function MultiSelectMenu(props: any) {
         }
     }
 
-    const trace = useTrace('multi-select-menu')
-    trace({ selected, defaultSelected })
+    // const trace = useTrace('multi-select-menu')
+    // trace({ selected, defaultSelected, inputRef: props.inputRef })
 
     return (
         <StatefulFilterMenu
@@ -128,10 +139,8 @@ function MultiSelectMenu(props: any) {
             }}
             overrides={{
                 List: {
-                    props: {
-                        className: 'filter-popover',
-                    },
                     style: {
+                        maxWidth: '500px',
                         minWidth: '150px',
                         maxHeight: '500px',
                     },
@@ -149,9 +158,12 @@ function PopoverContainer(props: {
     isOpen: boolean
     children: React.ReactNode
     inputRef?: React.RefObject<HTMLInputElement>
+    Content?: React.FC<any>
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
+
+    const { Content = SingleSelectMenu, inputRef, ...rest } = props
 
     useEffect(() => {
         setIsOpen(props.isOpen)
@@ -166,18 +178,15 @@ function PopoverContainer(props: {
             innerRef={ref}
             overrides={{
                 Body: {
+                    props: {
+                        className: 'filter-popover',
+                    },
                     style: {
                         marginTop: '32px',
                     },
                 },
             }}
-            content={() =>
-                !props.multi ? (
-                    <SingleSelectMenu {...props} onClose={handleClose} />
-                ) : (
-                    <MultiSelectMenu {...props} onClose={handleClose} />
-                )
-            }
+            content={<Content {...rest} inputRef={inputRef} onClose={handleClose} />}
         >
             <div>{props.children}</div>
         </Popover>
@@ -201,78 +210,5 @@ function Label(props) {
     )
 }
 
-function Filter(options: FilterT): FilterT {
-    return {
-        kind: options.kind,
-        operators: options.operators,
-        renderField: function RenderField({
-            options: renderOptions = [],
-            optionFilter = () => true,
-            isEditing = false,
-            ...rest
-        }) {
-            return (
-                <PopoverContainer
-                    {...rest}
-                    options={renderOptions.filter(optionFilter)}
-                    isOpen={isEditing}
-                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
-                >
-                    {isEditing && rest.renderInput?.()}
-                    {!isEditing && (
-                        <Label {...rest}>{typeof rest.value === 'string' ? normalize(rest.value) : rest.value}</Label>
-                    )}
-                </PopoverContainer>
-            )
-        },
-        renderOperator: function RenderOperator({
-            options: renderOptions = [],
-            optionFilter = () => true,
-            isEditing = false,
-            ...rest
-        }) {
-            return (
-                <PopoverContainer
-                    {...rest}
-                    options={renderOptions.filter(optionFilter)}
-                    isOpen={isEditing}
-                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
-                >
-                    {isEditing && rest.renderInput?.()}
-                    {!isEditing && (
-                        <Label {...rest}>
-                            {renderOptions.find((v) => v.id === rest.value)?.label} {rest.renderAfter?.()}
-                        </Label>
-                    )}
-                </PopoverContainer>
-            )
-        },
-        renderFieldValue: function RenderField({
-            options: renderOptions = [],
-            optionFilter = () => true,
-            isEditing = false,
-            ...rest
-        }) {
-            return (
-                <PopoverContainer
-                    {...rest}
-                    options={renderOptions.filter(optionFilter)}
-                    // only option exsit will show popover
-                    isOpen={isEditing}
-                    onItemSelect={({ item }) => rest.onChange?.(item.type)}
-                    onItemIdsChange={(ids = []) => rest.onChange?.(ids.join(','))}
-                >
-                    {isEditing && rest.renderInput?.()}
-                    {!isEditing && (
-                        <Label {...rest}>
-                            {Array.isArray(rest.value) ? rest.value.join(',') : rest.value} {rest.renderAfter?.()}
-                        </Label>
-                    )}
-                </PopoverContainer>
-            )
-        },
-        renderValue: options?.renderValue ?? undefined,
-        // renderFieldValue: options?.renderFieldValue ?? <></>,
-    }
-}
-export default Filter
+export { Label, PopoverContainer, SingleSelectMenu, MultiSelectMenu }
+export default PopoverContainer

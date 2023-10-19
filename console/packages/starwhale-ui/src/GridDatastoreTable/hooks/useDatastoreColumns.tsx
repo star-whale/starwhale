@@ -1,9 +1,10 @@
 import React from 'react'
-import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
+import { ColumnHintsDesc, ColumnSchemaDesc, RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { ColumnT } from '../../base/data-table/types'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { RecordAttr } from '../recordAttrModel'
 import CustomColumn from '@starwhale/ui/base/data-table/column-custom'
+import { FilterBuilderByColumnType, SearchFieldSchemaT } from '@starwhale/ui/Search'
 
 export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
@@ -29,35 +30,83 @@ export function RenderMixedCell({ value, columnKey }: { value: RecordAttr; colum
 }
 
 export function useDatastoreColumns(
-    columnTypes?: { name: string; type: string }[],
     options: {
         fillWidth?: boolean
         showPrivate?: boolean
         showLink?: boolean
+        columnTypes?: ColumnSchemaDesc[]
+        columnHints?: Record<string, ColumnHintsDesc>
     } = {
         fillWidth: false,
     }
 ): ColumnT[] {
+    const { columnTypes, columnHints } = options
+
+    const searchColumns = React.useMemo(() => {
+        if (!columnTypes) return []
+        const arr: SearchFieldSchemaT[] = []
+        const columns = columnTypes.filter((column) => isSearchColumns(column.name as string))
+        columns.forEach(({ name }) => {
+            if (!name) return
+            arr.push({
+                id: name,
+                type: name,
+                label: name,
+                name,
+            })
+        })
+
+        return arr.sort(sortColumn)
+    }, [columnTypes])
+
     const columns = React.useMemo(() => {
         const columnsWithAttrs: ColumnT[] = []
 
         columnTypes
-            ?.filter((column) => !!column)
+            ?.filter((column) => !!column?.name)
             .filter((column) => {
-                return isSearchColumns(column.name)
+                return isSearchColumns(column?.name as string)
             })
             .sort(sortColumn)
             .forEach((column) => {
+                if (!column?.type) return
+                if (!column?.name) return
+                const { name, type } = column
+
+                const { columnValueHints } = columnHints?.[name] || {}
+                const fieldOptions = searchColumns
+                const valueOptions = columnValueHints?.map((v) => {
+                    return {
+                        id: v,
+                        type: v,
+                        label: v,
+                    }
+                })
+                const getFilters = () =>
+                    FilterBuilderByColumnType(type, {
+                        fieldOptions,
+                        valueOptions,
+                    })
+
+                const build =
+                    (cached) =>
+                    (_FilterBuilder, _options = {}) =>
+                        _FilterBuilder({ ...cached, ..._options })
+
                 columnsWithAttrs.push(
                     CustomColumn<RecordAttr, any>({
+                        // @ts-ignore
                         columnType: column,
-                        key: column.name,
-                        title: column.name,
+                        key: name,
+                        title: name,
                         fillWidth: options.fillWidth,
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
-                            return RecordAttr.decode(record, column.name)
+                            return RecordAttr.decode(record, name)
                         },
+                        // search bar
+                        getFilters,
+                        buildFilters: build({ fieldOptions, valueOptions }),
                     })
                 )
             })

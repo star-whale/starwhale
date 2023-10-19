@@ -136,7 +136,9 @@ function EvalSelectList({
 
     const unionColumnTypes = React.useMemo(() => getTableDistinctColumnTypes(selectData), [selectData])
 
-    const $columns = useDatastoreSummaryColumns(unionColumnTypes as any)
+    const $columns = useDatastoreSummaryColumns({
+        columnTypes: unionColumnTypes,
+    })
 
     // overrider sys/id use inline projectId
     const $override = React.useMemo(
