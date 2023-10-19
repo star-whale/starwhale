@@ -1,11 +1,11 @@
 import React from 'react'
 import PopoverContainer, { Label } from './PopoverContainer'
-import { StatefulCalendar } from 'baseui/datepicker'
 import { useTrace } from '@starwhale/core'
 import FieldInput from './FieldInput'
 import moment from 'moment'
 import { useControllableValue, useCreation, useKeyPress, useUpdateEffect } from 'ahooks'
 import { DATETIME_DELIMITER } from '@starwhale/core/datastore/schemas/TableQueryFilter'
+import { StatefulCalendar } from '@starwhale/ui/DatePicker'
 
 export const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD hh:mm:ss'
 
