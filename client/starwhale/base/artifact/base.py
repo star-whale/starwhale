@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import queue
+import atexit
 import typing as t
 import threading
 from abc import ABC, abstractmethod
@@ -51,6 +52,7 @@ class AsyncArtifactWriterBase(ABC):
             alignment_bytes_size=self._blob_alignment_bytes_size,
             volume_bytes_size=self._blob_volume_bytes_size,
         )
+        atexit.register(self.close)
 
     def __enter__(self) -> AsyncArtifactWriterBase:
         return self

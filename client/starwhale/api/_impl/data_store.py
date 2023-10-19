@@ -1880,7 +1880,7 @@ class LocalTable:
             manifest.key_column_type = key_type_str
 
         data_blocks = self._load_data_blocks()
-        console.trace(f"load {len(data_blocks)} data blocks")
+        console.trace(f"load {len(data_blocks)} data blocks in {self.table_name}")
 
         key_column = self.key_column
         if key_column is None:
@@ -1914,7 +1914,9 @@ class LocalTable:
                 last_range_broken = False
 
         for start, end in key_range_not_found:
-            console.trace(f"create new block for key range {start} - {end}")
+            console.trace(
+                f"create new block for key range {start} - {end} in table {self.table_name}"
+            )
             block_id = manifest.next_block_id
             file = self._get_block_file_name(
                 root_path, manifest.block_config.block_name_prefix, block_id
@@ -1965,7 +1967,7 @@ class LocalTable:
                         manifest.next_block_id,
                     ),
                 )
-                console.trace(f"dump block {block.file}")
+                console.trace(f"dump block {block.file} in table {self.table_name}")
                 block.dump(items, self.compressor, str(root_path))
                 min_rev, max_rev = revision_range_of_items(items)
                 manifest.blocks.append(
@@ -1996,10 +1998,13 @@ class LocalTable:
         mem_table.records.clear()
 
     def dump(self) -> None:
+        console.trace(f"full dump triggered of table {self.table_name}")
         if self._immutable_memory_table is not None:
+            console.trace(f"dump immutable memory table of {self.table_name}")
             self._dump(self.root_path, self._immutable_memory_table)
             self._immutable_memory_table = None
         if self.memory_table is not None:
+            console.trace(f"dump memory table of {self.table_name}")
             self._dump(self.root_path, self.memory_table)
             self.memory_table = None
 
