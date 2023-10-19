@@ -34,13 +34,15 @@ export default function Markdown({ children, ...props }: IMarkdownProps) {
     }
 
     return (
-        <ReactMarkdown
-            transformLinkUri={transformLinkUri}
-            transformImageUri={transformImageUri}
-            linkTarget={linkTarget}
-            {...props}
-        >
-            {children}
-        </ReactMarkdown>
+        <div className='markdown-body'>
+            <ReactMarkdown
+                transformLinkUri={transformLinkUri}
+                transformImageUri={transformImageUri}
+                linkTarget={linkTarget}
+                {...props}
+            >
+                {children}
+            </ReactMarkdown>
+        </div>
     )
 }

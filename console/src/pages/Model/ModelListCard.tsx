@@ -21,6 +21,7 @@ import { toaster } from 'baseui/toast'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 import Shared from '@/components/Shared'
 import _ from 'lodash'
+import QuickStartNewModel from '@/domain/project/components/QuickStartNewModel'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -43,7 +44,14 @@ export default function ModelListCard() {
     const [t] = useTranslation()
 
     return (
-        <Card title={t('Models')}>
+        <Card
+            title={
+                <div className='flex items-center gap-20px'>
+                    <p className='font-bold text-18px'>{t('Models')}</p>
+                    <QuickStartNewModel />
+                </div>
+            }
+        >
             <div className='max-w-280px mb-10px'>
                 <QueryInput
                     placeholder={t('model.search.name.placeholder')}

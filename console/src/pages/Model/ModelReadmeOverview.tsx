@@ -9,7 +9,7 @@ export default function ModelReadmeOverview() {
 
     return (
         <div
-            className='markdown-body flex-column'
+            className='flex-column'
             style={{
                 paddingTop: '20px',
                 minHeight: '500px',

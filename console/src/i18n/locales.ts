@@ -813,6 +813,14 @@ const quickstart = {
         en: 'Quickstart',
         zh: '快速开始',
     },
+    'quickstart.model.how': {
+        en: 'How to create a model',
+        zh: '如何构建新模型',
+    },
+    'quickstart.model.button': {
+        en: 'Learn more in docs',
+        zh: '查看文档了解更多',
+    },
 }
 
 const ui = {
