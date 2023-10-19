@@ -104,6 +104,9 @@ class _ResourceOwnerMixin:
 
 
 class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
+    # "fp" and "__cache_bytes" are the runtime attributes that are not saved in the datastore
+    __slots__ = ("fp", "__cache_bytes", "_content")
+
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -145,15 +148,6 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
 
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
         return self.fetch_data(encoding)
-
-    # TODO: use the better way to clear cache in datastore storing process
-    def clear_cache(self) -> None:
-        self.__cache_bytes = b""
-        if isinstance(self.fp, (bytes, io.IOBase, str)):
-            self.fp = ""
-
-        if self.link:
-            self.link.clear_cache()
 
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self.__cache_bytes:
@@ -685,6 +679,9 @@ class Text(BaseArtifact, SwObject):
     # size = DIGEST_SIZE + Text Struct size + Link Object Struct size
     AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 1024
 
+    # "_content" is the runtime attributes that is not saved in the datastore
+    __slots__ = ("_content",)
+
     def __init__(
         self,
         content: str = "",
@@ -711,10 +708,6 @@ class Text(BaseArtifact, SwObject):
         if not self._content:
             self._content = self.link_to_content()
         return self._content
-
-    def clear_cache(self) -> None:
-        super().clear_cache()
-        self._content = ""
 
     def to_bytes(self, encoding: str = "") -> bytes:
         return self.content.encode(encoding or self.encoding)
@@ -794,6 +787,9 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
 
 # TODO: support tensorflow transform
 class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
+    # "_signed_uri" is the runtime attributes that is not saved in the datastore
+    __slots__ = ("_signed_uri",)
+
     def __init__(
         self,
         uri: t.Union[str, Path] = "",
@@ -824,13 +820,11 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
                 data_type = data_type.astype()
 
         self.data_type = data_type
-
-        self._signed_uri = ""
         self.extra_info = kwargs
 
     @property
     def signed_uri(self) -> str:
-        return self._signed_uri
+        return getattr(self, "_signed_uri", "")
 
     @signed_uri.setter
     def signed_uri(self, value: str) -> None:
@@ -870,9 +864,6 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
             key_compose=key_compose, bucket=store.bucket
         ) as f:
             return f.read(self.size)  # type: ignore
-
-    def clear_cache(self) -> None:
-        self._signed_uri = ""
 
 
 class JsonDict(SwObject):

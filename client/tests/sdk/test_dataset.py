@@ -271,8 +271,6 @@ class TestDatasetCopy(BaseTestCase):
                     "attributes": [
                         {"name": "as_mask", "type": "BOOL"},
                         {"name": "mask_uri", "type": "STRING"},
-                        {"name": "fp", "type": "STRING"},
-                        {"name": "_BaseArtifact__cache_bytes", "type": "BYTES"},
                         {"name": "_type", "type": "STRING"},
                         {"name": "display_name", "type": "STRING"},
                         {"name": "_mime_type", "type": "STRING"},
@@ -292,7 +290,6 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
                                 {"name": "data_type", "type": "UNKNOWN"},
-                                {"name": "_signed_uri", "type": "STRING"},
                                 {
                                     "keyType": {"type": "UNKNOWN"},
                                     "name": "extra_info",
@@ -318,7 +315,7 @@ class TestDatasetCopy(BaseTestCase):
         for v in content["records"][0]["values"]:
             if v["key"] != "features/text":
                 continue
-            assert v["value"]["fp"] == ""
+            assert "fp" not in v["value"]
 
     @patch("os.environ", {})
     @Mocker()

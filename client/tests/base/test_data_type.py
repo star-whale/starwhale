@@ -138,9 +138,9 @@ class TestDataType(TestCase):
         assert _asdict["display_name"] == "t"
         assert _asdict["shape"] == [28, 28, 3]
         assert json.loads(json.dumps(_asdict))["_type"] == "image"
-
-        with self.assertRaises(RuntimeError):
-            data_store._get_type(img)
+        t = data_store._get_type(img)
+        assert t.raw_type == Image
+        assert t.name == "object"
 
         img = Image(
             "path/to/file", display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG
@@ -157,8 +157,6 @@ class TestDataType(TestCase):
         assert _asdict["_mime_type"] == MIMEType.GRAYSCALE.value
         assert _asdict["shape"] == [28, 28, 1]
         assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
-        with self.assertRaises(RuntimeError):
-            data_store._get_type(img)
 
         self.fs.create_file("path/to/file", contents="")
         img = GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]).carry_raw_data()
@@ -238,7 +236,7 @@ class TestDataType(TestCase):
         _asdict = json.loads(json.dumps(text.asdict()))
         assert text.to_bytes() == b"test"
         assert "fp" not in _asdict
-        assert _asdict["_content"] == "test"
+        assert "_content" not in _asdict
         assert _asdict["_type"] == "text"
         assert _asdict["_mime_type"] == MIMEType.PLAIN.value
         assert text.to_str() == "test"
@@ -431,7 +429,6 @@ class TestJsonDict(TestCase):
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "data_type": data_store.UNKNOWN,
-                            "_signed_uri": data_store.STRING,
                             "extra_info": data_store.SwMapType(
                                 data_store.UNKNOWN, data_store.UNKNOWN
                             ),
