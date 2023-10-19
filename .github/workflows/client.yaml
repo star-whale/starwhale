@@ -65,8 +65,8 @@ jobs:
       - name: Install dependencies
         working-directory: ./client
         run: |
-          make install-sw
           make install-dev-req
+          make install-sw
 
       - name: Black Format Check
         working-directory: ./client
