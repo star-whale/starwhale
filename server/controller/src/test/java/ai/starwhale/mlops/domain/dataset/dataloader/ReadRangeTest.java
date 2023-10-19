@@ -141,6 +141,97 @@ public class ReadRangeTest {
     }
 
     @Test
+    public void testGenerateRangeWithIter() {
+        dataRangeProvider.setMaxScanSize(10);
+
+        var request = QueryDataIndexRequest.builder()
+                .tableName("test-table-name")
+                .start("0000-000")
+                .startInclusive(true)
+                .end("0000-008")
+                .endInclusive(true)
+                .batchSize(3)
+                .build();
+        given(dataStore.scan(
+                DataStoreScanRequest.builder()
+                        .start("0000-000")
+                        .startInclusive(true)
+                        .end("0000-008")
+                        .endInclusive(true)
+                        .keepNone(true)
+                        .rawResult(false)
+                        .tables(List.of(
+                                DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("test-table-name")
+                                        .columns(Map.of("id", "id"))
+                                        .build()
+                        ))
+                        .limit(10)
+                        .encodeWithType(true)
+                        .build()
+        )).willReturn(new RecordList(
+                Map.of(),
+                Map.of(),
+                List.of(Map.of("id", Map.of("value", "0000-000", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-001", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-002", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-003", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-004", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-005", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-006", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-007", "type", "STRING")),
+                        Map.of("id", Map.of("value", "0000-008", "type", "STRING"))
+                ),
+                "0000-008",
+                "STRING"
+        ));
+        given(dataStore.scan(
+                DataStoreScanRequest.builder()
+                        .start("0000-008")
+                        .startInclusive(false)
+                        .end("0000-008")
+                        .endInclusive(true)
+                        .keepNone(true)
+                        .rawResult(false)
+                        .tables(List.of(
+                                DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("test-table-name")
+                                        .columns(Map.of("id", "id"))
+                                        .build()
+                        ))
+                        .limit(10)
+                        .encodeWithType(true)
+                        .build()
+        )).willReturn(new RecordList(
+                Map.of(), Map.of(), List.of(
+                Map.of("id", Map.of("value", "0000-009", "type", "STRING")),
+                Map.of("id", Map.of("value", "0000-010", "type", "STRING")),
+                Map.of("id", Map.of("value", "0000-011", "type", "STRING"))
+        ), "0000-010",
+                "STRING"
+        ));
+
+        var dataRanges = dataRangeProvider.returnDataIndexIter(request);
+        var count = 0;
+        while (dataRanges.hasNext()) {
+            count++;
+            dataRanges.next();
+        }
+        assertThat("number", count == 4);
+        verify(dataStore, times(2)).scan(any());
+
+        request.setBatchSize(6);
+        dataRanges = dataRangeProvider.returnDataIndexIter(request);
+        count = 0;
+        while (dataRanges.hasNext()) {
+            count++;
+            dataRanges.next();
+        }
+        assertThat("number", count == 2);
+        verify(dataStore, times(4)).scan(any());
+    }
+
+    @Test
     public void testNextDataRange() {
         var sid = 2L;
         var sessionId = "1-session";
