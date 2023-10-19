@@ -46,7 +46,8 @@ from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.base.data_type import Link
 from starwhale.base.blob.store import LocalFileStore
-from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.resource import ResourceType
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
@@ -334,7 +335,7 @@ class ObjectStore:
         self,
         backend: str,
         bucket: str = "",
-        resource: Resource | None = None,
+        instance: Instance | None = None,
         key_prefix: str = "",
         **kw: t.Any,
     ) -> None:
@@ -344,9 +345,9 @@ class ObjectStore:
         if backend == SWDSBackendType.S3:
             self.backend = S3StorageBackend(kw.get("conn") or S3Connection.from_env())
         elif backend == SWDSBackendType.SignedUrl:
-            if not isinstance(resource, Resource):
-                raise FieldTypeOrValueError(f"{resource} is not Resource type")
-            self.backend = SignedUrlBackend(resource)
+            if not isinstance(instance, Instance):
+                raise FieldTypeOrValueError(f"{instance} is not Instance type")
+            self.backend = SignedUrlBackend(instance)
         elif backend == SWDSBackendType.Http:
             self.backend = HttpBackend()
         else:
@@ -382,16 +383,16 @@ class ObjectStore:
         return cls(backend=backend, bucket=bucket, conn=conn)
 
     @classmethod
-    def to_signed_http_backend(cls, resource: Resource) -> ObjectStore:
-        if not resource.instance.is_cloud:
-            raise RuntimeError(f"{resource} is not server/cloud resource")
+    def to_signed_http_backend(cls, instance: Instance) -> ObjectStore:
+        if not instance.is_cloud:
+            raise RuntimeError(f"{instance} is not server/cloud instance")
 
-        return cls(backend=SWDSBackendType.SignedUrl, resource=resource)
+        return cls(backend=SWDSBackendType.SignedUrl, instance=instance)
 
     @classmethod
-    def get_store(cls, link: Link, owner: str | Resource | None = None) -> ObjectStore:
+    def get_store(cls, link: Link) -> ObjectStore:
         with cls._store_lock:
-            key = f"{link.owner}.{link.scheme}"
+            key = f"{link.instance}.{link.scheme}"
             if link.scheme in S3Connection.supported_schemes:
                 _parts = urlparse(link.uri).path.lstrip("/").split("/", 1)
                 key = f"{key}.{link.uri.replace(_parts[-1], '')}"
@@ -400,11 +401,8 @@ class ObjectStore:
             if _store:
                 return _store
 
-            if isinstance(owner, str):
-                owner = Resource(owner)
-
-            if owner and owner.instance.is_cloud:
-                _store = ObjectStore.to_signed_http_backend(owner)
+            if link.instance and link.instance.is_cloud:
+                _store = ObjectStore.to_signed_http_backend(link.instance)
             else:
                 _store = ObjectStore.from_link(link)
 
@@ -505,9 +503,9 @@ class LocalFSStorageBackend(StorageBackend):
 
 
 class SignedUrlBackend(StorageBackend, CloudRequestMixed):
-    def __init__(self, resource: Resource) -> None:
+    def __init__(self, instance: Instance) -> None:
         super().__init__(kind=SWDSBackendType.SignedUrl)
-        self.resource = resource
+        self.instance = instance
 
     @http_retry
     def _make_file(
@@ -521,15 +519,15 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
         )
 
     def _do_sign(self, uri: str) -> str:
-        r = get_signed_urls(self.resource, [uri])
+        r = get_signed_urls(self.instance, [uri])
         return r.get(uri, "")
 
 
-def get_signed_urls(resource: Resource, uris: t.List[str]) -> t.Dict[str, str]:
+def get_signed_urls(instance: Instance | str, uris: t.List[str]) -> t.Dict[str, str]:
     r = CloudRequestMixed.do_http_request(
-        f"/project/{resource.project.id}/{resource.typ.name}/{resource.name}/uri/sign-links",
+        "/filestorage/sign-links",
         method=HTTPMethod.POST,
-        instance=resource.instance,
+        instance=instance,
         params={
             "expTimeMillis": int(
                 os.environ.get(

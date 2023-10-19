@@ -21,7 +21,7 @@ from starwhale.utils.error import (
     MissingDependencyError,
 )
 from starwhale.utils.retry import http_retry
-from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.uri.instance import Instance
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 _T = t.TypeVar("_T")
@@ -92,18 +92,7 @@ class ArtifactType(Enum):
     Unknown = "unknown"
 
 
-class _ResourceOwnerMixin:
-    @property
-    def owner(self) -> t.Optional[Resource]:
-        _owner = getattr(self, "_owner", None)
-        return Resource(_owner, ResourceType.dataset, refine=False) if _owner else None
-
-    @owner.setter
-    def owner(self, value: t.Optional[Resource]) -> None:
-        self._owner = str(value) if value else None
-
-
-class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
+class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
     # "fp" and "__cache_bytes" are the runtime attributes that are not saved in the datastore
     __slots__ = ("fp", "__cache_bytes", "_content")
 
@@ -165,7 +154,6 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
             self.__cache_bytes = _content.encode(encoding) if isinstance(_content, str) else _content  # type: ignore
             return self.__cache_bytes
         elif self.link:
-            self.link.owner = self.owner
             self.__cache_bytes = self.link.to_bytes()
             return self.__cache_bytes
         elif not self.fp and isinstance(self.fp, bytes):
@@ -207,6 +195,10 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
 
     def __str__(self) -> str:
         return f"{self.type}, display:{self.display_name}, mime_type:{self.mime_type}, shape:{self.shape}, encoding: {self.encoding}"
+
+    def prepare_link(self, instance: Instance) -> None:
+        if self.link:
+            self.link.instance = instance
 
     __repr__ = __str__
 
@@ -780,9 +772,9 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
 
 
 # TODO: support tensorflow transform
-class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
-    # "_signed_uri" is the runtime attributes that is not saved in the datastore
-    __slots__ = ("_signed_uri",)
+class Link(ASDictMixin, SwObject):
+    # "_signed_uri" and "_instance" are the runtime attributes that are not saved in the datastore
+    __slots__ = ("_signed_uri", "_instance")
 
     def __init__(
         self,
@@ -824,6 +816,14 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
     def signed_uri(self, value: str) -> None:
         self._signed_uri = value
 
+    @property
+    def instance(self) -> Instance | None:
+        return getattr(self, "_instance", None)
+
+    @instance.setter
+    def instance(self, value: Instance | None) -> None:
+        self._instance = value
+
     def astype(self) -> t.Dict[str, t.Any]:
         data_type: t.Dict
         if isinstance(self.data_type, dict):
@@ -845,7 +845,6 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
 
     @http_retry
     def to_bytes(self) -> bytes:
-        # TODO: cache store
         from starwhale.core.dataset.store import ObjectStore
 
         key_compose = (
@@ -853,7 +852,7 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
             self.offset or 0,
             self.size + self.offset - 1 if self.size != -1 else sys.maxsize,
         )
-        store = ObjectStore.get_store(self, self.owner)
+        store = ObjectStore.get_store(self)
         with store.backend._make_file(
             key_compose=key_compose, bucket=store.bucket
         ) as f:

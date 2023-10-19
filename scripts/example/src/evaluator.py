@@ -81,7 +81,6 @@ def evaluate(ppl_result: t.Iterator):
         assert "placeholder" not in _data["input"]
         assert isinstance(_data["input"]["img"], Image)
         assert len(_data["input"]["img"].to_bytes()) > 0
-        assert _data["input"]["img"].owner
         assert isinstance(_data["input"]["txt"], Text)
         assert isinstance(_data["output/image"], Image)
         assert len(_data["output/image"].to_bytes()) > 0

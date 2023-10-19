@@ -226,7 +226,7 @@ class Evaluation(AsyncArtifactWriterBase):
             Binary(encoded) -> bytes
         """
         if isinstance(data, BaseArtifact):
-            data.owner = self._resource
+            data.prepare_link(self._resource.instance)
 
         if isinstance(data, Text) and data.auto_convert_to_str:
             return data.content

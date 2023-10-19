@@ -57,7 +57,7 @@ class TestDatasetBackend(TestCase):
         raw_content = string.ascii_lowercase.encode()
         data_uri = "12345678abcdefg"
         req_signed_url = rm.post(
-            "http://127.0.0.1:1234/api/v1/project/1/dataset/mnist/uri/sign-links",
+            "http://127.0.0.1:1234/api/v1/filestorage/sign-links",
             json={"data": {data_uri: signed_url}},
         )
         req_file_download = rm.get(
@@ -70,7 +70,7 @@ class TestDatasetBackend(TestCase):
             typ=ResourceType.dataset,
             refine=False,
         )
-        obj = SignedUrlBackend(dataset_uri)._make_file((Link(data_uri), 0, -1))
+        obj = SignedUrlBackend(dataset_uri.instance)._make_file((Link(data_uri), 0, -1))
         assert obj.read(1) == b"a"
         assert obj.read(-1) == raw_content[1:]
         assert req_signed_url.call_count == 1

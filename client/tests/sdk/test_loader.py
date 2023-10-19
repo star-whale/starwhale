@@ -119,7 +119,7 @@ class TestDataLoader(TestCase):
         assert len(_data["image"].to_bytes()) == 28 * 28
         assert isinstance(_data["image"], Image)
 
-        key = "local/project/self/dataset/mnist/version/1122334455667788."
+        key = "local."
 
         assert list(ObjectStore._stores.keys()) == [key]
         assert ObjectStore._stores[key].backend.kind == SWDSBackendType.LocalFS
@@ -279,15 +279,11 @@ class TestDataLoader(TestCase):
 
             assert len(ObjectStore._stores) == 4
             assert (
-                ObjectStore._stores[
-                    "local/project/self/dataset/mnist/version/1122334455667788.s3.s3://127.0.0.1/starwhale/"
-                ].backend.kind
+                ObjectStore._stores["local.s3.s3://127.0.0.1/starwhale/"].backend.kind
                 == SWDSBackendType.S3
             )
             assert (
-                ObjectStore._stores[
-                    "local/project/self/dataset/mnist/version/1122334455667788.s3.s3://127.0.0.1:9000/starwhale/"
-                ].bucket
+                ObjectStore._stores["local.s3.s3://127.0.0.1:9000/starwhale/"].bucket
                 == "starwhale"
             )
 
@@ -362,7 +358,7 @@ class TestDataLoader(TestCase):
 
         signed_url = "http://minio/signed/path/file"
         rm.post(
-            "http://127.0.0.1:1234/api/v1/project/1/dataset/mnist/uri/sign-links",
+            "http://127.0.0.1:1234/api/v1/filestorage/sign-links",
             json={"data": {fname: signed_url}},
         )
         rm.get(
@@ -381,27 +377,13 @@ class TestDataLoader(TestCase):
         assert len(_data["image"].to_bytes()) == 28 * 28
         assert isinstance(_data["image"], Image)
 
-        assert list(ObjectStore._stores.keys()) == [
-            "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
-        ]
-        backend = ObjectStore._stores[
-            "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
-        ].backend
+        assert list(ObjectStore._stores.keys()) == ["cloud://foo."]
+        backend = ObjectStore._stores["cloud://foo."].backend
         assert isinstance(backend, SignedUrlBackend)
         assert backend.kind == SWDSBackendType.SignedUrl
 
-        assert (
-            ObjectStore._stores[
-                "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
-            ].bucket
-            == ""
-        )
-        assert (
-            ObjectStore._stores[
-                "http://127.0.0.1:1234/project/1/dataset/mnist/version/1122334455667788."
-            ].key_prefix
-            == ""
-        )
+        assert ObjectStore._stores["cloud://foo."].bucket == ""
+        assert ObjectStore._stores["cloud://foo."].key_prefix == ""
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
@@ -461,7 +443,7 @@ class TestDataLoader(TestCase):
         assert len(_data["image"].to_bytes()) == 784
         assert isinstance(_data["image"].to_bytes(), bytes)
 
-        key = "local/project/self/dataset/mnist/version/1122334455667788."
+        key = "local."
         assert list(ObjectStore._stores.keys()) == [key]
         backend = ObjectStore._stores[key].backend
         assert isinstance(backend, LocalFSStorageBackend)
@@ -615,7 +597,7 @@ class TestDataLoader(TestCase):
         raw_content = b"abcdefg"
         req_get_file = rm.register_uri(HTTPMethod.GET, "/get-file", content=raw_content)
         rm.post(
-            "http://localhost/api/v1/project/1/dataset/mnist/uri/sign-links",
+            "http://localhost/api/v1/filestorage/sign-links",
             json={"data": _uri_dict},
         )
 

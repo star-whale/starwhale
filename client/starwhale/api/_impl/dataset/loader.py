@@ -246,17 +246,14 @@ class DataLoader:
                     for rows in self.tabular_dataset.scan_batch(
                         rt[0], rt[1], self.session_consumption.batch_size
                     ):
-                        _links = []
-                        for row in rows:
-                            for at in row.artifacts:
-                                at.owner = self.dataset_uri
-                                if at.link:
-                                    _links.append(at.link)
-                        uri_dict = get_signed_urls(
-                            self.dataset_uri, [lk.uri for lk in _links]
+                        _links = [
+                            a.link for row in rows for a in row.artifacts if a.link
+                        ]
+                        _signed_uris_map = get_signed_urls(
+                            self.dataset_uri.instance, [lk.uri for lk in _links]
                         )
                         for lk in _links:
-                            lk.signed_uri = uri_dict.get(lk.uri, "")
+                            lk.signed_uri = _signed_uris_map.get(lk.uri, "")
 
                         for row in rows:
                             rows_cnt += 1
@@ -299,7 +296,7 @@ class DataLoader:
         shadow_dataset: t.Optional[Dataset] = None,
     ) -> DataRow:
         for artifact in row.artifacts:
-            artifact.owner = self.dataset_uri
+            artifact.prepare_link(self.dataset_uri.instance)
             if not skip_fetch_data:
                 artifact.fetch_data()
 
