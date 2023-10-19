@@ -26,4 +26,14 @@ export default defineConfig({
             cssExtend: {},
         }),
     ],
+    shortcuts: [
+        ['wh-full', 'w-full h-full'],
+        ['flex-col', 'flex flex-col'],
+        ['f-c-c', 'flex justify-center items-center'],
+        [
+            'icon-btn',
+            'text-16 inline-block cursor-pointer select-none opacity-75 transition duration-200 ease-in-out hover:opacity-100 hover:text-primary !outline-none',
+        ],
+    ],
+    rules: [['card-shadow', { 'box-shadow': '0 2px 8px 0 rgba(0,0,0,0.20); ' }]],
 })

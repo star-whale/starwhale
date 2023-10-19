@@ -26,3 +26,11 @@ export const languages = [
 export const cliMateServer = 'http://127.0.0.1:8007'
 export const docsZH = 'https://starwhale.cn/docs'
 export const docsEN = 'https://doc.starwhale.ai'
+export const urls = {
+    zh: {
+        quickstart: 'https://starwhale.cn/docs/quickstart/on-premises',
+    },
+    en: {
+        quickstart: 'https://doc.starwhale.ai/docs/quickstart/on-premises',
+    },
+}

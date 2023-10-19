@@ -796,6 +796,25 @@ const table = {
     },
 }
 
+const quickstart = {
+    'quickstart.welcome.title': {
+        en: 'Welcome to Starwhale!',
+        zh: '欢迎使用 Starwhale!',
+    },
+    'quickstart.welcome.desc': {
+        en: 'Starwhale is an MLOps platform that supports you to evaluate and manage models, datasets and runtimes. ',
+        zh: 'Starwhale 是一个支持您评测和管理模型、数据集和运行时的 MLOps 平台。',
+    },
+    'quickstart.welcome.desc1': {
+        en: 'Go to quickstart to begin your Starwhale journey.',
+        zh: '快速开始您的 Starwhale 之旅。',
+    },
+    'quickstart.button': {
+        en: 'Quickstart',
+        zh: '快速开始',
+    },
+}
+
 const ui = {
     'selector.placeholder': {
         en: 'Select...',
@@ -1944,6 +1963,7 @@ const locales0 = {
     ...evaluation,
     ...widget,
     ...ui,
+    ...quickstart,
 }
 
 // eslint-disable-next-line import/no-mutable-exports
