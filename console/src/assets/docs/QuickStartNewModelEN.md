@@ -10,7 +10,7 @@ python3 -m pip install starwhale
 swcli --version
 
 sudo rm -rf /usr/local/bin/swcli
-sudo ln -s which swcli /usr/local/bin/
+sudo ln -s "$(which swcli)" /usr/local/bin/
 ```
 
 **Step2: Log in Starwhale Cloud Instance**
