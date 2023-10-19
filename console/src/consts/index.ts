@@ -28,9 +28,9 @@ export const docsZH = 'https://starwhale.cn/docs'
 export const docsEN = 'https://doc.starwhale.ai'
 export const urls = {
     zh: {
-        quickstart: 'https://starwhale.cn/docs/quickstart/on-premises',
+        quickstart: 'https://starwhale.cn/docs/getting-started/',
     },
     en: {
-        quickstart: 'https://doc.starwhale.ai/docs/quickstart/on-premises',
+        quickstart: 'https://doc.starwhale.ai/getting-started/',
     },
 }
