@@ -1,17 +1,11 @@
-import { ButtonLink, TextLink } from '@/components/Link'
-import Link from '@/components/Link/Link'
+import { ButtonLink } from '@/components/Link'
 import { urls } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
-import Button, { ExtendButton } from '@starwhale/ui/Button'
-import React, { useState } from 'react'
+import Button from '@starwhale/ui/Button'
+import React from 'react'
 import { useLocalStorage } from 'react-use'
 
-interface IQuickStartProps {
-    titleKey: string
-    descriptionKey: string
-}
-
-const QuickStart: React.FC<IQuickStartProps> = () => {
+const QuickStart = () => {
     const [t, i18n] = useTranslation()
     const [isNoticeClosed, setIsNoticeClosed] = useLocalStorage('isQuickstartNoticeClosed', false)
 

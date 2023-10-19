@@ -6,7 +6,6 @@ import { fetchProject } from '@project/services/project'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { toaster } from 'baseui/toast'
-import QuickStart from '@/domain/project/components/QuickStart'
 
 export interface IProjectLayoutProps {
     children: React.ReactNode
