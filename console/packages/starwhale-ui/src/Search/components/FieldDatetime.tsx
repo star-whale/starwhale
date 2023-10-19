@@ -62,6 +62,7 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
             const initialValue = multi ? (Array.isArray(value) ? value : [value, undefined]) : value
             return (
                 <StatefulCalendar
+                    // @ts-ignore
                     initialState={{
                         value: initialValue as any,
                     }}
