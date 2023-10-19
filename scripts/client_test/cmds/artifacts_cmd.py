@@ -72,7 +72,7 @@ class Model(BaseArtifact):
         version = gen_uniq_version()
         cmd = [
             CLI,
-            "-vvv",
+            "-vvvv",
             "model",
             "run",
             "--uri",

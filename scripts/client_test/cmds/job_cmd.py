@@ -9,7 +9,9 @@ class Job:
     _cmd = "job"
 
     def info(self, version: str) -> t.Any:
-        _ret_code, _res = invoke_output([CLI, "-o", "json", self._cmd, "info", version])
+        _ret_code, _res = invoke_output(
+            [CLI, "-o", "json", self._cmd, "info", version], log=True
+        )
         try:
             return json.loads(_res) if _ret_code == 0 else {}
         except Exception as e:
