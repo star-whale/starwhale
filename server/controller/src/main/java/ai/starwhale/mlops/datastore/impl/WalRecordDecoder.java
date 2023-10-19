@@ -109,21 +109,26 @@ public class WalRecordDecoder {
 
     private static BaseValue decodeList(ColumnSchema columnSchema, @NonNull Wal.Column col) {
         var ret = new ListValue();
-        for (var element : col.getListValueList()) {
-            ret.add(WalRecordDecoder.decodeValue(
-                    columnSchema == null ? null : columnSchema.getElementSchema(),
-                    element));
+        var values = col.getListValueList();
+        for (var i = 0; i < values.size(); i++) {
+            ColumnSchema schema = null;
+            if (columnSchema != null) {
+                var sparse = columnSchema.getSparseElementSchema();
+                if (sparse != null) {
+                    schema = sparse.get(i);
+                }
+                if (schema == null) {
+                    schema = columnSchema.getElementSchema();
+                }
+            }
+            ret.add(WalRecordDecoder.decodeValue(schema, values.get(i)));
         }
         return ret;
     }
 
     private static BaseValue decodeTuple(ColumnSchema columnSchema, @NonNull Wal.Column col) {
         var ret = new TupleValue();
-        for (var element : col.getListValueList()) {
-            ret.add(WalRecordDecoder.decodeValue(
-                    columnSchema == null ? null : columnSchema.getElementSchema(),
-                    element));
-        }
+        ret.addAll((ListValue) WalRecordDecoder.decodeList(columnSchema, col));
         return ret;
     }
 

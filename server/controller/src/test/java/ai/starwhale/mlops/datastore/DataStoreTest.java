@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
@@ -149,24 +150,33 @@ public class DataStoreTest {
 
     @Test
     public void testUpdate() {
+        var objDesc = ColumnSchemaDesc.builder().name("v").type("OBJECT").pythonType("test-py")
+                        .attributes(List.of(
+                                ColumnSchemaDesc.builder().name("property").type("STRING")
+                                        .build()
+                        ));
         var desc = new TableSchemaDesc("k",
                 List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
                         ColumnSchemaDesc.builder().name("a").type("INT32").build(),
                         ColumnSchemaDesc.builder().name("x").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("u").type("LIST")
-                                .elementType(
-                                        ColumnSchemaDesc.builder().name("v").type("OBJECT").pythonType("test-py")
-                                                .attributes(List.of(
-                                                        ColumnSchemaDesc.builder().name("property").type("STRING")
-                                                                .build()
-                                                )).build()
-                                ).build()));
+                        ColumnSchemaDesc.builder().name("u").type("LIST").elementType(objDesc.build()).build(),
+                        ColumnSchemaDesc.builder().name("l").type("LIST")
+                                .elementType(ColumnSchemaDesc.builder().name("v").type("INT32").build())
+                                .attributes(List.of(
+                                        ColumnSchemaDesc.builder().index(1).type("STRING").build(),
+                                        objDesc.index(3).build()
+                                    ))
+                                .build()
+
+                ));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "1")));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "u", List.of(Map.of("property", "0")))));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "1", "a", "2")));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "1", "u", List.of(Map.of("property", "1")))));
         this.dataStore.update("t2", desc, List.of(Map.of("k", "3", "x", "2")));
         this.dataStore.update("t1", desc, List.of(Map.of("k", "0", "a", "5"), Map.of("k", "4", "-", "1")));
+        this.dataStore.update("t1", desc, List.of(
+                Map.of("k", "1", "l", List.of("1", "abcde", "3", Map.of("property", "4")))));
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -204,11 +214,16 @@ public class DataStoreTest {
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                                         .tableName("t1")
-                                        .columns(Map.of("k", "k", "a", "a", "u", "u"))
+                                        .columns(Map.of("k", "k", "a", "a", "u", "u", "l", "l"))
                                         .build()))
                                 .build())
                         .getRecords(),
-                is(List.of(Map.of("k", "1", "a", "00000002", "u", List.of(Map.of("property", "1"))))));
+                is(List.of(
+                        Map.of(
+                                "k", "1",
+                                "a", "00000002",
+                                "u", List.of(Map.of("property", "1")),
+                                "l", List.of("00000001", "abcde", "00000003", Map.of("property", "4"))))));
         assertThat("t2",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1139,6 +1154,8 @@ public class DataStoreTest {
                         put("k", Map.of("a", "0000000b", "b", "0000000c"));
                         put("l", List.of("0000000b"));
                         put("m", Map.of("01", "0002"));
+                        // list with multiple types
+                        put("n", List.of("00000001", "02", "3", "04", "05"));
                         put("complex", Map.of("a", List.of(List.of("00000001")),
                                 "b", List.of(List.of("00000002")),
                                 "c", Map.of("t", List.of("00000004"))));
@@ -1170,6 +1187,15 @@ public class DataStoreTest {
                                 put("02", null);
                             }
                         });
+                        put("n", new ArrayList<String>() {
+                            {
+                                add(null);
+                                add("02");
+                                add(null);
+                                add("04");
+                                add(null);
+                            }
+                        });
                     }
                 },
                 new HashMap<>() {
@@ -1179,6 +1205,7 @@ public class DataStoreTest {
                         put("k", Map.of());
                         put("l", List.of());
                         put("m", Map.of());
+                        put("n", List.of());
                     }
                 });
         var columnSchemaList = List.of(
@@ -1210,6 +1237,12 @@ public class DataStoreTest {
                         .type("MAP")
                         .keyType(ColumnSchemaDesc.builder().name("key").type("INT8").build())
                         .valueType(ColumnSchemaDesc.builder().name("value").type("INT16").build())
+                        .build(),
+                ColumnSchemaDesc.builder().name("n")
+                        .type("LIST")
+                        .elementType(ColumnSchemaDesc.builder().name("element").type("INT8").build())
+                        .attributes(List.of(ColumnSchemaDesc.builder().name("").index(0).type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("").index(2).type("STRING").build()))
                         .build(),
                 ColumnSchemaDesc.builder().name("complex")
                         .type("OBJECT")
@@ -1335,6 +1368,14 @@ public class DataStoreTest {
                                         .columnValueHints(List.of("2"))
                                         .build())
                                 .build());
+                        put("n", ColumnHintsDesc.builder()
+                                .typeHints(List.of("LIST"))
+                                .columnValueHints(List.of())
+                                .elementHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT32", "INT8", "STRING"))
+                                        .columnValueHints(List.of("1", "2", "4", "5", "3"))
+                                        .build())
+                                .build());
                         put("complex", ColumnHintsDesc.builder()
                                 .typeHints(List.of("OBJECT"))
                                 .columnValueHints(List.of())
@@ -1395,7 +1436,7 @@ public class DataStoreTest {
                 .build());
         result.getColumnSchemaMap().entrySet()
                 .forEach(entry -> entry.setValue(new ColumnSchema(entry.getValue().toColumnSchemaDesc(), 0)));
-        assertThat(result, is(expected));
+        assertEquals(expected, result);
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")
@@ -1405,7 +1446,7 @@ public class DataStoreTest {
                 .encodeWithType(true)
                 .build());
         var encoded = encodeResultWithType(expected);
-        assertThat(result, is(encoded));
+        assertEquals(encoded, result);
 
         this.dataStore.update("t",
                 new TableSchemaDesc("key", List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build())),
@@ -1430,6 +1471,7 @@ public class DataStoreTest {
                         put("k", ColumnType.OBJECT);
                         put("l", ColumnType.TUPLE);
                         put("m", ColumnType.MAP);
+                        put("n", ColumnType.LIST);
                         put("complex", ColumnType.OBJECT);
                     }
                 }));
@@ -1501,9 +1543,19 @@ public class DataStoreTest {
         switch (schema.getType()) {
             case LIST:
             case TUPLE:
-                value = ((List<?>) value).stream()
-                        .map(e -> encodeValueWithType(schema.getElementSchema(), e))
-                        .collect(Collectors.toList());
+                var items = (List<?>) value;
+                var encoded = new ArrayList<>();
+                for (int i = 0; i < items.size(); ++i) {
+                    ColumnSchema elementSchema = null;
+                    if (schema.getSparseElementSchema() != null) {
+                        elementSchema = schema.getSparseElementSchema().get(i);
+                    }
+                    if (elementSchema == null) {
+                        elementSchema = schema.getElementSchema();
+                    }
+                    encoded.add(encodeValueWithType(elementSchema, items.get(i)));
+                }
+                value = encoded;
                 break;
             case MAP:
                 value = ((Map<?, ?>) value).entrySet().stream()

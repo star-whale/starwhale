@@ -32,9 +32,13 @@ public class ColumnSchema {
     private static Set<String> pythonTypeConstants = new ConcurrentHashSet<>();
     private String name;
     private int index;
+    // offset is used to indicate the order of the elements in a list or tuple
+    private Integer offset;
     private ColumnType type;
     private String pythonType;
     private ColumnSchema elementSchema;
+    private Map<Integer, ColumnSchema> sparseElementSchema;
+
     private ColumnSchema keySchema;
     private ColumnSchema valueSchema;
     private Map<String, ColumnSchema> attributesSchema;
@@ -48,10 +52,15 @@ public class ColumnSchema {
     public ColumnSchema(@NonNull ColumnSchema schema) {
         this.name = schema.name;
         this.index = schema.index;
+        this.offset = schema.offset;
         this.type = schema.type;
         this.pythonType = schema.pythonType;
         if (schema.elementSchema != null) {
             this.elementSchema = new ColumnSchema(schema.elementSchema);
+        }
+        if (schema.sparseElementSchema != null) {
+            this.sparseElementSchema = schema.sparseElementSchema.entrySet().stream()
+                    .collect(Collectors.toMap(Entry::getKey, entry -> new ColumnSchema(entry.getValue())));
         }
         if (schema.keySchema != null) {
             this.keySchema = new ColumnSchema(schema.keySchema);
@@ -67,7 +76,8 @@ public class ColumnSchema {
     }
 
     public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
-        this.name = schema.getName();
+        // ensure the name is not null (wal do not allow null name)
+        this.name = schema.getName() == null ? "" : schema.getName();
         this.index = index;
         this.type = ColumnType.valueOf(schema.getType());
         switch (this.type) {
@@ -75,6 +85,14 @@ public class ColumnSchema {
             case TUPLE:
                 this.elementSchema = new ColumnSchema(schema.getElementType(), 0);
                 this.elementSchema.setName("element");
+                if (schema.getAttributes() != null && !schema.getAttributes().isEmpty()) {
+                    this.sparseElementSchema = new HashMap<>();
+                    for (var attr : schema.getAttributes()) {
+                        var it = new ColumnSchema(attr, 0);
+                        it.setOffset(attr.getIndex());
+                        this.sparseElementSchema.put(attr.getIndex(), it);
+                    }
+                }
                 break;
             case MAP:
                 this.keySchema = new ColumnSchema(schema.getKeyType(), 0);
@@ -105,6 +123,14 @@ public class ColumnSchema {
             case TUPLE:
                 this.elementSchema = new ColumnSchema(schema.getElementType());
                 this.elementSchema.setName("element");
+                if (!schema.getAttributesList().isEmpty()) {
+                    this.sparseElementSchema = new HashMap<>();
+                    for (var attr : schema.getAttributesList()) {
+                        var it = new ColumnSchema(attr);
+                        it.setOffset(attr.getColumnIndex());
+                        this.sparseElementSchema.put(attr.getColumnIndex(), it);
+                    }
+                }
                 break;
             case MAP:
                 this.keySchema = new ColumnSchema(schema.getKeyType());
@@ -129,11 +155,17 @@ public class ColumnSchema {
     public ColumnSchemaDesc toColumnSchemaDesc() {
         var builder = ColumnSchemaDesc.builder()
                 .name(this.name)
+                .index(this.offset)
                 .type(this.type.name());
         switch (this.type) {
             case LIST:
             case TUPLE:
                 builder.elementType(this.elementSchema.toColumnSchemaDesc());
+                if (this.sparseElementSchema != null) {
+                    builder.attributes(this.sparseElementSchema.values().stream()
+                            .map(ColumnSchema::toColumnSchemaDesc)
+                            .collect(Collectors.toList()));
+                }
                 break;
             case MAP:
                 builder.keyType(this.keySchema.toColumnSchemaDesc());
@@ -154,12 +186,17 @@ public class ColumnSchema {
     public Wal.ColumnSchema.Builder toWal() {
         var builder = Wal.ColumnSchema.newBuilder()
                 .setColumnName(this.name)
-                .setColumnIndex(this.index)
+                .setColumnIndex(this.offset != null ? this.offset : this.index)
                 .setColumnType(this.type.name());
         switch (this.type) {
             case LIST:
             case TUPLE:
                 builder.setElementType(this.elementSchema.toWal());
+                if (this.sparseElementSchema != null) {
+                    this.sparseElementSchema.values().stream()
+                            .map(ColumnSchema::toWal)
+                            .forEach(builder::addAttributes);
+                }
                 break;
             case MAP:
                 builder.setKeyType(this.keySchema.toWal());
@@ -196,6 +233,21 @@ public class ColumnSchema {
                 var elementWal = elementSchema.getDiff(schema.getElementType());
                 if (elementWal != null) {
                     ret = Wal.ColumnSchema.newBuilder().setElementType(elementWal);
+                }
+                if (schema.getAttributes() != null) {
+                    for (var attr : schema.getAttributes()) {
+                        var attrSchema = this.sparseElementSchema.get(attr.getIndex());
+                        if (attrSchema == null) {
+                            attrSchema = new ColumnSchema(attr.getName(), 0);
+                        }
+                        var attrWal = attrSchema.getDiff(attr);
+                        if (attrWal != null) {
+                            if (ret == null) {
+                                ret = Wal.ColumnSchema.newBuilder();
+                            }
+                            ret.addAttributes(attrWal.setColumnName(attr.getName()).setColumnIndex(attr.getIndex()));
+                        }
+                    }
                 }
                 break;
             case MAP:
@@ -273,6 +325,20 @@ public class ColumnSchema {
                     this.elementSchema = new ColumnSchema("element", 0);
                 }
                 this.elementSchema.update(schema.getElementType());
+                if (!schema.getAttributesList().isEmpty()) {
+                    if (this.sparseElementSchema == null) {
+                        this.sparseElementSchema = new HashMap<>();
+                    }
+                    for (var attr : schema.getAttributesList()) {
+                        var attrSchema = this.sparseElementSchema.get(attr.getColumnIndex());
+                        if (attrSchema == null) {
+                            attrSchema = new ColumnSchema(attr.getColumnName(), 0);
+                            attrSchema.setOffset(attr.getColumnIndex());
+                            this.sparseElementSchema.put(attr.getColumnIndex(), attrSchema);
+                        }
+                        attrSchema.update(attr);
+                    }
+                }
                 break;
             case MAP:
                 if (this.keySchema == null) {
@@ -324,7 +390,25 @@ public class ColumnSchema {
         switch (this.type) {
             case LIST:
             case TUPLE:
-                return this.elementSchema.isSameType(other.elementSchema);
+                var same = this.elementSchema.isSameType(other.elementSchema);
+                if (!same) {
+                    return false;
+                }
+                if (this.sparseElementSchema == null && other.sparseElementSchema == null) {
+                    return true;
+                }
+                if (this.sparseElementSchema == null || other.sparseElementSchema == null) {
+                    return false;
+                }
+                if (this.sparseElementSchema.size() != other.sparseElementSchema.size()) {
+                    return false;
+                }
+                for (var offset : this.sparseElementSchema.keySet()) {
+                    if (!this.sparseElementSchema.get(offset).isSameType(other.sparseElementSchema.get(offset))) {
+                        return false;
+                    }
+                }
+                break;
             case MAP:
                 return this.keySchema.isSameType(other.keySchema) && this.valueSchema.isSameType(other.valueSchema);
             case OBJECT:

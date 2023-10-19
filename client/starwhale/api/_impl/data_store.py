@@ -35,6 +35,7 @@ from typing import (
     Sequence,
 )
 from pathlib import Path
+from functools import cmp_to_key
 from collections import UserDict
 
 import dill
@@ -72,10 +73,6 @@ class SwType(metaclass=ABCMeta):
         self.name = name
         self.pa_type = pa_type
 
-    @abstractmethod
-    def merge(self, type: "SwType") -> "SwType":
-        ...
-
     def serialize(self, value: Any) -> Any:
         return value
 
@@ -86,16 +83,29 @@ class SwType(metaclass=ABCMeta):
     def encode_schema(type: "SwType") -> Dict[str, Any]:
         if isinstance(type, SwScalarType):
             return {"type": str(type)}
-        if isinstance(type, SwListType):
-            return {
-                "type": "LIST",
-                "elementType": SwType.encode_schema(type.element_type),
-            }
         if isinstance(type, SwTupleType):
-            return {
+            ret: Dict[str, Any] = {
                 "type": "TUPLE",
-                "elementType": SwType.encode_schema(type.element_type),
+                "elementType": SwType.encode_schema(type.main_type),
             }
+            if type.sparse_types:
+                ret["attributes"] = [
+                    # TODO use model in client api.models
+                    dict(SwType.encode_schema(t), index=i)
+                    for i, t in type.sparse_types.items()
+                ]
+            return ret
+        if isinstance(type, SwListType):
+            ret = {
+                "type": "LIST",
+                "elementType": SwType.encode_schema(type.main_type),
+            }
+            if type.sparse_types:
+                ret["attributes"] = [
+                    dict(SwType.encode_schema(t), index=i)
+                    for i, t in type.sparse_types.items()
+                ]
+            return ret
         if isinstance(type, SwMapType):
             return {
                 "type": "MAP",
@@ -121,18 +131,32 @@ class SwType(metaclass=ABCMeta):
     @staticmethod
     def decode_schema(schema: Dict[str, Any]) -> "SwType":
         type_name = schema.get("type", None)
+
+        def decode_list_types(
+            _schema: Dict[str, Any]
+        ) -> Tuple[SwType, Dict[int, SwType] | None]:
+            element_type = _schema.get("elementType", None)
+            if element_type is None:
+                raise RuntimeError(f"no element type found for type {type_name}")
+            _attrs = _schema.get("attributes", None)
+            sparse_types: Dict[int, SwType] | None = None
+            if _attrs is not None:
+                if not isinstance(_attrs, list):
+                    raise RuntimeError("attributes should be a list")
+                sparse_types = {}
+                for _attr in _attrs:
+                    index = _attr.get("index", None)
+                    if index is None:
+                        raise RuntimeError("no index found for attribute")
+                    sparse_types[index] = SwType.decode_schema(_attr)
+            return SwType.decode_schema(element_type), sparse_types
+
         if type_name is None:
             raise RuntimeError("no type in schema")
         if type_name == "LIST":
-            element_type = schema.get("elementType", None)
-            if element_type is None:
-                raise RuntimeError(f"no element type found for type {type_name}")
-            return SwListType(SwType.decode_schema(element_type))
+            return SwListType(*decode_list_types(schema))
         if type_name == "TUPLE":
-            element_type = schema.get("elementType", None)
-            if element_type is None:
-                raise RuntimeError(f"no element type found for type {type_name}")
-            return SwTupleType(SwType.decode_schema(element_type))
+            return SwTupleType(*decode_list_types(schema))
         if type_name == "MAP":
             key_type = schema.get("keyType", None)
             value_type = schema.get("valueType", None)
@@ -185,15 +209,17 @@ class SwType(metaclass=ABCMeta):
             # 	  "value": "01"
             # 	}]
             # }
-            element_type: SwType = UNKNOWN
+            element_types: List[SwType] = [UNKNOWN]
             v = value.get("value", [])
             # TODO: support more than one item types
             if isinstance(v, (list, tuple)) and len(v) != 0:
-                element_type = SwType.decode_schema_from_type_encoded_value(v[0])
+                element_types = [
+                    SwType.decode_schema_from_type_encoded_value(i) for i in v
+                ]
             if type_name == "LIST":
-                return SwListType(element_type)
+                return SwListType(element_types)
             else:
-                return SwTupleType(element_type)
+                return SwTupleType(element_types)
         if type_name == "MAP":
             # {
             # 	"type": "MAP",
@@ -281,6 +307,10 @@ class SwType(metaclass=ABCMeta):
     def __repr__(self) -> str:
         return self.__str__()
 
+    @abstractmethod
+    def __gt__(self, other: object) -> bool:
+        ...
+
 
 class SwScalarType(SwType):
     def __init__(
@@ -289,13 +319,6 @@ class SwScalarType(SwType):
         super().__init__(name, pa_type)
         self.nbits = nbits
         self.default_value = default_value
-
-    def merge(self, type: SwType) -> SwType:
-        if type is UNKNOWN or self is type:
-            return self
-        if self is UNKNOWN:
-            return type
-        raise RuntimeError(f"conflicting type {self} and {type}")
 
     def encode(self, value: Any) -> Optional[Any]:
         if value is None:
@@ -375,6 +398,22 @@ class SwScalarType(SwType):
         else:
             return self.name.upper()
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, SwScalarType):
+            return self.name == other.name and self.nbits == other.nbits
+        return False
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, SwScalarType):
+            # unknown is always the smallest
+            if self is UNKNOWN and other is not UNKNOWN:
+                return False
+            return self.nbits > other.nbits
+        return False
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.nbits))
+
 
 class SwCompositeType(SwType):
     def __init__(self, name: str) -> None:
@@ -386,132 +425,160 @@ class SwCompositeType(SwType):
     def deserialize(self, value: Any) -> Any:
         return dill.loads(value)
 
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, SwCompositeType):
+            return self.name > other.name
+        if isinstance(other, SwScalarType):
+            return True
+        return False
 
-# TODO support multiple types for items
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+
 class SwListType(SwCompositeType):
-    def __init__(self, element_type: SwType) -> None:
-        super().__init__("list")
-        self.element_type = element_type
+    def __init__(
+        self,
+        element_types: List[SwType] | SwType,
+        sparse_types: Dict[int, SwType] | None = None,
+        _tuple: bool = False,
+    ) -> None:
+        if not isinstance(element_types, list):
+            element_types = [element_types]
+        if len(element_types) == 0:
+            element_types = [UNKNOWN]
 
-    def merge(self, type: SwType) -> SwType:
-        if isinstance(type, SwListType):
-            t = self.element_type.merge(type.element_type)
-            if t is self.element_type:
-                return self
-            if t is type.element_type:
-                return type
-            return SwListType(t)
-        raise RuntimeError(f"conflicting type {self} and {type}")
+        self.main_type: SwType = element_types[0]
+        self.sparse_types: Dict[int, SwType] = sparse_types or {}
 
-    def encode(self, value: Any) -> Any:
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return [self.element_type.encode(element) for element in value]
-        raise RuntimeError(f"value should be a list: {value}")
+        # find the most common type
+        types: Dict[SwType, int] = {}
+        for typ in element_types:
+            if typ in types:
+                types[typ] += 1
+            else:
+                types[typ] = 1
 
-    def decode(self, value: Any) -> Any:
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return [self.element_type.decode(element) for element in value]
-        raise RuntimeError(f"value should be a list: {value}")
+        if len(types) > 1:
 
-    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
-        if value is None:
-            return {"type": str(self), "value": None}
-        if isinstance(value, list):
-            return {
-                "type": "LIST",
-                "value": [
-                    self.element_type.encode_type_encoded_value(element, raw_value)
-                    for element in value
-                ],
-            }
-        raise RuntimeError(f"value should be a list: {value}")
+            def count_then_type(x: Tuple[SwType, int], y: Tuple[SwType, int]) -> int:
+                if x[1] == y[1]:
+                    return x[0] > y[0] and 1 or -1
+                return x[1] > y[1] and 1 or -1
 
-    def decode_from_type_encoded_value(self, value: Any) -> Any:
-        value = value["value"]
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return [
-                self.element_type.decode_from_type_encoded_value(element)
-                for element in value
-            ]
-        raise RuntimeError(f"value should be a list: {value}")
-
-    def __str__(self) -> str:
-        return f"[{self.element_type}]"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, SwListType):
-            return self.element_type == other.element_type
-        return False
-
-
-class SwTupleType(SwCompositeType):
-    def __init__(self, element_type: SwType) -> None:
-        super().__init__("tuple")
-        self.element_type = element_type
-
-    def merge(self, type: SwType) -> SwType:
-        if isinstance(type, SwTupleType):
-            t = self.element_type.merge(type.element_type)
-            if t is self.element_type:
-                return self
-            if t is type.element_type:
-                return type
-            return SwTupleType(t)
-        raise RuntimeError(f"conflicting type {self} and {type}")
-
-    def encode(self, value: Any) -> Any:
-        if value is None:
-            return None
-        if isinstance(value, tuple):
-            return tuple([self.element_type.encode(element) for element in value])
-        raise RuntimeError(f"value should be a tuple: {value}")
-
-    def decode(self, value: Any) -> Any:
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return tuple([self.element_type.decode(element) for element in value])
-        raise RuntimeError(f"value should be a list: {value}")
-
-    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
-        if value is None:
-            return {"type": str(self), "value": None}
-        if isinstance(value, tuple):
-            return {
-                "type": "TUPLE",
-                "value": [
-                    self.element_type.encode_type_encoded_value(element, raw_value)
-                    for element in value
-                ],
-            }
-        raise RuntimeError(f"value should be a tuple: {value}")
-
-    def decode_from_type_encoded_value(self, value: Any) -> Any:
-        value = value["value"]
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return tuple(
-                [
-                    self.element_type.decode_from_type_encoded_value(element)
-                    for element in value
-                ]
+            sorted_types = sorted(
+                types.items(), reverse=True, key=cmp_to_key(count_then_type)
             )
+            most_common_type = sorted_types[0][0]
+            self.main_type = most_common_type
+            assert isinstance(element_types, list)
+            for i, typ in enumerate(element_types):
+                if typ != most_common_type:
+                    self.sparse_types[i] = typ
+
+        self._is_tuple = _tuple
+        super().__init__(self._is_tuple and "tuple" or "list")
+
+    def _get_element_type(self, index: int) -> SwType:
+        if len(self.sparse_types) == 0 or index not in self.sparse_types:
+            return self.main_type
+        return self.sparse_types[index]
+
+    def encode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        # TODO: support tuple
+        if (isinstance(value, list) and not self._is_tuple) or (
+            isinstance(value, tuple) and self._is_tuple
+        ):
+            ret: Tuple | List = [
+                self._get_element_type(i).encode(element)
+                for i, element in enumerate(value)
+            ]
+            if self._is_tuple:
+                ret = tuple(ret)
+            return ret
         raise RuntimeError(f"value should be a list: {value}")
 
+    def decode(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            ret: Tuple | List = [
+                self._get_element_type(i).decode(element)
+                for i, element in enumerate(value)
+            ]
+            if self._is_tuple:
+                ret = tuple(ret)
+            return ret
+        raise RuntimeError(f"value should be a list: {value}")
+
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        if value is None:
+            return {"type": str(self), "value": None}
+        if isinstance(value, (list, tuple)):
+            return {
+                "type": self._is_tuple and "TUPLE" or "LIST",
+                "value": [
+                    self._get_element_type(i).encode_type_encoded_value(
+                        element, raw_value
+                    )
+                    for i, element in enumerate(value)
+                ],
+            }
+        raise RuntimeError(f"value should be a list: {value}")
+
+    def decode_from_type_encoded_value(self, value: Any) -> Any:
+        value = value["value"]
+        if value is None:
+            return None
+        if isinstance(value, list):
+            ret: Tuple | List = [
+                self._get_element_type(i).decode_from_type_encoded_value(element)
+                for i, element in enumerate(value)
+            ]
+            if self._is_tuple:
+                ret = tuple(ret)
+            return ret
+        raise RuntimeError(f"value should be list: {value}")
+
     def __str__(self) -> str:
-        return f"({self.element_type})"
+        def fmt_sparse_types() -> str:
+            if not self.sparse_types:
+                return ""
+            return (
+                "{"
+                + ",".join(
+                    [
+                        str(self.sparse_types[i])
+                        for i in sorted(self.sparse_types.keys())
+                    ]
+                )
+                + "}"
+            )
+
+        if self._is_tuple:
+            return "-".join(filter(bool, [f"({self.main_type})", fmt_sparse_types()]))
+        return "-".join(filter(bool, [f"[{self.main_type}]", fmt_sparse_types()]))
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, SwTupleType):
-            return self.element_type == other.element_type
+        if (isinstance(other, SwListType) and not self._is_tuple) or (
+            isinstance(other, SwTupleType) and self._is_tuple
+        ):
+            return (
+                self.main_type == other.main_type
+                and self.sparse_types == other.sparse_types
+            )
         return False
+
+
+class SwTupleType(SwListType):
+    def __init__(
+        self,
+        element_types: List[SwType] | SwType,
+        sparse_types: Dict[int, SwType] | None = None,
+    ) -> None:
+        super().__init__(element_types, sparse_types, True)
 
 
 class SwMapType(SwCompositeType):
@@ -519,17 +586,6 @@ class SwMapType(SwCompositeType):
         super().__init__("map")
         self.key_type = key_type
         self.value_type = value_type
-
-    def merge(self, type: SwType) -> SwType:
-        if isinstance(type, SwMapType):
-            kt = self.key_type.merge(type.key_type)
-            vt = self.value_type.merge(type.value_type)
-            if kt is self.key_type and vt is self.value_type:
-                return self
-            if kt is type.key_type and vt is type.value_type:
-                return type
-            return SwMapType(kt, vt)
-        raise RuntimeError(f"conflicting type {self} and {type}")
 
     def encode(self, value: Any) -> Any:
         if value is None:
@@ -598,27 +654,6 @@ class SwObjectType(SwCompositeType):
         super().__init__("object")
         self.raw_type = raw_type
         self.attrs = attrs
-
-    def merge(self, type: SwType) -> SwType:
-        if type is UNKNOWN or self is type:
-            return self
-        if isinstance(type, SwObjectType) and self.raw_type is type.raw_type:
-            new_attrs: Dict[str, SwType] = {}
-            for attr_name, attr_type in self.attrs.items():
-                t = type.attrs.get(attr_name, None)
-                if t is not None:
-                    new_type = attr_type.merge(t)
-                    if new_type is not attr_type:
-                        new_attrs[attr_name] = new_type
-            for attr_name, attr_type in type.attrs.items():
-                if attr_name not in self.attrs:
-                    new_attrs[attr_name] = attr_type
-            if len(new_attrs) == 0:
-                return self
-            attrs = dict(self.attrs)
-            attrs.update(new_attrs)
-            return SwObjectType(self.raw_type, attrs)
-        raise RuntimeError(f"conflicting type {str(self)} and {str(type)}")
 
     def encode(self, value: Any) -> Optional[Any]:
         if value is None:
@@ -693,6 +728,9 @@ class SwObjectType(SwCompositeType):
             return self.attrs == other.attrs
         return False
 
+    def __hash__(self) -> int:
+        return hash(str(self))
+
 
 UNKNOWN = SwScalarType("unknown", None, 1, None)
 INT8 = SwScalarType("int", pa.int8(), 8, 0)
@@ -728,21 +766,33 @@ _TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
 
 
 def _get_type(obj: Any) -> SwType:
-    element_type: SwType = UNKNOWN
     if isinstance(obj, list):
-        for element in obj:
-            element_type = element_type.merge(_get_type(element))
-        return SwListType(element_type)
+        types = [_get_type(element) for element in obj]
+        return SwListType(types)
     if isinstance(obj, tuple):
-        for element in obj:
-            element_type = element_type.merge(_get_type(element))
-        return SwTupleType(element_type)
+        types = [_get_type(element) for element in obj]
+        return SwTupleType(types)
     if isinstance(obj, dict):
         key_type: SwType = UNKNOWN
         value_type: SwType = UNKNOWN
         for k, v in obj.items():
-            key_type = key_type.merge(_get_type(k))
-            value_type = value_type.merge(_get_type(v))
+            # TODO: support more than one key types
+            new_key_type = _get_type(k)
+            if key_type is UNKNOWN:
+                key_type = new_key_type
+            else:
+                if key_type != new_key_type and new_key_type != UNKNOWN:
+                    raise RuntimeError(
+                        f"conflicting key types, expected {key_type}, actual {new_key_type}"
+                    )
+            new_value_type = _get_type(v)
+            if value_type is UNKNOWN:
+                value_type = new_value_type
+            else:
+                if value_type != new_value_type and new_value_type != UNKNOWN:
+                    raise RuntimeError(
+                        f"conflicting value types, expected {value_type}, actual {new_value_type}"
+                    )
         return SwMapType(key_type, value_type)
     if isinstance(obj, SwObject):
         attrs = {}
@@ -857,10 +907,10 @@ class TableSchema:
             if column_schema is None:
                 new_schema[col.name] = col
             else:
-                try:
-                    column_schema.type = column_schema.type.merge(col.type)
-                except RuntimeError as e:
-                    raise RuntimeError(f"can not update column {col.name}") from e
+                if column_schema.type != col.type:
+                    raise RuntimeError(
+                        f"can not update column {col.name} to {col.type} from {column_schema.type}"
+                    )
         self.columns.update(new_schema)
 
     @staticmethod
@@ -2219,6 +2269,7 @@ class LocalDataStore:
     def update_table(
         self,
         table_name: str,
+        # TODO remove or combine table schema
         schema: TableSchema,
         records: List[Dict[str, Any]],
     ) -> str:
