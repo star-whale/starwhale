@@ -857,6 +857,8 @@
     white-space: pre;
     background: transparent;
     border: 0;
+    /* extends */
+    white-space: pre-wrap;
 }
 
 .markdown-body .highlight {

@@ -30,6 +30,7 @@ import { useEventCallback } from '@starwhale/core'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
 import Checkbox from '@starwhale/ui/Checkbox'
+import QuickStart from '@/domain/project/components/QuickStart'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -551,104 +552,86 @@ export default function ProjectListCard() {
     }, [handleRefresh, data, filter])
 
     return (
-        <Card
-            title={currentUser?.name ?? t('projects')}
-            titleIcon={undefined}
-            extra={
-                <Button
-                    size={ButtonSize.compact}
-                    onClick={() => {
-                        setEditProject(undefined)
-                        setIsCreateProjectOpen(true)
-                    }}
-                >
-                    {t('create')}
-                </Button>
-            }
-        >
-            <div
-                className={css({
-                    marginBottom: '20px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                })}
-            >
-                <div style={{ maxWidth: '280px' }}>
-                    <QueryInput
-                        onChange={(val: string) => {
-                            setFilter(val.trim())
+        <>
+            <QuickStart />
+            <Card
+                title={currentUser?.name ?? t('projects')}
+                titleIcon={undefined}
+                extra={
+                    <Button
+                        size={ButtonSize.compact}
+                        onClick={() => {
+                            setEditProject(undefined)
+                            setIsCreateProjectOpen(true)
                         }}
-                    />
+                    >
+                        {t('create')}
+                    </Button>
+                }
+            >
+                <div className='flex justify-between mb-20px'>
+                    <div style={{ maxWidth: '280px' }}>
+                        <QueryInput
+                            onChange={(val: string) => {
+                                setFilter(val.trim())
+                            }}
+                        />
+                    </div>
+                    <div className='flex gap-20px self-end'>
+                        <div className='flex items-center gap-8px'>
+                            <Checkbox checked={onlyMyProject} onChange={(e) => setOnlyMyProject(e.target.checked)} />
+                            {t('project.filter.only')}
+                            <Tooltip content={t('project.filter.only.tooltip')} showArrow placement='top'>
+                                <p
+                                    className={css({
+                                        'cursor': 'pointer',
+                                        'color': 'rgba(2,16,43,0.40);',
+                                        ':hover': { color: '#5181E0' },
+                                    })}
+                                >
+                                    <IconFont type='info' />
+                                </p>
+                            </Tooltip>
+                        </div>
+                        <div className='flex items-center gap-4px min-w-100px text-12px  color-[rgba(2,16,43,0.60)]'>
+                            {t('project.visit.orderby')}:
+                            <VisitSelector value={visit} onChange={setVisit as any} />
+                        </div>
+                    </div>
                 </div>
                 <div
-                    style={{
-                        display: 'flex',
-                        alignSelf: 'flex-end',
+                    className={css({
+                        marginBottom: '20px',
+                        display: 'grid',
+                        width: '100%',
+                        flexWrap: 'wrap',
                         gap: '20px',
-                    }}
+                        gridTemplateColumns:
+                            data.length >= 3 || data.length === 0
+                                ? 'repeat(auto-fit, minmax(334px, 1fr))'
+                                : 'repeat(3, minmax(334px, 1fr))',
+                    })}
                 >
-                    <div className='flex items-center gap-8px'>
-                        <Checkbox checked={onlyMyProject} onChange={(e) => setOnlyMyProject(e.target.checked)} />
-                        {t('project.filter.only')}
-                        <Tooltip content={t('project.filter.only.tooltip')} showArrow placement='top'>
-                            <p
-                                className={css({
-                                    'cursor': 'pointer',
-                                    'color': 'rgba(2,16,43,0.40);',
-                                    ':hover': { color: '#5181E0' },
-                                })}
-                            >
-                                <IconFont type='info' />
-                            </p>
-                        </Tooltip>
-                    </div>
-                    <div
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            minWidth: '100px',
-                            fontSize: '12px',
-                            color: 'rgba(2,16,43,0.60);',
-                            gap: '4px',
-                        })}
-                    >
-                        {t('project.visit.orderby')}:
-                        <VisitSelector value={visit} onChange={setVisit as any} />
-                    </div>
+                    {projectCards}
                 </div>
-            </div>
-            <div
-                className={css({
-                    marginBottom: '20px',
-                    display: 'grid',
-                    width: '100%',
-                    flexWrap: 'wrap',
-                    gap: '20px',
-                    gridTemplateColumns:
-                        data.length >= 3 || data.length === 0
-                            ? 'repeat(auto-fit, minmax(334px, 1fr))'
-                            : 'repeat(3, minmax(334px, 1fr))',
-                })}
-            >
-                {projectCards}
-            </div>
-            <Modal
-                isOpen={isCreateProjectOpen}
-                onClose={() => setIsCreateProjectOpen(false)}
-                closeable
-                animate
-                autoFocus
-            >
-                <ModalHeader>
-                    {editProject ? t('edit sth', [t('Project')]) : t('create sth', [t('Project')])}
-                </ModalHeader>
-                <ModalBody>
-                    <ProjectForm
-                        project={editProject}
-                        onSubmit={editProject ? handleEditProject : handleCreateProject}
-                    />
-                </ModalBody>
-            </Modal>
-        </Card>
+                <Modal
+                    isOpen={isCreateProjectOpen}
+                    onClose={() => setIsCreateProjectOpen(false)}
+                    closeable
+                    animate
+                    autoFocus
+                >
+                    <ModalHeader>
+                        {editProject ? t('edit sth', [t('Project')]) : t('create sth', [t('Project')])}
+                    </ModalHeader>
+                    <ModalBody>
+                        <ProjectForm
+                            project={editProject}
+                            onSubmit={editProject ? handleEditProject : handleCreateProject}
+                        />
+                    </ModalBody>
+                </Modal>
+            </Card>
+        </>
     )
 }

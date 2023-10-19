@@ -16,6 +16,10 @@
     overflow: hidden;
 }
 
+html {
+    // font-size: 4px; // * 方便unocss计算：1单位 = 0.25rem = 1px
+}
+
 body {
     margin: 0;
     font-size: 14px;
