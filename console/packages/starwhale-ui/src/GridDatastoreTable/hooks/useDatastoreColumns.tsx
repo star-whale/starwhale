@@ -9,6 +9,8 @@ import { FilterBuilderByColumnType, SearchFieldSchemaT } from '@starwhale/ui/Sea
 export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
     if (cb.name === 'sys/id') return 1
+    if (ca.name === 'sys/name') return -1
+    if (cb.name === 'sys/name') return 1
     if (ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
         return ca.name.localeCompare(cb.name)
     }

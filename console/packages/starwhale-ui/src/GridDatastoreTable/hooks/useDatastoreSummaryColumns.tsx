@@ -12,6 +12,7 @@ import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { FilterDatatime } from '@starwhale/ui/Search'
 import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
+import { Text } from '@starwhale/ui/Text'
 
 export function useDatastoreSummaryColumns(
     options: {
@@ -42,6 +43,20 @@ export function useDatastoreSummaryColumns(
                         const id = record.value
                         if (!id) return <></>
                         return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
+                    },
+                })
+            if (column.key === 'sys/name')
+                return CustomColumn<RecordAttr, any>({
+                    ...column,
+                    renderCell: ({ value: record }) => {
+                        const id = record.record?.id
+                        const { value } = record
+                        if (!value) return <></>
+                        return (
+                            <TextLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                                <Text tooltip={value}>{value}</Text>
+                            </TextLink>
+                        )
                     },
                 })
             if (column.key === 'sys/duration_ms')
