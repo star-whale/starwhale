@@ -221,7 +221,7 @@ class Binary(BaseArtifact, SwObject):
     # TODO: use the better way to calculate the min size
     # Detect if the bytes is too long to encode to Binary for the datastore efficiency
     # size = DIGEST_SIZE + Binary Struct size + Link Object Struct size
-    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
+    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 1024
 
     def __init__(
         self,
@@ -683,7 +683,7 @@ class Text(BaseArtifact, SwObject):
     # TODO: use the better way to calculate the min size
     # Detect if the str is too long to encode to Text for the datastore efficiency
     # size = DIGEST_SIZE + Text Struct size + Link Object Struct size
-    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
+    AUTO_ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 1024
 
     def __init__(
         self,

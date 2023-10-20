@@ -68,8 +68,8 @@ class TestEvaluation(BaseTestCase):
 
         _log(category=category, id=1, metrics={"a": 1, "b": 2})
         _log(category=category, id=2, metrics={"a": 2, "b": 3})
-        _log_result(id="id-1", metrics={"text": "ttt" * 200})
-        _log_result(id="id-2", metrics={"binary": b"bbb" * 200})
+        _log_result(id="id-1", metrics={"text": "ttt" * 1000})
+        _log_result(id="id-2", metrics={"binary": b"bbb" * 1000})
 
         _els = _get_log_store_from_context()
         _els.flush_all(artifacts_flush=True)
@@ -79,8 +79,8 @@ class TestEvaluation(BaseTestCase):
 
         rt = list(evaluation_log_module.scan_results())
         assert rt == [
-            {"id": "id-1", "text": "ttt" * 200},
-            {"id": "id-2", "binary": b"bbb" * 200},
+            {"id": "id-1", "text": "ttt" * 1000},
+            {"id": "id-2", "binary": b"bbb" * 1000},
         ]
 
     def test_log_summary_for_singleton_instance(self) -> None:
@@ -201,8 +201,8 @@ class TestEvaluation(BaseTestCase):
         store.log_result(
             id="id-1",
             metrics={
-                "text": "aaa" * 200,
-                "binary": b"bbb" * 200,
+                "text": "aaa" * 2000,
+                "binary": b"bbb" * 2000,
                 "image": self._generate_random_image(),
             },
         )
@@ -239,8 +239,8 @@ class TestEvaluation(BaseTestCase):
             "binary": b"bbb",
             "items": [1, 2, 3],
         }
-        assert results[0]["text"] == "aaa" * 200
-        assert results[0]["binary"] == b"bbb" * 200
+        assert results[0]["text"] == "aaa" * 2000
+        assert results[0]["binary"] == b"bbb" * 2000
         img = results[0]["image"]
         assert isinstance(img, Image)
         assert len(img.to_bytes()) > 0
