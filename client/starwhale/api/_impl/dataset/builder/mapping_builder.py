@@ -84,10 +84,6 @@ class MappingDatasetBuilder(AsyncArtifactWriterBase):
                 )
                 self._stash_uri_rows_map[_path].append((artifact, td_row))
 
-            # TODO: find a graceful cleanup method
-            # forbid to write cache and fp contents into datastore table
-            artifact.clear_cache()
-
         self._tabular_dataset.put(td_row)
 
     def _handle_bin_sync(self, bin_path: Path) -> None:

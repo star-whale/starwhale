@@ -23,7 +23,7 @@ from starwhale.base.data_type import JsonDict
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
+from starwhale.core.dataset.tabular import TabularDatasetInfo
 
 from .log import Evaluation
 
@@ -436,10 +436,6 @@ class PipelineHandler(metaclass=ABCMeta):
                 for k, v in features.items()
                 if k in self.predict_log_dataset_features
             }
-
-        for artifact in TabularDatasetRow.artifacts_of(_log_features):
-            if artifact.link:
-                artifact.clear_cache()
 
         input_features = {
             f"{self._INPUT_PREFIX}{k}": JsonDict.from_data(v)

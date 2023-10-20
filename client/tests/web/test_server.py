@@ -124,7 +124,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
                 {"name": "offset", "type": "INT64"},
                 {"name": "size", "type": "INT64"},
                 {"name": "data_type", "type": "UNKNOWN"},
-                {"name": "_signed_uri", "type": "STRING"},
                 {
                     "keyType": {"type": "UNKNOWN"},
                     "name": "extra_info",
@@ -180,7 +179,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
                 {"name": "offset", "type": "INT64"},
                 {"name": "size", "type": "INT64"},
                 {"name": "data_type", "type": "UNKNOWN"},
-                {"name": "_signed_uri", "type": "STRING"},
                 {
                     "keyType": {"type": "UNKNOWN"},
                     "name": "extra_info",
@@ -228,7 +226,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
                 "type": "OBJECT",
                 "pythonType": "starwhale.base.data_type.Link",
                 "value": {
-                    "_signed_uri": {"type": "STRING", "value": ""},
                     "_type": {"type": "STRING", "value": "link"},
                     "data_type": {"type": "UNKNOWN", "value": "None"},
                     "extra_info": {"type": "MAP", "value": []},
