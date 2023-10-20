@@ -146,10 +146,14 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
         return self.fetch_data(encoding)
 
+    # TODO: use the better way to clear cache in datastore storing process
     def clear_cache(self) -> None:
         self.__cache_bytes = b""
         if isinstance(self.fp, (bytes, io.IOBase, str)):
             self.fp = ""
+
+        if self.link:
+            self.link.clear_cache()
 
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self.__cache_bytes:
@@ -866,6 +870,9 @@ class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
             key_compose=key_compose, bucket=store.bucket
         ) as f:
             return f.read(self.size)  # type: ignore
+
+    def clear_cache(self) -> None:
+        self._signed_uri = ""
 
 
 class JsonDict(SwObject):
