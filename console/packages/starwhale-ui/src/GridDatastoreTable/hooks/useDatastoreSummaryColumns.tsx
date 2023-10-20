@@ -49,7 +49,7 @@ export function useDatastoreSummaryColumns(
                 return CustomColumn<RecordAttr, any>({
                     ...column,
                     renderCell: ({ value: record }) => {
-                        const id = record.record?.id
+                        const id = record.record?.['sys/id']
                         const { value } = record
                         if (!value) return <></>
                         return (
