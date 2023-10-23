@@ -201,7 +201,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         this.updateHandle.offer(new Object());
         var table = this.getTable(tableName, true, true);
         //noinspection ConstantConditions
-        table.lock();
+        table.lock(false);
         try {
             var ts = table.update(schema, records);
             synchronized (this.dirtyTables) {
@@ -213,7 +213,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             synchronized (updateHandle) {
                 updateHandle.notifyAll();
             }
-            table.unlock();
+            table.unlock(false);
         }
 
     }
@@ -227,7 +227,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         if (table == null) {
             return new RecordList(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(), null, null);
         }
-        table.lock();
+        table.lock(true);
         try {
             int skipCount = req.getStart();
             if (skipCount < 0) {
@@ -303,7 +303,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     lastKey,
                     lastKeyType);
         } finally {
-            table.unlock();
+            table.unlock(true);
         }
     }
 
@@ -327,7 +327,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                         .collect(Collectors.toList());
 
         for (var table : tablesToLock) {
-            table.lock();
+            table.lock(true);
         }
         try {
             class TableMeta {
@@ -495,7 +495,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     BaseValue.getColumnType(lastKey).name());
         } finally {
             for (var table : tablesToLock) {
-                table.unlock();
+                table.unlock(true);
             }
         }
     }
@@ -625,13 +625,13 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             if (table == null) {
                 continue;
             }
-            table.lock();
+            table.lock(false);
             try {
                 if (table.getFirstWalLogId() >= 0 && table.getFirstWalLogId() < minWalLogIdToRetain) {
                     minWalLogIdToRetain = table.getFirstWalLogId();
                 }
             } finally {
-                table.unlock();
+                table.unlock(false);
             }
         }
         try {
