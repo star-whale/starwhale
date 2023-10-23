@@ -26,15 +26,22 @@ import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.exception.SwProcessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -104,5 +111,28 @@ public class FileStorageController {
         } catch (IOException e) {
             throw new SwProcessException(SwProcessException.ErrorType.NETWORK, "error write data to response", e);
         }
+    }
+
+    @Operation(summary = "Sign uris to get a batch of temporarily accessible links",
+            description = "Sign uris to get a batch of temporarily accessible links")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/filestorage/sign-links",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<Map<String, String>>> signLinks(
+            @RequestBody Set<String> uris,
+            @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
+            @RequestParam(name = "expTimeMillis")
+            Long expTimeMillis
+    ) {
+        return ResponseEntity.ok(
+                Code.success.asResponse(
+                        uris.stream().collect(Collectors.toMap(
+                                u -> u,
+                                u -> uriAccessor.linkOf(
+                                        u,
+                                        expTimeMillis
+                                )
+                        ))));
     }
 }

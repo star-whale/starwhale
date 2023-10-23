@@ -216,6 +216,9 @@ public class EvaluationController {
     }
 
 
+    /**
+     * legacy sign links api, use {@link FileStorageController} instead
+     */
     @Operation(summary = "Sign uris to get a batch of temporarily accessible links",
             description = "Sign uris to get a batch of temporarily accessible links")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -223,6 +226,7 @@ public class EvaluationController {
             value = "/project/{projectUrl}/evaluation/{version}/uri/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    @Deprecated(since = "0.6.2")
     ResponseEntity<ResponseMessage<Map<String, String>>> signLinks(
             @PathVariable(name = "projectUrl") String projectUrl,
             @PathVariable(name = "version") String version,
