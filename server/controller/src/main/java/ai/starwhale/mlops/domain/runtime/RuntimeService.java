@@ -195,22 +195,23 @@ public class RuntimeService {
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         Long projectId = projectService.getProjectId(runtimeQuery.getProjectUrl());
         Long userId = userService.getUserId(runtimeQuery.getOwner());
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getName(), userId, null);
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getName(), userId, null);
 
-        return PageUtil.toPageInfo(entities, rt -> {
-            RuntimeVo vo = runtimeConvertor.convert(rt);
-            RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
-            if (version != null) {
-                var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                        BundleAccessor.Type.RUNTIME, rt.getId(), List.of(version));
-                RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags.get(version.getId()));
-                versionVo.setOwner(userService.findUserById(version.getOwnerId()));
-                vo.setVersion(versionVo);
-            }
-            vo.setOwner(userService.findUserById(rt.getOwnerId()));
-            return vo;
-        });
+            return PageUtil.toPageInfo(entities, rt -> {
+                RuntimeVo vo = runtimeConvertor.convert(rt);
+                RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
+                if (version != null) {
+                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                            BundleAccessor.Type.RUNTIME, rt.getId(), List.of(version));
+                    RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags.get(version.getId()));
+                    versionVo.setOwner(userService.findUserById(version.getOwnerId()));
+                    vo.setVersion(versionVo);
+                }
+                vo.setOwner(userService.findUserById(rt.getOwnerId()));
+                return vo;
+            });
+        }
     }
 
     public List<RuntimeViewVo> listRuntimeVersionView(
@@ -389,15 +390,16 @@ public class RuntimeService {
 
     public PageInfo<RuntimeVersionVo> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
         Long runtimeId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = runtimeVersionMapper.list(runtimeId, query.getVersionName());
-        var latest = runtimeVersionMapper.findByLatest(runtimeId);
-        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, runtimeId, entities);
-        return PageUtil.toPageInfo(entities, entity -> {
-            RuntimeVersionVo vo = versionConvertor.convert(entity, latest, tags.get(entity.getId()));
-            vo.setOwner(userService.findUserById(entity.getOwnerId()));
-            return vo;
-        });
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var entities = runtimeVersionMapper.list(runtimeId, query.getVersionName());
+            var latest = runtimeVersionMapper.findByLatest(runtimeId);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, runtimeId, entities);
+            return PageUtil.toPageInfo(entities, entity -> {
+                RuntimeVersionVo vo = versionConvertor.convert(entity, latest, tags.get(entity.getId()));
+                vo.setOwner(userService.findUserById(entity.getOwnerId()));
+                return vo;
+            });
+        }
     }
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {

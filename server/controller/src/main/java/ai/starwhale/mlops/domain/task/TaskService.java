@@ -64,16 +64,16 @@ public class TaskService {
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         var job = jobDao.findJobEntity(jobUrl);
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = taskMapper.listTasks(job.getId());
-        return PageUtil.toPageInfo(entities, entity -> {
-            var vo = taskConvertor.convert(entity);
-            if (!StringUtils.hasText(vo.getResourcePool())) {
-                vo.setResourcePool(job.getResourcePool());
-            }
-            return vo;
-        });
-
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var entities = taskMapper.listTasks(job.getId());
+            return PageUtil.toPageInfo(entities, entity -> {
+                var vo = taskConvertor.convert(entity);
+                if (!StringUtils.hasText(vo.getResourcePool())) {
+                    vo.setResourcePool(job.getResourcePool());
+                }
+                return vo;
+            });
+        }
     }
 
     public TaskVo getTask(String taskUrl) {

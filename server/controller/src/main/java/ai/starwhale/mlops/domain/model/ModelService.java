@@ -181,21 +181,23 @@ public class ModelService {
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ModelEntity> entities = modelMapper.list(projectId, query.getName(), userId, null);
-        return PageUtil.toPageInfo(entities, entity -> {
-            ModelVo vo = modelVoConverter.convert(entity);
-            var modelVersion = modelVersionMapper.findByLatest(entity.getId());
-            if (modelVersion != null) {
-                var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                        BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
-                var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags.get(modelVersion.getId()));
-                versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
-                vo.setVersion(versionVo);
-            }
-            vo.setOwner(userService.findUserById(entity.getOwnerId()));
-            return vo;
-        });
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            List<ModelEntity> entities = modelMapper.list(projectId, query.getName(), userId, null);
+            return PageUtil.toPageInfo(entities, entity -> {
+                ModelVo vo = modelVoConverter.convert(entity);
+                var modelVersion = modelVersionMapper.findByLatest(entity.getId());
+                if (modelVersion != null) {
+                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                            BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
+                    var versionVo = versionConvertor.convert(
+                            modelVersion, modelVersion, tags.get(modelVersion.getId()));
+                    versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
+                    vo.setVersion(versionVo);
+                }
+                vo.setOwner(userService.findUserById(entity.getOwnerId()));
+                return vo;
+            });
+        }
     }
 
     public Model findModel(Long modelId) {
@@ -347,13 +349,14 @@ public class ModelService {
     }
 
     public PageInfo<ModelVersionVo> listModelVersionHistory(ModelVersionQuery query, PageParams pageParams) {
-        Long modelId = bundleManager.getBundleId(BundleUrl
-                                                         .create(query.getProjectUrl(), query.getModelUrl()));
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = modelVersionMapper.list(modelId, query.getVersionName());
-        var latest = modelVersionMapper.findByLatest(modelId);
-        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
-        return PageUtil.toPageInfo(entities, i -> versionConvertor.convert(i, latest, tags.get(i.getId())));
+        Long modelId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getModelUrl()));
+
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var entities = modelVersionMapper.list(modelId, query.getVersionName());
+            var latest = modelVersionMapper.findByLatest(modelId);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
+            return PageUtil.toPageInfo(entities, i -> versionConvertor.convert(i, latest, tags.get(i.getId())));
+        }
     }
 
     public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl, Boolean shared) {

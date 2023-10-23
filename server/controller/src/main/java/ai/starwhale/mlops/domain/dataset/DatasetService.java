@@ -188,19 +188,20 @@ public class DatasetService {
     public PageInfo<DatasetVo> listDataset(DatasetQuery query, PageParams pageParams) {
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<DatasetEntity> entities = datasetMapper.list(projectId, query.getName(), userId, null);
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            List<DatasetEntity> entities = datasetMapper.list(projectId, query.getName(), userId, null);
 
-        return PageUtil.toPageInfo(entities, ds -> {
-            DatasetVo vo = datasetVoConverter.convert(ds);
-            DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
-            if (version != null) {
-                var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                        BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
-                vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
-            }
-            return vo;
-        });
+            return PageUtil.toPageInfo(entities, ds -> {
+                DatasetVo vo = datasetVoConverter.convert(ds);
+                DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
+                if (version != null) {
+                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                            BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
+                    vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
+                }
+                return vo;
+            });
+        }
     }
 
     public List<DatasetViewVo> listDatasetVersionView(
@@ -353,11 +354,13 @@ public class DatasetService {
 
     public PageInfo<DatasetVersionVo> listDatasetVersionHistory(DatasetVersionQuery query, PageParams pageParams) {
         Long datasetId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl()));
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = datasetVersionMapper.list(datasetId, query.getVersionName());
-        var latest = datasetVersionMapper.findByLatest(datasetId);
-        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.DATASET, datasetId, entities);
-        return PageUtil.toPageInfo(entities, item -> versionConvertor.convert(item, latest, tags.get(item.getId())));
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var entities = datasetVersionMapper.list(datasetId, query.getVersionName());
+            var latest = datasetVersionMapper.findByLatest(datasetId);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.DATASET, datasetId, entities);
+            return PageUtil.toPageInfo(entities, item ->
+                    versionConvertor.convert(item, latest, tags.get(item.getId())));
+        }
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
@@ -515,20 +518,21 @@ public class DatasetService {
 
     public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, PageParams pageParams) {
         var project = projectService.findProject(projectUrl);
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = buildRecordMapper.list(project.getId());
-        return PageUtil.toPageInfo(entities, entity -> {
-                    TaskEntity task = taskMapper.findTaskById(entity.getTaskId()); // todo speed this up
-                    return BuildRecordVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .taskId(String.valueOf(entity.getTaskId()))
-                            .datasetName(entity.getDatasetName())
-                            .type(entity.getType())
-                            .status(null == task ? TaskStatus.SUCCESS : task.getTaskStatus())
-                            .createTime(entity.getCreatedTime().getTime())
-                            .build();
-                }
-        );
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var entities = buildRecordMapper.list(project.getId());
+            return PageUtil.toPageInfo(entities, entity -> {
+                        TaskEntity task = taskMapper.findTaskById(entity.getTaskId()); // todo speed this up
+                        return BuildRecordVo.builder()
+                                .id(String.valueOf(entity.getId()))
+                                .taskId(String.valueOf(entity.getTaskId()))
+                                .datasetName(entity.getDatasetName())
+                                .type(entity.getType())
+                                .status(null == task ? TaskStatus.SUCCESS : task.getTaskStatus())
+                                .createTime(entity.getCreatedTime().getTime())
+                                .build();
+                    }
+            );
+        }
     }
 
     public void addDatasetVersionTag(

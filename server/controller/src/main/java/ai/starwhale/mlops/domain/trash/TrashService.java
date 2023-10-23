@@ -90,9 +90,10 @@ public class TrashService {
                 projectId = userService.getUserId(query.getOperator());
             }
         }
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<TrashPo> poList = trashMapper.list(projectId, operatorId, query.getName(), query.getType());
-        return PageUtil.toPageInfo(poList, this::toTrashVo);
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            List<TrashPo> poList = trashMapper.list(projectId, operatorId, query.getName(), query.getType());
+            return PageUtil.toPageInfo(poList, this::toTrashVo);
+        }
     }
 
     @Transactional
