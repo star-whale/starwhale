@@ -706,7 +706,7 @@ class Text(BaseArtifact, SwObject):
     @property
     def content(self) -> str:
         if not self._content:
-            self._content = self.link_to_content()
+            self._content = str(self.fetch_data(), self.encoding) if self.link else ""
         return self._content
 
     def to_bytes(self, encoding: str = "") -> bytes:
@@ -717,12 +717,6 @@ class Text(BaseArtifact, SwObject):
 
     def to_str(self) -> str:
         return self.content
-
-    def link_to_content(self, encoding: str = "") -> str:
-        if self.link:
-            return str(self.link.to_bytes(), encoding or self.encoding)
-        else:
-            return ""
 
     def __str__(self) -> str:
         return self.content
