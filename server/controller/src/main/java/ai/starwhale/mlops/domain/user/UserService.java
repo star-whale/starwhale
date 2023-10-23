@@ -186,10 +186,10 @@ public class UserService implements UserDetailsService {
 
 
     public PageInfo<UserVo> listUsers(User user, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<UserEntity> userEntities = userMapper.list(user.getName(), null);
-
-        return PageUtil.toPageInfo(userEntities, entity -> UserVo.fromEntity(entity, idConvertor));
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            List<UserEntity> userEntities = userMapper.list(user.getName(), null);
+            return PageUtil.toPageInfo(userEntities, entity -> UserVo.fromEntity(entity, idConvertor));
+        }
     }
 
     @Transactional

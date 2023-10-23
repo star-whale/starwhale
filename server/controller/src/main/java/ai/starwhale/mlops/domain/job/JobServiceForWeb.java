@@ -106,9 +106,10 @@ public class JobServiceForWeb {
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
         Long projectId = projectService.getProjectId(projectUrl);
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var jobEntities = jobDao.listJobs(projectId, modelId);
-        return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var jobEntities = jobDao.listJobs(projectId, modelId);
+            return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
+        }
     }
 
     public JobVo findJob(String projectUrl, String jobUrl) {

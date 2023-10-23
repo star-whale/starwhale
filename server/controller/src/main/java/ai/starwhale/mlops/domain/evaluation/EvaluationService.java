@@ -113,9 +113,10 @@ public class EvaluationService {
     public PageInfo<SummaryVo> listEvaluationSummary(String projectUrl,
             SummaryFilter summaryFilter, PageParams pageParams) {
         Long projectId = projectService.getProjectId(projectUrl);
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var jobs = jobDao.listJobs(projectId, null);
-        return PageUtil.toPageInfo(jobs, this::toSummary);
+        try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
+            var jobs = jobDao.listJobs(projectId, null);
+            return PageUtil.toPageInfo(jobs, this::toSummary);
+        }
     }
 
 
