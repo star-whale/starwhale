@@ -7,7 +7,7 @@ class RandomSampling(object):
     def __init__(self, num=16, interval=2, speed=(1.0, 1.0), seed=0):
         assert num > 0, "at least sampling 1 frame"
         self.num = num
-        self.interval = interval if type(interval) == list else [interval]
+        self.interval = interval if isinstance(interval, list) else [interval]
         self.speed = speed
         self.rng = np.random.RandomState(seed)
 
@@ -34,7 +34,7 @@ class SequentialSampling(object):
     def __init__(self, num, interval=1, shuffle=False, fix_cursor=False, seed=0):
         self.memory = {}
         self.num = num
-        self.interval = interval if type(interval) == list else [interval]
+        self.interval = interval if isinstance(interval, list) else [interval]
         self.shuffle = shuffle
         self.fix_cursor = fix_cursor
         self.rng = np.random.RandomState(seed)

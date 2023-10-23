@@ -1,7 +1,7 @@
 -r requirements-install.txt
+ruff==0.1.1
 black==22.3.0
 jupyter-black==0.3.1
-flake8==4.0.1
 mypy>=1.4.1
 mypy-extensions==1.0.0
 profimp==0.1.0
