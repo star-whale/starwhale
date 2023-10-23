@@ -115,8 +115,12 @@ class AsyncArtifactWriterBase(ABC):
                     break
             raise
         finally:
-            self._artifact_bin_writer.close()
-            self._abs_queue.put(None)
+            # If exceptions are raised in the artifact's close function, we should still enqueue `None` to the abs queue
+            # in order to terminate the abs thread. Failing to do so cloud result in the abs thread becoming blocked indefinitely.
+            try:
+                self._artifact_bin_writer.close()
+            finally:
+                self._abs_queue.put(None)
 
     def _abs_worker(self) -> None:
         try:
