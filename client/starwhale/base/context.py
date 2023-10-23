@@ -49,10 +49,10 @@ class Context:
     def get_runtime_context(cls) -> Context:
         try:
             val: Context = cls._context_holder.value  # type: ignore
-        except AttributeError:
+        except AttributeError as e:
             raise RuntimeError(
                 "Starwhale does not set Context yet, please check if the get_runtime_context function is used at the right time."
-            )
+            ) from e
 
         if not isinstance(val, Context):
             raise RuntimeError(

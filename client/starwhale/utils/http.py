@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from http import HTTPStatus
 from functools import wraps
@@ -13,8 +15,9 @@ def wrap_sw_error_resp(
     header: str,
     use_raise: bool = False,
     silent: bool = False,
-    ignore_status_codes: t.List[int] = [],
+    ignore_status_codes: t.List[int] | None = None,
 ) -> None:
+    ignore_status_codes = ignore_status_codes or []
     if silent:
         _print: t.Callable = lambda x: x
     else:
@@ -35,7 +38,7 @@ def wrap_sw_error_resp(
         msg += f":dragon: error message: {_resp['message']}"
     finally:
         if r.status_code in ignore_status_codes:
-            return
+            return  # noqa: B012
 
         _print(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
 

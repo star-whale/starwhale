@@ -121,7 +121,7 @@ class FsUtilsTestCase(TestCase):
             invalid_member,
             valid_member,
         ]
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(Exception, "Attempted path traversal in tar file"):
             extract_tar(tar_path, target_dir, force=True)
 
         m_open.reset_mock()

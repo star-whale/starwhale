@@ -47,7 +47,7 @@ class TestInstance(TestCase):
             Instance(uri="https://foo.com")
 
         # use both alias and url
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(Exception, "alias and uri can not both set"):
             Instance(instance_alias="foo", uri="https://bar.com")
 
         # path

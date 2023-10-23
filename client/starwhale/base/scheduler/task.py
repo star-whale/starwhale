@@ -191,6 +191,6 @@ class TaskExecutor:
                 f"finish {self.context}, status:{self.status}, error:{self.exception}"
             )
             loop.close()
-            return TaskResult(
+            return TaskResult(  # noqa: B012
                 id=self.index, status=self.status, exception=self.exception
             )

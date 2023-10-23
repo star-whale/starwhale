@@ -1212,7 +1212,7 @@ class ZipCompressor(Compressor):
 
 # get all the compressors in this module
 compressors: Dict[str, Compressor] = {}
-for name, obj in inspect.getmembers(sys.modules[__name__]):
+for _, obj in inspect.getmembers(sys.modules[__name__]):
     if inspect.isclass(obj) and issubclass(obj, Compressor) and obj != Compressor:
         compressors[obj.__name__] = obj()
 

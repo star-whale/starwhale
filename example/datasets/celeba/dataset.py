@@ -144,13 +144,8 @@ def build_ds():
             link=Link(f"{PATH_ROOT}/{IMG_PATH}/{img}"),
         )
 
-    for img_id, data in data.items():
-        ds.append(
-            (
-                img_id,
-                data,
-            )
-        )
+    for k, v in data.items():
+        ds.append((k, v))
     ds.commit()
     ds.close()
 

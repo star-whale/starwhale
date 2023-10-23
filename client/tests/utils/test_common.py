@@ -167,7 +167,7 @@ class TestRetry(TestCase):
 
         assert self._do_urllib_raise.retry.statistics["attempt_number"] == 6
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(Exception, "dummy"):
             self._do_raise()
         assert self._do_raise.retry.statistics["attempt_number"] == 2
         assert self._do_raise.retry.statistics["idle_for"] == 1.0

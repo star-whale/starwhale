@@ -121,10 +121,10 @@ class RandomHorizontalFlip(Transform):
 
 
 class RandomHLS(Transform):
-    def __init__(self, vars=[15, 35, 25]):
-        super().__init__()
-        self.vars = vars
+    def __init__(self, vars=None):
+        self.vars = [15, 35, 25] if vars is None else vars
         self.rng = np.random.RandomState(0)
+        super().__init__()
 
     def __call__(self, data):
         h, w, c = data.shape
@@ -171,10 +171,12 @@ class RandomScale(Transform):
     def __init__(
         self,
         make_square=False,
-        aspect_ratio=[1.0, 1.0],
-        slen=[224, 288],
+        aspect_ratio=None,
+        slen=None,
         interpolation=cv2.INTER_LINEAR,
     ):
+        aspect_ratio = aspect_ratio or [1.0, 1.0]
+        slen = slen or [224, 288]
         super().__init__()
         assert slen[1] >= slen[0], f"slen ({slen}) should be in increase order"
         assert (

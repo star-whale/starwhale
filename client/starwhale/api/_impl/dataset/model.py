@@ -422,7 +422,7 @@ class Dataset:
 
         return _loader
 
-    @lru_cache(maxsize=32)
+    @lru_cache(maxsize=32)  # noqa: B019
     def _get_datastore_revision(self, uri: Resource) -> DatastoreRevision:
         if uri.typ != ResourceType.dataset:
             raise NoSupportError(

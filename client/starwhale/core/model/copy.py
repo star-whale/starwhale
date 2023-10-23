@@ -85,8 +85,9 @@ async def _send_request(
     params: t.Dict[str, t.Any] | None = None,
     content: str | bytes | None = None,
     json: t.Any | None = None,
-    headers: t.Dict[str, str] = {},
+    headers: t.Dict[str, str] | None = None,
 ) -> httpx.Response | None:
+    headers = headers or {}
     resp = await _httpx_client.get().request(
         method,
         url,
@@ -120,9 +121,10 @@ async def _http_request(
     params: t.Dict[str, t.Any] | None = None,
     content: str | bytes | None = None,
     json: t.Any | None = None,
-    headers: t.Dict[str, str] = {},
+    headers: t.Dict[str, str] | None = None,
     replace: bool = True,
 ) -> httpx.Response:
+    headers = headers or {}
     instance = _instance.get()
     headers = dict(headers)
     if url is None:

@@ -417,7 +417,7 @@ class Tracker:
             return
 
         _data = flatten(data, extract_sequence=True)
-        for k, v in _data.items():
+        for v in _data.values():
             # TODO: support more artifacts type
             if not isinstance(v, BaseArtifact):
                 raise NoSupportError(f"v({v}:{type(v)}) not support for artifacts")

@@ -297,10 +297,10 @@ class Image(BaseArtifact, SwObject):
     def to_pil(self) -> t.Any:
         try:
             from PIL import Image as PILImage
-        except ImportError:  # pragma: no cover
+        except ImportError as e:  # pragma: no cover
             raise MissingDependencyError(
                 "pillow is required to convert Starwhale Image to Pillow Image, please install pillow with 'pip install pillow' or 'pip install starwhale[image]'."
-            )
+            ) from e
 
         return PILImage.open(io.BytesIO(self.to_bytes()))
 
@@ -369,10 +369,10 @@ class Audio(BaseArtifact, SwObject):
     def to_numpy(self) -> numpy.ndarray:
         try:
             import soundfile
-        except ImportError:  # pragma: no cover
+        except ImportError as e:  # pragma: no cover
             raise MissingDependencyError(
                 "soundfile is required to convert Starwhale Auto to numpy ndarray, please install soundfile with 'pip install soundfile' or 'pip install starwhale[audio]'."
-            )
+            ) from e
 
         array, _ = soundfile.read(
             io.BytesIO(self.to_bytes()), dtype=self.dtype.name, always_2d=True

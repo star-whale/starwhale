@@ -61,7 +61,7 @@ class TestResource(TestCase):
         assert r.version == "bar"
         assert r.full_uri == "local/project/self/dataset/foo/version/bar"
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(Exception, "invalid uri without version field"):
             Resource(
                 uri="mnist/foo/bar",
                 typ=ResourceType.dataset,
@@ -244,7 +244,9 @@ class TestResource(TestCase):
                     expect.version = "latest of the version"
             assert expect == Resource(url)
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(
+            NoMatchException, "Can not find the exact match item"
+        ):
             Resource("https://foo.com/projects/1/model")  # model missing the tail 's'
 
     @Mocker()

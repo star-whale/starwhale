@@ -222,7 +222,7 @@ class TestBundleCopy(BaseTestCase):
         st = StandaloneTag(Resource("pytorch", typ=ResourceType.runtime))
         assert set(st.list()) == {"latest", "t1", "t2", "t3", "v0"}
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(KeyError, "local"):
             BundleCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/pytorch-new-alias",
@@ -1039,7 +1039,7 @@ class TestBundleCopy(BaseTestCase):
             assert swds_manifest_path.exists()
             assert swds_manifest_path.is_file()
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(KeyError, "local"):
             DatasetCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/mnist-new-alias",

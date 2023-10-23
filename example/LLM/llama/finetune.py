@@ -110,8 +110,8 @@ def get_accelerate_model(
         ),
         torch_dtype=torch_dtype,
     )
-    setattr(model, "model_parallel", True)
-    setattr(model, "is_parallelizable", True)
+    model.model_parallel = True
+    model.is_parallelizable = True
     model.config.torch_dtype = torch_dtype
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     model.gradient_checkpointing_enable()

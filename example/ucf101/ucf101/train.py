@@ -154,7 +154,6 @@ class StaticModel(object):
         return "{}_ep-{:04d}.pth".format(self.model_prefix, epoch)
 
     def load_checkpoint(self, epoch, optimizer=None):
-
         load_path = self.get_checkpoint_path(epoch)
         assert os.path.exists(
             load_path
@@ -184,7 +183,6 @@ class StaticModel(object):
                 )
 
     def save_checkpoint(self, epoch, optimizer_state=None):
-
         save_path = self.get_checkpoint_path(epoch)
         save_folder = os.path.dirname(save_path)
 
@@ -254,7 +252,6 @@ class DynamicModel(StaticModel):
         opt_batch_size=None,
         **kwargs,
     ):
-
         # load parameters
         if kwargs:
             logging.warning(f"Unknown kwargs: {kwargs}")
@@ -342,7 +339,6 @@ class DynamicModel(StaticModel):
         epoch_end=10000,
         **kwargs,
     ):
-
         """
         checking
         """
@@ -468,10 +464,12 @@ def get_ucf101(
     clip_length=8,
     train_interval=2,
     val_interval=2,
-    mean=[0.485, 0.456, 0.406],
-    std=[0.229, 0.224, 0.225],
+    mean=None,
+    std=None,
     seed=0,
 ):
+    mean = None or [0.485, 0.456, 0.406]
+    std = None or [0.229, 0.224, 0.225]
     """data iter for ucf-101"""
     logging.debug(
         f"VideoIter:: clip_length = {clip_length}, "
@@ -535,11 +533,11 @@ def train_model(
     save_frequency=1,
     lr_base=0.01,
     lr_factor=0.1,
-    lr_steps=[400000, 800000],
+    lr_steps=None,
     end_epoch=100,
     fine_tune=False,
 ):
-
+    lr_steps = lr_steps or [400000, 800000]
     # data iterator
     iter_seed = 101 + max(0, resume_epoch) * 100
 

@@ -219,7 +219,7 @@ class Handler(StepSpecClient):
                             if (
                                 idx == 0
                                 and args
-                                and hasattr(getattr(args[0], func.__name__), "__call__")
+                                and callable(getattr(args[0], func.__name__))
                             ):  # if the first argument has a function with the same name it is considered as self
                                 continue
                             required = _p.default is inspect._empty or (
@@ -240,7 +240,7 @@ class Handler(StepSpecClient):
                             if (
                                 idx == 0
                                 and args
-                                and hasattr(getattr(args[0], func.__name__), "__call__")
+                                and callable(getattr(args[0], func.__name__))
                             ):
                                 continue
                             parsed_args = {

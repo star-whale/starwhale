@@ -148,7 +148,7 @@ class TestApi(unittest.TestCase):
             },
             resp.json(),
         )
-        for i in range(5):
+        for _ in range(5):
             self._read(0)
             self._write(b"", 0)
             time.sleep(0.5)

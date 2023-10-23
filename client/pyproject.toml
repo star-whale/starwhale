@@ -59,6 +59,7 @@ select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
     "F",  # pyflakes
+    "B",  # flake8-bugbear
 ]
 ignore = [
     "E501",  # line too long, handled by black
@@ -68,6 +69,7 @@ ignore = [
     "E731",  # Do not assign a `lambda` expression, use a `def`
     "E741",  # ambiguous variable name
     "W605",  # invalid escape sequence '\#'
+    "B018",  # Found useless expression.
 ]
 exclude = [
     ".eggs",
@@ -99,6 +101,7 @@ exclude = [
 "starwhale/base/data_type.py" = ["E721"]
 "starwhale/core/dataset/store.py" = ["E721"]
 "tests/sdk/test_dataset_sdk.py" = ["E721"]
+"starwhale/api/_impl/job/handler.py" = ["B009"]
 
 #TODO: replace isort with ruff.isort, currently ruff doesn't support all isort options
 [tool.isort]

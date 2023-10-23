@@ -32,7 +32,7 @@ def yield_tokens(data_iter, ngrams):
 
 def collate_batch(batch):
     label_list, text_list, offsets = [], [], [0]
-    for (_label, _text) in batch:
+    for _label, _text in batch:
         label_list.append(label_pipeline(_label))
         processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
         text_list.append(processed_text)
@@ -78,7 +78,7 @@ def evaluate(dataloader, model):
     total_acc, total_count = 0, 0
 
     with torch.no_grad():
-        for idx, (label, text, offsets) in enumerate(dataloader):
+        for label, text, offsets in dataloader:
             predited_label = model(text, offsets)
             total_acc += (predited_label.argmax(1) == label).sum().item()
             total_count += label.size(0)
