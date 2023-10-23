@@ -35,7 +35,7 @@ from starwhale.base.data_type import (
     GrayscaleImage,
     COCOObjectAnnotation,
 )
-from starwhale.base.uri.resource import Resource
+from starwhale.base.uri.instance import Instance
 
 
 class TestDataType(TestCase):
@@ -361,13 +361,11 @@ class TestDataType(TestCase):
             "http://127.0.0.1:8081/api/v1/project/1/dataset/mnist",
             json={"data": {"id": 1, "versionName": "123456a", "versionId": 100}},
         )
-        link.owner = Resource(
-            "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
-        )
+        link.instance = Instance("http://127.0.0.1:8081")
 
         rm.request(
             HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/1/dataset/mnist/uri/sign-links?expTimeMillis=86400000",
+            "http://127.0.0.1:8081/api/v1/filestorage/sign-links?expTimeMillis=86400000",
             json={
                 "data": {
                     "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"
