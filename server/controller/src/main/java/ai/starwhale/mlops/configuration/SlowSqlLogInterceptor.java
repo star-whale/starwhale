@@ -103,7 +103,7 @@ public class SlowSqlLogInterceptor implements Interceptor {
      *
      * @return the param list
      */
-    private String formatSql(BoundSql boundSql, Configuration configuration) {
+    public String formatSql(BoundSql boundSql, Configuration configuration) {
         String sql = boundSql.getSql();
         List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
         Object parameterObject = boundSql.getParameterObject();
