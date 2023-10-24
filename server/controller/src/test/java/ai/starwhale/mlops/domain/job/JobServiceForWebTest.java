@@ -45,6 +45,7 @@ import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
@@ -87,6 +88,7 @@ public class JobServiceForWebTest {
     private ModelService modelService;
     private TrashService trashService;
     private SwTaskScheduler swTaskScheduler;
+    private EventService eventService;
 
     @BeforeEach
     public void setUp() {
@@ -111,12 +113,22 @@ public class JobServiceForWebTest {
         modelService = mock(ModelService.class);
         trashService = mock(TrashService.class);
         swTaskScheduler = mock(SwTaskScheduler.class);
+        eventService = mock(EventService.class);
 
         service = new JobServiceForWeb(
-                taskMapper, jobConverter,
-                hotJobHolder, projectService, jobDao, jobLoader, userService,
+                taskMapper,
+                jobConverter,
+                hotJobHolder,
+                projectService,
+                jobDao,
+                jobLoader,
+                userService,
                 mock(JobUpdateHelper.class),
-                trashService, swTaskScheduler, mock(JobCreator.class));
+                trashService,
+                swTaskScheduler,
+                mock(JobCreator.class),
+                eventService
+        );
     }
 
     @Test
@@ -213,6 +225,7 @@ public class JobServiceForWebTest {
                 hasItem(1L),
                 hasItem(2L)
         ));
+        verify(eventService).addInternalJobInfoEvent(eq(1L), anyString());
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.cancelJob("2"));
@@ -239,6 +252,7 @@ public class JobServiceForWebTest {
                 hasItem(1L),
                 hasItem(2L)
         ));
+        verify(eventService).addInternalJobInfoEvent(eq(1L), anyString());
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.cancelJob("22"));
@@ -257,6 +271,7 @@ public class JobServiceForWebTest {
         }).when(jobLoader).load(any(), any());
         service.resumeJob("1");
         assertThat(jobs, iterableWithSize(1));
+        verify(eventService).addInternalJobInfoEvent(eq(1L), anyString());
 
         assertThrows(SwValidationException.class,
                 () -> service.resumeJob("2"));
