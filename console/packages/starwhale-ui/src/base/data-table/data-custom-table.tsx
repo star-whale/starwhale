@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useReducer } from 'react'
-import { VariableSizeGrid } from 'react-window'
+import React, { useCallback, useDeferredValue, useEffect, useReducer } from 'react'
+import { VariableSizeGrid } from '../react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { SORT_DIRECTIONS } from './constants'
 import MeasureColumnWidths from './measure-column-widths'
@@ -148,7 +148,9 @@ export function DataTable({
         }
     }, [gridRef, columnKeys])
 
-    const [scrollLeft, setScrollLeft] = React.useState(0)
+    const [_scrollLeft, setScrollLeft] = React.useState(0)
+    const scrollLeft = useDeferredValue(_scrollLeft)
+
     const resetAfterColumnIndex = useEventCallback(
         _.debounce((columnIndex) => {
             if (gridRef) {
@@ -511,8 +513,10 @@ export function DataTable({
                             widths: normalizedWidths,
                             onSelectOne,
                             getId,
+                            width,
                         }}
                     >
+                        {/*  headers outside to make scroll not covered header bar */}
                         <Headers width={width} />
                         <VariableSizeGrid
                             className='table-columns'

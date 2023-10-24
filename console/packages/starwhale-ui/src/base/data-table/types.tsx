@@ -72,6 +72,7 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
     sortFn: (valueA: ValueT, valueB: ValueT) => number
     getFilters?: () => FilterT
     buildFilters?: (builder, args?: FilterT) => FilterT
+    renderAction?: RenderCellT<ValueT>
 } & SharedColumnOptionsT<ValueT>
 
 export type RowT = {

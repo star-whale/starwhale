@@ -10,6 +10,7 @@ import type { ColumnT, RenderCellT, RenderFilterT, SharedColumnOptionsT } from '
 type OptionsT<ValueT, FilterParamsT> = {
     // @ts-ignore
     renderCell: RenderCellT<ValueT>
+    renderAction?: RenderCellT<ValueT>
     renderFilter?: RenderFilterT<ValueT, FilterParamsT>
     buildFilter?: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, args: ValueT) => boolean

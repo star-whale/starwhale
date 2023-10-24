@@ -111,6 +111,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         columnType: options.columnType,
         getFilters: options.getFilters,
         buildFilters: options.buildFilters,
+        renderAction: options.renderAction,
     }
 }
 

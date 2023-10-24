@@ -4,7 +4,7 @@ import { RecordAttr } from '../recordAttrModel'
 import { useDatastoreColumns } from './useDatastoreColumns'
 import React, { useMemo } from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { TextLink } from '@/components/Link'
+import { IconLink, TextLink } from '@/components/Link'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
@@ -12,6 +12,7 @@ import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { FilterDatatime } from '@starwhale/ui/Search'
 import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
+import IconFont from '@starwhale/ui/IconFont'
 
 export function useDatastoreSummaryColumns(
     options: {
@@ -42,6 +43,15 @@ export function useDatastoreSummaryColumns(
                         const id = record.value
                         if (!id) return <></>
                         return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
+                    },
+                    renderAction: ({ value: record }) => {
+                        const id = record.value
+                        if (!id) return <></>
+                        return (
+                            <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                                <IconFont type='tasks' />
+                            </IconLink>
+                        )
                     },
                 })
             if (column.key === 'sys/duration_ms')
