@@ -1,0 +1,10 @@
+name: musicgen
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: 3.9
+  starwhale_version: 0.6.1 # Starwhale >= 0.6.0 supports log artifacts in the evaluation phase.
+dependencies:
+  - requirements.txt

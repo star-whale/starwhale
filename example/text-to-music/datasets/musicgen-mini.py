@@ -1,7 +1,7 @@
 from starwhale import dataset
 from starwhale.utils.debug import init_logger
 
-init_logger(4)
+init_logger(3)
 
 # data from https://ai.honu.io/papers/musicgen/
 desc_samples = [
@@ -29,15 +29,15 @@ desc_samples = [
     "An energetic hip-hop music piece, with synth sounds and strong bass. There is a rhythmic hi-hat patten in the drums."
     "90s rock song with electric guitar and heavy drums",
     "An 80s driving pop song with heavy drums and synth pads in the background",
-    "	An energetic hip-hop music piece, with synth sounds and strong bass. There is a rhythmic hi-hat patten in the drums.",
+    "An energetic hip-hop music piece, with synth sounds and strong bass. There is a rhythmic hi-hat patten in the drums.",
 ]
 
 
 def build_dataset() -> None:
     print("Building musicgen dataset...")
     with dataset("musicgen-mini") as ds:
-        for desc in desc_samples:
-            ds.append({"desc": desc})
+        for idx, desc in enumerate(desc_samples):
+            ds[idx] = {"desc": desc}
         ds.commit()
 
 
