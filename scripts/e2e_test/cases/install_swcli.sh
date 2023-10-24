@@ -8,6 +8,7 @@ function cleanup {
 }
 trap cleanup EXIT
 pushd $WORK_DIR
+export SW_LOCAL_STORAGE=$WORK_DIR
 python3 -m venv venv && . venv/bin/activate && python3 -m pip install --upgrade pip
 pip install starwhale==$PYPI_RELEASE_VERSION
 swcli --version
