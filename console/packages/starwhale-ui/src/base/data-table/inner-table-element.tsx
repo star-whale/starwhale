@@ -89,7 +89,6 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         (_columns, { pinRight = false } = {}) => {
             const cells: React.ReactNode[] = []
             if (!gridRef || !rowStopIndex) return cells
-            a
             _columns.forEach((column: any) => {
                 const { columnIndex } = column
                 for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
