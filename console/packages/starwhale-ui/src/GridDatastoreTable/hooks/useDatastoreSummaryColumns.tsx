@@ -35,7 +35,7 @@ export function useDatastoreSummaryColumns(
     const $columns = useDatastoreColumns(options)
 
     const $columnsWithSpecColumns = useMemo(() => {
-        return $columns.map((column) => {
+        const _tmp = $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn<RecordAttr, any>({
                     ...column,
@@ -43,15 +43,6 @@ export function useDatastoreSummaryColumns(
                         const id = record.value
                         if (!id) return <></>
                         return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
-                    },
-                    renderAction: ({ value: record }) => {
-                        const id = record.value
-                        if (!id) return <></>
-                        return (
-                            <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
-                                <IconFont type='tasks' />
-                            </IconLink>
-                        )
                     },
                 })
             if (column.key === 'sys/duration_ms')
@@ -119,9 +110,44 @@ export function useDatastoreSummaryColumns(
                         )
                     },
                 })
+            if (column.key === 'action')
+                return CustomColumn<RecordAttr, any>({
+                    ..._tmp[0],
+                    key: 'action',
+                    title: t('Action'),
+                    pin: 'RIGHT',
+                    renderCell: ({ value: record }) => {
+                        const id = record.record?.['sys/id']
+                        if (!id) return <></>
+                        return (
+                            <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                                <IconFont type='tasks' />
+                            </IconLink>
+                        )
+                    },
+                })
 
             return { ...column }
         })
+
+        return [
+            ..._tmp,
+            CustomColumn<RecordAttr, any>({
+                ..._tmp[0],
+                key: 'action',
+                title: t('Action'),
+                pin: 'RIGHT',
+                renderCell: ({ value: record }) => {
+                    const id = record.record?.['sys/id']
+                    if (!id) return <></>
+                    return (
+                        <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                            <IconFont type='tasks' />
+                        </IconLink>
+                    )
+                },
+            }),
+        ]
     }, [$columns, projectId, t])
 
     return $columnsWithSpecColumns

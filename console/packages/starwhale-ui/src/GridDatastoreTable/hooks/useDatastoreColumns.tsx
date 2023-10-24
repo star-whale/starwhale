@@ -95,6 +95,7 @@ export function useDatastoreColumns(
 
                 columnsWithAttrs.push(
                     CustomColumn<RecordAttr, any>({
+                        ...column,
                         // @ts-ignore
                         columnType: column,
                         key: name,

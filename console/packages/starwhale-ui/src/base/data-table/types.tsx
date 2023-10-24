@@ -35,7 +35,7 @@ export type SharedColumnOptionsT<ValueT> = {
     sortable?: boolean
     title: string
     key: string
-    pin?: 'LEFT'
+    pin?: 'LEFT' | 'RIGHT'
     filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
     renderCell?: RenderCellT<ValueT>

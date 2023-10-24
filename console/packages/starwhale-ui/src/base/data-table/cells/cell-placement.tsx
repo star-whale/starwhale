@@ -60,6 +60,9 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     } = data
 
     const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
+
+    if (!column) return <></>
+
     const { row, rowCount, rowData } = React.useMemo(() => {
         const rowTmp = rows[rowIndex]
         const rowCountTmp = rows.length

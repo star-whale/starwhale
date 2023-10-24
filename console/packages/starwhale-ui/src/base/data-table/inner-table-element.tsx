@@ -36,6 +36,21 @@ type InnerTableElementProps = {
     gridRef: typeof VariableSizeGrid
 }
 
+type ColumnTmpT = ColumnT & { columnIndex: number }
+
+const filterColumns = (columns: ColumnT[], attr: string, value: any) => {
+    const _arr = [] as ColumnTmpT[]
+    columns.forEach((column: ColumnT, index) => {
+        if (column[attr] === value) {
+            _arr.push({
+                ...column,
+                columnIndex: index,
+            })
+        }
+    })
+    return _arr
+}
+
 // replaces the content of the virtualized window with contents. in this case,
 // we are prepending a table header row before the table rows (children to the fn).
 const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProps>((props, ref) => {
@@ -50,92 +65,65 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     const { data, gridRef } = props
     const { rowHighlightIndex = 2 } = ctx
 
-    const $columns = React.useMemo(
-        () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
-        [data.columns]
-    )
+    const $columns = React.useMemo(() => filterColumns(data.columns, 'pin', 'LEFT'), [data.columns])
 
-    const $columnsWithAction = React.useMemo(
-        () => data.columns.filter((column: ColumnT) => Boolean(column.renderAction)),
-        [data.columns]
-    )
+    const $columnsRight = React.useMemo(() => filterColumns(data.columns, 'pin', 'RIGHT'), [data.columns])
+
+    const $columnsRightWidth = React.useMemo(() => {
+        return sum($columnsRight.map((v) => ctx.widths.get(v.key) ?? 0))
+    }, [$columnsRight, ctx.widths])
 
     const pinnedWidth = React.useMemo(
         () => sum(ctx.columns.map((v) => (v.pin === 'LEFT' ? ctx.widths.get(v.key) : 0))),
         [ctx.columns, ctx.widths]
     )
 
+    const list = React.Children.toArray(props.children)
+    // @ts-ignore
+    const rowStartIndex = list[0]?.props?.rowIndex
+    // @ts-ignore
+    const rowStopIndex = list[list.length - 1]?.props?.rowIndex
+
     // notice: must generate by calculate not from children, because pin column or row will not render when scrolling
-    const $childrenPinned = React.useMemo(() => {
-        const cells: React.ReactNode[] = []
-        if (!gridRef) return cells
-        const list = React.Children.toArray(props.children)
-        if (list.length === 0) return cells
+    const renderPinned = React.useCallback(
+        (_columns, { pinRight = false } = {}) => {
+            const cells: React.ReactNode[] = []
+            if (!gridRef || !rowStopIndex) return cells
+            a
+            _columns.forEach((column: any) => {
+                const { columnIndex } = column
+                for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
+                    // @ts-ignore
+                    const { left, ...rest } = gridRef._getItemStyle(rowIndex, columnIndex)
+                    cells.push(
+                        <CellPlacement
+                            key={`${rowIndex}-${columnIndex}`}
+                            columnIndex={columnIndex}
+                            rowIndex={rowIndex}
+                            data={data}
+                            style={{
+                                ...rest,
+                                width: ctx.widths.get(column.key) ?? 0,
+                                zIndex: 1,
+                                left: pinRight ? undefined : left,
+                            }}
+                        />
+                    )
+                }
+            })
 
-        // @ts-ignore
-        const rowStartIndex = list[0]?.props?.rowIndex
-        // @ts-ignore
-        const rowStopIndex = list[list.length - 1]?.props?.rowIndex
+            return cells
+        },
+        [$columns, data, props.children, ctx.widths, gridRef, rowStopIndex]
+    )
 
-        $columns.forEach((column: any, columnIndex: number) => {
-            for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
-                cells.push(
-                    <CellPlacement
-                        key={`${rowIndex}-${columnIndex}`}
-                        columnIndex={columnIndex}
-                        rowIndex={rowIndex}
-                        data={data}
-                        style={{
-                            // @ts-ignore
-                            ...gridRef._getItemStyle(rowIndex, columnIndex),
-                            width: ctx.widths.get(column.key) ?? 0,
-                            zIndex: 1,
-                        }}
-                    />
-                )
-            }
-        })
+    const $childrenPinnedLeft = React.useMemo(() => {
+        return renderPinned($columns)
+    }, [renderPinned, $columns])
 
-        return cells
-    }, [$columns, data, props.children, ctx.widths, gridRef])
-
-    const $childrenActions = React.useMemo(() => {
-        const cells: React.ReactNode[] = []
-        if (!gridRef) return cells
-        const list = React.Children.toArray(props.children)
-        if (list.length === 0) return cells
-
-        // @ts-ignore
-        const rowStartIndex = list[0]?.props?.rowIndex
-        // @ts-ignore
-        const rowStopIndex = list[list.length - 1]?.props?.rowIndex
-
-        for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
-            // @ts-ignore
-            const { top, height } = gridRef._getItemStyle(rowIndex, 0)
-            cells.push(
-                <div style={{ zIndex: 1, top, height }}>
-                    {$columnsWithAction.map((column: any, columnIndex: number) => {
-                        return (
-                            <CellAction
-                                key={`${rowIndex}-${columnIndex}`}
-                                columnIndex={columnIndex}
-                                rowIndex={rowIndex}
-                                data={data}
-                                style={{
-                                    height,
-                                    zIndex: 1,
-                                    // backgroudColor: '#fff',
-                                }}
-                            />
-                        )
-                    })}
-                </div>
-            )
-        }
-
-        return cells
-    }, [$columnsWithAction, data, props.children, ctx.widths, gridRef])
+    const $childrenPinnedRight = React.useMemo(() => {
+        return renderPinned($columnsRight, { pinRight: true })
+    }, [renderPinned, $columnsRight])
 
     const [$background, $backgroundPinned] = React.useMemo(() => {
         const cells: React.ReactNode[] = []
@@ -216,7 +204,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                 })
             )}
         >
-            {viewState === RENDERING && $childrenPinned.length > 0 && (
+            {viewState === RENDERING && $columns.length > 0 && (
                 <div
                     className='table-columns-pinned relative overflow-hidden'
                     // @ts-ignore
@@ -226,23 +214,23 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                         borderRight: '1px solid #CFD7E6',
                     }}
                 >
-                    {$childrenPinned}
+                    {$childrenPinnedLeft}
                     {$backgroundPinned}
                 </div>
             )}
-            {viewState === RENDERING && $childrenActions.length > 0 && (
+            {viewState === RENDERING && $columnsRight.length > 0 && (
                 <div
-                    className='table-columns-pinned relative overflow-hidden'
+                    className='table-columns-pinned relative overflow-hidden flex-c-c'
                     // @ts-ignore
                     style={{
                         ...props.style,
-                        width: '100px',
+                        width: $columnsRightWidth,
                         marginLeft: 'auto',
                         marginRight: '-1px',
                         borderLeft: '1px solid #CFD7E6',
                     }}
                 >
-                    {$childrenActions}
+                    {$childrenPinnedRight}
                     {$backgroundPinned}
                 </div>
             )}

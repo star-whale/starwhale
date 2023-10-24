@@ -33,9 +33,10 @@ function useGridCurrentView(columns: ColumnT[]) {
         return $ids
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
+                const _pin = columnsMap[id].pin ?? undefined
                 return {
                     ...columnsMap[id],
-                    pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
+                    pin: pinnedIds.includes(id) ? 'LEFT' : _pin,
                 }
             }) as ColumnT[]
     }, [view, columns, $ids])

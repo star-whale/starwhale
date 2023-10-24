@@ -9,6 +9,7 @@ import { useStore, useStoreApi } from '../../../GridTable/hooks/useStore'
 import { IGridState } from '../../../GridTable/types'
 import useGrid from '../../../GridTable/hooks/useGrid'
 import HeaderBar from './header-bar'
+import useTranslation from '@/hooks/useTranslation'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
@@ -26,6 +27,7 @@ export default function Headers({ width }: { width: number }) {
     const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
         useStoreApi().getState()
     const { columns, selectedRowIds } = useGrid()
+    const [t] = useTranslation()
 
     const $columns = React.useMemo(
         () =>
@@ -157,63 +159,62 @@ export default function Headers({ width }: { width: number }) {
         return $columns.filter((v) => v.pin !== 'LEFT').map(headerRender)
     }, [$columns, headerRender])
 
+    const headersRightCount = React.useMemo(() => {
+        return $columns.filter((v) => v.pin === 'RIGHT')?.length || 0
+    }, [$columns])
+
+    const headerRightWidth = React.useMemo(() => {
+        return sum($columns.map((v) => (v.pin === 'RIGHT' ? ctx.widths.get(v.key) : 0)))
+    }, [$columns, ctx.widths])
+
     return (
         <div
-            className={cn(
-                'table-headers-wrapper',
-                css({
-                    position: 'sticky',
-                    top: 0,
-                    left: 0,
-                    display: 'flex',
-                    zIndex: 2,
-                    backgroundColor: '#F3F5F9',
-                    overflow: 'hidden',
-                })
-            )}
+            className='table-headers-wrapper sticky top-0 left-0 flex z-2 overflow-hidden bg-[#F3F5F9]'
             style={{
                 width,
+                height: HEADER_ROW_HEIGHT,
             }}
         >
             <div
-                className='table-headers-bar'
+                className='table-headers-bar absolute left-13px z-51 border-l-0 overflow-visible break-inside-avoid flex '
                 style={{
-                    position: 'absolute',
-                    left: '13px',
-                    zIndex: 51,
-                    borderLeftWidth: '0',
-                    overflow: 'visible',
-                    breakInside: 'avoid',
-                    display: 'flex',
                     height: HEADER_ROW_HEIGHT,
                 }}
             >
                 {!ctx.isSelectable && <HeaderBar wrapperWidth={width} />}
             </div>
-            <div
-                className='table-headers-pinned'
-                style={{
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 50,
-                    borderLeftWidth: '0',
-                    overflow: 'visible',
-                    breakInside: 'avoid',
-                    display: 'flex',
-                    height: HEADER_ROW_HEIGHT,
-                }}
-            >
-                {headersLeft}
+            <div className='table-headers-pinned sticky left-0 z-50 overflow-visible flex h-0 w-full border-l-0'>
+                {headersLeft.length > 0 && (
+                    <div
+                        className='flex overflow-hidden'
+                        style={{
+                            borderRight: '1px solid #CFD7E6',
+                            height: HEADER_ROW_HEIGHT,
+                            width: headersLeftWidth,
+                        }}
+                    >
+                        {headersLeft}
+                    </div>
+                )}
+                {headersRightCount > 0 && (
+                    <div
+                        className='flex flex-start items-center ml-auto pl-12px bg-[#F3F5F9] font-bold text-14px'
+                        style={{
+                            width: headerRightWidth + ctx.scrollbarWidth,
+                            height: HEADER_ROW_HEIGHT,
+                            borderLeft: '1px solid #CFD7E6',
+                        }}
+                    >
+                        {t('Action')}
+                    </div>
+                )}
             </div>
 
             {headers.length > 0 && (
                 <>
                     <div
-                        className='table-headers'
+                        className='table-headers absolute left-0 w-full'
                         style={{
-                            width: '100%',
-                            position: 'absolute',
-                            left: 0,
                             marginLeft: headersLeftWidth,
                             transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
                         }}
