@@ -23,11 +23,11 @@ from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
-from starwhale import dataset
 from starwhale.utils import config
 from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.debug import init_logger
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.api._impl.data_store import TableDesc, LocalDataStore, RemoteDataStore
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -216,11 +216,20 @@ class TestCli:
 
     @staticmethod
     def compare_local_and_remote_dataset(local: Resource, remote: Resource) -> None:
-        local_ds = dataset(local).with_loader_config(num_workers=1)
-        remote_ds = dataset(remote).with_loader_config(num_workers=1)
-        for local_item, remote_item in zip(local_ds, remote_ds):
+        local_ds = LocalDataStore.get_instance()
+        remote_ds = RemoteDataStore(remote.instance.url, remote.instance.token)
+
+        def get_table_name(uri: Resource) -> str:
+            return f"/project/{uri.project.id}/dataset/{uri.name}/_current/meta"
+
+        local_iter = local_ds.scan_tables([TableDesc(table_name=get_table_name(local))])
+        remote_iter = remote_ds.scan_tables(
+            [TableDesc(table_name=get_table_name(remote))]
+        )
+
+        for local_item, remote_item in zip(local_iter, remote_iter):
             # TODO compare the whole item when every type has implemented __eq__
-            if local_item.index != remote_item.index:
+            if local_item["*"] != remote_item["*"]:
                 raise RuntimeError(
                     f"local item {local_item!r} is not equal to remote item {remote_item!r}"
                 )

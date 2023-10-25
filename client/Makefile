@@ -33,16 +33,18 @@ black-format:
 isort-format:
 	isort $(PY_CHANGED_FILES)
 
+LINT_DIRS = . ../example ../scripts/client_test
+
 format:
-	black --config pyproject.toml . ../example ../scripts/client_test && isort . ../example ../scripts/client_test
+	ruff check --fix ${LINT_DIRS} && black --config pyproject.toml ${LINT_DIRS} && isort ${LINT_DIRS}
 
 ci-format-checker:
 	echo "run black"
-	black --check --config pyproject.toml . ../example ../scripts/client_test
+	black --check --config pyproject.toml ${LINT_DIRS}
 
 ci-lint:
 	echo "run linter..."
-	ruff check . ../example ../scripts/client_test
+	ruff check ${LINT_DIRS}
 
 ci-mypy:
 	echo "run mypy"
@@ -50,7 +52,7 @@ ci-mypy:
 
 ci-isort:
 	echo "run isort"
-	isort --check . ../example ../scripts/client_test
+	isort --check ${LINT_DIRS}
 
 ut:
 	echo "ut"
