@@ -17,7 +17,10 @@
 package ai.starwhale.mlops.domain.event;
 
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
+import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
+import ai.starwhale.mlops.api.protocol.event.Event.EventType;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
+import ai.starwhale.mlops.api.protocol.event.EventRequest.RelatedResource;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
 import ai.starwhale.mlops.domain.job.JobDao;
@@ -103,6 +106,15 @@ public class EventService {
             related.setId(jobId);
         }
         return getEvents(related);
+    }
+
+    public void addInternalJobInfoEvent(Long jobId, String message) {
+        addEvent(EventRequest.builder()
+                .eventType(EventType.INFO)
+                .source(EventSource.SERVER)
+                .relatedResource(new RelatedResource(EventResourceType.JOB, jobId))
+                .message(message)
+                .build());
     }
 
     private void validateOwnership(Long jobId, EventRequest.RelatedResource related) {

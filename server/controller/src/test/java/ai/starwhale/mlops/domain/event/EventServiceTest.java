@@ -44,6 +44,7 @@ import ai.starwhale.mlops.exception.SwNotFoundException;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class EventServiceTest {
     private final EventMapper eventMapper = mock(EventMapper.class);
@@ -191,5 +192,18 @@ class EventServiceTest {
         reset(eventMapper);
         eventService.getEventsForJob("5", new RelatedResource(EventResourceType.RUN, 71L));
         verify(eventMapper).listEvents(EventResourceType.RUN, 71L);
+    }
+
+    @Test
+    void testServerSideEvent() {
+        eventService.addInternalJobInfoEvent(1L, "foo");
+        ArgumentCaptor<EventEntity> captor = ArgumentCaptor.forClass(EventEntity.class);
+        verify(eventMapper).insert(captor.capture());
+        var event = captor.getValue();
+        assertEquals(event.getType(), EventType.INFO);
+        assertEquals(event.getSource(), EventSource.SERVER);
+        assertEquals(event.getResourceType(), EventResourceType.JOB);
+        assertEquals(event.getResourceId(), 1L);
+        assertEquals(event.getMessage(), "foo");
     }
 }

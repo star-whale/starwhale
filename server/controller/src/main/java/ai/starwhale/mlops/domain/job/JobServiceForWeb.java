@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
@@ -80,17 +81,26 @@ public class JobServiceForWeb {
     private final ProjectService projectService;
     private final JobDao jobDao;
     private final JobUpdateHelper jobUpdateHelper;
+    private final EventService eventService;
 
     private final TrashService trashService;
 
     private final JobCreator jobCreator;
 
     public JobServiceForWeb(
-            TaskMapper taskMapper, JobConverter jobConvertor,
+            TaskMapper taskMapper,
+            JobConverter jobConvertor,
             HotJobHolder hotJobHolder,
-            ProjectService projectService, JobDao jobDao, JobLoader jobLoader,
-            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
-            SwTaskScheduler swTaskScheduler, JobCreator jobCreator) {
+            ProjectService projectService,
+            JobDao jobDao,
+            JobLoader jobLoader,
+            UserService userService,
+            JobUpdateHelper jobUpdateHelper,
+            TrashService trashService,
+            SwTaskScheduler swTaskScheduler,
+            JobCreator jobCreator,
+            EventService eventService
+    ) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.hotJobHolder = hotJobHolder;
@@ -102,6 +112,7 @@ public class JobServiceForWeb {
         this.trashService = trashService;
         this.swTaskScheduler = swTaskScheduler;
         this.jobCreator = jobCreator;
+        this.eventService = eventService;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -165,8 +176,11 @@ public class JobServiceForWeb {
     ) {
         User user = userService.currentUserDetail();
         var project = projectService.findProject(projectUrl);
-        return jobCreator.createJob(project, modelVersionUrl, datasetVersionUrls, runtimeVersionUrl, comment,
+        var jobId = jobCreator.createJob(project, modelVersionUrl, datasetVersionUrls, runtimeVersionUrl, comment,
                 resourcePool, handler, stepSpecOverWrites, type, devWay, devMode, devPassword, ttlInSec, user).getId();
+
+        eventService.addInternalJobInfoEvent(jobId, "Job created");
+        return jobId;
     }
 
     @Transactional
@@ -221,6 +235,7 @@ public class JobServiceForWeb {
                 .collect(Collectors.toList());
         batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELLING);
         updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELLING);
+        eventService.addInternalJobInfoEvent(jobId, "Job canceled");
     }
 
     public List<Job> listHotJobs() {
@@ -254,7 +269,7 @@ public class JobServiceForWeb {
         }
         batchPersistTaskStatus(notRunningTasks, TaskStatus.PAUSED);
         updateWithoutPersistWatcher(notRunningTasks, TaskStatus.PAUSED);
-
+        eventService.addInternalJobInfoEvent(jobId, "Job paused");
     }
 
     private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
@@ -301,6 +316,7 @@ public class JobServiceForWeb {
         }
         job = jobLoader.load(job, true);
         jobUpdateHelper.updateJob(job);
+        eventService.addInternalJobInfoEvent(jobId, "Job resumed");
     }
 
     public ExecResponse exec(
