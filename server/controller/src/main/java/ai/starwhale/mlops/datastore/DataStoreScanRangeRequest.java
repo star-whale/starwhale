@@ -36,9 +36,6 @@ public class DataStoreScanRangeRequest extends DataStoreScanRequest {
     @AllArgsConstructor
     public static class RangeInfo {
         private Integer batchSize;
-        @Builder.Default
-        private boolean startInclusive = true;
-        private boolean endInclusive;
     }
 
     private RangeInfo rangeInfo;

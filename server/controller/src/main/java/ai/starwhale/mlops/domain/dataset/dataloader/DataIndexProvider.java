@@ -17,11 +17,9 @@
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
-import java.util.Iterator;
 import java.util.List;
 
 public interface DataIndexProvider {
-    Iterator<List<DataIndex>> returnDataIndexIter(QueryDataIndexRequest request);
 
     List<DataIndex> returnDataIndex(QueryDataIndexRequest request);
 }

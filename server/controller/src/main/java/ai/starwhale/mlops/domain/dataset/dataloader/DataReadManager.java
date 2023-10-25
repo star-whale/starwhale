@@ -52,6 +52,7 @@ public class DataReadManager {
     private final DataIndexProvider dataIndexProvider;
     private final LRUCache<String, LinkedList<DataReadLog>> sessionCache;
     private final Integer cacheSize;
+    private final Integer insertBatchSize;
 
     private final DelayQueue<FailSession> failSessionQueue = new DelayQueue<>();
 
@@ -60,12 +61,14 @@ public class DataReadManager {
                            DataIndexProvider dataIndexProvider,
                            @Value("${sw.dataset.load.read.log-cache-capacity:1000}") int capacity,
                            @Value("${sw.dataset.load.read.log-cache-size:1000}") int cacheSize,
-                           @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout
+                           @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout,
+                           @Value("${sw.dataset.load.read.log-insert-batch:10}") int insertBatchSize
     ) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
         this.cacheSize = cacheSize;
+        this.insertBatchSize = insertBatchSize;
         this.sessionCache = new LRUCache<>(capacity, DurationStyle.detectAndParse(cacheTimeout).toMillis());
     }
 
@@ -180,7 +183,7 @@ public class DataReadManager {
                 return;
             } else {
                 start = lastLog.getEnd();
-                startInclusive = true;
+                startInclusive = !lastLog.isEndInclusive();
             }
         }
 
@@ -195,7 +198,8 @@ public class DataReadManager {
         // get data index TODO use iterator
         var data = dataIndexProvider.returnDataIndex(request);
         Iterables.partition(
-                data.stream().map(dataIndex -> DataReadLog.builder()
+                data.stream()
+                        .map(dataIndex -> DataReadLog.builder()
                                 .sessionId(session.getId())
                                 .start(dataIndex.getStart())
                                 .startType(dataIndex.getStartType())
@@ -207,7 +211,7 @@ public class DataReadManager {
                                 .status(Status.DataStatus.UNPROCESSED)
                                 .build())
                         .collect(Collectors.toList()),
-                100
+                this.insertBatchSize
         ).forEach(dataReadLogDao::batchInsert);
         // save session
         sessionDao.updateToFinished(session.getId());
