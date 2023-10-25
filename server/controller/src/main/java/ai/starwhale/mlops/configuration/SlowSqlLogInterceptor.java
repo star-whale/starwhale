@@ -46,7 +46,7 @@ import org.springframework.util.ReflectionUtils;
         @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
         @Signature(type = StatementHandler.class, method = "update", args = {Statement.class})
 })
-@ConditionalOnProperty(prefix = "sw.sql.log-slow-sql", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "sw.db.sql.log-slow-sql", name = "enable", havingValue = "true", matchIfMissing = true)
 public class SlowSqlLogInterceptor implements Interceptor {
 
     private Configuration configuration = null;
@@ -58,8 +58,8 @@ public class SlowSqlLogInterceptor implements Interceptor {
     private final int maxSqlLength;
 
     public SlowSqlLogInterceptor(
-            @Value("${sw.sql.slow-sql-millis:100}") int slowSqlMillis,
-            @Value("${sw.sql.max-print-length:200}") int maxSqlLength
+            @Value("${sw.db.sql.slow-sql-millis:100}") int slowSqlMillis,
+            @Value("${sw.db.sql.max-print-length:200}") int maxSqlLength
     ) {
         this.slowSqlMillis = slowSqlMillis;
         this.maxSqlLength = maxSqlLength;

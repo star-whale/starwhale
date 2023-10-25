@@ -12,6 +12,12 @@ spring:
       static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
+  db:
+    sql:
+      log-slow-sql:
+        enable: ${SW_DB_SQL_LOG_SLOW_SQL_ENABLE:true}
+      slow-sql-millis: ${SW_DB_SQL_LOG_SLOW_SQL_MILLIS:100}
+      max-print-length: ${SW_DB_SQL_LOG_SLOW_SQL_MAX_PRINT_LENGTH:200}
   features:
     disabled: ${SW_DISABLED_FEATURES:}
   public-api:
