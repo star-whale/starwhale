@@ -160,6 +160,6 @@ watchdog==2.2.1
 wcwidth==0.2.6
 webdataset==0.2.5
 websockets==10.4
-Werkzeug==2.2.3
+Werkzeug==3.0.1
 yarl==1.8.2
 zipp==3.14.0
