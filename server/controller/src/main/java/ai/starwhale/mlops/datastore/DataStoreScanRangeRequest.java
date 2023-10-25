@@ -16,11 +16,10 @@
 
 package ai.starwhale.mlops.datastore;
 
-import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -28,35 +27,19 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DataStoreScanRequest {
+@EqualsAndHashCode(callSuper = true)
+public class DataStoreScanRangeRequest extends DataStoreScanRequest {
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TableInfo {
-
-        private String tableName;
-        // timestamp in milliseconds, used to filter out the data that is older than the timestamp for this table
-        private long revision;
-        private String columnPrefix;
-        private Map<String, String> columns;
-        private boolean keepNone;
+    public static class RangeInfo {
+        private Integer batchSize;
+        @Builder.Default
+        private boolean startInclusive = true;
+        private boolean endInclusive;
     }
 
-    private List<TableInfo> tables;
-    private long revision;
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
-    @Builder.Default
-    private int limit = -1;
-    private boolean keepNone;
-    private boolean rawResult;
-    private boolean ignoreNonExistingTable;
-    private boolean encodeWithType;
+    private RangeInfo rangeInfo;
 }

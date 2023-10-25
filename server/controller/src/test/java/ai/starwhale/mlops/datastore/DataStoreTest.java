@@ -458,6 +458,293 @@ public class DataStoreTest {
     }
 
     @Test
+    public void testScanTableRange() {
+        var desc = new TableSchemaDesc("k",
+                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()));
+
+        // case 1: Integer multiple of batch
+        this.dataStore.update("t1",
+                desc,
+                List.of(Map.of("k", "0", "a", "5"),
+                        Map.of("k", "1", "a", "4"),
+                        new HashMap<>() {{
+                            put("k", "2");
+                            put("a", null);
+                        }},
+                        Map.of("k", "3", "a", "2")));
+
+        var rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("1")
+                .startInclusive(true)
+                .end("3")
+                .endInclusive(true)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("part range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                        KeyRangeList.Range.builder()
+                                .start("1").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("3").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(true)
+                                .size(1)
+                                .build()
+                ))
+        );
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("0")
+                .startInclusive(true)
+                .end("3")
+                .endInclusive(true)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(true)
+                                .size(2)
+                                .build()
+                ))
+        );
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("0")
+                .startInclusive(true)
+                .end("4")
+                .endInclusive(false)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(true)
+                                .size(2)
+                                .build()
+                ))
+        );
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test without param",
+                rangeList.getRanges(),
+                is(List.of(
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end(null).endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build()
+                ))
+        );
+
+        // case 2: Non-Integer multiple of batch
+        this.dataStore.update("t1",
+                desc,
+                List.of(Map.of("k", "4", "a", "1")));
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("1")
+                .startInclusive(true)
+                .end("3")
+                .endInclusive(true)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("part range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                    KeyRangeList.Range.builder()
+                            .start("1").startType("STRING").startInclusive(true)
+                            .end("3").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("3").startType("STRING").startInclusive(true)
+                            .end("3").endType("STRING").endInclusive(true)
+                            .size(1)
+                            .build()
+                ))
+        );
+        // only one item(for the range test)
+        var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("a", "a"))
+                        .keepNone(true)
+                        .build()))
+                .start("3")
+                .startInclusive(true)
+                .end("3")
+                .endInclusive(true)
+                .keepNone(true)
+                .build());
+        assertThat("scan one item",
+                recordList.getColumnSchemaMap().entrySet().stream()
+                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
+                is(Map.of("a", ColumnType.INT32)));
+        assertThat("scan one item",
+                recordList.getRecords(),
+                is(List.of(Map.of("a", "00000002"))));
+        assertThat("scan one item", recordList.getLastKey(), is("3"));
+
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("0")
+                .startInclusive(true)
+                .end("4")
+                .endInclusive(false)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                    KeyRangeList.Range.builder()
+                            .start("0").startType("STRING").startInclusive(true)
+                            .end("2").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("2").startType("STRING").startInclusive(true)
+                            .end("3").endType("STRING").endInclusive(true)
+                            .size(2)
+                            .build()
+                ))
+        );
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .start("0")
+                .startInclusive(true)
+                .end("4")
+                .endInclusive(true)
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test with exactly param",
+                rangeList.getRanges(),
+                is(List.of(
+                    KeyRangeList.Range.builder()
+                            .start("0").startType("STRING").startInclusive(true)
+                            .end("2").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("2").startType("STRING").startInclusive(true)
+                            .end("4").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("4").startType("STRING").startInclusive(true)
+                            .end("4").endType("STRING").endInclusive(true)
+                            .size(1)
+                            .build()
+                ))
+        );
+
+        rangeList = this.dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k"))
+                        .keepNone(true)
+                        .build()))
+                .keepNone(true)
+                .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(2).build())
+                .encodeWithType(true)
+                .build());
+        assertThat("all range test without param",
+                rangeList.getRanges(),
+                is(List.of(
+                    KeyRangeList.Range.builder()
+                            .start("0").startType("STRING").startInclusive(true)
+                            .end("2").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("2").startType("STRING").startInclusive(true)
+                            .end("4").endType("STRING").endInclusive(false)
+                            .size(2)
+                            .build(),
+                    KeyRangeList.Range.builder()
+                            .start("4").startType("STRING").startInclusive(true)
+                            .end(null).endType("STRING").endInclusive(false)
+                            .size(1)
+                            .build()
+                ))
+        );
+    }
+
+    @Test
     public void testScanOneTable() {
         var desc = new TableSchemaDesc("k",
                 List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
