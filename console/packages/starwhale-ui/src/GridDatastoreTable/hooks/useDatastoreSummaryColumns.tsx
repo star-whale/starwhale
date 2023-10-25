@@ -110,23 +110,6 @@ export function useDatastoreSummaryColumns(
                         )
                     },
                 })
-            if (column.key === 'action')
-                return CustomColumn<RecordAttr, any>({
-                    ..._tmp[0],
-                    key: 'action',
-                    title: t('Action'),
-                    pin: 'RIGHT',
-                    columnable: false,
-                    renderCell: ({ value: record }) => {
-                        const id = record.record?.['sys/id']
-                        if (!id) return <></>
-                        return (
-                            <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
-                                <IconFont type='tasks' />
-                            </IconLink>
-                        )
-                    },
-                })
 
             return { ...column }
         })
