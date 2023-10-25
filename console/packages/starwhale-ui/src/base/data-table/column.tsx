@@ -90,6 +90,8 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
     RenderCell.displayName = 'Cell'
 
     return {
+        key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
+        pin: options.pin,
         kind: options.kind,
         buildFilter: options.buildFilter || ((params) => (data) => true),
         textQueryFilter: options.textQueryFilter,
@@ -103,14 +105,14 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         renderFilter: options.renderFilter || (() => null),
         sortable: Boolean(options.sortable) && Boolean(options.sortFn),
         sortFn: options.sortFn || sortFn,
-        title: options.title,
         onAsyncChange: options?.onAsyncChange,
-        key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
-        pin: options.pin,
         filterType: options.filterType,
         columnType: options.columnType,
         getFilters: options.getFilters,
         buildFilters: options.buildFilters,
+        renderAction: options.renderAction,
+        title: options.title,
+        columnable: options.columnable === undefined ? true : options.columnable,
     }
 }
 

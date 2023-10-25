@@ -10,12 +10,14 @@ import type { ColumnT, RenderCellT, RenderFilterT, SharedColumnOptionsT } from '
 type OptionsT<ValueT, FilterParamsT> = {
     // @ts-ignore
     renderCell: RenderCellT<ValueT>
+    renderAction?: RenderCellT<ValueT>
     renderFilter?: RenderFilterT<ValueT, FilterParamsT>
     buildFilter?: (args: FilterParamsT) => (args: ValueT) => boolean
     textQueryFilter?: (text: string, args: ValueT) => boolean
     sortFn?: (valueA: ValueT, valueB: ValueT) => number
     getFilters?: () => FilterT | undefined
     buildFilters?: (builder, args: FilterT) => FilterT
+    columnable?:boolean
 } & SharedColumnOptionsT<ValueT>
 
 function CustomColumn<ValueT, FilterParamsT>(options: OptionsT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {

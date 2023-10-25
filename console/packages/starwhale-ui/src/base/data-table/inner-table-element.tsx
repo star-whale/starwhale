@@ -3,8 +3,9 @@ import cn from 'classnames'
 import { themedUseStyletron } from '../../theme/styletron'
 import { HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
-import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
+import Headers from './headers/headers'
+import { VariableSizeGrid } from '../react-window'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -31,7 +32,22 @@ type InnerTableElementProps = {
     children: React.ReactNode | null
     style: React.CSSProperties
     data: any
-    gridRef: VariableSizeGrid
+    gridRef: typeof VariableSizeGrid
+}
+
+type ColumnTmpT = ColumnT & { columnIndex: number }
+
+const filterColumns = (columns: ColumnT[], attr: string, value: any) => {
+    const _arr = [] as ColumnTmpT[]
+    columns.forEach((column: ColumnT, index) => {
+        if (column[attr] === value) {
+            _arr.push({
+                ...column,
+                columnIndex: index,
+            })
+        }
+    })
+    return _arr
 }
 
 // replaces the content of the virtualized window with contents. in this case,
@@ -46,51 +62,66 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         viewState = EMPTY
     }
     const { data, gridRef } = props
-    const { rowHighlightIndex } = ctx
+    const { rowHighlightIndex = 2 } = ctx
 
-    const $columns = React.useMemo(
-        () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
-        [data.columns]
-    )
+    const $columns = React.useMemo(() => filterColumns(data.columns, 'pin', 'LEFT'), [data.columns])
+
+    const $columnsRight = React.useMemo(() => filterColumns(data.columns, 'pin', 'RIGHT'), [data.columns])
+
+    const $columnsRightWidth = React.useMemo(() => {
+        return sum($columnsRight.map((v) => ctx.widths.get(v.key) ?? 0))
+    }, [$columnsRight, ctx.widths])
 
     const pinnedWidth = React.useMemo(
         () => sum(ctx.columns.map((v) => (v.pin === 'LEFT' ? ctx.widths.get(v.key) : 0))),
         [ctx.columns, ctx.widths]
     )
 
-    // notice: must generate by calculate not from children, cause pin column or row will not render when scrolling
-    const $childrenPinned = React.useMemo(() => {
-        const cells: React.ReactNode[] = []
-        if (!gridRef) return cells
-        const list = React.Children.toArray(props.children)
-        if (list.length === 0) return cells
+    const list = React.Children.toArray(props.children)
+    // @ts-ignore
+    const rowStartIndex = list[0]?.props?.rowIndex
+    // @ts-ignore
+    const rowStopIndex = list[list.length - 1]?.props?.rowIndex
 
-        // @ts-ignore
-        const rowStartIndex = list[0]?.props?.rowIndex
-        // @ts-ignore
-        const rowStopIndex = list[list.length - 1]?.props?.rowIndex
+    // notice: must generate by calculate not from children, because pin column or row will not render when scrolling
+    const renderPinned = React.useCallback(
+        (_columns, { pinRight = false } = {}) => {
+            const cells: React.ReactNode[] = []
+            if (!gridRef || !rowStopIndex) return cells
+            _columns.forEach((column: any) => {
+                const { columnIndex } = column
+                for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
+                    // @ts-ignore
+                    const { left, ...rest } = gridRef._getItemStyle(rowIndex, columnIndex)
+                    cells.push(
+                        <CellPlacement
+                            key={`${rowIndex}-${columnIndex}`}
+                            columnIndex={columnIndex}
+                            rowIndex={rowIndex}
+                            data={data}
+                            style={{
+                                ...rest,
+                                width: ctx.widths.get(column.key) ?? 0,
+                                zIndex: 1,
+                                left: pinRight ? undefined : left,
+                            }}
+                        />
+                    )
+                }
+            })
 
-        $columns.forEach((column: any, columnIndex: number) => {
-            for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
-                cells.push(
-                    <CellPlacement
-                        key={`${rowIndex}-${columnIndex}`}
-                        columnIndex={columnIndex}
-                        rowIndex={rowIndex}
-                        data={data}
-                        style={{
-                            // @ts-ignore
-                            ...gridRef._getItemStyle(rowIndex, columnIndex),
-                            width: ctx.widths.get(column.key) ?? 0,
-                            zIndex: 1,
-                        }}
-                    />
-                )
-            }
-        })
+            return cells
+        },
+        [$columns, data, props.children, ctx.widths, gridRef, rowStopIndex]
+    )
 
-        return cells
-    }, [$columns, data, props.children, ctx.widths, gridRef])
+    const $childrenPinnedLeft = React.useMemo(() => {
+        return renderPinned($columns)
+    }, [renderPinned, $columns])
+
+    const $childrenPinnedRight = React.useMemo(() => {
+        return renderPinned($columnsRight, { pinRight: true })
+    }, [renderPinned, $columnsRight])
 
     const [$background, $backgroundPinned] = React.useMemo(() => {
         const cells: React.ReactNode[] = []
@@ -158,50 +189,63 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return null
     }
 
+    const Pinned = (
+        <div
+            className={cn(
+                'table-inner-sticky bg-white sticky z-2 flex',
+                css({
+                    height: '0',
+                    left: 0,
+                    borderLeftWidth: '0',
+                    overflow: 'visible',
+                    breakInside: 'avoid',
+                })
+            )}
+        >
+            {viewState === RENDERING && $columns.length > 0 && (
+                <div
+                    className='table-columns-pinned relative overflow-hidden'
+                    // @ts-ignore
+                    style={{
+                        ...props.style,
+                        width: pinnedWidth,
+                        borderRight: '1px solid #CFD7E6',
+                    }}
+                >
+                    {$childrenPinnedLeft}
+                    {$backgroundPinned}
+                </div>
+            )}
+            {viewState === RENDERING && $columnsRight.length > 0 && (
+                <div
+                    className='table-columns-pinned relative overflow-hidden flex-c-c'
+                    // @ts-ignore
+                    style={{
+                        ...props.style,
+                        width: $columnsRightWidth,
+                        marginLeft: 'auto',
+                        marginRight: '-1px',
+                        borderLeft: '1px solid #CFD7E6',
+                    }}
+                >
+                    {$childrenPinnedRight}
+                    {$backgroundPinned}
+                </div>
+            )}
+        </div>
+    )
+
     return (
         <>
-            <div
-                className={cn(
-                    'table-inner-sticky',
-                    css({
-                        position: 'sticky',
-                        width: 0,
-                        height: 0,
-                        left: 0,
-                        zIndex: 100,
-                        borderLeftWidth: '0',
-                        borderRight: '1px solid #CFD7E6',
-                        overflow: 'visible',
-                        breakInside: 'avoid',
-                    })
-                )}
-            >
-                {viewState === RENDERING && $childrenPinned.length > 0 && (
-                    <div
-                        className='table-columns-pinned'
-                        // @ts-ignore
-                        style={{
-                            ...props.style,
-                            width: pinnedWidth,
-                            position: 'relative',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {$childrenPinned}
-                        {$backgroundPinned}
-                    </div>
-                )}
-            </div>
-
+            {Pinned}
             <div
                 // @ts-ignore
                 ref={ref}
-                className='table-inner'
+                className='table-inner min-w-full absolute flex-1 flex'
                 // @ts-ignore
                 style={{
                     ...props.style,
-                    minWidth: '100%',
-                    position: 'relative',
+                    // transform: `translate3d(${ctx.scrollLeft}px, 0px, 0px)`,
                 }}
                 onMouseLeave={ctx?.onRowMouseLeave}
             >

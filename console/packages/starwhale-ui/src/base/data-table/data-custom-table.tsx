@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer } from 'react'
+import React, { useCallback, useDeferredValue, useEffect, useReducer } from 'react'
 import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { SORT_DIRECTIONS } from './constants'
@@ -148,7 +148,9 @@ export function DataTable({
         }
     }, [gridRef, columnKeys])
 
-    const [scrollLeft, setScrollLeft] = React.useState(0)
+    const [_scrollLeft, setScrollLeft] = React.useState(0)
+    const scrollLeft = useDeferredValue(_scrollLeft)
+
     const resetAfterColumnIndex = useEventCallback(
         _.debounce((columnIndex) => {
             if (gridRef) {
@@ -433,13 +435,6 @@ export function DataTable({
         onRemove,
     ])
 
-    const columnWidth = React.useCallback(
-        (index) => {
-            return normalizedWidths.get(columns[index].key)
-        },
-        [normalizedWidths, columns]
-    )
-
     const InnerElement = React.useMemo(() => {
         // @ts-ignore
         return (props) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
@@ -456,6 +451,15 @@ export function DataTable({
             (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
         )
     }, [columns, itemIndexs])
+
+    const columnCount = columns.length
+
+    const columnWidth = React.useCallback(
+        (index) => {
+            return normalizedWidths.get(columns[index]?.key)
+        },
+        [normalizedWidths, columns]
+    )
 
     return (
         <>
@@ -475,67 +479,92 @@ export function DataTable({
                     setGridWidth(args.width)
                 }}
             >
-                {({ height, width }) => (
-                    <HeaderContext.Provider
-                        value={{
-                            columns,
-                            columnHighlightIndex,
-                            // @ts-ignore
-                            emptyMessage: emptyMessage || locale.datatable.emptyState,
-                            filters,
-                            loading: Boolean(loading),
-                            // @ts-ignore
-                            loadingMessage: loadingMessage || locale.datatable.loadingState,
-                            isScrollingX,
-                            isSelectable,
-                            isSelectedAll,
-                            isSelectedIndeterminate,
-                            isQueryInline,
-                            onMouseEnter: handleColumnHeaderMouseEnter,
-                            onMouseLeave: handleColumnHeaderMouseLeave,
-                            onRowMouseLeave: handleRowMouseLeave,
-                            onResize: handleColumnResize,
-                            onSelectMany,
-                            onSelectNone,
-                            onSort: handleSort,
-                            resizableColumnWidths,
-                            compareable,
-                            removable,
-                            rowHeight,
-                            rowHighlightIndex,
-                            rows,
-                            scrollLeft,
-                            sortDirection: sortDirection || null,
-                            sortIndex: typeof sortIndex === 'number' ? sortIndex : -1,
-                            tableHeight: height,
-                            widths: normalizedWidths,
-                            onSelectOne,
-                            getId,
-                        }}
-                    >
-                        <Headers width={width} />
-                        <VariableSizeGrid
-                            className='table-columns'
-                            ref={setGridRef as any}
-                            overscanRowCount={0}
-                            overscanColumnCount={0}
-                            innerElementType={InnerElement}
-                            height={height - HEADER_ROW_HEIGHT}
-                            columnWidth={columnWidth}
-                            columnCount={columns.length}
-                            width={width}
-                            itemData={itemData}
-                            onScroll={handleScroll}
-                            rowCount={rows.length}
-                            rowHeight={rowHeightAtIndex}
-                            style={STYLE}
-                            direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
-                            onItemsRendered={handleItemsRendered}
-                        >
-                            {CellPlacementMemo as any}
-                        </VariableSizeGrid>
-                    </HeaderContext.Provider>
-                )}
+                {({ height, width }) => {
+                    const scrollbarWidth = () => {
+                        if (!gridRef) return 0
+                        const gridProps = gridRef.props
+
+                        let isContentTallerThanContainer = false
+                        let visibleRowHeight = 0
+                        for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                            visibleRowHeight += rowHeightAtIndex(rowIndex)
+                            if (visibleRowHeight >= gridProps.height) {
+                                isContentTallerThanContainer = true
+                                break
+                            }
+                        }
+
+                        return isContentTallerThanContainer ? browserScrollbarWidth : 0
+                    }
+
+                    return (
+                        <>
+                            <HeaderContext.Provider
+                                value={{
+                                    columns,
+                                    columnHighlightIndex,
+                                    // @ts-ignore
+                                    emptyMessage: emptyMessage || locale.datatable.emptyState,
+                                    filters,
+                                    loading: Boolean(loading),
+                                    // @ts-ignore
+                                    loadingMessage: loadingMessage || locale.datatable.loadingState,
+                                    isScrollingX,
+                                    isSelectable,
+                                    isSelectedAll,
+                                    isSelectedIndeterminate,
+                                    isQueryInline,
+                                    onMouseEnter: handleColumnHeaderMouseEnter,
+                                    onMouseLeave: handleColumnHeaderMouseLeave,
+                                    onRowMouseLeave: handleRowMouseLeave,
+                                    onResize: handleColumnResize,
+                                    onSelectMany,
+                                    onSelectNone,
+                                    onSort: handleSort,
+                                    resizableColumnWidths,
+                                    compareable,
+                                    removable,
+                                    rowHeight,
+                                    rowHighlightIndex,
+                                    rows,
+                                    scrollLeft,
+                                    sortDirection: sortDirection || null,
+                                    sortIndex: typeof sortIndex === 'number' ? sortIndex : -1,
+                                    tableHeight: height,
+                                    widths: normalizedWidths,
+                                    onSelectOne,
+                                    getId,
+                                    width,
+                                    scrollbarWidth: scrollbarWidth(),
+                                }}
+                            >
+                                {/*  headers outside to make scroll not covered header bar */}
+                                <Headers width={width} />
+
+                                <VariableSizeGrid
+                                    className='table-columns'
+                                    ref={setGridRef as any}
+                                    overscanRowCount={0}
+                                    overscanColumnCount={0}
+                                    innerElementType={InnerElement}
+                                    height={height - HEADER_ROW_HEIGHT}
+                                    columnWidth={columnWidth}
+                                    columnCount={columnCount}
+                                    width={width}
+                                    itemData={itemData}
+                                    onScroll={handleScroll}
+                                    rowCount={rows.length}
+                                    rowHeight={rowHeightAtIndex}
+                                    style={STYLE}
+                                    direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
+                                    onItemsRendered={handleItemsRendered}
+                                >
+                                    {CellPlacementMemo as any}
+                                </VariableSizeGrid>
+                            </HeaderContext.Provider>
+                        </>
+                    )
+                }}
             </AutoSizer>
         </>
     )

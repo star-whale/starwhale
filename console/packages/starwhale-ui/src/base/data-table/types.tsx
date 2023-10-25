@@ -35,11 +35,12 @@ export type SharedColumnOptionsT<ValueT> = {
     sortable?: boolean
     title: string
     key: string
-    pin?: 'LEFT'
+    pin?: 'LEFT' | 'RIGHT'
     filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
     renderCell?: RenderCellT<ValueT>
     columnType?: { name: string; type: string }
+    columnable?: boolean
 }
 
 export type RenderCellT<ValueT> = React.FC<{
@@ -72,6 +73,7 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
     sortFn: (valueA: ValueT, valueB: ValueT) => number
     getFilters?: () => FilterT
     buildFilters?: (builder, args?: FilterT) => FilterT
+    renderAction?: RenderCellT<ValueT>
 } & SharedColumnOptionsT<ValueT>
 
 export type RowT = {

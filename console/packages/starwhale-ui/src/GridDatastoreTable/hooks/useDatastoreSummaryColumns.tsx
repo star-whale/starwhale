@@ -4,7 +4,7 @@ import { RecordAttr } from '../recordAttrModel'
 import { useDatastoreColumns } from './useDatastoreColumns'
 import React, { useMemo } from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { TextLink } from '@/components/Link'
+import { IconLink, TextLink } from '@/components/Link'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
@@ -12,6 +12,7 @@ import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { FilterDatatime } from '@starwhale/ui/Search'
 import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
+import IconFont from '@starwhale/ui/IconFont'
 
 export function useDatastoreSummaryColumns(
     options: {
@@ -34,7 +35,7 @@ export function useDatastoreSummaryColumns(
     const $columns = useDatastoreColumns(options)
 
     const $columnsWithSpecColumns = useMemo(() => {
-        return $columns.map((column) => {
+        const _tmp = $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn<RecordAttr, any>({
                     ...column,
@@ -112,6 +113,26 @@ export function useDatastoreSummaryColumns(
 
             return { ...column }
         })
+
+        return [
+            ..._tmp,
+            CustomColumn<RecordAttr, any>({
+                ..._tmp[0],
+                key: 'action',
+                title: t('Action'),
+                pin: 'RIGHT',
+                columnable: false,
+                renderCell: ({ value: record }) => {
+                    const id = record.record?.['sys/id']
+                    if (!id) return <></>
+                    return (
+                        <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                            <IconFont type='tasks' />
+                        </IconLink>
+                    )
+                },
+            }),
+        ]
     }, [$columns, projectId, t])
 
     return $columnsWithSpecColumns
