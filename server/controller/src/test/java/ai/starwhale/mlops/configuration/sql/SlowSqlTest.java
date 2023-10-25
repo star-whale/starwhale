@@ -42,6 +42,12 @@ public class SlowSqlTest {
         Assertions.assertEquals("SELECT name FROM sw_user where id = 1 and name = 'sw'",
                 interceptor.formatSql(boundSql, configuration));
 
+        statement = configuration.getMappedStatement(
+                "ai.starwhale.mlops.configuration.sql.SqlMapper.selectByIdAndName");
+        boundSql = statement.getBoundSql(Map.of("id", 2, "name", "sw2"));
+        Assertions.assertEquals("SELECT name FROM sw_user where id = 2 and name = 'sw2'",
+                interceptor.formatSql(boundSql, configuration));
+
         statement = configuration.getMappedStatement("ai.starwhale.mlops.configuration.sql.SqlMapper.selectAll");
         boundSql = statement.getBoundSql(null);
         Assertions.assertEquals("SELECT name FROM sw_user", interceptor.formatSql(boundSql, configuration));

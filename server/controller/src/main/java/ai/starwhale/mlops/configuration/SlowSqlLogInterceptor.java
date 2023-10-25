@@ -115,7 +115,7 @@ public class SlowSqlLogInterceptor implements Interceptor {
             return "";
         }
         TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
-        sql = sql.replaceAll("[\\s\n ]+", " ");
+        sql = sql.replaceAll("\\s+", " ");
         // DefaultParameterHandler
         if (parameterMappings != null) {
             for (ParameterMapping parameterMapping : parameterMappings) {

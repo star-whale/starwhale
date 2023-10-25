@@ -32,4 +32,8 @@ public interface SqlMapper {
 
     @Select("SELECT name FROM sw_user where id = #{id} and name = #{name}")
     String selectById(int id, String name);
+
+    @Select("SELECT name FROM sw_user \n"
+            + " where id = #{id} and name = #{name}")
+    String selectByIdAndName(int id, String name);
 }
