@@ -64,6 +64,8 @@ sw:
     event:
       task-to-job-cache-capacity: ${SW_JOB_EVENT_TASK_TO_JOB_CACHE_CAPACITY:1000}
       run-to-job-cache-capacity: ${SW_JOB_EVENT_RUN_TO_JOB_CACHE_CAPACITY:1000}
+      scheduler-event-log:
+        enabled: ${SW_JOB_SCHEDULER_EVENT_LOG_ENABLED:false}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h
     max-time-to-wait-in-seconds: ${SW_ONLINE_EVAL_MAX_WAIT_SECS:10} # 10s

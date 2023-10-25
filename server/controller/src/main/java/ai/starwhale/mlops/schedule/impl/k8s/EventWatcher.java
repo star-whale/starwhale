@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
+import ai.starwhale.mlops.schedule.impl.k8s.reporting.ResourceEventHolder;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Job;

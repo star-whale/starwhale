@@ -38,7 +38,7 @@ public class Event implements Serializable {
     private EventType eventType;
 
     public enum EventSource {
-        CLIENT, SERVER
+        CLIENT, SERVER, NODE
     }
 
     // event source, e.g. client, server

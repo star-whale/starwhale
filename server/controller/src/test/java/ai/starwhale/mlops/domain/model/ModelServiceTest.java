@@ -84,7 +84,7 @@ import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
 import ai.starwhale.mlops.schedule.impl.docker.log.RunLogCollectorFactoryDocker;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.schedule.impl.k8s.reporting.ResourceEventHolder;
 import ai.starwhale.mlops.schedule.log.RunLogSaver;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;

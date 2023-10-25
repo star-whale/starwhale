@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.impl.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -43,15 +43,19 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
     // TODO: deal with ReplicaSet
     private final Set<String> allowedResources = Set.of("Pod", "Deployment", "Job", "Statefulset");
 
+    private final List<K8sEventListener> listeners;
+
     /**
      * ResourceEventHolder holds events from k8s
      * The event-ttl is 1 hour by default see <a href="https://github.com/kubernetes/kubernetes/blob/d2f40481d115155f3ce7abc0b7b2ff2cf8a0bb1e/cmd/kube-apiserver/app/options/options.go#L111">detail</a>
      * We will hold the events may be deleted in the k8s api server
      */
     public ResourceEventHolder(
-            @Value("${sw.scheduler.k8s.event-holder-ttl-in-seconds}") long eventTtlSec
+            @Value("${sw.scheduler.k8s.event-holder-ttl-in-seconds}") long eventTtlSec,
+            List<K8sEventListener> listeners
     ) {
         this.eventTtlSec = eventTtlSec;
+        this.listeners = listeners;
         events = new ConcurrentHashMap<>();
     }
 
@@ -88,9 +92,10 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
             return;
         }
 
-        var rc = events.computeIfAbsent(event.getObject(), k -> new ConcurrentHashMap<>());
+        var rc = events.computeIfAbsent(Event.objectName(event.kind, event.name), k -> new ConcurrentHashMap<>());
         rc.put(event.getName(), event);
         log.info("Event added: {}", event);
+        listeners.forEach(l -> l.onEvent(event));
     }
 
     @Override
@@ -120,7 +125,7 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
     @Builder
     @Data
     public static class Event {
-        // the name of the event, used for logging
+        // the name of the related resource, e.g. foo-bar-123
         final String name;
         // the event time in milliseconds (uses the first event time when the event occurs multiple times)
         final Long eventTimeInMs;
@@ -134,8 +139,8 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
         final String reason;
         // the detail message, usually a long sentence
         final String message;
-        // the related objects resource name, e.g. pod/foo-bar-12345
-        final String object;
+        // the related objects resource kind, e.g. Pod
+        final String kind;
 
         public static Event fromCoreV1Event(CoreV1Event coreV1Event) {
             Long tm = null;
@@ -161,14 +166,13 @@ public class ResourceEventHolder implements ResourceEventHandler<CoreV1Event> {
                 count = coreV1Event.getCount();
             }
             return Event.builder()
-                    .name(coreV1Event.getMetadata().getName())
+                    .name(coreV1Event.getInvolvedObject().getName())
                     .eventTimeInMs(tm)
                     .count(count)
                     .type(coreV1Event.getType())
                     .reason(coreV1Event.getReason())
                     .message(coreV1Event.getMessage())
-                    .object(objectName(coreV1Event.getInvolvedObject().getKind(),
-                            coreV1Event.getInvolvedObject().getName()))
+                    .kind(coreV1Event.getInvolvedObject().getKind())
                     .build();
         }
 

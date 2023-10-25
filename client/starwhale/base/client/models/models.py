@@ -356,6 +356,7 @@ class EventType(Enum):
 class Source(Enum):
     client = 'CLIENT'
     server = 'SERVER'
+    node = 'NODE'
 
 
 class EventResourceType(Enum):
