@@ -22,6 +22,7 @@ fi
 export source_registry=${source_registry:="ghcr.io"}
 export source_repo_name=${source_repo_name:="star-whale"}
 export target_registry=${target_registry:="homepage-bj.intra.starwhale.ai:5000"}
+export target_registry_read_only=${target_registry_read_only:="docker-registry.starwhale.cn"}
 target_repo_name1=star-whale
 target_repo_name2=starwhaleai
 
@@ -44,10 +45,14 @@ function get_tags() {
 # start to sync images
 declare -a starwhale_images=("server" "base" "cuda" "dataset_builder" "runtime-dockerizing")
 for image in "${starwhale_images[@]}"; do
-    tags=$(get_tags "$image")
-    # if the image has already synced, regctl would skip it.
-    for tag in $tags; do
-      copy_image "$source_repo_name/$image:$tag" "$target_repo_name1/$image:$tag"
-      copy_image "$source_repo_name/$image:$tag" "$target_repo_name2/$image:$tag"
-  done
+    source_repo_tags=$(./regctl tag -v error ls "$source_registry"/star-whale/"$image")
+    target_repo_tags1=$(./regctl tag -v error ls "$target_registry_read_only"/"$target_repo_name1"/"$image")
+    target_repo_tags2=$(./regctl tag -v error ls "$target_registry_read_only"/"$target_repo_name2"/"$image")
+
+    while IFS= read -r line; do
+        copy_image "$source_repo_name/$image:$line" "$target_repo_name2/$image:$line"
+    done < <(comm -23 <(sort <<< "$source_repo_tags") <(sort <<< "$target_repo_tags1"))
+    while IFS= read -r line; do
+        copy_image "$source_repo_name/$image:$line" "$target_repo_name2/$image:$line"
+    done < <(comm -23 <(sort <<< "$source_repo_tags") <(sort <<< "$target_repo_tags2"))
 done
