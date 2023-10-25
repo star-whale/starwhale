@@ -12,7 +12,7 @@ export enum QuickGroupEnum {
 
 function QuickGroup({
     filters = [],
-    value = QuickGroupEnum.all,
+    value = QuickGroupEnum.current,
     options = [],
     onChange,
 }: {
