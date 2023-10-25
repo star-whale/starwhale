@@ -12,6 +12,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.ref }}'
+  cancel-in-progress: true
+
 env:
   PYPI_RELEASE_VERSION: 100.0.0
   RELEASE_VERSION: 0.0.0-dev
