@@ -254,7 +254,7 @@ def loadRes(self, resFile):
         anns = self.loadNumpyAnnotations(resFile)
     else:
         anns = resFile
-    assert type(anns) == list, "results in not an array of objects"
+    assert isinstance(anns, list), "results in not an array of objects"
     annsImgIds = [ann["image_id"] for ann in anns]
     assert set(annsImgIds) == (
         set(annsImgIds) & set(self.getImgIds())

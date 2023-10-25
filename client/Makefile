@@ -41,8 +41,8 @@ ci-format-checker:
 	black --check --config pyproject.toml . ../example ../scripts/client_test
 
 ci-lint:
-	echo "run flake8"
-	flake8 . ../example ../scripts/client_test
+	echo "run linter..."
+	ruff check . ../example ../scripts/client_test
 
 ci-mypy:
 	echo "run mypy"

@@ -31,7 +31,7 @@ class EvalMetric(object):
 
     def check_label_shapes(self, preds, labels):
         # raise if the shape is inconsistent
-        if (type(labels) is list) and (type(preds) is list):
+        if isinstance(labels, list) and isinstance(preds, list):
             label_shape, pred_shape = len(labels), len(preds)
         else:
             label_shape, pred_shape = labels.shape[0], preds.shape[0]
@@ -51,9 +51,9 @@ class MetricList(EvalMetric):
         super(MetricList, self).__init__(name=name)
 
     def update(self, preds, labels, losses=None):
-        preds = [preds] if type(preds) is not list else preds
-        labels = [labels] if type(labels) is not list else labels
-        losses = [losses] if type(losses) is not list else losses
+        preds = [preds] if not isinstance(preds, list) else preds
+        labels = [labels] if not isinstance(labels, list) else labels
+        losses = [losses] if not isinstance(losses, list) else losses
 
         for metric in self.metrics:
             metric.update(preds, labels, losses)
@@ -91,8 +91,8 @@ class Accuracy(EvalMetric):
         self.topk = topk
 
     def update(self, preds, labels, losses):
-        preds = [preds] if type(preds) is not list else preds
-        labels = [labels] if type(labels) is not list else labels
+        preds = [preds] if not isinstance(preds, list) else preds
+        labels = [labels] if not isinstance(labels, list) else labels
 
         self.check_label_shapes(preds, labels)
         for pred, label in zip(preds, labels):
