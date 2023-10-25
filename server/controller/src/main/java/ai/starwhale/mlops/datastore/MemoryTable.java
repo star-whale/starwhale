@@ -50,9 +50,9 @@ public interface MemoryTable {
             boolean endInclusive,
             boolean keepNone);
 
-    void lock();
+    void lock(boolean forRead);
 
-    void unlock();
+    void unlock(boolean forRead);
 
     void save() throws IOException;
 

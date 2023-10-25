@@ -64,7 +64,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -115,7 +116,9 @@ public class MemoryTableImpl implements MemoryTable {
 
     private final TreeMap<BaseValue, List<MemoryRecord>> recordMap = new TreeMap<>();
 
-    private final Lock lock = new ReentrantLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     public MemoryTableImpl(String tableName,
             WalManager walManager,
@@ -194,7 +197,7 @@ public class MemoryTableImpl implements MemoryTable {
     public void save() throws IOException {
         String metadata;
         var columnSchema = new HashMap<String, ColumnSchema>();
-        this.lock();
+        this.lock(false);
         var lastRevision = this.lastRevision;
         var firstWalLogId = this.firstWalLogId;
         this.firstWalLogId = -1;
@@ -220,7 +223,7 @@ public class MemoryTableImpl implements MemoryTable {
                 columnSchema.put(REVISION_COLUMN_NAME, timestampColumnSchema);
                 columnSchema.put(DELETED_FLAG_COLUMN_NAME, deletedFlagColumnSchema);
             } finally {
-                this.unlock();
+                this.unlock(false);
             }
             var currentSnapshots = this.storageAccessService.list(this.dataPathPrefix).collect(Collectors.toList());
             var path = this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date());
@@ -255,7 +258,7 @@ public class MemoryTableImpl implements MemoryTable {
                         }
 
                         private void getNext() {
-                            MemoryTableImpl.this.lock();
+                            MemoryTableImpl.this.lock(false);
                             try {
                                 NavigableMap<BaseValue, List<MemoryRecord>> target;
                                 if (this.lastKey == null) {
@@ -284,7 +287,7 @@ public class MemoryTableImpl implements MemoryTable {
                                     }
                                 }
                             } finally {
-                                MemoryTableImpl.this.unlock();
+                                MemoryTableImpl.this.unlock(false);
                             }
                         }
                     });
@@ -305,13 +308,21 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public void lock() {
-        this.lock.lock();
+    public void lock(boolean forRead) {
+        if (forRead) {
+            this.readLock.lock();
+        } else {
+            this.writeLock.lock();
+        }
     }
 
     @Override
-    public void unlock() {
-        this.lock.unlock();
+    public void unlock(boolean forRead) {
+        if (forRead) {
+            this.readLock.unlock();
+        } else {
+            this.writeLock.unlock();
+        }
     }
 
     @Override
