@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import createListComponent from './createListComponent'
 import { Props, ScrollToAlign } from './createListComponent'
 type InstanceProps = any

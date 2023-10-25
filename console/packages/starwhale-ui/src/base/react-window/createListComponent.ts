@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import memoizeOne from 'memoize-one'
 import { createElement, PureComponent } from 'react'
 import { cancelTimeout, requestTimeout } from './timer'
@@ -97,8 +99,8 @@ const defaultItemKey = (index: number, data: any) => index
 
 // In DEV mode, this Set helps us only log a warning once per component instance.
 // This avoids spamming the console every time a render happens.
-let devWarningsDirection = null
-let devWarningsTagName = null
+let devWarningsDirection: WeakSet<any> | null = null
+let devWarningsTagName: WeakSet<any> | null = null
 
 if (process.env.NODE_ENV !== 'production') {
     if (typeof window !== 'undefined' && typeof window.WeakSet !== 'undefined') {
@@ -154,7 +156,7 @@ export default function createListComponent({
             super(props)
         }
 
-        static getDerivedStateFromProps(nextProps: Props<T>, prevState: State): $Shape<State> | null {
+        static getDerivedStateFromProps(nextProps: Props<any>, prevState: State): State | null {
             validateSharedProps(nextProps, prevState)
             validateProps(nextProps)
             return null
@@ -298,6 +300,7 @@ export default function createListComponent({
             if (itemCount > 0) {
                 for (let index = startIndex; index <= stopIndex; index++) {
                     items.push(
+                        // @ts-ignore
                         createElement(children, {
                             data: itemData,
                             key: itemKey(index, itemData),
@@ -361,11 +364,13 @@ export default function createListComponent({
                     visibleStopIndex,
                 })
         )
+        // @ts-ignore
         _callOnScroll: (
             scrollDirection: ScrollDirection,
             scrollOffset: number,
             scrollUpdateWasRequested: boolean
         ) => void
+        // @ts-ignore
         _callOnScroll = memoizeOne(
             (scrollDirection: ScrollDirection, scrollOffset: number, scrollUpdateWasRequested: boolean) =>
                 (this.props.onScroll as any as onScrollCallback)({
@@ -403,7 +408,9 @@ export default function createListComponent({
         // So that pure component sCU will prevent re-renders.
         // We maintain this cache, and pass a style prop rather than index,
         // So that List can clear cached styles and force item re-render if necessary.
+        // @ts-ignore
         _getItemStyle: (index: number) => Record<string, any>
+        // @ts-ignore
         _getItemStyle = (index: number): Record<string, any> => {
             const { direction, itemSize, layout } = this.props
 
@@ -436,7 +443,9 @@ export default function createListComponent({
 
             return style
         }
+        // @ts-ignore
         _getItemStyleCache: (_: any, __: any, ___: any) => ItemStyleCache
+        // @ts-ignore
         _getItemStyleCache = memoizeOne((_: any, __: any, ___: any) => ({}))
 
         _getRangeToRender(): [number, number, number, number] {

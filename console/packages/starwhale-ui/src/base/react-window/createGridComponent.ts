@@ -1,3 +1,4 @@
+// @ts-nocheck
 import memoizeOne from 'memoize-one'
 import { createElement, PureComponent } from 'react'
 import { cancelTimeout, requestTimeout } from './timer'
@@ -554,7 +555,9 @@ export default function createGridComponent({
 
             return style
         }
+        // @ts-ignore
         _getItemStyleCache: (_: any, __: any, ___: any) => ItemStyleCache
+        // @ts-ignore
         _getItemStyleCache = memoizeOne((_: any, __: any, ___: any) => ({}))
 
         _getHorizontalRangeToRender(): [number, number, number, number] {
@@ -676,6 +679,7 @@ export default function createGridComponent({
                 () => {
                     // Clear style cache after state update has been committed.
                     // This way we don't break pure sCU for items that don't use isScrolling param.
+                    // @ts-ignore
                     this._getItemStyleCache(-1)
                 }
             )

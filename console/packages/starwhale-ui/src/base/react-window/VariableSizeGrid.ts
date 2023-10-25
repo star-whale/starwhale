@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import createGridComponent from './createGridComponent'
 import { Props, ScrollToAlign } from './createGridComponent'
 const DEFAULT_ESTIMATED_ITEM_SIZE = 50

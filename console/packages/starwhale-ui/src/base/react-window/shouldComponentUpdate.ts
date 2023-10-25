@@ -4,5 +4,6 @@ import shallowDiffers from './shallowDiffers' // Custom shouldComponentUpdate fo
 // See https://reactjs.org/docs/react-component.html#shouldcomponentupdate
 
 export default function shouldComponentUpdate(nextProps: Record<string, any>, nextState: Record<string, any>): boolean {
+    // @ts-ignore
     return !areEqual(this.props, nextProps) || shallowDiffers(this.state, nextState)
 }

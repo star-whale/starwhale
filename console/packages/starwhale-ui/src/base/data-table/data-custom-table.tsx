@@ -1,5 +1,5 @@
 import React, { useCallback, useDeferredValue, useEffect, useReducer } from 'react'
-import { VariableSizeGrid } from '../react-window'
+import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { SORT_DIRECTIONS } from './constants'
 import MeasureColumnWidths from './measure-column-widths'
