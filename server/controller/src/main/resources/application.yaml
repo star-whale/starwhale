@@ -12,6 +12,12 @@ spring:
       static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
+  db:
+    sql:
+      log-slow-sql:
+        enable: ${SW_DB_SQL_LOG_SLOW_SQL_ENABLE:true}
+      slow-sql-millis: ${SW_DB_SQL_LOG_SLOW_SQL_MILLIS:100}
+      max-print-length: ${SW_DB_SQL_LOG_SLOW_SQL_MAX_PRINT_LENGTH:200}
   features:
     disabled: ${SW_DISABLED_FEATURES:}
   public-api:
@@ -148,6 +154,10 @@ spring:
     url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
     username: ${SW_METADATA_STORAGE_USER:starwhale}
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
+    hikari:
+      max-pool-size: ${SW_METADATA_STORAGE_MAX_POOL_SIZE:100} # mysql server max_connections default is 151
+      connection-timeout: ${SW_METADATA_STORAGE_CONNECT_TIMEOUT:50000}
+      max-lifetime: ${SW_METADATA_STORAGE_MAX_LIFETIME:300000}
   flyway:
     locations: "classpath:db/migration"
     ignore-missing-migrations: true
@@ -167,6 +177,8 @@ mybatis:
 
 server:
   tomcat:
+    mbeanregistry:
+      enabled: ${SW_CONTROLLER_TOMCAT_MBEANREGISTRY_ENABLED:true}
     threads:
       max: ${SW_CONTROLLER_TOMCAT_MAX_THREADS:500}
   port: ${SW_CONTROLLER_PORT:8082}
@@ -188,7 +200,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics}
+        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics,prometheus}
   server:
     port: ${SW_MANAGEMENT_PORT:9082}
   metrics:
