@@ -19,7 +19,7 @@ function useGridQuery() {
     const trace = useTrace('grid-table-user-grid-query')
     const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
     const { originalColumns } = useGirdData()
-    const [isSimpleQuery, setIsSimpleQuery] = React.useState(false)
+    const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
 
     const hasFilter = React.useMemo(() => {
