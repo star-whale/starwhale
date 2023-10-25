@@ -26,7 +26,7 @@ def build_dataset(name: str) -> None:
         for line in reader:
             ds.append(line)
 
-        reader.close
+        reader.close()
         ds.commit()
 
 

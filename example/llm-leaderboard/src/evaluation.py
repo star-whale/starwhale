@@ -145,7 +145,7 @@ def evaluation_results() -> None:
     all_scores = []
     all_weights = []
 
-    for category, scores in category_weight_scores.items():
+    for _, scores in category_weight_scores.items():
         for shot, (score, weight) in scores.items():
             shot_weight_scores[shot]["score"].append(score)
             shot_weight_scores[shot]["weight"].append(weight)

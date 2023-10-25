@@ -78,7 +78,7 @@ class StandaloneDatasetTestCase(BaseTestCase):
         dataset_uri = Resource(name, typ=ResourceType.dataset)
 
         def _iter_rows() -> t.Generator:
-            for i in range(0, 5):
+            for _ in range(0, 5):
                 yield {"a": {1: "a", b"b": "b"}}
 
         sd = StandaloneDataset(dataset_uri)

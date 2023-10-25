@@ -813,7 +813,7 @@ class TestDatasetSessionConsumption(TestCase):
         assert tdsc._todo_queue.qsize() == 11
 
         rt_tasks = []
-        for i in range(0, 11):
+        for _ in range(0, 11):
             task = tdsc._todo_queue.get()
             rt_tasks.append(task)
             tdsc._todo_queue.put(task)

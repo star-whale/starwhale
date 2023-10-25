@@ -14,7 +14,7 @@ class PFPDatasetBuildExecutor:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
         self.object_id = 1
-        for idx, name in enumerate(sorted(names)):
+        for name in sorted(names):
             data_fname = f"PNGImages/{name}.png"
             mask_fname = f"PedMasks/{name}_mask.png"
             mask_fpath = root_dir / mask_fname

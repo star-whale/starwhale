@@ -1028,7 +1028,7 @@ class MockReport:
             "mock_user_module:MockReport.report_handler",
         } == {r.name for r in results}
         assert all([r.status == "success" for r in results])
-        assert {1, 1, 10, 1} == {len(r.task_results) for r in results}
+        assert {1, 10} == {len(r.task_results) for r in results}
         for r in results:
             if r.name == "mock_user_module:predict_handler":
                 assert {i for i in range(10)} == {t.id for t in r.task_results}

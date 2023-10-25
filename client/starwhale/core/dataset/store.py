@@ -560,7 +560,7 @@ class HttpBackend(StorageBackend, CloudRequestMixed):
 _BFType = t.TypeVar("_BFType", bound="BaseBufferedFileLike")
 
 
-class BaseBufferedFileLike(metaclass=ABCMeta):
+class BaseBufferedFileLike:
     def __init__(self, buffer_size: int) -> None:
         self._read_buffer = BytesBuffer(buffer_size)
 

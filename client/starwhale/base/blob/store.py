@@ -5,7 +5,7 @@ import sys
 import shutil
 import typing as t
 import fnmatch
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 from starwhale.utils import console, pretty_bytes
@@ -18,9 +18,11 @@ BuiltinPyExcludes = ["__pycache__/", "*.py[cod]", "*$py.class"]
 
 
 class ObjectStore(ABC):
+    @abstractmethod
     def get(self, key: str) -> t.Any:
         raise NotImplementedError
 
+    @abstractmethod
     def put(self, path: PathLike, key: t.Optional[str]) -> t.Any:
         raise NotImplementedError
 
@@ -114,7 +116,7 @@ class LocalFileStore(ObjectStore):
         Returns: a list of virtual environments or conda environments
         """
         envs = []
-        for root, dirs, files in os.walk(path):
+        for root, _, _ in os.walk(path):
             if cls._check_if_is_py_env(root):
                 envs.append(Path(root))
         return envs

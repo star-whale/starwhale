@@ -227,7 +227,7 @@ async def write_command_file(
         count = f.write(offset, data, 1)
         return {"count": count}
     except (ClosedError, InvalidOffsetError) as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
 
 @app.post("/session/{session_id}/command/{command_id}/file/{filename}/closeRead")
@@ -267,7 +267,7 @@ def read_command_file(
     try:
         data = f.read(offset, 1)
     except (ClosedError, InvalidOffsetError) as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     if data is None:
         return Response(
             headers={"x-wait-for-data": ""},

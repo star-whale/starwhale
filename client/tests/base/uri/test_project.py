@@ -78,7 +78,7 @@ class TestProject(TestCase):
             "foo/project/myproject/dataset/mnist": "myproject",
         }
 
-        for uri, project in tests.items():
+        for uri, _ in tests.items():
             p = Project.parse_from_full_uri(uri, ignore_rc_type=False)
             assert p.id == "1"
             assert p.name == "myproject"

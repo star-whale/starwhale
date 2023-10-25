@@ -425,7 +425,7 @@ class TestCli:
                 raise RuntimeError(msg)
 
     def test_all(self) -> None:
-        for name, example in ALL_EXAMPLES.items():
+        for _, example in ALL_EXAMPLES.items():
             if not os.path.exists(os.path.join(example.workdir, "Makefile")):
                 logger.info("no Makefile found, skip prepare data")
                 continue
@@ -441,7 +441,7 @@ class TestCli:
                 logger.error(process.stderr.read().decode("utf-8"))  # type: ignore
                 raise
 
-        for name, rt in self.RUNTIME_EXAMPLES.items():
+        for _, rt in self.RUNTIME_EXAMPLES.items():
             self.build_runtime(rt["workdir"], rt["yaml"])
 
         for name, example in ALL_EXAMPLES.items():

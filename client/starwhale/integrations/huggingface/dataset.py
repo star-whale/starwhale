@@ -9,7 +9,9 @@ from starwhale.utils.error import NoSupportError
 try:
     import datasets as hf_datasets
 except ImportError:  # pragma: no cover
-    raise ImportError("Please install huggingface/datasets with `pip install datasets`")
+    raise ImportError(
+        "Please install huggingface/datasets with `pip install datasets`"
+    ) from None
 
 from starwhale.utils import console
 from starwhale.base.data_type import Audio, Image, MIMEType

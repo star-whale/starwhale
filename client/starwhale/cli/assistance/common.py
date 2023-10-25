@@ -48,12 +48,16 @@ class TaskRunner(threading.Thread):
         self.stopped = True
 
     def run_until_success(
-        self, f: Callable[[], Any], ignore_stopped: bool = False
+        self,
+        f: Callable,
+        ignore_stopped: bool = False,
+        *f_args: Any,
+        **f_kwargs: Any,
     ) -> Any:
         backoff = 0.1
         while not self.stopped or ignore_stopped:
             try:
-                return f()
+                return f(*f_args, **f_kwargs)
             except UnrecoverableError:
                 raise
             except Exception:
@@ -314,7 +318,7 @@ class BrokerWriter(TaskRunner):
                         return
                     d = data
                     while not self.stopped and len(d) > 0:
-                        count = self.run_until_success(lambda: self._write_to_broker(d))
+                        count = self.run_until_success(self._write_to_broker, False, d)
                         self.offset += count
                         d = d[count:]
         except Exception as e:

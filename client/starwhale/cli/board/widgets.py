@@ -125,12 +125,12 @@ class TableWidget(Widget):
         data = self._orderby.sort(self.data)
         for idx, item in enumerate(data):
 
-            def try_render(col: Column) -> t.Any:
-                if col.render:
-                    return col.render(idx, item)
-                return get_field(item, col.key)
+            def try_render(col_: Column, idx_: int, item_: t.Any) -> t.Any:
+                if col_.render:
+                    return col_.render(idx_, item_)
+                return get_field(item_, col_.key)
 
-            self.table.add_row(*[try_render(i) for i in self.render_fn])
+            self.table.add_row(*[try_render(i, idx, item) for i in self.render_fn])
 
         self.highlight_row(self.cursor_line)
         self.refresh()

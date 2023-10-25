@@ -15,7 +15,7 @@ def build_ds(ds_uri: str):
     :param ds_uri: cloud://server/project/starwhale/dataset/hotdog_test
     """
     ds = dataset(ds_uri, create="empty")
-    for idx, label in enumerate(_LABEL_NAMES):
+    for label in _LABEL_NAMES:
         path = ROOT_DIR / "data" / tag / label
         for _fn in os.listdir(path):
             _f = path / _fn
