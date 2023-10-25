@@ -40,6 +40,7 @@ export type SharedColumnOptionsT<ValueT> = {
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
     renderCell?: RenderCellT<ValueT>
     columnType?: { name: string; type: string }
+    columnable?: boolean
 }
 
 export type RenderCellT<ValueT> = React.FC<{

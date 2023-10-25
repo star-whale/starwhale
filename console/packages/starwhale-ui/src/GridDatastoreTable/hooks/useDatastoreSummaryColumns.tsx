@@ -116,6 +116,7 @@ export function useDatastoreSummaryColumns(
                     key: 'action',
                     title: t('Action'),
                     pin: 'RIGHT',
+                    columnable: false,
                     renderCell: ({ value: record }) => {
                         const id = record.record?.['sys/id']
                         if (!id) return <></>
@@ -137,6 +138,7 @@ export function useDatastoreSummaryColumns(
                 key: 'action',
                 title: t('Action'),
                 pin: 'RIGHT',
+                columnable: false,
                 renderCell: ({ value: record }) => {
                     const id = record.record?.['sys/id']
                     if (!id) return <></>

@@ -200,7 +200,7 @@ export default function Headers({ width }: { width: number }) {
                     <div
                         className='flex flex-start items-center ml-auto pl-12px bg-[#F3F5F9] font-bold text-14px'
                         style={{
-                            width: headerRightWidth + ctx.scrollbarWidth,
+                            width: headerRightWidth + ctx.scrollbarWidth - 1,
                             height: HEADER_ROW_HEIGHT,
                             borderLeft: '1px solid #CFD7E6',
                         }}

@@ -109,7 +109,7 @@ export function matchesQuery(text: string, query: string): boolean {
 export default function Transfer({
     isDragable = false,
     isSearchable = false,
-    columns = [],
+    columns: _columns = [],
     value = defaultValue,
     onChange = () => {},
 }: TransferPropsT) {
@@ -120,6 +120,8 @@ export default function Transfer({
 
     // eslint-disable-next-line no-param-reassign
     if (!value) value = defaultValue
+
+    const columns = React.useMemo(() => _columns.filter((v) => v.columnable), [_columns])
 
     // cached & filtered columns
     const columnMap = useMemo(() => {

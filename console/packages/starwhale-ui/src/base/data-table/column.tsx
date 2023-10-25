@@ -112,6 +112,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         buildFilters: options.buildFilters,
         renderAction: options.renderAction,
         title: options.title,
+        columnable: options.columnable === undefined ? true : options.columnable,
     }
 }
 
