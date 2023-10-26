@@ -121,7 +121,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
 
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems} extra={extra}>
-            <div style={{ paddingTop: '12px', flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+            <div className='flex-1 flex flex-col pt-12px'>{children}</div>
         </BaseSubLayout>
     )
 }
