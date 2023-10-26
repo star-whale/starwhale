@@ -16,5 +16,3 @@
 
 ALTER TABLE dataset_read_session ADD status varchar(100) DEFAULT 'UNFINISHED' NOT NULL;
 UPDATE dataset_read_session set status = 'FINISHED';
-
-CREATE INDEX dataset_read_log_session_id_IDX USING BTREE ON dataset_read_log (session_id,consumer_id,status);
