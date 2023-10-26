@@ -178,6 +178,10 @@ public class K8sClient {
         return coreV1Api.listNamespacedPod(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 
+    public V1Pod getPod(String name) throws ApiException {
+        return coreV1Api.readNamespacedPod(name, ns, null);
+    }
+
     /**
      * execute command in pod
      *

@@ -397,10 +397,15 @@ public class JobController {
     public ResponseEntity<ResponseMessage<List<EventVo>>> getEvents(
             @PathVariable String projectUrl,
             @PathVariable String jobUrl,
-            @RequestParam(required = false) Long taskId
+            @RequestParam(required = false) Long taskId,
+            @RequestParam(required = false) Long runId
     ) {
         EventRequest.RelatedResource request = null;
-        if (taskId != null) {
+        if (runId != null) {
+            request = new EventRequest.RelatedResource();
+            request.setEventResourceType(EventResourceType.RUN);
+            request.setId(runId);
+        } else if (taskId != null) {
             request = new EventRequest.RelatedResource();
             request.setEventResourceType(EventResourceType.TASK);
             request.setId(taskId);

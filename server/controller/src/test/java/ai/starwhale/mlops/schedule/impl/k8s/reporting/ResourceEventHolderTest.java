@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.impl.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import java.time.OffsetDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class ResourceEventHolderTest {
     private ResourceEventHolder resourceEventHolder;
@@ -31,7 +35,7 @@ class ResourceEventHolderTest {
 
     @BeforeEach
     void setUp() {
-        resourceEventHolder = new ResourceEventHolder(3600);
+        resourceEventHolder = new ResourceEventHolder(3600, List.of());
         event = new CoreV1Event()
                 .metadata(new V1ObjectMeta().name("event-name"))
                 .eventTime(OffsetDateTime.now())
@@ -42,18 +46,18 @@ class ResourceEventHolderTest {
     }
 
     @Test
-    void getEvents() {
+    void testGetEvents() {
         resourceEventHolder.onAdd(event);
         var events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(1, events.size());
         var expectedEvent = ResourceEventHolder.Event.builder()
-                .name(event.getMetadata().getName())
+                .name("test-pod")
                 .eventTimeInMs(event.getEventTime().toInstant().toEpochMilli())
                 .message(event.getMessage())
                 .reason(event.getReason())
                 .type(event.getType())
                 .count(event.getCount())
-                .object("Pod/test-pod")
+                .kind("Pod")
                 .build();
         Assertions.assertEquals(expectedEvent, events.get(0));
 
@@ -69,7 +73,7 @@ class ResourceEventHolderTest {
     }
 
     @Test
-    void onAdd() {
+    void testOnAdd() {
         resourceEventHolder.onAdd(event);
         var events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(1, events.size());
@@ -82,8 +86,8 @@ class ResourceEventHolderTest {
     }
 
     @Test
-    void gc() throws InterruptedException {
-        resourceEventHolder = new ResourceEventHolder(1);
+    void testGc() throws InterruptedException {
+        resourceEventHolder = new ResourceEventHolder(1, List.of());
         resourceEventHolder.onAdd(event);
         var events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(1, events.size());
@@ -91,5 +95,24 @@ class ResourceEventHolderTest {
         resourceEventHolder.gc();
         events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(0, events.size());
+    }
+
+    @Test
+    void testEventListener() {
+        var listener = mock(K8sEventListener.class);
+        var captor = ArgumentCaptor.forClass(ResourceEventHolder.Event.class);
+        resourceEventHolder = new ResourceEventHolder(1, List.of(listener));
+        resourceEventHolder.onAdd(event);
+        verify(listener).onEvent(captor.capture());
+        var expectedEvent = ResourceEventHolder.Event.builder()
+                .name("test-pod")
+                .eventTimeInMs(event.getEventTime().toInstant().toEpochMilli())
+                .message(event.getMessage())
+                .reason(event.getReason())
+                .type(event.getType())
+                .count(event.getCount())
+                .kind("Pod")
+                .build();
+        Assertions.assertEquals(expectedEvent, captor.getValue());
     }
 }

@@ -16,8 +16,11 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
+import io.kubernetes.client.common.KubernetesObject;
 import java.time.OffsetDateTime;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 public class Util {
@@ -28,4 +31,26 @@ public class Util {
         return time.toInstant().toEpochMilli();
     }
 
+    @Nullable
+    public static Long getRunId(@Nullable KubernetesObject object) {
+        if (object == null) {
+            return null;
+        }
+
+        var metadata = object.getMetadata();
+        if (metadata == null || metadata.getAnnotations() == null) {
+            return null;
+        }
+
+        String rid = metadata.getAnnotations().get(RunExecutorK8s.ANNOTATION_KEY_RUN_ID);
+        if (!StringUtils.hasText(rid)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(rid);
+        } catch (NumberFormatException e) {
+            log.warn("invalid run id {}", rid);
+            return null;
+        }
+    }
 }
