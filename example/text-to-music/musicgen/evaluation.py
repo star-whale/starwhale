@@ -4,9 +4,8 @@ import os
 import typing as t
 from tempfile import NamedTemporaryFile
 
-from audiocraft.models import MusicGen
+from transformers import AutoProcessor, MusicgenForConditionalGeneration
 from audiocraft.data.audio import audio_write
-from audiocraft.models.loaders import load_lm_model, load_compression_model
 
 from starwhale import Audio, MIMEType, evaluation
 
@@ -15,36 +14,31 @@ try:
 except ImportError:
     from utils import get_model_name, PRETRAINED_MODELS_DIR
 
-duration = int(os.environ.get("DURATION", 10))
 top_k = int(os.environ.get("TOP_K", 250))
 top_p = int(os.environ.get("TOP_P", 0))
 temperature = float(os.environ.get("TEMPERATURE", 1.0))
-cfg_coef = float(os.environ.get("CFG_COEF", 3.0))
 max_input_length = int(os.environ.get("MAX_INPUT_LENGTH", 512))
+max_new_tokens = int(os.environ.get("MAX_NEW_TOKENS", 500))  # 500 tokens = 10 seconds
+guidance_scale = float(os.environ.get("GUIDANCE_SCALE", 3.0))
 
 _g_model = None
+_g_processor = None
 _g_model_name = None
 
 
-def _load_model() -> t.Tuple[MusicGen, str]:
-    global _g_model, _g_model_name
+def _load_model() -> t.Tuple[t.Any, t.Any, str]:
+    global _g_model, _g_model_name, _g_processor
 
-    if _g_model is None or _g_model_name is None:
-        model_name = get_model_name()
-        device = "cuda"
-        c_model = load_compression_model(
-            PRETRAINED_MODELS_DIR / model_name / "compression_state_dict.bin",
-            device=device,
+    if _g_model is None or _g_model_name is None or _g_processor is None:
+        _g_model_name = get_model_name()
+        _g_model = MusicgenForConditionalGeneration.from_pretrained(
+            PRETRAINED_MODELS_DIR / _g_model_name
         )
-        l_model = load_lm_model(
-            PRETRAINED_MODELS_DIR / model_name / "state_dict.bin", device=device
+        _g_model.to("cuda")
+        _g_processor = AutoProcessor.from_pretrained(
+            PRETRAINED_MODELS_DIR / _g_model_name
         )
-        if model_name == "melody":
-            l_model.condition_provider.conditioners["self_wav"].match_len_on_eval = True
-        _g_model = MusicGen(model_name, c_model, l_model)
-        _g_model_name = model_name
-
-    return _g_model, _g_model_name
+    return _g_model, _g_processor, _g_model_name
 
 
 @evaluation.predict(
@@ -55,30 +49,36 @@ def _load_model() -> t.Tuple[MusicGen, str]:
 )
 def music_predict(data: dict) -> Audio:
     # TODO: support batch prediction
-    model, _ = _load_model()
-    model.set_generation_params(
-        duration=duration,
+    model, processor, _ = _load_model()
+    inputs = processor(
+        text=[data["desc"][:max_input_length]],
+        padding=True,
+        return_tensors="pt",
+    )
+    # TODO: support melody
+    outputs = model.generate(
+        **inputs.to("cuda"),
+        do_sample=True,
+        guidance_scale=guidance_scale,
+        max_new_tokens=max_new_tokens,
         top_k=top_k,
         top_p=top_p,
         temperature=temperature,
-        cfg_coef=cfg_coef,
     )
-    # TODO: support melody
-    outputs = model.generate([data.desc[:max_input_length]])
     output = outputs[0].detach().cpu().float()
 
     with NamedTemporaryFile("wb", suffix=".wav", delete=True) as file:
         fpath = audio_write(
             stem_name=file.name,
             wav=output,
-            sample_rate=model.sample_rate,
+            sample_rate=model.config.audio_encoder.sampling_rate,
             strategy="loudness",
             loudness_headroom_db=16,
             loudness_compressor=True,
             add_suffix=False,
         )
         audio = Audio(
-            fp=fpath,
+            fp=fpath.read_bytes(),
             mime_type=MIMEType.WAV,
         )
         return audio

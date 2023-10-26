@@ -5,7 +5,7 @@ import sys
 from huggingface_hub import snapshot_download
 
 from starwhale import model as starwhale_model
-from starwhale.utils import debug
+from starwhale import init_logger
 
 try:
     from .utils import (
@@ -22,7 +22,13 @@ except ImportError:
     )
     from evaluation import music_predict
 
-debug.init_logger(4)
+# init_logger configures the logging level of starwhale:
+#   -> 0: ERROR  (default)
+#   -> 1: WARNING
+#   -> 2: INFO
+#   -> 3: DEBUG
+#   -> 4: TRACE
+init_logger(3)
 
 
 def build_starwhale_model(model_name: str) -> None:
@@ -39,6 +45,8 @@ def build_starwhale_model(model_name: str) -> None:
     )
 
     prepare_build_model_package(model_name)
+
+    # Use Starwhale SDK to build Starwhale model Package, `swcli model build` is also available.
     starwhale_model.build(name=f"musicgen-{model_name}", modules=[music_predict])
 
 
