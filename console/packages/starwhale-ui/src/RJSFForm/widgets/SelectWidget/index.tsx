@@ -82,6 +82,13 @@ const SelectWidget = ({
                         placement: 'bottom',
                     },
                 },
+                IconsContainer: {
+                    style: {
+                        color: 'rgba(2, 16, 43, 0.2)',
+                        alignItems: 'start',
+                        paddingTop: '8px',
+                    },
+                },
             }}
             size={SIZE.compact}
             autoFocus={autofocus}

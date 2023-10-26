@@ -151,7 +151,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                     overrides={{
                                         SingleValue: {
                                             style: {
-                                                width: isCompare ? '50%' : '100%',
+                                                width: isCompare ? '70%' : '100%',
                                             },
                                         },
                                     }}
@@ -191,7 +191,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                                         overrides={{
                                             SingleValue: {
                                                 style: {
-                                                    width: '50%',
+                                                    width: '70%',
                                                 },
                                             },
                                         }}
