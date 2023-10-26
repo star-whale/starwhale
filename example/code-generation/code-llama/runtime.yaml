@@ -1,0 +1,8 @@
+name: code-llama
+mode: venv
+environment:
+  arch: noarch
+  cuda: 11.7
+  python: 3.9
+dependencies:
+  - requirements.txt

@@ -1,0 +1,5 @@
+vllm==0.2.1.post1  # vllm supports code-llama >= 0.17
+transformers==4.34.1  # transformers supports code-llama >= 4.3.3
+torch==2.0.1
+accelerate==0.24.0
+gradio==3.50.2
