@@ -163,7 +163,7 @@ spring:
     hikari:
       maximum-pool-size: ${SW_METADATA_STORAGE_MAX_POOL_SIZE:100} # mysql server max_connections default is 151
       connection-timeout: ${SW_METADATA_STORAGE_CONNECT_TIMEOUT:50000}
-      max-lifetime: ${SW_METADATA_STORAGE_MAX_LIFETIME:300000}
+      max-lifetime: ${SW_METADATA_STORAGE_MAX_LIFETIME:1800000}
   flyway:
     locations: "classpath:db/migration"
     ignore-missing-migrations: true
