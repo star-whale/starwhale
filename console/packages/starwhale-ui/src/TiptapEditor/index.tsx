@@ -52,7 +52,7 @@ export default function TiptapEditor({ id = '', initialContent, editable, onSave
             onSaveStatusChange?.(SaveStatus.UNSAVED)
             debouncedUpdates(e)
         },
-        autofocus: 'end',
+        autofocus: 'start',
     })
 
     // Hydrate the editor with the content from localStorage.

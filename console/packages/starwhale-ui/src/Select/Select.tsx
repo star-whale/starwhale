@@ -28,6 +28,7 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
             },
             DropdownListItem: {
                 style: {
+                    'minWidth': 'fit-content',
                     ':hover': {
                         backgroundColor: '#EBF1FF',
                     },

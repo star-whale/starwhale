@@ -23,6 +23,8 @@ export const ModelLabelText = themedStyled('div', () => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: 'Roboto Mono',
+    height: 'inherit',
+    flexShrink: 0,
 }))
 
 export function getModelLabel(version: IModelTreeVersionSchema, model?: IModelTreeSchema) {

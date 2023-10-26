@@ -24,13 +24,15 @@ export function useDatastoreSummaryColumns(
         showLink?: boolean
         columnTypes?: ColumnSchemaDesc[]
         columnHints?: Record<string, ColumnHintsDesc>
+        hasAction?: boolean
     } = {
         fillWidth: false,
         projectId: '',
+        hasAction: false,
     }
 ): ColumnT[] {
     const [t] = useTranslation()
-    const { projectId } = options
+    const { projectId, hasAction } = options
 
     const $columns = useDatastoreColumns(options)
 
@@ -116,24 +118,28 @@ export function useDatastoreSummaryColumns(
 
         return [
             ..._tmp,
-            CustomColumn<RecordAttr, any>({
-                ..._tmp[0],
-                key: 'action',
-                title: t('Action'),
-                pin: 'RIGHT',
-                columnable: false,
-                renderCell: ({ value: record }) => {
-                    const id = record.record?.['sys/id']
-                    if (!id) return <></>
-                    return (
-                        <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
-                            <IconFont type='tasks' />
-                        </IconLink>
-                    )
-                },
-            }),
+            ...(hasAction
+                ? [
+                      CustomColumn<RecordAttr, any>({
+                          ..._tmp[0],
+                          key: 'action',
+                          title: t('Action'),
+                          pin: 'RIGHT',
+                          columnable: false,
+                          renderCell: ({ value: record }) => {
+                              const id = record.record?.['sys/id']
+                              if (!id) return <></>
+                              return (
+                                  <IconLink to={`/projects/${projectId}/jobs/${id}/tasks`}>
+                                      <IconFont type='tasks' />
+                                  </IconLink>
+                              )
+                          },
+                      }),
+                  ]
+                : []),
         ]
-    }, [$columns, projectId, t])
+    }, [$columns, projectId, t, hasAction])
 
     return $columnsWithSpecColumns
 }

@@ -73,7 +73,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             navItems={navItems}
             extra={<JobActionGroup hasText hasSaveAs />}
         >
-            {children}
+            <div className='flex-1 flex flex-col pt-12px'>{children}</div>
         </BaseSubLayout>
     )
 }
