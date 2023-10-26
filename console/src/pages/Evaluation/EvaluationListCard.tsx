@@ -70,7 +70,7 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreSummaryColumns({ projectId, columnTypes, columnHints })
+    const $columns = useDatastoreSummaryColumns({ projectId, columnTypes, columnHints, hasAction: true })
 
     const $ready = evaluationViewConfig.isSuccess
 
