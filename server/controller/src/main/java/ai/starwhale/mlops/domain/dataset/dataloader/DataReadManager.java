@@ -38,7 +38,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.convert.DurationStyle;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -51,7 +50,6 @@ public class DataReadManager {
     private final SessionDao sessionDao;
     private final DataReadLogDao dataReadLogDao;
     private final DataIndexProvider dataIndexProvider;
-    private final TaskExecutor taskExecutor;
     private final LRUCache<String, LinkedList<DataReadLog>> sessionCache;
     private final Integer cacheSize;
     private final Integer insertBatchSize;
@@ -61,7 +59,6 @@ public class DataReadManager {
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
                            DataIndexProvider dataIndexProvider,
-                           TaskExecutor taskExecutor,
                            @Value("${sw.dataset.load.read.log-cache-capacity:1000}") int capacity,
                            @Value("${sw.dataset.load.read.log-cache-size:1000}") int cacheSize,
                            @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout,
@@ -70,7 +67,6 @@ public class DataReadManager {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
-        this.taskExecutor = taskExecutor;
         this.cacheSize = cacheSize;
         this.insertBatchSize = insertBatchSize;
         this.sessionCache = new LRUCache<>(capacity, DurationStyle.detectAndParse(cacheTimeout).toMillis());
@@ -99,24 +95,6 @@ public class DataReadManager {
         // insert session
         sessionDao.insert(session);
         return session;
-    }
-
-    /**
-     * deal with unFinished session at start stage
-     */
-    @Async
-    public void dealWithUnFinishedSession() {
-        var unFinishedSessions = sessionDao.selectUnFinished();
-        for (Session session : unFinishedSessions) {
-            taskExecutor.execute(() -> {
-                try {
-                    generate(session.getId());
-                } catch (Exception e) {
-                    log.error("Error when continue to generate read logs for session: {}", session.getSessionId(), e);
-                    failSessionQueue.add(new FailSession(session.getId()));
-                }
-            });
-        }
     }
 
     @Async

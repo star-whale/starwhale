@@ -16,15 +16,19 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
+import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import ai.starwhale.mlops.domain.upgrade.rollup.RollingUpdateStatusListener;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SessionInitializer implements RollingUpdateStatusListener {
     private final DataReadManager dataReadManager;
+    private final SessionDao sessionDao;
 
-    public SessionInitializer(DataReadManager dataReadManager) {
+    public SessionInitializer(DataReadManager dataReadManager, SessionDao sessionDao) {
         this.dataReadManager = dataReadManager;
+        this.sessionDao = sessionDao;
     }
 
     @Override
@@ -32,10 +36,16 @@ public class SessionInitializer implements RollingUpdateStatusListener {
 
     }
 
+    /**
+     * deal with unFinished session at start stage
+     */
     @Override
     public void onOldInstanceStatus(ServerInstanceStatus status) {
         if (status == ServerInstanceStatus.READY_DOWN) {
-            dataReadManager.dealWithUnFinishedSession();
+            var unFinishedSessions = sessionDao.selectUnFinished();
+            for (Session session : unFinishedSessions) {
+                dataReadManager.generateDataReadLog(session.getId());
+            }
         }
     }
 }
