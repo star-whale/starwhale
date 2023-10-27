@@ -101,6 +101,7 @@ public class JobEventHandlerTest {
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .build();
         verify(runReportReceiver).receive(expected);
+        reset(runReportReceiver);
 
         // test with reason and message
         var con = new V1JobCondition()
@@ -112,7 +113,7 @@ public class JobEventHandlerTest {
                 .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .failedReason("job failed: reason, message")
+                .failedReason(null)
                 .build();
         verify(runReportReceiver).receive(expected2);
 
@@ -128,7 +129,7 @@ public class JobEventHandlerTest {
                 .status(RunStatus.FAILED)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .failedReason("job failed: reason, message\npod failed: foo, bar\nfoo, bar")
+                .failedReason("foo, bar\nfoo, bar")
                 .build();
         verify(runReportReceiver).receive(expected3);
     }

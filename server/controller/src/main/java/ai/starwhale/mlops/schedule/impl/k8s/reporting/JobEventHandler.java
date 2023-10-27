@@ -139,23 +139,16 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             log.warn("no pod stop time found for job {}, use now", jobName);
         }
 
-        // prefer using the pod failed reason, it has more details
+        // use the pod failed reason, it has more details
+        // we have disabled the job retry, so the job failed reason is not useful
         var podFailedReason = getPodFailedReason(jobName);
-
-        var failedReason = "";
-        if (StringUtils.hasText(jobFailedReason)) {
-            failedReason = "job failed: " + jobFailedReason;
-        }
-        if (StringUtils.hasText(podFailedReason)) {
-            failedReason = failedReason + "\npod failed: " + podFailedReason;
-        }
 
         var report = ReportedRun.builder()
                 .id(runId)
                 .status(runStatus)
                 .startTimeMillis(startTime)
                 .stopTimeMillis(stopTime)
-                .failedReason(StringUtils.hasText(failedReason) ? failedReason : null)
+                .failedReason(StringUtils.hasText(podFailedReason) ? podFailedReason : null)
                 .build();
         runReportReceiver.receive(report);
     }
