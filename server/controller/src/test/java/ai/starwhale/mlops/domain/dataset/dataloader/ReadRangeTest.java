@@ -39,6 +39,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
+import org.springframework.core.task.TaskExecutor;
 
 public class ReadRangeTest {
 
@@ -56,7 +57,7 @@ public class ReadRangeTest {
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
-                sessionDao, dataReadLogDao, dataRangeProvider, 1, cacheSize, "10s", 10);
+                sessionDao, dataReadLogDao, dataRangeProvider, mock(TaskExecutor.class), 1, cacheSize, "10s", 10);
         dataLoader = new DataLoader(dataReadManager, 1);
     }
 
