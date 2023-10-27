@@ -14,7 +14,9 @@ dependencies:
       - apt-get install -y libgl1
       - touch /tmp/runtime-command-run.flag
 environment:
-  arch: noarch
   os: ubuntu:20.04
+  arch:
+    - amd64
+    - arm64
 mode: venv
 name: simple-test
