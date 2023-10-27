@@ -5,45 +5,32 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field, constr, BaseModel
+from pydantic import Field, constr
+
+from starwhale.base.models.base import SwBaseModel
 
 
-class UserUpdateStateRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserUpdateStateRequest(SwBaseModel):
     is_enabled: bool = Field(..., alias='isEnabled')
 
 
-class ResponseMessageString(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageString(SwBaseModel):
     code: str
     message: str
     data: str
 
 
-class UserUpdatePasswordRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserUpdatePasswordRequest(SwBaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
     new_pwd: str = Field(..., alias='newPwd')
 
 
-class UserRoleUpdateRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserRoleUpdateRequest(SwBaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
     role_id: str = Field(..., alias='roleId')
 
 
-class UpdateProjectRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UpdateProjectRequest(SwBaseModel):
     project_name: Optional[constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$')] = Field(
         None, alias='projectName'
     )
@@ -51,69 +38,45 @@ class UpdateProjectRequest(BaseModel):
     description: Optional[str] = None
 
 
-class ResponseMessageObject(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageObject(SwBaseModel):
     code: str
     message: str
     data: Dict[str, Any]
 
 
-class RuntimeTagRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeTagRequest(SwBaseModel):
     force: Optional[bool] = None
     tag: str
 
 
-class UpdateReportRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UpdateReportRequest(SwBaseModel):
     title: Optional[constr(min_length=0, max_length=255)] = None
     description: Optional[constr(min_length=0, max_length=255)] = None
     content: Optional[str] = None
     shared: Optional[bool] = None
 
 
-class ModelUpdateRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelUpdateRequest(SwBaseModel):
     tag: Optional[str] = None
     built_in_runtime: Optional[str] = None
 
 
-class JobModifyRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class JobModifyRequest(SwBaseModel):
     comment: str
 
 
-class ApplySignedUrlRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ApplySignedUrlRequest(SwBaseModel):
     flag: Optional[str] = None
     path_prefix: str = Field(..., alias='pathPrefix')
     files: List[str] = Field(..., unique_items=True)
 
 
-class SignedUrlResponse(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class SignedUrlResponse(SwBaseModel):
     path_prefix: Optional[str] = Field(None, alias='pathPrefix')
     signed_urls: Optional[Dict[str, str]] = Field(None, alias='signedUrls')
 
 
-class UserRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserRequest(SwBaseModel):
     user_name: constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{3,32}$') = Field(
         ..., alias='userName'
     )
@@ -121,27 +84,18 @@ class UserRequest(BaseModel):
     salt: Optional[str] = None
 
 
-class UserCheckPasswordRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserCheckPasswordRequest(SwBaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
 
 
-class Resource(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class Resource(SwBaseModel):
     name: Optional[str] = None
     max: Optional[float] = None
     min: Optional[float] = None
     defaults: Optional[float] = None
 
 
-class Toleration(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class Toleration(SwBaseModel):
     key: Optional[str] = None
     operator: Optional[str] = None
     value: Optional[str] = None
@@ -149,19 +103,13 @@ class Toleration(BaseModel):
     toleration_seconds: Optional[int] = Field(None, alias='tolerationSeconds')
 
 
-class UserRoleAddRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserRoleAddRequest(SwBaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
     user_id: str = Field(..., alias='userId')
     role_id: str = Field(..., alias='roleId')
 
 
-class CreateProjectRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class CreateProjectRequest(SwBaseModel):
     project_name: constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$') = Field(
         ..., alias='projectName'
     )
@@ -169,27 +117,18 @@ class CreateProjectRequest(BaseModel):
     description: str
 
 
-class CreateModelVersionRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class CreateModelVersionRequest(SwBaseModel):
     meta_blob_id: str = Field(..., alias='metaBlobId')
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
     force: Optional[bool] = None
 
 
-class CreateJobTemplateRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class CreateJobTemplateRequest(SwBaseModel):
     name: str
     job_url: str = Field(..., alias='jobUrl')
 
 
-class ModelServingRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelServingRequest(SwBaseModel):
     model_version_url: str = Field(..., alias='modelVersionUrl')
     runtime_version_url: str = Field(..., alias='runtimeVersionUrl')
     resource_pool: Optional[str] = Field(None, alias='resourcePool')
@@ -197,92 +136,59 @@ class ModelServingRequest(BaseModel):
     spec: Optional[str] = None
 
 
-class ModelServingVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelServingVo(SwBaseModel):
     id: str
     base_uri: Optional[str] = Field(None, alias='baseUri')
 
 
-class ResponseMessageModelServingVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageModelServingVo(SwBaseModel):
     code: str
     message: str
     data: ModelServingVo
 
 
-class RunEnvs(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RunEnvs(SwBaseModel):
     env_vars: Optional[Dict[str, str]] = Field(None, alias='envVars')
 
 
-class BuildImageResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class BuildImageResult(SwBaseModel):
     success: Optional[bool] = None
     message: Optional[str] = None
 
 
-class ResponseMessageBuildImageResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageBuildImageResult(SwBaseModel):
     code: str
     message: str
     data: BuildImageResult
 
 
-class RuntimeRevertRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeRevertRequest(SwBaseModel):
     version_url: str = Field(..., alias='versionUrl')
 
 
-class ClientRuntimeRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ClientRuntimeRequest(SwBaseModel):
     runtime: Optional[str] = None
     project: Optional[str] = None
     force: Optional[str] = None
     manifest: Optional[str] = None
 
 
-class CreateReportRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class CreateReportRequest(SwBaseModel):
     title: constr(min_length=1, max_length=255)
     description: Optional[constr(min_length=0, max_length=255)] = None
     content: constr(min_length=1, max_length=2147483647)
 
 
-class TransferReportRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TransferReportRequest(SwBaseModel):
     target_project_url: str = Field(..., alias='targetProjectUrl')
 
 
-class ModelTagRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelTagRequest(SwBaseModel):
     force: Optional[bool] = None
     tag: str
 
 
-class RevertModelVersionRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RevertModelVersionRequest(SwBaseModel):
     version_url: str = Field(..., alias='versionUrl')
 
 
@@ -298,10 +204,7 @@ class DevWay(Enum):
     vs_code = 'VS_CODE'
 
 
-class JobRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class JobRequest(SwBaseModel):
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: str = Field(..., alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
@@ -316,34 +219,22 @@ class JobRequest(BaseModel):
     dev_way: Optional[DevWay] = Field(None, alias='devWay')
 
 
-class ExecRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ExecRequest(SwBaseModel):
     command: List[str]
 
 
-class ExecResponse(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ExecResponse(SwBaseModel):
     stdout: Optional[str] = None
     stderr: Optional[str] = None
 
 
-class ResponseMessageExecResponse(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageExecResponse(SwBaseModel):
     code: str
     message: str
     data: ExecResponse
 
 
-class JobModifyPinRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class JobModifyPinRequest(SwBaseModel):
     pinned: bool
 
 
@@ -365,62 +256,41 @@ class EventResourceType(Enum):
     run = 'RUN'
 
 
-class RelatedResource(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RelatedResource(SwBaseModel):
     event_resource_type: EventResourceType = Field(..., alias='eventResourceType')
     id: int
 
 
-class ResponseMessageMapStringString(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageMapStringString(SwBaseModel):
     code: str
     message: str
     data: Dict[str, str]
 
 
-class ConfigRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ConfigRequest(SwBaseModel):
     name: str
     content: str
 
 
-class DatasetTagRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetTagRequest(SwBaseModel):
     force: Optional[bool] = None
     tag: str
 
 
-class DataIndexDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DataIndexDesc(SwBaseModel):
     start: Optional[str] = None
     start_type: Optional[str] = Field(None, alias='startType')
     end: Optional[str] = None
     end_type: Optional[str] = Field(None, alias='endType')
 
 
-class NullableResponseMessageDataIndexDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class NullableResponseMessageDataIndexDesc(SwBaseModel):
     code: str
     message: str
     data: Optional[DataIndexDesc] = None
 
 
-class RevertDatasetRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RevertDatasetRequest(SwBaseModel):
     version_url: str = Field(..., alias='versionUrl')
 
 
@@ -440,10 +310,7 @@ class Phase(Enum):
     cancel = 'CANCEL'
 
 
-class DatasetUploadRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetUploadRequest(SwBaseModel):
     upload_id: int = Field(..., alias='uploadId')
     part_name: Optional[str] = Field(None, alias='partName')
     signature: Optional[str] = None
@@ -455,10 +322,7 @@ class DatasetUploadRequest(BaseModel):
     swds: str
 
 
-class UploadResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UploadResult(SwBaseModel):
     upload_id: Optional[int] = Field(None, alias='uploadId')
 
 
@@ -468,28 +332,19 @@ class Type1(Enum):
     audio = 'AUDIO'
 
 
-class DatasetBuildRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetBuildRequest(SwBaseModel):
     type: Type1
     shared: Optional[bool] = None
     storage_path: str = Field(..., alias='storagePath')
 
 
-class ResponseMessageMapObjectObject(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageMapObjectObject(SwBaseModel):
     code: str
     message: str
     data: Dict[str, Dict[str, Any]]
 
 
-class ColumnSchemaDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ColumnSchemaDesc(SwBaseModel):
     name: Optional[str] = None
     index: Optional[int] = None
     type: Optional[str] = None
@@ -499,36 +354,24 @@ class ColumnSchemaDesc(BaseModel):
     value_type: Optional[ColumnSchemaDesc] = Field(None, alias='valueType')
 
 
-class RecordValueDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
 
 
-class TableSchemaDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TableSchemaDesc(SwBaseModel):
     key_column: Optional[str] = Field(None, alias='keyColumn')
     column_schema_list: Optional[List[ColumnSchemaDesc]] = Field(
         None, alias='columnSchemaList'
     )
 
 
-class ColumnDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ColumnDesc(SwBaseModel):
     column_name: Optional[str] = Field(None, alias='columnName')
     alias: Optional[str] = None
 
 
-class TableDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TableDesc(SwBaseModel):
     table_name: Optional[str] = Field(None, alias='tableName')
     column_prefix: Optional[str] = Field(None, alias='columnPrefix')
     columns: Optional[List[ColumnDesc]] = None
@@ -536,10 +379,7 @@ class TableDesc(BaseModel):
     revision: Optional[str] = None
 
 
-class ColumnHintsDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ColumnHintsDesc(SwBaseModel):
     type_hints: Optional[List[str]] = Field(None, alias='typeHints')
     column_value_hints: Optional[List[str]] = Field(None, alias='columnValueHints')
     element_hints: Optional[ColumnHintsDesc] = Field(None, alias='elementHints')
@@ -547,10 +387,7 @@ class ColumnHintsDesc(BaseModel):
     value_hints: Optional[ColumnHintsDesc] = Field(None, alias='valueHints')
 
 
-class RecordListVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RecordListVo(SwBaseModel):
     column_types: Optional[List[ColumnSchemaDesc]] = Field(None, alias='columnTypes')
     column_hints: Optional[Dict[str, ColumnHintsDesc]] = Field(
         None, alias='columnHints'
@@ -559,49 +396,31 @@ class RecordListVo(BaseModel):
     last_key: Optional[str] = Field(None, alias='lastKey')
 
 
-class ResponseMessageRecordListVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageRecordListVo(SwBaseModel):
     code: str
     message: str
     data: RecordListVo
 
 
-class OrderByDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class OrderByDesc(SwBaseModel):
     column_name: Optional[str] = Field(None, alias='columnName')
     descending: Optional[bool] = None
 
 
-class ListTablesRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ListTablesRequest(SwBaseModel):
     prefix: Optional[str] = None
     prefixes: Optional[List[str]] = Field(None, unique_items=True)
 
 
-class TableNameListVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TableNameListVo(SwBaseModel):
     tables: Optional[List[str]] = None
 
 
-class FlushRequest(BaseModel):
+class FlushRequest(SwBaseModel):
     pass
 
-    class Config:
-        allow_population_by_field_name = True
 
-
-class InitUploadBlobRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class InitUploadBlobRequest(SwBaseModel):
     content_md5: str = Field(..., alias='contentMd5')
     content_length: int = Field(..., alias='contentLength')
 
@@ -611,44 +430,29 @@ class Status(Enum):
     existed = 'EXISTED'
 
 
-class InitUploadBlobResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class InitUploadBlobResult(SwBaseModel):
     status: Optional[Status] = None
     blob_id: Optional[str] = Field(None, alias='blobId')
     signed_url: Optional[str] = Field(None, alias='signedUrl')
 
 
-class ResponseMessageInitUploadBlobResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageInitUploadBlobResult(SwBaseModel):
     code: str
     message: str
     data: InitUploadBlobResult
 
 
-class CompleteUploadBlobResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class CompleteUploadBlobResult(SwBaseModel):
     blob_id: Optional[str] = Field(None, alias='blobId')
 
 
-class ResponseMessageCompleteUploadBlobResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageCompleteUploadBlobResult(SwBaseModel):
     code: str
     message: str
     data: CompleteUploadBlobResult
 
 
-class UserVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserVo(SwBaseModel):
     id: str
     name: str
     created_time: int = Field(..., alias='createdTime')
@@ -657,29 +461,20 @@ class UserVo(BaseModel):
     project_roles: Optional[Dict[str, str]] = Field(None, alias='projectRoles')
 
 
-class ResponseMessageUserVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageUserVo(SwBaseModel):
     code: str
     message: str
     data: UserVo
 
 
-class RoleVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RoleVo(SwBaseModel):
     id: str
     name: str
     code: str
     description: Optional[str] = None
 
 
-class StatisticsVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class StatisticsVo(SwBaseModel):
     model_counts: int = Field(..., alias='modelCounts')
     dataset_counts: int = Field(..., alias='datasetCounts')
     runtime_counts: int = Field(..., alias='runtimeCounts')
@@ -687,59 +482,38 @@ class StatisticsVo(BaseModel):
     evaluation_counts: int = Field(..., alias='evaluationCounts')
 
 
-class SystemVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class SystemVersionVo(SwBaseModel):
     id: Optional[str] = None
     version: Optional[str] = None
 
 
-class FeaturesVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class FeaturesVo(SwBaseModel):
     disabled: List[str]
 
 
-class ResponseMessageFeaturesVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageFeaturesVo(SwBaseModel):
     code: str
     message: str
     data: FeaturesVo
 
 
-class DeviceVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DeviceVo(SwBaseModel):
     name: str
 
 
-class ResponseMessageListDeviceVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListDeviceVo(SwBaseModel):
     code: str
     message: str
     data: List[DeviceVo]
 
 
-class ResponseMessageListRoleVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListRoleVo(SwBaseModel):
     code: str
     message: str
     data: List[RoleVo]
 
 
-class ReportVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ReportVo(SwBaseModel):
     id: int
     uuid: str
     title: str
@@ -751,10 +525,7 @@ class ReportVo(BaseModel):
     modified_time: int = Field(..., alias='modifiedTime')
 
 
-class ResponseMessageReportVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageReportVo(SwBaseModel):
     code: str
     message: str
     data: ReportVo
@@ -772,10 +543,7 @@ class Type2(Enum):
     file = 'file'
 
 
-class FileNode(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class FileNode(SwBaseModel):
     name: Optional[str] = None
     signature: Optional[str] = None
     flag: Optional[Flag] = None
@@ -785,26 +553,17 @@ class FileNode(BaseModel):
     size: Optional[str] = None
 
 
-class ListFilesResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ListFilesResult(SwBaseModel):
     files: Optional[List[FileNode]] = None
 
 
-class ResponseMessageListFilesResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListFilesResult(SwBaseModel):
     code: str
     message: str
     data: ListFilesResult
 
 
-class TrashVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TrashVo(SwBaseModel):
     id: Optional[str] = None
     name: Optional[str] = None
     type: Optional[str] = None
@@ -815,37 +574,25 @@ class TrashVo(BaseModel):
     retention_time: Optional[int] = Field(None, alias='retentionTime')
 
 
-class JobTemplateVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class JobTemplateVo(SwBaseModel):
     id: Optional[int] = None
     name: Optional[str] = None
     job_id: Optional[int] = Field(None, alias='jobId')
 
 
-class ResponseMessageListJobTemplateVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListJobTemplateVo(SwBaseModel):
     code: str
     message: str
     data: List[JobTemplateVo]
 
 
-class ResponseMessageJobTemplateVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageJobTemplateVo(SwBaseModel):
     code: str
     message: str
     data: JobTemplateVo
 
 
-class RuntimeVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeVersionVo(SwBaseModel):
     tags: Optional[List[str]] = None
     latest: bool
     id: str
@@ -860,10 +607,7 @@ class RuntimeVersionVo(BaseModel):
     shared: bool
 
 
-class RuntimeVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeVo(SwBaseModel):
     id: str
     name: str
     created_time: int = Field(..., alias='createdTime')
@@ -871,18 +615,12 @@ class RuntimeVo(BaseModel):
     version: RuntimeVersionVo
 
 
-class FlattenFileVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class FlattenFileVo(SwBaseModel):
     name: Optional[str] = None
     size: Optional[str] = None
 
 
-class RuntimeInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeInfoVo(SwBaseModel):
     version_info: RuntimeVersionVo = Field(..., alias='versionInfo')
     id: str
     name: str
@@ -897,10 +635,7 @@ class RuntimeInfoVo(BaseModel):
     files: Optional[List[FlattenFileVo]] = None
 
 
-class PageInfoRuntimeVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoRuntimeVersionVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[RuntimeVersionVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -921,37 +656,25 @@ class PageInfoRuntimeVersionVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoRuntimeVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoRuntimeVersionVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoRuntimeVersionVo
 
 
-class ResponseMessageListString(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListString(SwBaseModel):
     code: str
     message: str
     data: List[str]
 
 
-class ResponseMessageLong(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageLong(SwBaseModel):
     code: str
     message: str
     data: int
 
 
-class RuntimeVersionViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeVersionViewVo(SwBaseModel):
     id: str
     version_name: str = Field(..., alias='versionName')
     alias: str
@@ -960,10 +683,7 @@ class RuntimeVersionViewVo(BaseModel):
     created_time: int = Field(..., alias='createdTime')
 
 
-class RuntimeViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeViewVo(SwBaseModel):
     owner_name: str = Field(..., alias='ownerName')
     project_name: str = Field(..., alias='projectName')
     runtime_id: str = Field(..., alias='runtimeId')
@@ -972,10 +692,7 @@ class RuntimeViewVo(BaseModel):
     versions: List[RuntimeVersionViewVo]
 
 
-class PageInfoReportVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoReportVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[ReportVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -996,54 +713,36 @@ class PageInfoReportVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoReportVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoReportVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoReportVo
 
 
-class ContainerSpec(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ContainerSpec(SwBaseModel):
     image: Optional[str] = None
     cmds: Optional[List[str]] = None
     entrypoint: Optional[List[str]] = None
 
 
-class Env(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class Env(SwBaseModel):
     name: Optional[str] = None
     value: Optional[str] = None
 
 
-class ParameterSignature(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
     multiple: Optional[bool] = None
 
 
-class RuntimeResource(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeResource(SwBaseModel):
     type: Optional[str] = None
     request: Optional[float] = None
     limit: Optional[float] = None
 
 
-class StepSpec(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class StepSpec(SwBaseModel):
     name: str
     concurrency: Optional[int] = None
     replicas: int
@@ -1061,10 +760,7 @@ class StepSpec(BaseModel):
     parameters_sig: Optional[List[ParameterSignature]] = None
 
 
-class DatasetVersionViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetVersionViewVo(SwBaseModel):
     id: str
     version_name: str = Field(..., alias='versionName')
     alias: Optional[str] = None
@@ -1073,10 +769,7 @@ class DatasetVersionViewVo(BaseModel):
     created_time: int = Field(..., alias='createdTime')
 
 
-class DatasetViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetViewVo(SwBaseModel):
     owner_name: str = Field(..., alias='ownerName')
     project_name: str = Field(..., alias='projectName')
     dataset_id: str = Field(..., alias='datasetId')
@@ -1085,19 +778,13 @@ class DatasetViewVo(BaseModel):
     versions: List[DatasetVersionViewVo]
 
 
-class ResponseMessageListDatasetViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListDatasetViewVo(SwBaseModel):
     code: str
     message: str
     data: List[DatasetViewVo]
 
 
-class ModelVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelVersionVo(SwBaseModel):
     latest: bool
     tags: Optional[List[str]] = None
     step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
@@ -1111,10 +798,7 @@ class ModelVersionVo(BaseModel):
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
 
 
-class ModelVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelVo(SwBaseModel):
     id: str
     name: str
     created_time: int = Field(..., alias='createdTime')
@@ -1122,10 +806,7 @@ class ModelVo(BaseModel):
     version: ModelVersionVo
 
 
-class PageInfoModelVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoModelVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[ModelVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1146,19 +827,13 @@ class PageInfoModelVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoModelVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoModelVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoModelVo
 
 
-class ModelInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelInfoVo(SwBaseModel):
     version_info: ModelVersionVo = Field(..., alias='versionInfo')
     id: str
     name: str
@@ -1170,19 +845,13 @@ class ModelInfoVo(BaseModel):
     shared: int
 
 
-class ResponseMessageModelInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageModelInfoVo(SwBaseModel):
     code: str
     message: str
     data: ModelInfoVo
 
 
-class PageInfoModelVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoModelVersionVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[ModelVersionVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1203,28 +872,19 @@ class PageInfoModelVersionVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoModelVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoModelVersionVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoModelVersionVo
 
 
-class ResponseMessageMapStringListFileNode(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageMapStringListFileNode(SwBaseModel):
     code: str
     message: str
     data: Dict[str, List[FileNode]]
 
 
-class DatasetVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetVersionVo(SwBaseModel):
     tags: Optional[List[str]] = None
     latest: bool
     index_table: Optional[str] = Field(None, alias='indexTable')
@@ -1237,10 +897,7 @@ class DatasetVersionVo(BaseModel):
     shared: bool
 
 
-class DatasetVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetVo(SwBaseModel):
     id: str
     name: str
     created_time: int = Field(..., alias='createdTime')
@@ -1253,10 +910,7 @@ class Type3(Enum):
     web_handler = 'WEB_HANDLER'
 
 
-class ExposedLinkVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ExposedLinkVo(SwBaseModel):
     type: Type3
     name: str
     link: str
@@ -1274,10 +928,7 @@ class JobStatus(Enum):
     unknown = 'UNKNOWN'
 
 
-class JobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class JobVo(SwBaseModel):
     exposed_links: List[ExposedLinkVo] = Field(..., alias='exposedLinks')
     id: str
     uuid: str
@@ -1302,10 +953,7 @@ class JobVo(BaseModel):
     pinned_time: Optional[int] = Field(None, alias='pinnedTime')
 
 
-class PageInfoJobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoJobVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[JobVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1326,19 +974,13 @@ class PageInfoJobVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoJobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoJobVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoJobVo
 
 
-class ResponseMessageJobVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageJobVo(SwBaseModel):
     code: str
     message: str
     data: JobVo
@@ -1351,10 +993,7 @@ class Status1(Enum):
     failed = 'FAILED'
 
 
-class RunVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RunVo(SwBaseModel):
     id: Optional[int] = None
     task_id: Optional[int] = Field(None, alias='taskId')
     status: Optional[Status1] = None
@@ -1379,10 +1018,7 @@ class TaskStatus(Enum):
     unknown = 'UNKNOWN'
 
 
-class TaskVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TaskVo(SwBaseModel):
     id: str
     uuid: str
     started_time: Optional[int] = Field(None, alias='startedTime')
@@ -1396,28 +1032,19 @@ class TaskVo(BaseModel):
     runs: Optional[List[RunVo]] = None
 
 
-class ResponseMessageTaskVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageTaskVo(SwBaseModel):
     code: str
     message: str
     data: TaskVo
 
 
-class ResponseMessageListRunVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListRunVo(SwBaseModel):
     code: str
     message: str
     data: List[RunVo]
 
 
-class EventVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class EventVo(SwBaseModel):
     event_type: EventType = Field(..., alias='eventType')
     source: Source
     message: str
@@ -1426,28 +1053,19 @@ class EventVo(BaseModel):
     id: Optional[int] = None
 
 
-class ResponseMessageListEventVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListEventVo(SwBaseModel):
     code: str
     message: str
     data: List[EventVo]
 
 
-class GraphEdge(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class GraphEdge(SwBaseModel):
     from_: Optional[int] = Field(None, alias='from')
     to: Optional[int] = None
     content: Optional[str] = None
 
 
-class GraphNode(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class GraphNode(SwBaseModel):
     id: Optional[int] = None
     type: Optional[str] = None
     content: Optional[Dict[str, Any]] = None
@@ -1455,19 +1073,13 @@ class GraphNode(BaseModel):
     entity_id: Optional[int] = Field(None, alias='entityId')
 
 
-class AttributeValueVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class AttributeValueVo(SwBaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
     value: Optional[str] = None
 
 
-class SummaryVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class SummaryVo(SwBaseModel):
     id: str
     uuid: str
     project_id: str = Field(..., alias='projectId')
@@ -1486,45 +1098,30 @@ class SummaryVo(BaseModel):
     attributes: Optional[List[AttributeValueVo]] = None
 
 
-class ConfigVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ConfigVo(SwBaseModel):
     name: Optional[str] = None
     content: Optional[str] = None
     create_time: Optional[int] = Field(None, alias='createTime')
 
 
-class ResponseMessageConfigVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageConfigVo(SwBaseModel):
     code: str
     message: str
     data: ConfigVo
 
 
-class AttributeVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class AttributeVo(SwBaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
 
 
-class ResponseMessageListAttributeVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListAttributeVo(SwBaseModel):
     code: str
     message: str
     data: List[AttributeVo]
 
 
-class PageInfoDatasetVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoDatasetVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[DatasetVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1545,19 +1142,13 @@ class PageInfoDatasetVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoDatasetVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoDatasetVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoDatasetVo
 
 
-class DatasetInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DatasetInfoVo(SwBaseModel):
     index_table: Optional[str] = Field(None, alias='indexTable')
     version_info: Optional[DatasetVersionVo] = Field(None, alias='versionInfo')
     id: str
@@ -1572,19 +1163,13 @@ class DatasetInfoVo(BaseModel):
     version_meta: str = Field(..., alias='versionMeta')
 
 
-class ResponseMessageDatasetInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageDatasetInfoVo(SwBaseModel):
     code: str
     message: str
     data: DatasetInfoVo
 
 
-class PageInfoDatasetVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoDatasetVersionVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[DatasetVersionVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1605,10 +1190,7 @@ class PageInfoDatasetVersionVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoDatasetVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoDatasetVersionVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoDatasetVersionVo
@@ -1635,10 +1217,7 @@ class Type4(Enum):
     audio = 'AUDIO'
 
 
-class BuildRecordVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class BuildRecordVo(SwBaseModel):
     id: str
     project_id: str = Field(..., alias='projectId')
     task_id: str = Field(..., alias='taskId')
@@ -1648,10 +1227,7 @@ class BuildRecordVo(BaseModel):
     create_time: int = Field(..., alias='createTime')
 
 
-class PageInfoBuildRecordVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoBuildRecordVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[BuildRecordVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1672,76 +1248,49 @@ class PageInfoBuildRecordVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoBuildRecordVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoBuildRecordVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoBuildRecordVo
 
 
-class ModelServingStatusVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelServingStatusVo(SwBaseModel):
     progress: Optional[int] = None
     events: Optional[str] = None
 
 
-class ResponseMessageModelServingStatusVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageModelServingStatusVo(SwBaseModel):
     code: str
     message: str
     data: ModelServingStatusVo
 
 
-class PanelPluginVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PanelPluginVo(SwBaseModel):
     id: str
     name: str
     version: str
 
 
-class RuntimeSuggestionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RuntimeSuggestionVo(SwBaseModel):
     runtimes: Optional[List[RuntimeVersionVo]] = None
 
 
-class UserRoleDeleteRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UserRoleDeleteRequest(SwBaseModel):
     current_user_pwd: str = Field(..., alias='currentUserPwd')
 
 
-class FileDeleteRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class FileDeleteRequest(SwBaseModel):
     path_prefix: str = Field(..., alias='pathPrefix')
     files: List[str] = Field(..., unique_items=True)
 
 
-class ResponseMessageSignedUrlResponse(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageSignedUrlResponse(SwBaseModel):
     code: str
     message: str
     data: SignedUrlResponse
 
 
-class ResourcePool(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResourcePool(SwBaseModel):
     name: Optional[str] = None
     node_selector: Optional[Dict[str, str]] = Field(None, alias='nodeSelector')
     resources: Optional[List[Resource]] = None
@@ -1751,10 +1300,7 @@ class ResourcePool(BaseModel):
     visible_user_ids: Optional[List[int]] = Field(None, alias='visibleUserIds')
 
 
-class EventRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class EventRequest(SwBaseModel):
     event_type: EventType = Field(..., alias='eventType')
     source: Source
     message: str
@@ -1763,10 +1309,7 @@ class EventRequest(BaseModel):
     related_resource: RelatedResource = Field(..., alias='relatedResource')
 
 
-class DataConsumptionRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class DataConsumptionRequest(SwBaseModel):
     session_id: Optional[str] = Field(None, alias='sessionId')
     consumer_id: Optional[str] = Field(None, alias='consumerId')
     batch_size: Optional[int] = Field(None, alias='batchSize')
@@ -1778,35 +1321,23 @@ class DataConsumptionRequest(BaseModel):
     serial: Optional[bool] = None
 
 
-class ResponseMessageUploadResult(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageUploadResult(SwBaseModel):
     code: str
     message: str
     data: UploadResult
 
 
-class RecordDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class RecordDesc(SwBaseModel):
     values: List[RecordValueDesc]
 
 
-class UpdateTableRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class UpdateTableRequest(SwBaseModel):
     table_name: Optional[str] = Field(None, alias='tableName')
     table_schema_desc: Optional[TableSchemaDesc] = Field(None, alias='tableSchemaDesc')
     records: Optional[List[RecordDesc]] = None
 
 
-class ScanTableRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ScanTableRequest(SwBaseModel):
     tables: Optional[List[TableDesc]] = None
     start: Optional[str] = None
     start_type: Optional[str] = Field(None, alias='startType')
@@ -1823,19 +1354,13 @@ class ScanTableRequest(BaseModel):
     )
 
 
-class ResponseMessageTableNameListVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageTableNameListVo(SwBaseModel):
     code: str
     message: str
     data: TableNameListVo
 
 
-class PageInfoUserVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoUserVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[UserVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1856,19 +1381,13 @@ class PageInfoUserVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoUserVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoUserVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoUserVo
 
 
-class ProjectVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ProjectVo(SwBaseModel):
     id: str
     name: str
     description: Optional[str] = None
@@ -1878,28 +1397,19 @@ class ProjectVo(BaseModel):
     statistics: Optional[StatisticsVo] = None
 
 
-class ResponseMessageSystemVersionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageSystemVersionVo(SwBaseModel):
     code: str
     message: str
     data: SystemVersionVo
 
 
-class ResponseMessageListResourcePool(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListResourcePool(SwBaseModel):
     code: str
     message: str
     data: List[ResourcePool]
 
 
-class PageInfoProjectVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoProjectVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[ProjectVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1920,28 +1430,19 @@ class PageInfoProjectVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoProjectVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoProjectVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoProjectVo
 
 
-class ResponseMessageProjectVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageProjectVo(SwBaseModel):
     code: str
     message: str
     data: ProjectVo
 
 
-class PageInfoTrashVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoTrashVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[TrashVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1962,19 +1463,13 @@ class PageInfoTrashVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoTrashVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoTrashVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoTrashVo
 
 
-class PageInfoRuntimeVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoRuntimeVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[RuntimeVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -1995,37 +1490,25 @@ class PageInfoRuntimeVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoRuntimeVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoRuntimeVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoRuntimeVo
 
 
-class ResponseMessageRuntimeInfoVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageRuntimeInfoVo(SwBaseModel):
     code: str
     message: str
     data: RuntimeInfoVo
 
 
-class ResponseMessageListRuntimeViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListRuntimeViewVo(SwBaseModel):
     code: str
     message: str
     data: List[RuntimeViewVo]
 
 
-class ModelVersionViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelVersionViewVo(SwBaseModel):
     id: str
     version_name: str = Field(..., alias='versionName')
     alias: str
@@ -2037,10 +1520,7 @@ class ModelVersionViewVo(BaseModel):
     created_time: int = Field(..., alias='createdTime')
 
 
-class ModelViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ModelViewVo(SwBaseModel):
     owner_name: str = Field(..., alias='ownerName')
     project_name: str = Field(..., alias='projectName')
     model_id: str = Field(..., alias='modelId')
@@ -2049,19 +1529,13 @@ class ModelViewVo(BaseModel):
     versions: List[ModelVersionViewVo]
 
 
-class ResponseMessageListModelViewVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListModelViewVo(SwBaseModel):
     code: str
     message: str
     data: List[ModelViewVo]
 
 
-class PageInfoTaskVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoTaskVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[TaskVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -2082,19 +1556,13 @@ class PageInfoTaskVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoTaskVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoTaskVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoTaskVo
 
 
-class Graph(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class Graph(SwBaseModel):
     id: Optional[int] = None
     grouping_nodes: Optional[Dict[str, List[GraphNode]]] = Field(
         None, alias='groupingNodes'
@@ -2102,19 +1570,13 @@ class Graph(BaseModel):
     edges: Optional[List[GraphEdge]] = None
 
 
-class ResponseMessageGraph(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageGraph(SwBaseModel):
     code: str
     message: str
     data: Graph
 
 
-class PageInfoSummaryVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoSummaryVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[SummaryVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -2135,19 +1597,13 @@ class PageInfoSummaryVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoSummaryVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoSummaryVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoSummaryVo
 
 
-class PageInfoPanelPluginVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class PageInfoPanelPluginVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[PanelPluginVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
@@ -2168,47 +1624,32 @@ class PageInfoPanelPluginVo(BaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoPanelPluginVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessagePageInfoPanelPluginVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoPanelPluginVo
 
 
-class ResponseMessageRuntimeSuggestionVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageRuntimeSuggestionVo(SwBaseModel):
     code: str
     message: str
     data: RuntimeSuggestionVo
 
 
-class ProjectMemberVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ProjectMemberVo(SwBaseModel):
     id: str
     user: UserVo
     project: ProjectVo
     role: RoleVo
 
 
-class ResponseMessageListProjectMemberVo(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class ResponseMessageListProjectMemberVo(SwBaseModel):
     code: str
     message: str
     data: List[ProjectMemberVo]
 
 
-class QueryTableRequest(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class QueryTableRequest(SwBaseModel):
     table_name: Optional[str] = Field(None, alias='tableName')
     columns: Optional[List[ColumnDesc]] = None
     order_by: Optional[List[OrderByDesc]] = Field(None, alias='orderBy')
@@ -2225,18 +1666,12 @@ class QueryTableRequest(BaseModel):
     revision: Optional[str] = None
 
 
-class TableQueryFilterDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TableQueryFilterDesc(SwBaseModel):
     operator: str
     operands: Optional[List[TableQueryOperandDesc]] = None
 
 
-class TableQueryOperandDesc(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-
+class TableQueryOperandDesc(SwBaseModel):
     filter: Optional[TableQueryFilterDesc] = None
     column_name: Optional[str] = Field(None, alias='columnName')
     bool_value: Optional[bool] = Field(None, alias='boolValue')
