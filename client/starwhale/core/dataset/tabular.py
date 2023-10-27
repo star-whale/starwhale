@@ -13,12 +13,7 @@ from collections import UserDict, defaultdict
 
 from typing_extensions import Protocol
 
-from starwhale.utils import (
-    console,
-    gen_uniq_version,
-    validate_obj_name,
-    check_python_scalar_type,
-)
+from starwhale.utils import console, gen_uniq_version, validate_obj_name
 from starwhale.consts import ENV_POD_NAME
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.utils.error import (
@@ -215,18 +210,6 @@ class TabularDatasetRow(ASDictMixin):
                 return Binary(fp=data, auto_convert_to_bytes=True)
             elif isinstance(data, dict):
                 return {k: _transform(v) for k, v in data.items()}
-            elif isinstance(data, (list, tuple)):
-                data = type(data)([_transform(v) for v in data])
-                types = set(type(i) for i in data)
-                if (
-                    not types
-                    or len(types) == 1
-                    and check_python_scalar_type(types.pop())
-                ):
-                    # Only keep the simple format(the scalar type in list/tuple) the original type for dataset viewer, such as: [1,2,3]
-                    return data
-                else:
-                    return Sequence(data=data, auto_convert=True)
             else:
                 return data
 

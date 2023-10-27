@@ -571,6 +571,9 @@ class SwListType(SwCompositeType):
             )
         return False
 
+    def __hash__(self) -> int:
+        return hash(str(self))
+
 
 class SwTupleType(SwListType):
     def __init__(
@@ -579,6 +582,9 @@ class SwTupleType(SwListType):
         sparse_types: Dict[int, SwType] | None = None,
     ) -> None:
         super().__init__(element_types, sparse_types, True)
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 class SwMapType(SwCompositeType):
