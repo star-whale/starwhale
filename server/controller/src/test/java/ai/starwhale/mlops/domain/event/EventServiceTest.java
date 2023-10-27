@@ -70,10 +70,10 @@ class EventServiceTest {
         var req = new EventRequest();
         req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
         var resp = eventService.getEvents(req.getRelatedResource());
-        verify(eventMapper).listEvents(EventResourceType.JOB, 2L);
+        verify(eventMapper).listEventsOfResource(EventResourceType.JOB, 2L);
         assertEquals(resp, List.of());
 
-        when(eventMapper.listEvents(EventResourceType.JOB, 2L)).thenReturn(
+        when(eventMapper.listEventsOfResource(EventResourceType.JOB, 2L)).thenReturn(
                 List.of(EventEntity.builder()
                         .id(1L)
                         .type(EventType.INFO)
@@ -165,21 +165,42 @@ class EventServiceTest {
 
         // use job if related is null
         eventService.getEventsForJob("1", null);
-        verify(eventMapper).listEvents(EventResourceType.JOB, 1L);
+        verify(eventMapper).listEventsOfResource(EventResourceType.JOB, 1L);
 
         // normal case
         when(jobDao.getJobId("2")).thenReturn(2L);
         eventService.getEventsForJob("2", related);
-        verify(eventMapper).listEvents(EventResourceType.JOB, 2L);
+        verify(eventMapper).listEventsOfResource(EventResourceType.JOB, 2L);
 
         // the related resource is task of job
         when(taskMapper.findTaskById(3L)).thenReturn(TaskEntity.builder().stepId(4L).build());
         when(stepMapper.findById(4L)).thenReturn(StepEntity.builder().jobId(5L).build());
         when(jobDao.getJobId("5")).thenReturn(5L);
+        when(runMapper.list(3L)).thenReturn(
+                List.of(RunEntity.builder().id(42L).build(), RunEntity.builder().id(43L).build()));
         reset(eventMapper);
+
+        when(eventMapper.listEventsOfResources(EventResourceType.RUN, List.of(42L, 43L))).thenReturn(
+                List.of(EventEntity.builder().id(1L).createdTime(new Date(8L)).build(),
+                        EventEntity.builder().id(2L).createdTime(new Date(7L)).build(),
+                        EventEntity.builder().id(3L).createdTime(new Date(9L)).build()));
+        when(eventMapper.listEventsOfResource(EventResourceType.TASK, 3L)).thenReturn(
+                List.of(EventEntity.builder().id(4L).createdTime(new Date(3L)).build(),
+                        EventEntity.builder().id(5L).createdTime(new Date(2L)).build(),
+                        EventEntity.builder().id(6L).createdTime(new Date(1L)).build()));
+
         related = new EventRequest.RelatedResource(EventResourceType.TASK, 3L);
-        eventService.getEventsForJob("5", related);
-        verify(eventMapper).listEvents(EventResourceType.TASK, 3L);
+        var events = eventService.getEventsForJob("5", related);
+        verify(eventMapper).listEventsOfResource(EventResourceType.TASK, 3L);
+        verify(eventMapper).listEventsOfResources(EventResourceType.RUN, List.of(42L, 43L));
+        assertEquals(events.size(), 6);
+        // order by created time asc
+        assertEquals(events.get(0).getId(), 6L);
+        assertEquals(events.get(1).getId(), 5L);
+        assertEquals(events.get(2).getId(), 4L);
+        assertEquals(events.get(3).getId(), 2L);
+        assertEquals(events.get(4).getId(), 1L);
+        assertEquals(events.get(5).getId(), 3L);
 
         reset(eventMapper);
         // the related resource is task, but the task is not found
@@ -191,7 +212,7 @@ class EventServiceTest {
         when(runMapper.get(71L)).thenReturn(RunEntity.builder().id(71L).taskId(3L).build());
         reset(eventMapper);
         eventService.getEventsForJob("5", new RelatedResource(EventResourceType.RUN, 71L));
-        verify(eventMapper).listEvents(EventResourceType.RUN, 71L);
+        verify(eventMapper).listEventsOfResource(EventResourceType.RUN, 71L);
     }
 
     @Test
