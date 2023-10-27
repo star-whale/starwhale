@@ -1,5 +1,9 @@
 import sys
+import time
 import typing as t
+import threading
+import contextlib
+from urllib.parse import urlparse
 
 from rich import box
 from rich.panel import Panel
@@ -43,6 +47,68 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
                 f":person_shrugging: failed to login {instance}, reason: {e}"
             )
             sys.exit(1)
+
+    def login_with_browser(self, instance: str, alias: str) -> None:
+        p = urlparse(instance)
+        instance = f"{p.scheme}://{p.netloc}"
+
+        import uvicorn
+        from fastapi import FastAPI
+        from starlette.middleware.cors import CORSMiddleware
+
+        login_done = False
+
+        app = FastAPI()
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+        @app.on_event("startup")
+        async def on_startup() -> None:
+            nonlocal instance
+            url = f"{instance}/auth/client"
+            import webbrowser
+
+            webbrowser.open(url)
+
+        @app.get("/login")
+        async def _login(token: str) -> dict:
+            print(f"get token {token}")
+            login(instance, alias, token=token)
+            nonlocal login_done
+            login_done = True
+            return {"message": "success"}
+
+        # https://github.com/encode/uvicorn/issues/742
+        class Server(uvicorn.Server):
+            def install_signal_handlers(self) -> None:
+                pass
+
+            @contextlib.contextmanager
+            def run_in_thread(self) -> t.Generator:
+                thread = threading.Thread(target=self.run)
+                thread.start()
+                try:
+                    while not self.started:
+                        time.sleep(1e-3)
+                    yield
+                finally:
+                    self.should_exit = True
+                    thread.join()
+
+        config = uvicorn.Config(
+            app, host="127.0.0.1", port=8007, log_level="error", loop="asyncio"
+        )
+        server = Server(config=config)
+        with server.run_in_thread():
+            while not login_done:
+                time.sleep(1e-3)
+
+        print(f"login {instance} as {alias} successfully!")
 
     def logout(self, instance: str) -> None:
         if instance == STANDALONE_INSTANCE:
