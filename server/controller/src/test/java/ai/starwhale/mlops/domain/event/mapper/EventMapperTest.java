@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.event.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
@@ -24,6 +25,7 @@ import ai.starwhale.mlops.api.protocol.event.Event.EventType;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.event.po.EventEntity;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +40,7 @@ public class EventMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testEvents() {
-        var events = eventMapper.listEvents(null, null);
+        var events = eventMapper.listEventsOfResource(null, null);
         assertEquals(0, events.size());
 
         var entity = EventEntity.builder()
@@ -61,15 +63,30 @@ public class EventMapperTest extends MySqlContainerHolder {
                 .createdTime(new Date(456L * 1000))
                 .build();
 
+        var entity3 = EventEntity.builder()
+                .type(EventType.INFO)
+                .source(EventSource.CLIENT)
+                .resourceType(EventResourceType.TASK)
+                .resourceId(3L)
+                .message("baz")
+                .data("{}")
+                .createdTime(new Date(789L * 1000))
+                .build();
+
         eventMapper.insert(entity);
         eventMapper.insert(entity2);
+        eventMapper.insert(entity3);
 
-        events = eventMapper.listEvents(EventResourceType.JOB, 1L);
+        events = eventMapper.listEventsOfResource(EventResourceType.JOB, 1L);
         assertEquals(1, events.size());
         assertEquals(entity, events.get(0));
 
-        events = eventMapper.listEvents(EventResourceType.TASK, 2L);
+        events = eventMapper.listEventsOfResource(EventResourceType.TASK, 2L);
         assertEquals(1, events.size());
         assertEquals(entity2, events.get(0));
+
+        events = eventMapper.listEventsOfResources(EventResourceType.TASK, List.of(2L, 3L));
+        assertEquals(2, events.size());
+        assertThat(events).containsExactly(entity2, entity3);
     }
 }

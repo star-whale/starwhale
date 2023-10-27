@@ -39,5 +39,17 @@ public interface EventMapper {
 
     @Select("select " + COLUMNS + " from " + TABLE
             + " where resource_type = #{resourceType} and resource_id = #{resourceId} order by created_time asc")
-    List<EventEntity> listEvents(@NotNull Event.EventResourceType resourceType, @NotNull Long resourceId);
+    List<EventEntity> listEventsOfResource(@NotNull Event.EventResourceType resourceType, @NotNull Long resourceId);
+
+    @Select("<script>"
+            + "select " + COLUMNS + " from " + TABLE
+            + " where resource_type = #{resourceType} and resource_id in "
+            + "<foreach item='item' index='index' collection='resourceIds' open='(' separator=',' close=')'>"
+            + "#{item}"
+            + "</foreach>"
+            + "</script>")
+    List<EventEntity> listEventsOfResources(
+            @NotNull Event.EventResourceType resourceType,
+            @NotNull List<Long> resourceIds
+    );
 }

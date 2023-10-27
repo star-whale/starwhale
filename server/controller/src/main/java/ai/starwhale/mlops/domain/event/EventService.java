@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.event;
 
+import ai.starwhale.mlops.api.protocol.event.Event;
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
@@ -23,13 +24,17 @@ import ai.starwhale.mlops.api.protocol.event.EventRequest;
 import ai.starwhale.mlops.api.protocol.event.EventRequest.RelatedResource;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
+import ai.starwhale.mlops.domain.event.po.EventEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.run.RunEntity;
 import ai.starwhale.mlops.domain.run.mapper.RunMapper;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -84,11 +89,36 @@ public class EventService {
 
     @NotNull
     public List<EventVo> getEvents(EventRequest.RelatedResource related) {
-        var events = eventMapper.listEvents(related.getEventResourceType(), related.getId());
-        if (events == null) {
+        List<EventEntity> events = new LinkedList<>();
+
+        // returns all the run events belongs to the task when the scope is task.
+        // we do not support job scope aggregation for now.
+        if (related.getEventResourceType() == EventResourceType.TASK) {
+            var runs = runMapper.list(related.getId());
+            if (runs == null) {
+                return List.of();
+            }
+            var runIds = runs.stream().map(RunEntity::getId).collect(Collectors.toList());
+            var runEvents = eventMapper.listEventsOfResources(EventResourceType.RUN, runIds);
+            if (runEvents != null) {
+                events.addAll(runEvents);
+            }
+        }
+
+        var resourceEvents = eventMapper.listEventsOfResource(related.getEventResourceType(), related.getId());
+        if (resourceEvents != null) {
+            events.addAll(resourceEvents);
+        }
+
+        if (events.isEmpty()) {
             return List.of();
         }
-        return events.stream().map(eventConverter::toVo).collect(Collectors.toList());
+
+        // order by created time asc
+        return events.stream()
+                .map(eventConverter::toVo)
+                .sorted(Comparator.comparingLong(Event::getTimestamp))
+                .collect(Collectors.toList());
     }
 
     public void addEventForJob(String jobUrl, @NotNull EventRequest event) {
