@@ -210,6 +210,8 @@ class TabularDatasetRow(ASDictMixin):
                 return Binary(fp=data, auto_convert_to_bytes=True)
             elif isinstance(data, dict):
                 return {k: _transform(v) for k, v in data.items()}
+            elif isinstance(data, (list, tuple)):
+                return type(data)([_transform(v) for v in data])
             else:
                 return data
 
