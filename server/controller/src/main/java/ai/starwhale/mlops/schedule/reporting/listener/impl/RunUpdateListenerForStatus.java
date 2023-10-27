@@ -95,6 +95,8 @@ public class RunUpdateListenerForStatus implements RunUpdateListener {
         retryNum = null == retryNum ? 0 : retryNum;
         Integer userRetryLimit = task.getStep().getSpec().getBackoffLimit();
         Integer backOffLimit = userRetryLimit == null ? this.backOffLimit : userRetryLimit;
+
+        var updateFinishedTime = true;
         if (
                 run.getStatus() == RunStatus.FAILED
                         && retryNum < backOffLimit
@@ -108,6 +110,8 @@ public class RunUpdateListenerForStatus implements RunUpdateListener {
                 Task ot = ((WatchableTask) task).unwrap();
                 ot.updateStatus(TaskStatus.READY);
             }
+            // do not update finished time for retrying task
+            updateFinishedTime = false;
         } else {
             taskNewStatus = taskStatusMachine.transfer(task.getStatus(), run.getStatus());
         }
@@ -118,7 +122,7 @@ public class RunUpdateListenerForStatus implements RunUpdateListener {
         if (run.getStartTime() != null) {
             taskMapper.updateTaskStartedTimeIfNotSet(run.getTaskId(), new Date(run.getStartTime()));
         }
-        if (run.getFinishTime() != null) {
+        if (run.getFinishTime() != null && updateFinishedTime) {
             taskMapper.updateTaskFinishedTimeIfNotSet(run.getTaskId(), new Date(run.getFinishTime()));
         }
         if (run.getIp() != null) {

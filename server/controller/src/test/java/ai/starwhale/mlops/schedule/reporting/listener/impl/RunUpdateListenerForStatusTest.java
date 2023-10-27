@@ -18,6 +18,7 @@ package ai.starwhale.mlops.schedule.reporting.listener.impl;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +33,7 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -103,4 +105,32 @@ public class RunUpdateListenerForStatusTest {
 
     }
 
+    @Test
+    public void testFinishTime() {
+        var task = Task.builder()
+                .retryNum(0)
+                .step(Step.builder().spec(StepSpec.builder().backoffLimit(2).build()).build())
+                .currentRun(Run.builder().id(1L).status(RunStatus.RUNNING).build())
+                .build();
+        when(hotJobHolder.taskWithId(1L)).thenReturn(task);
+        var reportdRun = Run.builder()
+                .id(1L)
+                .taskId(1L)
+                .status(RunStatus.FAILED)
+                .finishTime(42L)
+                .ip("1.1.1.1")
+                .build();
+        runReportReceiver.onRunUpdate(reportdRun);
+        verify(this.taskMapper, never()).updateTaskFinishedTimeIfNotSet(any(), any());
+
+        // fail again
+        task.getCurrentRun().setStatus(RunStatus.RUNNING);
+        runReportReceiver.onRunUpdate(reportdRun);
+        verify(this.taskMapper, never()).updateTaskFinishedTimeIfNotSet(any(), any());
+
+        // the last attempt
+        task.getCurrentRun().setStatus(RunStatus.RUNNING);
+        runReportReceiver.onRunUpdate(reportdRun);
+        verify(this.taskMapper, times(1)).updateTaskFinishedTimeIfNotSet(1L, new Date(42L));
+    }
 }
