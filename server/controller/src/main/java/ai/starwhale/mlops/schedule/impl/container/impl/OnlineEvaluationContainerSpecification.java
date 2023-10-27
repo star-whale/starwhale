@@ -20,7 +20,6 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
 import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
@@ -55,18 +54,40 @@ public class OnlineEvaluationContainerSpecification implements ContainerSpecific
     @Override
     public Map<String, String> getContainerEnvs() {
         Job job = task.getStep().getJob();
-        JobRuntime jobRuntime = job.getJobRuntime();
+        var model = job.getModel();
+        var runtime = job.getJobRuntime();
         var envs = new HashMap<String, String>();
-        envs.put("SW_RUNTIME_PYTHON_VERSION", jobRuntime.pythonVersion());
-        envs.put("SW_VERSION", jobRuntime.swVersion());
-        envs.put("SW_RUNTIME_VERSION", String.format("%s/version/%s", jobRuntime.getName(), jobRuntime.getVersion()));
+
+        envs.put("SW_RUNTIME_PYTHON_VERSION", runtime.pythonVersion());
+        envs.put("SW_VERSION", runtime.swVersion());
+        envs.put("SW_RUNTIME_VERSION", String.format("%s/version/%s", runtime.getName(), runtime.getVersion()));
+        envs.put("SW_RUNTIME_URI",
+                String.format(
+                        FORMATTER_URI_ARTIFACT,
+                        instanceUri,
+                        runtime.getProjectId(),
+                        "runtime",
+                        runtime.getName(),
+                        runtime.getVersion()));
         envs.put(
                 "SW_MODEL_VERSION",
                 String.format("%s/version/%s", job.getModel().getName(), job.getModel().getVersion())
         );
+        envs.put("SW_MODEL_URI",
+                String.format(
+                        FORMATTER_URI_ARTIFACT,
+                        instanceUri,
+                        model.getProjectId(),
+                        "model",
+                        model.getName(),
+                        model.getVersion()));
         envs.put("SW_INSTANCE_URI", instanceUri);
         envs.put("SW_TOKEN", taskTokenValidator.getTaskToken(job.getOwner(), task.getId()));
         envs.put("SW_PROJECT", job.getProject().getName());
+        envs.put("SW_PROJECT_URI", String.format(
+                FORMATTER_URI_PROJECT,
+                instanceUri,
+                job.getProject().getId()));
         setPypiSettings(envs);
 
         envs.put("SW_PRODUCTION", "1");
@@ -97,7 +118,7 @@ public class OnlineEvaluationContainerSpecification implements ContainerSpecific
 
     @Override
     public ContainerCommand getCmd() {
-        return ContainerCommand.builder().cmd(new String[]{"serve"}).build();
+        return ContainerCommand.builder().cmd(new String[] {"serve"}).build();
     }
 
     @Override
