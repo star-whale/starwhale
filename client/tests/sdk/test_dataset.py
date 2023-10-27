@@ -232,29 +232,13 @@ class TestDatasetCopy(BaseTestCase):
 
         assert {
             "attributes": [
-                {"name": "_type", "type": "STRING"},
-                {"name": "sequence_type", "type": "STRING"},
-                {"name": "_cnt", "type": "INT64"},
-                {
-                    "attributes": [
-                        {"name": "i0", "type": "INT64"},
-                        {"name": "i1", "type": "STRING"},
-                        {"name": "i2", "type": "FLOAT64"},
-                        {
-                            "elementType": {"type": "STRING"},
-                            "name": "i3",
-                            "type": "TUPLE",
-                        },
-                    ],
-                    "name": "data",
-                    "pythonType": "starwhale.base.data_type.JsonDict",
-                    "type": "OBJECT",
-                },
-                {"name": "auto_convert", "type": "BOOL"},
+                {"index": 0, "type": "INT64"},
+                {"index": 1, "type": "STRING"},
+                {"index": 2, "type": "FLOAT64"},
             ],
+            "elementType": {"elementType": {"type": "STRING"}, "type": "TUPLE"},
             "name": "features/mixed_types_tuple",
-            "pythonType": "starwhale.base.data_type.Sequence",
-            "type": "OBJECT",
+            "type": "TUPLE",
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
         assert {
