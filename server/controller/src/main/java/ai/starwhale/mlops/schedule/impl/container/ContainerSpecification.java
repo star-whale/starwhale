@@ -20,6 +20,8 @@ import java.util.Map;
 
 public interface ContainerSpecification {
     String FORMATTER_URI_PROJECT = "%s/project/%s";
+    String FORMATTER_URI_ARTIFACT = "%s/project/%s/%s/%s/version/%s";
+    String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
 
     Map<String, String> getContainerEnvs();
 

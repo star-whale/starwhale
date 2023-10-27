@@ -36,9 +36,6 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class SwCliModelHandlerContainerSpecification implements ContainerSpecification {
 
-
-    static final String FORMATTER_URI_ARTIFACT = "%s/project/%s/%s/%s/version/%s";
-    static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
     final String instanceUri;
     final int devPort;
     final int datasetLoadBatchSize;
