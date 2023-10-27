@@ -30,6 +30,9 @@ import lombok.NoArgsConstructor;
 public class DataIndexDesc {
     private String start;
     private String startType;
+    @Builder.Default
+    private boolean startInclusive = true;
     private String end;
     private String endType;
+    private boolean endInclusive;
 }
