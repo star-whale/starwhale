@@ -74,7 +74,6 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         userMapper.insert(user);
         project = ProjectEntity.builder()
                 .projectName("pjn")
-                .projectDescription("desc")
                 .overview("overview")
                 .ownerId(user.getId())
                 .privacy(1)
