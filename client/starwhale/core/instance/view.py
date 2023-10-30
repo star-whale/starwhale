@@ -107,7 +107,9 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
             while not login_done:
                 time.sleep(1e-3)
 
-        console.print(f":man_cook: login {instance} as [blue]{alias}[/blue] successfully!")
+        console.print(
+            f":man_cook: login {instance} as [blue]{alias}[/blue] successfully!"
+        )
 
     def logout(self, instance: str) -> None:
         if instance == STANDALONE_INSTANCE:
