@@ -10,7 +10,6 @@ What we learn
 
 - use the `@Starwhale.predict` and `@Starwhale.evaluate` decorators to define handlers for Starwhale Model to finish the image segmentation evaluation tasks.
 - build Starwhale Dataset by Starwhale Python SDK and use Starwhale Dataset Web Viewer.
-- build Starwhale Dataset by `swcli dataset build -hf` command, no code, only one command.
 - use Starwhale Evaluation Summary Page to compare the algorithm quality of the different models.
 - build an unified Starwhale Runtime to run all models.
 - use Starwhale `replicas` feature to speedup model evaluation.

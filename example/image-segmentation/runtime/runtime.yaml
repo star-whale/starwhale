@@ -1,0 +1,8 @@
+name: image-segmentation
+mode: venv
+environment:
+  cuda: 11.7
+  python: 3.9
+  starwhale: 0.6.2
+dependencies:
+  - requirements.txt
