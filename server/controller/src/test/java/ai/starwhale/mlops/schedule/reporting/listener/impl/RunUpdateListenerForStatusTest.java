@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.reporting.listener.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -132,5 +133,24 @@ public class RunUpdateListenerForStatusTest {
         task.getCurrentRun().setStatus(RunStatus.RUNNING);
         runReportReceiver.onRunUpdate(reportdRun);
         verify(this.taskMapper, times(1)).updateTaskFinishedTimeIfNotSet(1L, new Date(42L));
+    }
+
+    @Test
+    public void testIpAddr() {
+        var task = Task.builder()
+                .retryNum(0)
+                .step(Step.builder().spec(StepSpec.builder().backoffLimit(2).build()).build())
+                .currentRun(Run.builder().id(1L).status(RunStatus.RUNNING).build())
+                .build();
+        when(hotJobHolder.taskWithId(1L)).thenReturn(task);
+        var reportdRun = Run.builder()
+                .id(1L)
+                .taskId(1L)
+                .status(RunStatus.FAILED)
+                .finishTime(42L)
+                .ip("1.2.3.4")
+                .build();
+        runReportReceiver.onRunUpdate(reportdRun);
+        assertEquals("1.2.3.4", task.getIp());
     }
 }
