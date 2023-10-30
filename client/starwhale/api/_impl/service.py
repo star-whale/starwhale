@@ -164,8 +164,10 @@ class Service:
         :param title webpage title
         :return: None
         """
+        # change the root path when running in docker and proxied by the starwhale controller
+        root_path = os.getenv("SW_ONLINE_SERVING_ROOT_PATH", "").strip()
         server = self._gen_gradio_server(title=title)
-        server.launch(server_name=addr, server_port=port)
+        server.launch(server_name=addr, server_port=port, root_path=root_path)
 
 
 _svc = Service()

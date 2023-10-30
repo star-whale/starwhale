@@ -19,6 +19,7 @@ package ai.starwhale.mlops.common.proxy;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * proxy the request to the task
@@ -74,5 +75,14 @@ public class WebServerInTask implements Service {
         } else {
             return String.format("http://%s:%d", taskIp, port);
         }
+    }
+
+    public String generateServiceRoot(Long taskId, int port) {
+        if (featuresProperties.isJobProxyEnabled()) {
+            var root = String.format(TASK_GATEWAY_PATTERN, taskId, port);
+            // remove the last "/"
+            return StringUtils.trimTrailingCharacter(root, '/');
+        }
+        return "";
     }
 }

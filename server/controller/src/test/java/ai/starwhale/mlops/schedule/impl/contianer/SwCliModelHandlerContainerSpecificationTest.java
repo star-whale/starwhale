@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.Constants;
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
@@ -44,7 +45,6 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.impl.container.impl.SwCliModelHandlerContainerSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -162,30 +162,52 @@ public class SwCliModelHandlerContainerSpecificationTest {
                 "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
+        var webServerInTask = mock(WebServerInTask.class);
+        when(webServerInTask.generateServiceRoot(1L, 1234)).thenReturn("/gateway/1/1234");
         SwCliModelHandlerContainerSpecification containerSpecification = new SwCliModelHandlerContainerSpecification(
                 "http://instanceUri",
                 8000,
                 50,
                 runTimeProperties,
                 taskTokenValidator,
+                webServerInTask,
                 mockTask(false)
         );
         assertMapEquals(expectedEnvsRun, containerSpecification.getContainerEnvs());
         Assertions.assertIterableEquals(List.of("run"), Arrays.asList(containerSpecification.getCmd().getCmd()));
+
+        var task = mockTask(false);
+        // make the expose port non-zero
+        task.getStep().getSpec().setExpose(1234);
+        var csWithExposed = new SwCliModelHandlerContainerSpecification(
+                "http://instanceUri",
+                8000,
+                50,
+                runTimeProperties,
+                taskTokenValidator,
+                webServerInTask,
+                task
+        );
+
+        var envWithSourceRoot = new HashMap<>(expectedEnvsRun);
+        envWithSourceRoot.put("SW_ONLINE_SERVING_ROOT_PATH", "/gateway/1/1234");
+        assertMapEquals(envWithSourceRoot, csWithExposed.getContainerEnvs());
     }
 
     @Test
-    public void testDevMode() throws IOException, ApiException {
+    public void testDevMode() throws IOException {
         RunTimeProperties runTimeProperties = new RunTimeProperties(
                 "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
+        var webServerInTask = mock(WebServerInTask.class);
         SwCliModelHandlerContainerSpecification containerSpecification = new SwCliModelHandlerContainerSpecification(
                 "http://instanceUri",
                 8000,
                 50,
                 runTimeProperties,
                 taskTokenValidator,
+                webServerInTask,
                 mockTask(true)
         );
         assertMapEquals(expectedEnvsDev, containerSpecification.getContainerEnvs());
@@ -253,6 +275,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
         step.setName("cmp");
         step.setJob(job);
         step.setResourcePool(job.getResourcePool());
+        step.setSpec(stepSpecs.get(0));
         return Task.builder()
                 .id(1L)
                 .taskRequest(TaskRequest.builder().index(1).total(2).build())

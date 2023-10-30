@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.container.impl;
 
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -42,6 +43,8 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
     final RunTimeProperties runTimeProperties;
     final TaskTokenValidator taskTokenValidator;
 
+    private final WebServerInTask webServerInTask;
+
     final Task task;
 
     public SwCliModelHandlerContainerSpecification(
@@ -50,6 +53,7 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             RunTimeProperties runTimeProperties,
             TaskTokenValidator taskTokenValidator,
+            WebServerInTask webServerInTask,
             Task task
     ) {
         this.instanceUri = instanceUri;
@@ -57,6 +61,7 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.runTimeProperties = runTimeProperties;
         this.taskTokenValidator = taskTokenValidator;
+        this.webServerInTask = webServerInTask;
         this.task = task;
     }
 
@@ -152,6 +157,12 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
             coreContainerEnvs.put("SW_DEV_PORT", String.valueOf(devPort));
         }
         coreContainerEnvs.put("SW_POD_NAME", task.getId().toString());
+
+        // for online eval
+        if (task.getStep().getSpec() != null && task.getStep().getSpec().getExpose() != 0) {
+            coreContainerEnvs.put("SW_ONLINE_SERVING_ROOT_PATH",
+                    webServerInTask.generateServiceRoot(task.getId(), task.getStep().getSpec().getExpose()));
+        }
 
         return coreContainerEnvs;
     }
