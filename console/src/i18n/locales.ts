@@ -1951,6 +1951,14 @@ const locales0 = {
         en: 'Wechat',
         zh: '微信',
     },
+    'Client Login Success': {
+        en: 'Client Login Success',
+        zh: '客户端登录成功',
+    },
+    'Client Login Failed': {
+        en: 'Client Login Failed',
+        zh: '客户端登录失败',
+    },
     'copyright': {
         en: 'Copyright © 2023 Starwhale, Inc. All rights reserved. ',
         zh: '版权所有 © 2023 Starwhale, Inc. 保留所有权利。',

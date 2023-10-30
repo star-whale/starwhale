@@ -1,4 +1,3 @@
-import sys
 import typing as t
 
 import click
@@ -42,8 +41,9 @@ def _login(instance: str, username: str, password: str, token: str, alias: str) 
     * INSTANCE: Instance URI, if ignore it, swcli will login current selected instance.
     """
     if not bool(password and username) ^ bool(token):
-        click.echo("token or password+username, only choose one type")
-        sys.exit(1)
+        click.echo("credential or token not provided, will open browser to login")
+        InstanceTermView().login_with_browser(instance, alias)
+        return
 
     if token:
         kw = {"token": token}

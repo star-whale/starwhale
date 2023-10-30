@@ -58,6 +58,7 @@ import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
 import JobOverview from './pages/Job/JobOverview'
 import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
+import ClientLogin from '@/pages/Auth/ClientLogin'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -132,6 +133,13 @@ const Routes = () => {
                                         <Redirect from='/settings/:path?' to='/settings/agents' />
                                     </Switch>
                                 </SettingsOverviewLayout>
+                            </Route>
+                            <Route exact path='/auth/:path?'>
+                                <CenterLayout>
+                                    <Switch>
+                                        <Route exact path='/auth/client' component={ClientLogin} />
+                                    </Switch>
+                                </CenterLayout>
                             </Route>
                             {/* project */}
                             <Route exact path='/projects/:projectId/members'>
