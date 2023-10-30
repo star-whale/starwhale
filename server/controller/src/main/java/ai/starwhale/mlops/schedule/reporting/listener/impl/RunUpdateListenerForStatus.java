@@ -127,6 +127,7 @@ public class RunUpdateListenerForStatus implements RunUpdateListener {
         }
         if (run.getIp() != null) {
             taskMapper.updateIp(run.getTaskId(), run.getIp());
+            task.setIp(run.getIp());
         }
         task.updateStatus(taskNewStatus);
     }
