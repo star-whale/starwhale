@@ -136,6 +136,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .privacy(Privacy.fromValue(entity.getPrivacy()))
                 .createdTime(entity.getCreatedTime())
                 .description(entity.getProjectDescription())
+                .overview(entity.getOverview())
                 .isDefault(Objects.equals(entity.getIsDefault(), 1))
                 .isDeleted(Objects.equals(entity.getIsDeleted(), 1))
                 .owner(entity.getOwnerId() == null ? null : userService.loadUserById(entity.getOwnerId()))
