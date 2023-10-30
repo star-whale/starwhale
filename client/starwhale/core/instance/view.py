@@ -77,7 +77,6 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
 
         @app.get("/login")
         async def _login(token: str) -> dict:
-            print(f"get token {token}")
             login(instance, alias, token=token)
             nonlocal login_done
             login_done = True
@@ -108,7 +107,7 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
             while not login_done:
                 time.sleep(1e-3)
 
-        print(f"login {instance} as {alias} successfully!")
+        console.print(f":man_cook: login {instance} as [blue]{alias}[/blue] successfully!")
 
     def logout(self, instance: str) -> None:
         if instance == STANDALONE_INSTANCE:
