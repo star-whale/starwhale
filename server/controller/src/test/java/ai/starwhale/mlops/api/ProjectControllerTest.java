@@ -201,13 +201,13 @@ public class ProjectControllerTest {
 
     @Test
     public void testUpdateProject() {
-        given(projectService.updateProject(anyString(), any(), any(), any()))
+        given(projectService.updateProject(anyString(), any(), any(), any(), any()))
                 .willReturn(true);
         String errUrl = "err_url";
-        given(projectService.updateProject(same(errUrl), any(), any(), any()))
+        given(projectService.updateProject(same(errUrl), any(), any(), any(), any()))
                 .willReturn(false);
         String errName = "err_name";
-        given(projectService.updateProject(anyString(), same(errName), any(), any()))
+        given(projectService.updateProject(anyString(), same(errName), any(), any(), any()))
                 .willThrow(StarwhaleApiException.class);
 
         UpdateProjectRequest request = new UpdateProjectRequest();

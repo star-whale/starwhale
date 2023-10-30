@@ -264,23 +264,23 @@ public class ProjectServiceTest {
                 .willReturn(1);
         given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any()))
                 .willReturn(ProjectEntity.builder().id(2L).projectName("p2").build());
-        var res = service.updateProject("1", "pro1", null, "PUBLIC");
+        var res = service.updateProject("1", "pro1", null, null, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.updateProject("p1", "pro1", null, "PUBLIC");
+        res = service.updateProject("p1", "pro1", null, null, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.updateProject("2", "pro1", null, "PUBLIC");
+        res = service.updateProject("2", "pro1", null, null, "PUBLIC");
         assertThat(res, is(false));
 
-        res = service.updateProject("1", "pro1", null, "PUBLIC");
+        res = service.updateProject("1", "pro1", null, null, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.updateProject("2", "p2", null, "PUBLIC");
+        res = service.updateProject("2", "p2", null, null, "PUBLIC");
         assertThat(res, is(false));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.updateProject("1", "p2", "", "PUBLIC"));
+                () -> service.updateProject("1", "p2", "", "", "PUBLIC"));
     }
 
     @Test

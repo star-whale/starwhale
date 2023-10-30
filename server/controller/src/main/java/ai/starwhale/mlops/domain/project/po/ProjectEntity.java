@@ -40,6 +40,8 @@ public class ProjectEntity extends BaseEntity {
 
     private String projectDescription;
 
+    private String overview;
+
     private Integer isDeleted;
 
     private Integer isDefault;

@@ -225,6 +225,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .ownerId(project.getOwner().getId())
                 .privacy(project.getPrivacy().getValue())
                 .projectDescription(project.getDescription())
+                .overview(project.getOverview())
                 .isDefault(project.isDefault() ? 1 : 0)
                 .build();
         projectMapper.insert(entity);
@@ -326,7 +327,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     }
 
     @Transactional
-    public Boolean updateProject(String projectUrl, String projectName, String description, String privacy) {
+    public Boolean updateProject(
+            String projectUrl, String projectName, String description, String overview, String privacy) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
@@ -352,6 +354,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
+                .overview(overview)
                 .privacy(privacyEnum.getValue())
                 .build();
         int res = projectMapper.update(entity);

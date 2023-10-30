@@ -123,6 +123,7 @@ public class ProjectController {
                         .isDefault(false)
                         .privacy(Privacy.fromName(createProjectRequest.getPrivacy()))
                         .description(createProjectRequest.getDescription())
+                        .overview(createProjectRequest.getOverview())
                         .build());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(projectId)));
@@ -177,6 +178,7 @@ public class ProjectController {
                 projectUrl,
                 updateProjectRequest.getProjectName(),
                 updateProjectRequest.getDescription(),
+                updateProjectRequest.getOverview(),
                 updateProjectRequest.getPrivacy()
         );
         if (!res) {

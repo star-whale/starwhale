@@ -36,4 +36,7 @@ public class UpdateProjectRequest {
 
     @JsonProperty("description")
     private String description;
+
+    @JsonProperty("overview")
+    private String overview;
 }
