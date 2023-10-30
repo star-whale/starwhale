@@ -29,8 +29,8 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
+import ai.starwhale.mlops.api.protocol.event.Event.RelatedResource;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
-import ai.starwhale.mlops.api.protocol.event.EventRequest.RelatedResource;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
 import ai.starwhale.mlops.domain.event.po.EventEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
@@ -59,16 +59,18 @@ class EventServiceTest {
 
     @Test
     void testAddEvent() {
-        var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
+        var req = EventRequest.builder()
+                .relatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L))
+                .build();
         eventService.addEvent(req);
         verify(eventMapper).insert(any());
     }
 
     @Test
     void testGetEvents() {
-        var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
+        var req = EventRequest.builder()
+                .relatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L))
+                .build();
         var resp = eventService.getEvents(req.getRelatedResource());
         verify(eventMapper).listEventsOfResource(EventResourceType.JOB, 2L);
         assertEquals(resp, List.of());
@@ -97,8 +99,9 @@ class EventServiceTest {
 
     @Test
     void testAddEventForJob() {
-        var req = new EventRequest();
-        req.setRelatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L));
+        var req = EventRequest.builder()
+                .relatedResource(new EventRequest.RelatedResource(EventResourceType.JOB, 2L))
+                .build();
         when(jobDao.getJobId("1")).thenReturn(1L);
         // the job id is not equal to the related resource id
         assertThrows(SwNotFoundException.class, () -> eventService.addEventForJob("1", req));

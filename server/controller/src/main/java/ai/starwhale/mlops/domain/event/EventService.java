@@ -20,8 +20,8 @@ import ai.starwhale.mlops.api.protocol.event.Event;
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
+import ai.starwhale.mlops.api.protocol.event.Event.RelatedResource;
 import ai.starwhale.mlops.api.protocol.event.EventRequest;
-import ai.starwhale.mlops.api.protocol.event.EventRequest.RelatedResource;
 import ai.starwhale.mlops.api.protocol.event.EventVo;
 import ai.starwhale.mlops.domain.event.mapper.EventMapper;
 import ai.starwhale.mlops.domain.event.po.EventEntity;
@@ -95,18 +95,18 @@ public class EventService {
         // we do not support job scope aggregation for now.
         if (related.getEventResourceType() == EventResourceType.TASK) {
             var runs = runMapper.list(related.getId());
-            if (runs == null) {
+            if (runs == null || runs.isEmpty()) {
                 return List.of();
             }
             var runIds = runs.stream().map(RunEntity::getId).collect(Collectors.toList());
             var runEvents = eventMapper.listEventsOfResources(EventResourceType.RUN, runIds);
-            if (runEvents != null) {
+            if (runEvents != null && !runEvents.isEmpty()) {
                 events.addAll(runEvents);
             }
         }
 
         var resourceEvents = eventMapper.listEventsOfResource(related.getEventResourceType(), related.getId());
-        if (resourceEvents != null) {
+        if (resourceEvents != null && !resourceEvents.isEmpty()) {
             events.addAll(resourceEvents);
         }
 

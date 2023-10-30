@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api.protocol.event;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -49,6 +50,21 @@ public class Event implements Serializable {
     public enum EventResourceType {
         JOB, TASK, RUN
     }
+
+    @Data
+    @Builder
+    @Validated
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RelatedResource {
+        @NotNull
+        private EventResourceType eventResourceType;
+        @NotNull
+        private Long id;
+    }
+
+    @NotNull
+    private RelatedResource relatedResource;
 
     @NotNull
     private String message;
