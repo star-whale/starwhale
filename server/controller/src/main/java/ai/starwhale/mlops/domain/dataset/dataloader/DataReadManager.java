@@ -102,7 +102,7 @@ public class DataReadManager {
         try {
             this.generate(sessionId);
         } catch (Exception e) {
-            log.error("Error when generate data read logs for session: {}", sessionId, e);
+            log.error("Error while generate data read logs for session: {}", sessionId, e);
             failSessionQueue.add(new FailSession(sessionId));
         }
     }
