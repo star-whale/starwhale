@@ -13,6 +13,8 @@ What we learn
 - build Starwhale Dataset by `swcli dataset build -hf` command, no code, only one command.
 - use Starwhale Evaluation Summary Page to compare the algorithm quality of the different models.
 - build an unified Starwhale Runtime to run all models.
+- use Starwhale `replicas` feature to speedup model evaluation.
+- use `Starwhale.Image` and `Starwhale.COCOObjectAnnotation` to represent Dataset type.
 
 Models
 ------
@@ -30,13 +32,13 @@ We will use the following datasets to evaluate models.
 
 - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
 
-  - Introduction: The dataset contains 20 object categories including vehicles, household, animals and others. Each image in this dataset has pixel-level segmentation annotations, bounding box annotations, and object class annotations. This dataset has been widely used as a benchmark for object detection, semantic segmentation, and classification tasks.
-  - Size: 1,464 images for training, 1,449 images for validation and a private testing set.
+  - Introduction: The dataset contains 20 object categories including vehicles, household, animals and others. Each image in this dataset has pixel-level segmentation annotations, bounding box annotations, and object class annotations. This dataset has been widely used as a benchmark for object detection, semantic segmentation, and classification tasks. In this example, we will use 2012 year dataset.
+  - Size: The train/val data has 11,530 images containing 27,450 ROI annotated objects and 6,929 segmentations.
 
-- [COCO-Stuff](https://github.com/nightrome/cocostuff)
+- [COCO 2017 Stuff](https://cocodataset.org/#stuff-2017)
 
-  - Introduction: The Coco Stuff is dataset for scene understanding tasks like semantic segmentation, object detection and image captioning. It is constructed by annotating the original COCO dataset, which originally annotated things while neglecting stuff annotations.
-  - Size: 164k images in COCO-stuff dataset that span over 172 categories including 80 things, 91 stuff, and 1 unlabeled class.
+  - Introduction: The COCO Stuff Segmentation Task is designed to push the state of the art in semantic segmentation of stuff classes. Whereas the object detection task addresses thing classes (person, car, elephant), this task focuses on stuff classes (grass, wall, sky).
+  - Size: Validation images 5,000.
 
 - [ADE20K](https://groups.csail.mit.edu/vision/datasets/ADE20K/)
 
