@@ -36,6 +36,7 @@ class UpdateProjectRequest(SwBaseModel):
     )
     privacy: Optional[str] = None
     description: Optional[str] = None
+    overview: Optional[str] = None
 
 
 class ResponseMessageObject(SwBaseModel):
@@ -115,6 +116,7 @@ class CreateProjectRequest(SwBaseModel):
     )
     privacy: str
     description: str
+    overview: Optional[str] = None
 
 
 class CreateModelVersionRequest(SwBaseModel):
@@ -1391,6 +1393,7 @@ class ProjectVo(SwBaseModel):
     id: str
     name: str
     description: Optional[str] = None
+    overview: Optional[str] = None
     privacy: str
     created_time: int = Field(..., alias='createdTime')
     owner: UserVo
