@@ -8,7 +8,9 @@ dependencies:
       - echo "hello world"
 environment:
   python: "3.10"
-  arch: noarch
+  arch:
+    - amd64
+    - arm64
   os: ubuntu:20.04
 mode: venv
 name: pytorch310

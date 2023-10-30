@@ -985,6 +985,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["environment"]["mode"] == "venv"
         assert _manifest["environment"]["lock"]["shell"]["use_venv"]
         assert _manifest["environment"]["lock"]["starwhale_version"] == "0.0.0.dev0"
+        assert _manifest["environment"]["arch"] == []
         assert _manifest["artifacts"]["wheels"] == ["wheels/dummy.whl"]
         assert _manifest["artifacts"]["files"][0] == {
             "dest": "bin/../bin/prepare.sh",
@@ -1764,7 +1765,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "environment": {
                         "mode": "venv",
                         "python": "3.7",
-                        "arch": [SupportArch.AMD64],
+                        "arch": [],
                     },
                     "dependencies": {
                         "local_packaged_env": False,
@@ -2053,7 +2054,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "environment": {
                         "python": "3.7",
                         "mode": "conda",
-                        "arch": [SupportArch.ARM64],
+                        "arch": [""],
                         "lock": {"files": [".starwhale/lock/conda-sw-lock.yaml"]},
                     },
                     "dependencies": {

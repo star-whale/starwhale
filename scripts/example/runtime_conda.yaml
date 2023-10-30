@@ -11,7 +11,6 @@ dependencies:
   - commands:
       - echo "hello world"
 environment:
-  arch: noarch
   os: ubuntu:20.04
 mode: conda
 name: simple-test-conda

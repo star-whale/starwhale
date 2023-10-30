@@ -175,14 +175,14 @@ class DockerEnv(ASDictMixin):
 class Environment(ASDictMixin):
     def __init__(
         self,
-        arch: _t_mixed_str_list = "",
+        arch: _t_mixed_str_list | None = None,
         os: str = SupportOS.UBUNTU,
         python: str = "",
         cuda: str = "",
         cudnn: str = "",
         **kw: t.Any,
     ) -> None:
-        self.arch = _list(arch)
+        self.arch = _list(arch or [])
         self.os = os.lower()
 
         if not python:
@@ -2203,6 +2203,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @staticmethod
     def _validate_environment(expected_arch: t.List[str]) -> None:
+        expected_arch = list(filter(None, map(str.strip, expected_arch)))
+
         # TODO: add os, cuda version, python version validator
         def _validate_arch() -> None:
             machine_map = {

@@ -8,7 +8,7 @@ dependencies:
       - echo "hello world"
 environment:
   python: 3.9
-  arch: noarch
+  arch: amd64
   os: ubuntu:20.04
 mode: venv
 name: pytorch39
