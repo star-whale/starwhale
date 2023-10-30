@@ -3,6 +3,7 @@ import axios from 'axios'
 import { cliMateServer } from '@/consts'
 import { useAuth } from '@/api/Auth'
 import useTranslation from '@/hooks/useTranslation'
+// eslint-disable-next-line
 import { Spinner } from 'baseui/spinner'
 
 export default function ClientLogin() {
@@ -30,6 +31,6 @@ export default function ClientLogin() {
                 setErrMsg(t('Client Login Failed'))
                 setLoading(false)
             })
-    }, [])
+    }, [t, token])
     return <div>{loading ? <Spinner /> : <div>{success ? t('Client Login Success') : errMsg}</div>}</div>
 }
