@@ -281,8 +281,10 @@ class DatasetTagRequest(SwBaseModel):
 class DataIndexDesc(SwBaseModel):
     start: Optional[str] = None
     start_type: Optional[str] = Field(None, alias='startType')
+    start_inclusive: Optional[bool] = Field(None, alias='startInclusive')
     end: Optional[str] = None
     end_type: Optional[str] = Field(None, alias='endType')
+    end_inclusive: Optional[bool] = Field(None, alias='endInclusive')
 
 
 class NullableResponseMessageDataIndexDesc(SwBaseModel):
