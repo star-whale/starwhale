@@ -111,7 +111,7 @@ class TaskExecutor:
         from starwhale.api._impl.evaluation import PipelineHandler
 
         module = load_module(self.step.module_name, self.workdir)
-        cls_ = getattr(module, self.step.cls_name, None)
+        cls_ = self.step.cls_name and getattr(module, self.step.cls_name, None) or None
 
         if cls_ is None:
             # for internal function
