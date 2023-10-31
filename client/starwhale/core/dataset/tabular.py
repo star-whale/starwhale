@@ -21,7 +21,7 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
-from starwhale.base.data_type import Link, JsonDict, Sequence, BaseArtifact
+from starwhale.base.data_type import Link, Sequence, BaseArtifact
 from starwhale.base.uri.project import Project
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
@@ -76,16 +76,16 @@ class TabularDatasetInfo(UserDict):
                 raise TypeError(f"key:{k} is not str type")
 
             # TODO： add validator for value?
-            converted_mapping[k] = JsonDict.from_data(v)
+            converted_mapping[k] = v
         super().__init__(converted_mapping)
 
     def __getitem__(self, k: str) -> t.Any:
-        return JsonDict.to_data(super().__getitem__(k))
+        return super().__getitem__(k)
 
     def __setitem__(self, k: str, v: t.Any) -> None:
         if not isinstance(k, str):
             raise TypeError(f"key:{k} is not str type")
-        super().__setitem__(k, JsonDict.from_data(v))
+        super().__setitem__(k, v)
 
     @classmethod
     def load_from_datastore(
@@ -138,7 +138,7 @@ class TabularDatasetRow(ASDictMixin):
         for k, v in kw.items():
             if k.startswith(cls._FEATURES_PREFIX):
                 _, name = k.split(cls._FEATURES_PREFIX, 1)
-                _content[name] = JsonDict.to_data(v)
+                _content[name] = v
             else:
                 _extra_kw[k] = v
 
@@ -173,7 +173,7 @@ class TabularDatasetRow(ASDictMixin):
         d = super().asdict(ignore_keys=ignore_keys or ["features", "extra_kw"])
         d.update(_do_asdict_convert(self.extra_kw))
         for k, v in self.features.items():
-            d[f"{self._FEATURES_PREFIX}{k}"] = JsonDict.from_data(v)
+            d[f"{self._FEATURES_PREFIX}{k}"] = v
         return d
 
     @classmethod

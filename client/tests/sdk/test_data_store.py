@@ -2289,7 +2289,7 @@ class TestTableWriter(BaseTestCase):
                 {"k": 0, "a": None},
                 {"k": 2, "a": "22"},
                 {"k": 3, "b": "3"},
-                {"k": 4, "a": 0, "a/b": 0, "a/c": 1},
+                {"k": 4, "a": 0},
                 {
                     "k": 5,
                     "x": data_store.Link("http://test.com/1.jpg"),
