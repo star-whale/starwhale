@@ -48,6 +48,7 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.project.ProjectVo;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -157,6 +158,7 @@ public class DatasetServiceTest {
 
         userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder().id(1L).build());
+        given(userService.findUserById(any())).willReturn(UserVo.builder().id("1").name("foo").build());
         projectService = mock(ProjectService.class);
         given(projectService.findProject(same("1"))).willReturn(Project.builder().id(1L).name("p").build());
         given(projectService.findProject(same("2"))).willReturn(Project.builder().id(2L).name("p2").build());
@@ -272,6 +274,7 @@ public class DatasetServiceTest {
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
                 hasProperty("list", hasItem(hasProperty("id", is("2"))))
         ));
+        res.getList().forEach(ds -> assertEquals("foo", ds.getOwner().getName()));
     }
 
     @Test
@@ -370,9 +373,8 @@ public class DatasetServiceTest {
                         .build(),
                 PageParams.builder().build()
         );
-        assertThat(res, allOf(
-                hasProperty("list", iterableWithSize(1))
-        ));
+        assertThat(res, allOf(hasProperty("list", iterableWithSize(1))));
+        res.getList().forEach(ds -> assertEquals("foo", ds.getOwner().getName()));
     }
 
     @Test

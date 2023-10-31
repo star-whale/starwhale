@@ -355,7 +355,11 @@ public class ModelService {
             var entities = modelVersionMapper.list(modelId, query.getVersionName());
             var latest = modelVersionMapper.findByLatest(modelId);
             var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
-            return PageUtil.toPageInfo(entities, i -> versionConvertor.convert(i, latest, tags.get(i.getId())));
+            return PageUtil.toPageInfo(entities, item -> {
+                var vo = versionConvertor.convert(item, latest, tags.get(item.getId()));
+                vo.setOwner(userService.findUserById(item.getOwnerId()));
+                return vo;
+            });
         }
     }
 

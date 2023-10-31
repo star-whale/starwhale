@@ -622,6 +622,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 hasProperty("list", hasItem(hasProperty("name", is("m")))),
                 hasProperty("list", hasItem(hasProperty("name", is("m1"))))
         ));
+        res.getList().forEach(m -> assertEquals(this.user.getName(), m.getOwner().getName()));
     }
 
     @Test
@@ -738,9 +739,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
                         .build(),
                 PageParams.builder().build()
         );
-        assertThat(res, allOf(
-                hasProperty("list", iterableWithSize(4))
-        ));
+        assertThat(res, allOf(hasProperty("list", iterableWithSize(4))));
+        res.getList().forEach(v -> assertEquals(this.user.getName(), v.getOwner().getName()));
     }
 
     @Test
@@ -812,18 +812,18 @@ public class ModelServiceTest extends MySqlContainerHolder {
                                 hasProperty("latest", is(true)))))));
 
         assertThat(res.get(1).getVersions(), hasItems(
-                                allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("v1")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v2")),
-                                        hasProperty("alias", is("v2")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v3")),
-                                        hasProperty("alias", is("v3")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v4")),
-                                        hasProperty("alias", is("v4")),
-                                        hasProperty("latest", is(true)))));
+                allOf(hasProperty("versionName", is("v1")),
+                        hasProperty("alias", is("v1")),
+                        hasProperty("latest", is(false))),
+                allOf(hasProperty("versionName", is("v2")),
+                        hasProperty("alias", is("v2")),
+                        hasProperty("latest", is(false))),
+                allOf(hasProperty("versionName", is("v3")),
+                        hasProperty("alias", is("v3")),
+                        hasProperty("latest", is(false))),
+                allOf(hasProperty("versionName", is("v4")),
+                        hasProperty("alias", is("v4")),
+                        hasProperty("latest", is(true)))));
     }
 
     @Test
