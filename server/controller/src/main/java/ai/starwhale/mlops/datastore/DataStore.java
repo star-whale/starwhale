@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -323,9 +324,45 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     public RecordList apply(
                             List<TableMeta> tables,
                             Map<String, ColumnSchema> columnSchemaMap,
-                            List<Map<String, Object>> records,
-                            BaseValue lastKey
+                            List<TableRecords> records
                     ) {
+                        BaseValue lastKey = null;
+                        List<Map<String, Object>> ret = new ArrayList<>();
+                        while (!records.isEmpty() && ret.size() < finalLimit) {
+                            lastKey = Collections.min(records, (a, b) -> {
+                                var x = a.record.getKey();
+                                var y = b.record.getKey();
+                                return x.compareTo(y);
+                            }).record.getKey();
+                            Map<String, Object> record = null;
+                            for (var r : records) {
+                                if (r.record.getKey().equals(lastKey)) {
+                                    if (r.record.isDeleted()) {
+                                        record = null;
+                                    } else {
+                                        if (record == null) {
+                                            record = new HashMap<>();
+                                        }
+                                        record.putAll(
+                                                RecordEncoder.encodeRecord(r.record.getValues(),
+                                                        req.isRawResult(),
+                                                        req.isEncodeWithType()));
+                                    }
+                                    if (r.iterator.hasNext()) {
+                                        r.record = r.iterator.next();
+                                    } else {
+                                        r.record = null;
+                                    }
+                                }
+                            }
+                            if (record != null) {
+                                if (!req.isKeepNone()) {
+                                    record.entrySet().removeIf(x -> x.getValue() == null);
+                                }
+                                ret.add(record);
+                            }
+                            records.removeIf(r -> r.record == null);
+                        }
                         var columnStatistics = new HashMap<String, ColumnStatistics>();
                         for (var table : tables) {
                             table.table.getColumnStatistics(table.columns).forEach((k, v) ->
@@ -335,7 +372,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                                 columnSchemaMap,
                                 columnStatistics.entrySet().stream().collect(
                                         Collectors.toMap(Entry::getKey, entry -> entry.getValue().toColumnHintsDesc())),
-                                records,
+                                ret,
                                 (String) BaseValue.encode(lastKey, false, false),
                                 BaseValue.getColumnType(lastKey).name()
                         );
@@ -366,28 +403,45 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     public KeyRangeList apply(
                             List<TableMeta> tables,
                             Map<String, ColumnSchema> columnSchemaMap,
-                            List<Map<String, Object>> records,
-                            BaseValue lastKey
+                            List<TableRecords> records
                     ) {
-                        var keyColumn = tables.get(0).schema.getKeyColumn();
+
+                        BaseValue lastKey;
+                        List<BaseValue> keys = new LinkedList<>();
+                        while (!records.isEmpty()) {
+                            lastKey = Collections.min(records, (a, b) -> {
+                                var x = a.record.getKey();
+                                var y = b.record.getKey();
+                                return x.compareTo(y);
+                            }).record.getKey();
+                            for (var r : records) {
+                                if (r.record.getKey().equals(lastKey)) {
+                                    if (!r.record.isDeleted() && !keys.contains(r.record.getKey())) {
+                                        keys.add(r.record.getKey());
+                                    }
+                                    if (r.iterator.hasNext()) {
+                                        r.record = r.iterator.next();
+                                    } else {
+                                        r.record = null;
+                                    }
+                                }
+                            }
+
+                            records.removeIf(r -> r.record == null);
+                        }
+
                         var ranges = new ArrayList<KeyRangeList.Range>();
                         var batchSize = req.getRangeInfo().getBatchSize();
                         var index = 0;
-                        while (index < records.size()) {
-                            if (index + batchSize < records.size()) {
-                                var start = req.isEncodeWithType()
-                                        ? (String) ((Map<?, ?>) records.get(index).get(keyColumn)).get("value")
-                                        : (String) records.get(index).get(keyColumn);
-                                var startType = req.isEncodeWithType()
-                                        ? (String) ((Map<?, ?>) records.get(index).get(keyColumn)).get("type")
-                                        : req.getStartType();
-                                var end = req.isEncodeWithType() ? (String)
-                                            ((Map<?, ?>) records.get(index + batchSize).get(keyColumn)).get("value")
-                                        : (String) records.get(index + batchSize).get(keyColumn);
-                                var endType = req.isEncodeWithType()
-                                        ? (String)
-                                        ((Map<?, ?>) records.get(index + batchSize).get(keyColumn)).get("type")
-                                        : req.getEndType();
+                        while (index < keys.size()) {
+                            if (index + batchSize < keys.size()) {
+                                var startKey = keys.get(index);
+                                var start = (String) startKey.encode(req.isRawResult(), false);
+                                var startType = startKey.getColumnType().name();
+
+                                var endKey = keys.get(index + batchSize);
+                                var end = (String) endKey.encode(req.isRawResult(), false);
+                                var endType = endKey.getColumnType().name();
                                 ranges.add(KeyRangeList.Range.builder()
                                         .start(start)
                                         .startType(startType)
@@ -399,18 +453,13 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                                         .build());
                                 index += batchSize;
                             } else {
-                                var start = req.isEncodeWithType()
-                                        ? (String) ((Map<?, ?>) records.get(index).get(keyColumn)).get("value")
-                                        : (String) records.get(index).get(keyColumn);
-                                var startType = req.isEncodeWithType()
-                                        ? (String) ((Map<?, ?>) records.get(index).get(keyColumn)).get("type")
-                                        : req.getStartType();
-                                var end = req.isEncodeWithType() ? (String)
-                                            ((Map<?, ?>) records.get(records.size() - 1).get(keyColumn)).get("value")
-                                        : (String) records.get(records.size() - 1).get(keyColumn);
-                                var endType = req.isEncodeWithType() ? (String)
-                                            ((Map<?, ?>) records.get(records.size() - 1).get(keyColumn)).get("type")
-                                        : req.getEndType();
+                                var startKey = keys.get(index);
+                                var start = (String) startKey.encode(req.isRawResult(), false);
+                                var startType = startKey.getColumnType().name();
+
+                                var endKey = keys.get(keys.size() - 1);
+                                var end = (String) endKey.encode(req.isRawResult(), false);
+                                var endType = endKey.getColumnType().name();
                                 ranges.add(KeyRangeList.Range.builder()
                                         .start(start)
                                         .startType(startType)
@@ -418,9 +467,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                                         .end(StringUtils.hasText(req.getEnd()) ? end : null)
                                         .endType(endType)
                                         .endInclusive(StringUtils.hasText(req.getEnd()))
-                                        .size(records.size() - index)
+                                        .size(keys.size() - index)
                                         .build());
-                                index = records.size();
+                                index = keys.size();
                             }
                         }
                         return new KeyRangeList(ranges);
@@ -460,15 +509,13 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
          *
          * @param tables table meta data
          * @param columnSchemaMap column schema map
-         * @param records records
-         * @param lastKey the last key
+         * @param recordIter records iterator
          * @return r the result
          */
         R apply(
                 List<TableMeta> tables,
                 Map<String, ColumnSchema> columnSchemaMap,
-                List<Map<String, Object>> records,
-                BaseValue lastKey
+                List<TableRecords> recordIter
         );
 
         default R empty() {
@@ -590,44 +637,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     records.add(r);
                 }
             }
-            BaseValue lastKey = null;
-            List<Map<String, Object>> ret = new ArrayList<>();
-            while (!records.isEmpty() && !resultResolver.stop(ret.size())) {
-                lastKey = Collections.min(records, (a, b) -> {
-                    var x = a.record.getKey();
-                    var y = b.record.getKey();
-                    return x.compareTo(y);
-                }).record.getKey();
-                Map<String, Object> record = null;
-                for (var r : records) {
-                    if (r.record.getKey().equals(lastKey)) {
-                        if (r.record.isDeleted()) {
-                            record = null;
-                        } else {
-                            if (record == null) {
-                                record = new HashMap<>();
-                            }
-                            record.putAll(
-                                    RecordEncoder.encodeRecord(r.record.getValues(),
-                                            req.isRawResult(),
-                                            req.isEncodeWithType()));
-                        }
-                        if (r.iterator.hasNext()) {
-                            r.record = r.iterator.next();
-                        } else {
-                            r.record = null;
-                        }
-                    }
-                }
-                if (record != null) {
-                    if (!req.isKeepNone()) {
-                        record.entrySet().removeIf(x -> x.getValue() == null);
-                    }
-                    ret.add(record);
-                }
-                records.removeIf(r -> r.record == null);
-            }
-            return resultResolver.apply(tables, columnSchemaMap, ret, lastKey);
+
+            return resultResolver.apply(tables, columnSchemaMap, records);
         } finally {
             for (var table : tablesToLock) {
                 table.unlock(true);
