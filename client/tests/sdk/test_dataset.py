@@ -35,7 +35,6 @@ from starwhale.base.data_type import (
     Text,
     Image,
     Binary,
-    JsonDict,
     MIMEType,
     Sequence,
     BoundingBox,
@@ -48,7 +47,6 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.model import DatasetConfig, StandaloneDataset
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
-from starwhale.api._impl.data_store import SwObject
 from starwhale.core.dataset.tabular import (
     CloudTDSC,
     StandaloneTDSC,
@@ -248,51 +246,53 @@ class TestDatasetCopy(BaseTestCase):
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
         assert {
-            "type": "OBJECT",
-            "attributes": [
-                {"type": "LIST", "elementType": {"type": "INT64"}, "name": "box"},
-                {
-                    "attributes": [
-                        {"name": "as_mask", "type": "BOOL"},
-                        {"name": "mask_uri", "type": "STRING"},
-                        {"name": "_type", "type": "STRING"},
-                        {"name": "display_name", "type": "STRING"},
-                        {"name": "_mime_type", "type": "STRING"},
-                        {
-                            "type": "LIST",
-                            "name": "shape",
-                            "elementType": {"type": "UNKNOWN"},
-                            "attributes": [{"index": 2, "type": "INT64"}],
-                        },
-                        {"name": "_dtype_name", "type": "STRING"},
-                        {"name": "encoding", "type": "STRING"},
-                        {
-                            "attributes": [
-                                {"name": "_type", "type": "STRING"},
-                                {"name": "uri", "type": "STRING"},
-                                {"name": "scheme", "type": "STRING"},
-                                {"name": "offset", "type": "INT64"},
-                                {"name": "size", "type": "INT64"},
-                                {"name": "data_type", "type": "UNKNOWN"},
-                                {
-                                    "keyType": {"type": "UNKNOWN"},
-                                    "name": "extra_info",
-                                    "type": "MAP",
-                                    "valueType": {"type": "UNKNOWN"},
-                                },
-                            ],
-                            "name": "link",
-                            "pythonType": "starwhale.base.data_type.Link",
-                            "type": "OBJECT",
-                        },
-                    ],
-                    "name": "mask",
-                    "pythonType": "starwhale.base.data_type.Image",
-                    "type": "OBJECT",
-                },
-            ],
-            "pythonType": "starwhale.base.data_type.JsonDict",
             "name": "features/seg",
+            "type": "MAP",
+            "keyType": {"type": "STRING"},
+            "valueType": {
+                "attributes": [
+                    {"name": "as_mask", "type": "BOOL"},
+                    {"name": "mask_uri", "type": "STRING"},
+                    {"name": "_type", "type": "STRING"},
+                    {"name": "display_name", "type": "STRING"},
+                    {"name": "_mime_type", "type": "STRING"},
+                    {
+                        "attributes": [{"index": 2, "type": "INT64"}],
+                        "elementType": {"type": "UNKNOWN"},
+                        "name": "shape",
+                        "type": "LIST",
+                    },
+                    {"name": "_dtype_name", "type": "STRING"},
+                    {"name": "encoding", "type": "STRING"},
+                    {
+                        "attributes": [
+                            {"name": "_type", "type": "STRING"},
+                            {"name": "uri", "type": "STRING"},
+                            {"name": "scheme", "type": "STRING"},
+                            {"name": "offset", "type": "INT64"},
+                            {"name": "size", "type": "INT64"},
+                            {"name": "data_type", "type": "UNKNOWN"},
+                            {
+                                "keyType": {"type": "UNKNOWN"},
+                                "name": "extra_info",
+                                "type": "MAP",
+                                "valueType": {"type": "UNKNOWN"},
+                            },
+                        ],
+                        "name": "link",
+                        "pythonType": "starwhale.base.data_type.Link",
+                        "type": "OBJECT",
+                    },
+                ],
+                "pythonType": "starwhale.base.data_type.Image",
+                "type": "OBJECT",
+            },
+            "sparseKeyValuePairSchema": {
+                "0": {
+                    "keyType": {"type": "STRING"},
+                    "valueType": {"elementType": {"type": "INT64"}, "type": "LIST"},
+                }
+            },
         } in content["tableSchemaDesc"]["columnSchemaList"]
         assert len(content["records"]) > 0
 
@@ -894,18 +894,23 @@ class TestTabularDatasetInfo(BaseTestCase):
 
     def test_inner_json_dict(self) -> None:
         info = TabularDatasetInfo(
-            {"int": 1, "dict": {"a": 1, "b": 2}, "list_dict": [{"a": 1}, {"a": 2}]}
+            {
+                "int": 1,
+                "dict": {"a": 1, "b": 2},
+                "list_dict": [{"a": 1}, {"a": 2}],
+                "dict with int key": {1: "a"},
+            },
         )
         assert info["int"] == 1
         assert info["dict"] == {"a": 1, "b": 2}
         assert info["list_dict"] == [{"a": 1}, {"a": 2}]
+        assert info["dict with int key"] == {1: "a"}
 
-        assert isinstance(info.data["dict"], SwObject)
-        assert isinstance(info.data["dict"], JsonDict)
-        assert info.data["dict"].__dict__ == {"a": 1, "b": 2}
+        assert isinstance(info.data["dict"], dict)
+        assert info.data["dict"] == {"a": 1, "b": 2}
         assert isinstance(info.data["list_dict"], list)
-        assert isinstance(info.data["list_dict"][0], JsonDict)
-        assert info.data["list_dict"][0].__dict__ == {"a": 1}
+        assert isinstance(info.data["list_dict"][0], dict)
+        assert info.data["list_dict"][0] == {"a": 1}
 
     def test_exceptions(self) -> None:
         info = TabularDatasetInfo()
@@ -1081,7 +1086,7 @@ class TestTabularDataset(TestCase):
 
         u_row_dict = u_row.asdict()
         assert u_row_dict["features/a"] == 1
-        assert u_row_dict["features/b"] == JsonDict({"c": 1})
+        assert u_row_dict["features/b"] == {"c": 1}
         assert l_row.asdict()["id"] == "path/1"
 
         with self.assertRaises(FieldTypeOrValueError):
@@ -1274,7 +1279,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "RowPutThread raise exception"):
             for i in range(0, 5):
-                mdb.put(DataRow(index=i, features={"a": {b"b": 1}}))
+                mdb.put(DataRow(index=i, features={"a": type("unknown")}))
             mdb.flush()
 
     @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")

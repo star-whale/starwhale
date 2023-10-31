@@ -60,7 +60,6 @@ from starwhale.utils.retry import (
     _RETRY_HTTP_STATUS_CODES,
 )
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.dict_util import flatten as flatten_dict
 from starwhale.base.models.base import SwBaseModel
 from starwhale.base.client.models.models import ColumnSchemaDesc, KeyValuePairSchema
 
@@ -803,6 +802,9 @@ class SwMapType(SwCompositeType):
             and self.sparse_pair_types == other.sparse_pair_types
         )
 
+    def __hash__(self) -> int:
+        return hash(str(self))
+
 
 class SwObjectType(SwCompositeType):
     def __init__(self, raw_type: Type, attrs: Dict[str, SwType]) -> None:
@@ -967,8 +969,7 @@ class Record(UserDict):
     def dumps(self) -> Dict[str, Dict]:
         return {
             "schema": {
-                k: json.loads(SwType.encode_schema(_get_type(v)).json())
-                for k, v in self.items()
+                k: SwType.encode_schema(_get_type(v)).to_dict() for k, v in self.items()
             },
             "data": {k: _get_type(v).encode(v) for k, v in self.items()},
         }
@@ -2862,7 +2863,6 @@ class TableWriter(threading.Thread):
             raise TableWriterException(f"{self} run raise {len(_es)} exceptions: {_es}")
 
     def insert(self, record: Dict[str, Any]) -> None:
-        record = flatten_dict(record)
         for k in record:
             for ch in k:
                 if (

@@ -79,12 +79,12 @@ class StandaloneDatasetTestCase(BaseTestCase):
 
         def _iter_rows() -> t.Generator:
             for _ in range(0, 5):
-                yield {"a": {1: "a", b"b": "b"}}
+                yield type("can not find")
 
         sd = StandaloneDataset(dataset_uri)
         with self.assertRaisesRegex(
-            RuntimeError,
-            "RowPutThread raise exception: json like dict shouldn't have none-str keys 1",
+            TypeError,
+            "value only supports tuple, dict or DataRow type",
         ):
             sd.build(config=DatasetConfig(name=name, handler=_iter_rows))
 

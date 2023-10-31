@@ -19,7 +19,6 @@ from starwhale.base.type import RunSubDirType, PredictLogMode
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
-from starwhale.base.data_type import JsonDict
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -438,8 +437,7 @@ class PipelineHandler(metaclass=ABCMeta):
             }
 
         input_features = {
-            f"{self._INPUT_PREFIX}{k}": JsonDict.from_data(v)
-            for k, v in _log_features.items()
+            f"{self._INPUT_PREFIX}{k}": v for k, v in _log_features.items()
         }
         if self.predict_log_mode == PredictLogMode.PICKLE:
             output = dill.dumps(output)
