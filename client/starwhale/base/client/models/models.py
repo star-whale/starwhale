@@ -1015,6 +1015,7 @@ class ResponseMessageListRunVo(SwBaseModel):
 class EventVo(SwBaseModel):
     event_type: EventType = Field(..., alias='eventType')
     source: Source
+    related_resource: RelatedResource = Field(..., alias='relatedResource')
     message: str
     data: Optional[str] = None
     timestamp: Optional[int] = None
@@ -1271,10 +1272,10 @@ class ResourcePool(SwBaseModel):
 class EventRequest(SwBaseModel):
     event_type: EventType = Field(..., alias='eventType')
     source: Source
+    related_resource: RelatedResource = Field(..., alias='relatedResource')
     message: str
     data: Optional[str] = None
     timestamp: Optional[int] = None
-    related_resource: RelatedResource = Field(..., alias='relatedResource')
 
 
 class DataConsumptionRequest(SwBaseModel):

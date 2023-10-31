@@ -16,33 +16,15 @@
 
 package ai.starwhale.mlops.api.protocol.event;
 
-import javax.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Validated
 @SuperBuilder
-@NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class EventRequest extends Event {
 
-    @Data
-    @Validated
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class RelatedResource {
-        @NotNull
-        private EventResourceType eventResourceType;
-        @NotNull
-        private Long id;
-    }
-
-    @NotNull
-    private RelatedResource relatedResource;
 }
