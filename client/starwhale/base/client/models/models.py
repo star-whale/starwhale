@@ -344,26 +344,9 @@ class ResponseMessageMapObjectObject(SwBaseModel):
     data: Dict[str, Dict[str, Any]]
 
 
-class ColumnSchemaDesc(SwBaseModel):
-    name: Optional[str] = None
-    index: Optional[int] = None
-    type: Optional[str] = None
-    python_type: Optional[str] = Field(None, alias='pythonType')
-    element_type: Optional[ColumnSchemaDesc] = Field(None, alias='elementType')
-    key_type: Optional[ColumnSchemaDesc] = Field(None, alias='keyType')
-    value_type: Optional[ColumnSchemaDesc] = Field(None, alias='valueType')
-
-
 class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
-
-
-class TableSchemaDesc(SwBaseModel):
-    key_column: Optional[str] = Field(None, alias='keyColumn')
-    column_schema_list: Optional[List[ColumnSchemaDesc]] = Field(
-        None, alias='columnSchemaList'
-    )
 
 
 class ColumnDesc(SwBaseModel):
@@ -385,21 +368,6 @@ class ColumnHintsDesc(SwBaseModel):
     element_hints: Optional[ColumnHintsDesc] = Field(None, alias='elementHints')
     key_hints: Optional[ColumnHintsDesc] = Field(None, alias='keyHints')
     value_hints: Optional[ColumnHintsDesc] = Field(None, alias='valueHints')
-
-
-class RecordListVo(SwBaseModel):
-    column_types: Optional[List[ColumnSchemaDesc]] = Field(None, alias='columnTypes')
-    column_hints: Optional[Dict[str, ColumnHintsDesc]] = Field(
-        None, alias='columnHints'
-    )
-    records: Optional[List[Dict[str, Dict[str, Any]]]] = None
-    last_key: Optional[str] = Field(None, alias='lastKey')
-
-
-class ResponseMessageRecordListVo(SwBaseModel):
-    code: str
-    message: str
-    data: RecordListVo
 
 
 class OrderByDesc(SwBaseModel):
@@ -1331,12 +1299,6 @@ class RecordDesc(SwBaseModel):
     values: List[RecordValueDesc]
 
 
-class UpdateTableRequest(SwBaseModel):
-    table_name: Optional[str] = Field(None, alias='tableName')
-    table_schema_desc: Optional[TableSchemaDesc] = Field(None, alias='tableSchemaDesc')
-    records: Optional[List[RecordDesc]] = None
-
-
 class ScanTableRequest(SwBaseModel):
     tables: Optional[List[TableDesc]] = None
     start: Optional[str] = None
@@ -1649,6 +1611,53 @@ class ResponseMessageListProjectMemberVo(SwBaseModel):
     data: List[ProjectMemberVo]
 
 
+class ColumnSchemaDesc(SwBaseModel):
+    name: Optional[str] = None
+    index: Optional[int] = None
+    type: Optional[str] = None
+    python_type: Optional[str] = Field(None, alias='pythonType')
+    element_type: Optional[ColumnSchemaDesc] = Field(None, alias='elementType')
+    key_type: Optional[ColumnSchemaDesc] = Field(None, alias='keyType')
+    value_type: Optional[ColumnSchemaDesc] = Field(None, alias='valueType')
+    attributes: Optional[List[ColumnSchemaDesc]] = None
+    sparse_key_value_pair_schema: Optional[Dict[str, KeyValuePairSchema]] = Field(
+        None, alias='sparseKeyValuePairSchema'
+    )
+
+
+class KeyValuePairSchema(SwBaseModel):
+    key_type: Optional[ColumnSchemaDesc] = Field(None, alias='keyType')
+    value_type: Optional[ColumnSchemaDesc] = Field(None, alias='valueType')
+
+
+class TableSchemaDesc(SwBaseModel):
+    key_column: Optional[str] = Field(None, alias='keyColumn')
+    column_schema_list: Optional[List[ColumnSchemaDesc]] = Field(
+        None, alias='columnSchemaList'
+    )
+
+
+class UpdateTableRequest(SwBaseModel):
+    table_name: Optional[str] = Field(None, alias='tableName')
+    table_schema_desc: Optional[TableSchemaDesc] = Field(None, alias='tableSchemaDesc')
+    records: Optional[List[RecordDesc]] = None
+
+
+class RecordListVo(SwBaseModel):
+    column_types: Optional[List[ColumnSchemaDesc]] = Field(None, alias='columnTypes')
+    column_hints: Optional[Dict[str, ColumnHintsDesc]] = Field(
+        None, alias='columnHints'
+    )
+    records: Optional[List[Dict[str, Dict[str, Any]]]] = None
+    last_key: Optional[str] = Field(None, alias='lastKey')
+
+
+class ResponseMessageRecordListVo(SwBaseModel):
+    code: str
+    message: str
+    data: RecordListVo
+
+
 class QueryTableRequest(SwBaseModel):
     table_name: Optional[str] = Field(None, alias='tableName')
     columns: Optional[List[ColumnDesc]] = None
@@ -1681,7 +1690,7 @@ class TableQueryOperandDesc(SwBaseModel):
     bytes_value: Optional[str] = Field(None, alias='bytesValue')
 
 
-ColumnSchemaDesc.update_forward_refs()
 ColumnHintsDesc.update_forward_refs()
+ColumnSchemaDesc.update_forward_refs()
 QueryTableRequest.update_forward_refs()
 TableQueryFilterDesc.update_forward_refs()

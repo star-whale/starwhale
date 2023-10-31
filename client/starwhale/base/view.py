@@ -28,6 +28,7 @@ from starwhale.consts import (
     STANDALONE_INSTANCE,
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
+from starwhale.utils.json import Encoder
 from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
@@ -223,15 +224,7 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def pretty_json(data: t.Any) -> None:
-        class _Encoder(json.JSONEncoder):
-            def default(self, o: t.Any) -> t.Any:
-                if isinstance(o, bytes):
-                    return o.decode("utf-8")
-                if isinstance(o, BaseModel):
-                    return json.loads(o.json())
-                return super().default(o)
-
-        print(json.dumps(data, indent=4, sort_keys=True, cls=_Encoder))
+        print(json.dumps(data, indent=4, sort_keys=True, cls=Encoder))
 
     @staticmethod
     def list_data(

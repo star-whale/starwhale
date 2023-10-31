@@ -18,8 +18,8 @@ exclude = '''
     | example/LLM/belle-bloom/BELLE
     | example/LLM/llama2/llama
     | starwhale/proto_gen
-    | starwhale/base/client/models
   )/
+  | starwhale/base/client/models/models.py
 )
 '''
 

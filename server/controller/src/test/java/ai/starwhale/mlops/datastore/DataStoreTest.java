@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.type.BaseValue;
@@ -43,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -53,12 +55,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -133,13 +137,13 @@ public class DataStoreTest {
     public void testList() {
         assertThat("empty", this.dataStore.list(Set.of("")), empty());
         this.dataStore.update("t1",
-                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.string().name("k").build())),
                 List.of());
         this.dataStore.update("t2",
-                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.string().name("k").build())),
                 List.of());
         this.dataStore.update("test",
-                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
+                new TableSchemaDesc("k", List.of(ColumnSchemaDesc.string().name("k").build())),
                 List.of());
         assertThat("all", this.dataStore.list(Set.of("")), containsInAnyOrder("t1", "t2", "test"));
         assertThat("all", this.dataStore.list(Set.of("t")), containsInAnyOrder("t1", "t2", "test"));
@@ -150,22 +154,17 @@ public class DataStoreTest {
 
     @Test
     public void testUpdate() {
-        var objDesc = ColumnSchemaDesc.builder().name("v").type("OBJECT").pythonType("test-py")
-                        .attributes(List.of(
-                                ColumnSchemaDesc.builder().name("property").type("STRING")
-                                        .build()
-                        ));
+        var objDesc = ColumnSchemaDesc.objectOf("test-py", ColumnSchemaDesc.string().name("property")).name("v");
         var desc = new TableSchemaDesc("k",
-                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("x").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("u").type("LIST").elementType(objDesc.build()).build(),
-                        ColumnSchemaDesc.builder().name("l").type("LIST")
-                                .elementType(ColumnSchemaDesc.builder().name("v").type("INT32").build())
+                List.of(ColumnSchemaDesc.string().name("k").build(),
+                        ColumnSchemaDesc.int32().name("a").build(),
+                        ColumnSchemaDesc.int32().name("x").build(),
+                        ColumnSchemaDesc.listOf(objDesc).name("u").build(),
+                        ColumnSchemaDesc.listOf(ColumnSchemaDesc.int32()).name("l")
                                 .attributes(List.of(
-                                        ColumnSchemaDesc.builder().index(1).type("STRING").build(),
+                                        ColumnSchemaDesc.string().index(1).build(),
                                         objDesc.index(3).build()
-                                    ))
+                                ))
                                 .build()
 
                 ));
@@ -238,8 +237,8 @@ public class DataStoreTest {
     @Test
     public void testQuery() {
         var desc = new TableSchemaDesc("k",
-                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("a").type("INT32").build()));
+                List.of(ColumnSchemaDesc.string().name("k").build(),
+                        ColumnSchemaDesc.int32().name("a").build()));
         this.dataStore.update("t1",
                 desc,
                 List.of(Map.of("k", "0", "a", "5"),
@@ -441,7 +440,7 @@ public class DataStoreTest {
         }
 
         var encodeString = new EncodeString();
-        var testParams = new boolean[]{true, false, true, false, true, false};
+        var testParams = new boolean[] {true, false, true, false, true, false};
         for (boolean rawResult : testParams) {
             var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                     .tableName("t1")
@@ -1156,6 +1155,11 @@ public class DataStoreTest {
                         put("m", Map.of("01", "0002"));
                         // list with multiple types
                         put("n", List.of("00000001", "02", "3", "04", "05"));
+                        // map with multiple types
+                        put("o", List.of(
+                                List.of("01", "00000001"),
+                                List.of("foo", Long.toHexString(Double.doubleToLongBits(4.2))),
+                                List.of("03", "00000003")));
                         put("complex", Map.of("a", List.of(List.of("00000001")),
                                 "b", List.of(List.of("00000002")),
                                 "c", Map.of("t", List.of("00000004"))));
@@ -1206,80 +1210,46 @@ public class DataStoreTest {
                         put("l", List.of());
                         put("m", Map.of());
                         put("n", List.of());
+                        put("o", Map.of());
                     }
                 });
+
+        var int8Type = ColumnSchemaDesc.int8();
+        var int16Type = ColumnSchemaDesc.int16();
+        var int32Type = ColumnSchemaDesc.int32();
+        var float64Type = ColumnSchemaDesc.float64();
+        var stringType = ColumnSchemaDesc.string();
+
         var columnSchemaList = List.of(
-                ColumnSchemaDesc.builder().name("key").type("STRING").build(),
-                ColumnSchemaDesc.builder().name("a").type("BOOL").build(),
-                ColumnSchemaDesc.builder().name("b").type("INT8").build(),
-                ColumnSchemaDesc.builder().name("c").type("INT16").build(),
-                ColumnSchemaDesc.builder().name("d").type("INT32").build(),
-                ColumnSchemaDesc.builder().name("e").type("INT64").build(),
-                ColumnSchemaDesc.builder().name("f").type("FLOAT32").build(),
-                ColumnSchemaDesc.builder().name("g").type("FLOAT64").build(),
-                ColumnSchemaDesc.builder().name("h").type("BYTES").build(),
-                ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build(),
-                ColumnSchemaDesc.builder().name("j")
-                        .type("LIST")
-                        .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
+                stringType.name("key").build(),
+                ColumnSchemaDesc.bool().name("a").build(),
+                int8Type.name("b").build(),
+                int16Type.name("c").build(),
+                int32Type.name("d").build(),
+                ColumnSchemaDesc.int64().name("e").build(),
+                ColumnSchemaDesc.float32().name("f").build(),
+                float64Type.name("g").build(),
+                ColumnSchemaDesc.bytes().name("h").build(),
+                ColumnSchemaDesc.unknown().name("i").build(),
+                ColumnSchemaDesc.listOf(int32Type).name("j").build(),
+                ColumnSchemaDesc.objectOf("t", ColumnSchemaDesc.int32().name("a"), ColumnSchemaDesc.int32().name("b"))
+                        .name("k")
                         .build(),
-                ColumnSchemaDesc.builder().name("k")
-                        .type("OBJECT")
-                        .pythonType("t")
-                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                                ColumnSchemaDesc.builder().name("b").type("INT32").build()))
+                ColumnSchemaDesc.tupleOf(int32Type).name("l").build(),
+                ColumnSchemaDesc.mapOf(int8Type, int16Type).name("m").build(),
+                ColumnSchemaDesc.listOf(int8Type).name("n")
+                        .attributes(List.of(ColumnSchemaDesc.int32().index(0).build(),
+                                ColumnSchemaDesc.string().index(2).build()))
                         .build(),
-                ColumnSchemaDesc.builder().name("l")
-                        .type("TUPLE")
-                        .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
+                ColumnSchemaDesc.mapOf(int8Type, int32Type,
+                                Map.of(1, new KeyValuePairSchema(stringType.build(), float64Type.build())))
+                        .name("o")
                         .build(),
-                ColumnSchemaDesc.builder().name("m")
-                        .type("MAP")
-                        .keyType(ColumnSchemaDesc.builder().name("key").type("INT8").build())
-                        .valueType(ColumnSchemaDesc.builder().name("value").type("INT16").build())
-                        .build(),
-                ColumnSchemaDesc.builder().name("n")
-                        .type("LIST")
-                        .elementType(ColumnSchemaDesc.builder().name("element").type("INT8").build())
-                        .attributes(List.of(ColumnSchemaDesc.builder().name("").index(0).type("INT32").build(),
-                                ColumnSchemaDesc.builder().name("").index(2).type("STRING").build()))
-                        .build(),
-                ColumnSchemaDesc.builder().name("complex")
-                        .type("OBJECT")
-                        .pythonType("tt")
-                        .attributes(List.of(
-                                ColumnSchemaDesc.builder().name("a")
-                                        .type("LIST")
-                                        .elementType(ColumnSchemaDesc.builder()
-                                                .name("element")
-                                                .type("TUPLE")
-                                                .elementType(ColumnSchemaDesc.builder().name("element").type("INT32")
-                                                        .build())
-                                                .build())
-                                        .build(),
-                                ColumnSchemaDesc.builder()
-                                        .name("b")
-                                        .type("TUPLE")
-                                        .elementType(ColumnSchemaDesc.builder()
-                                                .name("element")
-                                                .type("LIST")
-                                                .elementType(ColumnSchemaDesc.builder()
-                                                        .name("element")
-                                                        .type("INT32")
-                                                        .build())
-                                                .build())
-                                        .build(),
-                                ColumnSchemaDesc.builder().name("c").type("MAP")
-                                        .keyType(ColumnSchemaDesc.builder().name("key").type("STRING").build())
-                                        .valueType(ColumnSchemaDesc.builder().name("value")
-                                                .type("LIST")
-                                                .elementType(
-                                                        ColumnSchemaDesc.builder()
-                                                                .name("element")
-                                                                .type("INT32")
-                                                                .build())
-                                                .build())
-                                        .build()))
+                ColumnSchemaDesc.objectOf("tt",
+                                ColumnSchemaDesc.listOf(ColumnSchemaDesc.tupleOf(int32Type)).name("a"),
+                                ColumnSchemaDesc.tupleOf(ColumnSchemaDesc.listOf(int32Type)).name("b"),
+                                ColumnSchemaDesc.mapOf(stringType, ColumnSchemaDesc.listOf(int32Type)).name("c")
+                        ).name("complex")
                         .build());
         var schema = new TableSchemaDesc("key", columnSchemaList);
         var expected = new RecordList(
@@ -1376,6 +1346,18 @@ public class DataStoreTest {
                                         .columnValueHints(List.of("1", "2", "4", "5", "3"))
                                         .build())
                                 .build());
+                        put("o", ColumnHintsDesc.builder()
+                                .typeHints(List.of("MAP"))
+                                .columnValueHints(List.of())
+                                .keyHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT8", "STRING"))
+                                        .columnValueHints(List.of("1", "3", "foo"))
+                                        .build())
+                                .valueHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("FLOAT64", "INT32"))
+                                        .columnValueHints(List.of("1", "3", "4.2"))
+                                        .build())
+                                .build());
                         put("complex", ColumnHintsDesc.builder()
                                 .typeHints(List.of("OBJECT"))
                                 .columnValueHints(List.of())
@@ -1436,6 +1418,13 @@ public class DataStoreTest {
                 .build());
         result.getColumnSchemaMap().entrySet()
                 .forEach(entry -> entry.setValue(new ColumnSchema(entry.getValue().toColumnSchemaDesc(), 0)));
+
+        var originFlatMap = records.get(0).get("o");
+        // hack flat map in record list
+        // because the scan method returns map when the object type is map, not flat map
+        records.get(0).put("o", Map.of("01", "00000001", "foo", Long.toHexString(Double.doubleToLongBits(4.2)),
+                "03", "00000003"));
+
         assertEquals(expected, result);
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1445,7 +1434,27 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
+        // restore flat map in record list
+        records.get(0).put("o", originFlatMap);
         var encoded = encodeResultWithType(expected);
+
+        // encode of map value will return list of map,
+        // the order of the list items is not guaranteed,
+        // so we sort the list items to make sure the test is stable
+        Consumer<RecordList> sortMapValue = r -> {
+            for (var record : r.getRecords()) {
+                if (!record.containsKey("o")) {
+                    continue;
+                }
+                // noinspection unchecked
+                var col = (Map<String, Object>) record.get("o");
+                // noinspection unchecked
+                var o = (List<Map<String, Object>>) col.get("value");
+                o.sort(Comparator.comparing(m -> m.get("key").toString()));
+            }
+        };
+        List.of(encoded, result).forEach(sortMapValue);
+
         assertEquals(encoded, result);
 
         this.dataStore.update("t",
@@ -1472,6 +1481,7 @@ public class DataStoreTest {
                         put("l", ColumnType.TUPLE);
                         put("m", ColumnType.MAP);
                         put("n", ColumnType.LIST);
+                        put("o", ColumnType.MAP);
                         put("complex", ColumnType.OBJECT);
                     }
                 }));
@@ -1486,7 +1496,8 @@ public class DataStoreTest {
         encoded.getRecords().add(0, Map.of("key", Map.of("type", "INT32", "value", "00000001")));
         encoded.getColumnHints().get("key").setTypeHints(List.of("INT32", "STRING"));
         encoded.getColumnHints().get("key").setColumnValueHints(List.of("1", "x", "y", "z"));
-        assertThat(result, is(encoded));
+        List.of(encoded, result).forEach(sortMapValue);
+        assertEquals(encoded, result);
 
         // check WAL
         this.dataStore.terminate();
@@ -1502,7 +1513,9 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
-        assertThat(result, is(encoded));
+
+        List.of(encoded, result).forEach(sortMapValue);
+        assertEquals(encoded, result);
         // check parquet
         while (this.dataStore.hasDirtyTables()) {
             Thread.sleep(100);
@@ -1517,7 +1530,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
-        assertThat(result, is(encoded));
+        List.of(encoded, result).forEach(sortMapValue);
+        assertEquals(encoded, result);
     }
 
     private static RecordList encodeResultWithType(RecordList records) {
@@ -1542,7 +1556,7 @@ public class DataStoreTest {
         }
         switch (schema.getType()) {
             case LIST:
-            case TUPLE:
+            case TUPLE: {
                 var items = (List<?>) value;
                 var encoded = new ArrayList<>();
                 for (int i = 0; i < items.size(); ++i) {
@@ -1557,14 +1571,38 @@ public class DataStoreTest {
                 }
                 value = encoded;
                 break;
-            case MAP:
-                value = ((Map<?, ?>) value).entrySet().stream()
-                        .map(entry -> Map.of(
-                                "key", encodeValueWithType(schema.getKeySchema(), entry.getKey()),
-                                "value", encodeValueWithType(schema.getValueSchema(), entry.getValue())))
-                        .collect(Collectors.toList());
-
+            }
+            case MAP: {
+                if (value instanceof List<?>) {
+                    // map transformed to list of map.entry
+                    var items = (List<?>) value;
+                    var encoded = new ArrayList<Map<String, Object>>();
+                    for (int i = 0; i < items.size(); i++) {
+                        var item = items.get(i);
+                        Pair<ColumnSchema, ColumnSchema> entrySchema = null;
+                        if (schema.getSparseKeyValueSchema() != null) {
+                            entrySchema = schema.getSparseKeyValueSchema().get(i);
+                        }
+                        if (entrySchema == null) {
+                            // use the default schema
+                            entrySchema = Pair.of(schema.getKeySchema(), schema.getValueSchema());
+                        }
+                        var entry = (List<?>) item;
+                        encoded.add(Map.of(
+                                "key", encodeValueWithType(entrySchema.getLeft(), entry.get(0)),
+                                "value", encodeValueWithType(entrySchema.getRight(), entry.get(1))));
+                    }
+                    value = encoded;
+                } else {
+                    // old version client posted record with map
+                    value = ((Map<?, ?>) value).entrySet().stream()
+                            .map(entry -> Map.of(
+                                    "key", encodeValueWithType(schema.getKeySchema(), entry.getKey()),
+                                    "value", encodeValueWithType(schema.getValueSchema(), entry.getValue())))
+                            .collect(Collectors.toList());
+                }
                 break;
+            }
             case OBJECT:
                 ret.put("pythonType", schema.getPythonType());
                 //noinspection unchecked

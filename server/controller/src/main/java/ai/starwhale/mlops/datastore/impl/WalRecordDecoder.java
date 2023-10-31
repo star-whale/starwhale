@@ -134,13 +134,10 @@ public class WalRecordDecoder {
 
     private static BaseValue decodeMap(ColumnSchema columnSchema, @NonNull Wal.Column col) {
         var ret = new MapValue();
+        // the type info in columnSchema is not reliable, do not use it
         for (var entry : col.getMapValueList()) {
-            ret.put(WalRecordDecoder.decodeValue(
-                            columnSchema == null ? null : columnSchema.getKeySchema(),
-                            entry.getKey()),
-                    WalRecordDecoder.decodeValue(
-                            columnSchema == null ? null : columnSchema.getValueSchema(),
-                            entry.getValue()));
+            ret.put(WalRecordDecoder.decodeValue(null, entry.getKey()),
+                    WalRecordDecoder.decodeValue(null, entry.getValue()));
         }
         return ret;
     }

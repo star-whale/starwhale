@@ -18,7 +18,14 @@ package ai.starwhale.mlops.datastore;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -79,13 +86,13 @@ public class ColumnSchemaDesc {
     private ColumnSchemaDesc elementType;
 
     /**
-     * This field represents the type of keys in the map. It is only used when type is MAP. The name field of
+     * This field represents the main type of keys in the map. It is only used when type is MAP. The name field of
      * keyType is never used.
      */
     private ColumnSchemaDesc keyType;
 
     /**
-     * This field represents the type of values in map. It is only used when type is MAP. The name field of
+     * This field represents the main type of values in map. It is only used when type is MAP. The name field of
      * valueType is never used.
      */
     private ColumnSchemaDesc valueType;
@@ -94,5 +101,93 @@ public class ColumnSchemaDesc {
      * This field describes the attributes of object type.
      * Or it describes the columns of list/tuple type.
      */
+    // https://github.com/swagger-api/swagger-core/issues/3484
+    @ArraySchema(schema = @Schema(implementation = ColumnSchemaDesc.class))
     private List<ColumnSchemaDesc> attributes;
+
+    /**
+     * This field describes the sparse &lt;key, value&gt; schema pair of map type.
+     */
+
+    @Data
+    @AllArgsConstructor
+    public static class KeyValuePairSchema {
+        private ColumnSchemaDesc keyType;
+        private ColumnSchemaDesc valueType;
+    }
+
+    private Map<Integer, KeyValuePairSchema> sparseKeyValuePairSchema;
+
+    public static ColumnSchemaDescBuilder int8() {
+        return ColumnSchemaDesc.builder().type(ColumnType.INT8.name());
+    }
+
+    public static ColumnSchemaDescBuilder int16() {
+        return ColumnSchemaDesc.builder().type(ColumnType.INT16.name());
+    }
+
+    public static ColumnSchemaDescBuilder int32() {
+        return ColumnSchemaDesc.builder().type(ColumnType.INT32.name());
+    }
+
+    public static ColumnSchemaDescBuilder int64() {
+        return ColumnSchemaDesc.builder().type(ColumnType.INT64.name());
+    }
+
+    public static ColumnSchemaDescBuilder float32() {
+        return ColumnSchemaDesc.builder().type(ColumnType.FLOAT32.name());
+    }
+
+    public static ColumnSchemaDescBuilder float64() {
+        return ColumnSchemaDesc.builder().type(ColumnType.FLOAT64.name());
+    }
+
+    public static ColumnSchemaDescBuilder bool() {
+        return ColumnSchemaDesc.builder().type(ColumnType.BOOL.name());
+    }
+
+    public static ColumnSchemaDescBuilder bytes() {
+        return ColumnSchemaDesc.builder().type(ColumnType.BYTES.name());
+    }
+
+    public static ColumnSchemaDescBuilder unknown() {
+        return ColumnSchemaDesc.builder().type(ColumnType.UNKNOWN.name());
+    }
+
+    public static ColumnSchemaDescBuilder string() {
+        return ColumnSchemaDesc.builder().type(ColumnType.STRING.name());
+    }
+
+    public static ColumnSchemaDescBuilder listOf(ColumnSchemaDescBuilder elementType) {
+        return ColumnSchemaDesc.builder().type(ColumnType.LIST.name()).elementType(elementType.name("element").build());
+    }
+
+    public static ColumnSchemaDescBuilder tupleOf(ColumnSchemaDescBuilder elementType) {
+        return ColumnSchemaDesc.builder()
+                .type(ColumnType.TUPLE.name())
+                .elementType(elementType.name("element").build());
+    }
+
+    public static ColumnSchemaDescBuilder mapOf(
+            @NotNull ColumnSchemaDescBuilder keyType,
+            @NotNull ColumnSchemaDescBuilder valueType,
+            @Null Map<Integer, KeyValuePairSchema> sparseKeyValuePairSchema
+    ) {
+        return ColumnSchemaDesc.builder()
+                .type(ColumnType.MAP.name())
+                .keyType(keyType.name("key").build())
+                .valueType(valueType.name("value").build())
+                .sparseKeyValuePairSchema(sparseKeyValuePairSchema);
+    }
+
+    public static ColumnSchemaDescBuilder mapOf(ColumnSchemaDescBuilder keyType, ColumnSchemaDescBuilder valueType) {
+        return mapOf(keyType, valueType, null);
+    }
+
+    public static ColumnSchemaDescBuilder objectOf(String pythonType, ColumnSchemaDescBuilder... attributes) {
+        return ColumnSchemaDesc.builder()
+                .type(ColumnType.OBJECT.name())
+                .pythonType(pythonType)
+                .attributes(Stream.of(attributes).map(ColumnSchemaDescBuilder::build).collect(Collectors.toList()));
+    }
 }
