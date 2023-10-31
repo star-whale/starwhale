@@ -60,7 +60,7 @@ public class ProjectVo implements Serializable {
     }
 
     public static ProjectVo system() {
-        return new ProjectVo("0", "SYSTEM", null,
+        return new ProjectVo("0", "SYSTEM", "System",
                 Privacy.PUBLIC.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
     }
 
