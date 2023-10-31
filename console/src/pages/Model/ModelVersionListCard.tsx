@@ -25,6 +25,7 @@ import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { VersionText } from '@starwhale/ui'
+import User from '@user/components/User'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -74,7 +75,15 @@ export default function ModelVersionListCard() {
         <Card title={t('model versions')}>
             <Table
                 isLoading={modelsInfo.isLoading}
-                columns={[t('Model Version'), t('Alias'), t('Shared'), t('Size'), t('Created'), t('Action')]}
+                columns={[
+                    t('Model Version'),
+                    t('Alias'),
+                    t('Shared'),
+                    t('Size'),
+                    t('Created'),
+                    t('Owner'),
+                    t('Action'),
+                ]}
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
@@ -94,6 +103,7 @@ export default function ModelVersionListCard() {
                             <Shared key='shared' shared={model.shared} isTextShow />,
                             model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),
+                            model.owner && <User user={model.owner} />,
                             <ButtonGroup key='action'>
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}

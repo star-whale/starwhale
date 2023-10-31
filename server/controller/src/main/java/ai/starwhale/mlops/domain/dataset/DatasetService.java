@@ -199,6 +199,7 @@ public class DatasetService {
                             BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
                     vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
                 }
+                vo.setOwner(userService.findUserById(ds.getOwnerId()));
                 return vo;
             });
         }
@@ -358,8 +359,11 @@ public class DatasetService {
             var entities = datasetVersionMapper.list(datasetId, query.getVersionName());
             var latest = datasetVersionMapper.findByLatest(datasetId);
             var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.DATASET, datasetId, entities);
-            return PageUtil.toPageInfo(entities, item ->
-                    versionConvertor.convert(item, latest, tags.get(item.getId())));
+            return PageUtil.toPageInfo(entities, item -> {
+                var vo = versionConvertor.convert(item, latest, tags.get(item.getId()));
+                vo.setOwner(userService.findUserById(item.getOwnerId()));
+                return vo;
+            });
         }
     }
 
