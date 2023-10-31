@@ -43,7 +43,4 @@ public class CreateProjectRequest implements Serializable {
     @JsonProperty("description")
     private String description;
 
-    @JsonProperty("overview")
-    private String overview;
-
 }

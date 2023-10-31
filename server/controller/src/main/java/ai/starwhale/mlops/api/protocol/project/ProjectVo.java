@@ -43,8 +43,6 @@ public class ProjectVo implements Serializable {
 
     private String description;
 
-    private String overview;
-
     @NotNull
     private String privacy;
 
@@ -57,12 +55,12 @@ public class ProjectVo implements Serializable {
     private StatisticsVo statistics;
 
     public static ProjectVo empty() {
-        return new ProjectVo("", "", "", "",
+        return new ProjectVo("", "", "",
                 Privacy.PRIVATE.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
     }
 
     public static ProjectVo system() {
-        return new ProjectVo("0", "SYSTEM", "System", null,
+        return new ProjectVo("0", "SYSTEM", null,
                 Privacy.PUBLIC.toString(), -1L, UserVo.empty(), StatisticsVo.empty());
     }
 
@@ -81,7 +79,6 @@ public class ProjectVo implements Serializable {
                 .createdTime(project.getCreatedTime().getTime())
                 .privacy(project.getPrivacy().name())
                 .description(project.getDescription())
-                .overview(project.getOverview())
                 .statistics(StatisticsVo.empty())
                 .build();
     }
@@ -99,7 +96,6 @@ public class ProjectVo implements Serializable {
                 .createdTime(entity.getCreatedTime().getTime())
                 .privacy(Privacy.fromValue(entity.getPrivacy()).name())
                 .description(entity.getProjectDescription())
-                .overview(entity.getOverview())
                 .statistics(StatisticsVo.empty())
                 .build();
     }

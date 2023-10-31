@@ -35,12 +35,11 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface ProjectMapper {
 
-    String SIMPLIFY_COLUMNS = "id,project_name,owner_id,privacy,project_description,"
+    String COLUMNS = "id,project_name,owner_id,privacy,project_description,"
             + "is_default,is_deleted,created_time,modified_time";
-    String COLUMNS =  SIMPLIFY_COLUMNS + ",overview";
 
-    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, overview, is_default)"
-            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{overview}, #{isDefault})")
+    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, is_default)"
+            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{isDefault})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(@NotNull ProjectEntity project);
 
@@ -60,7 +59,10 @@ public interface ProjectMapper {
             + " where id = #{id}")
     ProjectEntity find(@Param("id") Long id);
 
-    @Select("select " + SIMPLIFY_COLUMNS + " from project_info"
+    @Select("select readme from project_info where id = #{id}")
+    String getReadme(@Param("id") Long id);
+
+    @Select("select " + COLUMNS + " from project_info"
             + " where project_name = #{projectName}"
             + " and is_deleted = 0")
     List<ProjectEntity> findByName(@Param("projectName") String projectName);
@@ -131,8 +133,8 @@ public interface ProjectMapper {
                     if (Objects.nonNull(project.getProjectDescription())) {
                         SET("project_description = #{projectDescription}");
                     }
-                    if (Objects.nonNull(project.getOverview())) {
-                        SET("overview = #{overview}");
+                    if (Objects.nonNull(project.getReadme())) {
+                        SET("readme = #{readme}");
                     }
                     if (Objects.nonNull(project.getOwnerId())) {
                         SET("owner_id = #{ownerId}");
@@ -153,7 +155,7 @@ public interface ProjectMapper {
                 @Param("order") String order) {
             return new SQL() {
                 {
-                    SELECT(SIMPLIFY_COLUMNS);
+                    SELECT(COLUMNS);
                     FROM("project_info");
                     WHERE("is_deleted = 0");
                     if (userId != null) {
@@ -178,7 +180,7 @@ public interface ProjectMapper {
                 @Param("order") String order) {
             return new SQL() {
                 {
-                    SELECT(SIMPLIFY_COLUMNS);
+                    SELECT(COLUMNS);
                     FROM("project_info");
                     WHERE("is_deleted = 0");
                     if (StrUtil.isNotEmpty(projectName)) {
@@ -196,7 +198,7 @@ public interface ProjectMapper {
         public String listRemovedSql(@Param("projectName") String projectName, @Param("ownerId") Long ownerId) {
             return new SQL() {
                 {
-                    SELECT(SIMPLIFY_COLUMNS);
+                    SELECT(COLUMNS);
                     FROM("project_info");
                     WHERE("is_deleted = 1");
                     if (StrUtil.isNotEmpty(projectName)) {

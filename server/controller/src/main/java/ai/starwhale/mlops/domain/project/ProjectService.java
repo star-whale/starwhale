@@ -136,7 +136,6 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .privacy(Privacy.fromValue(entity.getPrivacy()))
                 .createdTime(entity.getCreatedTime())
                 .description(entity.getProjectDescription())
-                .overview(entity.getOverview())
                 .isDefault(Objects.equals(entity.getIsDefault(), 1))
                 .isDeleted(Objects.equals(entity.getIsDeleted(), 1))
                 .owner(entity.getOwnerId() == null ? null : userService.loadUserById(entity.getOwnerId()))
@@ -155,6 +154,10 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
      */
     public ProjectVo getProjectVo(String projectUrl) {
         return ProjectVo.fromBo(findProject(projectUrl), idConvertor);
+    }
+
+    public String getReadme(String projectUrl) {
+        return projectMapper.getReadme(projectDao.getProjectId(projectUrl));
     }
 
     public PageInfo<ProjectVo> listProject(String projectName, OrderParams orderParams, User user) {
@@ -226,7 +229,6 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .ownerId(project.getOwner().getId())
                 .privacy(project.getPrivacy().getValue())
                 .projectDescription(project.getDescription())
-                .overview(project.getOverview())
                 .isDefault(project.isDefault() ? 1 : 0)
                 .build();
         projectMapper.insert(entity);
@@ -329,7 +331,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
 
     @Transactional
     public Boolean updateProject(
-            String projectUrl, String projectName, String description, String overview, String privacy) {
+            String projectUrl, String projectName, String description, String readme, String privacy) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
@@ -355,7 +357,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
-                .overview(overview)
+                .readme(readme)
                 .privacy(privacyEnum.getValue())
                 .build();
         int res = projectMapper.update(entity);

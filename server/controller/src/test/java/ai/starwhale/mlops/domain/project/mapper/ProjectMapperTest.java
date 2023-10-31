@@ -74,7 +74,7 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         userMapper.insert(user);
         project = ProjectEntity.builder()
                 .projectName("pjn")
-                .overview("overview")
+                .readme("readme")
                 .ownerId(user.getId())
                 .privacy(1)
                 .isDefault(1)
@@ -137,15 +137,14 @@ public class ProjectMapperTest extends MySqlContainerHolder {
                 .projectName("pxn3")
                 .ownerId(user.getId())
                 .privacy(0)
-                .overview("overview3") // new overview content
+                .readme("readme3") // new readme content
                 .isDefault(0)
                 .build();
         project3.setId(project.getId());
         projectMapper.update(project3);
 
-        var newest = projectMapper.find(project.getId());
-        validProject(project3, user, newest);
-        Assertions.assertEquals(project3.getOverview(), newest.getOverview());
+        validProject(project3, user, projectMapper.find(project.getId()));
+        Assertions.assertEquals(project3.getReadme(), projectMapper.getReadme(project.getId()));
     }
 
     @Test

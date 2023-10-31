@@ -37,8 +37,6 @@ public class Project {
 
     private String description;
 
-    private String overview;
-
     private Privacy privacy;
 
     private User owner;
