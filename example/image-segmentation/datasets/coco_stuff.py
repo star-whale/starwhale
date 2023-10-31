@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import json
-import zipfile
 from pathlib import Path
 from collections import defaultdict
-
-import requests
-from tqdm import tqdm
 
 from starwhale import Image, dataset, init_logger
 from starwhale.utils import console
 from starwhale.base.data_type import COCOObjectAnnotation
+
+try:
+    from .utils import extract, download
+except ImportError:
+    from utils import extract, download
 
 # set Starwhale Python SDK logger level to 3 (DEBUG)
 init_logger(3)
@@ -19,48 +20,6 @@ ROOT = Path(__file__).parent
 DATA_DIR = ROOT / "data" / "coco2017-stuff"
 VAL_DIR_NAME = "val2017"
 ANNOTATION_DIR_NAME = "annotations"
-
-
-def extract(from_path: Path, to_path: Path, chk_path: Path) -> None:
-    if not from_path.exists() or from_path.suffix != ".zip":
-        raise ValueError(f"invalid zip file: {from_path}")
-
-    if chk_path.exists() and chk_path.is_dir():
-        console.log(f"skip extract {from_path}, dir {chk_path} already exists")
-        return
-
-    console.log(f"extract {from_path} to {to_path} ...")
-    with zipfile.ZipFile(from_path, "r", zipfile.ZIP_STORED) as z:
-        for file in tqdm(
-            iterable=z.namelist(),
-            total=len(z.namelist()),
-            desc=f"extract {from_path.name}",
-        ):
-            z.extract(member=file, path=to_path)
-
-
-def download(url: str, to_path: Path) -> None:
-    if to_path.exists():
-        console.log(f"skip download {url}, file {to_path} already exists")
-        return
-
-    to_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with requests.get(url, timeout=60, stream=True) as r:
-        r.raise_for_status()
-        size = int(r.headers.get("content-length", 0))
-        with tqdm(
-            total=size,
-            unit="B",
-            unit_scale=True,
-            desc=f"download {url}",
-            initial=0,
-            unit_divisor=1024,
-        ) as pbar:
-            with to_path.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-                    pbar.update(len(chunk))
 
 
 def download_and_extract(root_dir: Path) -> None:
