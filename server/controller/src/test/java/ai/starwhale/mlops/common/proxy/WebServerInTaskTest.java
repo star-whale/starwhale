@@ -75,4 +75,15 @@ class WebServerInTaskTest {
         gatewayUrl = webServerInTask.generateGatewayUrl(1L, "1.1.1.1", 2);
         assertEquals("http://1.1.1.1:2", gatewayUrl);
     }
+
+    @Test
+    void testGenerateServiceRoot() {
+        when(featuresProperties.isJobProxyEnabled()).thenReturn(true);
+        var root = webServerInTask.generateServiceRoot(1L, 2);
+        assertEquals("/gateway/task/1/2", root);
+
+        when(featuresProperties.isJobProxyEnabled()).thenReturn(false);
+        root = webServerInTask.generateServiceRoot(1L, 2);
+        assertEquals("", root);
+    }
 }

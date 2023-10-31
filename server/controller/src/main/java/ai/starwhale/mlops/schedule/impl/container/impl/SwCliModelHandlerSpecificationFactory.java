@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.container.impl;
 
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -35,25 +36,35 @@ public class SwCliModelHandlerSpecificationFactory implements TaskContainerSpeci
     final RunTimeProperties runTimeProperties;
     final TaskTokenValidator taskTokenValidator;
 
+    private final WebServerInTask webServerInTask;
+
     public SwCliModelHandlerSpecificationFactory(
             @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.task.dev-port}") int devPort,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             RunTimeProperties runTimeProperties,
-            TaskTokenValidator taskTokenValidator
+            TaskTokenValidator taskTokenValidator,
+            WebServerInTask webServerInTask
     ) {
         this.instanceUri = instanceUri;
         this.devPort = devPort;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.runTimeProperties = runTimeProperties;
         this.taskTokenValidator = taskTokenValidator;
+        this.webServerInTask = webServerInTask;
     }
 
     @Override
     public ContainerSpecification containerSpecificationOf(Task task) {
-        return new SwCliModelHandlerContainerSpecification(instanceUri, devPort, datasetLoadBatchSize,
+        return new SwCliModelHandlerContainerSpecification(
+                instanceUri,
+                devPort,
+                datasetLoadBatchSize,
                 runTimeProperties,
-                taskTokenValidator, task);
+                taskTokenValidator,
+                webServerInTask,
+                task
+        );
     }
 
     @Override
