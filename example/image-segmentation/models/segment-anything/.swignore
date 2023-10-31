@@ -1,0 +1,4 @@
+#.swignore file is used to ignore files and directories for Starwhale Model building.
+#In this example, we only want to include `sam_vi_b` checkpoint, so we ignore all other checkpoints.
+checkpoints/sam_vit_h_*
+checkpoints/sam_vit_l_*

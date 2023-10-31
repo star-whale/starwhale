@@ -116,8 +116,6 @@ docker/charts/starwhale-*.tgz
 gradio
 .pnpm-store/
 console/src/assets/GradioWidget/
-/example/**/models/
-/example/**/data/
 
 /example/**/pretrained_models/
 

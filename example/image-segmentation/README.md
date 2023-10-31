@@ -14,6 +14,9 @@ What we learn
 - build an unified Starwhale Runtime to run all models.
 - use Starwhale `replicas` feature to speedup model evaluation.
 - use `Starwhale.Image`, `Starwhale.COCOObjectAnnotation` and `Starwhale.BoundingBox` to represent Dataset type.
+- use `.swignore` file to ignore unexpected files or folders in the Starwhale Model building.
+- use Starwhale Online Evaluation.
+- use `Starwhale.Evaluation` SDK to log evaluation metrics into the user custom tables.
 
 Models
 ------
