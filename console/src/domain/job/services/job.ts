@@ -18,7 +18,7 @@ export async function listJobs(projectId: string, query: IListQuerySchema): Prom
     return resp.data
 }
 
-export async function fetchJob(projectId: string, jobId: string): Promise<any> {
+export async function fetchJob(projectId: string, jobId: string): Promise<IJobDetailSchema> {
     const resp = await axios.get<IJobDetailSchema>(`/api/v1/project/${projectId}/job/${jobId}`)
     return resp.data
 }

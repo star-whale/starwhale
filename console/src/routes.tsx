@@ -59,6 +59,7 @@ import ReportEdit from '@/pages/Report/ReportEdit'
 import JobOverview from './pages/Job/JobOverview'
 import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
 import ClientLogin from '@/pages/Auth/ClientLogin'
+import JobServings from '@/pages/Job/JobServings'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -191,6 +192,11 @@ const Routes = () => {
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/results'
                                             component={EvaluationWidgetResults}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/jobs/:jobId/servings'
+                                            component={JobServings}
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'
