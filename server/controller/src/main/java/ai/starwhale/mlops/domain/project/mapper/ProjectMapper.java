@@ -38,8 +38,8 @@ public interface ProjectMapper {
     String COLUMNS = "id,project_name,owner_id,privacy,project_description,"
             + "is_default,is_deleted,created_time,modified_time";
 
-    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, is_default)"
-            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{isDefault})")
+    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, readme, is_default)"
+            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{readme}, #{isDefault})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(@NotNull ProjectEntity project);
 

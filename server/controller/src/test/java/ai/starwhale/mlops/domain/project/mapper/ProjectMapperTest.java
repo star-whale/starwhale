@@ -137,14 +137,21 @@ public class ProjectMapperTest extends MySqlContainerHolder {
                 .projectName("pxn3")
                 .ownerId(user.getId())
                 .privacy(0)
-                .readme("readme3") // new readme content
+                .readme(null)
                 .isDefault(0)
                 .build();
         project3.setId(project.getId());
         projectMapper.update(project3);
 
         validProject(project3, user, projectMapper.find(project.getId()));
-        Assertions.assertEquals(project3.getReadme(), projectMapper.getReadme(project.getId()));
+        Assertions.assertEquals("readme", projectMapper.getReadme(project.getId()));
+
+        project3 = ProjectEntity.builder()
+                .id(project.getId())
+                .readme("readme-new") // new readme content
+                .build();
+        projectMapper.update(project3);
+        Assertions.assertEquals("readme-new", projectMapper.getReadme(project.getId()));
     }
 
     @Test
