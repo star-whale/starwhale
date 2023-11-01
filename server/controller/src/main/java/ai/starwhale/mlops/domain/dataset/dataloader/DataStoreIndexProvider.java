@@ -60,6 +60,7 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                                 .columns(Map.of(KeyColumn, KeyColumn))
                                 .build()
                 ))
+                .revision(request.getRevision())
                 .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(request.getBatchSize()).build())
                 .build()
         );

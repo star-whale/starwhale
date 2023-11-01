@@ -19,13 +19,16 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 import static ai.starwhale.mlops.exception.SwRequestFrequentException.RequestType.DATASET_LOAD;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
+import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
 import ai.starwhale.mlops.exception.SwRequestFrequentException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import cn.hutool.cache.impl.LRUCache;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Iterables;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,7 +78,7 @@ public class DataReadManager {
 
     public Session getSession(DataReadRequest request) {
         var sessionId = request.getSessionId();
-        var datasetVersionId = request.getDatasetVersionId();
+        var datasetVersionId = request.getDatasetVersion().getId();
 
         return sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId));
     }
@@ -90,11 +93,21 @@ public class DataReadManager {
             throw new SwValidationException(
                     SwValidationException.ValidSubject.DATASET, "endType is required when end is provided");
         }
+        var datasetVersion = request.getDatasetVersion();
+        long revision;
+        try {
+            Manifest manifest = Constants.yamlMapper.readValue(datasetVersion.getVersionMeta(), Manifest.class);
+            revision = Long.parseLong(manifest.getRevision());
+        } catch (JsonProcessingException e) {
+            log.error("version meta read failed for {}", datasetVersion.getId(), e);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASET, "version meta read failed");
+        }
+
         var session = Session.builder()
                 .sessionId(request.getSessionId())
-                .datasetName(request.getDatasetName())
-                .datasetVersion(String.valueOf(request.getDatasetVersionId()))
-                .tableName(request.getTableName())
+                .datasetName(datasetVersion.getDatasetName())
+                .datasetVersion(String.valueOf(datasetVersion.getId()))
+                .tableName(datasetVersion.getIndexTable())
                 .start(request.getStart())
                 .startType(request.getStartType())
                 .startInclusive(request.isStartInclusive())
@@ -102,6 +115,7 @@ public class DataReadManager {
                 .endType(request.getEndType())
                 .endInclusive(request.isEndInclusive())
                 .batchSize(request.getBatchSize())
+                .revision(revision)
                 .build();
         // insert session
         sessionDao.insert(session);
@@ -194,6 +208,7 @@ public class DataReadManager {
                 .end(session.getEnd())
                 .endType(session.getEndType())
                 .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
                 .build();
         // get data index TODO use iterator
         var dataIndices = dataIndexProvider.returnDataIndex(request);

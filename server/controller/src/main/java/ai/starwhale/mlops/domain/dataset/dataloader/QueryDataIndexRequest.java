@@ -31,4 +31,5 @@ public class QueryDataIndexRequest {
     private String end;
     private String endType;
     private boolean endInclusive;
+    private long revision;
 }

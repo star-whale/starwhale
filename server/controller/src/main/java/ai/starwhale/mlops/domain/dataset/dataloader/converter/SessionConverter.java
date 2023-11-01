@@ -40,6 +40,7 @@ public class SessionConverter implements Converter<Session, SessionEntity> {
                 .end(session.getEnd())
                 .endType(session.getEndType())
                 .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
                 .status(session.getStatus())
                 .createdTime(session.getCreatedTime())
                 .build();
@@ -60,6 +61,7 @@ public class SessionConverter implements Converter<Session, SessionEntity> {
                 .end(session.getEnd())
                 .endType(session.getEndType())
                 .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
                 .status(session.getStatus())
                 .createdTime(session.getCreatedTime())
                 .build();

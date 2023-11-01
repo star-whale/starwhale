@@ -43,7 +43,7 @@ public class DataLoader {
     public DataReadLog next(DataReadRequest request) {
         var consumerId = request.getConsumerId();
         var sessionId = request.getSessionId();
-        var datasetVersionId = request.getDatasetVersionId();
+        var datasetVersionId = request.getDatasetVersion().getId();
         Session session = dataReadManager.getSession(request);
         if (session == null) {
             // ensure serially in the same session with the same dataset version

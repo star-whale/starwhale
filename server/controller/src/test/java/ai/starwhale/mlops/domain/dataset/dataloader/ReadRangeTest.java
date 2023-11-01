@@ -30,6 +30,7 @@ import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreScanRangeRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.KeyRangeList;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
@@ -133,16 +134,34 @@ public class ReadRangeTest {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
-        var datasetVersion = 1L;
+        var datasetVersionId = 1L;
         var tableName = "test-table-name";
+        var datasetVersion = DatasetVersion.builder()
+                        .id(datasetVersionId)
+                        .datasetName(datasetName)
+                        .versionMeta("build:\n"
+                                + "  os: Linux\n"
+                                + "  starwhale: 0.0.0.dev0\n"
+                                + "created_at: 2023-10-26 19:33:06 CST\n"
+                                + "data_datastore_revision: '16661'\n"
+                                + "dataset_summary:\n"
+                                + "  blobs_byte_size: 0\n"
+                                + "  deleted_rows: 0\n"
+                                + "  increased_blobs_byte_size: 0\n"
+                                + "  rows: 199999\n"
+                                + "  updated_rows: 199999\n"
+                                + "info_datastore_revision: ''\n"
+                                + "message: ''\n"
+                                + "version: 7lrimg6swyv6h2jxopqbnxnzqljia3xsop2inkom"
+                        )
+                        .indexTable(tableName)
+                        .build();
         var batchSize = 10;
         var consumerIdFor1 = "1";
         var request = DataReadRequest.builder()
                 .sessionId(sessionId)
                 .consumerId(consumerIdFor1)
-                .tableName(tableName)
-                .datasetName(datasetName)
-                .datasetVersionId(datasetVersion)
+                .datasetVersion(datasetVersion)
                 .processedData(List.of())
                 .batchSize(batchSize)
                 .start("0000-000")
@@ -153,8 +172,23 @@ public class ReadRangeTest {
                 .endInclusive(true)
                 .build();
 
-        // case 1: generate
-        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
+        // case 1: invalid params(without startType)
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId))).willReturn(null);
+        assertThrows(SwValidationException.class, () -> dataLoader.next(DataReadRequest.builder()
+                .sessionId(sessionId)
+                .consumerId(consumerIdFor1)
+                .datasetVersion(datasetVersion)
+                .processedData(List.of())
+                .batchSize(batchSize)
+                .start("0000-000") // without startType
+                .startInclusive(true)
+                .end("0000-011")
+                .endType("STRING")
+                .endInclusive(true)
+                .build())
+        );
+
+        // case 2: generate
         given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
             var s = invocation.getArgument(0, Session.class);
             s.setId(sid);
@@ -163,7 +197,7 @@ public class ReadRangeTest {
         given(sessionDao.selectOne(sid)).willReturn(Session.builder()
                         .id(sid)
                         .datasetName(datasetName)
-                        .datasetVersion(String.valueOf(datasetVersion))
+                        .datasetVersion(String.valueOf(datasetVersionId))
                         .tableName(datasetName)
                         .start("0000-000").startType("STRING").startInclusive(true)
                         .end("0000-011").endType("STRING").endInclusive(true)
@@ -240,14 +274,14 @@ public class ReadRangeTest {
         verify(dataReadLogDao, times(0)).updateToProcessed(any(), any(), any(), any());
         verify(sessionDao, times(1)).insert(any());
 
-        // case 2: get next data with exist session and consumer 1
+        // case 3: get next data with exist session and consumer 1
         request.setProcessedData(List.of(
                 DataIndexDesc.builder().start("0000-011").end("0000-011").build()
         ));
         var session = Session.builder()
                 .id(sid)
                 .datasetName(datasetName)
-                .datasetVersion(String.valueOf(datasetVersion))
+                .datasetVersion(String.valueOf(datasetVersionId))
                 .tableName(tableName)
                 .start("0000-000").startType("STRING").startInclusive(true)
                 .end("0000-011").endType("STRING").endInclusive(true)
@@ -255,7 +289,7 @@ public class ReadRangeTest {
                 .status(Status.SessionStatus.FINISHED)
                 .build();
 
-        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(session);
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId))).willReturn(session);
         given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
                 .willReturn(List.of(DataReadLog.builder()
                         .id(2L)
@@ -285,25 +319,6 @@ public class ReadRangeTest {
         verify(dataReadLogDao, times(1))
                 .updateToProcessed(sid, consumerIdFor1, "0000-011", "0000-011");
         verify(sessionDao, times(1)).insert(any());
-
-
-        // case 3: invalid params(without startType)
-        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
-        assertThrows(SwValidationException.class, () -> dataLoader.next(DataReadRequest.builder()
-                .sessionId(sessionId)
-                .consumerId(consumerIdFor1)
-                .tableName(tableName)
-                .datasetName(datasetName)
-                .datasetVersionId(datasetVersion)
-                .processedData(List.of())
-                .batchSize(batchSize)
-                .start("0000-000") // without startType
-                .startInclusive(true)
-                .end("0000-011")
-                .endType("STRING")
-                .endInclusive(true)
-                .build())
-        );
 
     }
 }

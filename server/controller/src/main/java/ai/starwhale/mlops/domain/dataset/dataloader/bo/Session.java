@@ -39,6 +39,8 @@ public class Session {
     private String endType;
     private boolean endInclusive;
 
+    private long revision;
+
     @Builder.Default
     private Status.SessionStatus status = Status.SessionStatus.UNFINISHED;
 

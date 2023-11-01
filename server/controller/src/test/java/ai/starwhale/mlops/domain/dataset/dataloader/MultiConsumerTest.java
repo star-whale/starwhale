@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
@@ -135,8 +136,27 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                 var request = DataReadRequest.builder()
                             .sessionId(sessionId)
                             .consumerId(consumerId)
-                            .datasetName(datasetName)
-                            .tableName("test-table-name")
+                            .datasetVersion(
+                                    DatasetVersion.builder()
+                                            .id(null) // set it on ut
+                                            .datasetName(datasetName)
+                                            .versionMeta("build:\n"
+                                                    + "  os: Linux\n"
+                                                    + "  starwhale: 0.0.0.dev0\n"
+                                                    + "created_at: 2023-10-26 19:33:06 CST\n"
+                                                    + "data_datastore_revision: '16661'\n"
+                                                    + "dataset_summary:\n"
+                                                    + "  blobs_byte_size: 0\n"
+                                                    + "  deleted_rows: 0\n"
+                                                    + "  increased_blobs_byte_size: 0\n"
+                                                    + "  rows: 199999\n"
+                                                    + "  updated_rows: 199999\n"
+                                                    + "info_datastore_revision: ''\n"
+                                                    + "message: ''\n"
+                                                    + "version: 7lrimg6swyv6h2jxopqbnxnzqljia3xsop2inkom"
+                                            )
+                                            .indexTable("test-table-name")
+                                            .build())
                             .processedData(List.of())
                             .batchSize(batchSize)
                             .start(null)
@@ -146,7 +166,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .build();
                 for (long i = 0; i < datasetNum; i++) {
                     // mock multi datasets
-                    request.setDatasetVersionId(i);
+                    request.getDatasetVersion().setId(i);
                     request.setProcessedData(null);
                     for (; ; ) {
                         try {

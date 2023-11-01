@@ -44,6 +44,8 @@ public class SessionEntity {
     private String endType;
     private boolean endInclusive;
 
+    private long revision;
+
     private Status.SessionStatus status;
 
     private Date createdTime;

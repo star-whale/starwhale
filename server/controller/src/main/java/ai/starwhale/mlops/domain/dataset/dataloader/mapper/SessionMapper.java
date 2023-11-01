@@ -30,10 +30,10 @@ public interface SessionMapper {
 
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     @Insert("INSERT into dataset_read_session ("
-            + "session_id, batch_size, dataset_name, dataset_version, table_name, "
+            + "session_id, batch_size, dataset_name, dataset_version, table_name, revision, "
             + "start, start_type, start_inclusive, end, end_type, end_inclusive, status) "
             + "VALUES("
-            + "#{sessionId}, #{batchSize}, #{datasetName}, #{datasetVersion}, #{tableName}, "
+            + "#{sessionId}, #{batchSize}, #{datasetName}, #{datasetVersion}, #{tableName}, #{revision}, "
             + "#{start}, #{startType}, #{startInclusive}, #{end}, #{endType}, #{endInclusive}, #{status}) "
             )
     int insert(SessionEntity session);
