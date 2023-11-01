@@ -38,8 +38,10 @@ public class SessionEntity {
     private boolean currentInclusive;
 
     private String start;
+    private String startType;
     private boolean startInclusive;
     private String end;
+    private String endType;
     private boolean endInclusive;
 
     private Status.SessionStatus status;

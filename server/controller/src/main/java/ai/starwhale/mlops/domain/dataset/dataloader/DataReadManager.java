@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
 import ai.starwhale.mlops.exception.SwRequestFrequentException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import cn.hutool.cache.impl.LRUCache;
 import com.google.common.collect.Iterables;
 import java.util.LinkedList;
@@ -81,14 +82,24 @@ public class DataReadManager {
 
     @Transactional
     public Session generateSession(DataReadRequest request) {
+        if (request.getStart() != null && request.getStartType() == null) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.DATASET, "startType is required when start is provided");
+        }
+        if (request.getEnd() != null && request.getEndType() == null) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.DATASET, "endType is required when end is provided");
+        }
         var session = Session.builder()
                 .sessionId(request.getSessionId())
                 .datasetName(request.getDatasetName())
                 .datasetVersion(String.valueOf(request.getDatasetVersionId()))
                 .tableName(request.getTableName())
                 .start(request.getStart())
+                .startType(request.getStartType())
                 .startInclusive(request.isStartInclusive())
                 .end(request.getEnd())
+                .endType(request.getEndType())
                 .endInclusive(request.isEndInclusive())
                 .batchSize(request.getBatchSize())
                 .build();
@@ -138,17 +149,18 @@ public class DataReadManager {
         }
     }
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRateString = "${sw.dataset.load.read.deal-error-session-interval:1000}")
     public void dealWithErrorSessions() {
-        while (!failSessionQueue.isEmpty()) {
-            FailSession delayed = failSessionQueue.poll();
+        FailSession delayed = failSessionQueue.poll();
+        while (delayed != null) {
             try {
                 this.generate(delayed.sessionId);
             } catch (Exception e) {
                 log.error("Error while deal with error session {}", delayed.sessionId, e);
                 delayed.failCount++;
-                failSessionQueue.add(delayed);
+                failSessionQueue.offer(delayed);
             }
+            delayed = failSessionQueue.poll();
         }
     }
 
@@ -158,6 +170,7 @@ public class DataReadManager {
             return;
         }
         String start = session.getStart();
+        String startType = session.getStartType();
         boolean startInclusive = session.isStartInclusive();
 
         var lastLog = dataReadLogDao.selectLastData(session.getId());
@@ -167,6 +180,7 @@ public class DataReadManager {
                 return;
             } else {
                 start = lastLog.getEnd();
+                startType = lastLog.getStartType();
                 startInclusive = !lastLog.isEndInclusive();
             }
         }
@@ -175,28 +189,32 @@ public class DataReadManager {
                 .tableName(session.getTableName())
                 .batchSize(session.getBatchSize())
                 .start(start)
+                .startType(startType)
                 .startInclusive(startInclusive)
                 .end(session.getEnd())
+                .endType(session.getEndType())
                 .endInclusive(session.isEndInclusive())
                 .build();
         // get data index TODO use iterator
-        var data = dataIndexProvider.returnDataIndex(request);
-        Iterables.partition(
-                data.stream()
-                        .map(dataIndex -> DataReadLog.builder()
-                                .sessionId(session.getId())
-                                .start(dataIndex.getStart())
-                                .startType(dataIndex.getStartType())
-                                .startInclusive(dataIndex.isStartInclusive())
-                                .end(dataIndex.getEnd())
-                                .endType(dataIndex.getEndType())
-                                .endInclusive(dataIndex.isEndInclusive())
-                                .size(dataIndex.getSize())
-                                .status(Status.DataStatus.UNPROCESSED)
-                                .build())
-                        .collect(Collectors.toList()),
-                this.insertBatchSize
-        ).forEach(dataReadLogDao::batchInsert);
+        var dataIndices = dataIndexProvider.returnDataIndex(request);
+        if (!dataIndices.isEmpty()) {
+            Iterables.partition(
+                    dataIndices.stream()
+                            .map(dataIndex -> DataReadLog.builder()
+                                    .sessionId(session.getId())
+                                    .start(dataIndex.getStart())
+                                    .startType(dataIndex.getStartType())
+                                    .startInclusive(dataIndex.isStartInclusive())
+                                    .end(dataIndex.getEnd())
+                                    .endType(dataIndex.getEndType())
+                                    .endInclusive(dataIndex.isEndInclusive())
+                                    .size(dataIndex.getSize())
+                                    .status(Status.DataStatus.UNPROCESSED)
+                                    .build())
+                            .collect(Collectors.toList()),
+                    this.insertBatchSize
+            ).forEach(dataReadLogDao::batchInsert);
+        }
         // save session
         sessionDao.updateToFinished(session.getId());
     }

@@ -47,8 +47,10 @@ public class DataStoreIndexProvider implements DataIndexProvider {
 
         var ranges = dataStore.scanKeyRange(DataStoreScanRangeRequest.builder()
                 .start(request.getStart())
+                .startType(request.getStartType())
                 .startInclusive(request.isStartInclusive())
                 .end(request.getEnd())
+                .endType(request.getEndType())
                 .endInclusive(request.isEndInclusive())
                 .keepNone(true)
                 .rawResult(false)

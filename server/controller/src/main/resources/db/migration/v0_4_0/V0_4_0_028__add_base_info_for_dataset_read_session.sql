@@ -16,3 +16,6 @@
 
 ALTER TABLE dataset_read_session ADD status varchar(100) DEFAULT 'UNFINISHED' NOT NULL;
 UPDATE dataset_read_session set status = 'FINISHED';
+
+ALTER TABLE dataset_read_session ADD start_type varchar(100) NULL;
+ALTER TABLE dataset_read_session ADD end_type varchar(100) NULL;

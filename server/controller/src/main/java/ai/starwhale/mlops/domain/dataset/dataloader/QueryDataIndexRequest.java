@@ -25,8 +25,10 @@ public class QueryDataIndexRequest {
     private String tableName;
     private int batchSize;
     private String start;
+    private String startType;
     @Builder.Default
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
 }

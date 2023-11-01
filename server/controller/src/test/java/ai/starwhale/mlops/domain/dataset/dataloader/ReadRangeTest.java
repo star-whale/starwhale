@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -34,6 +35,7 @@ import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
+import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,8 +146,10 @@ public class ReadRangeTest {
                 .processedData(List.of())
                 .batchSize(batchSize)
                 .start("0000-000")
+                .startType("STRING")
                 .startInclusive(true)
                 .end("0000-011")
+                .endType("STRING")
                 .endInclusive(true)
                 .build();
 
@@ -161,8 +165,8 @@ public class ReadRangeTest {
                         .datasetName(datasetName)
                         .datasetVersion(String.valueOf(datasetVersion))
                         .tableName(datasetName)
-                        .start("0000-000").startInclusive(true)
-                        .end("0000-011").endInclusive(true)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
                         .batchSize(batchSize)
                         .status(Status.SessionStatus.UNFINISHED)
                         .build());
@@ -171,16 +175,18 @@ public class ReadRangeTest {
                 .willReturn(List.of(DataReadLog.builder()
                         .id(1L)
                         .sessionId(sid)
-                        .start("0000-000").startInclusive(true)
-                        .end("0000-011").endInclusive(false)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(false)
                         .size(10)
                         .build()));
 
         given(dataStore.scanKeyRange(
                 DataStoreScanRangeRequest.builder()
                         .start("0000-000")
+                        .startType("STRING")
                         .startInclusive(true)
                         .end("0000-011")
+                        .endType("STRING")
                         .endInclusive(true)
                         .keepNone(true)
                         .rawResult(false)
@@ -190,7 +196,6 @@ public class ReadRangeTest {
                                         .columns(Map.of("id", "id"))
                                         .build()
                         ))
-                        .encodeWithType(true)
                         .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(10).build())
                         .build()
         )).willReturn(new KeyRangeList(
@@ -223,8 +228,8 @@ public class ReadRangeTest {
                         .id(1L)
                         .sessionId(sid)
                         .consumerId(consumerIdFor1) // update consumer id
-                        .start("0000-000").startInclusive(true)
-                        .end("0000-011").endInclusive(false)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(false)
                         .assignedNum(1)
                         .size(10)
                         .status(Status.DataStatus.UNPROCESSED)
@@ -244,8 +249,8 @@ public class ReadRangeTest {
                 .datasetName(datasetName)
                 .datasetVersion(String.valueOf(datasetVersion))
                 .tableName(tableName)
-                .start("0000-000").startInclusive(true)
-                .end("0000-011").endInclusive(true)
+                .start("0000-000").startType("STRING").startInclusive(true)
+                .end("0000-011").endType("STRING").endInclusive(true)
                 .batchSize(batchSize)
                 .status(Status.SessionStatus.FINISHED)
                 .build();
@@ -255,8 +260,8 @@ public class ReadRangeTest {
                 .willReturn(List.of(DataReadLog.builder()
                         .id(2L)
                         .sessionId(sid)
-                        .start("0000-011").startInclusive(true)
-                        .end("0000-011").endInclusive(true)
+                        .start("0000-011").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
                         .size(1)
                         .assignedNum(0)
                         .build()));
@@ -268,8 +273,8 @@ public class ReadRangeTest {
                         .id(2L)
                         .sessionId(sid)
                         .consumerId(consumerIdFor1)
-                        .start("0000-011").startInclusive(true)
-                        .end("0000-011").endInclusive(true)
+                        .start("0000-011").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
                         .size(1)
                         .assignedNum(1)
                         .status(Status.DataStatus.UNPROCESSED)
@@ -280,6 +285,25 @@ public class ReadRangeTest {
         verify(dataReadLogDao, times(1))
                 .updateToProcessed(sid, consumerIdFor1, "0000-011", "0000-011");
         verify(sessionDao, times(1)).insert(any());
+
+
+        // case 3: invalid params(without startType)
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
+        assertThrows(SwValidationException.class, () -> dataLoader.next(DataReadRequest.builder()
+                .sessionId(sessionId)
+                .consumerId(consumerIdFor1)
+                .tableName(tableName)
+                .datasetName(datasetName)
+                .datasetVersionId(datasetVersion)
+                .processedData(List.of())
+                .batchSize(batchSize)
+                .start("0000-000") // without startType
+                .startInclusive(true)
+                .end("0000-011")
+                .endType("STRING")
+                .endInclusive(true)
+                .build())
+        );
 
     }
 }

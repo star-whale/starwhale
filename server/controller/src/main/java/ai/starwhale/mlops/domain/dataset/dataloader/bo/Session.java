@@ -32,9 +32,11 @@ public class Session {
     private String datasetVersion;
 
     private String start;
+    private String startType;
     @Builder.Default
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
 
     @Builder.Default
