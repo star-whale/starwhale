@@ -152,6 +152,7 @@ class AsyncArtifactWriterBase(ABC):
         self._rows_put_thread.join()
 
     def close(self) -> None:
+        atexit.unregister(self.close)
         self._rows_put_queue.put(None)
         self._threads_join()
 

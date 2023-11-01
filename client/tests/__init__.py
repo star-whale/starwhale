@@ -27,7 +27,7 @@ class BaseTestCase(unittest.TestCase):
         self.datastore_root = str(sw_config.SWCliConfigMixed().datastore_dir)
         ensure_dir(self.datastore_root)
 
-        self.mock_atexit = patch("starwhale.api._impl.data_store.atexit", MagicMock())
+        self.mock_atexit = patch("starwhale.base.artifact.base.atexit", MagicMock())
         self.mock_atexit.start()
 
     def tearDown(self) -> None:

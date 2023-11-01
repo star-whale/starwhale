@@ -7,7 +7,6 @@ import sys
 import copy
 import json
 import time
-import atexit
 import base64
 import shutil
 import struct
@@ -688,7 +687,7 @@ class SwMapType(SwCompositeType):
 
             pair_counts: Dict[PairSchema, int] = {}
             # update the main and sparse types
-            for (kt, vt) in key_value_types:
+            for kt, vt in key_value_types:
                 p = PairSchema(key=kt, value=vt)
                 if p in pair_counts:
                     pair_counts[p] += 1
@@ -2357,7 +2356,6 @@ class LocalDataStore:
                 ds_path = SWCliConfigMixed().datastore_dir
                 ensure_dir(ds_path)
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
-                atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
     def __init__(self, root_path: str) -> None:
@@ -2834,7 +2832,6 @@ class TableWriter(threading.Thread):
 
         self.daemon = True
         self.start()
-        atexit.register(self.close)
 
     def __enter__(self) -> Any:
         return self
@@ -2846,7 +2843,6 @@ class TableWriter(threading.Thread):
         self.flush()
         with self._cond:
             if not self._stopped:
-                atexit.unregister(self.close)
                 self._stopped = True
                 self._cond.notify()
         self.join()
