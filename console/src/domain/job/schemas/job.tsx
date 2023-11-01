@@ -4,7 +4,6 @@ import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
 import { IModelSchema } from '@/domain/model/schemas/model'
 import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
-import { RelatedResource } from '../../../__generated__/MySuperbApi'
 
 export enum JobActionType {
     CANCEL = 'cancel',

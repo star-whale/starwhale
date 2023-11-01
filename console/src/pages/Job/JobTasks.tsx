@@ -121,11 +121,12 @@ export default function JobTasks() {
             <div className='min-h-320px'>
                 <TaskListCard />
             </div>
-            <div className='h-580px content-full'>
+            <div className='h-580px content-full [role="tab"]:text-ellipsis'>
                 {hasSource && (
                     <Tabs
                         onChange={(args) => {
                             updateQuery({
+                                ...query,
                                 active: args.activeKey,
                             })
                         }}
@@ -145,6 +146,9 @@ export default function JobTasks() {
                                 },
                             },
                             Tab: {
+                                props: {
+                                    className: 'first:rounded-tl-4px last:rounded-tr-4px last:border-1px',
+                                },
                                 style: ({ $active }) => {
                                     return {
                                         position: 'relative',

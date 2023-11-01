@@ -625,6 +625,18 @@ const job = {
         en: 'Description',
         zh: '描述',
     },
+    'job.event.level.info': {
+        en: 'Info',
+        zh: '信息',
+    },
+    'job.event.level.warning': {
+        en: 'Warning',
+        zh: '警告',
+    },
+    'job.event.level.error': {
+        en: 'Error',
+        zh: '错误',
+    },
     'job.tasks.action.viewlog': {
         en: 'View Log',
         zh: '查看日志',
