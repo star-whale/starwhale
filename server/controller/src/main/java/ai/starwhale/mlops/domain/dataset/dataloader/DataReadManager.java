@@ -205,15 +205,15 @@ public class DataReadManager {
      * Assign data for consumer
      *
      * @param consumerId consumer
-     * @param sessionId    sessionId
+     * @param session    session
      * @return data
      */
     @Transactional
-    public DataReadLog assignmentData(String consumerId, Long sessionId) {
-        var queue = sessionCache.get(String.valueOf(sessionId), LinkedList::new);
+    public DataReadLog assignmentData(String consumerId, Session session) {
+        var queue = sessionCache.get(String.valueOf(session.getId()), LinkedList::new);
 
         if (queue.isEmpty()) {
-            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sessionId, cacheSize));
+            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(session.getId(), cacheSize));
         }
         DataReadLog readLog = queue.poll();
         if (Objects.nonNull(readLog)) {
@@ -222,7 +222,6 @@ public class DataReadManager {
             dataReadLogDao.updateToAssigned(readLog);
             log.info("Assignment data id: {} to consumer:{}", readLog.getId(), readLog.getConsumerId());
         } else {
-            var session = sessionDao.selectOne(sessionId);
             if (session.getStatus() == Status.SessionStatus.UNFINISHED) {
                 throw new SwRequestFrequentException(
                         DATASET_LOAD, "data load: index is building, please try again later");

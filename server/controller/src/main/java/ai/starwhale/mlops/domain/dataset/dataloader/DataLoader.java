@@ -65,7 +65,7 @@ public class DataLoader {
         // this lock can be replaced by select fot update in future
         Session finalSession = session;
         return lockOrThrow(String.format("dl-assignment-%s", session.getId()), () ->
-                dataReadManager.assignmentData(consumerId, finalSession.getId()), "data load: assignment data"
+                dataReadManager.assignmentData(consumerId, finalSession), "data load: assignment data"
         );
     }
 
