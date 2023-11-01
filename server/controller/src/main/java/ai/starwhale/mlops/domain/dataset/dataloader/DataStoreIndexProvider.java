@@ -58,8 +58,6 @@ public class DataStoreIndexProvider implements DataIndexProvider {
                                 .columns(Map.of(KeyColumn, KeyColumn))
                                 .build()
                 ))
-                // return the row's key and value
-                .encodeWithType(true)
                 .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(request.getBatchSize()).build())
                 .build()
         );

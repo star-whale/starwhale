@@ -82,7 +82,6 @@ public class ReadRangeTest {
                                         .columns(Map.of("id", "id"))
                                         .build()
                         ))
-                        .encodeWithType(true)
                         .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(10).build())
                         .build()
         )).willReturn(new KeyRangeList(

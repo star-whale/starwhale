@@ -393,11 +393,6 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
     }
 
     public KeyRangeList scanKeyRange(DataStoreScanRangeRequest req) {
-        if (!req.isEncodeWithType()
-                && (!StringUtils.hasText(req.getStartType()) || !StringUtils.hasText(req.getEndType()))) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "startType and endType must be specified when encodeWithType is false");
-        }
         return scanRecords(req, new ResultResolver<>() {
                     @Override
                     public KeyRangeList apply(
