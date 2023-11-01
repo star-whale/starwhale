@@ -100,6 +100,18 @@ const basic = {
         en: 'Latest version alias',
         zh: '最新版本别名',
     },
+    'fullscreen': {
+        en: 'Fullscreen',
+        zh: '全屏',
+    },
+    'download': {
+        en: 'Download',
+        zh: '下载',
+    },
+    'gototop': {
+        en: 'Go to top',
+        zh: '返回顶部',
+    },
 }
 
 const dataset = {
@@ -596,6 +608,38 @@ const job = {
     'job.form.template.all': {
         en: 'All',
         zh: '全部',
+    },
+    'job.event.source': {
+        en: 'Source',
+        zh: '来源',
+    },
+    'job.event.level': {
+        en: 'Event Level',
+        zh: '事件级别',
+    },
+    'job.event.message': {
+        en: 'Message',
+        zh: '消息',
+    },
+    'job.event.description': {
+        en: 'Description',
+        zh: '描述',
+    },
+    'job.tasks.action.viewlog': {
+        en: 'View Log',
+        zh: '查看日志',
+    },
+    'job.tasks.action.viewevent': {
+        en: 'View Event',
+        zh: '查看事件',
+    },
+    'job.tasks.tab.log': {
+        en: 'Log',
+        zh: '日志',
+    },
+    'job.tasks.tab.event': {
+        en: 'Event',
+        zh: '事件',
     },
 }
 

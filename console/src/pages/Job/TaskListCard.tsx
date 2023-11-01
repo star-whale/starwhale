@@ -1,13 +1,12 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
-import { useParams, useLocation } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import _ from 'lodash'
-import qs from 'qs'
 import moment from 'moment'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { WithCurrentAuth } from '@/api/WithAuth'
@@ -17,31 +16,25 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import ExecutorForm from '@job/components/ExecutorForm'
 import Text from '@starwhale/ui/Text'
 import ExposedLink from '@job/components/ExposedLink'
+import { useQueryArgs } from '@starwhale/core'
 
 export interface ITaskListCardProps {
-    header: React.ReactNode
-    onAction?: (type: string, value: any) => void
+    header?: React.ReactNode
 }
 
-export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
+export default function TaskListCard({ header }: ITaskListCardProps) {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    const location = useLocation()
-    const id = qs.parse(location.search, { ignoreQueryPrefix: true })?.id ?? ''
-
-    const tasksInfo = useFetchTasks(projectId, jobId, page)
+    const tasksInfo = useFetchTasks(projectId, jobId, { pageSize: page.pageSize, pageNum: page.pageNum })
     const [t] = useTranslation()
     const [currentTaskExecutor, setCurrentTaskExecutor] = React.useState<string>('')
-
-    useEffect(() => {
-        if (id && tasksInfo.data?.list) {
-            const taskInfo = tasksInfo.data?.list.find((task) => task.id === id)
-            if (taskInfo)
-                onAction?.('viewlog', {
-                    ...taskInfo,
-                })
-        }
-    }, [tasksInfo.isSuccess, tasksInfo.data, id, onAction])
+    const { updateQuery } = useQueryArgs()
+    const onAction = (type, task) => {
+        updateQuery({
+            active: type,
+            taskId: task.id,
+        })
+    }
 
     return (
         <Card>
@@ -82,8 +75,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             <Text key='statusDesc' tooltip={task.failedReason} content={task.failedReason} />,
                             <ButtonGroup key='action'>
                                 <ExtendButton
-                                    tooltip={t('View Log')}
-                                    key={task.uuid}
+                                    tooltip={t('job.tasks.action.viewlog')}
                                     as='link'
                                     icon='a-Viewlog'
                                     onClick={(e: any) => {
@@ -95,7 +87,25 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                         })
                                         trDom?.classList.add('tr--selected')
 
-                                        onAction?.('viewlog', {
+                                        onAction?.('log', {
+                                            ...task,
+                                        })
+                                    }}
+                                />
+                                <ExtendButton
+                                    tooltip={t('job.tasks.action.viewevent')}
+                                    as='link'
+                                    icon='txt'
+                                    onClick={(e: any) => {
+                                        // eslint-disalbe-next-line no-unused-expressions
+                                        const trDom = e.currentTarget.closest('tr')
+                                        const trDoms = trDom?.parentElement?.children
+                                        _.forEach(trDoms, (d) => {
+                                            d?.classList.remove('tr--selected')
+                                        })
+                                        trDom?.classList.add('tr--selected')
+
+                                        onAction?.('event', {
                                             ...task,
                                         })
                                     }}

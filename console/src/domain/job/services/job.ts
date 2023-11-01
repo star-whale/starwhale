@@ -9,6 +9,7 @@ import {
     IExecInTaskSchema,
     IJobTemplateSchema,
     ICeateJobTemplateSchema,
+    IJobEventSchema,
 } from '../schemas/job'
 
 export async function listJobs(projectId: string, query: IListQuerySchema): Promise<IListSchema<IJobSchema>> {
@@ -35,6 +36,21 @@ export async function doJobAction(projectId: string, jobId: string, action: JobA
 
 export async function fetchJobDAG(projectId: string, jobId: string): Promise<IJobResultSchema> {
     const resp = await axios.get<IJobResultSchema>(`/api/v1/project/${projectId}/job/${jobId}/dag`)
+    return resp.data
+}
+
+export async function fetchJobEvents(
+    projectId: string,
+    jobId: string,
+    taskId?: string,
+    runId?: string
+): Promise<IJobEventSchema[]> {
+    const resp = await axios.get<IJobEventSchema[]>(`/api/v1/project/${projectId}/job/${jobId}/event`, {
+        params: {
+            taskId,
+            runId,
+        },
+    })
     return resp.data
 }
 

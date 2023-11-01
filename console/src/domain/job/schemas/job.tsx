@@ -4,6 +4,7 @@ import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
 import { IModelSchema } from '@/domain/model/schemas/model'
 import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
+import { RelatedResource } from '../../../__generated__/MySuperbApi'
 
 export enum JobActionType {
     CANCEL = 'cancel',
@@ -38,6 +39,18 @@ export interface IExposedLinkSchema {
 export enum RuntimeType {
     BUILTIN = 'builtin',
     OTHER = 'other',
+}
+
+export enum EventType {
+    INFO = 'INFO',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
+export enum EventSource {
+    CLIENT = 'CLIENT',
+    SERVER = 'SERVER',
+    NODE = 'NODE',
 }
 
 export interface IJobSchema extends IResourceSchema {
@@ -114,4 +127,17 @@ export interface IJobTemplateSchema {
 export interface ICeateJobTemplateSchema {
     name: string
     jobUrl: string
+}
+
+export interface IJobEventSchema {
+    eventType: EventType
+    source: EventSource
+    message: string
+    data: string
+    timestamp: number
+    id: number
+    relatedResource: {
+        eventResourceType: string
+        id: number
+    }
 }
