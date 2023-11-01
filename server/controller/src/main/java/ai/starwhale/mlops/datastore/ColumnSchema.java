@@ -43,7 +43,6 @@ public class ColumnSchema {
     private ColumnSchema keySchema;
     private ColumnSchema valueSchema;
     private Map<String, ColumnSchema> attributesSchema;
-    private boolean singleType = true;
 
     // key is the offset of the map.entry list
     // value is the pair of key and value schema
@@ -83,7 +82,6 @@ public class ColumnSchema {
                             Pair.of(new ColumnSchema(entry.getValue().getLeft()),
                                     new ColumnSchema(entry.getValue().getRight()))));
         }
-        this.singleType = schema.singleType;
     }
 
     public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
@@ -326,11 +324,14 @@ public class ColumnSchema {
                             if (ret == null) {
                                 ret = Wal.ColumnSchema.newBuilder();
                             }
-                            ret.putSparseKeyValueTypes(index,
-                                    Wal.ColumnSchema.KeyValuePair.newBuilder()
-                                            .setKey(keyDiff)
-                                            .setValue(valueDiff)
-                                            .build());
+                            var kvPair = Wal.ColumnSchema.KeyValuePair.newBuilder();
+                            if (keyDiff != null) {
+                                kvPair.setKey(keyDiff);
+                            }
+                            if (valueDiff != null) {
+                                kvPair.setValue(valueDiff);
+                            }
+                            ret.putSparseKeyValueTypes(index, kvPair.build());
                         }
                     }
                 }
@@ -372,9 +373,6 @@ public class ColumnSchema {
     public void update(@NonNull Wal.ColumnSchema schema) {
         var type = ColumnType.valueOf(schema.getColumnType());
         if (this.type != type) {
-            if (this.type != null) {
-                this.singleType = false;
-            }
             this.keySchema = null;
             this.valueSchema = null;
             this.elementSchema = null;
@@ -437,8 +435,12 @@ public class ColumnSchema {
                                     new ColumnSchema(item.getValue().getValue()));
                             this.sparseKeyValueSchema.put(index, existPair);
                         } else {
-                            existPair.getLeft().update(item.getValue().getKey());
-                            existPair.getRight().update(item.getValue().getValue());
+                            if (item.getValue().hasKey()) {
+                                existPair.getLeft().update(item.getValue().getKey());
+                            }
+                            if (item.getValue().hasValue()) {
+                                existPair.getRight().update(item.getValue().getValue());
+                            }
                         }
                     }
                 }
