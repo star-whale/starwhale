@@ -59,9 +59,14 @@ export default function JobTasks() {
     const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
     const { query, updateQuery } = useQueryArgs()
     const { taskId, active: activeKey } = query
-    const { data: task } = useQuery('fetchTask', () => fetchTask(projectId, jobId, taskId), {
+    const { data: task } = useQuery([projectId, jobId, taskId], () => fetchTask(projectId, jobId, taskId), {
         enabled: !!taskId,
     })
+
+    useUpdateEffect(() => {
+        setCurrentEvents({})
+        setCurrentLogFiles({})
+    }, [jobId])
 
     useUpdateEffect(() => {
         if (!task) return
