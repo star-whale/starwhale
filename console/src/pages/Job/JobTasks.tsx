@@ -139,15 +139,8 @@ export default function JobTasks() {
                         overrides={mergeOverrides({
                             TabBar: {
                                 style: {
-                                    'backgroundColor': 'none',
-                                    'paddingLeft': 0,
-                                    '& > div:first-child': {
-                                        borderTopLeftRadius: '4px',
-                                    },
-                                    '& > div': {
-                                        borderTopRightRadius: '4px',
-                                        borderRight: '1px solid #E2E7F0',
-                                    },
+                                    backgroundColor: 'none',
+                                    paddingLeft: 0,
                                 },
                             },
                             Tab: {
@@ -179,7 +172,6 @@ export default function JobTasks() {
                                     height: '100%',
                                     flex: 1,
                                     flexDirection: 'column',
-                                    // overflow: 'hidden',
                                     position: 'relative',
                                 },
                             },
