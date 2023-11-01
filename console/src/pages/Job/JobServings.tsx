@@ -27,8 +27,13 @@ export default function JobServings() {
             {serving && (
                 <iframe
                     title='job-servings'
-                    src={serving.link}
-                    style={{ position: 'absolute', height: '100%', width: '100%', border: 'none' }}
+                    src={`${serving.link}?__theme=light`}
+                    style={{
+                        position: 'absolute',
+                        height: '100%',
+                        width: '100%',
+                        border: 'none',
+                    }}
                 />
             )}
         </div>
