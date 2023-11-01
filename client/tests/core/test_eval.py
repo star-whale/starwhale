@@ -79,12 +79,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
             == "/path/to/.starwhale/self/job/xx/xxyy/snapshot"
         )
 
-    @patch("starwhale.api._impl.data_store.atexit")
     @patch("starwhale.api._impl.wrapper.Evaluation.get")
     @patch("starwhale.api._impl.wrapper.Evaluation.get_summary_metrics")
-    def test_info(
-        self, m_get_metrics: MagicMock, m_get: MagicMock, m_atexit: MagicMock
-    ):
+    def test_info(self, m_get_metrics: MagicMock, m_get: MagicMock):
         m_get.return_value = {}
         m_get_metrics.return_value = {"kind": "multi_classification"}
 
