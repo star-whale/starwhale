@@ -10,7 +10,7 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import { FilterDatatime } from '@starwhale/ui/Search'
+import { FilterDatetime } from '@starwhale/ui/Search'
 import { ColumnHintsDesc, ColumnSchemaDesc } from '@starwhale/core'
 import IconFont from '@starwhale/ui/IconFont'
 
@@ -82,7 +82,7 @@ export function useDatastoreSummaryColumns(
                             </span>
                         )
                     },
-                    getFilters: () => column.buildFilters?.(FilterDatatime),
+                    getFilters: () => column.buildFilters?.(FilterDatetime),
                 })
             }
             if (column.key === 'sys/model_name') {

@@ -1,12 +1,13 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { StyledTable, StyledHead, StyledHeadCell, StyledBody, StyledRow, StyledCell } from 'baseui/table'
-import { ExtendButton, IconFont, Input, FormSelect } from '@starwhale/ui'
+import { ExtendButton, IconFont, FormSelect, Search, createBuilder } from '@starwhale/ui'
 import { IJobEventSchema } from '@/domain/job/schemas/job'
 import { expandBorder } from '../../../packages/starwhale-ui/src/utils/index'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFullscreen, useToggle } from 'react-use'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import FieldDatetime from '@starwhale/ui/Search/components/FieldDatetime'
 
 export interface ITaskEventListCardProps {
     sources: Record<string, IJobEventSchema[]>
@@ -53,6 +54,8 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
 
     const list = sources[$current] ?? []
 
+    const fields = ['timestamp', 'eventType', 'source', 'message', 'data']
+
     const attrs = [
         {
             key: 'timestamp',
@@ -61,6 +64,12 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             headerStyle: {
                 flex: '1.3',
             },
+            getFilters: () =>
+                createBuilder({
+                    fields,
+                    list,
+                    key: 'timestamp',
+                })(FieldDatetime),
         },
         {
             key: 'eventType',
@@ -188,9 +197,9 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
     return (
         <div ref={ref} className='task-event-list overflow-hidden h-full'>
             <div className='grid gap-20px grid-cols-[280px_1fr_16px] mb-20px'>
-                <FormSelect options={options} onChange={setCurrent as any} value={$current} />
+                <FormSelect options={options} onChange={setCurrent as any} value={$current} clearable={false} />
                 <div className='flex-1'>
-                    <Input />
+                    <Search getFilters={(key) => attrs[key]?.getFilters() ?? {}} />
                 </div>
                 {/* <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} /> */}
                 <ExtendButton
