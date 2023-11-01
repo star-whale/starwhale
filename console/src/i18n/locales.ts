@@ -1574,6 +1574,10 @@ const locales0 = {
         en: 'Tasks',
         zh: '任务',
     },
+    'Servings': {
+        en: 'Servings',
+        zh: '服务',
+    },
     'Results': {
         en: 'Results',
         zh: '结果',

@@ -7,6 +7,7 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import JobActionGroup from '@/domain/job/components/JobActionGroup'
+import { JobStatusType } from '@job/schemas/job'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -64,8 +65,15 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
                 pattern: '/\\/tasks\\/?',
             },
         ]
+        if (job?.exposedLinks?.length && job?.jobStatus === JobStatusType.RUNNING) {
+            items.push({
+                title: t('Servings'),
+                path: `/projects/${projectId}/jobs/${jobId}/servings`,
+                pattern: '/\\/servings\\/?',
+            })
+        }
         return items
-    }, [projectId, jobId, t])
+    }, [projectId, jobId, t, job?.exposedLinks, job?.jobStatus])
 
     return (
         <BaseSubLayout
