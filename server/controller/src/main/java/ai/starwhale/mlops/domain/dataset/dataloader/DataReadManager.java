@@ -163,7 +163,10 @@ public class DataReadManager {
         }
     }
 
-    @Scheduled(fixedRateString = "${sw.dataset.load.read.deal-error-session-interval:1000}")
+    @Scheduled(
+            fixedRateString = "${sw.dataset.load.read.deal-error-session-interval-seconds:1}",
+            timeUnit = TimeUnit.SECONDS
+    )
     public void dealWithErrorSessions() {
         FailSession delayed = failSessionQueue.poll();
         while (delayed != null) {

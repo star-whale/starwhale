@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -402,7 +401,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     ) {
 
                         BaseValue lastKey;
-                        List<BaseValue> keys = new LinkedList<>();
+                        List<BaseValue> keys = new ArrayList<>();
                         while (!records.isEmpty()) {
                             lastKey = Collections.min(records, (a, b) -> {
                                 var x = a.record.getKey();
@@ -431,11 +430,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                         while (index < keys.size()) {
                             if (index + batchSize < keys.size()) {
                                 var startKey = keys.get(index);
-                                var start = (String) startKey.encode(req.isRawResult(), false);
+                                var start = (String) startKey.encode(false, false);
                                 var startType = startKey.getColumnType().name();
 
                                 var endKey = keys.get(index + batchSize);
-                                var end = (String) endKey.encode(req.isRawResult(), false);
+                                var end = (String) endKey.encode(false, false);
                                 var endType = endKey.getColumnType().name();
                                 ranges.add(KeyRangeList.Range.builder()
                                         .start(start)
@@ -449,11 +448,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                                 index += batchSize;
                             } else {
                                 var startKey = keys.get(index);
-                                var start = (String) startKey.encode(req.isRawResult(), false);
+                                var start = (String) startKey.encode(false, false);
                                 var startType = startKey.getColumnType().name();
 
                                 var endKey = keys.get(keys.size() - 1);
-                                var end = (String) endKey.encode(req.isRawResult(), false);
+                                var end = (String) endKey.encode(false, false);
                                 var endType = endKey.getColumnType().name();
                                 ranges.add(KeyRangeList.Range.builder()
                                         .start(start)
