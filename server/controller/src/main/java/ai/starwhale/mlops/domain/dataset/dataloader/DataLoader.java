@@ -25,6 +25,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwRequestFrequentException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class DataLoader {
     public DataReadLog next(DataReadRequest request) {
         var consumerId = request.getConsumerId();
         var sessionId = request.getSessionId();
-        var datasetVersionId = request.getDatasetVersionId();
+        var datasetVersionId = request.getDatasetVersion().getId();
         Session session = dataReadManager.getSession(request);
         if (session == null) {
             // ensure serially in the same session with the same dataset version
@@ -51,12 +52,15 @@ public class DataLoader {
                 var s = dataReadManager.getSession(request);
                 if (s == null) {
                     s = dataReadManager.generateSession(request);
+                    // async to generate data read log
+                    dataReadManager.generateDataReadLog(s.getId());
                 }
                 return s;
             }, "data load: session init");
         }
-
-        dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session);
+        if (CollectionUtils.isNotEmpty(request.getProcessedData())) {
+            dataReadManager.handleConsumerData(consumerId, request.getProcessedData(), session.getId());
+        }
 
         // this lock can be replaced by select fot update in future
         Session finalSession = session;

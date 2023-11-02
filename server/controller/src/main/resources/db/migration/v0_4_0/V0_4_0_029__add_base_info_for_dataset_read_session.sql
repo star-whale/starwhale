@@ -14,25 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.dataloader;
+ALTER TABLE dataset_read_session ADD status varchar(100) DEFAULT 'UNFINISHED' NOT NULL;
+UPDATE dataset_read_session set status = 'FINISHED';
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonInclude
-public class DataIndexDesc {
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
-}
+ALTER TABLE dataset_read_session ADD start_type varchar(100) NULL;
+ALTER TABLE dataset_read_session ADD end_type varchar(100) NULL;
+ALTER TABLE dataset_read_session ADD revision bigint NULL;

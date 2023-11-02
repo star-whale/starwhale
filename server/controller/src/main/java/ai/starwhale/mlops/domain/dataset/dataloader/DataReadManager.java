@@ -16,24 +16,37 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
+import static ai.starwhale.mlops.exception.SwRequestFrequentException.RequestType.DATASET_LOAD;
+
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
+import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
+import ai.starwhale.mlops.exception.SwRequestFrequentException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import cn.hutool.cache.impl.LRUCache;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Iterables;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.convert.DurationStyle;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -43,89 +56,200 @@ public class DataReadManager {
     private final DataIndexProvider dataIndexProvider;
     private final LRUCache<String, LinkedList<DataReadLog>> sessionCache;
     private final Integer cacheSize;
+    private final Integer insertBatchSize;
+
+    private final DelayQueue<FailSession> failSessionQueue = new DelayQueue<>();
 
     public DataReadManager(SessionDao sessionDao,
                            DataReadLogDao dataReadLogDao,
                            DataIndexProvider dataIndexProvider,
                            @Value("${sw.dataset.load.read.log-cache-capacity:1000}") int capacity,
                            @Value("${sw.dataset.load.read.log-cache-size:1000}") int cacheSize,
-                           @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout
+                           @Value("${sw.dataset.load.read.log-cache-timeout:24h}") String cacheTimeout,
+                           @Value("${sw.dataset.load.read.log-insert-batch:10}") int insertBatchSize
     ) {
         this.sessionDao = sessionDao;
         this.dataReadLogDao = dataReadLogDao;
         this.dataIndexProvider = dataIndexProvider;
         this.cacheSize = cacheSize;
+        this.insertBatchSize = insertBatchSize;
         this.sessionCache = new LRUCache<>(capacity, DurationStyle.detectAndParse(cacheTimeout).toMillis());
     }
 
     public Session getSession(DataReadRequest request) {
         var sessionId = request.getSessionId();
-        var datasetVersionId = request.getDatasetVersionId();
+        var datasetVersionId = request.getDatasetVersion().getId();
 
         return sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId));
     }
 
     @Transactional
     public Session generateSession(DataReadRequest request) {
+        if (request.getStart() != null && request.getStartType() == null) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.DATASET, "startType is required when start is provided");
+        }
+        if (request.getEnd() != null && request.getEndType() == null) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.DATASET, "endType is required when end is provided");
+        }
+        var datasetVersion = request.getDatasetVersion();
+        long revision;
+        try {
+            Manifest manifest = Constants.yamlMapper.readValue(datasetVersion.getVersionMeta(), Manifest.class);
+            revision = Long.parseLong(manifest.getRevision());
+        } catch (JsonProcessingException e) {
+            log.error("version meta read failed for {}", datasetVersion.getId(), e);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASET, "version meta read failed");
+        }
+
         var session = Session.builder()
-                    .sessionId(request.getSessionId())
-                    .datasetName(request.getDatasetName())
-                    .datasetVersion(String.valueOf(request.getDatasetVersionId()))
-                    .tableName(request.getTableName())
-                    .start(request.getStart())
-                    .startInclusive(request.isStartInclusive())
-                    .end(request.getEnd())
-                    .endInclusive(request.isEndInclusive())
-                    .batchSize(request.getBatchSize())
-                    .build();
+                .sessionId(request.getSessionId())
+                .datasetName(datasetVersion.getDatasetName())
+                .datasetVersion(String.valueOf(datasetVersion.getId()))
+                .tableName(datasetVersion.getIndexTable())
+                .start(request.getStart())
+                .startType(request.getStartType())
+                .startInclusive(request.isStartInclusive())
+                .end(request.getEnd())
+                .endType(request.getEndType())
+                .endInclusive(request.isEndInclusive())
+                .batchSize(request.getBatchSize())
+                .revision(revision)
+                .build();
         // insert session
         sessionDao.insert(session);
-        // get data index
-        List<DataIndex> dataIndices = dataIndexProvider.returnDataIndex(
-                QueryDataIndexRequest.builder()
-                    .tableName(session.getTableName())
-                    .batchSize(session.getBatchSize())
-                    .start(session.getStart())
-                    .startInclusive(session.isStartInclusive())
-                    .end(session.getEnd())
-                    .endInclusive(session.isEndInclusive())
-                    .build()
-        );
-        Long sid = session.getId();
-        Iterables.partition(
-                dataIndices.stream()
-                        .map(dataIndex -> DataReadLog.builder()
-                                .sessionId(sid)
-                                .start(dataIndex.getStart())
-                                .startType(dataIndex.getStartType())
-                                .startInclusive(dataIndex.isStartInclusive())
-                                .end(dataIndex.getEnd())
-                                .endType(dataIndex.getEndType())
-                                .endInclusive(dataIndex.isEndInclusive())
-                                .size(dataIndex.getSize())
-                                .status(Status.DataStatus.UNPROCESSED)
-                                .build())
-                        .collect(Collectors.toList()),
-                1000).forEach(dataReadLogDao::batchInsert);
-
         return session;
+    }
 
+    @Async
+    public void generateDataReadLog(Long sessionId) {
+        try {
+            this.generate(sessionId);
+        } catch (Exception e) {
+            log.error("Error while generate data read logs for session: {}", sessionId, e);
+            failSessionQueue.add(new FailSession(sessionId));
+        }
+    }
+
+    private static class FailSession implements Delayed {
+        int failCount = 0;
+
+        Long sessionId;
+
+        FailSession(Long sessionId) {
+            this.sessionId = sessionId;
+        }
+
+        public long getDelayTime() {
+            long delay = 100;
+            if (failCount > 0) {
+                delay *= (2L << (failCount - 1));
+            }
+            return delay;
+        }
+
+        @Override
+        public long getDelay(@NotNull TimeUnit unit) {
+            return unit.convert(getDelayTime(), TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public int compareTo(@NotNull Delayed o) {
+            long diffMillis = getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS);
+            diffMillis = Math.min(diffMillis, 1);
+            diffMillis = Math.max(diffMillis, -1);
+            return (int) diffMillis;
+        }
+    }
+
+    @Scheduled(
+            fixedRateString = "${sw.dataset.load.read.deal-error-session-interval-seconds:1}",
+            timeUnit = TimeUnit.SECONDS
+    )
+    public void dealWithErrorSessions() {
+        FailSession delayed = failSessionQueue.poll();
+        while (delayed != null) {
+            try {
+                this.generate(delayed.sessionId);
+            } catch (Exception e) {
+                log.error("Error while deal with error session {}", delayed.sessionId, e);
+                delayed.failCount++;
+                failSessionQueue.offer(delayed);
+            }
+            delayed = failSessionQueue.poll();
+        }
+    }
+
+    private void generate(Long sessionId) {
+        var session = sessionDao.selectOne(sessionId);
+        if (session == null || session.getStatus() == Status.SessionStatus.FINISHED) {
+            return;
+        }
+        String start = session.getStart();
+        String startType = session.getStartType();
+        boolean startInclusive = session.isStartInclusive();
+
+        var lastLog = dataReadLogDao.selectLastData(session.getId());
+        if (lastLog != null) {
+            if (!StringUtils.hasText(lastLog.getEnd())) {
+                sessionDao.updateToFinished(session.getId());
+                return;
+            } else {
+                start = lastLog.getEnd();
+                startType = lastLog.getStartType();
+                startInclusive = !lastLog.isEndInclusive();
+            }
+        }
+
+        var request = QueryDataIndexRequest.builder()
+                .tableName(session.getTableName())
+                .batchSize(session.getBatchSize())
+                .start(start)
+                .startType(startType)
+                .startInclusive(startInclusive)
+                .end(session.getEnd())
+                .endType(session.getEndType())
+                .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
+                .build();
+        // get data index TODO use iterator
+        var dataIndices = dataIndexProvider.returnDataIndex(request);
+        if (!dataIndices.isEmpty()) {
+            Iterables.partition(
+                    dataIndices.stream()
+                            .map(dataIndex -> DataReadLog.builder()
+                                    .sessionId(session.getId())
+                                    .start(dataIndex.getStart())
+                                    .startType(dataIndex.getStartType())
+                                    .startInclusive(dataIndex.isStartInclusive())
+                                    .end(dataIndex.getEnd())
+                                    .endType(dataIndex.getEndType())
+                                    .endInclusive(dataIndex.isEndInclusive())
+                                    .size(dataIndex.getSize())
+                                    .status(Status.DataStatus.UNPROCESSED)
+                                    .build())
+                            .collect(Collectors.toList()),
+                    this.insertBatchSize
+            ).forEach(dataReadLogDao::batchInsert);
+        }
+        // save session
+        sessionDao.updateToFinished(session.getId());
     }
 
     /**
      * Assign data for consumer
      *
      * @param consumerId consumer
-     * @param session session
+     * @param session    session
      * @return data
      */
     @Transactional
     public DataReadLog assignmentData(String consumerId, Session session) {
-        var sid = session.getId();
-        var queue = sessionCache.get(String.valueOf(sid), LinkedList::new);
+        var queue = sessionCache.get(String.valueOf(session.getId()), LinkedList::new);
 
         if (queue.isEmpty()) {
-            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize));
+            queue.addAll(dataReadLogDao.selectTopsUnAssignedData(session.getId(), cacheSize));
         }
         DataReadLog readLog = queue.poll();
         if (Objects.nonNull(readLog)) {
@@ -133,18 +257,22 @@ public class DataReadManager {
             readLog.setAssignedNum(readLog.getAssignedNum() + 1);
             dataReadLogDao.updateToAssigned(readLog);
             log.info("Assignment data id: {} to consumer:{}", readLog.getId(), readLog.getConsumerId());
+        } else {
+            if (session.getStatus() == Status.SessionStatus.UNFINISHED) {
+                throw new SwRequestFrequentException(
+                        DATASET_LOAD, "data load: index is building, please try again later");
+            }
         }
         return readLog;
     }
 
     @Transactional
     public void handleConsumerData(
-            String consumerId, List<DataIndexDesc> processedData, Session session) {
-        var sid = session.getId();
+            String consumerId, List<DataIndexDesc> processedData, Long sessionId) {
         // update processed data
         if (CollectionUtils.isNotEmpty(processedData)) {
             for (DataIndexDesc indexDesc : processedData) {
-                dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+                dataReadLogDao.updateToProcessed(sessionId, consumerId, indexDesc.getStart(), indexDesc.getEnd());
             }
         }
     }

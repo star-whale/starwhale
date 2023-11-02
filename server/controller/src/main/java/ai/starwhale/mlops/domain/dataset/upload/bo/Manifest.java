@@ -40,6 +40,8 @@ public class Manifest {
     String mode;
     String process;
     String version;
+    @JsonProperty("data_datastore_revision")
+    String revision;
     @JsonProperty("dataset_summary")
     DatasetSummary datasetSummary;
     List<String> signature;

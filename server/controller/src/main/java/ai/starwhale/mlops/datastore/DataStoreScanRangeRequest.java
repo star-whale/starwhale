@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.dataloader;
+package ai.starwhale.mlops.datastore;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude
-public class DataIndexDesc {
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
+@EqualsAndHashCode(callSuper = true)
+public class DataStoreScanRangeRequest extends DataStoreScanRequest {
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RangeInfo {
+        private Integer batchSize;
+    }
+
+    private RangeInfo rangeInfo;
 }

@@ -34,28 +34,36 @@ public class SessionConverter implements Converter<Session, SessionEntity> {
                 .datasetName(session.getDatasetName())
                 .datasetVersion(session.getDatasetVersion())
                 .tableName(session.getTableName())
-            .start(session.getStart())
-            .startInclusive(session.isStartInclusive())
-            .end(session.getEnd())
-            .endInclusive(session.isEndInclusive())
-            .createdTime(session.getCreatedTime())
-            .build();
+                .start(session.getStart())
+                .startType(session.getStartType())
+                .startInclusive(session.isStartInclusive())
+                .end(session.getEnd())
+                .endType(session.getEndType())
+                .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
+                .status(session.getStatus())
+                .createdTime(session.getCreatedTime())
+                .build();
     }
 
     @Override
     public Session revert(SessionEntity session) throws ConvertException {
         return Session.builder()
-            .id(session.getId())
-            .sessionId(session.getSessionId())
-            .batchSize(session.getBatchSize())
-            .datasetName(session.getDatasetName())
-            .datasetVersion(session.getDatasetVersion())
-            .tableName(session.getTableName())
-            .start(session.getStart())
-            .startInclusive(session.isStartInclusive())
-            .end(session.getEnd())
-            .endInclusive(session.isEndInclusive())
-            .createdTime(session.getCreatedTime())
-            .build();
+                .id(session.getId())
+                .sessionId(session.getSessionId())
+                .batchSize(session.getBatchSize())
+                .datasetName(session.getDatasetName())
+                .datasetVersion(session.getDatasetVersion())
+                .tableName(session.getTableName())
+                .start(session.getStart())
+                .startType(session.getStartType())
+                .startInclusive(session.isStartInclusive())
+                .end(session.getEnd())
+                .endType(session.getEndType())
+                .endInclusive(session.isEndInclusive())
+                .revision(session.getRevision())
+                .status(session.getStatus())
+                .createdTime(session.getCreatedTime())
+                .build();
     }
 }

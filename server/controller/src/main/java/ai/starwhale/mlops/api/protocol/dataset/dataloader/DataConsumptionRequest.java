@@ -37,8 +37,10 @@ public class DataConsumptionRequest {
     private int batchSize;
 
     private String start;
+    private String startType;
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
 
     private List<DataIndexDesc> processedData;

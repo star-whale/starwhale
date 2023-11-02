@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,14 +32,14 @@ public class DataReadRequest {
     private String sessionId;
     private String consumerId;
 
-    private String datasetName;
-    private Long datasetVersionId;
-    private String tableName;
+    private DatasetVersion datasetVersion;
 
     private int batchSize;
     private String start;
+    private String startType;
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
 
     private List<DataIndexDesc> processedData;

@@ -52,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
 
 @Slf4j
@@ -316,7 +317,211 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         if (limit < 0) {
             limit = QUERY_LIMIT;
         }
+        int finalLimit = limit;
+        return scanRecords(req, new ResultResolver<>() {
+                    @Override
+                    public RecordList apply(
+                            List<TableMeta> tables,
+                            Map<String, ColumnSchema> columnSchemaMap,
+                            List<TableRecords> records
+                    ) {
+                        BaseValue lastKey = null;
+                        List<Map<String, Object>> ret = new ArrayList<>();
+                        while (!records.isEmpty() && ret.size() < finalLimit) {
+                            lastKey = Collections.min(records, (a, b) -> {
+                                var x = a.record.getKey();
+                                var y = b.record.getKey();
+                                return x.compareTo(y);
+                            }).record.getKey();
+                            Map<String, Object> record = null;
+                            for (var r : records) {
+                                if (r.record.getKey().equals(lastKey)) {
+                                    if (r.record.isDeleted()) {
+                                        record = null;
+                                    } else {
+                                        if (record == null) {
+                                            record = new HashMap<>();
+                                        }
+                                        record.putAll(
+                                                RecordEncoder.encodeRecord(r.record.getValues(),
+                                                        req.isRawResult(),
+                                                        req.isEncodeWithType()));
+                                    }
+                                    if (r.iterator.hasNext()) {
+                                        r.record = r.iterator.next();
+                                    } else {
+                                        r.record = null;
+                                    }
+                                }
+                            }
+                            if (record != null) {
+                                if (!req.isKeepNone()) {
+                                    record.entrySet().removeIf(x -> x.getValue() == null);
+                                }
+                                ret.add(record);
+                            }
+                            records.removeIf(r -> r.record == null);
+                        }
+                        var columnStatistics = new HashMap<String, ColumnStatistics>();
+                        for (var table : tables) {
+                            table.table.getColumnStatistics(table.columns).forEach((k, v) ->
+                                    columnStatistics.computeIfAbsent(k, x -> new ColumnStatistics()).merge(v));
+                        }
+                        return new RecordList(
+                                columnSchemaMap,
+                                columnStatistics.entrySet().stream().collect(
+                                        Collectors.toMap(Entry::getKey, entry -> entry.getValue().toColumnHintsDesc())),
+                                ret,
+                                (String) BaseValue.encode(lastKey, false, false),
+                                BaseValue.getColumnType(lastKey).name()
+                        );
+                    }
 
+                    @Override
+                    public boolean stop(int recordSize) {
+                        return recordSize >= finalLimit;
+                    }
+
+                    @Override
+                    public RecordList empty() {
+                        return new RecordList(
+                                Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(), null, null);
+                    }
+                }
+        );
+    }
+
+    public KeyRangeList scanKeyRange(DataStoreScanRangeRequest req) {
+        return scanRecords(req, new ResultResolver<>() {
+                    @Override
+                    public KeyRangeList apply(
+                            List<TableMeta> tables,
+                            Map<String, ColumnSchema> columnSchemaMap,
+                            List<TableRecords> records
+                    ) {
+
+                        BaseValue lastKey;
+                        List<BaseValue> keys = new ArrayList<>();
+                        while (!records.isEmpty()) {
+                            lastKey = Collections.min(records, (a, b) -> {
+                                var x = a.record.getKey();
+                                var y = b.record.getKey();
+                                return x.compareTo(y);
+                            }).record.getKey();
+                            for (var r : records) {
+                                if (r.record.getKey().equals(lastKey)) {
+                                    if (!r.record.isDeleted() && !keys.contains(r.record.getKey())) {
+                                        keys.add(r.record.getKey());
+                                    }
+                                    if (r.iterator.hasNext()) {
+                                        r.record = r.iterator.next();
+                                    } else {
+                                        r.record = null;
+                                    }
+                                }
+                            }
+
+                            records.removeIf(r -> r.record == null);
+                        }
+
+                        var ranges = new ArrayList<KeyRangeList.Range>();
+                        var batchSize = req.getRangeInfo().getBatchSize();
+                        var index = 0;
+                        while (index < keys.size()) {
+                            if (index + batchSize < keys.size()) {
+                                var startKey = keys.get(index);
+                                var start = (String) startKey.encode(false, false);
+                                var startType = startKey.getColumnType().name();
+
+                                var endKey = keys.get(index + batchSize);
+                                var end = (String) endKey.encode(false, false);
+                                var endType = endKey.getColumnType().name();
+                                ranges.add(KeyRangeList.Range.builder()
+                                        .start(start)
+                                        .startType(startType)
+                                        .startInclusive(true)
+                                        .end(end)
+                                        .endType(endType)
+                                        .endInclusive(false)
+                                        .size(batchSize)
+                                        .build());
+                                index += batchSize;
+                            } else {
+                                var startKey = keys.get(index);
+                                var start = (String) startKey.encode(false, false);
+                                var startType = startKey.getColumnType().name();
+
+                                var endKey = keys.get(keys.size() - 1);
+                                var end = (String) endKey.encode(false, false);
+                                var endType = endKey.getColumnType().name();
+                                ranges.add(KeyRangeList.Range.builder()
+                                        .start(start)
+                                        .startType(startType)
+                                        .startInclusive(true)
+                                        .end(StringUtils.hasText(req.getEnd()) ? end : null)
+                                        .endType(endType)
+                                        .endInclusive(StringUtils.hasText(req.getEnd()))
+                                        .size(keys.size() - index)
+                                        .build());
+                                index = keys.size();
+                            }
+                        }
+                        return new KeyRangeList(ranges);
+                    }
+
+                    @Override
+                    public KeyRangeList empty() {
+                        return new KeyRangeList(Collections.emptyList());
+                    }
+                }
+        );
+    }
+
+    static class TableMeta {
+
+        String tableName;
+        long revision;
+        MemoryTable table;
+        TableSchema schema;
+        Map<String, String> columns;
+        Map<String, ColumnSchema> columnSchemaMap;
+        boolean keepNone;
+    }
+
+    static class TableRecords {
+
+        TableMeta meta;
+        Iterator<RecordResult> iterator;
+        RecordResult record;
+    }
+
+    @FunctionalInterface
+    public interface ResultResolver<R> {
+
+        /**
+         * Applies this function to the given arguments.
+         *
+         * @param tables table meta data
+         * @param columnSchemaMap column schema map
+         * @param recordIter records iterator
+         * @return r the result
+         */
+        R apply(
+                List<TableMeta> tables,
+                Map<String, ColumnSchema> columnSchemaMap,
+                List<TableRecords> recordIter
+        );
+
+        default R empty() {
+            return null;
+        }
+
+        default boolean stop(int resultSize) {
+            return false;
+        }
+    }
+
+    private <R> R scanRecords(DataStoreScanRequest req, ResultResolver<R> resultResolver) {
         var tablesToLock =
                 req.getTables()
                         .stream()
@@ -330,17 +535,6 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             table.lock(true);
         }
         try {
-            class TableMeta {
-
-                String tableName;
-                long revision;
-                MemoryTable table;
-                TableSchema schema;
-                Map<String, String> columns;
-                Map<String, ColumnSchema> columnSchemaMap;
-                boolean keepNone;
-            }
-
             var tables = req.getTables().stream().map(info -> {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
@@ -374,8 +568,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
             if (tables.isEmpty()) {
-                return new RecordList(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(),
-                        null, null);
+                return resultResolver.empty();
             }
             Map<String, ColumnSchema> columnSchemaMap;
             if (req.isEncodeWithType()) {
@@ -420,13 +613,6 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                 }
             }
 
-            class TableRecords {
-
-                TableMeta meta;
-                Iterator<RecordResult> iterator;
-                RecordResult record;
-            }
-
             var records = new ArrayList<TableRecords>();
             for (var table : tables) {
                 var r = new TableRecords();
@@ -445,54 +631,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     records.add(r);
                 }
             }
-            BaseValue lastKey = null;
-            List<Map<String, Object>> ret = new ArrayList<>();
-            while (!records.isEmpty() && ret.size() < limit) {
-                lastKey = Collections.min(records, (a, b) -> {
-                    var x = a.record.getKey();
-                    var y = b.record.getKey();
-                    return x.compareTo(y);
-                }).record.getKey();
-                Map<String, Object> record = null;
-                for (var r : records) {
-                    if (r.record.getKey().equals(lastKey)) {
-                        if (r.record.isDeleted()) {
-                            record = null;
-                        } else {
-                            if (record == null) {
-                                record = new HashMap<>();
-                            }
-                            record.putAll(
-                                    RecordEncoder.encodeRecord(r.record.getValues(),
-                                            req.isRawResult(),
-                                            req.isEncodeWithType()));
-                        }
-                        if (r.iterator.hasNext()) {
-                            r.record = r.iterator.next();
-                        } else {
-                            r.record = null;
-                        }
-                    }
-                }
-                if (record != null) {
-                    if (!req.isKeepNone()) {
-                        record.entrySet().removeIf(x -> x.getValue() == null);
-                    }
-                    ret.add(record);
-                }
-                records.removeIf(r -> r.record == null);
-            }
-            var columnStatistics = new HashMap<String, ColumnStatistics>();
-            for (var table : tables) {
-                table.table.getColumnStatistics(table.columns)
-                        .forEach((k, v) -> columnStatistics.computeIfAbsent(k, x -> new ColumnStatistics()).merge(v));
-            }
-            return new RecordList(columnSchemaMap,
-                    columnStatistics.entrySet().stream()
-                            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().toColumnHintsDesc())),
-                    ret,
-                    (String) BaseValue.encode(lastKey, false, false),
-                    BaseValue.getColumnType(lastKey).name());
+
+            return resultResolver.apply(tables, columnSchemaMap, records);
         } finally {
             for (var table : tablesToLock) {
                 table.unlock(true);

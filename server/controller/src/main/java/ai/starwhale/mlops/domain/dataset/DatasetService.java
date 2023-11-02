@@ -431,8 +431,10 @@ public class DatasetService {
         return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
                 .start(dataRange.getStart())
                 .startType(dataRange.getStartType())
+                .startInclusive(dataRange.isStartInclusive())
                 .end(dataRange.getEnd())
                 .endType(dataRange.getEndType())
+                .endInclusive(dataRange.isEndInclusive())
                 .build();
     }
 

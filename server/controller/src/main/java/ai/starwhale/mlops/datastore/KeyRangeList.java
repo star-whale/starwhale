@@ -14,25 +14,38 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.dataloader;
+package ai.starwhale.mlops.datastore;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Data
-@Builder
-@NoArgsConstructor
+
+@Getter
 @AllArgsConstructor
-@JsonInclude
-public class DataIndexDesc {
-    private String start;
-    private String startType;
-    @Builder.Default
-    private boolean startInclusive = true;
-    private String end;
-    private String endType;
-    private boolean endInclusive;
+@EqualsAndHashCode
+@ToString
+public class KeyRangeList {
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Range {
+        private String start;
+        private String startType;
+        @Builder.Default
+        private boolean startInclusive = true;
+        private String end;
+        private String endType;
+        private boolean endInclusive;
+        private int size;
+    }
+
+    private List<Range> ranges;
 }

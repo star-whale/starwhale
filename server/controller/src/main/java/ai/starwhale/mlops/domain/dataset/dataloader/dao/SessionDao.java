@@ -16,6 +16,9 @@
 
 package ai.starwhale.mlops.domain.dataset.dataloader.dao;
 
+import static ai.starwhale.mlops.domain.dataset.dataloader.Status.SessionStatus.FINISHED;
+
+import ai.starwhale.mlops.domain.dataset.dataloader.Status;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.converter.SessionConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.mapper.SessionMapper;
@@ -40,8 +43,17 @@ public class SessionDao {
         return rows > 0;
     }
 
+    public boolean updateToFinished(Long sid) {
+        return mapper.updateStatus(sid, FINISHED) > 0;
+    }
+
     public Session selectOne(String sessionId, String datasetVersion) {
         var entity = mapper.selectOne(sessionId, datasetVersion);
+        return entity != null ? converter.revert(entity) : null;
+    }
+
+    public Session selectOne(Long  sid) {
+        var entity = mapper.selectById(sid);
         return entity != null ? converter.revert(entity) : null;
     }
 
@@ -51,5 +63,10 @@ public class SessionDao {
 
     public List<Session> selectAll() {
         return mapper.selectAll().stream().map(converter::revert).collect(Collectors.toList());
+    }
+
+    public List<Session> selectUnFinished() {
+        return mapper.selectByStatus(Status.SessionStatus.UNFINISHED).stream()
+                .map(converter::revert).collect(Collectors.toList());
     }
 }

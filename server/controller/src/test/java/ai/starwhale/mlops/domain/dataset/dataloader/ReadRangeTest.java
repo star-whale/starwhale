@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -26,12 +27,16 @@ import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.datastore.DataStore;
+import ai.starwhale.mlops.datastore.DataStoreScanRangeRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
-import ai.starwhale.mlops.datastore.RecordList;
+import ai.starwhale.mlops.datastore.KeyRangeList;
+import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.Session;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.DataReadLogDao;
 import ai.starwhale.mlops.domain.dataset.dataloader.dao.SessionDao;
+import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,28 +59,24 @@ public class ReadRangeTest {
         dataReadLogDao = mock(DataReadLogDao.class);
         dataRangeProvider = new DataStoreIndexProvider(dataStore);
         DataReadManager dataReadManager = new DataReadManager(
-                sessionDao, dataReadLogDao, dataRangeProvider, 1, cacheSize, "10s");
+                sessionDao, dataReadLogDao, dataRangeProvider, 1, cacheSize, "10s", 10);
         dataLoader = new DataLoader(dataReadManager, 1);
     }
 
     @Test
     public void testGenerateRange() {
-        dataRangeProvider.setMaxBatchSize(9);
-
         var request = QueryDataIndexRequest.builder()
                 .tableName("test-table-name")
                 .start("0000-000")
                 .startInclusive(true)
-                .end("0000-008")
-                .endInclusive(true)
-                .batchSize(3)
+                .batchSize(10)
                 .build();
-        given(dataStore.scan(
-                DataStoreScanRequest.builder()
+        given(dataStore.scanKeyRange(
+                DataStoreScanRangeRequest.builder()
                         .start("0000-000")
                         .startInclusive(true)
-                        .end("0000-008")
-                        .endInclusive(true)
+                        .end(null)
+                        .endInclusive(false)
                         .keepNone(true)
                         .rawResult(false)
                         .tables(List.of(
@@ -84,60 +85,48 @@ public class ReadRangeTest {
                                         .columns(Map.of("id", "id"))
                                         .build()
                         ))
-                        .limit(9)
-                        .encodeWithType(true)
+                        .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(10).build())
                         .build()
-        )).willReturn(new RecordList(
-                Map.of(),
-                Map.of(),
-                List.of(Map.of("id", Map.of("value", "0000-000", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-001", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-002", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-003", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-004", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-005", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-006", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-007", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-008", "type", "STRING"))
-                ),
-                "0000-008",
-                "STRING"
+        )).willReturn(new KeyRangeList(
+                List.of(
+                        KeyRangeList.Range.builder()
+                                .start("0000-000")
+                                .startType("STRING")
+                                .startInclusive(true)
+                                .end("0000-011")
+                                .endType("STRING")
+                                .endInclusive(false)
+                                .size(10)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("0000-011")
+                                .startType("STRING")
+                                .startInclusive(true)
+                                .end("0000-011")
+                                .endType("STRING")
+                                .endInclusive(true)
+                                .size(1)
+                                .build()
+                )
         ));
-        given(dataStore.scan(
-                DataStoreScanRequest.builder()
-                        .start("0000-008")
-                        .startInclusive(false)
-                        .end("0000-008")
-                        .endInclusive(true)
-                        .keepNone(true)
-                        .rawResult(false)
-                        .tables(List.of(
-                                DataStoreScanRequest.TableInfo.builder()
-                                        .tableName("test-table-name")
-                                        .columns(Map.of("id", "id"))
-                                        .build()
-                        ))
-                        .limit(9)
-                        .encodeWithType(true)
-                        .build()
-        )).willReturn(new RecordList(
-                Map.of(), Map.of(), List.of(
-                Map.of("id", Map.of("value", "0000-009", "type", "STRING")),
-                Map.of("id", Map.of("value", "0000-010", "type", "STRING")),
-                Map.of("id", Map.of("value", "0000-011", "type", "STRING"))
-        ), "0000-010",
-                "STRING"
-        ));
-
         var dataRanges = dataRangeProvider.returnDataIndex(request);
-        assertThat("number", dataRanges.size() == 4);
-        verify(dataStore, times(2)).scan(any());
-
-        request.setBatchSize(6);
-        dataRanges = dataRangeProvider.returnDataIndex(request);
-
+        assertThat("ranges",
+                dataRanges,
+                is(List.of(
+                        DataIndex.builder()
+                                .start("0000-000").startType("STRING").startInclusive(true)
+                                .end("0000-011").endType("STRING").endInclusive(false)
+                                .size(10)
+                                .build(),
+                        DataIndex.builder()
+                                .start("0000-011").startType("STRING").startInclusive(true)
+                                .end("0000-011").endType("STRING").endInclusive(true)
+                                .size(1)
+                                .build()
+                ))
+        );
         assertThat("number", dataRanges.size() == 2);
-        verify(dataStore, times(4)).scan(any());
+        verify(dataStore, times(1)).scanKeyRange(any());
     }
 
     @Test
@@ -145,72 +134,125 @@ public class ReadRangeTest {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
-        var datasetVersion = 1L;
+        var datasetVersionId = 1L;
         var tableName = "test-table-name";
+        var datasetVersion = DatasetVersion.builder()
+                        .id(datasetVersionId)
+                        .datasetName(datasetName)
+                        .versionMeta("build:\n"
+                                + "  os: Linux\n"
+                                + "  starwhale: 0.0.0.dev0\n"
+                                + "created_at: 2023-10-26 19:33:06 CST\n"
+                                + "data_datastore_revision: '16661'\n"
+                                + "dataset_summary:\n"
+                                + "  blobs_byte_size: 0\n"
+                                + "  deleted_rows: 0\n"
+                                + "  increased_blobs_byte_size: 0\n"
+                                + "  rows: 199999\n"
+                                + "  updated_rows: 199999\n"
+                                + "info_datastore_revision: ''\n"
+                                + "message: ''\n"
+                                + "version: 7lrimg6swyv6h2jxopqbnxnzqljia3xsop2inkom"
+                        )
+                        .indexTable(tableName)
+                        .build();
+        var batchSize = 10;
         var consumerIdFor1 = "1";
-        var consumerIdFor2 = "2";
         var request = DataReadRequest.builder()
                 .sessionId(sessionId)
                 .consumerId(consumerIdFor1)
-                .tableName(tableName)
-                .datasetName(datasetName)
-                .datasetVersionId(datasetVersion)
+                .datasetVersion(datasetVersion)
                 .processedData(List.of())
-                .batchSize(2)
+                .batchSize(batchSize)
                 .start("0000-000")
+                .startType("STRING")
                 .startInclusive(true)
-                .end("0000-008")
+                .end("0000-011")
+                .endType("STRING")
                 .endInclusive(true)
                 .build();
 
-        // case 1: generate
-        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(null);
+        // case 1: invalid params(without startType)
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId))).willReturn(null);
+        assertThrows(SwValidationException.class, () -> dataLoader.next(DataReadRequest.builder()
+                .sessionId(sessionId)
+                .consumerId(consumerIdFor1)
+                .datasetVersion(datasetVersion)
+                .processedData(List.of())
+                .batchSize(batchSize)
+                .start("0000-000") // without startType
+                .startInclusive(true)
+                .end("0000-011")
+                .endType("STRING")
+                .endInclusive(true)
+                .build())
+        );
+
+        // case 2: generate
         given(sessionDao.insert(any())).willAnswer((Answer<Boolean>) invocation -> {
-            var session = invocation.getArgument(0, Session.class);
-            session.setId(sid);
+            var s = invocation.getArgument(0, Session.class);
+            s.setId(sid);
             return true;
         });
+        given(sessionDao.selectOne(sid)).willReturn(Session.builder()
+                        .id(sid)
+                        .datasetName(datasetName)
+                        .datasetVersion(String.valueOf(datasetVersionId))
+                        .tableName(datasetName)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
+                        .batchSize(batchSize)
+                        .status(Status.SessionStatus.UNFINISHED)
+                        .build());
+
         given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
                 .willReturn(List.of(DataReadLog.builder()
                         .id(1L)
                         .sessionId(sid)
-                        .start("0000-000").startInclusive(true)
-                        .end("0000-001").endInclusive(true)
-                        .size(2)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(false)
+                        .size(10)
                         .build()));
 
-        given(dataStore.scan(
-                DataStoreScanRequest.builder()
+        given(dataStore.scanKeyRange(
+                DataStoreScanRangeRequest.builder()
                         .start("0000-000")
+                        .startType("STRING")
                         .startInclusive(true)
-                        .end("0000-008")
+                        .end("0000-011")
+                        .endType("STRING")
                         .endInclusive(true)
                         .keepNone(true)
                         .rawResult(false)
                         .tables(List.of(
                                 DataStoreScanRequest.TableInfo.builder()
-                                        .tableName("test-table-name")
+                                        .tableName(datasetName)
                                         .columns(Map.of("id", "id"))
                                         .build()
                         ))
-                        .limit(1000)
-                        .encodeWithType(true)
+                        .rangeInfo(DataStoreScanRangeRequest.RangeInfo.builder().batchSize(10).build())
                         .build()
-        )).willReturn(new RecordList(
-                Map.of(),
-                Map.of(),
-                List.of(Map.of("id", Map.of("value", "0000-000", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-001", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-002", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-003", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-004", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-005", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-006", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-007", "type", "STRING")),
-                        Map.of("id", Map.of("value", "0000-008", "type", "STRING"))
-                ),
-                "0000-008",
-                "STRING"
+        )).willReturn(new KeyRangeList(
+                List.of(
+                        KeyRangeList.Range.builder()
+                                .start("0000-000")
+                                .startType("STRING")
+                                .startInclusive(true)
+                                .end("0000-011")
+                                .endType("STRING")
+                                .endInclusive(false)
+                                .size(10)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("0000-011")
+                                .startType("STRING")
+                                .startInclusive(true)
+                                .end("0000-011")
+                                .endType("STRING")
+                                .endInclusive(true)
+                                .size(1)
+                                .build()
+                )
         ));
 
         var dataRange = dataLoader.next(request);
@@ -220,40 +262,41 @@ public class ReadRangeTest {
                         .id(1L)
                         .sessionId(sid)
                         .consumerId(consumerIdFor1) // update consumer id
-                        .start("0000-000").startInclusive(true)
-                        .end("0000-001").endInclusive(true)
+                        .start("0000-000").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(false)
                         .assignedNum(1)
-                        .size(2)
+                        .size(10)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()
                 ));
-        verify(dataStore, times(1)).scan(any());
+        verify(dataStore, times(1)).scanKeyRange(any());
         verify(dataReadLogDao, times(1)).updateToAssigned(any());
         verify(dataReadLogDao, times(0)).updateToProcessed(any(), any(), any(), any());
         verify(sessionDao, times(1)).insert(any());
 
-        // case 2: get next data with exist session and consumer 1
+        // case 3: get next data with exist session and consumer 1
         request.setProcessedData(List.of(
-                DataIndexDesc.builder().start("0000-000").end("0000-001").build()
+                DataIndexDesc.builder().start("0000-011").end("0000-011").build()
         ));
         var session = Session.builder()
                 .id(sid)
-                .datasetName("test-name")
-                .datasetVersion("test-version")
-                .tableName("test-table-name")
-                .start("0000-000").startInclusive(true)
-                .end("0000-008").endInclusive(true)
-                .batchSize(2)
+                .datasetName(datasetName)
+                .datasetVersion(String.valueOf(datasetVersionId))
+                .tableName(tableName)
+                .start("0000-000").startType("STRING").startInclusive(true)
+                .end("0000-011").endType("STRING").endInclusive(true)
+                .batchSize(batchSize)
+                .status(Status.SessionStatus.FINISHED)
                 .build();
 
-        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersion))).willReturn(session);
+        given(sessionDao.selectOne(sessionId, String.valueOf(datasetVersionId))).willReturn(session);
         given(dataReadLogDao.selectTopsUnAssignedData(sid, cacheSize))
                 .willReturn(List.of(DataReadLog.builder()
                         .id(2L)
                         .sessionId(sid)
-                        .start("0000-002").startInclusive(true)
-                        .end("0000-003").endInclusive(true)
-                        .size(2)
+                        .start("0000-011").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
+                        .size(1)
                         .assignedNum(0)
                         .build()));
 
@@ -264,17 +307,17 @@ public class ReadRangeTest {
                         .id(2L)
                         .sessionId(sid)
                         .consumerId(consumerIdFor1)
-                        .start("0000-002").startInclusive(true)
-                        .end("0000-003").endInclusive(true)
-                        .size(2)
+                        .start("0000-011").startType("STRING").startInclusive(true)
+                        .end("0000-011").endType("STRING").endInclusive(true)
+                        .size(1)
                         .assignedNum(1)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()));
 
-        verify(dataStore, times(1)).scan(any());
+        verify(dataStore, times(1)).scanKeyRange(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
         verify(dataReadLogDao, times(1))
-                .updateToProcessed(sid, consumerIdFor1, "0000-000", "0000-001");
+                .updateToProcessed(sid, consumerIdFor1, "0000-011", "0000-011");
         verify(sessionDao, times(1)).insert(any());
 
     }

@@ -20,5 +20,6 @@ import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import java.util.List;
 
 public interface DataIndexProvider {
+
     List<DataIndex> returnDataIndex(QueryDataIndexRequest request);
 }
