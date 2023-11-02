@@ -38,8 +38,8 @@ public interface ProjectMapper {
     String COLUMNS = "id,project_name,owner_id,privacy,project_description,"
             + "is_default,is_deleted,created_time,modified_time";
 
-    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, is_default)"
-            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{isDefault})")
+    @Insert("insert into project_info(project_name, owner_id, privacy, project_description, readme, is_default)"
+            + " values (#{projectName}, #{ownerId}, #{privacy}, #{projectDescription}, #{readme}, #{isDefault})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(@NotNull ProjectEntity project);
 
@@ -58,6 +58,9 @@ public interface ProjectMapper {
     @Select("select " + COLUMNS + " from project_info"
             + " where id = #{id}")
     ProjectEntity find(@Param("id") Long id);
+
+    @Select("select readme from project_info where id = #{id}")
+    String getReadme(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from project_info"
             + " where project_name = #{projectName}"
@@ -127,8 +130,11 @@ public interface ProjectMapper {
                     if (StrUtil.isNotEmpty(project.getProjectName())) {
                         SET("project_name = #{projectName}");
                     }
-                    if (StrUtil.isNotEmpty(project.getProjectDescription())) {
+                    if (Objects.nonNull(project.getProjectDescription())) {
                         SET("project_description = #{projectDescription}");
+                    }
+                    if (Objects.nonNull(project.getReadme())) {
+                        SET("readme = #{readme}");
                     }
                     if (Objects.nonNull(project.getOwnerId())) {
                         SET("owner_id = #{ownerId}");

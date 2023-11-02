@@ -72,7 +72,12 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     public void setUp() {
         user = UserEntity.builder().userEnabled(0).userName("un12").userPwdSalt("x").userPwd("up").build();
         userMapper.insert(user);
-        project = ProjectEntity.builder().projectName("pjn").ownerId(user.getId()).privacy(1).isDefault(1)
+        project = ProjectEntity.builder()
+                .projectName("pjn")
+                .readme("readme")
+                .ownerId(user.getId())
+                .privacy(1)
+                .isDefault(1)
                 .build();
         projectMapper.insert(project);
         project2 = ProjectEntity.builder().projectName("pxn2").ownerId(user.getId()).privacy(0).isDefault(0)
@@ -128,12 +133,25 @@ public class ProjectMapperTest extends MySqlContainerHolder {
 
     @Test
     public void testModifyProject() {
-        ProjectEntity project3 = ProjectEntity.builder().projectName("pxn3").ownerId(user.getId()).privacy(0)
+        ProjectEntity project3 = ProjectEntity.builder()
+                .projectName("pxn3")
+                .ownerId(user.getId())
+                .privacy(0)
+                .readme(null)
                 .isDefault(0)
                 .build();
         project3.setId(project.getId());
         projectMapper.update(project3);
+
         validProject(project3, user, projectMapper.find(project.getId()));
+        Assertions.assertEquals("readme", projectMapper.getReadme(project.getId()));
+
+        project3 = ProjectEntity.builder()
+                .id(project.getId())
+                .readme("readme-new") // new readme content
+                .build();
+        projectMapper.update(project3);
+        Assertions.assertEquals("readme-new", projectMapper.getReadme(project.getId()));
     }
 
     @Test

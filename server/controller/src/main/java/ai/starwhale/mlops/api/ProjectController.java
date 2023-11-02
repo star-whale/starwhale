@@ -166,6 +166,17 @@ public class ProjectController {
         return ResponseEntity.ok(Code.success.asResponse(vo));
     }
 
+    @Operation(summary = "Get a project readme by Url", description = "Returns readme content.")
+    @GetMapping(value = "/project/{projectUrl}/readme", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> getProjectReadmeByUrl(
+            @PathVariable String projectUrl
+    ) {
+        var readme = projectService.getReadme(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(readme));
+    }
+
+
     @Operation(summary = "Modify project information")
     @PutMapping(value = "/project/{projectUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
@@ -177,6 +188,7 @@ public class ProjectController {
                 projectUrl,
                 updateProjectRequest.getProjectName(),
                 updateProjectRequest.getDescription(),
+                updateProjectRequest.getReadme(),
                 updateProjectRequest.getPrivacy()
         );
         if (!res) {

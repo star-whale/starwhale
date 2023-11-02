@@ -36,6 +36,7 @@ class UpdateProjectRequest(SwBaseModel):
     )
     privacy: Optional[str] = None
     description: Optional[str] = None
+    readme: Optional[str] = None
 
 
 class ResponseMessageObject(SwBaseModel):

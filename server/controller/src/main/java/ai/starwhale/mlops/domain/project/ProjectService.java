@@ -156,6 +156,10 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         return ProjectVo.fromBo(findProject(projectUrl), idConvertor);
     }
 
+    public String getReadme(String projectUrl) {
+        return projectMapper.getReadme(projectDao.getProjectId(projectUrl));
+    }
+
     public PageInfo<ProjectVo> listProject(String projectName, OrderParams orderParams, User user) {
         boolean showAll = false;
         List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
@@ -326,7 +330,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     }
 
     @Transactional
-    public Boolean updateProject(String projectUrl, String projectName, String description, String privacy) {
+    public Boolean updateProject(
+            String projectUrl, String projectName, String description, String readme, String privacy) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
@@ -352,6 +357,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
+                .readme(readme)
                 .privacy(privacyEnum.getValue())
                 .build();
         int res = projectMapper.update(entity);
