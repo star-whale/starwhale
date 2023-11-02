@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useReducer, useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import Card from '@/components/Card'
@@ -63,10 +63,11 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     })
     const [content, setContent] = React.useState('')
     const [saving, setSaving] = React.useState(false)
+    const [count, forceUpdate] = useReducer((x) => x + 1, 0)
+
+    const contentString = React.useMemo(() => (_.isString(content) ? content : JSON.stringify(content)), [content])
 
     const handleSave = useEventCallback(() => {
-        const contentString = _.isString(content) ? content : JSON.stringify(content)
-
         async function update() {
             setSaving(true)
             await changeProject(project.id, {
@@ -119,11 +120,17 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                             ) : (
                                 <div className='flex gap-8px'>
                                     {/* cancel */}
-                                    <ExtendButton onClick={() => setReadonly(true)} kind='secondary'>
+                                    <ExtendButton
+                                        onClick={() => {
+                                            setReadonly(true)
+                                            forceUpdate()
+                                        }}
+                                        kind='secondary'
+                                    >
                                         {t('Cancel')}
                                     </ExtendButton>
                                     {/* save  */}
-                                    <ExtendButton disabled={saving} onClick={handleSave}>
+                                    <ExtendButton disabled={saving || contentString === info.data} onClick={handleSave}>
                                         {t('Save')}
                                     </ExtendButton>
                                 </div>
@@ -131,6 +138,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         </WithAuth>
                     </div>
                     <TiptapEditor
+                        key={count}
                         id={`project-readme-${project.id}`}
                         initialContent={info.data || ''}
                         onContentChange={(tmp: string) => setContent(tmp)}
