@@ -66,5 +66,5 @@ if __name__ == "__main__":
         _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-eval"
     else:
         _ds_uri = f"pokemon-blip-captions-eval"
-    # build_ds_from_local_fs(_ds_uri)
-    build_ds_from_hf(_ds_uri)
+    build_ds_from_local_fs(_ds_uri)
+    # build_ds_from_hf(_ds_uri)

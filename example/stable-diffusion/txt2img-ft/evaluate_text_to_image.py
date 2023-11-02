@@ -20,6 +20,8 @@ from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from diffusers.loaders import LORA_WEIGHT_NAME
 from starwhale import Text, PipelineHandler, Image, MIMEType
 from starwhale.api.service import api
+from starwhale.base.type import PredictLogMode
+
 try:
     from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
 except ImportError:
@@ -30,7 +32,7 @@ model_id = get_base_model_path() if get_base_model_path().exists() else "CompVis
 
 class StableDiffusion(PipelineHandler):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(predict_log_mode=PredictLogMode.PLAIN)
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id, torch_dtype=torch.float16
         )

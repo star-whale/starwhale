@@ -54,8 +54,11 @@ def build_ds_from_local_fs(ds_uri):
 def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captions"):
     ds = dataset(ds_uri, create="empty")
     hf_ds = load_dataset(dataset_name, cache_dir="cache")
-    max_number = 2
+    max_number = 100
+    index = 0
+    print("preparing data...")
     for row in hf_ds["train"]:
+        print(f"{index}/{max_number}")
         if max_number < 0:
             break
         bytes = BytesIO()
@@ -70,6 +73,7 @@ def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captio
             }
         )
         max_number -= 1
+        index += 1
     ds.commit()
     ds.close()
     print("build done!")
@@ -78,8 +82,8 @@ def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captio
 if __name__ == "__main__":
     instance_uri = os.getenv(SWEnv.instance_uri)
     if instance_uri:
-        _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-mini"
+        _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-train"
     else:
-        _ds_uri = f"pokemon-blip-captions-mini"
+        _ds_uri = f"pokemon-blip-captions-train"
     # build_ds_from_local_fs(_ds_uri)
     build_ds_from_hf(_ds_uri)
