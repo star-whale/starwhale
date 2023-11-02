@@ -11,7 +11,7 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import TextLink from './Link/TextLink'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
-const EXPANDED_PADDING = '24px'
+const EXPANDED_PADDING = '27px'
 const FOLDED_PADDING = '0px'
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -38,6 +38,7 @@ const useBaseSideBarStyles = createUseStyles({
         textDecoration: 'none',
         marginBottom: '5px',
         paddingLeft: EXPANDED_PADDING,
+        alignItems: 'center',
     },
     siderNavLink: {
         display: 'flex',
@@ -139,6 +140,13 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
         }
     }, [ctx])
 
+    const $title = (
+        <div className={styles.siderTitle}>
+            <span className='flex-shrink-0 lh-none'>{icon}</span>
+            {ctx.expanded && <span className='font-bold overflow-hidden text-ellipsis'>{title}</span>}
+        </div>
+    )
+
     return (
         <div
             className={styles.sidebarWrapper}
@@ -150,18 +158,19 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
         >
             {title && icon && (
                 <div>
-                    <TextLink
-                        to={titleLink ?? '/projects'}
-                        tooltip={{
-                            content: title,
-                            placement: 'bottomRight',
-                        }}
-                    >
-                        <div className={styles.siderTitle}>
-                            <span className='flex-shrink-0'>{icon}</span>
-                            {ctx.expanded && <span className='font-bold overflow-hidden text-ellipsis'>{title}</span>}
-                        </div>
-                    </TextLink>
+                    {titleLink ? (
+                        <TextLink
+                            to={titleLink}
+                            tooltip={{
+                                content: title,
+                                placement: 'bottomRight',
+                            }}
+                        >
+                            {$title}
+                        </TextLink>
+                    ) : (
+                        $title
+                    )}
                 </div>
             )}
             <Navigation

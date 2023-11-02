@@ -193,7 +193,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
         <div className={styles.projectCard}>
             <div className={styles.row}>
                 <div className={styles.name}>
-                    <TextLink className={styles.text} to={`/projects/${project.id}/jobs`}>
+                    <TextLink className={styles.text} to={`/projects/${project.id}/overview`}>
                         {[project.owner?.name, project.name].join('/')}
                     </TextLink>
                 </div>
@@ -483,7 +483,7 @@ export default function ProjectListCard() {
     const [filter, setFilter] = useState('')
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
     const [editProject, setEditProject] = useState<IProjectSchema>()
-    const [onlyMyProject, setOnlyMyProject] = useState(true)
+    const [onlyMyProject, setOnlyMyProject] = useLocalStorage('onlyMyProject', true)
     const history = useHistory()
 
     const handleCreateProject = useCallback(

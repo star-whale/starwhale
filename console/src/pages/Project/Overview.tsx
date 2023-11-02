@@ -1,12 +1,11 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import Card from '@/components/Card'
 import { ICreateProjectSchema } from '@project/schemas/project'
-import { fetchProject, changeProject } from '@project/services/project'
+import { fetchProject, changeProject, fetchProjectReadme } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
-import { StatefulTooltip } from 'baseui/tooltip'
 import { useHistory } from 'react-router-dom'
 import { IProjectSchema } from '@/domain/project/schemas/project'
 import { createUseStyles } from 'react-jss'
@@ -15,7 +14,11 @@ import { useQuery } from 'react-query'
 import Avatar from '@/components/Avatar'
 import WithAuth from '@/api/WithAuth'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
-import { Button } from '@starwhale/ui'
+import { Button, ExtendButton } from '@starwhale/ui'
+import { formatTimestampDateTime } from '@/utils/datetime'
+import TiptapEditor from '@starwhale/ui/TiptapEditor'
+import _ from 'lodash'
+import { useEventCallback } from '@starwhale/core'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -23,11 +26,6 @@ type IProjectCardProps = {
 }
 
 const useCardStyles = createUseStyles({
-    card: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '22px',
-    },
     row: {
         display: 'flex',
         fontSize: '14px',
@@ -37,26 +35,7 @@ const useCardStyles = createUseStyles({
     rowKey: {
         color: 'rgba(2,16,43,0.60)',
         marginRight: '8px',
-    },
-    rowValue: {
-        display: 'flex',
-        alignItems: 'center',
-        color: '#02102B',
-    },
-    rowEnd: {
-        marginLeft: 'auto',
-    },
-    tag: {
-        fontSize: '12px',
-        color: '#00B368',
-        backgroundColor: '#E6FFF4',
-        borderRadius: '9px',
-        padding: '3px 10px',
-    },
-    divider: {
-        height: '1px',
-        width: '100%',
-        backgroundColor: '#EEF1F6',
+        flexShrink: 0,
     },
     memberWrapper: {
         display: 'flex',
@@ -79,61 +58,126 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     const history = useHistory()
     const members = useFetchProjectMembers(project.id)
     const { role } = useFetchProjectRole(project.id)
+    const info = useQuery([project.id], () => fetchProjectReadme(project.id), {
+        enabled: !!project.id,
+    })
+    const [content, setContent] = React.useState('')
+    const [saving, setSaving] = React.useState(false)
+
+    const handleSave = useEventCallback(() => {
+        const contentString = _.isString(content) ? content : JSON.stringify(content)
+
+        async function update() {
+            setSaving(true)
+            await changeProject(project.id, {
+                readme: contentString,
+            })
+            await info.refetch()
+        }
+
+        update()
+            .then(() => {})
+            .finally(() => {
+                setSaving(false)
+            })
+    })
+
+    useEffect(() => {
+        if (info.data) {
+            setContent(info.data)
+        }
+    }, [info.data])
+
+    const [readonly, setReadonly] = React.useState(true)
 
     return (
-        <div className={styles.card}>
-            <div className={styles.row}>
-                <div className={styles.rowValue}>{[project.owner?.name, project.name].join('/')}</div>
-                <div className={styles.rowEnd}>
-                    <WithAuth role={role} id='project.update'>
-                        <Button onClick={() => onEdit?.()} icon='edit' kind='secondary'>
-                            {t('Edit')}
-                        </Button>
-                    </WithAuth>
-                </div>
+        <div className='flex flex-col flex-1'>
+            <div className='flex text-16px color-[#02102b] lh-none font-bold gap-12px my-20px items-center'>
+                <div>{[project.owner?.name, project.name].join('/')}</div>
+                <p
+                    className='text-12px font-normal py-3px px-10px bg-[#E6FFF4] rounded-[9px]'
+                    style={{
+                        color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
+                        backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
+                    }}
+                >
+                    {project.privacy === 'PRIVATE' ? t('Private') : t('Public')}
+                </p>
             </div>
-            <div className={styles.row}>
-                <div className={styles.rowKey}>{t('Privacy')}: </div>
-                <div className={styles.rowValue}>
-                    <p
-                        className={styles.tag}
-                        style={{
-                            color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
-                            backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
-                        }}
-                    >
-                        {project.privacy === 'PRIVATE' ? t('Private') : t('Public')}
-                    </p>
+            <div className='flex flex-1 gap-20px'>
+                {/* readme */}
+                <div className='flex flex-col flex-1 border-1 border-[#cfd7e6] px-20px py-12px rounded-4px'>
+                    <div className='flex justify-between items-center mb-12px'>
+                        <div className='flex-1 text-16px font-bold color-[rgba(2,16,43,0.60)]'>
+                            {t('project.readme')}
+                        </div>
+                        <WithAuth role={role} id='project.update'>
+                            {readonly ? (
+                                <Button onClick={() => setReadonly(false)} icon='edit' kind='secondary'>
+                                    {t('Edit')}
+                                </Button>
+                            ) : (
+                                <div className='flex gap-8px'>
+                                    {/* cancel */}
+                                    <ExtendButton onClick={() => setReadonly(true)} kind='secondary'>
+                                        {t('Cancel')}
+                                    </ExtendButton>
+                                    {/* save  */}
+                                    <ExtendButton disabled={saving} onClick={handleSave}>
+                                        {t('Save')}
+                                    </ExtendButton>
+                                </div>
+                            )}
+                        </WithAuth>
+                    </div>
+                    <TiptapEditor
+                        id={`project-readme-${project.id}`}
+                        initialContent={info.data || ''}
+                        onContentChange={(tmp: string) => setContent(tmp)}
+                        editable={!readonly}
+                    />
                 </div>
-            </div>
-            <div className={styles.row}>
-                <div className={styles.rowKey}>{t('Description')}</div>
-                <div className={styles.rowValue}>
-                    <StatefulTooltip content='desc' placement='bottom'>
-                        {project.description ?? ' '}
-                    </StatefulTooltip>
-                </div>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.row}>
-                <div className={styles.rowKey}>{t('Member')}: </div>
-                <div className={styles.rowEnd}>
-                    <WithAuth role={role} id='member.update'>
-                        <Button
-                            onClick={() => history.push(`/projects/${project.id}/members`)}
-                            icon='a-managemember'
-                            kind='secondary'
-                        >
-                            {t('Manage Member')}
-                        </Button>
-                    </WithAuth>
-                </div>
-            </div>
-            <div className={styles.row}>
-                <div className={styles.memberWrapper}>
-                    {members.data?.map((member, i) => (
-                        <Avatar key={i} name={member.user.name} />
-                    ))}
+                {/* right */}
+                <div className='basis-420px text-14px lh-none'>
+                    {/* basic */}
+                    <div className='flex justify-between border-t border-[#cfd7e6] items-center pt-20px mb-20px'>
+                        <div className='flex-1 text-16px font-bold color-[rgba(2,16,43,0.60)]'>
+                            {t('project.overview.basic')}
+                        </div>
+                        <WithAuth role={role} id='project.update'>
+                            <Button onClick={() => onEdit?.()} icon='edit' kind='secondary'>
+                                {t('Edit')}
+                            </Button>
+                        </WithAuth>
+                    </div>
+                    <div className='flex justify-start my-20px'>
+                        <div className={styles.rowKey}>{t('Created At')}:</div>
+                        <div>{project?.createdTime ? formatTimestampDateTime(project?.createdTime) : ''}</div>
+                    </div>
+                    <div className='flex justify-start my-20px'>
+                        <div className={styles.rowKey}>{t('Description')}:</div>
+                        <div>{project.description || ' '}</div>
+                    </div>
+                    {/* member */}
+                    <div className='flex justify-between border-t border-[#cfd7e6]  items-center pt-20px mb-20px'>
+                        <div className='flex-1 text-16px font-bold color-[rgba(2,16,43,0.60)]'>{t('Member')}</div>
+                        <WithAuth role={role} id='member.update'>
+                            <Button
+                                onClick={() => history.push(`/projects/${project.id}/members`)}
+                                icon='a-managemember'
+                                kind='secondary'
+                            >
+                                {t('Manage Member')}
+                            </Button>
+                        </WithAuth>
+                    </div>
+                    <div className={styles.row}>
+                        <div className={styles.memberWrapper}>
+                            {members.data?.map((member, i) => (
+                                <Avatar key={i} name={member.user.name} />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

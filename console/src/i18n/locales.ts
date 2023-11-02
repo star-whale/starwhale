@@ -478,6 +478,14 @@ const project = {
         en: 'This is where you can write a long description for your project.',
         zh: '您可以详细描述下您的项目。',
     },
+    'project.overview.basic': {
+        en: 'Basic',
+        zh: '基本信息',
+    },
+    'project.readme': {
+        en: 'README',
+        zh: 'README',
+    },
 }
 
 const job = {
@@ -1381,6 +1389,10 @@ const locales0 = {
     'Continue': {
         en: 'Continue',
         zh: '继续',
+    },
+    'Save': {
+        en: 'Save',
+        zh: '保存',
     },
     'Cancel': {
         en: 'Cancel',

@@ -15,13 +15,17 @@ export interface IProjectSchema extends IResourceSchema {
     }
 }
 
-export interface IUpdateProjectSchema {
-    description?: string
-}
-
 export interface ICreateProjectSchema {
     ownerId?: string
     projectName: string
+    privacy?: string
+    description?: string
+}
+
+export interface IUpdateProjectSchema {
+    readme?: string
+    ownerId?: string
+    projectName?: string
     privacy?: string
     description?: string
 }

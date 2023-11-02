@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import { IUserRoleSchema } from '@user/schemas/user'
-import { ICreateProjectSchema, IProjectSchema, IProjectRoleSchema } from '../schemas/project'
+import { ICreateProjectSchema, IUpdateProjectSchema, IProjectSchema, IProjectRoleSchema } from '../schemas/project'
 
 export async function listProjects(query: IListQuerySchema & { sort?: string }): Promise<IListSchema<IProjectSchema>> {
     const resp = await axios.get<IListSchema<IProjectSchema>>('/api/v1/project', { params: query })
@@ -10,6 +10,11 @@ export async function listProjects(query: IListQuerySchema & { sort?: string }):
 
 export async function fetchProject(projectId: string): Promise<any> {
     const resp = await axios.get<IProjectSchema>(`/api/v1/project/${projectId}`)
+    return resp.data
+}
+
+export async function fetchProjectReadme(projectId: string): Promise<string> {
+    const resp = await axios.get<string>(`/api/v1/project/${projectId}/readme`)
     return resp.data
 }
 
@@ -23,7 +28,7 @@ export async function removeProject(projectId: string): Promise<string> {
     return data
 }
 
-export async function changeProject(projectId: string, data: ICreateProjectSchema): Promise<IProjectSchema> {
+export async function changeProject(projectId: string, data: IUpdateProjectSchema): Promise<IProjectSchema> {
     const resp = await axios.put<IProjectSchema>(`/api/v1/project/${projectId}`, data)
     return resp.data
 }
