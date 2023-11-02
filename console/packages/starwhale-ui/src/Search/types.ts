@@ -1,3 +1,7 @@
+import { DATETIME_DELIMITER } from '@starwhale/core/datastore/schemas/TableQueryFilter'
+import moment from 'moment'
+import _ from 'lodash'
+
 export enum KIND {
     BOOLEAN = 'BOOLEAN',
     CATEGORICAL = 'CATEGORICAL',
@@ -19,8 +23,8 @@ export enum OPERATOR {
     NOT_IN = 'NOT_IN',
     OR = 'OR',
     AND = 'AND',
-    // CONTAINS = 'CONTAINS',
-    // NOT_CONTAINS = 'NOT_CONTAINS',
+    CONTAINS = 'CONTAINS',
+    NOT_CONTAINS = 'NOT_CONTAINS',
     // IS = 'IS',
     // IS_NOT = 'IS_NOT',
     EXISTS = 'EXISTS',
@@ -34,7 +38,7 @@ export enum OPERATOR {
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN, OPERATOR.NOT_IN],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.CONTAINS, OPERATOR.NOT_CONTAINS, OPERATOR.IN, OPERATOR.NOT_IN],
     [KIND.NUMERICAL]: [
         OPERATOR.EQUAL,
         OPERATOR.GREATER,
@@ -139,28 +143,28 @@ export const Operators: Record<string, OperatorT> = {
             }
         },
     },
-    // [OPERATOR.CONTAINS]: {
-    //     key: OPERATOR.CONTAINS,
-    //     label: 'contains',
-    //     value: 'contains',
-    //     buildFilter: ({ value = '' }) => {
-    //         return (data: string) => {
-    //             return String(data ?? '')
-    //                 .trim()
-    //                 .includes(value)
-    //         }
-    //     },
-    // },
-    // [OPERATOR.NOT_CONTAINS]: {
-    //     key: OPERATOR.NOT_CONTAINS,
-    //     label: 'not contains',
-    //     value: 'notContains',
-    //     buildFilter: ({ value = '' }) => {
-    //         return (data: string) => {
-    //             return !data.trim().includes(value)
-    //         }
-    //     },
-    // },
+    [OPERATOR.CONTAINS]: {
+        key: OPERATOR.CONTAINS,
+        label: 'contains',
+        value: 'contains',
+        buildFilter: ({ value = '' }) => {
+            return (data: string) => {
+                return String(data ?? '')
+                    .trim()
+                    .includes(value)
+            }
+        },
+    },
+    [OPERATOR.NOT_CONTAINS]: {
+        key: OPERATOR.NOT_CONTAINS,
+        label: 'not contains',
+        value: 'notContains',
+        buildFilter: ({ value = '' }) => {
+            return (data: string) => {
+                return !data.trim().includes(value)
+            }
+        },
+    },
     [OPERATOR.IN]: {
         key: OPERATOR.IN,
         label: 'in',
@@ -188,9 +192,9 @@ export const Operators: Record<string, OperatorT> = {
         label: 'before',
         value: 'before',
         // @ts-ignore
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return data < value
+        buildFilter: ({ value }) => {
+            return (data: number) => {
+                return data < moment(value).valueOf()
             }
         },
     },
@@ -199,9 +203,9 @@ export const Operators: Record<string, OperatorT> = {
         label: 'after',
         value: 'after',
         // @ts-ignore
-        buildFilter: ({ value = '' }) => {
-            return (data: string) => {
-                return data > value
+        buildFilter: ({ value }) => {
+            return (data: number) => {
+                return data > moment(value).valueOf()
             }
         },
     },
@@ -210,9 +214,10 @@ export const Operators: Record<string, OperatorT> = {
         label: 'between',
         value: 'between',
         // @ts-ignore
-        buildFilter: ({ value = [] }) => {
-            return (data: string) => {
-                return data > value[0] && data < value[1]
+        buildFilter: ({ value: _v }) => {
+            const [before, after] = _.isString(_v) ? _v.split(DATETIME_DELIMITER) : _v
+            return (data: number) => {
+                return data > moment(before).valueOf() && data < moment(after).valueOf()
             }
         },
     },
@@ -221,9 +226,10 @@ export const Operators: Record<string, OperatorT> = {
         label: 'not between',
         value: 'not between',
         // @ts-ignore
-        buildFilter: ({ value = [] }) => {
-            return (data: string) => {
-                return data < value[0] || data > value[1]
+        buildFilter: ({ value: _v }) => {
+            const [before, after] = _.isString(_v) ? _v.split(DATETIME_DELIMITER) : _v
+            return (data: number) => {
+                return data < moment(before).valueOf() || data > moment(after).valueOf()
             }
         },
     },

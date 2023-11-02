@@ -1,16 +1,30 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { StyledTable, StyledHead, StyledHeadCell, StyledBody, StyledRow, StyledCell } from 'baseui/table'
-import { ExtendButton, IconFont, FormSelect, Search, createBuilder } from '@starwhale/ui'
+import {
+    ExtendButton,
+    IconFont,
+    FormSelect,
+    Search,
+    createBuilder,
+    FilterDatetime,
+    FilterString,
+    Operators,
+} from '@starwhale/ui'
 import { IJobEventSchema } from '@/domain/job/schemas/job'
 import { expandBorder } from '../../../packages/starwhale-ui/src/utils/index'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFullscreen, useToggle } from 'react-use'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
-import FieldDatetime from '@starwhale/ui/Search/components/FieldDatetime'
 
 export interface ITaskEventListCardProps {
     sources: Record<string, IJobEventSchema[]>
+}
+
+type QueryT = {
+    property: string
+    op: string
+    value: string
 }
 
 export default function TaskEventListCard({ sources }: ITaskEventListCardProps) {
@@ -18,6 +32,8 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
     const [expandId, setExpandId] = React.useState<number | undefined>(undefined)
     const [current, setCurrent] = React.useState<string | undefined>(undefined)
     const ref = React.useRef<HTMLDivElement>(null)
+
+    const [queries, setQueries] = React.useState<QueryT[]>([])
 
     const [css] = themedUseStyletron()
     const cls = css({
@@ -50,9 +66,25 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             </p>
         ),
     }
+
     const $current = current ?? Object.keys(sources)[0]
 
-    const list = sources[$current] ?? []
+    const $listRaw = React.useMemo(() => sources[$current] ?? [], [$current, sources])
+
+    const $listFiltered = React.useMemo(() => {
+        const set = new Set($listRaw.map((_, idx) => idx))
+        Array.from(queries || new Set(), (f) => f).forEach(({ property, op, value }: any) => {
+            // @ts-ignore
+            const filterFn = Operators[op]?.buildFilter({ value })
+            Array.from(set).forEach((idx) => {
+                if (filterFn && !filterFn($listRaw[idx][property])) {
+                    set.delete(idx)
+                }
+            })
+        })
+
+        return [...set].map((idx) => $listRaw[idx])
+    }, [$listRaw, queries])
 
     const fields = ['timestamp', 'eventType', 'source', 'message', 'data']
 
@@ -67,9 +99,9 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             getFilters: () =>
                 createBuilder({
                     fields,
-                    list,
+                    list: $listRaw,
                     key: 'timestamp',
-                })(FieldDatetime),
+                })(FilterDatetime),
         },
         {
             key: 'eventType',
@@ -78,6 +110,12 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             headerStyle: {
                 flex: '0.7',
             },
+            getFilters: () =>
+                createBuilder({
+                    fields,
+                    list: $listRaw,
+                    key: 'eventType',
+                })(FilterString),
         },
         {
             key: 'source',
@@ -86,6 +124,12 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             headerStyle: {
                 flex: '0.5',
             },
+            getFilters: () =>
+                createBuilder({
+                    fields,
+                    list: $listRaw,
+                    key: 'source',
+                })(FilterString),
         },
         {
             key: 'message',
@@ -94,6 +138,12 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             headerStyle: {
                 flex: '3',
             },
+            getFilters: () =>
+                createBuilder({
+                    fields,
+                    list: $listRaw,
+                    key: 'message',
+                })(FilterString),
         },
         {
             key: 'data',
@@ -102,6 +152,12 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             headerStyle: {
                 flex: '2',
             },
+            getFilters: () =>
+                createBuilder({
+                    fields,
+                    list: $listRaw,
+                    key: 'data',
+                })(FilterString),
         },
     ]
 
@@ -121,7 +177,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
         )
     })
 
-    const attrRow = list.map((item) => {
+    const attrRow = $listFiltered.map((item) => {
         const isExpand = expandId === item.id
 
         return (
@@ -199,7 +255,11 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
             <div className='grid gap-20px grid-cols-[280px_1fr_16px] mb-20px'>
                 <FormSelect options={options} onChange={setCurrent as any} value={$current} clearable={false} />
                 <div className='flex-1'>
-                    <Search getFilters={(key) => attrs[key]?.getFilters() ?? {}} />
+                    <Search
+                        value={queries}
+                        getFilters={(key) => (attrs.find((v) => v.key === key) || attrs[0])?.getFilters()}
+                        onChange={setQueries as any}
+                    />
                 </div>
                 {/* <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} /> */}
                 <ExtendButton

@@ -117,6 +117,7 @@ export default function JobStatusSelector({
         if (typeof value === 'string')
             return String(value)
                 .split(',')
+                .filter((item) => item in JOB_STATUS)
                 .map((item: any) => ({ id: item }))
 
         return (
@@ -124,6 +125,7 @@ export default function JobStatusSelector({
                 id: item,
             })) ?? []
         )
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value])
 
     return (

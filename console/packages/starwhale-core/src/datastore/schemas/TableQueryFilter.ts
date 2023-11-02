@@ -138,6 +138,9 @@ class TableQueryFilter {
                 }
                 return new TableQueryFilter(OPERATOR.OR, operands)
             }
+            case OPERATOR.CONTAINS:
+            case OPERATOR.NOT_CONTAINS:
+                return undefined
             default: {
                 break
             }
