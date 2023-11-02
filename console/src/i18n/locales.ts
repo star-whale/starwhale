@@ -470,6 +470,14 @@ const project = {
         zh: '我的项目：您作为项目成员参与的项目',
         en: 'My Projects: Projects you are involved in as a member',
     },
+    'project.readme.add': {
+        en: 'Edit a Readme File',
+        zh: '编辑 README 文件',
+    },
+    'project.readme.desc': {
+        en: 'This is where you can write a long description for your project.',
+        zh: '您可以详细描述下您的项目。',
+    },
 }
 
 const job = {

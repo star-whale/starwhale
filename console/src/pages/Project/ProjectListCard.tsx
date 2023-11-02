@@ -31,6 +31,7 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
 import Checkbox from '@starwhale/ui/Checkbox'
 import QuickStart from '@/domain/project/components/QuickStart'
+import { useHistory } from 'react-router'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -483,23 +484,30 @@ export default function ProjectListCard() {
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
     const [editProject, setEditProject] = useState<IProjectSchema>()
     const [onlyMyProject, setOnlyMyProject] = useState(true)
+    const history = useHistory()
 
     const handleCreateProject = useCallback(
-        async (data: ICreateProjectSchema) => {
-            await createProject(data)
+        async (data: ICreateProjectSchema, editReadme = false) => {
+            const id = await createProject(data)
             await projectsInfo.refetch()
             setIsCreateProjectOpen(false)
+            if (editReadme) {
+                history.push(`/projects/${id}/overview`)
+            }
         },
-        [projectsInfo]
+        [projectsInfo, history]
     )
     const handleEditProject = useCallback(
-        async (data: ICreateProjectSchema) => {
+        async (data: ICreateProjectSchema, editReadme = false) => {
             if (!editProject) return
             await changeProject(editProject.id, data)
             await projectsInfo.refetch()
             setIsCreateProjectOpen(false)
+            if (editReadme) {
+                history.push(`/projects/${editProject.id}/overview`)
+            }
         },
-        [projectsInfo, editProject]
+        [projectsInfo, editProject, history]
     )
 
     const [data, setData] = useState<IProjectSchema[]>([])

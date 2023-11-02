@@ -12,6 +12,8 @@ import { IUserSchema } from '@user/schemas/user'
 import { createUseStyles } from 'react-jss'
 import Input from '@starwhale/ui/Input'
 import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
+import Checkbox from '@starwhale/ui/Checkbox'
+import { useToggle } from 'ahooks'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
 
@@ -120,6 +122,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
             projectName: project.name,
         })
     }, [project])
+    const [checked, { toggle }] = useToggle(false)
 
     const [loading, setLoading] = useState(false)
 
@@ -131,12 +134,12 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
         async (values_) => {
             setLoading(true)
             try {
-                await onSubmit(values_)
+                await onSubmit(values_, checked)
             } finally {
                 setLoading(false)
             }
         },
-        [onSubmit]
+        [onSubmit, checked]
     )
 
     return (
@@ -188,6 +191,13 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                     }}
                 />
             </FormItem>
+            <div className='my-20px flex flex-col gap-8px'>
+                <Checkbox checked={checked} onChange={(v) => toggle(v)}>
+                    {t('project.readme.add')}
+                </Checkbox>
+                <p>{t('project.readme.desc')}</p>
+            </div>
+
             <FormItem key='submit'>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1 }} />
