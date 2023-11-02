@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import io
 import typing as t
 
 import gradio
@@ -48,10 +48,13 @@ class StableDiffusion(PipelineHandler):
         self.pipe = pipe.to(device)
 
     def predict(self, data: t.Dict[str, str]) -> t.Any:
-        return Image(
-            self.pipe(
+        img = self.pipe(
                 data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs
-            ).images[0].tobytes(),
+            ).images[0]
+        byte_arr = io.BytesIO()
+        img.save(byte_arr, format="png")
+        return Image(
+            byte_arr,
             mime_type=MIMEType.PNG,
         )
 
