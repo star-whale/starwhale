@@ -19,6 +19,7 @@ export interface IExtendButtonProps extends IButtonProps {
     tooltip?: string
     transparent?: boolean
     icondisable?: boolean
+    iconnormal?: boolean
 }
 
 function Button(
@@ -178,7 +179,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         nopadding: {
             BaseButton: {
                 style: {
-                    lineHeight: '1',
+                    // lineHeight: '1',
                     paddingLeft: '0',
                     paddingRight: '0',
                     paddingBottom: '0',
@@ -228,6 +229,26 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                 },
             },
         },
+        iconnormal: {
+            BaseButton: {
+                style: {
+                    'backgroundColor': 'transparent',
+                    'color': 'rgba(2,16,43,0.60)',
+                    ':hover': {
+                        backgroundColor: 'transparent',
+                        color: theme.brandPrimaryHover,
+                    },
+                    ':focus': {
+                        backgroundColor: 'transparent',
+                        color: theme.brandPrimaryHover,
+                    },
+                    ':active': {
+                        backgroundColor: 'transparent',
+                        color: 'rgba(2,16,43,0.20)',
+                    },
+                },
+            },
+        },
         // btn & icon & disabled
         icondisable: {
             BaseButton: {
@@ -249,13 +270,14 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         props.transparent ? STYLES.transparent : {},
         props.negative ? STYLES.negative : {},
         props.icondisable ? STYLES.icondisable : {},
+        props.iconnormal ? STYLES.iconnormal : {},
         props.overrides ? props.overrides : {},
     ].reduce(mergeOverrides, {})
 
     if (props.tooltip) {
         return (
             <Tooltip content={props.tooltip} showArrow placement='top'>
-                <div style={{ lineHeight: 1 }}>
+                <div className='lh-none f-c-c'>
                     <ForwardButton {...props} overrides={overrides} ref={ref} />
                 </div>
             </Tooltip>
@@ -268,6 +290,7 @@ ExtendButton.displayName = 'ExtendButton'
 ExtendButton.defaultProps = {
     nopadding: undefined,
     transparent: undefined,
+    iconnormal: undefined,
     negative: undefined,
     kind: 'primary',
     as: undefined,

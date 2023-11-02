@@ -228,10 +228,10 @@ export default function JobActionGroup({
         <ButtonGroup key='action'>
             {actions[job.jobStatus] ?? ''}
             {rerun}
+            {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />}
             {job.exposedLinks?.map((exposed) => (
                 <ExposedLink key={exposed.link} data={exposed} />
             ))}
-            {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />}
             {children}
         </ButtonGroup>
     )

@@ -141,6 +141,9 @@ export type IconTypesT =
     | 'a-Pushlocal'
     | 'save'
     | 'a-saveas'
+    | 'play'
+    | 'top2'
+    | 'txt'
 
 interface IIconFontProps {
     style?: React.CSSProperties

@@ -69,7 +69,7 @@ function getOperatorOpeionsByKind(kind: KIND) {
     }))
 }
 
-function FilterDatatime(options: FilterT): FilterT {
+function FilterDatetime(options: FilterT): FilterT {
     return FilterBuilder({
         ...options,
         kind: KIND.DATATIME,
@@ -102,6 +102,14 @@ function FilterString(options: FilterT): FilterT {
     })
 }
 
+function FilterStrinWithContains(options: FilterT): FilterT {
+    return FilterBuilder({
+        ...options,
+        kind: KIND.STRING,
+        operatorOptions: getOperatorOpeionsByKind(KIND.STRING_WITH_CONTAINS),
+    })
+}
+
 function FilterBuilderByColumnType(type: string, options: FilterT): FilterT {
     switch (type) {
         default:
@@ -120,5 +128,53 @@ function FilterBuilderByColumnType(type: string, options: FilterT): FilterT {
     }
 }
 
-export { FilterBuilder, FilterBoolean, FilterNumberical, FilterString, FilterDatatime, FilterBuilderByColumnType }
+export function createBuilder({
+    key,
+    fields = [],
+    list = [],
+}: {
+    key: string
+    fields: string[]
+    list: any[]
+}): (args: any) => FilterT {
+    const valueHints = new Set()
+    // collect value hints
+    list.forEach((item) => {
+        if (valueHints.size < 20) valueHints.add(item[key])
+    })
+
+    const fieldOptions = fields.map((field) => {
+        return {
+            id: field,
+            type: field,
+            label: field,
+        }
+    })
+
+    const valueOptions = [...valueHints].map((v) => ({
+        id: v,
+        type: v,
+        label: v,
+    }))
+
+    const build =
+        (cached) =>
+        (_FilterBuilder, _options = {}) =>
+            _FilterBuilder({ ...cached, ..._options })
+
+    return build({
+        fieldOptions,
+        valueOptions,
+    })
+}
+
+export {
+    FilterBuilder,
+    FilterBoolean,
+    FilterNumberical,
+    FilterString,
+    FilterDatetime,
+    FilterBuilderByColumnType,
+    FilterStrinWithContains,
+}
 export default FilterBuilder

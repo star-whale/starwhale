@@ -102,7 +102,13 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
         if (!input && isEditing) setInput(formatDate(new Date()))
     }, [isEditing])
 
-    if (!isEditing) return <Label {...rest}>{rest.value}</Label>
+    if (!isEditing)
+        return (
+            <Label {...rest}>
+                {rest.value}
+                {rest.renderAfter?.()}
+            </Label>
+        )
 
     return (
         <div ref={ref}>
@@ -115,14 +121,7 @@ function FieldDatetime({ options: renderOptions = [], optionFilter = () => true,
                 onItemIdsChange={(ids = []) => rest.onChange?.(ids.join(','))}
                 Content={Content}
             >
-                {isEditing && (
-                    <FieldInput width={400} focused inputRef={rest.inputRef} value={input} onChange={setInput} />
-                )}
-                {!isEditing && (
-                    <Label {...rest}>
-                        {Array.isArray(rest.value) ? rest.value.join(',') : rest.value} {rest.renderAfter?.()}
-                    </Label>
-                )}
+                <FieldInput width={400} focused inputRef={rest.inputRef} value={input} onChange={setInput} />
             </PopoverContainer>
         </div>
     )

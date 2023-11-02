@@ -2,28 +2,17 @@ import '@patternfly/react-core/dist/styles/base.css'
 
 import React, { useLayoutEffect, useRef } from 'react'
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer'
-import {
-    Button,
-    Tooltip,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-    ToolbarToggleGroup,
-} from '@patternfly/react-core'
+import { Button, Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem, ToolbarToggleGroup } from '@patternfly/react-core'
 import OutlinedPlayCircleIcon from '@patternfly/react-icons/dist/esm/icons/outlined-play-circle-icon'
-import ExpandIcon from '@patternfly/react-icons/dist/esm/icons/expand-icon'
-import PauseIcon from '@patternfly/react-icons/dist/esm/icons/pause-icon'
-import PlayIcon from '@patternfly/react-icons/dist/esm/icons/play-icon'
 import EllipsisVIcon from '@patternfly/react-icons/dist/esm/icons/ellipsis-v-icon'
-import DownloadIcon from '@patternfly/react-icons/dist/esm/icons/download-icon'
-import HistoryIcon from '@patternfly/react-icons/dist/esm/icons/history-icon'
 import useWebSocket from '@/hooks/useWebSocket'
 import SWSelect from '@starwhale/ui/Select'
 import './LogView.scss'
 import useTranslation from '@/hooks/useTranslation'
 import { useFullscreen, useInterval, useToggle } from 'react-use'
 import { useEvent } from '@starwhale/core'
+import { ExtendButton } from '@starwhale/ui/Button'
+import IconFont from '@starwhale/ui/IconFont'
 
 function useSourceData({ ws = '', data }: { ws?: string; data?: string }) {
     const [content, setContent] = React.useState<any[]>([])
@@ -194,7 +183,7 @@ const ComplexToolbarLogViewer = ({
     React.useEffect(() => {
         reset()
         setSelectedDataSource(dataSources[0]?.id)
-        toggle(true)
+        // toggle(true)
         setTimeout(() => {
             scrollToBottom()
         }, 1000)
@@ -203,8 +192,8 @@ const ComplexToolbarLogViewer = ({
 
     const ControlButton = React.useMemo(
         () => (
-            <Button
-                variant={isPaused ? 'plain' : 'link'}
+            <ExtendButton
+                transparent
                 onClick={() => {
                     if (isPaused) {
                         scrollToBottom()
@@ -212,9 +201,9 @@ const ComplexToolbarLogViewer = ({
                     setIsPaused(!isPaused)
                 }}
             >
-                {isPaused ? <PlayIcon /> : <PauseIcon />}
-                {isPaused ? t('log.resume') : t('log.pause')}
-            </Button>
+                {isPaused ? <IconFont type='play' /> : <IconFont type='pause' />}
+                <span className='ml-8px'>{isPaused ? t('log.resume') : t('log.pause')}</span>
+            </ExtendButton>
         ),
         [isPaused, scrollToBottom, t]
     )
@@ -223,8 +212,15 @@ const ComplexToolbarLogViewer = ({
     const leftAlignedToolbarGroup = React.useMemo(
         () => (
             <>
-                <ToolbarToggleGroup toggleIcon={<EllipsisVIcon />} breakpoint='md'>
-                    <ToolbarItem variant='search-filter' style={{ minWidth: '280px', maxWidth: '500px' }}>
+                <ToolbarToggleGroup
+                    toggleIcon={<EllipsisVIcon />}
+                    breakpoint='md'
+                    style={{ flex: '1', marginRight: '12px', gap: '20px' }}
+                >
+                    <ToolbarItem
+                        variant='search-filter'
+                        style={{ minWidth: '280px', maxWidth: '500px', marginRight: 0 }}
+                    >
                         <div ref={selectRef} className='w-100%'>
                             <SWSelect
                                 clearable={false}
@@ -261,7 +257,7 @@ const ComplexToolbarLogViewer = ({
                             />
                         </div>
                     </ToolbarItem>
-                    <ToolbarItem variant='search-filter'>
+                    <ToolbarItem variant='search-filter' style={{ flex: '1', marginRight: 0 }}>
                         <LogViewerSearch
                             onChange={(e) => {
                                 if ((e.target as any).value?.length === 0) {
@@ -284,32 +280,37 @@ const ComplexToolbarLogViewer = ({
     const rightAlignedToolbarGroup = React.useMemo(
         () => (
             <>
-                <ToolbarGroup variant='icon-button-group'>
+                <ToolbarGroup
+                    variant='icon-button-group'
+                    style={{
+                        gap: '16px',
+                    }}
+                >
                     <ToolbarItem>
-                        <Tooltip position='top' content={<div>Top</div>}>
-                            <Button onClick={onScrollTop} variant='plain' aria-label='Scroll to TOP'>
-                                <HistoryIcon />
-                            </Button>
-                        </Tooltip>
+                        <ExtendButton iconnormal nopadding icon='top2' tooltip={t('gototop')} onClick={onScrollTop} />
                     </ToolbarItem>
                     <ToolbarItem>
-                        <Tooltip position='top' content={<div>Download</div>}>
-                            <Button onClick={onDownloadClick} variant='plain' aria-label='Download current logs'>
-                                <DownloadIcon />
-                            </Button>
-                        </Tooltip>
+                        <ExtendButton
+                            iconnormal
+                            nopadding
+                            icon='download'
+                            tooltip={t('download')}
+                            onClick={onDownloadClick}
+                        />
                     </ToolbarItem>
                     <ToolbarItem>
-                        <Tooltip position='top' content={<div>Expand</div>}>
-                            <Button onClick={onExpand} variant='plain' aria-label='View log viewer in full screen'>
-                                <ExpandIcon />
-                            </Button>
-                        </Tooltip>
+                        <ExtendButton
+                            iconnormal
+                            nopadding
+                            icon='fullscreen'
+                            tooltip={t('fullscreen')}
+                            onClick={onExpand}
+                        />
                     </ToolbarItem>
                 </ToolbarGroup>
             </>
         ),
-        [onDownloadClick, onScrollTop, onExpand]
+        [onDownloadClick, onScrollTop, onExpand, t]
     )
 
     const FooterButton = React.useMemo(() => {
@@ -325,6 +326,7 @@ const ComplexToolbarLogViewer = ({
                 isBlock
                 style={{
                     visibility: isPaused ? 'visible' : 'hidden',
+                    flexShrink: 0,
                 }}
             >
                 <OutlinedPlayCircleIcon />
@@ -354,7 +356,9 @@ const ComplexToolbarLogViewer = ({
             toolbar={
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup alignment={{ default: 'alignLeft' }}>{leftAlignedToolbarGroup}</ToolbarGroup>
+                        <ToolbarGroup style={{ marginRight: '12px', flex: 1 }} alignment={{ default: 'alignLeft' }}>
+                            {leftAlignedToolbarGroup}
+                        </ToolbarGroup>
                         <ToolbarGroup alignment={{ default: 'alignRight' }}>{rightAlignedToolbarGroup}</ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>

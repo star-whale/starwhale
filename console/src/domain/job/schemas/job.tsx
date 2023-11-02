@@ -40,6 +40,18 @@ export enum RuntimeType {
     OTHER = 'other',
 }
 
+export enum EventType {
+    INFO = 'INFO',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
+export enum EventSource {
+    CLIENT = 'CLIENT',
+    SERVER = 'SERVER',
+    NODE = 'NODE',
+}
+
 export interface IJobSchema extends IResourceSchema {
     uuid: string
     name: string
@@ -114,4 +126,17 @@ export interface IJobTemplateSchema {
 export interface ICeateJobTemplateSchema {
     name: string
     jobUrl: string
+}
+
+export interface IJobEventSchema {
+    eventType: EventType
+    source: EventSource
+    message: string
+    data: string
+    timestamp: number
+    id: number
+    relatedResource: {
+        eventResourceType: string
+        id: number
+    }
 }

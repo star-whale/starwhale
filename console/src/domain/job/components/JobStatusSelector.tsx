@@ -4,6 +4,9 @@ import React, { useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { JobStatusType } from '../schemas/job'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { Tag } from 'baseui/tag'
+import { expandBorderRadius } from '@starwhale/ui/utils'
+import IconFont from '@starwhale/ui/IconFont'
 
 export interface IJobStatusSelectorProps {
     value?: string[]
@@ -38,6 +41,28 @@ export default function JobStatusSelector({
             marginRight: '4px',
         },
     })
+
+    const JOB_STATUS_COLOR = {
+        [JobStatusType.CREATED]: '#2B65D9',
+        [JobStatusType.PAUSED]: '#6C48B3',
+        [JobStatusType.RUNNING]: '#E67F17',
+        [JobStatusType.CANCELLING]: '#E67F17',
+        [JobStatusType.CANCELED]: '#4D576A',
+        [JobStatusType.SUCCESS]: '#00B368',
+        [JobStatusType.FAIL]: '#CC3D3D',
+        [JobStatusType.READY]: '#4D576A',
+    }
+
+    const JOB_STATUS_BACKGROUND_COLOR = {
+        [JobStatusType.CREATED]: '#EBF1FF',
+        [JobStatusType.PAUSED]: '#F3EDFF',
+        [JobStatusType.RUNNING]: '#FFF3E8',
+        [JobStatusType.CANCELLING]: '#FFF3E8',
+        [JobStatusType.CANCELED]: '#EBF1FF',
+        [JobStatusType.SUCCESS]: '#E6FFF4',
+        [JobStatusType.FAIL]: '#FFEDED',
+        [JobStatusType.READY]: '#EBF1FF',
+    }
 
     const JOB_STATUS = {
         [JobStatusType.CREATED]: (
@@ -83,22 +108,33 @@ export default function JobStatusSelector({
     }
 
     const defaultOverrides = {
-        Tag: {
-            props: {
-                overrides: {
-                    Root: {
-                        style: {
-                            cursor: 'pointer',
-                            color: 'rgba(2, 16, 43, 0.2)',
-                            backgroundColor: 'rgba(2, 16, 43, 0)',
-                            marginTop: '2px',
-                            marginBottom: '2px',
-                            marginRight: '2px',
-                            marginLeft: '2px',
+        Tag: (args) => {
+            const { id } = args.value
+            return (
+                <Tag
+                    {...args}
+                    overrides={{
+                        Root: {
+                            style: {
+                                cursor: 'pointer',
+                                color: 'rgba(2, 16, 43, 0.2)',
+                                backgroundColor: JOB_STATUS_BACKGROUND_COLOR[id],
+                                marginTop: '2px',
+                                marginBottom: '2px',
+                                marginRight: '2px',
+                                marginLeft: '2px',
+                                ...expandBorderRadius('12px'),
+                            },
                         },
-                    },
-                },
-            },
+                        Action: {
+                            style: {
+                                marginLeft: 0,
+                            },
+                        },
+                        ActionIcon: () => <IconFont type='close' size={12} style={{ color: JOB_STATUS_COLOR[id] }} />,
+                    }}
+                />
+            )
         },
     }
 
@@ -117,6 +153,7 @@ export default function JobStatusSelector({
         if (typeof value === 'string')
             return String(value)
                 .split(',')
+                .filter((item) => item in JOB_STATUS)
                 .map((item: any) => ({ id: item }))
 
         return (
@@ -124,6 +161,7 @@ export default function JobStatusSelector({
                 id: item,
             })) ?? []
         )
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value])
 
     return (

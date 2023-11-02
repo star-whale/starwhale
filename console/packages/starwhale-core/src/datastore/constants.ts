@@ -34,4 +34,6 @@ export enum OPERATOR {
     NOT_BETWEEN = 'NOT_BETWEEN',
     BEFORE = 'BEFORE',
     AFTER = 'AFTER',
+    CONTAINS = 'CONTAINS',
+    NOT_CONTAINS = 'NOT_CONTAINS',
 }

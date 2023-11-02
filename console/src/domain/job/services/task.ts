@@ -13,7 +13,7 @@ export async function listTasks(
     return resp.data
 }
 
-export async function fetchTask(projectId: string, jobId: string, taskId: string): Promise<any> {
+export async function fetchTask(projectId: string, jobId: string, taskId: string): Promise<ITaskSchema> {
     const resp = await axios.get<ITaskDetailSchema>(`/api/v1/project/${projectId}/job/${jobId}/task/${taskId}`)
     return resp.data
 }
