@@ -637,6 +637,10 @@ const job = {
         en: 'Error',
         zh: '错误',
     },
+    'job.event.download.filename': {
+        en: 'Event List',
+        zh: '事件列表',
+    },
     'job.tasks.action.viewlog': {
         en: 'View Log',
         zh: '查看日志',

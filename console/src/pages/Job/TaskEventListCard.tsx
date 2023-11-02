@@ -8,7 +8,7 @@ import {
     Search,
     createBuilder,
     FilterDatetime,
-    FilterString,
+    FilterStrinWithContains,
     Operators,
 } from '@starwhale/ui'
 import { IJobEventSchema } from '@/domain/job/schemas/job'
@@ -16,6 +16,7 @@ import { expandBorder } from '../../../packages/starwhale-ui/src/utils/index'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFullscreen, useToggle } from 'react-use'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { CSVLink } from 'react-csv'
 
 export interface ITaskEventListCardProps {
     sources: Record<string, IJobEventSchema[]>
@@ -115,7 +116,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     fields,
                     list: $listRaw,
                     key: 'eventType',
-                })(FilterString),
+                })(FilterStrinWithContains),
         },
         {
             key: 'source',
@@ -129,7 +130,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     fields,
                     list: $listRaw,
                     key: 'source',
-                })(FilterString),
+                })(FilterStrinWithContains),
         },
         {
             key: 'message',
@@ -143,7 +144,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     fields,
                     list: $listRaw,
                     key: 'message',
-                })(FilterString),
+                })(FilterStrinWithContains),
         },
         {
             key: 'data',
@@ -157,7 +158,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     fields,
                     list: $listRaw,
                     key: 'data',
-                })(FilterString),
+                })(FilterStrinWithContains),
         },
     ]
 
@@ -250,9 +251,20 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
         }
     })
 
+    const csv = React.useMemo(() => {
+        const headers = attrs.map((attr) => attr.label)
+        const data = $listRaw.map((item) => {
+            return attrs.map((attr) => {
+                return item[attr.key]
+            })
+        })
+        return [headers, ...data]
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [$listRaw])
+
     return (
         <div ref={ref} className='task-event-list overflow-hidden h-full'>
-            <div className='grid gap-20px grid-cols-[280px_1fr_16px] mb-20px'>
+            <div className='grid gap-20px grid-cols-[280px_1fr_16px_16px] mb-20px'>
                 <FormSelect options={options} onChange={setCurrent as any} value={$current} clearable={false} />
                 <div className='flex-1'>
                     <Search
@@ -261,7 +273,9 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                         onChange={setQueries as any}
                     />
                 </div>
-                {/* <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} /> */}
+                <CSVLink data={csv} filename={t('job.event.download.filename')} className='f-c-c'>
+                    <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} />
+                </CSVLink>
                 <ExtendButton
                     iconnormal
                     nopadding

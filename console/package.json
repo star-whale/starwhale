@@ -100,6 +100,7 @@
     "react-color": "^2.19.3",
     "react-copy-code": "^2.1.2",
     "react-copy-to-clipboard": "^5.0.4",
+    "react-csv": "^2.2.2",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",

@@ -10,6 +10,8 @@ export enum KIND {
     NUMERICAL = 'NUMERICAL',
     STRING = 'STRING',
     DATATIME = 'DATATIME',
+    // only for local search
+    STRING_WITH_CONTAINS = 'STRING_WITH_CONTAINS',
 }
 
 export enum OPERATOR {
@@ -38,7 +40,7 @@ export enum OPERATOR {
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.CONTAINS, OPERATOR.NOT_CONTAINS, OPERATOR.IN, OPERATOR.NOT_IN],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN, OPERATOR.NOT_IN],
     [KIND.NUMERICAL]: [
         OPERATOR.EQUAL,
         OPERATOR.GREATER,
@@ -52,6 +54,7 @@ export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     BOOLEAN: [OPERATOR.EQUAL],
     CUSTOM: [],
     DATETIME: [],
+    STRING_WITH_CONTAINS: [OPERATOR.EQUAL, OPERATOR.CONTAINS, OPERATOR.NOT_CONTAINS, OPERATOR.IN, OPERATOR.NOT_IN],
 }
 
 export const Operators: Record<string, OperatorT> = {
@@ -147,6 +150,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.CONTAINS,
         label: 'contains',
         value: 'contains',
+        // @ts-ignore
         buildFilter: ({ value = '' }) => {
             return (data: string) => {
                 return String(data ?? '')
@@ -159,6 +163,7 @@ export const Operators: Record<string, OperatorT> = {
         key: OPERATOR.NOT_CONTAINS,
         label: 'not contains',
         value: 'notContains',
+        // @ts-ignore
         buildFilter: ({ value = '' }) => {
             return (data: string) => {
                 return !data.trim().includes(value)

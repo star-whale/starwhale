@@ -102,6 +102,14 @@ function FilterString(options: FilterT): FilterT {
     })
 }
 
+function FilterStrinWithContains(options: FilterT): FilterT {
+    return FilterBuilder({
+        ...options,
+        kind: KIND.STRING,
+        operatorOptions: getOperatorOpeionsByKind(KIND.STRING_WITH_CONTAINS),
+    })
+}
+
 function FilterBuilderByColumnType(type: string, options: FilterT): FilterT {
     switch (type) {
         default:
@@ -128,7 +136,7 @@ export function createBuilder({
     key: string
     fields: string[]
     list: any[]
-}): (args: any) => FilterT[] {
+}): (args: any) => FilterT {
     const valueHints = new Set()
     // collect value hints
     list.forEach((item) => {
@@ -160,5 +168,13 @@ export function createBuilder({
     })
 }
 
-export { FilterBuilder, FilterBoolean, FilterNumberical, FilterString, FilterDatetime, FilterBuilderByColumnType }
+export {
+    FilterBuilder,
+    FilterBoolean,
+    FilterNumberical,
+    FilterString,
+    FilterDatetime,
+    FilterBuilderByColumnType,
+    FilterStrinWithContains,
+}
 export default FilterBuilder
