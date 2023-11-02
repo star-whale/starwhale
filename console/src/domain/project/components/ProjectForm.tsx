@@ -28,7 +28,7 @@ const useStyles = createUseStyles({
 
 export interface IProjectFormProps {
     project?: IProjectSchema
-    onSubmit: (data: ICreateProjectSchema) => Promise<void>
+    onSubmit: (data: ICreateProjectSchema, readmeRedirect: boolean) => Promise<void>
 }
 
 interface IControlledProps {
@@ -192,7 +192,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                 />
             </FormItem>
             <div className='my-20px flex flex-col gap-8px'>
-                <Checkbox checked={checked} onChange={(v) => toggle(v)}>
+                <Checkbox checked={checked} onChange={() => toggle()}>
                     {t('project.readme.add')}
                 </Checkbox>
                 <p>{t('project.readme.desc')}</p>
