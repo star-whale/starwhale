@@ -51,10 +51,10 @@ class StableDiffusion(PipelineHandler):
         img = self.pipe(
                 data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs
             ).images[0]
-        byte_arr = io.BytesIO()
-        img.save(byte_arr, format="png")
+        bytes = io.BytesIO()
+        img.save(bytes, format='PNG')
         return Image(
-            byte_arr,
+            fp=bytes.getvalue(),
             mime_type=MIMEType.PNG,
         )
 
