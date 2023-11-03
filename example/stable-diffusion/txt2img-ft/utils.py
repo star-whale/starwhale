@@ -7,10 +7,10 @@ ROOTDIR = Path(__file__).parent
 PRETRAINED_MODELS_DIR = ROOTDIR / "pretrained_models"
 MODEL_NAME_PATH = ROOTDIR / ".model_name"
 SWIGNORE_PATH = ROOTDIR / ".swignore"
-DEFAULT_MODEL_NAME = "Stable-diffusion-v1-4-hf"
+DEFAULT_MODEL_NAME = "Stable-diffusion-v1-4"
 
 SUPPORTED_MODELS = {
-    "Stable-diffusion-v1-4-hf": "CompVis/stable-diffusion-v1-4",
+    "Stable-diffusion-v1-4": "CompVis/stable-diffusion-v1-4",
 }
 
 
@@ -51,6 +51,8 @@ def download_hf_model(model_name: str) -> None:
 
     base_repo = SUPPORTED_MODELS[model_name]
     _model_path = PRETRAINED_MODELS_DIR / f"base-{model_name}"
+    if _model_path.exists():
+        return
     snapshot_download(
         repo_id=base_repo, local_dir=_model_path
     )

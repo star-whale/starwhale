@@ -59,7 +59,6 @@ class StableDiffusion(PipelineHandler):
         )
 
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
-        # TODO to image
         return ppl_result
 
     @api(

@@ -35,8 +35,7 @@ def build_starwhale_model(model_name: str) -> None:
     if model_name not in SUPPORTED_MODELS:
         raise ValueError(f"model {model_name} not supported")
 
-    if model_name.endswith("-hf"):
-        download_hf_model(model_name)
+    download_hf_model(model_name)
 
     prepare_model_package(model_name)
     starwhale_model.build(
