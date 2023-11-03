@@ -84,6 +84,7 @@ public class RunEventListener implements K8sEventListener {
                         .message(getReason(event))
                         .source(EventSource.NODE)
                         .relatedResource(new RelatedResource(EventResourceType.RUN, runId))
+                        .timestamp(event.getEventTimeInMs())
                         .build()
         );
     }
