@@ -3,6 +3,7 @@ mode: venv
 environment:
   cuda: 11.7
   python: 3.9
-  starwhale: 0.6.2
+  # support for custom starwhale python package version, e.g. 0.6.3 or git+https url
+  starwhale_version: git+https://github.com/star-whale/starwhale.git@3691bb0#subdirectory=client&egg=starwhale
 dependencies:
   - requirements.txt
