@@ -43,6 +43,7 @@ import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -89,6 +90,7 @@ public class JobController {
     private final EventService eventService;
 
     private final RunService runService;
+    private final UserJobConverter userJobConverter;
 
     public JobController(
             JobServiceForWeb jobServiceForWeb,
@@ -99,7 +101,8 @@ public class JobController {
             DagQuerier dagQuerier,
             FeaturesProperties featuresProperties,
             EventService eventService,
-            RunService runService
+            RunService runService,
+            UserJobConverter userJobConverter
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
         this.taskService = taskService;
@@ -110,6 +113,8 @@ public class JobController {
         this.featuresProperties = featuresProperties;
         this.eventService = eventService;
         this.runService = runService;
+        this.userJobConverter = userJobConverter;
+
         var actions = InvokerManager.<String, String>create()
                 .addInvoker("cancel", jobServiceForWeb::cancelJob);
         if (featuresProperties.isJobPauseEnabled()) {
@@ -202,19 +207,9 @@ public class JobController {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
                     HttpStatus.BAD_REQUEST);
         }
-        Long jobId = jobServiceForWeb.createJob(projectUrl,
-                jobRequest.getModelVersionUrl(),
-                jobRequest.getDatasetVersionUrls(),
-                jobRequest.getRuntimeVersionUrl(),
-                jobRequest.getComment(),
-                jobRequest.getResourcePool(),
-                jobRequest.getHandler(),
-                jobRequest.getStepSpecOverWrites(),
-                jobRequest.getType(),
-                jobRequest.getDevWay(),
-                jobRequest.isDevMode(),
-                jobRequest.getDevPassword(),
-                jobRequest.getTimeToLiveInSec());
+
+        var req = userJobConverter.convert(projectUrl, jobRequest);
+        Long jobId = jobServiceForWeb.createJob(req);
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

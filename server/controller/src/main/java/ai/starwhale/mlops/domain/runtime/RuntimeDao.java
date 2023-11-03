@@ -21,7 +21,6 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
@@ -36,7 +35,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class RuntimeDao implements BundleAccessor, BundleVersionAccessor,
+public class RuntimeDao implements BundleAccessor, BundleVersionAccessor<RuntimeVersionEntity>,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     private final RuntimeMapper runtimeMapper;
@@ -106,23 +105,23 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor,
     }
 
     @Override
-    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+    public RuntimeVersionEntity findVersionById(Long bundleVersionId) {
         return runtimeVersionMapper.find(bundleVersionId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+    public RuntimeVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
         Long versionOrder = versionAliasConvertor.revert(alias);
         return runtimeVersionMapper.findByVersionOrder(versionOrder, bundleId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
+    public RuntimeVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return runtimeVersionMapper.findByNameAndRuntimeId(name, bundleId);
     }
 
     @Override
-    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+    public RuntimeVersionEntity findLatestVersionByBundleId(Long bundleId) {
         return runtimeVersionMapper.findByLatest(bundleId);
     }
 

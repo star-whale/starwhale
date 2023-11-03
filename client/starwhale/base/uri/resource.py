@@ -231,7 +231,7 @@ class Resource:
                     raise NoMatchException(ver, list(m))
         else:
             # TODO use api to check if it is a name or version
-            # assume is is name for now
+            # assume it is name for now
             self.name = ver
 
     def _refine_remote_rc_info(self) -> None:

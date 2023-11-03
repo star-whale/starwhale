@@ -27,7 +27,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -190,22 +189,7 @@ public class DatasetServiceTest {
         bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         jobCreator = mock(JobCreator.class);
-        when(jobCreator.createJob(
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                anyBoolean(),
-                any(),
-                any(),
-                any()
-        )).thenReturn(new JobMockHolder().mockJob());
+        when(jobCreator.createJob(any())).thenReturn(new JobMockHolder().mockJob());
         service = new DatasetService(
                 projectService,
                 datasetMapper,

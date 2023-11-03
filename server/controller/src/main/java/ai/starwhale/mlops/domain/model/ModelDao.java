@@ -21,7 +21,6 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
@@ -36,7 +35,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ModelDao implements BundleAccessor, BundleVersionAccessor,
+public class ModelDao implements BundleAccessor, BundleVersionAccessor<ModelVersionEntity>,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     private final ModelMapper modelMapper;
@@ -92,23 +91,23 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor,
     }
 
     @Override
-    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+    public ModelVersionEntity findVersionById(Long bundleVersionId) {
         return versionMapper.find(bundleVersionId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+    public ModelVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
         Long versionOrder = versionAliasConvertor.revert(alias);
         return versionMapper.findByVersionOrder(versionOrder, bundleId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
+    public ModelVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return versionMapper.findByNameAndModelId(name, bundleId);
     }
 
     @Override
-    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+    public ModelVersionEntity findLatestVersionByBundleId(Long bundleId) {
         return versionMapper.findByLatest(bundleId);
     }
 

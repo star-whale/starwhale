@@ -46,6 +46,7 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.Env;
@@ -725,20 +726,15 @@ public class RuntimeService {
                     e);
         }
         var project = projectService.findProject(projectUrl);
-        Job job = jobCreator.createJob(project,
-                null,
-                null,
-                null,
-                "runtime-dockerizing",
-                runTimeProperties.getImageBuild().getResourcePool(),
-                null,
-                stepSpecOverWrites,
-                JobType.BUILT_IN,
-                null,
-                false,
-                null,
-                null,
-                userService.currentUserDetail());
+        var jobReq = JobCreateRequest.builder()
+                .project(project)
+                .comment("runtime-dockerizing")
+                .resourcePool(runTimeProperties.getImageBuild().getResourcePool())
+                .stepSpecOverWrites(stepSpecOverWrites)
+                .jobType(JobType.BUILT_IN)
+                .user(userService.currentUserDetail())
+                .build();
+        Job job = jobCreator.createJob(jobReq);
         return new BuildImageResult(true, job.getId().toString());
 
     }

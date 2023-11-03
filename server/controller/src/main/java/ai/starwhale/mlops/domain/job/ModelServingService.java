@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.ModelServing;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.spec.Env;
@@ -226,7 +227,7 @@ public class ModelServingService {
                     "online_eval spec is empty in your $SW_JOB_VIRTUAL_SPECS_PATH"
             );
         }
-        List userEnvs = List.of();
+        List<Env> userEnvs = List.of();
         if (null != modelServingSpec && null != modelServingSpec.getEnvVars()) {
             userEnvs = modelServingSpec.getEnvVars().entrySet().stream().map(entry -> new Env(
                     entry.getKey(),
@@ -242,7 +243,7 @@ public class ModelServingService {
         resources = resourcePool.validateAndPatchResource(resources);
 
         List<RuntimeResource> finalResources = resources;
-        List finalUserEnvs = userEnvs;
+        var finalUserEnvs = userEnvs;
         stepSpecs.forEach(stepSpec -> {
             List<Env> envs = stepSpec.getEnv();
             if (null != envs) {
@@ -257,26 +258,25 @@ public class ModelServingService {
         try {
             stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
         } catch (JsonProcessingException e) {
-            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
-                                         e
-            );
+            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs", e);
         }
-        return jobServiceForWeb.createJob(
-                project.getName(),
-                modelVersionUrl,
-                null,
-                runtimeVersionUrl,
-                "model online evaluation",
-                resourcePool.getName(),
-                null,
-                stepSpecOverWrites,
-                JobType.BUILT_IN,
-                null,
-                false,
-                null,
-                null
-        );
 
+        // TODO refine model serving create request
+        // do validation and convert
+        var modelVersionId = idConverter.revert(modelVersionUrl);
+        var runtimeVersionId = idConverter.revert(runtimeVersionUrl);
+
+        var jobReq = UserJobCreateRequest.builder()
+                .project(project)
+                .modelVersionId(modelVersionId)
+                .runtimeVersionId(runtimeVersionId)
+                .comment("model online evaluation")
+                .resourcePool(resourcePool.getName())
+                .stepSpecOverWrites(stepSpecOverWrites)
+                .jobType(JobType.BUILT_IN)
+                .build();
+
+        return jobServiceForWeb.createJob(jobReq);
     }
 
     public static String getServiceBaseUri(long id) {

@@ -20,68 +20,51 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.common.Constants;
-import ai.starwhale.mlops.domain.dataset.DatasetDao;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.model.Model;
-import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
-import ai.starwhale.mlops.domain.project.ProjectDao;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.runtime.RuntimeDao;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class JobCreatorTest {
 
-    private JobBoConverter jobBoConverter;
     private JobSpliterator jobSpliterator;
     private JobLoader jobLoader;
     private StoragePathCoordinator storagePathCoordinator;
     private JobDao jobDao;
-    private ProjectDao projectDao;
-    private ModelService modelService;
-    private DatasetDao datasetDao;
-    private RuntimeDao runtimeDao;
     private JobUpdateHelper jobUpdateHelper;
 
     private SystemSettingService systemSettingService;
     private JobSpecParser jobSpecParser;
 
     private JobCreator jobCreator;
+    private UserJobConverter userJobConverter;
 
     @BeforeEach
     public void setup() {
-        jobBoConverter = mock(JobBoConverter.class);
         jobSpliterator = mock(JobSpliterator.class);
         jobLoader = mock(JobLoader.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
         jobDao = mock(JobDao.class);
-        projectDao = mock(ProjectDao.class);
         given(jobDao.findJob("1"))
                 .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).build());
         given(jobDao.findJobById(1L))
@@ -92,25 +75,19 @@ public class JobCreatorTest {
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
                 .willReturn(2L);
-        modelService = mock(ModelService.class);
-        runtimeDao = mock(RuntimeDao.class);
         systemSettingService = mock(SystemSettingService.class);
-        datasetDao = mock(DatasetDao.class);
         jobUpdateHelper = mock(JobUpdateHelper.class);
+        userJobConverter = mock(UserJobConverter.class);
         jobSpecParser = new JobSpecParser();
         jobCreator = new JobCreator(
-                jobBoConverter,
                 jobSpliterator,
                 jobLoader,
                 storagePathCoordinator,
                 jobDao,
-                projectDao,
-                modelService,
-                datasetDao,
-                runtimeDao,
                 jobUpdateHelper,
                 systemSettingService,
-                jobSpecParser
+                jobSpecParser,
+                userJobConverter
         );
     }
 
@@ -177,15 +154,6 @@ public class JobCreatorTest {
                 + "      required: 'false'\n"
                 + "  ext_cmd_args: '--a 1'\n"
                 + "  replicas: 1";
-        given(projectDao.findById(10L)).willReturn(ProjectEntity.builder().projectName("p-10").build());
-        given(runtimeDao.getRuntimeVersion(same("2")))
-                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).versionName("1r2t3y4u5i6").build());
-        given(runtimeDao.getRuntime(same(2L)))
-                .willReturn(RuntimeEntity.builder().id(2L).projectId(10L).runtimeName("test-runtime").build());
-        given(modelService.findModelVersion(same("3")))
-                .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").jobs(fullJobSpec).build());
-        given(modelService.findModel(same(3L)))
-                .willReturn(Model.builder().id(3L).projectId(10L).name("test-model").build());
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
         given(jobDao.addJob(any(JobFlattenEntity.class)))
@@ -194,73 +162,61 @@ public class JobCreatorTest {
                     entity.setId(1L);
                     return true;
                 });
-        given(datasetDao.getDatasetVersion(anyString()))
-                .willReturn(DatasetVersion.builder().id(1L).projectId(10L).versionName("a1s2d3f4g5h6").build());
+
+        var jobReq = JobCreateRequest.builder()
+                .handler("mnist.evaluator:MNISTInference.cmp")
+                .stepSpecOverWrites(overviewJobSpec)
+                .jobType(JobType.EVALUATION)
+                .build();
 
         // handler and stepSpec could only have one
-        assertThrows(StarwhaleApiException.class,
-                () -> jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
-                        "", "1", "", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
-                        User.builder().id(1L).build()));
+        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
-                        "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
-                        User.builder().id(1L).build()));
+        jobReq.setHandler(null);
+        jobReq.setStepSpecOverWrites(null);
+        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 
-        // use built-in runtime(but no built-in)
-        assertThrows(SwValidationException.class, () -> jobCreator.createJob(
-                        Project.builder().name("1").build(),
-                        "3",
-                        "1",
-                        "",
-                        "",
-                        "1",
-                        "mnist.evaluator:MNISTInference.cmp",
-                        "",
-                        JobType.EVALUATION,
-                        DevWay.VS_CODE,
-                        false,
-                        "",
-                        1L,
-                        User.builder().id(1L).build()
-        ));
 
-        var res = jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
-                "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L,
-                User.builder().id(1L).build());
+        var userJobReq = UserJobCreateRequest.builder()
+                .project(Project.builder().id(1L).build())
+                .modelVersionId(3L)
+                .datasetVersionIds(List.of(1L))
+                .runtimeVersionId(2L)
+                .handler("mnist.evaluator:MNISTInference.cmp")
+                .resourcePool("1")
+                .comment("")
+                .jobType(JobType.EVALUATION)
+                .devMode(false)
+                .devWay(DevWay.VS_CODE)
+                .devPassword("")
+                .ttlInSec(1L)
+                .user(User.builder().id(1L).build())
+                .build();
+
+        var flatten = JobFlattenEntity.builder()
+                .jobUuid("uuid1")
+                .project(Project.builder().id(1L).build())
+                .modelVersionId(3L)
+                .modelVersion(ModelVersion.builder().id(3L).jobs(fullJobSpec).build())
+                .runtimeVersionId(2L)
+                .resourcePool("1")
+                .comment("")
+                .devMode(false)
+                .devWay(null)
+                .devPassword(null);
+
+        given(userJobConverter.convert(userJobReq)).willReturn(flatten);
+
+        var res = jobCreator.createJob(userJobReq);
         assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> !jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == null && jobFlattenEntity.getDevPassword() == null));
 
-        res = jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "2",
-                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "", 1L,
-                User.builder().id(1L).build());
+        flatten.devMode(true).devWay(DevWay.VS_CODE).devPassword("");
+        res = jobCreator.createJob(userJobReq);
         assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> jobFlattenEntity.isDevMode()
-                && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().equals("")));
+                && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().isEmpty()));
 
-        // use built-in runtime(but no built-in)
-        var builtInRuntime = "built-in-rt";
-        given(modelService.findModelVersion(same("3"))).willReturn(
-                ModelVersion.builder()
-                        .id(3L)
-                        .modelId(3L)
-                        .name("q1w2e3r4t5y6")
-                        .builtInRuntime(builtInRuntime)
-                        .jobs(fullJobSpec)
-                        .build()
-        );
-
-        given(runtimeDao.getRuntimeByName(eq(Constants.SW_BUILT_IN_RUNTIME), any()))
-                .willReturn(RuntimeEntity.builder().id(2L).build());
-        given(runtimeDao.getRuntimeVersion(2L, builtInRuntime))
-                .willReturn(RuntimeVersionEntity.builder().id(2L).runtimeId(2L).build());
-        res = jobCreator.createJob(Project.builder().name("1").build(), "3", "1", "",
-                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "", 1L,
-                User.builder().id(1L).build());
-        assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
-        verify(runtimeDao).getRuntimeByName(eq(Constants.SW_BUILT_IN_RUNTIME), any());
     }
-
 }

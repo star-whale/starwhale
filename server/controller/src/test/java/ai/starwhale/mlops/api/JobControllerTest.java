@@ -26,7 +26,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
@@ -54,6 +53,7 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.run.RunService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -98,7 +98,9 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(RunService.class));
+                mock(RunService.class),
+                mock(UserJobConverter.class)
+        );
     }
 
     @Test
@@ -155,9 +157,7 @@ public class JobControllerTest {
 
     @Test
     public void testCreatJob() {
-        given(jobServiceForWeb.createJob(anyString(), anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), any(), any(), eq(DevWay.VS_CODE), eq(false), anyString(),
-                any())).willReturn(1L);
+        given(jobServiceForWeb.createJob(any())).willReturn(1L);
         JobRequest jobRequest = new JobRequest();
         jobRequest.setHandler("eval");
         jobRequest.setComment("");
@@ -299,7 +299,8 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(RunService.class)
+                mock(RunService.class),
+                mock(UserJobConverter.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "pause"));
@@ -321,7 +322,8 @@ public class JobControllerTest {
                 dagQuerier,
                 featuresProperties,
                 mock(EventService.class),
-                mock(RunService.class)
+                mock(RunService.class),
+                mock(UserJobConverter.class)
         );
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "resume"));

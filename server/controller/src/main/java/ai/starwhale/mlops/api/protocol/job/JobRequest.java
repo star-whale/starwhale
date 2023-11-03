@@ -20,6 +20,7 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -28,15 +29,21 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class JobRequest implements Serializable {
 
-    @NotNull
+    @Deprecated
     @JsonProperty("modelVersionUrl")
     private String modelVersionUrl;
 
+    @Deprecated
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
+    @Deprecated
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
+
+    private Long modelVersionId;
+    private List<Long> datasetVersionIds;
+    private Long runtimeVersionId;
 
     @JsonProperty("comment")
     private String comment;
