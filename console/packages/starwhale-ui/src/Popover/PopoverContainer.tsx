@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { PLACEMENT, Popover } from 'baseui/popover'
+import { PLACEMENT, Popover, PopoverProps } from 'baseui/popover'
 import { createUseStyles } from 'react-jss'
-import { StatefulFilterMenu } from '../StatefulFilterMenu'
-import Checkbox from '../../Checkbox'
+import { StatefulFilterMenu } from './StatefulFilterMenu'
+import Checkbox from '../Checkbox'
 import { useSelections } from 'ahooks'
+import { mergeOverride } from '../base/helpers/overrides'
 
 export const useStyles = createUseStyles({
     label: {
@@ -159,11 +160,23 @@ function PopoverContainer(props: {
     children: React.ReactNode
     inputRef?: React.RefObject<HTMLInputElement>
     Content?: React.FC<any>
+    mountNode?: HTMLElement
+    popperOptions?: any
+    overrides?: any
+    placement?: PopoverProps['placement']
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
 
-    const { Content = SingleSelectMenu, inputRef, ...rest } = props
+    const {
+        Content = SingleSelectMenu,
+        inputRef,
+        mountNode,
+        popperOptions,
+        overrides,
+        placement = PLACEMENT.bottomLeft,
+        ...rest
+    } = props
 
     useEffect(() => {
         setIsOpen(props.isOpen)
@@ -173,19 +186,25 @@ function PopoverContainer(props: {
 
     return (
         <Popover
-            placement={PLACEMENT.bottomLeft}
+            ignoreBoundary={false}
+            popperOptions={popperOptions}
+            mountNode={mountNode}
+            placement={placement}
             isOpen={isOpen}
             innerRef={ref}
-            overrides={{
-                Body: {
-                    props: {
-                        className: 'filter-popover',
-                    },
-                    style: {
-                        marginTop: '32px',
+            overrides={mergeOverride(
+                {
+                    Body: {
+                        props: {
+                            className: 'filter-popover',
+                        },
+                        style: {
+                            marginTop: '32px',
+                        },
                     },
                 },
-            }}
+                overrides
+            )}
             content={<Content {...rest} inputRef={inputRef} onClose={handleClose} />}
         >
             <div>{props.children}</div>

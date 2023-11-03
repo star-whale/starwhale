@@ -1,5 +1,5 @@
 import React from 'react'
-import { PopoverContainer, Label } from '../components/PopoverContainer'
+import { PopoverContainer, Label } from '../../Popover'
 import FieldDefault from '../components/FieldDefault'
 import { FilterT, FilterTypeOperators, KIND, Operators } from '../types'
 import FieldDatetime from '../components/FieldDatetime'
