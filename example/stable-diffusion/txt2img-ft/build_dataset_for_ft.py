@@ -13,12 +13,13 @@
 #  limitations under the License.
 
 import os
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
 
-from datasets import load_dataset, get_dataset_split_names
-from starwhale import Image, dataset, MIMEType
+from datasets import get_dataset_split_names, load_dataset
 from starwhale.consts.env import SWEnv
+
+from starwhale import Image, MIMEType, dataset
 
 ROOT_DIR = Path(__file__).parent
 
@@ -62,7 +63,7 @@ def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captio
         if max_number < 0:
             break
         bytes = BytesIO()
-        row.get("image").save(bytes, format='PNG')
+        row.get("image").save(bytes, format="PNG")
         ds.append(
             {
                 "image": Image(
@@ -82,7 +83,9 @@ def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captio
 if __name__ == "__main__":
     instance_uri = os.getenv(SWEnv.instance_uri)
     if instance_uri:
-        _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-train"
+        _ds_uri = (
+            f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-train"
+        )
     else:
         _ds_uri = f"pokemon-blip-captions-train"
     # build_ds_from_local_fs(_ds_uri)

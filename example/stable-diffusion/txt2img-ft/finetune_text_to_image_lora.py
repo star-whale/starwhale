@@ -33,92 +33,94 @@ import shutil
 from pathlib import Path
 
 import datasets
-from accelerate import Accelerator
-from accelerate.logging import get_logger
-from accelerate.utils import ProjectConfiguration
-from starwhale import Dataset, pass_context, Context
-from starwhale.api import model, experiment
+import diffusers
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
 import transformers
-
+from accelerate import Accelerator
+from accelerate.logging import get_logger
+from accelerate.utils import ProjectConfiguration
+from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
+from diffusers.loaders import (LORA_WEIGHT_NAME, LORA_WEIGHT_NAME_SAFE,
+                               AttnProcsLayers)
+from diffusers.models.attention_processor import LoRAAttnProcessor
+from diffusers.optimization import get_scheduler
+from diffusers.utils.import_utils import is_xformers_available
 from packaging import version
+from starwhale.api import experiment, model
 from starwhale.base.uri.resource import Resource, ResourceType
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
-import diffusers
-from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-from diffusers.loaders import AttnProcsLayers, LORA_WEIGHT_NAME_SAFE, LORA_WEIGHT_NAME
-from diffusers.models.attention_processor import LoRAAttnProcessor
-from diffusers.optimization import get_scheduler
-from diffusers.utils.import_utils import is_xformers_available
+from starwhale import Context, Dataset, pass_context
 
 try:
-    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
     from .evaluate_text_to_image import StableDiffusion
+    from .utils import PRETRAINED_MODELS_DIR, get_base_model_path
 except ImportError:
-    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
     from evaluate_text_to_image import StableDiffusion
+    from utils import PRETRAINED_MODELS_DIR, get_base_model_path
 
 
 ROOT_DIR = Path(__file__).parent
 
 logger = get_logger(__name__, log_level="INFO")
 
-DATASET_COLUMN_MAPPING = {
-    "image": {"image", "file"},
-    "text": {"text", "caption"}
-}
+DATASET_COLUMN_MAPPING = {"image": {"image", "file"}, "text": {"text", "caption"}}
 
 
 @pass_context
 @experiment.fine_tune()
-def fine_tune(context: Context,
-              pretrained_model_name_or_path=get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4",
-              revision=None,
-              dataset_name="pokemon-blip-captions/version/latest",
-              output_dir="sd-model-finetuned-lora",
-              seed=42,
-              resolution=512,
-              center_crop=False,
-              random_flip=True,
-              train_batch_size=1,
-              num_train_epochs=100,
-              max_train_steps=None,
-              gradient_accumulation_steps=1,
-              gradient_checkpointing=False,
-              learning_rate=1e-04,
-              scale_lr=False,
-              lr_scheduler="constant",
-              lr_warmup_steps=0,
-              snr_gamma=None,
-              use_8bit_adam=False,
-              allow_tf32=False,
-              dataloader_num_workers=0,
-              adam_beta1=0.9,
-              adam_beta2=0.999,
-              adam_weight_decay=1e-2,
-              adam_epsilon=1e-08,
-              max_grad_norm=1.0,
-              prediction_type=None,
-              log_dir="logs",
-              mixed_precision=None,  # choices=["no", "fp16", "bf16"],
-              local_rank=-1,
-              checkpointing_steps=500,
-              checkpoints_total_limit=None,
-              resume_from_checkpoint=None,
-              enable_xformers_memory_efficient_attention=False,
-              noise_offset=0,
-    ):
+def fine_tune(
+    context: Context,
+    pretrained_model_name_or_path=get_base_model_path()
+    if get_base_model_path().exists()
+    else "CompVis/stable-diffusion-v1-4",
+    revision=None,
+    dataset_name="pokemon-blip-captions/version/latest",
+    output_dir="sd-model-finetuned-lora",
+    seed=42,
+    resolution=512,
+    center_crop=False,
+    random_flip=True,
+    train_batch_size=1,
+    num_train_epochs=100,
+    max_train_steps=None,
+    gradient_accumulation_steps=1,
+    gradient_checkpointing=False,
+    learning_rate=1e-04,
+    scale_lr=False,
+    lr_scheduler="constant",
+    lr_warmup_steps=0,
+    snr_gamma=None,
+    use_8bit_adam=False,
+    allow_tf32=False,
+    dataloader_num_workers=0,
+    adam_beta1=0.9,
+    adam_beta2=0.999,
+    adam_weight_decay=1e-2,
+    adam_epsilon=1e-08,
+    max_grad_norm=1.0,
+    prediction_type=None,
+    log_dir="logs",
+    mixed_precision=None,  # choices=["no", "fp16", "bf16"],
+    local_rank=-1,
+    checkpointing_steps=500,
+    checkpoints_total_limit=None,
+    resume_from_checkpoint=None,
+    enable_xformers_memory_efficient_attention=False,
+    noise_offset=0,
+):
     logging_dir = Path(output_dir, log_dir)
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
     if env_local_rank != -1 and env_local_rank != local_rank:
         local_rank = env_local_rank
 
-    accelerator_project_config = ProjectConfiguration(project_dir=output_dir, logging_dir=logging_dir)
+    accelerator_project_config = ProjectConfiguration(
+        project_dir=output_dir, logging_dir=logging_dir
+    )
 
     accelerator = Accelerator(
         gradient_accumulation_steps=gradient_accumulation_steps,
@@ -146,14 +148,18 @@ def fine_tune(context: Context,
         os.makedirs(output_dir, exist_ok=True)
 
     # Load scheduler, tokenizer and models.
-    noise_scheduler = DDPMScheduler.from_pretrained(pretrained_model_name_or_path, subfolder="scheduler")
+    noise_scheduler = DDPMScheduler.from_pretrained(
+        pretrained_model_name_or_path, subfolder="scheduler"
+    )
     tokenizer = CLIPTokenizer.from_pretrained(
         pretrained_model_name_or_path, subfolder="tokenizer", revision=revision
     )
     text_encoder = CLIPTextModel.from_pretrained(
         pretrained_model_name_or_path, subfolder="text_encoder", revision=revision
     )
-    vae = AutoencoderKL.from_pretrained(pretrained_model_name_or_path, subfolder="vae", revision=revision)
+    vae = AutoencoderKL.from_pretrained(
+        pretrained_model_name_or_path, subfolder="vae", revision=revision
+    )
     unet = UNet2DConditionModel.from_pretrained(
         pretrained_model_name_or_path, subfolder="unet", revision=revision
     )
@@ -193,7 +199,11 @@ def fine_tune(context: Context,
     # Set correct lora layers
     lora_attn_procs = {}
     for name in unet.attn_processors.keys():
-        cross_attention_dim = None if name.endswith("attn1.processor") else unet.config.cross_attention_dim
+        cross_attention_dim = (
+            None
+            if name.endswith("attn1.processor")
+            else unet.config.cross_attention_dim
+        )
         if name.startswith("mid_block"):
             hidden_size = unet.config.block_out_channels[-1]
         elif name.startswith("up_blocks"):
@@ -203,7 +213,9 @@ def fine_tune(context: Context,
             block_id = int(name[len("down_blocks.")])
             hidden_size = unet.config.block_out_channels[block_id]
 
-        lora_attn_procs[name] = LoRAAttnProcessor(hidden_size=hidden_size, cross_attention_dim=cross_attention_dim)
+        lora_attn_procs[name] = LoRAAttnProcessor(
+            hidden_size=hidden_size, cross_attention_dim=cross_attention_dim
+        )
 
     unet.set_attn_processor(lora_attn_procs)
 
@@ -218,24 +230,30 @@ def fine_tune(context: Context,
                 )
             unet.enable_xformers_memory_efficient_attention()
         else:
-            raise ValueError("xformers is not available. Make sure it is installed correctly")
+            raise ValueError(
+                "xformers is not available. Make sure it is installed correctly"
+            )
 
     def compute_snr(timesteps):
         """
         Computes SNR as per https://github.com/TiankaiHang/Min-SNR-Diffusion-Training/blob/521b624bd70c67cee4bdf49225915f5945a872e3/guided_diffusion/gaussian_diffusion.py#L847-L849
         """
         alphas_cumprod = noise_scheduler.alphas_cumprod
-        sqrt_alphas_cumprod = alphas_cumprod ** 0.5
+        sqrt_alphas_cumprod = alphas_cumprod**0.5
         sqrt_one_minus_alphas_cumprod = (1.0 - alphas_cumprod) ** 0.5
 
         # Expand the tensors.
         # Adapted from https://github.com/TiankaiHang/Min-SNR-Diffusion-Training/blob/521b624bd70c67cee4bdf49225915f5945a872e3/guided_diffusion/gaussian_diffusion.py#L1026
-        sqrt_alphas_cumprod = sqrt_alphas_cumprod.to(device=timesteps.device)[timesteps].float()
+        sqrt_alphas_cumprod = sqrt_alphas_cumprod.to(device=timesteps.device)[
+            timesteps
+        ].float()
         while len(sqrt_alphas_cumprod.shape) < len(timesteps.shape):
             sqrt_alphas_cumprod = sqrt_alphas_cumprod[..., None]
         alpha = sqrt_alphas_cumprod.expand(timesteps.shape)
 
-        sqrt_one_minus_alphas_cumprod = sqrt_one_minus_alphas_cumprod.to(device=timesteps.device)[timesteps].float()
+        sqrt_one_minus_alphas_cumprod = sqrt_one_minus_alphas_cumprod.to(
+            device=timesteps.device
+        )[timesteps].float()
         while len(sqrt_one_minus_alphas_cumprod.shape) < len(timesteps.shape):
             sqrt_one_minus_alphas_cumprod = sqrt_one_minus_alphas_cumprod[..., None]
         sigma = sqrt_one_minus_alphas_cumprod.expand(timesteps.shape)
@@ -253,7 +271,10 @@ def fine_tune(context: Context,
 
     if scale_lr:
         learning_rate = (
-                learning_rate * gradient_accumulation_steps * train_batch_size * accelerator.num_processes
+            learning_rate
+            * gradient_accumulation_steps
+            * train_batch_size
+            * accelerator.num_processes
         )
 
     # Initialize the optimizer
@@ -286,34 +307,54 @@ def fine_tune(context: Context,
         if len(col_to_get) >= 1:
             return col_to_get.pop()
         else:
-            raise ValueError(f'Dataset should have one of the possible columns:{possible_cols}.')
+            raise ValueError(
+                f"Dataset should have one of the possible columns:{possible_cols}."
+            )
 
     # Preprocessing the datasets.
     # We need to tokenize input captions and transform the images.
     def tokenize_captions(caption):
         inputs = tokenizer(
-            caption, max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+            caption,
+            max_length=tokenizer.model_max_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
         )
         return inputs.input_ids
 
     class SwCompose(transforms.Compose):
         def __call__(self, data_row):
-            _img = data_row.get(get_col(DATASET_COLUMN_MAPPING.get("image"), data_row.keys())).to_pil().convert("RGB")
+            _img = (
+                data_row.get(
+                    get_col(DATASET_COLUMN_MAPPING.get("image"), data_row.keys())
+                )
+                .to_pil()
+                .convert("RGB")
+            )
             for t in self.transforms:
                 _img = t(_img)
             return {
                 "pixel_values": _img,
                 "input_ids": tokenize_captions(
-                    data_row.get(get_col(DATASET_COLUMN_MAPPING.get("text"), data_row.keys()))
+                    data_row.get(
+                        get_col(DATASET_COLUMN_MAPPING.get("text"), data_row.keys())
+                    )
                 ).squeeze(),
             }
 
     # Preprocessing the datasets.
     train_transforms = SwCompose(
         [
-            transforms.Resize(resolution, interpolation=transforms.InterpolationMode.BILINEAR),
-            transforms.CenterCrop(resolution) if center_crop else transforms.RandomCrop(resolution),
-            transforms.RandomHorizontalFlip() if random_flip else transforms.Lambda(lambda x: x),
+            transforms.Resize(
+                resolution, interpolation=transforms.InterpolationMode.BILINEAR
+            ),
+            transforms.CenterCrop(resolution)
+            if center_crop
+            else transforms.RandomCrop(resolution),
+            transforms.RandomHorizontalFlip()
+            if random_flip
+            else transforms.Lambda(lambda x: x),
             transforms.ToTensor(),
             transforms.Normalize([0.5], [0.5]),
         ]
@@ -326,7 +367,9 @@ def fine_tune(context: Context,
         return {"pixel_values": pixel_values, "input_ids": input_ids}
 
     dataset_name = context.dataset_uris[0] if context.dataset_uris else dataset_name
-    train_dataset = Dataset.dataset(Resource(dataset_name, typ=ResourceType.dataset), readonly=True)
+    train_dataset = Dataset.dataset(
+        Resource(dataset_name, typ=ResourceType.dataset), readonly=True
+    )
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset.to_pytorch(transform=train_transforms),
@@ -338,7 +381,9 @@ def fine_tune(context: Context,
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / gradient_accumulation_steps)
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / gradient_accumulation_steps
+    )
     if max_train_steps is None:
         max_train_steps = num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
@@ -356,7 +401,9 @@ def fine_tune(context: Context,
     )
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / gradient_accumulation_steps)
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / gradient_accumulation_steps
+    )
     if overrode_max_train_steps:
         max_train_steps = num_train_epochs * num_update_steps_per_epoch
     # Afterwards we recalculate our number of training epochs
@@ -368,13 +415,17 @@ def fine_tune(context: Context,
         accelerator.init_trackers("text2image-fine-tune")
 
     # Train!
-    total_batch_size = train_batch_size * accelerator.num_processes * gradient_accumulation_steps
+    total_batch_size = (
+        train_batch_size * accelerator.num_processes * gradient_accumulation_steps
+    )
 
     logger.info("***** Running training *****")
     logger.info(f"  Num examples = {len(train_dataset)}")
     logger.info(f"  Num Epochs = {num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {train_batch_size}")
-    logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
+    logger.info(
+        f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}"
+    )
     logger.info(f"  Gradient Accumulation steps = {gradient_accumulation_steps}")
     logger.info(f"  Total optimization steps = {max_train_steps}")
     global_step = 0
@@ -403,10 +454,15 @@ def fine_tune(context: Context,
 
             resume_global_step = global_step * gradient_accumulation_steps
             first_epoch = global_step // num_update_steps_per_epoch
-            resume_step = resume_global_step % (num_update_steps_per_epoch * gradient_accumulation_steps)
+            resume_step = resume_global_step % (
+                num_update_steps_per_epoch * gradient_accumulation_steps
+            )
 
     # Only show the progress bar once on each machine.
-    progress_bar = tqdm(range(global_step, max_train_steps), disable=not accelerator.is_local_main_process)
+    progress_bar = tqdm(
+        range(global_step, max_train_steps),
+        disable=not accelerator.is_local_main_process,
+    )
     progress_bar.set_description("Steps")
 
     for epoch in range(first_epoch, num_train_epochs):
@@ -421,7 +477,9 @@ def fine_tune(context: Context,
 
             with accelerator.accumulate(unet):
                 # Convert images to latent space
-                latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
+                latents = vae.encode(
+                    batch["pixel_values"].to(dtype=weight_dtype)
+                ).latent_dist.sample()
                 latents = latents * vae.config.scaling_factor
 
                 # Sample noise that we'll add to the latents
@@ -429,12 +487,18 @@ def fine_tune(context: Context,
                 if noise_offset:
                     # https://www.crosslabs.org//blog/diffusion-with-offset-noise
                     noise += noise_offset * torch.randn(
-                        (latents.shape[0], latents.shape[1], 1, 1), device=latents.device
+                        (latents.shape[0], latents.shape[1], 1, 1),
+                        device=latents.device,
                     )
 
                 bsz = latents.shape[0]
                 # Sample a random timestep for each image
-                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+                timesteps = torch.randint(
+                    0,
+                    noise_scheduler.config.num_train_timesteps,
+                    (bsz,),
+                    device=latents.device,
+                )
                 timesteps = timesteps.long()
 
                 # Add noise to the latents according to the noise magnitude at each timestep
@@ -454,26 +518,40 @@ def fine_tune(context: Context,
                 elif noise_scheduler.config.prediction_type == "v_prediction":
                     target = noise_scheduler.get_velocity(latents, noise, timesteps)
                 else:
-                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+                    raise ValueError(
+                        f"Unknown prediction type {noise_scheduler.config.prediction_type}"
+                    )
 
                 # Predict the noise residual and compute loss
-                model_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
+                model_pred = unet(
+                    noisy_latents, timesteps, encoder_hidden_states
+                ).sample
 
                 if snr_gamma is None:
-                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+                    loss = F.mse_loss(
+                        model_pred.float(), target.float(), reduction="mean"
+                    )
                 else:
                     # Compute loss-weights as per Section 3.4 of https://arxiv.org/abs/2303.09556.
                     # Since we predict the noise instead of x_0, the original formulation is slightly changed.
                     # This is discussed in Section 4.2 of the same paper.
                     snr = compute_snr(timesteps)
                     mse_loss_weights = (
-                            torch.stack([snr, snr_gamma * torch.ones_like(timesteps)], dim=1).min(dim=1)[0] / snr
+                        torch.stack(
+                            [snr, snr_gamma * torch.ones_like(timesteps)], dim=1
+                        ).min(dim=1)[0]
+                        / snr
                     )
                     # We first calculate the original loss. Then we mean over the non-batch dimensions and
                     # rebalance the sample-wise losses with their respective loss weights.
                     # Finally, we take the mean of the rebalanced loss.
-                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
-                    loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
+                    loss = F.mse_loss(
+                        model_pred.float(), target.float(), reduction="none"
+                    )
+                    loss = (
+                        loss.mean(dim=list(range(1, len(loss.shape))))
+                        * mse_loss_weights
+                    )
                     loss = loss.mean()
 
                 # Gather the losses across all processes for logging (if we use distributed training).
@@ -501,28 +579,43 @@ def fine_tune(context: Context,
                         # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
                         if checkpoints_total_limit is not None:
                             checkpoints = os.listdir(output_dir)
-                            checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
-                            checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
+                            checkpoints = [
+                                d for d in checkpoints if d.startswith("checkpoint")
+                            ]
+                            checkpoints = sorted(
+                                checkpoints, key=lambda x: int(x.split("-")[1])
+                            )
 
                             # before we save the new checkpoint, we need to have at _most_ `checkpoints_total_limit - 1` checkpoints
                             if len(checkpoints) >= checkpoints_total_limit:
-                                num_to_remove = len(checkpoints) - checkpoints_total_limit + 1
+                                num_to_remove = (
+                                    len(checkpoints) - checkpoints_total_limit + 1
+                                )
                                 removing_checkpoints = checkpoints[0:num_to_remove]
 
                                 logger.info(
                                     f"{len(checkpoints)} checkpoints already exist, removing {len(removing_checkpoints)} checkpoints"
                                 )
-                                logger.info(f"removing checkpoints: {', '.join(removing_checkpoints)}")
+                                logger.info(
+                                    f"removing checkpoints: {', '.join(removing_checkpoints)}"
+                                )
 
                                 for removing_checkpoint in removing_checkpoints:
-                                    removing_checkpoint = os.path.join(output_dir, removing_checkpoint)
+                                    removing_checkpoint = os.path.join(
+                                        output_dir, removing_checkpoint
+                                    )
                                     shutil.rmtree(removing_checkpoint)
 
-                        save_path = os.path.join(output_dir, f"checkpoint-{global_step}")
+                        save_path = os.path.join(
+                            output_dir, f"checkpoint-{global_step}"
+                        )
                         accelerator.save_state(save_path)
                         logger.info(f"Saved state to {save_path}")
 
-            logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+            logs = {
+                "step_loss": loss.detach().item(),
+                "lr": lr_scheduler.get_last_lr()[0],
+            }
             progress_bar.set_postfix(**logs)
 
             if global_step >= max_train_steps:

@@ -15,9 +15,10 @@
 import os
 from pathlib import Path
 
-from datasets import load_dataset, get_dataset_split_names
-from starwhale import dataset, Text
+from datasets import get_dataset_split_names, load_dataset
 from starwhale.consts.env import SWEnv
+
+from starwhale import Text, dataset
 
 ROOT_DIR = Path(__file__).parent
 

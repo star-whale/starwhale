@@ -14,20 +14,25 @@
 import io
 import typing as t
 
-import gradio
 import torch
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
+from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
 from diffusers.loaders import LORA_WEIGHT_NAME
-from starwhale import Text, PipelineHandler, Image, MIMEType
 from starwhale.api.service import api
 from starwhale.base.type import PredictLogMode
 
-try:
-    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
-except ImportError:
-    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
+import gradio
+from starwhale import Image, MIMEType, PipelineHandler, Text
 
-model_id = get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4"
+try:
+    from .utils import PRETRAINED_MODELS_DIR, get_base_model_path
+except ImportError:
+    from utils import PRETRAINED_MODELS_DIR, get_base_model_path
+
+model_id = (
+    get_base_model_path()
+    if get_base_model_path().exists()
+    else "CompVis/stable-diffusion-v1-4"
+)
 
 
 class StableDiffusion(PipelineHandler):
@@ -49,10 +54,12 @@ class StableDiffusion(PipelineHandler):
 
     def predict(self, data: t.Dict[str, str]) -> t.Any:
         img = self.pipe(
-                data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs
-            ).images[0]
+            data["text"],
+            guidance_scale=7.5,
+            cross_attention_kwargs=self.cross_attention_kwargs,
+        ).images[0]
         bytes = io.BytesIO()
-        img.save(bytes, format='PNG')
+        img.save(bytes, format="PNG")
         return Image(
             fp=bytes.getvalue(),
             mime_type=MIMEType.PNG,

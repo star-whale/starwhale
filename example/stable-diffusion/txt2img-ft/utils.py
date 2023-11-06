@@ -53,6 +53,4 @@ def download_hf_model(model_name: str) -> None:
     _model_path = PRETRAINED_MODELS_DIR / f"base-{model_name}"
     if _model_path.exists():
         return
-    snapshot_download(
-        repo_id=base_repo, local_dir=_model_path
-    )
+    snapshot_download(repo_id=base_repo, local_dir=_model_path)

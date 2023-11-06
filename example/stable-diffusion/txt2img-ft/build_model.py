@@ -2,27 +2,20 @@ from __future__ import annotations
 
 import sys
 
-from starwhale import model as starwhale_model
 from starwhale.utils import debug
 
+from starwhale import model as starwhale_model
+
 try:
-    from .utils import (
-        SUPPORTED_MODELS,
-        download_hf_model,
-        DEFAULT_MODEL_NAME,
-        prepare_model_package,
-    )
     from .evaluate_text_to_image import StableDiffusion
     from .finetune_text_to_image_lora import fine_tune
+    from .utils import (DEFAULT_MODEL_NAME, SUPPORTED_MODELS,
+                        download_hf_model, prepare_model_package)
 except ImportError:
-    from utils import (
-        SUPPORTED_MODELS,
-        download_hf_model,
-        DEFAULT_MODEL_NAME,
-        prepare_model_package,
-    )
     from evaluate_text_to_image import StableDiffusion
     from finetune_text_to_image_lora import fine_tune
+    from utils import (DEFAULT_MODEL_NAME, SUPPORTED_MODELS, download_hf_model,
+                       prepare_model_package)
 
 
 debug.init_logger(3)
