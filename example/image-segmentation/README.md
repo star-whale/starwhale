@@ -11,7 +11,6 @@ What we learn
 - use the `@Starwhale.predict` and `@Starwhale.evaluate` decorators to define handlers for Starwhale Model to finish the image segmentation evaluation tasks.
 - build Starwhale Dataset by Starwhale Python SDK and use Starwhale Dataset Web Viewer.
 - use Starwhale Evaluation Summary Page to compare the algorithm quality of the different models.
-- build an unified Starwhale Runtime to run all models.
 - use Starwhale `replicas` feature to speedup model evaluation.
 - use `Starwhale.Image`, `Starwhale.COCOObjectAnnotation` and `Starwhale.BoundingBox` to represent Dataset type.
 - use `.swignore` file to ignore unexpected files or folders in the Starwhale Model building.
@@ -21,11 +20,7 @@ What we learn
 Models
 ------
 
-- [Segment Anything Model](https://segment-anything.com/)
-- [GrabCut](https://docs.opencv.org/3.4/d8/d83/tutorial_py_grabcut.html)
-- [PSPNet](https://github.com/qubvel/segmentation_models)
-- [FCN](https://pytorch.org/vision/main/models/fcn.html)
-- [SAN](https://github.com/MendelXu/SAN)
+- [Segment Anything Model](https://segment-anything.com/): sam-vit-h, sam-vit-l, sam-vit-b
 
 Datasets
 ------
