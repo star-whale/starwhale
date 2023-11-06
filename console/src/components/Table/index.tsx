@@ -126,6 +126,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
 
     useClickAway(() => {
         setIsFocus(false)
+        setSelectedRowIndex(undefined)
     }, ref)
 
     const actions = useCreation(() => {
@@ -164,22 +165,24 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
 
     return (
         <>
-            <ActionMenu
-                key={selectedRowIndex}
-                isOpen={selectedRowIndex !== undefined && isFocus}
-                options={actions ?? []}
-                placement='right'
-                // @ts-ignore
-                overrides={getPopoverOverrides(rect)}
-            />
-            {!isFocus && rowRect && (
+            {renderActions && (
+                <ActionMenu
+                    key={selectedRowIndex}
+                    isOpen={selectedRowIndex !== undefined && isFocus}
+                    options={actions ?? []}
+                    placement='right'
+                    // @ts-ignore
+                    overrides={getPopoverOverrides(rect || {})}
+                />
+            )}
+            {renderActions && (
                 <ActionMenu
                     // key={selectedRowIndex}
-                    isOpen={selectedRowIndex !== undefined || true}
+                    isOpen={selectedRowIndex !== undefined && !isFocus}
                     options={popoverActions ?? []}
                     placement='right'
                     // @ts-ignore
-                    overrides={getPopoverOverrides(rowRect)}
+                    overrides={getPopoverOverrides(rowRect || {})}
                     Content={() => {
                         return (
                             <div className='f-c-c'>

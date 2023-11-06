@@ -143,7 +143,7 @@ export default function ModelListCard() {
             component: (hasText) => (
                 <WithCurrentAuth id='model.delete'>
                     <ConfirmButton
-                        title={t('model.remove.confirm')}
+                        title={`${model.name} ${t('model.remove.confirm')}`}
                         styleAs={['menuoption', 'negative']}
                         icon='delete'
                         isFull
@@ -180,7 +180,6 @@ export default function ModelListCard() {
             <Table
                 renderActions={(rowIndex) => {
                     const model = modelsInfo.data?.list[rowIndex]
-                    console.log(model, rowIndex)
                     if (!model) return undefined
                     return getActions(model)
                 }}

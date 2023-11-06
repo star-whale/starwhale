@@ -171,6 +171,7 @@ function PopoverContainer(props: {
     contentOverrides?: any
     placement?: PopoverProps['placement']
     autoClose?: boolean
+    triggerType?: PopoverProps['triggerType']
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
@@ -193,8 +194,6 @@ function PopoverContainer(props: {
     }, [props.isOpen])
 
     const handleClose = () => ref.current && setIsOpen(false)
-
-    console.log(triggerType)
 
     return (
         <Popover
