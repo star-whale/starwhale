@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createModel, removeModel } from '@model/services/model'
 import { usePage } from '@/hooks/usePage'
-import { ICreateModelSchema } from '@model/schemas/model'
+import { ICreateModelSchema, IModelSchema } from '@model/schemas/model'
 import ModelForm from '@model/components/ModelForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -13,7 +13,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
 import { ButtonGroup, ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { WithCurrentAuth, useAccess } from '@/api/WithAuth'
 import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { getAliasStr } from '@base/utils/alias'
@@ -43,6 +43,117 @@ export default function ModelListCard() {
     )
     const [t] = useTranslation()
 
+    const isAccessModelRun = useAccess('model.run')
+    const isAccessModelDelete = useAccess('model.delete')
+    const isAccessOnlineEval = useAccess('online-eval')
+    const getActions = (model: IModelSchema) => [
+        {
+            icon: 'overview',
+            label: t('Overview'),
+            access: true,
+            quickAccess: true,
+            component: (hasText) => (
+                <ExtendButton
+                    icon='overview'
+                    styleAs={['menuoption']}
+                    onClick={() =>
+                        history.push(`/projects/${projectId}/models/${model.id}/versions/${model.version?.id}/overview`)
+                    }
+                >
+                    {hasText ? t('Overview') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            icon: 'a-Versionhistory',
+            label: t('Version History'),
+            access: true,
+            component: (hasText) => (
+                <ExtendButton
+                    icon='a-Versionhistory'
+                    styleAs={['menuoption']}
+                    onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
+                >
+                    {hasText ? t('Version History') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            icon: 'a-runmodel',
+            label: t('model.run'),
+            access: isAccessModelRun,
+            component: (hasText) => (
+                <WithCurrentAuth id='model.run'>
+                    <ExtendButton
+                        tooltip={t('model.run')}
+                        icon='a-runmodel'
+                        styleAs={['menuoption']}
+                        onClick={() => history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)}
+                    >
+                        {hasText ? t('model.run') : undefined}
+                    </ExtendButton>
+                </WithCurrentAuth>
+            ),
+        },
+        {
+            icon: 'a-onlineevaluation',
+            label: t('online eval'),
+            access: isAccessOnlineEval,
+            component: (hasText) => (
+                <WithCurrentAuth id='online-eval'>
+                    {(isPrivileged: boolean, isCommunity: boolean) => {
+                        if (!isPrivileged) return null
+                        if (!isCommunity)
+                            return (
+                                <ExtendButton
+                                    icon='a-onlineevaluation'
+                                    styleAs={['menuoption']}
+                                    onClick={() =>
+                                        history.push(
+                                            `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
+                                        )
+                                    }
+                                >
+                                    {hasText ? t('online eval') : undefined}
+                                </ExtendButton>
+                            )
+
+                        return (
+                            <ExtendButton
+                                icon='a-onlineevaluation'
+                                styleAs={['menuoption']}
+                                onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
+                            >
+                                {hasText ? t('online eval') : undefined}
+                            </ExtendButton>
+                        )
+                    }}
+                </WithCurrentAuth>
+            ),
+        },
+        {
+            icon: 'delete',
+            label: t('model.remove.button'),
+            access: isAccessModelDelete,
+            component: (hasText) => (
+                <WithCurrentAuth id='model.delete'>
+                    <ConfirmButton
+                        title={t('model.remove.confirm')}
+                        styleAs={['menuoption', 'negative']}
+                        icon='delete'
+                        onClick={async () => {
+                            await removeModel(projectId, model.id)
+                            toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
+                            history.push(`/projects/${projectId}/models`)
+                        }}
+                    >
+                        {hasText ? t('model.remove.button') : undefined}
+                    </ConfirmButton>
+                </WithCurrentAuth>
+            ),
+        },
+    ]
+
     return (
         <Card
             title={
@@ -61,6 +172,12 @@ export default function ModelListCard() {
                 />
             </div>
             <Table
+                renderActions={(rowIndex) => {
+                    const model = modelsInfo.data?.list[rowIndex]
+                    console.log(model, rowIndex)
+                    if (!model) return undefined
+                    return getActions(model)
+                }}
                 isLoading={modelsInfo.isLoading}
                 columns={[
                     t('sth name', [t('Model')]),
@@ -70,84 +187,18 @@ export default function ModelListCard() {
                     t('Size'),
                     t('Owner'),
                     t('Created'),
-                    t('Action'),
+                    '',
                 ]}
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
-                            <TextLink
-                                key={model.id}
-                                to={`/projects/${projectId}/models/${model.id}/versions/${model.version?.id}/overview`}
-                            >
-                                {model.name}
-                            </TextLink>,
+                            model.name,
                             <VersionText key='name' version={model.version?.name ?? '-'} />,
                             model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
                             <Shared key='shared' shared={model.version?.shared} isTextShow />,
                             model.version && getReadableStorageQuantityStr(Number(model.version.size)),
                             model.owner && <User user={model.owner} />,
                             model.version?.createdTime && formatTimestampDateTime(model.version?.createdTime),
-                            <ButtonGroup key='action'>
-                                <ExtendButton
-                                    tooltip={t('Version History')}
-                                    icon='a-Versionhistory'
-                                    as='link'
-                                    onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
-                                />
-                                <WithCurrentAuth id='model.run'>
-                                    <ExtendButton
-                                        tooltip={t('model.run')}
-                                        icon='a-runmodel'
-                                        as='link'
-                                        onClick={() =>
-                                            history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)
-                                        }
-                                    />
-                                </WithCurrentAuth>
-                                <WithCurrentAuth id='online-eval'>
-                                    {(isPrivileged: boolean, isCommunity: boolean) => {
-                                        if (!isPrivileged) return null
-                                        if (!isCommunity)
-                                            return (
-                                                <ExtendButton
-                                                    tooltip={t('online eval')}
-                                                    icon='a-onlineevaluation'
-                                                    as='link'
-                                                    onClick={() =>
-                                                        history.push(
-                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
-                                                        )
-                                                    }
-                                                />
-                                            )
-
-                                        return (
-                                            <ExtendButton
-                                                tooltip={t('online eval')}
-                                                icon='a-onlineevaluation'
-                                                as='link'
-                                                onClick={() =>
-                                                    history.push(`/projects/${projectId}/online_eval/${model.id}`)
-                                                }
-                                            />
-                                        )
-                                    }}
-                                </WithCurrentAuth>
-                                <WithCurrentAuth id='model.delete'>
-                                    <ConfirmButton
-                                        title={t('model.remove.confirm')}
-                                        tooltip={t('model.remove.button')}
-                                        as='link'
-                                        negative
-                                        icon='delete'
-                                        onClick={async () => {
-                                            await removeModel(projectId, model.id)
-                                            toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
-                                            history.push(`/projects/${projectId}/models`)
-                                        }}
-                                    />
-                                </WithCurrentAuth>
-                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

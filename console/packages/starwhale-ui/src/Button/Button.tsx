@@ -20,6 +20,7 @@ export interface IExtendButtonProps extends IButtonProps {
     transparent?: boolean
     icondisable?: boolean
     iconnormal?: boolean
+    styleAs?: ('nopadding' | 'negative' | 'tooltip' | 'transparent' | 'icondisable' | 'iconnormal' | 'menuoption')[]
 }
 
 function Button(
@@ -175,6 +176,7 @@ ForwardButton.defaultProps = {
 
 const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
     const [, theme] = themedUseStyletron()
+    const { styleAs = [] } = props
     const STYLES = {
         nopadding: {
             BaseButton: {
@@ -264,15 +266,37 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                 },
             },
         },
+        // menu
+        menuoption: {
+            BaseButton: {
+                style: {
+                    'paddingTop': '9px',
+                    'paddingBottom': '9px',
+                    'paddingLeft': '12px',
+                    'paddingRight': '12px',
+                    'backgroundColor': 'transparent',
+                    'justifyContent': 'start',
+                    'gap': '3px',
+                    'color': '#02102B',
+                    ':hover': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                    ':focus': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                    ':active': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                },
+            },
+        },
+        default: props.overrides || {},
     }
-    const overrides = [
-        props.nopadding ? STYLES.nopadding : {},
-        props.transparent ? STYLES.transparent : {},
-        props.negative ? STYLES.negative : {},
-        props.icondisable ? STYLES.icondisable : {},
-        props.iconnormal ? STYLES.iconnormal : {},
-        props.overrides ? props.overrides : {},
-    ].reduce(mergeOverrides, {})
+    const styles = [...styleAs, 'default'].map((type) => STYLES?.[type] ?? {})
+    const overrides = styles.reduce(mergeOverrides, {})
 
     if (props.tooltip) {
         return (
@@ -299,6 +323,7 @@ ExtendButton.defaultProps = {
     className: undefined,
     tooltip: '',
     icondisable: undefined,
+    styleAs: [],
 }
 
 export { ExtendButton }

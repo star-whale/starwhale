@@ -9,10 +9,22 @@ import { BusyPlaceholder } from '@starwhale/ui'
 import { Pagination } from '@starwhale/ui/Pagination'
 import { useEventCallback } from '@starwhale/core'
 import { PopoverContainer, SingleSelectMenu } from '@starwhale/ui/Popover'
-import { useClickAway } from 'ahooks'
-import { E } from '@/assets/GradioWidget/es/Image'
+import { useClickAway, useCreation } from 'ahooks'
+import { IconTypesT } from '@starwhale/ui/IconFont'
+import { expandPadding } from '@starwhale/ui/utils'
 
-function ActionMenu({ options: renderOptions = [], optionFilter = () => true, isOpen = false, ...rest }) {
+function ActionMenu({
+    options: renderOptions = [],
+    optionFilter = () => true,
+    isOpen = false,
+    ...rest
+}: {
+    options: { type: string; label: any }[]
+    optionFilter?: (option: any) => boolean
+    isOpen?: boolean
+    onItemSelect?: (value: string) => void
+    placement?: any
+}) {
     return (
         <PopoverContainer
             {...rest}
@@ -20,7 +32,21 @@ function ActionMenu({ options: renderOptions = [], optionFilter = () => true, is
             // only option exsit will show popover
             isOpen={isOpen}
             Content={SingleSelectMenu}
-            onItemSelect={({ item }) => rest.onChange?.(item.type)}
+            onItemSelect={({ item }) => rest.onItemSelect?.(item.type)}
+            contentOverrides={{
+                ListItem: {
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'start',
+                        ...expandPadding('0px', '0px', '0px', '0px'),
+                    },
+                },
+                List: {
+                    style: {
+                        minWidth: '110px',
+                    },
+                },
+            }}
         >
             <div />
         </PopoverContainer>
@@ -30,16 +56,25 @@ function ActionMenu({ options: renderOptions = [], optionFilter = () => true, is
 export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     paginationProps?: IPaginationProps
     data?: any
+    renderActions?: (rowIndex: any) =>
+        | {
+              icon: IconTypesT | string
+              label: any
+              access?: boolean
+              quickAccess?: boolean
+              component: (hasText?: boolean) => any
+          }[]
+        | undefined
 }
 
-export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
+export default function Table({ isLoading, columns, data, overrides, paginationProps, renderActions }: ITableProps) {
     const [, theme] = themedUseStyletron()
     const [page, setPage] = usePage()
     const [selectedRowIndex, setSelectedRowIndex] = React.useState<string | number | undefined>(undefined)
     const [rect, setRect] = React.useState<{ left: number; top: number } | null>(null)
     const ref = React.useRef<HTMLElement>(null)
 
-    const handleRowSelect = useEventCallback(({ rowIndex, row, event }) => {
+    const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
         setSelectedRowIndex(rowIndex)
         setRect({
             left: event.clientX,
@@ -51,21 +86,26 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
         setSelectedRowIndex(undefined)
     }, ref)
 
-    const options = [
-        {
-            id: '1',
-            label: 'Pin',
-            type: 'pin',
-        },
-    ]
+    const actions = useCreation(() => {
+        if (!selectedRowIndex || !renderActions) return undefined
+        return renderActions?.(selectedRowIndex)
+            ?.filter((action) => action.access)
+            .map((action) => {
+                return {
+                    type: action.label,
+                    label: action.component(true),
+                }
+            })
+    }, [data, selectedRowIndex])
 
     return (
         <>
             <ActionMenu
                 key={selectedRowIndex}
                 isOpen={selectedRowIndex !== undefined}
-                options={options}
+                options={actions ?? []}
                 placement='right'
+                // @ts-ignore
                 overrides={
                     rect
                         ? {

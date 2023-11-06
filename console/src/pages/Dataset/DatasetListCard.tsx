@@ -135,7 +135,7 @@ export default function DatasetListCard() {
                                             title={t('dataset.remove.confirm')}
                                             tooltip={t('dataset.remove.button')}
                                             as='link'
-                                            negative
+                                            styleAs={['negative']}
                                             icon='delete'
                                             onClick={async () => {
                                                 await removeDataset(projectId, dataset.id)

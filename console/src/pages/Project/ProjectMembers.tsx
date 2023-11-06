@@ -152,7 +152,7 @@ export default function ProjectMembers() {
                             <ConfirmButton
                                 as='link'
                                 icon='delete'
-                                negative
+                                styleAs={['negative']}
                                 tooltip={t('Remove Project Member')}
                                 title={t('Remove Project Role Confirm')}
                                 onClick={async () => {

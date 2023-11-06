@@ -81,7 +81,7 @@ export default function TrashListCard() {
                                 <ConfirmButton
                                     as='link'
                                     icon='delete'
-                                    negative
+                                    styleAs={['negative']}
                                     tooltip={t('trash.remove.button')}
                                     title={t('trash.remove.confirm')}
                                     onClick={async () => {

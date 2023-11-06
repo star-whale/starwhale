@@ -44,14 +44,19 @@ function SingleSelectMenu(props: any) {
                 props.onItemSelect?.(args)
                 props.onClose()
             }}
-            overrides={{
-                List: {
-                    style: {
-                        maxHeight: '500px',
-                        maxWidth: '500px',
-                    },
-                },
-            }}
+            overrides={
+                mergeOverride(
+                    {
+                        List: {
+                            style: {
+                                maxHeight: '500px',
+                                maxWidth: '500px',
+                            },
+                        },
+                    } as any,
+                    props.overrides
+                ) as any
+            }
         />
     )
 }
@@ -163,7 +168,9 @@ function PopoverContainer(props: {
     mountNode?: HTMLElement
     popperOptions?: any
     overrides?: any
+    contentOverrides?: any
     placement?: PopoverProps['placement']
+    autoClose?: boolean
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
@@ -175,6 +182,8 @@ function PopoverContainer(props: {
         popperOptions,
         overrides,
         placement = PLACEMENT.bottomLeft,
+        contentOverrides,
+        autoClose,
         ...rest
     } = props
 
@@ -192,20 +201,29 @@ function PopoverContainer(props: {
             placement={placement}
             isOpen={isOpen}
             innerRef={ref}
-            overrides={mergeOverride(
-                {
-                    Body: {
-                        props: {
-                            className: 'filter-popover',
+            overrides={
+                mergeOverride(
+                    {
+                        Body: {
+                            props: {
+                                className: 'filter-popover',
+                            },
+                            style: {
+                                marginTop: '32px',
+                            },
                         },
-                        style: {
-                            marginTop: '32px',
-                        },
-                    },
-                },
-                overrides
-            )}
-            content={<Content {...rest} inputRef={inputRef} onClose={handleClose} />}
+                    } as any,
+                    overrides
+                ) as any
+            }
+            content={
+                <Content
+                    overrides={contentOverrides}
+                    {...rest}
+                    inputRef={inputRef}
+                    onClose={autoClose ? handleClose : () => {}}
+                />
+            }
         >
             <div>{props.children}</div>
         </Popover>

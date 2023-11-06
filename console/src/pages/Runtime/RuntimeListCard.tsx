@@ -110,7 +110,7 @@ export default function RuntimeListCard() {
                                         tooltip={t('runtime.remove.button')}
                                         title={t('runtime.remove.confirm')}
                                         as='link'
-                                        negative
+                                        styleAs={['negative']}
                                         icon='delete'
                                         onClick={async () => {
                                             await removeRuntime(projectId, runtime.id)

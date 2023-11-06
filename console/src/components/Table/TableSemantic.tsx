@@ -19,7 +19,9 @@ import { getOverrides } from 'baseui/helpers/overrides'
 import type { TableProps } from 'baseui/table-semantic'
 
 // eslint-disable-next-line
-export default class Table extends React.Component<TableProps> {
+export default class Table extends React.Component<
+    TableProps & { onRowSelect: (args: { rowIndex: number; event: React.SyntheticEvent }) => void }
+> {
     static defaultProps = {
         // @ts-ignore
         columns: [],
@@ -45,6 +47,7 @@ export default class Table extends React.Component<TableProps> {
 
         const [Root, rootProps] = getOverrides(overrides.Root, StyledRoot)
 
+        // eslint-disable-next-line
         const [Table, tableProps] = getOverrides(overrides.Table, StyledTable)
 
         const [TableHead, tableHeadProps] = getOverrides(overrides.TableHead, StyledTableHead)
@@ -118,7 +121,7 @@ export default class Table extends React.Component<TableProps> {
                                     $row={row}
                                     $rowIndex={rowIndex}
                                     {...tableBodyRowProps}
-                                    onClick={(event) => onRowSelect({ event, rowIndex, row })}
+                                    onClick={(event) => onRowSelect({ event, rowIndex })}
                                 >
                                     {columns.map((col, colIndex) => (
                                         <TableBodyCell
