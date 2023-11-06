@@ -8,14 +8,14 @@ In these examples, we will use Starwhale to evaluate a set of image segmentation
 What we learn
 ------
 
-- use the `@Starwhale.predict` and `@Starwhale.evaluate` decorators to define handlers for Starwhale Model to finish the image segmentation evaluation tasks.
+- use the `@starwhale.evaluation.predict` and `@starwhale.evaluation.evaluate` decorators to define handlers for Starwhale Model to finish the image segmentation evaluation tasks.
 - build Starwhale Dataset by Starwhale Python SDK and use Starwhale Dataset Web Viewer.
 - use Starwhale Evaluation Summary Page to compare the algorithm quality of the different models.
 - use Starwhale `replicas` feature to speedup model evaluation.
-- use `Starwhale.Image`, `Starwhale.COCOObjectAnnotation` and `Starwhale.BoundingBox` to represent Dataset type.
+- use `starwhale.Image`, `starwhale.COCOObjectAnnotation` and `starwhale.BoundingBox` to represent Dataset type.
 - use `.swignore` file to ignore unexpected files or folders in the Starwhale Model building.
 - use Starwhale Online Evaluation.
-- use `Starwhale.Evaluation` SDK to log evaluation metrics into the user custom tables.
+- use `starwhale.Evaluation` SDK to log evaluation metrics into the user custom tables.
 
 Models
 ------
