@@ -15,10 +15,10 @@
 import os
 from pathlib import Path
 
-from datasets import get_dataset_split_names, load_dataset
+from datasets import load_dataset
 from starwhale.consts.env import SWEnv
 
-from starwhale import Text, dataset
+from starwhale import dataset
 
 ROOT_DIR = Path(__file__).parent
 
@@ -66,6 +66,6 @@ if __name__ == "__main__":
     if instance_uri:
         _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-eval"
     else:
-        _ds_uri = f"pokemon-blip-captions-eval"
+        _ds_uri = "pokemon-blip-captions-eval"
     build_ds_from_local_fs(_ds_uri)
     # build_ds_from_hf(_ds_uri)

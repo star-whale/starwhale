@@ -21,7 +21,7 @@ from starwhale.api.service import api
 from starwhale.base.type import PredictLogMode
 
 import gradio
-from starwhale import Image, MIMEType, PipelineHandler, Text
+from starwhale import Image, MIMEType, PipelineHandler
 
 try:
     from .utils import PRETRAINED_MODELS_DIR, get_base_model_path

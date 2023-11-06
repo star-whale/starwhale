@@ -16,7 +16,7 @@ import os
 from io import BytesIO
 from pathlib import Path
 
-from datasets import get_dataset_split_names, load_dataset
+from datasets import load_dataset
 from starwhale.consts.env import SWEnv
 
 from starwhale import Image, MIMEType, dataset
@@ -87,6 +87,6 @@ if __name__ == "__main__":
             f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-train"
         )
     else:
-        _ds_uri = f"pokemon-blip-captions-train"
+        _ds_uri = "pokemon-blip-captions-train"
     # build_ds_from_local_fs(_ds_uri)
     build_ds_from_hf(_ds_uri)

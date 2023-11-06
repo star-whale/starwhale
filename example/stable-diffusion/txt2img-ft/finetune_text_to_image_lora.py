@@ -42,7 +42,7 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-from diffusers.loaders import LORA_WEIGHT_NAME_SAFE, AttnProcsLayers
+from diffusers.loaders import AttnProcsLayers
 from diffusers.models.attention_processor import LoRAAttnProcessor
 from diffusers.optimization import get_scheduler
 from diffusers.utils.import_utils import is_xformers_available
@@ -280,10 +280,10 @@ def fine_tune(
     if use_8bit_adam:
         try:
             import bitsandbytes as bnb
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Please install bitsandbytes to use 8-bit Adam. You can do so by running `pip install bitsandbytes`"
-            )
+            ) from e
 
         optimizer_cls = bnb.optim.AdamW8bit
     else:
