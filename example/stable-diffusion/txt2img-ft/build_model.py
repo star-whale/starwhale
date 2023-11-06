@@ -9,13 +9,21 @@ from starwhale import model as starwhale_model
 try:
     from .evaluate_text_to_image import StableDiffusion
     from .finetune_text_to_image_lora import fine_tune
-    from .utils import (DEFAULT_MODEL_NAME, SUPPORTED_MODELS,
-                        download_hf_model, prepare_model_package)
+    from .utils import (
+        DEFAULT_MODEL_NAME,
+        SUPPORTED_MODELS,
+        download_hf_model,
+        prepare_model_package,
+    )
 except ImportError:
     from evaluate_text_to_image import StableDiffusion
     from finetune_text_to_image_lora import fine_tune
-    from utils import (DEFAULT_MODEL_NAME, SUPPORTED_MODELS, download_hf_model,
-                       prepare_model_package)
+    from utils import (
+        DEFAULT_MODEL_NAME,
+        SUPPORTED_MODELS,
+        download_hf_model,
+        prepare_model_package,
+    )
 
 
 debug.init_logger(3)

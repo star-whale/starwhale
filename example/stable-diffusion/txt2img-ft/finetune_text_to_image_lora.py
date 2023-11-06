@@ -42,8 +42,7 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-from diffusers.loaders import (LORA_WEIGHT_NAME, LORA_WEIGHT_NAME_SAFE,
-                               AttnProcsLayers)
+from diffusers.loaders import LORA_WEIGHT_NAME_SAFE, AttnProcsLayers
 from diffusers.models.attention_processor import LoRAAttnProcessor
 from diffusers.optimization import get_scheduler
 from diffusers.utils.import_utils import is_xformers_available
