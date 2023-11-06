@@ -16,9 +16,9 @@ import os
 from pathlib import Path
 
 from datasets import load_dataset
-from starwhale.consts.env import SWEnv
 
 from starwhale import dataset
+from starwhale.consts.env import SWEnv
 
 ROOT_DIR = Path(__file__).parent
 

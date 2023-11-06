@@ -15,18 +15,18 @@ import io
 import typing as t
 
 import torch
-from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
-from diffusers.loaders import LORA_WEIGHT_NAME
-from starwhale.api.service import api
-from starwhale.base.type import PredictLogMode
-
 import gradio
+from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
+from diffusers.loaders import LORA_WEIGHT_NAME
+
 from starwhale import Image, MIMEType, PipelineHandler
+from starwhale.base.type import PredictLogMode
+from starwhale.api.service import api
 
 try:
-    from .utils import PRETRAINED_MODELS_DIR, get_base_model_path
+    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
 except ImportError:
-    from utils import PRETRAINED_MODELS_DIR, get_base_model_path
+    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
 
 model_id = (
     get_base_model_path()

@@ -17,9 +17,9 @@ from io import BytesIO
 from pathlib import Path
 
 from datasets import load_dataset
-from starwhale.consts.env import SWEnv
 
-from starwhale import Image, MIMEType, dataset
+from starwhale import Image, dataset, MIMEType
+from starwhale.consts.env import SWEnv
 
 ROOT_DIR = Path(__file__).parent
 

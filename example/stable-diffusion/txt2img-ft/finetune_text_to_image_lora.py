@@ -26,41 +26,41 @@
 # limitations under the License.
 """Fine-tuning script for Stable Diffusion for text2image with support for LoRA."""
 
-import logging
-import math
 import os
+import math
 import shutil
+import logging
 from pathlib import Path
 
+import torch
 import datasets
 import diffusers
-import torch
+import transformers
 import torch.nn.functional as F
 import torch.utils.checkpoint
-import transformers
-from accelerate import Accelerator
-from accelerate.logging import get_logger
-from accelerate.utils import ProjectConfiguration
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
+from packaging import version
+from tqdm.auto import tqdm
+from accelerate import Accelerator
+from torchvision import transforms
+from transformers import CLIPTextModel, CLIPTokenizer
+from accelerate.utils import ProjectConfiguration
 from diffusers.loaders import AttnProcsLayers
-from diffusers.models.attention_processor import LoRAAttnProcessor
+from accelerate.logging import get_logger
 from diffusers.optimization import get_scheduler
 from diffusers.utils.import_utils import is_xformers_available
-from packaging import version
-from starwhale.api import experiment, model
-from starwhale.base.uri.resource import Resource, ResourceType
-from torchvision import transforms
-from tqdm.auto import tqdm
-from transformers import CLIPTextModel, CLIPTokenizer
+from diffusers.models.attention_processor import LoRAAttnProcessor
 
 from starwhale import Context, Dataset, pass_context
+from starwhale.api import model, experiment
+from starwhale.base.uri.resource import Resource, ResourceType
 
 try:
+    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
     from .evaluate_text_to_image import StableDiffusion
-    from .utils import PRETRAINED_MODELS_DIR, get_base_model_path
 except ImportError:
+    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
     from evaluate_text_to_image import StableDiffusion
-    from utils import PRETRAINED_MODELS_DIR, get_base_model_path
 
 
 ROOT_DIR = Path(__file__).parent
