@@ -6,5 +6,5 @@ diffusers==0.17.1
 ftfy
 tensorboard
 Jinja2
-starwhale
 gradio
+starwhale[online-server] # for online serving
