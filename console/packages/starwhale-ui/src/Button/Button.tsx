@@ -20,7 +20,17 @@ export interface IExtendButtonProps extends IButtonProps {
     transparent?: boolean
     icondisable?: boolean
     iconnormal?: boolean
-    styleAs?: ('nopadding' | 'negative' | 'tooltip' | 'transparent' | 'icondisable' | 'iconnormal' | 'menuoption')[]
+    styleAs?: (
+        | 'nopadding'
+        | 'negative'
+        | 'tooltip'
+        | 'transparent'
+        | 'icondisable'
+        | 'iconnormal'
+        | 'menuoption'
+        | 'highlight'
+        | undefined
+    )[]
 }
 
 function Button(
@@ -270,8 +280,8 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         menuoption: {
             BaseButton: {
                 style: {
-                    'paddingTop': '9px',
-                    'paddingBottom': '9px',
+                    'paddingTop': '8px',
+                    'paddingBottom': '8px',
                     'paddingLeft': '12px',
                     'paddingRight': '12px',
                     'backgroundColor': 'transparent',
@@ -293,9 +303,30 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                 },
             },
         },
+        highlight: {
+            BaseButton: {
+                style: {
+                    'lineHeight': 1,
+                    'backgroundColor': 'transparent',
+                    'color': theme.colors.buttonPrimaryFill,
+                    ':hover': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                    ':focus': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                    ':active': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                },
+            },
+        },
         default: props.overrides || {},
     }
-    const styles = [...styleAs, 'default'].map((type) => STYLES?.[type] ?? {})
+    const styles = [...styleAs, 'default'].map((type) => type && STYLES?.[type]).filter(Boolean)
     const overrides = styles.reduce(mergeOverrides, {})
 
     if (props.tooltip) {

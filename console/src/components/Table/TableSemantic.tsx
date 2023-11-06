@@ -20,7 +20,10 @@ import type { TableProps } from 'baseui/table-semantic'
 
 // eslint-disable-next-line
 export default class Table extends React.Component<
-    TableProps & { onRowSelect: (args: { rowIndex: number; event: React.SyntheticEvent }) => void }
+    TableProps & {
+        onRowSelect: (args: { rowIndex: number; event: React.SyntheticEvent }) => void
+        onRowHighlight: (args: { rowIndex: number; event: React.SyntheticEvent }) => void
+    }
 > {
     static defaultProps = {
         // @ts-ignore
@@ -42,6 +45,7 @@ export default class Table extends React.Component<
             emptyMessage,
             size,
             onRowSelect,
+            onRowHighlight,
             ...rest
         } = this.props
 
@@ -94,7 +98,13 @@ export default class Table extends React.Component<
                             ))}
                         </TableHeadRow>
                     </TableHead>
-                    <TableBody {...tableBodyProps}>
+                    <TableBody
+                        {...tableBodyProps}
+                        // onMouseLeave={(event) => {
+                        //     if (document.querySelector('.filter-popover')?.contains(event.target)) return
+                        //     // onRowHighlight({ event, rowIndex: undefined })
+                        // }}
+                    >
                         {isLoading && (
                             <tr>
                                 <td colSpan={columns.length}>
@@ -121,7 +131,12 @@ export default class Table extends React.Component<
                                     $row={row}
                                     $rowIndex={rowIndex}
                                     {...tableBodyRowProps}
-                                    onClick={(event) => onRowSelect({ event, rowIndex })}
+                                    onClick={(event) => {
+                                        onRowSelect({ event, rowIndex })
+                                    }}
+                                    onMouseEnter={(event) => {
+                                        onRowHighlight({ event, rowIndex })
+                                    }}
                                 >
                                     {columns.map((col, colIndex) => (
                                         <TableBodyCell

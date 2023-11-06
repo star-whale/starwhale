@@ -1,22 +1,59 @@
-import React from 'react'
+import React, { startTransition } from 'react'
 import { TableProps as BaseTableProps } from 'baseui/table-semantic'
 import TableSemantic from './TableSemantic'
 import { Skeleton } from 'baseui/skeleton'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
-import { BusyPlaceholder } from '@starwhale/ui'
+import { BusyPlaceholder, ExtendButton } from '@starwhale/ui'
 import { Pagination } from '@starwhale/ui/Pagination'
 import { useEventCallback } from '@starwhale/core'
 import { PopoverContainer, SingleSelectMenu } from '@starwhale/ui/Popover'
 import { useClickAway, useCreation } from 'ahooks'
 import { IconTypesT } from '@starwhale/ui/IconFont'
 import { expandPadding } from '@starwhale/ui/utils'
+import { StatefulPopover } from 'baseui/popover'
+
+const listOverrides = {
+    ListItem: {
+        style: {
+            display: 'flex',
+            justifyContent: 'start',
+            ...expandPadding('0px', '0px', '0px', '0px'),
+        },
+    },
+    List: {
+        style: {
+            minWidth: '110px',
+        },
+    },
+}
+
+const getPopoverOverrides = ({ left, top }) => {
+    if (!left || !top) return {}
+
+    return {
+        Body: {
+            props: {
+                className: 'filter-popover',
+                $popoverOffset: {
+                    left: left - 100,
+                    top: top + 5,
+                },
+            },
+            style: {
+                zIndex: 999,
+            },
+        },
+    }
+}
 
 function ActionMenu({
     options: renderOptions = [],
     optionFilter = () => true,
     isOpen = false,
+    children,
+    Content,
     ...rest
 }: {
     options: { type: string; label: any }[]
@@ -24,6 +61,8 @@ function ActionMenu({
     isOpen?: boolean
     onItemSelect?: (value: string) => void
     placement?: any
+    children?: React.ReactNode
+    Content?: React.FC<any>
 }) {
     return (
         <PopoverContainer
@@ -31,24 +70,11 @@ function ActionMenu({
             options={renderOptions.filter(optionFilter)}
             // only option exsit will show popover
             isOpen={isOpen}
-            Content={SingleSelectMenu}
+            Content={Content ?? SingleSelectMenu}
             onItemSelect={({ item }) => rest.onItemSelect?.(item.type)}
-            contentOverrides={{
-                ListItem: {
-                    style: {
-                        display: 'flex',
-                        justifyContent: 'start',
-                        ...expandPadding('0px', '0px', '0px', '0px'),
-                    },
-                },
-                List: {
-                    style: {
-                        minWidth: '110px',
-                    },
-                },
-            }}
+            contentOverrides={listOverrides}
         >
-            <div />
+            {children}
         </PopoverContainer>
     )
 }
@@ -71,10 +97,26 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     const [, theme] = themedUseStyletron()
     const [page, setPage] = usePage()
     const [selectedRowIndex, setSelectedRowIndex] = React.useState<string | number | undefined>(undefined)
-    const [rect, setRect] = React.useState<{ left: number; top: number } | null>(null)
+    const [rowRect, setRowRect] = React.useState<{ left: number; top: number } | null>(null)
+    const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
+    const [isFocus, setIsFocus] = React.useState(false)
     const ref = React.useRef<HTMLElement>(null)
 
+    const handleRowHighlight = useEventCallback(({ event, rowIndex }) => {
+        if (isFocus) return
+
+        startTransition(() => {
+            const tr = event.currentTarget.getBoundingClientRect()
+            setSelectedRowIndex(rowIndex)
+            setRowRect({
+                left: tr.left + tr.width,
+                top: tr.top,
+            })
+        })
+    })
+
     const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
+        setIsFocus(true)
         setSelectedRowIndex(rowIndex)
         setRect({
             left: event.clientX,
@@ -83,11 +125,12 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     })
 
     useClickAway(() => {
-        setSelectedRowIndex(undefined)
+        setIsFocus(false)
     }, ref)
 
     const actions = useCreation(() => {
-        if (!selectedRowIndex || !renderActions) return undefined
+        if (selectedRowIndex === undefined || !renderActions) return undefined
+
         return renderActions?.(selectedRowIndex)
             ?.filter((action) => action.access)
             .map((action) => {
@@ -96,37 +139,87 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     label: action.component(true),
                 }
             })
-    }, [data, selectedRowIndex])
+    }, [data, selectedRowIndex, isFocus])
+
+    const [quickActions, popoverActions] = useCreation(() => {
+        if (selectedRowIndex === undefined || !renderActions) return []
+        const _actions = renderActions?.(selectedRowIndex)
+
+        return [
+            _actions
+                ?.filter((action) => action.access && action.quickAccess)
+                .map((action) => {
+                    return action.component()
+                }),
+            _actions
+                ?.filter((action) => action.access && !action.quickAccess)
+                .map((action) => {
+                    return {
+                        type: action.label,
+                        label: action.component(true),
+                    }
+                }),
+        ]
+    }, [data, selectedRowIndex, isFocus])
 
     return (
         <>
             <ActionMenu
                 key={selectedRowIndex}
-                isOpen={selectedRowIndex !== undefined}
+                isOpen={selectedRowIndex !== undefined && isFocus}
                 options={actions ?? []}
                 placement='right'
                 // @ts-ignore
-                overrides={
-                    rect
-                        ? {
-                              Body: {
-                                  props: {
-                                      $popoverOffset: {
-                                          left: rect?.left + 20,
-                                          top: rect?.top - 10,
-                                      },
-                                  },
-                              },
-                          }
-                        : {}
-                }
+                overrides={getPopoverOverrides(rect)}
             />
+            {!isFocus && rowRect && (
+                <ActionMenu
+                    // key={selectedRowIndex}
+                    isOpen={selectedRowIndex !== undefined || true}
+                    options={popoverActions ?? []}
+                    placement='right'
+                    // @ts-ignore
+                    overrides={getPopoverOverrides(rowRect)}
+                    Content={() => {
+                        return (
+                            <div className='f-c-c'>
+                                {quickActions}{' '}
+                                <StatefulPopover
+                                    triggerType='hover'
+                                    placement='bottom'
+                                    overrides={{
+                                        Body: {
+                                            props: {
+                                                className: 'filter-popover',
+                                            },
+                                            style: {
+                                                marginTop: '0px',
+                                            },
+                                        },
+                                    }}
+                                    content={() => {
+                                        return <SingleSelectMenu overrides={listOverrides} options={popoverActions} />
+                                    }}
+                                >
+                                    <ExtendButton icon='more' styleAs={['highlight']} />
+                                </StatefulPopover>
+                            </div>
+                        )
+                    }}
+                />
+            )}
             <TableSemantic
                 isLoading={isLoading}
                 columns={columns}
-                data={data as any}
+                data={data}
                 onRowSelect={handleRowSelect}
+                onRowHighlight={handleRowHighlight}
                 overrides={{
+                    TableBody: {
+                        props: {
+                            ref,
+                        },
+                    },
                     TableBodyRow: {
                         style: {
                             'cursor': 'pointer',

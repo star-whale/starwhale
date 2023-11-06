@@ -184,6 +184,7 @@ function PopoverContainer(props: {
         placement = PLACEMENT.bottomLeft,
         contentOverrides,
         autoClose,
+        triggerType,
         ...rest
     } = props
 
@@ -193,8 +194,11 @@ function PopoverContainer(props: {
 
     const handleClose = () => ref.current && setIsOpen(false)
 
+    console.log(triggerType)
+
     return (
         <Popover
+            triggerType={triggerType}
             ignoreBoundary={false}
             popperOptions={popperOptions}
             mountNode={mountNode}
