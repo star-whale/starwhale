@@ -43,6 +43,17 @@ Only one-line command to build Starwhale Dataset from the Huggingface:
 swcli dataset build -hf cifar10
 ```
 
+Example output:
+
+```bash
+❯ swcli dataset build -hf cifar10
+🚧 start to build dataset bundle...
+👷 uri local/project/self/dataset/cifar10/version/latest
+🌊 creating dataset local/project/self/dataset/cifar10/version/ygxtyhrsrh27ilvprgf65gx7pqot3d6mrlthy5zs...
+🦋 update 60000 records into dataset
+🌺 congratulation! dataset build from https://huggingface.co/datasets/cifar10 has been built. You can run  swcli dataset info cifar10/version/ygxtyhrsrh27
+```
+
 ### Build CIFAR-100 by Starwhale SDK
 
 ```bash

@@ -3,7 +3,7 @@ Image Classification
 
 Image Classification is a fundamental task in vision recognition that aims to understand and categorize an image as a whole under a specific label.
 
-In these examples, we will use Starwhale to evaluate a set of image classification models.
+In these examples, we will use Starwhale to evaluate a set of image classification models, the demos are in the [starwhale/image-classification](https://cloud.starwhale.cn/projects/399/overview) project of Starwhale Cloud.
 
 What we learn
 ------
@@ -15,6 +15,7 @@ What we learn
 - build Starwhale Dataset by Starwhale Python SDK and use Starwhale Dataset Web Viewer.
 - build Starwhale Dataset by the one-line command from the Huggingface, no code.
 - use one Starwhale Runtime to run all models.
+- use `model.yaml` to define the Starwhale Model.
 
 Models
 ------

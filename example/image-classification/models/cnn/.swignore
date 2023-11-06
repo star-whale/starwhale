@@ -3,6 +3,5 @@ venv/*
 .history*
 .vscode/*
 .venv/*
-data/*
 .idea/*
 *.py[cod]

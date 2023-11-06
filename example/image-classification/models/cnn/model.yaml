@@ -1,0 +1,4 @@
+version: 1.0
+name: cnn
+run:
+  handler: evaluator:CIFAR10Inference

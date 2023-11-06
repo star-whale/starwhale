@@ -21,7 +21,7 @@ Building Starwhale Runtime
 
 ```bash
 swcli -vvv runtime build
-swcli runtime cp code-llama https://cloud.starwhale.cn/project/starwhale:llm_code
+swcli runtime cp code-llama https://cloud.starwhale.cn/project/starwhale:code-generation
 ```
 
 Building Starwhale Model with builtin runtime
@@ -35,7 +35,7 @@ python3 download.py
 swcli model build . --runtime code-llama --name code-llama-7b-instruct -m inference
 
 # upload Starwhale Model Package to Cloud Instance
-swcli model cp code-llama-7b-instruct https://cloud.starwhale.cn/project/starwhale:llm_code
+swcli model cp code-llama-7b-instruct https://cloud.starwhale.cn/project/starwhale:code-generation
 ```
 
 When using `--runtime xxx` in the `swcli model build` command, the Starwhale Model Package will include the runtime as its builtin runtime.

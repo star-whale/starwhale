@@ -1,6 +1,0 @@
-version: 1.0
-name: cifar10
-run:
-  handler: cifar.evaluator:CIFAR10Inference
-
-desc: cifar10 by pytorch

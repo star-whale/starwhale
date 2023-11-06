@@ -7,7 +7,10 @@ from pathlib import Path
 from PIL import Image as PILImage
 from tqdm import tqdm
 
-from starwhale import Image, dataset, MIMEType
+from starwhale import Image, dataset, MIMEType, init_logger
+
+# set Starwhale Python SDK logger level to 3 (DEBUG)
+init_logger(3)
 
 DATASET_NAME = "cifar100"
 ROOT_DIR = Path(__file__).parent
@@ -16,17 +19,20 @@ DATA_DIR = ROOT_DIR / "data" / "cifar-100-python"
 
 def build():
     # If the dataset already exists, it will raise an exception. We assure to build the dataset only once.
+    print(f"start to build dataset {DATASET_NAME} ...")
     with dataset(DATASET_NAME, create="empty") as ds:
         with (DATA_DIR / "meta").open("rb") as f:
             meta = pickle.load(f, encoding="bytes")
 
         with (DATA_DIR / "train").open("rb") as f:
             content = pickle.load(f, encoding="bytes")
-            for data, fine_label, coarse_label, filename in zip(
-                content[b"data"],
-                content[b"fine_labels"],
-                content[b"coarse_labels"],
-                content[b"filenames"],
+            for data, fine_label, coarse_label, filename in tqdm(
+                zip(
+                    content[b"data"],
+                    content[b"fine_labels"],
+                    content[b"coarse_labels"],
+                    content[b"filenames"],
+                )
             ):
                 image_array = data.reshape(3, 32, 32).transpose(1, 2, 0)
                 image_bytes = io.BytesIO()
@@ -53,10 +59,12 @@ def build():
                 )
 
         # commit will generate a new version of the dataset.
+        print("committing dataset ...")
         ds.commit()
 
 
 def show():
+    print(f"show dataset {DATASET_NAME} ...")
     # the dataset must exist.
     ds = dataset(DATASET_NAME, readonly=True)
     # head will return a generator of the first n items.
