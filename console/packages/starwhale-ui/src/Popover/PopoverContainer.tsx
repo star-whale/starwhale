@@ -42,7 +42,7 @@ function SingleSelectMenu(props: any) {
             onItemSelect={(args) => {
                 // @ts-ignore
                 props.onItemSelect?.(args)
-                props.onClose()
+                props.onClose?.()
             }}
             overrides={
                 mergeOverride(
@@ -104,7 +104,7 @@ function MultiSelectMenu(props: any) {
     }, [props.options, isSelected])
 
     const submit = () => {
-        props.onClose()
+        props.onClose?.()
         props.onItemIdsChange?.(selected)
     }
 

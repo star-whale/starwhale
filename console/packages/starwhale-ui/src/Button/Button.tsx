@@ -20,7 +20,7 @@ export interface IExtendButtonProps extends IButtonProps {
     transparent?: boolean
     icondisable?: boolean
     iconnormal?: boolean
-    styleAs?: (
+    styleas?: (
         | 'nopadding'
         | 'negative'
         | 'tooltip'
@@ -186,7 +186,7 @@ ForwardButton.defaultProps = {
 
 const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
     const [, theme] = themedUseStyletron()
-    const { styleAs = [] } = props
+    const { styleas = [] } = props
     const STYLES = {
         nopadding: {
             BaseButton: {
@@ -326,7 +326,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         },
         default: props.overrides || {},
     }
-    const styles = [...styleAs, 'default'].map((type) => type && STYLES?.[type]).filter(Boolean)
+    const styles = [...styleas, 'default'].map((type) => type && STYLES?.[type]).filter(Boolean)
     const overrides = styles.reduce(mergeOverrides, {})
 
     if (props.tooltip) {
@@ -354,7 +354,7 @@ ExtendButton.defaultProps = {
     className: undefined,
     tooltip: '',
     icondisable: undefined,
-    styleAs: [],
+    styleas: [],
 }
 
 export { ExtendButton }

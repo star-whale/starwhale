@@ -106,7 +106,7 @@ export default function ReportListCard() {
                     as='link'
                     tooltip={t('Delete')}
                     icon='delete'
-                    styleAs={['negative']}
+                    styleas={['negative']}
                     onClick={() => handleDelete(report.id, report.title)}
                 />
             </ButtonGroup>,

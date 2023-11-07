@@ -6,10 +6,9 @@ import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
-import { TextLink } from '@/components/Link'
-import { Button, ButtonGroup, ConfirmButton, ExtendButton, IconFont } from '@starwhale/ui'
+import { Button, ConfirmButton, ExtendButton, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
-import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
+import { WithCurrentAuth, useAccess, useAuthPrivileged } from '@/api/WithAuth'
 import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
 import { fetchDatasetBuildList, removeDataset } from '@/domain/dataset/services/dataset'
@@ -22,6 +21,7 @@ import yaml from 'js-yaml'
 import Shared from '@/components/Shared'
 import { QueryInput } from '@starwhale/ui/Input'
 import _ from 'lodash'
+import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -47,6 +47,78 @@ export default function DatasetListCard() {
         }
     )
     const buildCount = datasetBuildList.data?.list?.length ?? 0
+
+    const isAccessDatasetUpload = useAccess('dataset.upload')
+    const isAccessDatasetDelete = useAccess('dataset.delete')
+
+    const getActions = (data: IDatasetSchema) => [
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='overview'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() =>
+                        history.push(`/projects/${projectId}/datasets/${data.id}/versions/${data.version?.id}/files`)
+                    }
+                >
+                    {hasText ? t('View Details') : null}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='a-Versionhistory'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/datasets/${data.id}/versions`)}
+                >
+                    {hasText ? t('Version History') : null}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: isAccessDatasetUpload,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='upload'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() =>
+                        history.push(
+                            `/projects/${projectId}/new_dataset/${data.id}?datasetName=${data.name}&datasetVersion=${data.version?.name}`
+                        )
+                    }
+                >
+                    {hasText ? t('Upload') : null}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: isAccessDatasetDelete,
+            component: ({ hasText }) => (
+                <ConfirmButton
+                    title={`${data.name} ${t('dataset.remove.confirm')}`}
+                    isFull
+                    icon='delete'
+                    styleas={['menuoption', 'negative']}
+                    onClick={async () => {
+                        await removeDataset(projectId, data.id)
+                        toaster.positive(t('dataset.remove.success'), {
+                            autoHideDuration: 1000,
+                        })
+                        datasetsInfo.refetch()
+                    }}
+                >
+                    {hasText ? t('dataset.remove.button') : null}
+                </ConfirmButton>
+            ),
+        },
+    ]
 
     return (
         <>
@@ -76,6 +148,11 @@ export default function DatasetListCard() {
                     />
                 </div>
                 <Table
+                    renderActions={(rowIndex) => {
+                        const data = datasetsInfo.data?.list[rowIndex]
+                        if (!data) return undefined
+                        return getActions(data)
+                    }}
                     isLoading={datasetsInfo.isLoading}
                     columns={[
                         t('sth name', [t('Dataset')]),
@@ -85,7 +162,6 @@ export default function DatasetListCard() {
                         t('dataset.file.count'),
                         t('Owner'),
                         t('Created'),
-                        t('Action'),
                     ]}
                     data={
                         datasetsInfo.data?.list.map((dataset) => {
@@ -97,56 +173,13 @@ export default function DatasetListCard() {
                             } catch (e) {}
 
                             return [
-                                <TextLink
-                                    key={dataset.id}
-                                    to={`/projects/${projectId}/datasets/${dataset.id}/versions/${dataset.version?.id}/files`}
-                                >
-                                    {dataset.name}
-                                </TextLink>,
+                                dataset.name,
                                 <VersionText key='name' version={dataset.version?.name ?? '-'} />,
                                 dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
                                 <Shared key='shared' shared={dataset.version?.shared} isTextShow />,
                                 counts,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
-                                <ButtonGroup key='action'>
-                                    <ExtendButton
-                                        tooltip={t('Version History')}
-                                        as='link'
-                                        icon='a-Versionhistory'
-                                        onClick={() =>
-                                            history.push(`/projects/${projectId}/datasets/${dataset.id}/versions`)
-                                        }
-                                    />
-                                    <WithCurrentAuth id='dataset.upload'>
-                                        <ExtendButton
-                                            tooltip={t('Upload')}
-                                            as='link'
-                                            icon='upload'
-                                            onClick={() =>
-                                                history.push(
-                                                    `/projects/${projectId}/new_dataset/${dataset.id}?datasetName=${dataset.name}`
-                                                )
-                                            }
-                                        />
-                                    </WithCurrentAuth>
-                                    <WithCurrentAuth id='dataset.delete'>
-                                        <ConfirmButton
-                                            title={t('dataset.remove.confirm')}
-                                            tooltip={t('dataset.remove.button')}
-                                            as='link'
-                                            styleAs={['negative']}
-                                            icon='delete'
-                                            onClick={async () => {
-                                                await removeDataset(projectId, dataset.id)
-                                                toaster.positive(t('dataset.remove.success'), {
-                                                    autoHideDuration: 1000,
-                                                })
-                                                history.push(`/projects/${projectId}/datasets`)
-                                            }}
-                                        />
-                                    </WithCurrentAuth>
-                                </ButtonGroup>,
                             ]
                         }) ?? []
                     }

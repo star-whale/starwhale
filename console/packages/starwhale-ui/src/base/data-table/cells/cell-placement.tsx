@@ -171,7 +171,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                             style={{
                                 marginRight: '8px',
                             }}
-                            styleAs={['negative']}
+                            styleas={['negative']}
                             icon='item-reduce'
                             onClick={() => onRemove?.(getId(value.record))}
                         />

@@ -10,7 +10,6 @@ import { Pagination } from '@starwhale/ui/Pagination'
 import { useEventCallback } from '@starwhale/core'
 import { PopoverContainer, SingleSelectMenu } from '@starwhale/ui/Popover'
 import { useClickAway, useCreation } from 'ahooks'
-import { IconTypesT } from '@starwhale/ui/IconFont'
 import { expandPadding } from '@starwhale/ui/utils'
 import { StatefulPopover } from 'baseui/popover'
 
@@ -37,8 +36,8 @@ const getPopoverOverrides = ({ left, top }) => {
             props: {
                 className: 'filter-popover',
                 $popoverOffset: {
-                    left: left - 100,
-                    top: top + 5,
+                    left,
+                    top,
                 },
             },
             style: {
@@ -56,7 +55,7 @@ function ActionMenu({
     Content,
     ...rest
 }: {
-    options: { type: string; label: any }[]
+    options: { type: string | number; label: any }[]
     optionFilter?: (option: any) => boolean
     isOpen?: boolean
     onItemSelect?: (value: string) => void
@@ -68,7 +67,6 @@ function ActionMenu({
         <PopoverContainer
             {...rest}
             options={renderOptions.filter(optionFilter)}
-            // only option exsit will show popover
             isOpen={isOpen}
             Content={Content ?? SingleSelectMenu}
             onItemSelect={({ item }) => rest.onItemSelect?.(item.type)}
@@ -84,11 +82,9 @@ export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     data?: any
     renderActions?: (rowIndex: any) =>
         | {
-              icon: IconTypesT | string
-              label: any
               access?: boolean
               quickAccess?: boolean
-              component: (hasText?: boolean) => any
+              component: React.FC<{ hasText?: boolean }>
           }[]
         | undefined
 }
@@ -102,28 +98,6 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     const [isFocus, setIsFocus] = React.useState(false)
     const ref = React.useRef<HTMLElement>(null)
 
-    const handleRowHighlight = useEventCallback(({ event, rowIndex }) => {
-        if (isFocus) return
-
-        startTransition(() => {
-            const tr = event.currentTarget.getBoundingClientRect()
-            setSelectedRowIndex(rowIndex)
-            setRowRect({
-                left: tr.left + tr.width,
-                top: tr.top,
-            })
-        })
-    })
-
-    const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
-        setIsFocus(true)
-        setSelectedRowIndex(rowIndex)
-        setRect({
-            left: event.clientX,
-            top: event.clientY,
-        })
-    })
-
     useClickAway(() => {
         setIsFocus(false)
         setSelectedRowIndex(undefined)
@@ -134,10 +108,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
 
         return renderActions?.(selectedRowIndex)
             ?.filter((action) => action.access)
-            .map((action) => {
+            .map((action, index) => {
                 return {
-                    type: action.label,
-                    label: action.component(true),
+                    type: index,
+                    label: <action.component key={index} hasText />,
                 }
             })
     }, [data, selectedRowIndex, isFocus])
@@ -149,19 +123,49 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
         return [
             _actions
                 ?.filter((action) => action.access && action.quickAccess)
-                .map((action) => {
-                    return action.component()
+                .map((action, index) => {
+                    return <action.component key={index} />
                 }),
             _actions
                 ?.filter((action) => action.access && !action.quickAccess)
-                .map((action) => {
+                .map((action, index) => {
                     return {
-                        type: action.label,
-                        label: action.component(true),
+                        type: index,
+                        label: <action.component key={index} hasText />,
                     }
                 }),
         ]
     }, [data, selectedRowIndex, isFocus])
+
+    const offset = React.useMemo(() => {
+        const len = quickActions?.length ?? 0
+        return {
+            left: -1 * (len + 1) * 33 - 10,
+            top: 5,
+        }
+    }, [quickActions])
+
+    const handleRowHighlight = useEventCallback(({ event, rowIndex }) => {
+        if (isFocus) return
+
+        startTransition(() => {
+            const tr = event.currentTarget.getBoundingClientRect()
+            setSelectedRowIndex(rowIndex)
+            setRowRect({
+                left: tr.left + tr.width + offset.left,
+                top: tr.top + offset.top,
+            })
+        })
+    })
+
+    const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
+        setIsFocus(true)
+        setSelectedRowIndex(rowIndex)
+        setRect({
+            left: event.clientX,
+            top: event.clientY + offset.top,
+        })
+    })
 
     return (
         <>
@@ -204,7 +208,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                                         return <SingleSelectMenu overrides={listOverrides} options={popoverActions} />
                                     }}
                                 >
-                                    <ExtendButton icon='more' styleAs={['highlight']} />
+                                    <ExtendButton icon='more' styleas={['highlight']} />
                                 </StatefulPopover>
                             </div>
                         )

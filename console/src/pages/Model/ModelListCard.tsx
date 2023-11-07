@@ -47,32 +47,28 @@ export default function ModelListCard() {
     const isAccessOnlineEval = useAccess('online-eval')
     const getActions = (model: IModelSchema) => [
         {
-            icon: 'overview',
-            label: t('Overview'),
             access: true,
             quickAccess: true,
-            component: (hasText) => (
+            component: ({ hasText }) => (
                 <ExtendButton
                     isFull
                     icon='overview'
-                    styleAs={['menuoption', hasText ? undefined : 'highlight']}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() =>
                         history.push(`/projects/${projectId}/models/${model.id}/versions/${model.version?.id}/overview`)
                     }
                 >
-                    {hasText ? t('Overview') : undefined}
+                    {hasText ? t('View Details') : undefined}
                 </ExtendButton>
             ),
         },
         {
-            icon: 'a-Versionhistory',
-            label: t('Version History'),
             access: true,
-            component: (hasText) => (
+            component: ({ hasText }) => (
                 <ExtendButton
                     isFull
                     icon='a-Versionhistory'
-                    styleAs={['menuoption', hasText ? undefined : 'highlight']}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
                 >
                     {hasText ? t('Version History') : undefined}
@@ -80,28 +76,22 @@ export default function ModelListCard() {
             ),
         },
         {
-            icon: 'a-runmodel',
-            label: t('model.run'),
             access: isAccessModelRun,
-            component: (hasText) => (
-                <WithCurrentAuth id='model.run'>
-                    <ExtendButton
-                        isFull
-                        tooltip={t('model.run')}
-                        icon='a-runmodel'
-                        styleAs={['menuoption', hasText ? undefined : 'highlight']}
-                        onClick={() => history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)}
-                    >
-                        {hasText ? t('model.run') : undefined}
-                    </ExtendButton>
-                </WithCurrentAuth>
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    tooltip={t('model.run')}
+                    icon='a-runmodel'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)}
+                >
+                    {hasText ? t('model.run') : undefined}
+                </ExtendButton>
             ),
         },
         {
-            icon: 'a-onlineevaluation',
-            label: t('online eval'),
             access: isAccessOnlineEval,
-            component: (hasText) => (
+            component: ({ hasText }) => (
                 <WithCurrentAuth id='online-eval'>
                     {(isPrivileged: boolean, isCommunity: boolean) => {
                         if (!isPrivileged) return null
@@ -110,7 +100,7 @@ export default function ModelListCard() {
                                 <ExtendButton
                                     isFull
                                     icon='a-onlineevaluation'
-                                    styleAs={['menuoption', hasText ? undefined : 'highlight']}
+                                    styleas={['menuoption', hasText ? undefined : 'highlight']}
                                     onClick={() =>
                                         history.push(
                                             `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
@@ -125,7 +115,7 @@ export default function ModelListCard() {
                             <ExtendButton
                                 isFull
                                 icon='a-onlineevaluation'
-                                styleAs={['menuoption']}
+                                styleas={['menuoption']}
                                 as={hasText ? undefined : 'link'}
                                 onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
                             >
@@ -137,25 +127,21 @@ export default function ModelListCard() {
             ),
         },
         {
-            icon: 'delete',
-            label: t('model.remove.button'),
             access: isAccessModelDelete,
-            component: (hasText) => (
-                <WithCurrentAuth id='model.delete'>
-                    <ConfirmButton
-                        title={`${model.name} ${t('model.remove.confirm')}`}
-                        styleAs={['menuoption', 'negative']}
-                        icon='delete'
-                        isFull
-                        onClick={async () => {
-                            await removeModel(projectId, model.id)
-                            toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
-                            history.push(`/projects/${projectId}/models`)
-                        }}
-                    >
-                        {hasText ? t('model.remove.button') : undefined}
-                    </ConfirmButton>
-                </WithCurrentAuth>
+            component: ({ hasText }) => (
+                <ConfirmButton
+                    title={`${model.name} ${t('model.remove.confirm')}`}
+                    styleas={['menuoption', 'negative']}
+                    icon='delete'
+                    isFull
+                    onClick={async () => {
+                        await removeModel(projectId, model.id)
+                        toaster.positive(t('model.remove.success'), { autoHideDuration: 1000 })
+                        modelsInfo.refetch()
+                    }}
+                >
+                    {hasText ? t('model.remove.button') : undefined}
+                </ConfirmButton>
             ),
         },
     ]
