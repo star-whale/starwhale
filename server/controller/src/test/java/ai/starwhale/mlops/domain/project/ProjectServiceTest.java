@@ -32,6 +32,8 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
@@ -60,6 +62,12 @@ import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
 
 public class ProjectServiceTest {
+
+    private RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
+
+    private ModelVersionMapper modelVersionMapper = mock(ModelVersionMapper.class);
+
+    private DatasetVersionMapper datasetVersionMapper = mock(DatasetVersionMapper.class);
 
     private ProjectService service;
 
@@ -139,9 +147,9 @@ public class ProjectServiceTest {
                 memberService,
                 idConvertor,
                 userService,
-                mock(RuntimeVersionMapper.class),
-                mock(ModelVersionMapper.class),
-                mock(DatasetVersionMapper.class)
+                runtimeVersionMapper,
+                modelVersionMapper,
+                datasetVersionMapper
         );
     }
 
@@ -264,10 +272,22 @@ public class ProjectServiceTest {
                 .willReturn(1);
         given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any()))
                 .willReturn(ProjectEntity.builder().id(2L).projectName("p2").build());
-        var res = service.updateProject("1", "pro1", null, null, "PUBLIC");
+        var res = service.updateProject("1", "pro1", null, null, null);
+        verify(runtimeVersionMapper, times(0)).unShareRuntimeVersionWithinProject(any());
+        verify(modelVersionMapper, times(0)).unShareModelVersionWithinProject(any());
+        verify(datasetVersionMapper, times(0)).unShareDatesetVersionWithinProject(any());
         assertThat(res, is(true));
 
-        res = service.updateProject("p1", "pro1", null, null, "PUBLIC");
+        res = service.updateProject("1", "pro1", null, null, "PUBLIC");
+        verify(runtimeVersionMapper, times(0)).unShareRuntimeVersionWithinProject(any());
+        verify(modelVersionMapper, times(0)).unShareModelVersionWithinProject(any());
+        verify(datasetVersionMapper, times(0)).unShareDatesetVersionWithinProject(any());
+        assertThat(res, is(true));
+
+        res = service.updateProject("p1", "pro1", null, null, "PRIVATE");
+        verify(runtimeVersionMapper, times(1)).unShareRuntimeVersionWithinProject(any());
+        verify(modelVersionMapper, times(1)).unShareModelVersionWithinProject(any());
+        verify(datasetVersionMapper, times(1)).unShareDatesetVersionWithinProject(any());
         assertThat(res, is(true));
 
         res = service.updateProject("2", "pro1", null, null, "PUBLIC");

@@ -346,12 +346,16 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             }
         }
 
-        var privacyEnum = Privacy.fromName(privacy);
-        if (privacyEnum == Privacy.PRIVATE) {
-            // make all the shared resource unshared
-            runtimeVersionMapper.unShareRuntimeVersionWithinProject(projectId);
-            modelVersionMapper.unShareModelVersionWithinProject(projectId);
-            datasetVersionMapper.unShareDatesetVersionWithinProject(projectId);
+        Integer privacyValue = null;
+        if (StrUtil.isNotEmpty(privacy)) {
+            var privacyEnum = Privacy.fromName(privacy);
+            if (privacyEnum == Privacy.PRIVATE) {
+                // make all the shared resource unshared
+                runtimeVersionMapper.unShareRuntimeVersionWithinProject(projectId);
+                modelVersionMapper.unShareModelVersionWithinProject(projectId);
+                datasetVersionMapper.unShareDatesetVersionWithinProject(projectId);
+            }
+            privacyValue = privacyEnum.getValue();
         }
 
         ProjectEntity entity = ProjectEntity.builder()
@@ -359,7 +363,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 .projectName(projectName)
                 .projectDescription(description)
                 .readme(readme)
-                .privacy(privacyEnum.getValue())
+                .privacy(privacyValue)
                 .build();
         int res = projectMapper.update(entity);
         log.info("Project has been modified ID={}", entity.getId());
