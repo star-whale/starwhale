@@ -9,6 +9,7 @@ export const Privileges = {
     'evaluation.create': true,
     'report.create': true,
     'report.update': true,
+    'report.delete': true,
     'runtime.version.revert': true,
     'model.run': true,
     'model.version.revert': true,
