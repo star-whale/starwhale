@@ -50,44 +50,37 @@ export default function ReportListCard() {
                     </ExtendButton>
                 ),
             },
-            report.shared
-                ? {
-                      access: true,
-                      component: ({ hasText }) => (
-                          <Link
-                              target='_blank'
-                              to={`/simple/report/preview/?rid=${report.uuid}`}
-                              style={{ color: 'rgb(43, 101, 217)' }}
-                          >
-                              <ExtendButton icon='link' styleas={['menuoption', hasText ? undefined : 'highlight']}>
-                                  {hasText ? t('Preview') : undefined}
-                              </ExtendButton>
-                          </Link>
-                      ),
-                  }
-                : undefined,
-            report.shared
-                ? {
-                      access: true,
-                      component: ({ hasText }) => (
-                          <div style={{ lineHeight: 1 }}>
-                              <Copy
-                                  text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
-                                  onCopy={() => {
-                                      toaster.positive(t('Copied'), { autoHideDuration: 1000 })
-                                  }}
-                              >
-                                  <ExtendButton
-                                      icon='a-copylink'
-                                      styleas={['menuoption', hasText ? undefined : 'highlight']}
-                                  >
-                                      {hasText ? t('Copy Link') : undefined}
-                                  </ExtendButton>
-                              </Copy>
-                          </div>
-                      ),
-                  }
-                : undefined,
+            {
+                access: report.shared,
+                component: ({ hasText }) => (
+                    <Link
+                        target='_blank'
+                        to={`/simple/report/preview/?rid=${report.uuid}`}
+                        style={{ color: 'rgb(43, 101, 217)' }}
+                    >
+                        <ExtendButton icon='link' styleas={['menuoption', hasText ? undefined : 'highlight']}>
+                            {hasText ? t('Preview') : undefined}
+                        </ExtendButton>
+                    </Link>
+                ),
+            },
+            {
+                access: report.shared,
+                component: ({ hasText }) => (
+                    <div style={{ lineHeight: 1 }}>
+                        <Copy
+                            text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
+                            onCopy={() => {
+                                toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                            }}
+                        >
+                            <ExtendButton icon='a-copylink' styleas={['menuoption', hasText ? undefined : 'highlight']}>
+                                {hasText ? t('Copy Link') : undefined}
+                            </ExtendButton>
+                        </Copy>
+                    </div>
+                ),
+            },
             {
                 access: isAccessReportDelete,
                 component: ({ hasText }) => (
