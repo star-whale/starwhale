@@ -14,17 +14,29 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.job.bo;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.job.DevWay;
+import java.util.List;
+import javax.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
-public interface BundleVersionAccessor<T extends BundleVersionEntity> {
+@Data
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class UserJobCreateRequest extends JobCreateRequest {
+    @NotNull
+    Long modelVersionId;
 
-    T findVersionById(Long bundleVersionId);
+    @NotNull
+    Long runtimeVersionId;
 
-    T findVersionByAliasAndBundleId(String alias, Long bundleId);
+    List<Long> datasetVersionIds;
 
-    T findVersionByNameAndBundleId(String name, Long bundleId);
-
-    T findLatestVersionByBundleId(Long bundleId);
+    boolean devMode;
+    DevWay devWay;
+    String devPassword;
+    Long ttlInSec;
 }

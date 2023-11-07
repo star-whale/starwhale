@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -43,12 +44,11 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import io.kubernetes.client.openapi.ApiException;
 import java.util.Date;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 public class ModelServingServiceTest {
@@ -121,7 +121,7 @@ public class ModelServingServiceTest {
     }
 
     @Test
-    public void testCreate() throws ApiException {
+    public void testCreate() {
         var resourcePool = "default";
 
         var entity = ModelServingEntity.builder()
@@ -152,15 +152,15 @@ public class ModelServingServiceTest {
                 + " \"a\": \"b\"\n";
 
         svc.create("2", "9", "8", resourcePool, spec);
-        verify(jobService).createJob(
-                eq("p"),
-                eq("9"),
-                eq(null),
-                eq("8"),
-                eq("model online evaluation"),
-                eq("rp"),
-                eq(null),
-                eq("---\n"
+        var argumentCaptor = ArgumentCaptor.forClass(UserJobCreateRequest.class);
+        verify(jobService).createJob(argumentCaptor.capture());
+        var req = argumentCaptor.getValue();
+        assertEquals("p", req.getProject().getName());
+        assertEquals(9L, req.getModelVersionId());
+        assertEquals(8L, req.getRuntimeVersionId());
+        assertEquals("rp", req.getResourcePool());
+        assertEquals("model online evaluation", req.getComment());
+        var expectStepSpec = "---\n"
                         + "- name: \"online_eval\"\n"
                         + "  concurrency: 1\n"
                         + "  replicas: 1\n"
@@ -174,15 +174,10 @@ public class ModelServingServiceTest {
                         + "  expose: 8080\n"
                         + "  job_name: \"online_eval\"\n"
                         + "  show_name: \"online_eval\"\n"
-                        + "  require_dataset: false\n"),
-                eq(JobType.BUILT_IN),
-                eq(null),
-                eq(false),
-                eq(null),
-                eq(null)
-        );
+                        + "  require_dataset: false\n";
 
-
+        assertEquals(expectStepSpec, req.getStepSpecOverWrites());
+        assertEquals(JobType.BUILT_IN, req.getJobType());
     }
 
 
@@ -246,6 +241,6 @@ public class ModelServingServiceTest {
                 .build();
         when(modelServingMapper.find(7L)).thenReturn(entity);
         var status = svc.getStatus(7L);
-        Assertions.assertEquals("RUNNING", status.getEvents());
+        assertEquals("RUNNING", status.getEvents());
     }
 }

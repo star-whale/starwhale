@@ -17,37 +17,27 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.common.Constants;
-import ai.starwhale.mlops.domain.dataset.DatasetDao;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.model.ModelService;
-import ai.starwhale.mlops.domain.project.ProjectDao;
-import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeDao;
-import ai.starwhale.mlops.domain.runtime.bo.Runtime;
-import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -59,66 +49,51 @@ import org.springframework.util.StringUtils;
 @Component
 @Slf4j
 public class JobCreator {
-    static final String FORMATTER_URI_ARTIFACT = "project/%s/%s/%s/version/%s";
-    private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
     private final JobLoader jobLoader;
     private final StoragePathCoordinator storagePathCoordinator;
     private final JobDao jobDao;
-    private final ProjectDao projectDao;
-    private final ModelService modelService;
-    private final DatasetDao datasetDao;
-    private final RuntimeDao runtimeDao;
     private final JobUpdateHelper jobUpdateHelper;
 
     private final SystemSettingService systemSettingService;
     private final JobSpecParser jobSpecParser;
+    private final UserJobConverter userJobConverter;
 
     public JobCreator(
-            JobBoConverter jobBoConverter,
-            JobSpliterator jobSpliterator, JobLoader jobLoader,
+            JobSpliterator jobSpliterator,
+            JobLoader jobLoader,
             StoragePathCoordinator storagePathCoordinator,
-            JobDao jobDao, ProjectDao projectDao, ModelService modelService,
-            DatasetDao datasetDao, RuntimeDao runtimeDao, JobUpdateHelper jobUpdateHelper,
-            SystemSettingService systemSettingService, JobSpecParser jobSpecParser
+            JobDao jobDao,
+            JobUpdateHelper jobUpdateHelper,
+            SystemSettingService systemSettingService,
+            JobSpecParser jobSpecParser,
+            UserJobConverter userJobConverter
     ) {
-        this.jobBoConverter = jobBoConverter;
         this.jobSpliterator = jobSpliterator;
         this.jobLoader = jobLoader;
         this.storagePathCoordinator = storagePathCoordinator;
         this.jobDao = jobDao;
-        this.projectDao = projectDao;
-        this.modelService = modelService;
-        this.datasetDao = datasetDao;
-        this.runtimeDao = runtimeDao;
         this.jobUpdateHelper = jobUpdateHelper;
         this.systemSettingService = systemSettingService;
         this.jobSpecParser = jobSpecParser;
+        this.userJobConverter = userJobConverter;
     }
 
 
     @Transactional
     @WriteOperation
-    public Job createJob(
-            Project project,
-            String modelVersionUrl,
-            String datasetVersionUrls,
-            String runtimeVersionUrl,
-            String comment,
-            String resourcePool,
-            String handler,
-            String stepSpecOverWrites,
-            JobType type,
-            DevWay devWay,
-            boolean devMode,
-            String devPassword,
-            Long ttlInSec,
-            User creator
-    ) {
+    public Job createJob(JobCreateRequest request) {
         String jobUuid = IdUtil.simpleUUID();
-        var modelVersion = StringUtils.hasText(modelVersionUrl) ? modelService.findModelVersion(modelVersionUrl) : null;
-        var model = null == modelVersion ? null : modelService.findModel(modelVersion.getModelId());
 
+        JobFlattenEntity.JobFlattenEntityBuilder builder;
+        if (request instanceof UserJobCreateRequest) {
+            builder = userJobConverter.convert((UserJobCreateRequest) request);
+        } else {
+            builder = JobFlattenEntity.builder();
+        }
+
+        var stepSpecOverWrites = request.getStepSpecOverWrites();
+        var handler = request.getHandler();
         if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
                 || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
             throw new StarwhaleApiException(
@@ -126,12 +101,11 @@ public class JobCreator {
                     HttpStatus.BAD_REQUEST
             );
         }
-
         List<StepSpec> steps;
         try {
             steps = StringUtils.hasText(stepSpecOverWrites)
                     ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
-                    : jobSpecParser.parseStepFromYaml(modelVersion.getJobs(), handler);
+                    : jobSpecParser.parseStepFromYaml(builder.build().getModelVersion().getJobs(), handler);
             for (var s : steps) {
                 s.verifyStepSpecArgs();
             }
@@ -146,12 +120,12 @@ public class JobCreator {
                     new SwValidationException(ValidSubject.JOB, "no stepSpec is configured"), HttpStatus.BAD_REQUEST);
         }
 
-        var pool = systemSettingService.queryResourcePool(resourcePool);
+        var pool = systemSettingService.queryResourcePool(request.getResourcePool());
         if (pool != null) {
             for (var step : steps) {
                 pool.validateResources(step.getResources());
             }
-            if (!pool.allowUser(creator.getId())) {
+            if (!pool.allowUser(request.getUser().getId())) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.JOB, "creator is not allowed to use this resource pool"),
                         HttpStatus.BAD_REQUEST
@@ -159,96 +133,21 @@ public class JobCreator {
             }
         }
 
-        RuntimeVersion runtimeVersion;
-        if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtimeVersionUrl));
-        } else if (null != modelVersion) {
-            log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
-            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
-            if (!StringUtils.hasText(runtimeVersionUrl)) {
-                throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
-            }
-            var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, model.getProjectId());
-            runtimeVersion = RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(
-                    runtime.getId(),
-                    runtimeVersionUrl
-            ));
-        } else {
-            runtimeVersion = null;
-        }
-        var runtime = null == runtimeVersion ? null :
-                Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
-
-        List<DatasetVersion> datasets = StringUtils.hasText(datasetVersionUrls)
-                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetDao::getDatasetVersion)
-                .collect(Collectors.toList())
-                : List.of();
-        var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
-                : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
-
-        JobFlattenEntity jobEntity = JobFlattenEntity.builder()
+        JobFlattenEntity jobEntity = builder
                 .jobUuid(jobUuid)
-                .ownerId(creator.getId())
+                .project(request.getProject())
+                .projectId(request.getProject().getId())
+                .ownerId(request.getUser().getId())
                 .name(steps.get(0).getJobName())
-                .ownerName(creator.getName())
-                .runtimeUri(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
-                        runtime.getProjectId(),
-                        "runtime",
-                        runtime.getId(),
-                        runtimeVersion.getId()))
-                .runtimeUriForView(null == runtime ? null : String.format(FORMATTER_URI_ARTIFACT,
-                        projectDao.findById(runtime.getProjectId()).getProjectName(),
-                        "runtime",
-                        runtime.getName(),
-                        runtimeVersion.getVersionName()))
-                .runtimeName(null == runtime ? null : runtime.getName())
-                .runtimeVersionId(null == runtimeVersion ? null : runtimeVersion.getId())
-                .runtimeVersionValue(null == runtimeVersion ? null : runtimeVersion.getVersionName())
-                .projectId(project.getId())
-                .project(project)
-                .modelVersionId(null == modelVersion ? null : modelVersion.getId())
-                .modelVersionValue(null == modelVersion ? null : modelVersion.getName())
-                .modelUri(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
-                        model.getProjectId(),
-                        "model",
-                        model.getId(),
-                        modelVersion.getId()))
-                .modelUriForView(null == model ? null : String.format(FORMATTER_URI_ARTIFACT,
-                        projectDao.findById(model.getProjectId()).getProjectName(),
-                        "model",
-                        model.getName(),
-                        modelVersion.getName()))
-                .modelName(null == model ? null : model.getName())
-                .datasetIdVersionMap(datasetVersionIdMaps)
-                .datasets(datasets.isEmpty() ? List.of()
-                        : datasets.stream()
-                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
-                                version.getProjectId(),
-                                "dataset",
-                                version.getDatasetId(),
-                                version.getId()))
-                        .collect(Collectors.toList()))
-                .datasetsForView(datasets.isEmpty() ? null
-                        : datasets.stream()
-                        .map(version -> String.format(FORMATTER_URI_ARTIFACT,
-                                projectDao.findById(version.getProjectId()).getProjectName(),
-                                "dataset",
-                                version.getDatasetName(),
-                                version.getVersionName()))
-                        .collect(Collectors.joining(",")))
-                .comment(comment)
+                .ownerName(request.getUser().getName())
+                .comment(request.getComment())
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
-                .type(type)
-                .resourcePool(resourcePool)
+                .type(request.getJobType())
+                .resourcePool(request.getResourcePool())
                 .stepSpec(stepSpecOverWrites)
                 .createdTime(new Date())
                 .modifiedTime(new Date())
-                .devMode(devMode)
-                .devWay(devMode ? devWay : null)
-                .devPassword(devMode ? devPassword : null)
-                .autoReleaseTime(ttlInSec == null ? null : new Date(System.currentTimeMillis() + ttlInSec * 1000))
                 .build();
 
         jobDao.addJob(jobEntity);

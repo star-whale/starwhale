@@ -24,6 +24,7 @@ import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
@@ -43,7 +44,6 @@ import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -159,26 +159,8 @@ public class JobServiceForWeb {
     }
 
     @Transactional
-    public Long createJob(
-            String projectUrl,
-            String modelVersionUrl,
-            String datasetVersionUrls,
-            String runtimeVersionUrl,
-            String comment,
-            String resourcePool,
-            String handler,
-            String stepSpecOverWrites,
-            JobType type,
-            DevWay devWay,
-            boolean devMode,
-            String devPassword,
-            Long ttlInSec
-    ) {
-        User user = userService.currentUserDetail();
-        var project = projectService.findProject(projectUrl);
-        var jobId = jobCreator.createJob(project, modelVersionUrl, datasetVersionUrls, runtimeVersionUrl, comment,
-                resourcePool, handler, stepSpecOverWrites, type, devWay, devMode, devPassword, ttlInSec, user).getId();
-
+    public Long createJob(UserJobCreateRequest request) {
+        var jobId = jobCreator.createJob(request).getId();
         eventService.addInternalJobInfoEvent(jobId, "Job created");
         return jobId;
     }

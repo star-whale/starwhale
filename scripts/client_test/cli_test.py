@@ -24,7 +24,6 @@ from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
 from starwhale.utils import config
-from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.debug import init_logger
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.api._impl.data_store import TableDesc, LocalDataStore, RemoteDataStore
@@ -357,14 +356,6 @@ class TestCli:
         conda_runtime_uri = self.build_runtime(workdir, "runtime_conda.yaml")
         model_uri = self.build_model(workdir, "simple", runtime=str(venv_runtime_uri))
         dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
-
-        if self.server_url:
-            self.dataset_api.copy(
-                src_uri=dataset_uri.full_uri,
-                target_project=self.cloud_target_project_uri,
-                force=True,
-                mode=DatasetChangeMode.OVERWRITE,
-            )
 
         remote_job_ids = []
         if self.server_url:

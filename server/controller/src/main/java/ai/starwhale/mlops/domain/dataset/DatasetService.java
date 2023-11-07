@@ -57,6 +57,7 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
 import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -506,10 +507,15 @@ public class DatasetService {
             throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
                     e);
         }
-        Job job = jobCreator.createJob(project, null, null, null, null,
-                systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool(), null,
-                stepSpecOverWrites,
-                JobType.BUILT_IN, null, false, null, null, userService.currentUserDetail());
+        var jobReq = JobCreateRequest.builder()
+                .project(project)
+                .resourcePool(systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool())
+                .stepSpecOverWrites(stepSpecOverWrites)
+                .jobType(JobType.BUILT_IN)
+                .user(userService.currentUserDetail())
+                .build();
+        Job job = jobCreator.createJob(jobReq);
+
         var entity = BuildRecordEntity.builder()
                 .projectId(project.getId())
                 .taskId(job.getSteps().get(0).getTasks().get(0).getId())

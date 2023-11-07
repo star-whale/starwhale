@@ -206,8 +206,11 @@ class DevWay(Enum):
 
 
 class JobRequest(SwBaseModel):
+    model_version_id: Optional[int] = Field(None, alias='modelVersionId')
+    dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
+    runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
-    model_version_url: str = Field(..., alias='modelVersionUrl')
+    model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
     runtime_version_url: Optional[str] = Field(None, alias='runtimeVersionUrl')
     comment: Optional[str] = None

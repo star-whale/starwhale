@@ -75,6 +75,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     private final ProjectMapper projectMapper;
 
     private final ProjectVisitedMapper projectVisitedMapper;
+
     private final ProjectDao projectDao;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final ModelVersionMapper modelVersionMapper;
@@ -365,11 +366,9 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         return res > 0;
     }
 
-    @Override
     public Long getProjectId(String projectUrl) {
         return findProject(projectUrl).getId();
     }
-
 
     private Boolean existProject(String projectName, Long userId) {
         ProjectEntity existProject = projectMapper.findExistingByNameAndOwner(projectName, userId);

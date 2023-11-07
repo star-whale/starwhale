@@ -43,7 +43,7 @@ class JobRequestTest {
             assertEquals(0, violations.size());
 
             // missing required fields
-            json = "{\"resourcePool\":\"default\"}";
+            json = "{\"modelVersionUrl\":\"abc\"}";
             deserialized = Constants.objectMapper.readValue(json, JobRequest.class);
             violations = validator.validate(deserialized);
             assertEquals(1, violations.size());

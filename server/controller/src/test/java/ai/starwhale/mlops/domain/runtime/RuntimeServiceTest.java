@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -64,6 +63,7 @@ import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -104,6 +104,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -551,7 +552,7 @@ public class RuntimeServiceTest {
 
         try (var mock = mockStatic(TarFileUtil.class)) {
             mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                    .thenReturn(new byte[] {1});
+                    .thenReturn(new byte[]{1});
 
             ClientRuntimeRequest request = new ClientRuntimeRequest();
             request.setProject("1");
@@ -599,7 +600,7 @@ public class RuntimeServiceTest {
         );
 
         try (LengthAbleInputStream fileInputStream = mock(LengthAbleInputStream.class);
-                 ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
+                ServletOutputStream outputStream = mock(ServletOutputStream.class)) {
             given(storageAccessService.get(anyString())).willReturn(fileInputStream);
             given(fileInputStream.transferTo(any())).willReturn(1000L);
             given(response.getOutputStream()).willReturn(outputStream);
@@ -633,66 +634,40 @@ public class RuntimeServiceTest {
                 .builtImage(null)
                 .build());
         when(bundleManager.getBundle(any())).thenReturn(RuntimeEntity.builder().runtimeName("rt").build());
-        when(jobCreator.createJob(
-                eq(project),
-                eq(null),
-                eq(null),
-                eq(null),
-                any(),
-                eq("rc"),
-                eq(null),
-                any(),
-                eq(JobType.BUILT_IN),
-                eq(null),
-                eq(false),
-                eq(null),
-                eq(null),
-                eq(user)
-        )).thenReturn(Job.builder().id(1L).build());
+        when(jobCreator.createJob(any())).thenReturn(Job.builder().id(1L).build());
         service.dockerize("project-1", "v1", "v1", new RunEnvs(Map.of("k", "v")));
-        verify(
-                jobCreator,
-                times(1)
-        ).createJob(
-                eq(project),
-                eq(null),
-                eq(null),
-                eq(null),
-                any(),
-                eq("rc"),
-                eq(null),
-                eq("---\n"
-                        + "- name: \"runtime_dockerizing\"\n"
-                        + "  concurrency: 1\n"
-                        + "  replicas: 1\n"
-                        + "  env:\n"
-                        + "  - name: \"k\"\n"
-                        + "    value: \"v\"\n"
-                        + "  - name: \"SW_TARGET_IMAGE\"\n"
-                        + "    value: \"localhost:8083/rt:v1\"\n"
-                        + "  - name: \"SW_DEST_IMAGE\"\n"
-                        + "    value: \"localhost:8083/rt:v1\"\n"
-                        + "  - name: \"SW_RUNTIME_VERSION\"\n"
-                        + "    value: \"rt/version/v1\"\n"
-                        + "  job_name: \"runtime_dockerizing\"\n"
-                        + "  show_name: \"runtime_dockerizing\"\n"
-                        + "  require_dataset: false\n"
-                        + "  container_spec:\n"
-                        + "    image: \"docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest\"\n"
-                        + "    cmds:\n"
-                        + "    - \"oho\"\n"
-                        + "    entrypoint:\n"
-                        + "    - \"sh\"\n"
-                        + "    - \"-c\"\n"),
-                eq(JobType.BUILT_IN),
-                eq(null),
-                eq(false),
-                eq(null),
-                eq(null),
-                eq(user)
-        );
+        var argumentCaptor = ArgumentCaptor.forClass(JobCreateRequest.class);
+        verify(jobCreator, times(1)).createJob(argumentCaptor.capture());
+        var req = argumentCaptor.getValue();
+        assertEquals(project, req.getProject());
+        assertEquals("rc", req.getResourcePool());
+        assertEquals(JobType.BUILT_IN, req.getJobType());
+        assertEquals(user, req.getUser());
 
-
+        var expectedStepSpec = "---\n"
+                + "- name: \"runtime_dockerizing\"\n"
+                + "  concurrency: 1\n"
+                + "  replicas: 1\n"
+                + "  env:\n"
+                + "  - name: \"k\"\n"
+                + "    value: \"v\"\n"
+                + "  - name: \"SW_TARGET_IMAGE\"\n"
+                + "    value: \"localhost:8083/rt:v1\"\n"
+                + "  - name: \"SW_DEST_IMAGE\"\n"
+                + "    value: \"localhost:8083/rt:v1\"\n"
+                + "  - name: \"SW_RUNTIME_VERSION\"\n"
+                + "    value: \"rt/version/v1\"\n"
+                + "  job_name: \"runtime_dockerizing\"\n"
+                + "  show_name: \"runtime_dockerizing\"\n"
+                + "  require_dataset: false\n"
+                + "  container_spec:\n"
+                + "    image: \"docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest\"\n"
+                + "    cmds:\n"
+                + "    - \"oho\"\n"
+                + "    entrypoint:\n"
+                + "    - \"sh\"\n"
+                + "    - \"-c\"\n";
+        assertEquals(expectedStepSpec, req.getStepSpecOverWrites());
     }
 
     @Test
@@ -711,25 +686,7 @@ public class RuntimeServiceTest {
     public void testDockerizeWontDo() {
         when(bundleManager.getBundleVersion(any())).thenReturn(RuntimeVersionEntity.builder().builtImage("x").build());
         service.dockerize("project-1", "rt", "v1", null);
-        verify(
-                jobCreator,
-                times(0)
-        ).createJob(
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                eq(false),
-                any(),
-                any(),
-                any()
-        );
+        verify(jobCreator, never()).createJob(any());
     }
 
 
