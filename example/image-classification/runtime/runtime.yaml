@@ -1,0 +1,7 @@
+name: image-classification
+mode: venv
+environment:
+  cuda: "11.7"
+  python: "3.10" # we should quote value to avoid yaml parser to interpret it as float
+dependencies:
+  - requirements.txt

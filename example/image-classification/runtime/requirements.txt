@@ -1,0 +1,5 @@
+gradio<4.0.0 # gradio 4.0 needs pydantic > 2.0, which is not compatible with fastapi
+pillow
+tqdm
+torch==2.0.1
+torchvision==0.15.2

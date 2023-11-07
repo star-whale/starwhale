@@ -67,13 +67,6 @@ CPU_EXAMPLES: t.Dict[str, ExampleDesc] = {
         runtime=random_pytorch_runtime(),
         is_standalone=True,
     ),
-    "cifar10": ExampleDesc(
-        run_handler="cifar.evaluator:CIFAR10Inference.evaluate",
-        workdir=f"{ROOT_DIR}/example/cifar10",
-        datasets=[DatasetExpl("cifar10", "")],
-        runtime=random_pytorch_runtime(),
-        is_standalone=True,
-    ),
     "nmt": ExampleDesc(
         run_handler="nmt.evaluator:NMTPipeline.cmp",
         workdir=f"{ROOT_DIR}/example/nmt",

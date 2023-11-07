@@ -1,5 +1,4 @@
 import io
-import os
 from pathlib import Path
 
 import torch
@@ -10,19 +9,26 @@ from torchvision import transforms
 from starwhale import Image, PipelineHandler, multi_classification
 from starwhale.api.service import api
 
-from .model import Net
+try:
+    from .model import Net
+except ImportError:
+    from model import Net
 
-ROOTDIR = Path(__file__).parent.parent
+ROOTDIR = Path(__file__).parent
 
 
 class CIFAR10Inference(PipelineHandler):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(
+            predict_log_mode="plain",
+            predict_log_dataset_features=["img", "label", "label__classlabel__"],
+        )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def predict(self, data, external):
-        data_tensor = self._pre(data["image"])
+    def predict(self, data):
+        img = data.get("img") or data.get("image")
+        data_tensor = self._pre(img)
         output = self.model(data_tensor)
         return self._post(output)
 
@@ -37,8 +43,8 @@ class CIFAR10Inference(PipelineHandler):
         result, label, pr = [], [], []
         for _data in ppl_result:
             label.append(_data["input"]["label"])
-            result.extend(_data["output"][0])
-            pr.extend(_data["output"][1])
+            result.append(_data["output/pred"])
+            pr.append(_data["output/prob"])
         return label, result, pr
 
     def _pre(self, input: Image) -> torch.Tensor:
@@ -52,9 +58,10 @@ class CIFAR10Inference(PipelineHandler):
         return torch.stack([_image]).to(self.device)
 
     def _post(self, input):
-        pred_value = input.argmax(1).flatten().tolist()
-        probability_matrix = torch.nn.Softmax(dim=1)(input).tolist()
-        return pred_value, probability_matrix
+        return {
+            "pred": input.argmax(1).flatten().tolist()[0],
+            "prob": torch.nn.Softmax(dim=1)(input).tolist()[0],
+        }
 
     def _load_model(self, device):
         model = Net().to(device)
@@ -68,7 +75,7 @@ class CIFAR10Inference(PipelineHandler):
     @api(
         gradio.Image(type="pil"),
         gradio.Label(label="prediction"),
-        examples=[os.path.join(os.path.dirname(__file__), "../kitty.jpeg")],
+        examples=[ROOTDIR / "kitty.jpeg"],
     )
     def online_eval(self, img: PILImage.Image):
         buf = io.BytesIO()
@@ -85,5 +92,5 @@ class CIFAR10Inference(PipelineHandler):
             "ship",
             "truck",
         )
-        _, prob = self.predict({"image": Image(fp=buf.getvalue())}, {})
+        _, prob = self.predict({"image": Image(fp=buf.getvalue())})
         return {classes[i]: p for i, p in enumerate(prob[0])}

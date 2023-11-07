@@ -1,8 +1,0 @@
-name: cifar10
-#handler: cifar.dataset:iter_cifar10_test_item  # test dataset
-handler: cifar.dataset:iter_cifar10_train_item # train dataset
-desc: CIFAR10 data and label test dataset
-
-attr:
-  alignment_size: 4k
-  volume_size: 10M
