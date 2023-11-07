@@ -1,7 +1,5 @@
 api_version: 1.1
 dependencies:
-  - pip:
-      - starwhale>=0.6.0
   - requirements.txt
 environment:
   arch: noarch
