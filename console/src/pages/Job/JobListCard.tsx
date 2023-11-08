@@ -148,7 +148,7 @@ export default function JobListCard() {
                 component: ({ hasText }) => (
                     <ExtendButton
                         isFull
-                        icon='overview'
+                        icon='Detail'
                         tooltip={!hasText ? t('View Details') : undefined}
                         styleas={['menuoption', hasText ? undefined : 'highlight']}
                         onClick={() => history.push(`/projects/${projectId}/jobs/${job.id}/overview`)}

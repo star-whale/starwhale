@@ -178,7 +178,7 @@ export default function EvaluationListCard() {
             component: ({ hasText }) => (
                 <ExtendButton
                     isFull
-                    icon='overview'
+                    icon='Detail'
                     tooltip={t('View Details')}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => history.push(`/projects/${projectId}/evaluations/${row?.id}/results`)}

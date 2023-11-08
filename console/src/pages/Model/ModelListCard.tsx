@@ -52,7 +52,7 @@ export default function ModelListCard() {
             component: ({ hasText }) => (
                 <ExtendButton
                     isFull
-                    icon='overview'
+                    icon='Detail'
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     tooltip={!hasText ? t('View Details') : undefined}
                     onClick={() =>

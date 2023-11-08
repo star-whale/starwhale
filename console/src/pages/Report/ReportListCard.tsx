@@ -42,7 +42,7 @@ export default function ReportListCard() {
                 component: ({ hasText }) => (
                     <ExtendButton
                         isFull
-                        icon='overview'
+                        icon='Detail'
                         styleas={['menuoption', hasText ? undefined : 'highlight']}
                         tooltip={!hasText ? t('View Details') : undefined}
                         onClick={() => history.push(`/projects/${projectId}/reports/${report.id}`)}
