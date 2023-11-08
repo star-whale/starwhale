@@ -82,6 +82,7 @@ export function DataTable({
     controlRef,
     onPreview,
     onRemove,
+    rowActions,
 }: DataTablePropsT) {
     const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
@@ -536,6 +537,7 @@ export function DataTable({
                                     getId,
                                     width,
                                     scrollbarWidth: scrollbarWidth(),
+                                    rowActions,
                                 }}
                             >
                                 {/*  headers outside to make scroll not covered header bar */}

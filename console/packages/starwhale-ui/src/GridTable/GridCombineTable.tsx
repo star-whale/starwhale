@@ -59,6 +59,7 @@ function BaseGridCombineTable({
     emptyMessage,
     emptyColumnMessage = <BusyPlaceholder type='notfound' />,
     getId = (record: any) => val(record.id),
+    rowActions,
 }: ITableProps) {
     const styles = useStyles()
     const { rowSelectedIds, setRowSelectedIds, rowSelectedRecords } = useStore(selector)
@@ -88,6 +89,7 @@ function BaseGridCombineTable({
                             headlineHeight={headlineHeight}
                             rowHeight={rowHeight}
                             getId={getId}
+                            rowActions={rowActions}
                         >
                             {title && (
                                 <LabelSmall style={{ height: `${headlineHeight}px` }} className={styles.headerTitle}>

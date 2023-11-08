@@ -30,7 +30,7 @@ export type HeaderContextT = {
     resizableColumnWidths: boolean
     compareable: boolean
     removable: boolean
-    rowActions: RowActionT[] | ((row: RowT) => RowActionT[])
+    rowActions?: RowActionT[] | ((row: RowT) => RowActionT[])
     rowHeight: number
     rowHighlightIndex: number
     rows: RowT[]
@@ -67,7 +67,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     resizableColumnWidths: false,
     compareable: false,
     removable: false,
-    rowActions: [],
+    rowActions: undefined,
     rowHeight: 0,
     rowHighlightIndex: -1,
     rows: [],
@@ -112,6 +112,7 @@ type HeaderProps = {
     sortDirection: SortDirectionsT
     tableHeight: number
     wrapperWidth: number
+    rowActions?: RowActionT[] | ((row: RowT) => RowActionT[])
 }
 
 function Header(props: HeaderProps) {

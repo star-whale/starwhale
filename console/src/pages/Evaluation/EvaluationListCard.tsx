@@ -14,7 +14,7 @@ import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDa
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { toaster } from 'baseui/toast'
-import { BusyPlaceholder, Button } from '@starwhale/ui'
+import { BusyPlaceholder, Button, ExtendButton } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
@@ -169,6 +169,38 @@ export default function EvaluationListCard() {
                 <BusyPlaceholder />
             </Card>
         )
+
+    // const isAccessOnlineEval = useAccess('online-eval')
+    const getActions = (row: any) => [
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='overview'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/evaluations/${row?.id}/results`)}
+                >
+                    {hasText ? t('View Details') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='tasks'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/jobs/${row?.id}/tasks`)}
+                >
+                    {hasText ? t('View Tasks') : undefined}
+                </ExtendButton>
+            ),
+        },
+    ]
+
     return (
         <Card
             title={t('Evaluations')}
@@ -191,6 +223,7 @@ export default function EvaluationListCard() {
             <GridResizerVertical
                 top={() => (
                     <GridCombineTable
+                        rowActions={getActions as any}
                         title={t('evaluation.title')}
                         titleOfCompare={t('compare.title')}
                         store={useEvaluationStore}
