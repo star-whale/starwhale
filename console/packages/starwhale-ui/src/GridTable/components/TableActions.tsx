@@ -86,17 +86,33 @@ function ActionMenu({
         </PopoverContainer>
     )
 }
+const QUICK_PADDING = 16
+const QUICK_RIGHT_OFFSET = 20
+const QUICK_ACTION_WIDTH = 32
+const QUICK_TOP_OFFSET = 5
 
 function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, actions, mountNode }: TableActionsPropsT) {
     const $focusActions = useCreation(() => {
-        return actions
-            ?.filter((action) => action.access)
-            .map((action, index) => {
-                return {
-                    type: index,
-                    label: <action.component key={index} hasText />,
-                }
-            })
+        const validActions = actions?.filter((action) => action.access)
+        return [
+            ...(validActions
+                ?.filter((action) => action.quickAccess)
+                .map((action, index) => {
+                    return {
+                        type: index,
+                        label: <action.component key={index} hasText />,
+                    }
+                }) ?? []),
+            { type: -1, label: <div className='my-4px w-full h-1px bg-[#EEF1F6]' /> },
+            ...(validActions
+                ?.filter((action) => !action.quickAccess)
+                .map((action, index) => {
+                    return {
+                        type: index,
+                        label: <action.component key={index} hasText />,
+                    }
+                }) ?? []),
+        ]
     }, [isFocus])
 
     const [$quickActions, $quickMoreActions] = useCreation(() => {
@@ -117,11 +133,13 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
         ]
     }, [actions, isFocus])
 
+    const quickActionCount = $quickActions?.length + ($quickMoreActions?.length > 0 ? 1 : 0)
+
     const $focusRect = React.useMemo(() => {
         const len = $focusActions?.length ?? 0
         const offset = {
-            left: -1 * (len + 1) * 33 - 10,
-            top: 5,
+            left: -1 * (len + 1) * QUICK_ACTION_WIDTH - QUICK_PADDING - QUICK_RIGHT_OFFSET,
+            top: QUICK_TOP_OFFSET,
         }
 
         const { left = 0, top = 0 } = focusRect ?? {}
@@ -133,10 +151,9 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
     }, [$focusActions, focusRect])
 
     const $rowRect = React.useMemo(() => {
-        const len = $quickActions?.length ?? 0
         const offset = {
-            left: -1 * (len + 1) * 33 - 10,
-            top: 5,
+            left: -1 * quickActionCount * QUICK_ACTION_WIDTH - QUICK_PADDING - QUICK_RIGHT_OFFSET,
+            top: QUICK_TOP_OFFSET,
         }
 
         const { left = 0, top = 0 } = rowRect ?? {}
@@ -145,7 +162,7 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
             left: left + offset.left,
             top: top + offset.top,
         }
-    }, [$quickActions, rowRect])
+    }, [quickActionCount, rowRect])
 
     if (!actions) return null
 
@@ -169,7 +186,7 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
                 overrides={getPopoverOverrides($rowRect)}
                 Content={() => {
                     return (
-                        <div className='f-c-c'>
+                        <div className='f-c-c px-8px'>
                             {$quickActions}
                             {$quickMoreActions && $quickMoreActions.length > 0 && (
                                 <StatefulPopover

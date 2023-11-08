@@ -306,6 +306,8 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
         highlight: {
             BaseButton: {
                 style: {
+                    'paddingLeft': '8px',
+                    'paddingRight': '8px',
                     'lineHeight': 1,
                     'backgroundColor': 'transparent',
                     'color': theme.colors.buttonPrimaryFill,
