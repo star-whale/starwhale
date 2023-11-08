@@ -112,7 +112,6 @@ def iter_dataset(
     cache: bool = True,
     add_info: bool = True,
 ) -> t.Iterator[t.Tuple[str, t.Dict]]:
-    subsets = subsets or []
     download_mode = (
         hf_datasets.DownloadMode.REUSE_DATASET_IF_EXISTS
         if cache
@@ -153,8 +152,9 @@ def iter_dataset(
         else:
             raise RuntimeError(f"Unknown dataset type: {type(ds)}")
 
-    for subset in subsets:
-        yield from _iter_by_subset(subset)
+    if subsets:
+        for subset in subsets:
+            yield from _iter_by_subset(subset)
     else:
         all_subsets = hf_datasets.get_dataset_config_names(
             repo,
