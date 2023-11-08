@@ -27,8 +27,8 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     const ref = React.useRef<HTMLElement>(null)
 
     useClickAway(() => {
+        if (!isFocus) setSelectedRowIndex(undefined)
         setIsFocus(false)
-        setSelectedRowIndex(undefined)
     }, ref)
 
     const handleRowHighlight = useEventCallback(({ event, rowIndex }) => {
