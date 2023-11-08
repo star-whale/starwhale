@@ -61,8 +61,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
 
     const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
 
-    if (!column) return <></>
-
     const { row, rowCount, rowData } = React.useMemo(() => {
         const rowTmp = rows[rowIndex]
         const rowCountTmp = rows.length
@@ -88,6 +86,8 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
         setIsFocused(false)
     }, [setIsFocused])
 
+    if (!column) return <></>
+
     return (
         <div
             data-column-index={columnIndex}
@@ -99,6 +99,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 rowIndex === 0 ? 'table-cell--first' : undefined,
                 rowIndex === rowCount - 1 ? 'table-cell--last' : undefined,
                 rowIndex === data.rowHighlightIndex ? 'table-row--hovering' : undefined,
+                `table-cell-${column.key}`,
 
                 css({
                     'borderTop': 'none',
