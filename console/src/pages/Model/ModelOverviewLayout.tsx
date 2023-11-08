@@ -14,10 +14,12 @@ import { createUseStyles } from 'react-jss'
 import { useQueryArgs } from '@starwhale/core'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
-import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVersion'
-import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
-import ModelVersionSelector from '../../domain/model/components/ModelVersionSelector'
+import { useFetchModelVersion } from '@model/hooks/useFetchModelVersion'
+import { useModelVersion } from '@model/hooks/useModelVersion'
+import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
+import { listJobs } from '@job/services/job'
+import { IJobSchema, JobStatusType } from '@job/schemas/job'
 
 const useStyles = createUseStyles({
     tagWrapper: {
@@ -39,6 +41,20 @@ export interface IModelLayoutProps {
     children: React.ReactNode
 }
 
+interface IModelVersionContextProps {
+    modelVersionId: string
+    servingJobs?: IJobSchema[]
+}
+
+const ModelVersionContext = React.createContext<IModelVersionContextProps | undefined>(undefined)
+export const useModelVersionContext = () => {
+    const ctx = React.useContext(ModelVersionContext)
+    if (!ctx) {
+        throw new Error('useModelVersionContext must be used within a ModelVersionContextProvider')
+    }
+    return ctx
+}
+
 export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const styles = useStyles()
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -53,6 +69,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const history = useHistory()
     const { setModelVersion } = useModelVersion()
     const { query } = useQueryArgs()
+    const [servingJobs, setServingJobs] = useState<IJobSchema[]>()
 
     const modelVersionInfo = useFetchModelVersion(projectId, modelId, modelVersionId)
 
@@ -72,6 +89,15 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
             setModelVersion(modelVersionInfo.data)
         }
     }, [modelVersionInfo.data, setModelVersion])
+
+    useEffect(() => {
+        listJobs(projectId, { swmpId: modelVersionId, pageNum: 1, pageSize: 9999 }).then((res) => {
+            const jobWithExposed = res.list.filter((job) => {
+                return job.jobStatus === JobStatusType.RUNNING && job.exposedLinks && job.exposedLinks.length > 0
+            })
+            setServingJobs(jobWithExposed)
+        })
+    }, [modelVersionId, projectId])
 
     const [t] = useTranslation()
     const modelName = model?.name ?? '-'
@@ -107,8 +133,16 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                 pattern: '/\\/files\\/?',
             },
         ]
+
+        if (servingJobs?.length) {
+            items.push({
+                title: t('Servings'),
+                path: `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/servings`,
+                pattern: '/\\/servings\\/?',
+            })
+        }
         return items
-    }, [projectId, modelId, modelVersionId, t])
+    }, [t, projectId, modelId, modelVersionId, servingJobs?.length])
 
     const { activeItemId } = useRouterActivePath(navItems)
 
@@ -210,7 +244,11 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                     </div>
                 )}
                 {modelVersionId && <BaseNavTabs navItems={navItems} />}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+                    <ModelVersionContext.Provider value={{ modelVersionId, servingJobs }}>
+                        {children}
+                    </ModelVersionContext.Provider>
+                </div>
             </div>
         </BaseSubLayout>
     )

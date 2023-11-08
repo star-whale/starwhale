@@ -12,7 +12,11 @@ import {
     IJobEventSchema,
 } from '../schemas/job'
 
-export async function listJobs(projectId: string, query: IListQuerySchema): Promise<IListSchema<IJobSchema>> {
+export interface IJobListQuerySchema extends IListQuerySchema {
+    swmpId?: string
+}
+
+export async function listJobs(projectId: string, query: IJobListQuerySchema): Promise<IListSchema<IJobSchema>> {
     const resp = await axios.get<IListSchema<IJobSchema>>(`/api/v1/project/${projectId}/job`, {
         params: query,
     })
