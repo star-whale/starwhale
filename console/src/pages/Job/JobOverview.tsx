@@ -6,6 +6,7 @@ import { useJob } from '@/domain/job/hooks/useJob'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Alias from '@/components/Alias'
 import { Text } from '@starwhale/ui/Text'
+import { TextLink } from '@/components/Link'
 
 export default function JobOverview() {
     const { job } = useJob()
@@ -13,10 +14,31 @@ export default function JobOverview() {
     const [t] = useTranslation()
     const projectId = project?.id
 
-    const datasetUris =
-        job?.datasetList
-            ?.map((v) => `project/${project?.name}/dataset/${v?.name}/version/${v?.version?.name}`)
-            .join(',') || '-'
+    const datasetUris = job?.datasetList?.map((v) => {
+        const uri = `project/${project?.name}/dataset/${v?.name}/version/${v?.version?.name}`
+        const to = `/projects/${project?.id}/datasets/${v?.id}/versions/${v?.version?.id}/overview`
+        return (
+            <TextLink key={uri} to={to} baseStyle={{ maxWidth: 'none' }}>
+                {uri}
+            </TextLink>
+        )
+    })
+
+    const modelUri = `project/${project?.name}/model/${job?.modelName}/version/${job?.modelVersion}`
+    const modelTo = `/projects/${project?.id}/models/${job?.model?.id}/versions/${job?.model?.version?.id}/overview`
+    const modelLink = (
+        <TextLink key={modelUri} to={modelTo} baseStyle={{ maxWidth: 'none' }}>
+            {modelUri}
+        </TextLink>
+    )
+
+    const runtimeUri = `project/${project?.name}/runtime/${job?.runtime?.name}/version/${job?.runtime?.version?.name}`
+    const runtimeTo = `/projects/${project?.id}/runtimes/${job?.runtime?.id}/versions/${job?.runtime?.version?.id}/overview`
+    const runtimeLink = (
+        <TextLink key={runtimeUri} to={runtimeTo} baseStyle={{ maxWidth: 'none' }}>
+            {runtimeUri}
+        </TextLink>
+    )
 
     const items = [
         {
@@ -40,7 +62,7 @@ export default function JobOverview() {
         },
         {
             key: 'sys/model_uri',
-            value: `project/${project?.name}/model/${job?.modelName}/version/${job?.modelVersion}`,
+            value: modelLink,
         },
         {
             label: t('Model Version'),
@@ -77,7 +99,7 @@ export default function JobOverview() {
         },
         {
             key: 'sys/runtime_uri',
-            value: `project/${project?.name}/runtime/${job?.runtime?.name}/version/${job?.runtime?.version?.name}`,
+            value: runtimeLink,
         },
         {
             key: 'sys/runtime_version',
@@ -97,7 +119,11 @@ export default function JobOverview() {
         },
         {
             key: 'sys/step_spec',
-            value: <Text tooltip={<pre>{job?.stepSpec}</pre>}>{job?.stepSpec}</Text>,
+            value: (
+                <div className='markdown-body'>
+                    <pre>{job?.stepSpec}</pre>
+                </div>
+            ),
         },
         {
             key: 'sys/name',
@@ -117,48 +143,32 @@ export default function JobOverview() {
         },
         {
             key: 'sys/dataset_uris',
-            value: <Text tooltip={<pre>{datasetUris}</pre>}>{datasetUris}</Text>,
+            value: datasetUris,
         },
     ].sort((a, b) => {
         return a?.key?.localeCompare(b?.key)
     })
 
     return (
-        <div
-            className='flex-column '
-            style={{
-                fontSize: '14px',
-                gridTemplateColumns: 'minmax(160px, max-content) 1fr',
-                display: 'grid',
-                overflow: 'auto',
-                gridAutoRows: '44px',
-            }}
-        >
+        <div className='flex-column'>
             {items.map((v) => (
-                <React.Fragment key={v?.key}>
-                    <div
-                        style={{
-                            color: 'rgba(2,16,43,0.60)',
-                            borderBottom: '1px solid #EEF1F6',
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}
-                    >
+                <div
+                    key={v?.label}
+                    style={{
+                        display: 'flex',
+                        gap: '20px',
+                        borderBottom: '1px solid #EEF1F6',
+                        lineHeight: '44px',
+                        flexWrap: 'nowrap',
+                        fontSize: '14px',
+                        paddingLeft: '12px',
+                    }}
+                >
+                    <div className='basis-170px overflow-hidden text-ellipsis flex-shrink-0 color-[rgba(2,16,43,0.60)]'>
                         {v?.key}
                     </div>
-
-                    <div
-                        className='line-clamp'
-                        style={{
-                            borderBottom: '1px solid #EEF1F6',
-                            paddingLeft: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}
-                    >
-                        {v?.value}
-                    </div>
-                </React.Fragment>
+                    <div className='py-13px lh-18px'>{v?.value}</div>
+                </div>
             ))}
         </div>
     )

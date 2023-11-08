@@ -8,10 +8,10 @@ const useLinkStyles = createUseStyles({
         textDecoration: 'none',
         flex: 1,
         width: '100%',
+        maxWidth: '300px',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
-        maxWidth: '300px',
         display: 'inline-block',
         verticalAlign: 'middle',
     },
@@ -33,11 +33,17 @@ const useLinkStyles = createUseStyles({
     },
 })
 
-export default function TextLink({ children, className, style, ...rest }: ILinkProps) {
+export default function TextLink({
+    children,
+    className,
+    style,
+    baseStyle,
+    ...rest
+}: ILinkProps & { baseStyle: React.CSSProperties }) {
     const styles = useLinkStyles()
 
     return (
-        <BaseLink className={styles.link} {...rest}>
+        <BaseLink className={styles.link} style={baseStyle} {...rest}>
             <div className={cn(styles.text, className)} style={style}>
                 {children}
             </div>

@@ -40,13 +40,13 @@ function EvaluationOverview() {
     return (
         <div
             className='flex-column '
-            style={{
-                fontSize: '14px',
-                gridTemplateColumns: 'minmax(160px, max-content) 1fr',
-                display: 'grid',
-                overflow: 'auto',
-                gridTemplateRows: 'repeat(100,44px)',
-            }}
+            // style={{
+            //     fontSize: '14px',
+            //     gridTemplateColumns: 'minmax(160px, max-content) 1fr',
+            //     display: 'grid',
+            //     overflow: 'auto',
+            //     gridTemplateRows: 'repeat(100, minmax(44px, max-content))',
+            // }}
         >
             {!record && (
                 <BusyPlaceholder
@@ -79,36 +79,37 @@ function EvaluationOverview() {
                             case 'sys/duration_ms':
                                 value = Number(value) > 0 ? durationToStr(value) : 0
                                 break
+                            case 'sys/step_spec':
+                                value = (
+                                    <div className='markdown-body'>
+                                        <pre>{value}</pre>
+                                    </div>
+                                )
+                                break
                             default:
                                 break
                         }
 
                         return (
-                            <React.Fragment key={label}>
-                                <div
-                                    style={{
-                                        color: 'rgba(2,16,43,0.60)',
-                                        borderBottom: '1px solid #EEF1F6',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    {label}
+                            <div
+                                key={label}
+                                style={{
+                                    display: 'flex',
+                                    gap: '20px',
+                                    borderBottom: '1px solid #EEF1F6',
+                                    lineHeight: '44px',
+                                    flexWrap: 'nowrap',
+                                    fontSize: '14px',
+                                    paddingLeft: '12px',
+                                }}
+                            >
+                                <div className='basis-250px overflow-hidden text-ellipsis flex-shrink-0 color-[rgba(2,16,43,0.60)]'>
+                                    <Text maxWidth='1000px' tooltip={<pre>{label}</pre>}>
+                                        {label}
+                                    </Text>{' '}
                                 </div>
-                                <div
-                                    className='line-clamp'
-                                    style={{
-                                        borderBottom: '1px solid #EEF1F6',
-                                        paddingLeft: '20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Text maxWidth='1000px' tooltip={<pre>{value}</pre>}>
-                                        {value}
-                                    </Text>
-                                </div>
-                            </React.Fragment>
+                                <div className='py-13px lh-18px'>{value}</div>
+                            </div>
                         )
                     })}
         </div>
