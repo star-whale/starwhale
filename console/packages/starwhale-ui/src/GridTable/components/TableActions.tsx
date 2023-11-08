@@ -103,7 +103,14 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
                         label: <action.component key={index} hasText />,
                     }
                 }) ?? []),
-            { type: -1, label: <div className='my-4px w-full h-1px bg-[#EEF1F6]' /> },
+            {
+                type: -1,
+                label: (
+                    <div className='py-4px w-full bg-[#fff]'>
+                        <p className=' h-1px bg-[#EEF1F6]' />
+                    </div>
+                ),
+            },
             ...(validActions
                 ?.filter((action) => !action.quickAccess)
                 .map((action, index) => {

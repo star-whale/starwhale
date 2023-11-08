@@ -43,6 +43,7 @@ export default function RuntimeListCard() {
                 <ExtendButton
                     isFull
                     icon='overview'
+                    tooltip={!hasText ? t('View Details') : undefined}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() =>
                         history.push(

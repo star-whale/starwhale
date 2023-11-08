@@ -44,6 +44,7 @@ export default function ReportListCard() {
                         isFull
                         icon='overview'
                         styleas={['menuoption', hasText ? undefined : 'highlight']}
+                        tooltip={!hasText ? t('View Details') : undefined}
                         onClick={() => history.push(`/projects/${projectId}/reports/${report.id}`)}
                     >
                         {hasText ? t('View Details') : undefined}

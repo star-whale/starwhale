@@ -31,9 +31,6 @@ export const useStyles = createUseStyles({
 })
 
 function SingleSelectMenu(props: any) {
-    // const trace = useTrace('single-select-menu')
-    // trace({ inputRef: props.inputRef })
-
     return (
         <StatefulFilterMenu
             // @ts-ignore cascade keydown event with input

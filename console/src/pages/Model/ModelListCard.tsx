@@ -54,6 +54,7 @@ export default function ModelListCard() {
                     isFull
                     icon='overview'
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    tooltip={!hasText ? t('View Details') : undefined}
                     onClick={() =>
                         history.push(`/projects/${projectId}/models/${model.id}/versions/${model.version?.id}/overview`)
                     }

@@ -42,6 +42,7 @@ export default function TrashListCard() {
                     title={t('trash.restore.confirm')}
                     icon='Restore'
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    tooltip={!hasText ? t('trash.restore.button') : undefined}
                     onClick={async () => {
                         await recoverTrash(projectId, trash.id)
                         toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
@@ -60,6 +61,7 @@ export default function TrashListCard() {
                     icon='delete'
                     styleas={['menuoption', hasText ? undefined : 'highlight', 'negative']}
                     title={t('trash.remove.confirm')}
+                    tooltip={!hasText ? t('trash.remove.button') : undefined}
                     onClick={async () => {
                         await removeTrash(projectId, trash.id)
                         toaster.positive(t('trash.remove.success'), { autoHideDuration: 1000 })
