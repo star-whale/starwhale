@@ -41,6 +41,7 @@ export type HeaderContextT = {
     widths: Map<any, any>
     wrapperWidth?: number
     scrollbarWidth: number
+    width: number
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -77,6 +78,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     tableHeight: 0,
     widths: new Map(),
     scrollbarWidth: 0,
+    width: 0,
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {

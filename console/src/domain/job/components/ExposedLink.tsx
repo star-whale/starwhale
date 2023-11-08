@@ -6,7 +6,6 @@ import { ExtendButton, IExtendButtonProps } from '@starwhale/ui'
 
 export interface IExposedLinkProps {
     data: IExposedLinkSchema
-    hasText?: boolean
 }
 
 const VSCODE_NAME = 'VS_CODE'
@@ -39,7 +38,7 @@ function ExposedButtonLink({
     data: { type, name, link },
     hasText = false,
     ...rest
-}: IExposedLinkProps & IExtendButtonProps) {
+}: IExposedLinkProps & IExtendButtonProps & { hasText?: boolean }) {
     let font: IconTypesT = 'global'
     let title = name
     if (type === ExposedLinkType.DEV_MODE && name === VSCODE_NAME) {

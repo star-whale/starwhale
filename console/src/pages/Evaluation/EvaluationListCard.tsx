@@ -179,6 +179,7 @@ export default function EvaluationListCard() {
                 <ExtendButton
                     isFull
                     icon='overview'
+                    tooltip={t('View Details')}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => history.push(`/projects/${projectId}/evaluations/${row?.id}/results`)}
                 >

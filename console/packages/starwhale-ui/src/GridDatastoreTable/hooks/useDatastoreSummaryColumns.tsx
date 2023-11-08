@@ -4,7 +4,6 @@ import { RecordAttr } from '../recordAttrModel'
 import { useDatastoreColumns } from './useDatastoreColumns'
 import React, { useMemo } from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { TextLink } from '@/components/Link'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import JobStatus from '@/domain/job/components/JobStatus'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
@@ -43,7 +42,7 @@ export function useDatastoreSummaryColumns(
                     renderCell: ({ value: record }) => {
                         const id = record.value
                         if (!id) return <></>
-                        return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
+                        return id
                     },
                 })
             if (column.key === 'sys/duration_ms')

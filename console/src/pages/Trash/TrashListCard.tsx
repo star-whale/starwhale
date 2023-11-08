@@ -36,6 +36,7 @@ export default function TrashListCard() {
     const getActions = (trash: ITrashSchema) => [
         {
             access: true,
+            quickAccess: true,
             component: ({ hasText }) => (
                 <ConfirmButton
                     title={t('trash.restore.confirm')}
@@ -53,10 +54,11 @@ export default function TrashListCard() {
         },
         {
             access: true,
+            quickAccess: true,
             component: ({ hasText }) => (
                 <ConfirmButton
                     icon='delete'
-                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    styleas={['menuoption', hasText ? undefined : 'highlight', 'negative']}
                     title={t('trash.remove.confirm')}
                     onClick={async () => {
                         await removeTrash(projectId, trash.id)
