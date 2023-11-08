@@ -67,7 +67,10 @@ ROOT_DIR = Path(__file__).parent
 
 logger = get_logger(__name__, log_level="INFO")
 
-DATASET_COLUMN_MAPPING = {"image": {"image", "file"}, "text": {"text", "caption"}}
+DATASET_COLUMN_MAPPING = {
+    "image": {"image", "file", "features/image"},
+    "text": {"text", "caption", "features/text"},
+}
 
 
 @pass_context
