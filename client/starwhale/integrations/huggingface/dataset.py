@@ -80,7 +80,10 @@ def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:
 
 
 def _iter_dataset(
-    ds: hf_datasets.Dataset, subset: str, split: str | None, add_info: bool = True
+    ds: hf_datasets.Dataset,
+    subset: str | None,
+    split: str | None,
+    add_info: bool = True,
 ) -> t.Iterator[t.Tuple[int, t.Dict]]:
     for i in range(len(ds)):
         item = {}
@@ -109,6 +112,7 @@ def iter_dataset(
     cache: bool = True,
     add_info: bool = True,
 ) -> t.Iterator[t.Tuple[str, t.Dict]]:
+    subsets = subsets or []
     download_mode = (
         hf_datasets.DownloadMode.REUSE_DATASET_IF_EXISTS
         if cache
@@ -119,18 +123,7 @@ def iter_dataset(
         num_proc=min(8, os.cpu_count() or 8),
     )
 
-    if not subsets:
-        subsets = hf_datasets.get_dataset_config_names(
-            repo,
-            revision=revision,
-            download_mode=download_mode,
-            download_config=download_config,
-        )
-
-    if not subsets:
-        raise RuntimeError(f"Dataset {repo} has no any valid config names")
-
-    for subset in subsets:
+    def _iter_by_subset(subset: str | None = None) -> t.Iterator[t.Tuple[str, t.Dict]]:
         ds = hf_datasets.load_dataset(
             repo,
             subset,
@@ -139,19 +132,47 @@ def iter_dataset(
             download_mode=download_mode,
             download_config=download_config,
         )
+        if subset is None:
+            subset_name = ""
+        else:
+            subset_name = f"{subset}/"
 
         if isinstance(ds, hf_datasets.DatasetDict):
             for _ds_split, _ds in ds.items():
                 for _key, _data in _iter_dataset(
                     _ds, subset, _ds_split, add_info=add_info
                 ):
-                    yield f"{subset}/{_ds_split}/{_key}", _data
+                    yield f"{subset_name}{_ds_split}/{_key}", _data
         elif isinstance(ds, hf_datasets.Dataset):
             for _key, _data in _iter_dataset(ds, subset, split, add_info=add_info):
                 if split:
-                    _s_key = f"{subset}/{split}/{_key}"
+                    _s_key = f"{subset_name}{split}/{_key}"
                 else:
-                    _s_key = f"{subset}/{_key}"
+                    _s_key = f"{subset_name}{_key}"
                 yield _s_key, _data
         else:
             raise RuntimeError(f"Unknown dataset type: {type(ds)}")
+
+    for subset in subsets:
+        yield from _iter_by_subset(subset)
+    else:
+        all_subsets = hf_datasets.get_dataset_config_names(
+            repo,
+            revision=revision,
+            download_mode=download_mode,
+            download_config=download_config,
+        )
+
+        if not all_subsets:
+            raise RuntimeError(f"Dataset {repo} has no any valid config names")
+
+        # workaround: some hf datasets don't have config class, hf will return 'default' as config name, but it may not expected by `dataset_infos.json`,
+        # so we need to skip it to use `None` as subset name, hf will handle data as expected.
+        # e.g.: https://huggingface.co/datasets/lambdalabs/pokemon-blip-captions, different subset has different features:
+        #    - 'default' subset: {'image': {'bytes': Value(dtype='binary', id=None), 'path': Value(dtype='string', id=None)}}
+        #    - 'None' subset: {'img': Image(decode=True, id=None)}
+        if len(all_subsets) == 1 and all_subsets[0] == "default":
+            all_subsets = [None]
+
+        for subset in all_subsets:
+            yield from _iter_by_subset(subset)

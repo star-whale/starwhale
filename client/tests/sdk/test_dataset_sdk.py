@@ -2396,3 +2396,9 @@ class TestHuggingface(_DatasetSDKTestBase):
         assert multi_subsets_ds["mixed/simple/0"].features["_hf_split"] == "simple"
         assert multi_subsets_ds["mixed/complex/0"].features["_hf_subset"] == "mixed"
         assert multi_subsets_ds["mixed/complex/0"].features["_hf_split"] == "complex"
+
+        m_get_config_names.return_value = ["default"]
+        m_load_dataset.side_effect = [hf_simple_ds]
+        default_subsets_ds = Dataset.from_huggingface(name="default", repo="default")
+        assert len(default_subsets_ds) == 2
+        assert default_subsets_ds["0"].features.int == 1
