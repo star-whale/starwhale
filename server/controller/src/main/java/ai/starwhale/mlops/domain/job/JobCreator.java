@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static ai.starwhale.mlops.domain.dataset.DatasetDao.RECOMMENDED_URL_SPLILTOR;
+
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -179,11 +181,7 @@ public class JobCreator {
         var runtime = null == runtimeVersion ? null :
                 Runtime.fromEntity(runtimeDao.getRuntime(runtimeVersion.getRuntimeId()));
 
-        List<DatasetVersion> datasets = StringUtils.hasText(datasetVersionUrls)
-                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetDao::getDatasetVersion)
-                .collect(Collectors.toList())
-                : List.of();
+        List<DatasetVersion> datasets = datasetDao.getDatasetVersions(datasetVersionUrls, RECOMMENDED_URL_SPLILTOR);
         var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
                 : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
 

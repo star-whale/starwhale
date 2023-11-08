@@ -33,10 +33,12 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -89,6 +91,15 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor,
                 "Can not find dataset" + entity.getDatasetId());
         }
         return DatasetVersion.fromEntity(datasetEntity, entity);
+    }
+
+    public static final String RECOMMENDED_URL_SPLILTOR="[,;]";
+    public List<DatasetVersion> getDatasetVersions(String datasetVersionUrls, String splitor){
+        return StringUtils.hasText(datasetVersionUrls)
+                ? Arrays.stream(datasetVersionUrls.split(splitor))
+                .map(this::getDatasetVersion)
+                .collect(Collectors.toList())
+                : List.of();
     }
 
     public DatasetVersion getDatasetVersion(Long versionId) {
