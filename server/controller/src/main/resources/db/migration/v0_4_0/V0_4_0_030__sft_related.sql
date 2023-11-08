@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `sft_space`
     `created_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE INDEX `uk_sft_space_project` (`projectId`, `name`) USING BTREE
+    UNIQUE INDEX `uk_sft_space_project` (`project_id`, `name`) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS `sft`
@@ -39,5 +39,6 @@ CREATE TABLE IF NOT EXISTS `sft`
     `created_time`              datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time`             datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    INDEX `idx_sft_space` (`spaceId`, `created_time`) USING BTREE
+    INDEX `idx_sft_job` (`job_id`) USING BTREE,
+    INDEX `idx_sft_space` (`space_id`, `created_time`) USING BTREE
 );

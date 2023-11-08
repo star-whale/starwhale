@@ -22,4 +22,6 @@ public interface SftMapper {
     void add(SftEntity sftEntity);
 
     List<SftEntity> list(Long spaceId);
+
+    SftEntity findSftByJob(Long jobId);
 }

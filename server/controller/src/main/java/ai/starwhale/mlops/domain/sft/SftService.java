@@ -17,17 +17,12 @@
 package ai.starwhale.mlops.domain.sft;
 
 import ai.starwhale.mlops.api.protocol.sft.SftCreateRequest;
-import ai.starwhale.mlops.domain.dataset.DatasetDao;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.model.ModelDao;
-import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.sft.po.SftEntity;
 import ai.starwhale.mlops.domain.sft.po.SftMapper;
@@ -47,9 +42,6 @@ public class SftService {
 
     JobMapper jobMapper;
 
-    ModelDao modelDao;
-
-    DatasetDao datasetDao;
 
     public void createSft(
             Long spaceId,
@@ -57,8 +49,6 @@ public class SftService {
             SftCreateRequest request,
             User creator
     ) {
-        String stepSpecOverWrites = request.getStepSpecOverWrites();
-        //stepSpecOverWrites modify
         Job job = jobCreator.createJob(
                 UserJobCreateRequest.builder()
                         .modelVersionId(request.getModelVersionId())
@@ -72,7 +62,7 @@ public class SftService {
                         .comment(request.getComment())
                         .resourcePool(request.getResourcePool())
                         .handler(request.getHandler())
-                        .stepSpecOverWrites(stepSpecOverWrites)
+                        .stepSpecOverWrites(request.getStepSpecOverWrites())
                         .jobType(JobType.FINE_TUNE)
                         .build()
         );
