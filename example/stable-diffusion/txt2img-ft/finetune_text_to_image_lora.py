@@ -74,7 +74,7 @@ DATASET_COLUMN_MAPPING = {
 
 
 @pass_context
-@experiment.fine_tune()
+@experiment.fine_tune(resources={"nvidia.com/gpu": 1})
 def fine_tune(
     context: Context,
     pretrained_model_name_or_path=get_base_model_path()
