@@ -26,6 +26,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.event.Event;
 import ai.starwhale.mlops.api.protocol.event.Event.EventResourceType;
 import ai.starwhale.mlops.api.protocol.event.Event.EventSource;
 import ai.starwhale.mlops.api.protocol.event.Event.EventType;
@@ -229,5 +230,23 @@ class EventServiceTest {
         assertEquals(event.getResourceType(), EventResourceType.JOB);
         assertEquals(event.getResourceId(), 1L);
         assertEquals(event.getMessage(), "foo");
+    }
+
+    @Test
+    void testDuplicateEvent() {
+        var eventBuilder = EventEntity.builder()
+                .type(EventType.INFO)
+                .source(EventSource.CLIENT)
+                .resourceType(EventResourceType.JOB)
+                .resourceId(2L)
+                .message("message")
+                .data("data")
+                .createdTime(new Date(123L));
+        var event1 = eventBuilder.id(1L).build();
+        var event2 = eventBuilder.id(2L).build();
+        when(eventMapper.listEventsOfResource(EventResourceType.JOB, 2L)).thenReturn(List.of(event1, event2));
+
+        var resp = eventService.getEvents(new Event.RelatedResource(EventResourceType.JOB, 2L));
+        assertEquals(resp.size(), 1);
     }
 }

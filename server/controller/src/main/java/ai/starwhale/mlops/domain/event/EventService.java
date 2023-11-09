@@ -116,7 +116,9 @@ public class EventService {
 
         // order by created time asc
         return events.stream()
+                .distinct()
                 .map(eventConverter::toVo)
+                .distinct()
                 .sorted(Comparator.comparingLong(Event::getTimestamp))
                 .collect(Collectors.toList());
     }
