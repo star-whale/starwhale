@@ -2181,333 +2181,333 @@ export interface FileDeleteRequest {
   files: string[];
 }
 
-export type UpdateUserStateData = ResponseMessageString;
+export type UpdateUserStateData = ResponseMessageString["data"];
 
-export type UpdateUserPwdData = ResponseMessageString;
+export type UpdateUserPwdData = ResponseMessageString["data"];
 
-export type UpdateCurrentUserPasswordData = ResponseMessageString;
+export type UpdateCurrentUserPasswordData = ResponseMessageString["data"];
 
-export type CheckCurrentUserPasswordData = ResponseMessageString;
+export type CheckCurrentUserPasswordData = ResponseMessageString["data"];
 
-export type UpdateUserSystemRoleData = ResponseMessageString;
+export type UpdateUserSystemRoleData = ResponseMessageString["data"];
 
-export type DeleteUserSystemRoleData = ResponseMessageString;
+export type DeleteUserSystemRoleData = ResponseMessageString["data"];
 
-export type GetProjectByUrlData = ResponseMessageProjectVo;
+export type GetProjectByUrlData = ResponseMessageProjectVo["data"];
 
-export type UpdateProjectData = ResponseMessageString;
+export type UpdateProjectData = ResponseMessageString["data"];
 
-export type DeleteProjectByUrlData = ResponseMessageString;
+export type DeleteProjectByUrlData = ResponseMessageString["data"];
 
-export type RecoverTrashData = ResponseMessageString;
+export type RecoverTrashData = ResponseMessageString["data"];
 
-export type DeleteTrashData = ResponseMessageString;
+export type DeleteTrashData = ResponseMessageString["data"];
 
-export type UpdateRuntimeData = ResponseMessageObject;
+export type UpdateRuntimeData = ResponseMessageObject["data"];
 
-export type ModifyRuntimeData = ResponseMessageString;
+export type ModifyRuntimeData = ResponseMessageString["data"];
 
-export type ShareRuntimeVersionData = ResponseMessageString;
+export type ShareRuntimeVersionData = ResponseMessageString["data"];
 
-export type RecoverRuntimeData = ResponseMessageString;
+export type RecoverRuntimeData = ResponseMessageString["data"];
 
-export type ModifyProjectRoleData = ResponseMessageString;
+export type ModifyProjectRoleData = ResponseMessageString["data"];
 
-export type DeleteProjectRoleData = ResponseMessageString;
+export type DeleteProjectRoleData = ResponseMessageString["data"];
 
-export type GetReportData = ResponseMessageReportVo;
+export type GetReportData = ResponseMessageReportVo["data"];
 
-export type ModifyReportData = ResponseMessageString;
+export type ModifyReportData = ResponseMessageString["data"];
 
-export type DeleteReportData = ResponseMessageString;
+export type DeleteReportData = ResponseMessageString["data"];
 
-export type SharedReportData = ResponseMessageString;
+export type SharedReportData = ResponseMessageString["data"];
 
-export type ModifyModelData = ResponseMessageString;
+export type ModifyModelData = ResponseMessageString["data"];
 
 export type HeadModelData = object;
 
-export type ShareModelVersionData = ResponseMessageString;
+export type ShareModelVersionData = ResponseMessageString["data"];
 
-export type RecoverModelData = ResponseMessageString;
+export type RecoverModelData = ResponseMessageString["data"];
 
-export type FindJobData = ResponseMessageJobVo;
+export type FindJobData = ResponseMessageJobVo["data"];
 
-export type ModifyJobCommentData = ResponseMessageString;
+export type ModifyJobCommentData = ResponseMessageString["data"];
 
-export type RemoveJobData = ResponseMessageString;
+export type RemoveJobData = ResponseMessageString["data"];
 
-export type ShareDatasetVersionData = ResponseMessageString;
+export type ShareDatasetVersionData = ResponseMessageString["data"];
 
-export type RecoverDatasetData = ResponseMessageString;
+export type RecoverDatasetData = ResponseMessageString["data"];
 
-export type RecoverProjectData = ResponseMessageString;
+export type RecoverProjectData = ResponseMessageString["data"];
 
-export type ApplySignedGetUrlsData = ResponseMessageSignedUrlResponse;
+export type ApplySignedGetUrlsData = ResponseMessageSignedUrlResponse["data"];
 
-export type ApplySignedPutUrlsData = ResponseMessageSignedUrlResponse;
+export type ApplySignedPutUrlsData = ResponseMessageSignedUrlResponse["data"];
 
-export type ListUserData = ResponseMessagePageInfoUserVo;
+export type ListUserData = ResponseMessagePageInfoUserVo["data"];
 
-export type CreateUserData = ResponseMessageString;
+export type CreateUserData = ResponseMessageString["data"];
 
-export type InstanceStatusData = ResponseMessageString;
+export type InstanceStatusData = ResponseMessageString["data"];
 
-export type QuerySettingData = ResponseMessageString;
+export type QuerySettingData = ResponseMessageString["data"];
 
-export type UpdateSettingData = ResponseMessageString;
+export type UpdateSettingData = ResponseMessageString["data"];
 
-export type ListResourcePoolsData = ResponseMessageListResourcePool;
+export type ListResourcePoolsData = ResponseMessageListResourcePool["data"];
 
-export type UpdateResourcePoolsData = ResponseMessageString;
+export type UpdateResourcePoolsData = ResponseMessageString["data"];
 
-export type ListSystemRolesData = ResponseMessageListProjectMemberVo;
+export type ListSystemRolesData = ResponseMessageListProjectMemberVo["data"];
 
-export type AddUserSystemRoleData = ResponseMessageString;
+export type AddUserSystemRoleData = ResponseMessageString["data"];
 
-export type ListProjectData = ResponseMessagePageInfoProjectVo;
+export type ListProjectData = ResponseMessagePageInfoProjectVo["data"];
 
-export type CreateProjectData = ResponseMessageString;
+export type CreateProjectData = ResponseMessageString["data"];
 
 export type CreateModelVersionData = any;
 
-export type SelectAllInProjectData = ResponseMessageListJobTemplateVo;
+export type SelectAllInProjectData = ResponseMessageListJobTemplateVo["data"];
 
-export type AddTemplateData = ResponseMessageString;
+export type AddTemplateData = ResponseMessageString["data"];
 
-export type CreateModelServingData = ResponseMessageModelServingVo;
+export type CreateModelServingData = ResponseMessageModelServingVo["data"];
 
-export type ListRuntimeVersionTagsData = ResponseMessageListString;
+export type ListRuntimeVersionTagsData = ResponseMessageListString["data"];
 
-export type AddRuntimeVersionTagData = ResponseMessageString;
+export type AddRuntimeVersionTagData = ResponseMessageString["data"];
 
-export type BuildRuntimeImageData = ResponseMessageBuildImageResult;
+export type BuildRuntimeImageData = ResponseMessageBuildImageResult["data"];
 
-export type RevertRuntimeVersionData = ResponseMessageString;
+export type RevertRuntimeVersionData = ResponseMessageString["data"];
 
-export type UploadData = ResponseMessageString;
+export type UploadData = ResponseMessageString["data"];
 
-export type ListProjectRoleData = ResponseMessageListProjectMemberVo;
+export type ListProjectRoleData = ResponseMessageListProjectMemberVo["data"];
 
-export type AddProjectRoleData = ResponseMessageString;
+export type AddProjectRoleData = ResponseMessageString["data"];
 
-export type ListReportsData = ResponseMessagePageInfoReportVo;
+export type ListReportsData = ResponseMessagePageInfoReportVo["data"];
 
-export type CreateReportData = ResponseMessageString;
+export type CreateReportData = ResponseMessageString["data"];
 
-export type TransferData = ResponseMessageString;
+export type TransferData = ResponseMessageString["data"];
 
-export type ListModelVersionTagsData = ResponseMessageListString;
+export type ListModelVersionTagsData = ResponseMessageListString["data"];
 
-export type AddModelVersionTagData = ResponseMessageString;
+export type AddModelVersionTagData = ResponseMessageString["data"];
 
-export type RevertModelVersionData = ResponseMessageString;
+export type RevertModelVersionData = ResponseMessageString["data"];
 
-export type ListJobsData = ResponseMessagePageInfoJobVo;
+export type ListJobsData = ResponseMessagePageInfoJobVo["data"];
 
-export type CreateJobData = ResponseMessageString;
+export type CreateJobData = ResponseMessageString["data"];
 
-export type ActionData = ResponseMessageString;
+export type ActionData = ResponseMessageString["data"];
 
-export type ExecData = ResponseMessageExecResponse;
+export type ExecData = ResponseMessageExecResponse["data"];
 
-export type RecoverJobData = ResponseMessageString;
+export type RecoverJobData = ResponseMessageString["data"];
 
-export type ModifyJobPinStatusData = ResponseMessageString;
+export type ModifyJobPinStatusData = ResponseMessageString["data"];
 
-export type GetEventsData = ResponseMessageListEventVo;
+export type GetEventsData = ResponseMessageListEventVo["data"];
 
-export type AddEventData = ResponseMessageString;
+export type AddEventData = ResponseMessageString["data"];
 
-export type SignLinksData = ResponseMessageMapStringString;
+export type SignLinksData = ResponseMessageMapStringString["data"];
 
 export type GetHashedBlobData = any;
 
-export type UploadHashedBlobData = ResponseMessageString;
+export type UploadHashedBlobData = ResponseMessageString["data"];
 
 export type HeadHashedBlobData = object;
 
-export type GetViewConfigData = ResponseMessageConfigVo;
+export type GetViewConfigData = ResponseMessageConfigVo["data"];
 
-export type CreateViewConfigData = ResponseMessageString;
+export type CreateViewConfigData = ResponseMessageString["data"];
 
-export type ListDatasetVersionTagsData = ResponseMessageListString;
+export type ListDatasetVersionTagsData = ResponseMessageListString["data"];
 
-export type AddDatasetVersionTagData = ResponseMessageString;
+export type AddDatasetVersionTagData = ResponseMessageString["data"];
 
 export type ConsumeNextDataData = NullableResponseMessageDataIndexDesc;
 
-export type RevertDatasetVersionData = ResponseMessageString;
+export type RevertDatasetVersionData = ResponseMessageString["data"];
 
-export type UploadDsData = ResponseMessageUploadResult;
+export type UploadDsData = ResponseMessageUploadResult["data"];
 
-export type BuildDatasetData = ResponseMessageString;
+export type BuildDatasetData = ResponseMessageString["data"];
 
-export type SignLinks1Data = ResponseMessageMapObjectObject;
+export type SignLinks1Data = ResponseMessageMapObjectObject["data"];
 
 export type GetHashedBlob1Data = any;
 
-export type UploadHashedBlob1Data = ResponseMessageString;
+export type UploadHashedBlob1Data = ResponseMessageString["data"];
 
 export type HeadHashedBlob1Data = object;
 
-export type ListSftSpaceData = ResponseMessagePageInfoSftSpaceVo;
+export type ListSftSpaceData = ResponseMessagePageInfoSftSpaceVo["data"];
 
-export type CreateSftSpaceData = ResponseMessageString;
+export type CreateSftSpaceData = ResponseMessageString["data"];
 
-export type ListSftData = ResponseMessagePageInfoSftVo;
+export type ListSftData = ResponseMessagePageInfoSftVo["data"];
 
-export type CreateSftData = ResponseMessageString;
+export type CreateSftData = ResponseMessageString["data"];
 
-export type GetPanelSettingData = ResponseMessageString;
+export type GetPanelSettingData = ResponseMessageString["data"];
 
-export type SetPanelSettingData = ResponseMessageString;
+export type SetPanelSettingData = ResponseMessageString["data"];
 
-export type PluginListData = ResponseMessagePageInfoPanelPluginVo;
+export type PluginListData = ResponseMessagePageInfoPanelPluginVo["data"];
 
-export type InstallPluginData = ResponseMessageString;
+export type InstallPluginData = ResponseMessageString["data"];
 
-export type SignLinks2Data = ResponseMessageMapStringString;
+export type SignLinks2Data = ResponseMessageMapStringString["data"];
 
-export type UpdateTableData = ResponseMessageString;
+export type UpdateTableData = ResponseMessageString["data"];
 
-export type ScanTableData = ResponseMessageRecordListVo;
+export type ScanTableData = ResponseMessageRecordListVo["data"];
 
 export type ScanAndExportData = any;
 
-export type QueryTableData = ResponseMessageRecordListVo;
+export type QueryTableData = ResponseMessageRecordListVo["data"];
 
 export type QueryAndExportData = any;
 
-export type ListTablesData = ResponseMessageTableNameListVo;
+export type ListTablesData = ResponseMessageTableNameListVo["data"];
 
-export type FlushData = ResponseMessageString;
+export type FlushData = ResponseMessageString["data"];
 
-export type InitUploadBlobData = ResponseMessageInitUploadBlobResult;
+export type InitUploadBlobData = ResponseMessageInitUploadBlobResult["data"];
 
-export type CompleteUploadBlobData = ResponseMessageCompleteUploadBlobResult;
+export type CompleteUploadBlobData = ResponseMessageCompleteUploadBlobResult["data"];
 
 export type HeadRuntimeData = object;
 
 export type HeadDatasetData = object;
 
-export type GetUserByIdData = ResponseMessageUserVo;
+export type GetUserByIdData = ResponseMessageUserVo["data"];
 
-export type UserTokenData = ResponseMessageString;
+export type UserTokenData = ResponseMessageString["data"];
 
-export type GetCurrentUserData = ResponseMessageUserVo;
+export type GetCurrentUserData = ResponseMessageUserVo["data"];
 
-export type GetCurrentUserRolesData = ResponseMessageListProjectMemberVo;
+export type GetCurrentUserRolesData = ResponseMessageListProjectMemberVo["data"];
 
-export type GetCurrentVersionData = ResponseMessageSystemVersionVo;
+export type GetCurrentVersionData = ResponseMessageSystemVersionVo["data"];
 
-export type QueryFeaturesData = ResponseMessageFeaturesVo;
+export type QueryFeaturesData = ResponseMessageFeaturesVo["data"];
 
-export type ListDeviceData = ResponseMessageListDeviceVo;
+export type ListDeviceData = ResponseMessageListDeviceVo["data"];
 
-export type ListRolesData = ResponseMessageListRoleVo;
+export type ListRolesData = ResponseMessageListRoleVo["data"];
 
-export type PreviewData = ResponseMessageReportVo;
+export type PreviewData = ResponseMessageReportVo["data"];
 
-export type GetModelMetaBlobData = ResponseMessageString;
+export type GetModelMetaBlobData = ResponseMessageString["data"];
 
-export type ListFilesData = ResponseMessageListFilesResult;
+export type ListFilesData = ResponseMessageListFilesResult["data"];
 
 /** @format binary */
 export type GetFileDataData = File;
 
-export type ListTrashData = ResponseMessagePageInfoTrashVo;
+export type ListTrashData = ResponseMessagePageInfoTrashVo["data"];
 
-export type GetTemplateData = ResponseMessageJobTemplateVo;
+export type GetTemplateData = ResponseMessageJobTemplateVo["data"];
 
-export type DeleteTemplateData = ResponseMessageString;
+export type DeleteTemplateData = ResponseMessageString["data"];
 
-export type ListRuntimeData = ResponseMessagePageInfoRuntimeVo;
+export type ListRuntimeData = ResponseMessagePageInfoRuntimeVo["data"];
 
-export type GetRuntimeInfoData = ResponseMessageRuntimeInfoVo;
+export type GetRuntimeInfoData = ResponseMessageRuntimeInfoVo["data"];
 
-export type DeleteRuntimeData = ResponseMessageString;
+export type DeleteRuntimeData = ResponseMessageString["data"];
 
-export type ListRuntimeVersionData = ResponseMessagePageInfoRuntimeVersionVo;
+export type ListRuntimeVersionData = ResponseMessagePageInfoRuntimeVersionVo["data"];
 
 export type PullData = any;
 
-export type GetRuntimeVersionTagData = ResponseMessageLong;
+export type GetRuntimeVersionTagData = ResponseMessageLong["data"];
 
-export type ListRuntimeTreeData = ResponseMessageListRuntimeViewVo;
+export type ListRuntimeTreeData = ResponseMessageListRuntimeViewVo["data"];
 
-export type SelectRecentlyInProjectData = ResponseMessageListJobTemplateVo;
+export type SelectRecentlyInProjectData = ResponseMessageListJobTemplateVo["data"];
 
-export type RecentRuntimeTreeData = ResponseMessageListRuntimeViewVo;
+export type RecentRuntimeTreeData = ResponseMessageListRuntimeViewVo["data"];
 
-export type RecentModelTreeData = ResponseMessageListModelViewVo;
+export type RecentModelTreeData = ResponseMessageListModelViewVo["data"];
 
-export type RecentDatasetTreeData = ResponseMessageListDatasetViewVo;
+export type RecentDatasetTreeData = ResponseMessageListDatasetViewVo["data"];
 
-export type GetProjectReadmeByUrlData = ResponseMessageString;
+export type GetProjectReadmeByUrlData = ResponseMessageString["data"];
 
-export type ListModelData = ResponseMessagePageInfoModelVo;
+export type ListModelData = ResponseMessagePageInfoModelVo["data"];
 
-export type GetModelInfoData = ResponseMessageModelInfoVo;
+export type GetModelInfoData = ResponseMessageModelInfoVo["data"];
 
-export type DeleteModelData = ResponseMessageString;
+export type DeleteModelData = ResponseMessageString["data"];
 
-export type ListModelVersionData = ResponseMessagePageInfoModelVersionVo;
+export type ListModelVersionData = ResponseMessagePageInfoModelVersionVo["data"];
 
-export type GetModelVersionTagData = ResponseMessageLong;
+export type GetModelVersionTagData = ResponseMessageLong["data"];
 
-export type GetModelDiffData = ResponseMessageMapStringListFileNode;
+export type GetModelDiffData = ResponseMessageMapStringListFileNode["data"];
 
-export type ListModelTreeData = ResponseMessageListModelViewVo;
+export type ListModelTreeData = ResponseMessageListModelViewVo["data"];
 
-export type ListTasksData = ResponseMessagePageInfoTaskVo;
+export type ListTasksData = ResponseMessagePageInfoTaskVo["data"];
 
-export type GetTaskData = ResponseMessageTaskVo;
+export type GetTaskData = ResponseMessageTaskVo["data"];
 
-export type GetRunsData = ResponseMessageListRunVo;
+export type GetRunsData = ResponseMessageListRunVo["data"];
 
-export type GetJobDagData = ResponseMessageGraph;
+export type GetJobDagData = ResponseMessageGraph["data"];
 
-export type ListEvaluationSummaryData = ResponseMessagePageInfoSummaryVo;
+export type ListEvaluationSummaryData = ResponseMessagePageInfoSummaryVo["data"];
 
-export type ListAttributesData = ResponseMessageListAttributeVo;
+export type ListAttributesData = ResponseMessageListAttributeVo["data"];
 
-export type ListDatasetData = ResponseMessagePageInfoDatasetVo;
+export type ListDatasetData = ResponseMessagePageInfoDatasetVo["data"];
 
-export type GetDatasetInfoData = ResponseMessageDatasetInfoVo;
+export type GetDatasetInfoData = ResponseMessageDatasetInfoVo["data"];
 
-export type DeleteDatasetData = ResponseMessageString;
+export type DeleteDatasetData = ResponseMessageString["data"];
 
-export type ListDatasetVersionData = ResponseMessagePageInfoDatasetVersionVo;
+export type ListDatasetVersionData = ResponseMessagePageInfoDatasetVersionVo["data"];
 
 export type PullDsData = any;
 
-export type GetDatasetVersionTagData = ResponseMessageLong;
+export type GetDatasetVersionTagData = ResponseMessageLong["data"];
 
-export type ListBuildRecordsData = ResponseMessagePageInfoBuildRecordVo;
+export type ListBuildRecordsData = ResponseMessagePageInfoBuildRecordVo["data"];
 
-export type ListDatasetTreeData = ResponseMessageListDatasetViewVo;
+export type ListDatasetTreeData = ResponseMessageListDatasetViewVo["data"];
 
 export type PullUriContentData = any;
 
-export type GetModelServingStatusData = ResponseMessageModelServingStatusVo;
+export type GetModelServingStatusData = ResponseMessageModelServingStatusVo["data"];
 
-export type OfflineLogsData = ResponseMessageListString;
+export type OfflineLogsData = ResponseMessageListString["data"];
 
 export type LogContentData = string;
 
-export type GetRuntimeSuggestionData = ResponseMessageRuntimeSuggestionVo;
+export type GetRuntimeSuggestionData = ResponseMessageRuntimeSuggestionVo["data"];
 
-export type ApplyPathPrefixData = ResponseMessageString;
+export type ApplyPathPrefixData = ResponseMessageString["data"];
 
 export type PullUriContent1Data = any;
 
-export type DeletePathData = ResponseMessageString;
+export type DeletePathData = ResponseMessageString["data"];
 
-export type DeleteRuntimeVersionTagData = ResponseMessageString;
+export type DeleteRuntimeVersionTagData = ResponseMessageString["data"];
 
-export type DeleteModelVersionTagData = ResponseMessageString;
+export type DeleteModelVersionTagData = ResponseMessageString["data"];
 
-export type DeleteDatasetVersionTagData = ResponseMessageString;
+export type DeleteDatasetVersionTagData = ResponseMessageString["data"];
 
-export type UninstallPluginData = ResponseMessageString;
+export type UninstallPluginData = ResponseMessageString["data"];

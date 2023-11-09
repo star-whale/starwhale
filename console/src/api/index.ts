@@ -5,7 +5,7 @@ import { HttpClient } from './server/http-client'
 
 let client
 // eslint-disable-next-line
-let api
+let api: Api
 
 const key = 'token'
 const store = window.localStorage ?? {
