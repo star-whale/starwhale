@@ -12,7 +12,7 @@ import { registerLocales } from './i18n/locales'
 import '@starwhale/ui/Markdown/markdown.css'
 import '@unocss/reset/tailwind.css'
 import 'virtual:uno.css'
-import { apiInit } from '@/api'
+import { api, apiInit } from '@/api'
 
 // eslint-disable-next-line
 // @ts-ignore
