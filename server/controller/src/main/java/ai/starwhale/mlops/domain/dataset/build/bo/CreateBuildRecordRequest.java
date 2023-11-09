@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.dataset.build.bo;
 
 import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -28,5 +30,53 @@ public class CreateBuildRecordRequest {
     private Boolean shared;
     private BuildType type;
     private String storagePath;
-    private String format;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Csv {
+        public enum Dialect {
+            EXCEL("excel"), EXCEL_TAB("excel-tab"), UNIX("unix");
+
+            private final String dialect;
+
+            Dialect(String dialect) {
+                this.dialect = dialect;
+            }
+
+            public String toString() {
+                return this.dialect;
+            }
+        }
+
+        private Dialect dialect;
+        private String delimiter;
+        private String quoteChar;
+    }
+
+    private Csv csv;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Json {
+        private String fieldSelector;
+    }
+
+    private Json json;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HuggingFace {
+        private String repo;
+        private String subset;
+        private String split;
+        private String revision;
+    }
+
+    private HuggingFace huggingFace;
 }

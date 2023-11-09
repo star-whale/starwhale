@@ -636,13 +636,15 @@ public class DatasetController {
             @PathVariable String datasetName,
             @Valid @RequestBody DatasetBuildRequest datasetBuildRequest
     ) {
-        datasetService.build(CreateBuildRecordRequest.builder()
+        var buildRequest = CreateBuildRecordRequest.builder()
                 .datasetName(datasetName)
                 .shared(datasetBuildRequest.getShared())
                 .projectUrl(projectUrl)
                 .type(datasetBuildRequest.getType())
                 .storagePath(datasetBuildRequest.getStoragePath())
-                .build());
+                .build();
+        // TODO: add more details for csv,json,hf
+        datasetService.build(buildRequest);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

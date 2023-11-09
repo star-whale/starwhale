@@ -102,23 +102,25 @@ ds_build_and_upload () {
         echo "-->[Error] There needs an environment variable: SW_PROJECT_URI, now will exit."
         exit 1
     fi;
-    echo "-->[Preparing] Downloading files..."
-    BUILD_DIR=$DATASET_BUILD_NAME
-    mkdir -p "$BUILD_DIR"
-    cd "$BUILD_DIR"
+    if [ -n "$DATASET_BUILD_DIR_PREFIX" ]; then
+      echo "-->[Preparing] Downloading files..."
+      BUILD_DIR=$DATASET_BUILD_NAME
+      mkdir -p "$BUILD_DIR"
+      cd "$BUILD_DIR"
 
-    SIGNED_URLS=$(curl -X 'GET' "$SW_INSTANCE_URI/api/v1/filestorage/signedurl?pathPrefix=$DATASET_BUILD_DIR_PREFIX"  -H 'accept: application/json'  -H "Authorization: $SW_TOKEN" | jq  ".data.signedUrls")
+      SIGNED_URLS=$(curl -X 'GET' "$SW_INSTANCE_URI/api/v1/filestorage/signedurl?pathPrefix=$DATASET_BUILD_DIR_PREFIX"  -H 'accept: application/json'  -H "Authorization: $SW_TOKEN" | jq  ".data.signedUrls")
 
-    for entry in $(echo "$SIGNED_URLS" | jq -r 'to_entries|map("\(.key)@\(.value)")|.[]'); do
-      IFS='@' read -r file signedurl <<< "$entry"
+      for entry in $(echo "$SIGNED_URLS" | jq -r 'to_entries|map("\(.key)@\(.value)")|.[]'); do
+        IFS='@' read -r file signedurl <<< "$entry"
 
-      filedir=$(dirname "$file")
-      if [ ! -d "$filedir" ]; then
-        mkdir -p "$filedir"
-      fi
-      echo "$file $signedurl"
-    done | xargs -I {} -n 2 -P 10 sh -c 'curl -o "$1" "$2"' sh
-    cd -
+        filedir=$(dirname "$file")
+        if [ ! -d "$filedir" ]; then
+          mkdir -p "$filedir"
+        fi
+        echo "$file $signedurl"
+      done | xargs -I {} -n 2 -P 10 sh -c 'curl -o "$1" "$2"' sh
+      cd -
+    fi
 
     cmd="swcli dataset build -n $DATASET_BUILD_NAME"
     if [ "$DATASET_BUILD_TYPE" = "IMAGE" ]; then
@@ -127,15 +129,37 @@ ds_build_and_upload () {
       cmd="$cmd -vf $BUILD_DIR"
     elif [ "$DATASET_BUILD_TYPE" = "AUDIO" ]; then
       cmd="$cmd -af $BUILD_DIR"
+    elif [ "$DATASET_BUILD_TYPE" = "CSV" ]; then
+      cmd="$cmd -c $BUILD_DIR"
+      if [ -n "$DATASET_BUILD_CSV_DIALECT" ]; then
+        cmd="$cmd --dialect $DATASET_BUILD_CSV_DIALECT"
+      fi
+      if [ -n "$DATASET_BUILD_CSV_DELIMITER" ]; then
+        cmd="$cmd --delimiter $DATASET_BUILD_CSV_DELIMITER"
+      fi
+      if [ -n "$DATASET_BUILD_CSV_QUOTECHAR" ]; then
+        cmd="$cmd --quotechar $DATASET_BUILD_CSV_QUOTECHAR"
+      fi
     elif [ "$DATASET_BUILD_TYPE" = "JSON" ]; then
       cmd="$cmd -jf $BUILD_DIR"
-      if [ -z "$DATASET_BUILD_EXTRA" ]; then
-        cmd="$cmd --field-selector $DATASET_BUILD_EXTRA"
+      if [ -n "$DATASET_BUILD_JSON_FIELD_SELECTOR" ]; then
+        cmd="$cmd --field-selector $DATASET_BUILD_JSON_FIELD_SELECTOR"
       fi
-    elif [ "$DATASET_BUILD_TYPE" = "HANDLER" ]; then
-      cmd="$cmd -h $DATASET_BUILD_HANDLER"
-    elif [ "$DATASET_BUILD_TYPE" = "YAML" ]; then
-      cmd="$cmd -f $DATASET_BUILD_YAML"
+    elif [ "$DATASET_BUILD_TYPE" = "HUGGINGFACE" ]; then
+      if [ -z "$DATASET_BUILD_HF_REPO" ]; then
+        echo "-->[Error] Build dataset by HuggingFace required env: DATASET_BUILD_HF_REPO."
+        exit 1
+      fi
+      cmd="$cmd -hf $DATASET_BUILD_HF_REPO"
+      if [ -n "$DATASET_BUILD_HF_SUBSET" ]; then
+        cmd="$cmd --subset $DATASET_BUILD_HF_SUBSET"
+      fi
+      if [ -n "$DATASET_BUILD_HF_SPLIT" ]; then
+        cmd="$cmd --split $DATASET_BUILD_HF_SPLIT"
+      fi
+      if [ -n "$DATASET_BUILD_HF_REVISION" ]; then
+        cmd="$cmd --revision $DATASET_BUILD_HF_REVISION"
+      fi
     else
       echo "Unknown type: $DATASET_BUILD_TYPE" && exit 1
     fi
