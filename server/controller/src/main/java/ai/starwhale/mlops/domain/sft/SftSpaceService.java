@@ -17,18 +17,17 @@
 package ai.starwhale.mlops.domain.sft;
 
 import ai.starwhale.mlops.api.protocol.sft.SftSpaceVo;
+import ai.starwhale.mlops.domain.sft.mapper.SftSpaceMapper;
 import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
-import ai.starwhale.mlops.domain.sft.po.SftSpaceMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class SftSpaceService {
 
     SftSpaceMapper sftSpaceMapper;
 
-    public void createSpace(Long projectId, String name, String description, Long userId){
+    public void createSpace(Long projectId, String name, String description, Long userId) {
         sftSpaceMapper.add(
                 SftSpaceEntity.builder()
                         .projectId(projectId)
@@ -52,7 +51,7 @@ public class SftSpaceService {
         }
     }
 
-    public void updateSpace(Long spaceId, String name, String description){
+    public void updateSpace(Long spaceId, String name, String description) {
         sftSpaceMapper.update(spaceId, name, description);
     }
 }

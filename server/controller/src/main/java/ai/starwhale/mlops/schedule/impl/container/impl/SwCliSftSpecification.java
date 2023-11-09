@@ -21,8 +21,8 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.sft.mapper.SftMapper;
 import ai.starwhale.mlops.domain.sft.po.SftEntity;
-import ai.starwhale.mlops.domain.sft.po.SftMapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import java.util.Map;
@@ -56,11 +56,10 @@ public class SwCliSftSpecification extends SwCliModelHandlerContainerSpecificati
     }
 
 
-
     public Map<String, String> getContainerEnvs() {
         Map<String, String> containerEnvs = super.getContainerEnvs();
         SftEntity sft = sftMapper.findSftByJob(task.getStep().getJob().getId());
-        if(!CollectionUtils.isEmpty(sft.getEvalDatasets())){
+        if (!CollectionUtils.isEmpty(sft.getEvalDatasets())) {
             String evalDataSetUris = sft.getEvalDatasets().stream().map(dsv -> {
                 DatasetVersion datasetVersion = datasetDao.getDatasetVersion(dsv);
                 return String.format(

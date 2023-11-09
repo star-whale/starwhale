@@ -21,7 +21,7 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.sft.po.SftMapper;
+import ai.starwhale.mlops.domain.sft.mapper.SftMapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,7 +55,7 @@ public class SwCliSftSpecificationFactory extends SwCliModelHandlerSpecification
             SftMapper sftMapper,
             DatasetDao datasetDao
     ) {
-        super(instanceUri, devPort , datasetLoadBatchSize , runTimeProperties, taskTokenValidator, webServerInTask);
+        super(instanceUri, devPort, datasetLoadBatchSize, runTimeProperties, taskTokenValidator, webServerInTask);
         this.instanceUri = instanceUri;
         this.devPort = devPort;
         this.datasetLoadBatchSize = datasetLoadBatchSize;

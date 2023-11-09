@@ -39,6 +39,6 @@ CREATE TABLE IF NOT EXISTS `sft`
     `created_time`              datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time`             datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    INDEX `idx_sft_job` (`job_id`) USING BTREE,
+    UNIQUE INDEX `idx_sft_job` (`job_id`) USING BTREE,
     INDEX `idx_sft_space` (`space_id`, `created_time`) USING BTREE
 );

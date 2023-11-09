@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.sft;
 
 import ai.starwhale.mlops.domain.sft.bo.SftSpace;
-import ai.starwhale.mlops.domain.sft.po.SftSpaceMapper;
+import ai.starwhale.mlops.domain.sft.mapper.SftSpaceMapper;
 import java.util.List;
 
 public class SftSpaceDao {
@@ -28,15 +28,15 @@ public class SftSpaceDao {
         this.sftSpaceMapper = sftSpaceMapper;
     }
 
-    public void addSftSpace(SftSpace sftSpace){
+    public void addSftSpace(SftSpace sftSpace) {
         //Todo
     }
 
-    public void renameSftSpace(){
+    public void renameSftSpace() {
         //Todo
     }
 
-    public List<SftSpace> listSftSpace(Long projectId){
+    public List<SftSpace> listSftSpace(Long projectId) {
         //Todo
         return List.of();
     }

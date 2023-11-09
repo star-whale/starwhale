@@ -39,13 +39,13 @@ public class SftVo {
     ModelInfo baseModel;
     ModelInfo targetModel;
 
-    public static class DsInfo{
+    public static class DsInfo {
         String name;
         String version;
         Long id;
     }
 
-    public static class ModelInfo{
+    public static class ModelInfo {
         String name;
         String version;
         Long id;
