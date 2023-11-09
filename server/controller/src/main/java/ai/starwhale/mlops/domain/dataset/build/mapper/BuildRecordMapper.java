@@ -40,10 +40,10 @@ public interface BuildRecordMapper {
     @SelectProvider(value = SqlProvider.class, method = "list")
     List<BuildRecordEntity> list(@Param("projectId") Long projectId);
 
-    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record r, task_info t "
+    @Select("SELECT COUNT(r.id) FROM dataset_build_record r, task_info t "
             + "WHERE r.task_id = t.id and (t.status != 'SUCCESS' and t.status != 'FAIL' and t.status != 'CANCELED') "
             + "and r.project_id = #{projectId} AND r.dataset_name = #{datasetName} ")
-    List<BuildRecordEntity> selectBuildingsInOneProject(
+    int selectBuildingsInOneProject(
             @Param("projectId") Long projectId, @Param("datasetName") String datasetName);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
