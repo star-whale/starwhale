@@ -39,7 +39,7 @@ export default function TextLink({
     style,
     baseStyle,
     ...rest
-}: ILinkProps & { baseStyle: React.CSSProperties }) {
+}: ILinkProps & { baseStyle?: React.CSSProperties }) {
     const styles = useLinkStyles()
 
     return (
