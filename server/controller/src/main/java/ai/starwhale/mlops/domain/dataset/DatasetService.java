@@ -460,8 +460,7 @@ public class DatasetService {
 
     public void build(CreateBuildRecordRequest request) {
         var project = projectService.findProject(request.getProjectUrl());
-        var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
-                project.getId(), request.getDatasetName());
+        var buildings = buildRecordMapper.selectBuildingsInOneProject(project.getId(), request.getDatasetName());
         if (buildings.size() > 0) {
             throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                     "The dataset:{0} in project:{1} is already in building.",

@@ -599,7 +599,7 @@ public class DatasetServiceTest {
 
         // case3: create and not exist the same name, but already building a same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true)).willReturn(null);
-        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
+        given(buildRecordMapper.selectBuildingsInOneProject(projectId, datasetName))
                 .willReturn(List.of(BuildRecordEntity.builder().build()));
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
                 .datasetName(datasetName)
@@ -608,7 +608,7 @@ public class DatasetServiceTest {
         );
 
         // case4: insert to db failed
-        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
+        given(buildRecordMapper.selectBuildingsInOneProject(projectId, datasetName)).willReturn(List.of());
         given(buildRecordMapper.insert(any())).willReturn(0);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
                 .datasetName(datasetName)
