@@ -42,7 +42,7 @@ function EvaluationOverview() {
     const datasetLinkMap = record?.['sys/_dataset_uris']?.map((v: string, index: number) => {
         const str = v.replace('project', 'projects').replace('dataset', 'datasets').replace('version', 'versions')
         return (
-            <TextLink key={v} to={`/${str}`} baseStyle={{ maxWidth: 'none' }}>
+            <TextLink key={v} to={`/${str}/overview`} baseStyle={{ maxWidth: 'none' }}>
                 {datasetUri[index]}
             </TextLink>
         )
@@ -54,7 +54,7 @@ function EvaluationOverview() {
         .replace('runtime', 'runtimes')
         .replace('version', 'versions')
     const runtimeLink = (
-        <TextLink key={runtimeUri} to={`/${runtimeTo}`} baseStyle={{ maxWidth: 'none' }}>
+        <TextLink key={runtimeUri} to={`/${runtimeTo}/overview`} baseStyle={{ maxWidth: 'none' }}>
             {runtimeUri}
         </TextLink>
     )
@@ -65,7 +65,7 @@ function EvaluationOverview() {
         .replace('model', 'models')
         .replace('version', 'versions')
     const modelLink = (
-        <TextLink key={modelUri} to={`/${modelTo}`} baseStyle={{ maxWidth: 'none' }}>
+        <TextLink key={modelUri} to={`/${modelTo}/overview`} baseStyle={{ maxWidth: 'none' }}>
             {modelUri}
         </TextLink>
     )
