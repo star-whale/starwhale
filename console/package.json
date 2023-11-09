@@ -261,7 +261,7 @@
     "rollup": "^2.0.0",
     "rollup-plugin-visualizer": "^5.7.1",
     "sass": "^1.49.0",
-    "swagger-typescript-api": "^10.0.3",
+    "swagger-typescript-api": "^13.0.3",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
     "unocss": "^0.54.1",

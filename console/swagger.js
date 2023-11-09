@@ -1,13 +1,16 @@
-const { generateApi } = require('swagger-typescript-api')
+const { generateApi, generateTemplates } = require('swagger-typescript-api')
 const path = require('path')
 const fs = require('fs')
+
+const PATH_TO_OUTPUT_DIR = path.resolve(process.cwd(), './src/api/server')
+const PATH_TO_OUTPUT_DIR_TEMPLATE = path.resolve(process.cwd(), './src/api/template')
 
 /* NOTE: all fields are optional expect one of `output`, `url`, `spec` */
 generateApi({
     name: 'MySuperbApi.ts',
-    output: path.resolve(process.cwd(), './src/__generated__'),
-    // url: 'http://api.com/swagger.json',
-    input: path.resolve(process.cwd(), './swagger.json'),
+    output: PATH_TO_OUTPUT_DIR,
+    url: 'http://10.0.128.11:8082/v3/api-docs/Api',
+    // input: path.resolve(process.cwd(), './swagger.json'),
     // spec: {
     //     swagger: '3.0',
     //     info: {
@@ -16,7 +19,7 @@ generateApi({
     //     },
     //     // ...
     // },
-    // templates: path.resolve(process.cwd(), './api-templates'),
+    templates: PATH_TO_OUTPUT_DIR_TEMPLATE,
     httpClientType: 'axios', // or "fetch"
     defaultResponseAsSuccess: false,
     generateRouteTypes: false,
@@ -24,6 +27,7 @@ generateApi({
     toJS: false,
     extractRequestParams: false,
     extractRequestBody: false,
+    unwrapResponseData: true,
     prettier: {
         // By default prettier config is load from your project
         printWidth: 120,
@@ -38,6 +42,8 @@ generateApi({
     moduleNameFirstTag: false,
     generateUnionEnums: false,
     extraTemplates: [],
+    modular: true,
+    extractResponseBody: true,
     hooks: {
         onCreateComponent: (component) => {},
         onCreateRequestParams: (rawType) => {},
@@ -50,11 +56,21 @@ generateApi({
         onPrepareConfig: (currentConfiguration) => {},
     },
 })
-    // .then(({ files, configuration }) => {
-    //     files.forEach(({ content, name }) => {
-    //         fs.writeFile(path, content, (err) => {
-    //             if (err) console.log(err)
-    //         })
-    //     })
-    // })
+    .then(({ files, configuration }) => {
+        // console.log(files)
+        // files.forEach(({ content, name }) => {
+        //     fs.writeFile(path, content, (err) => {
+        //         if (err) console.log(err)
+        //     })
+        // })
+    })
     .catch((e) => console.error(e))
+
+// generateTemplates({
+//     cleanOutput: false,
+//     output: PATH_TO_OUTPUT_DIR_TEMPLATE,
+//     httpClientType: 'axios',
+//     modular: true,
+//     silent: false,
+//     rewrite: false,
+// })
