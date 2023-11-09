@@ -63,4 +63,7 @@ public interface SftMapper {
 
     @Update("update sft set target_model_version_id = #{targetModelVersionId} where id = #{sftId}")
     int updateTargetModel(Long sftId, Long targetModelVersionId);
+
+    @Update("update sft set job_id = #{jobId} where id = #{sftId}")
+    int updateJobId(Long sftId, Long jobId);
 }

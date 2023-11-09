@@ -19,13 +19,22 @@ package ai.starwhale.mlops.domain.sft;
 import ai.starwhale.mlops.api.protocol.sft.SftSpaceVo;
 import ai.starwhale.mlops.domain.sft.mapper.SftSpaceMapper;
 import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
+import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
+@Service
 public class SftSpaceService {
 
-    SftSpaceMapper sftSpaceMapper;
+    final SftSpaceMapper sftSpaceMapper;
+    final UserService userService;
+
+    public SftSpaceService(SftSpaceMapper sftSpaceMapper, UserService userService) {
+        this.sftSpaceMapper = sftSpaceMapper;
+        this.userService = userService;
+    }
 
     public void createSpace(Long projectId, String name, String description, Long userId) {
         sftSpaceMapper.add(
@@ -46,6 +55,8 @@ public class SftSpaceService {
                                                .id(spaceEntity.getId())
                                                .name(spaceEntity.getName())
                                                .description(spaceEntity.getDescription())
+                                               .owner(userService.findUserById(spaceEntity.getOwnerId()))
+                                               .createdTime(spaceEntity.getCreatedTime().getTime())
                                                .build())
                                        .collect(Collectors.toList()));
         }

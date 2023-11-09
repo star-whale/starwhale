@@ -51,11 +51,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.api-prefix}")
 public class SftController {
 
-    ProjectService projectService;
-    UserService userService;
-    SftSpaceService sftSpaceService;
+    final ProjectService projectService;
+    final UserService userService;
+    final SftSpaceService sftSpaceService;
 
-    SftService sftService;
+    final SftService sftService;
+
+    public SftController(
+            ProjectService projectService,
+            UserService userService,
+            SftSpaceService sftSpaceService,
+            SftService sftService
+    ) {
+        this.projectService = projectService;
+        this.userService = userService;
+        this.sftSpaceService = sftSpaceService;
+        this.sftService = sftService;
+    }
 
     @Operation(summary = "Get the list of SFT spaces")
     @GetMapping(value = "/project/{projectId}/sft/space", produces = MediaType.APPLICATION_JSON_VALUE)

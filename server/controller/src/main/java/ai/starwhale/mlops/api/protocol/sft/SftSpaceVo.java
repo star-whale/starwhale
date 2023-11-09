@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.sft;
 
+import ai.starwhale.mlops.api.protocol.user.UserVo;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,4 +31,9 @@ public class SftSpaceVo {
     private Long id;
     private String name;
     private String description;
+    @NotNull
+    private Long createdTime;
+
+    @NotNull
+    private UserVo owner;
 }
