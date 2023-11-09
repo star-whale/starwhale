@@ -118,10 +118,14 @@ class CreateProjectRequest(SwBaseModel):
     description: str
 
 
-class CreateModelVersionRequest(SwBaseModel):
-    meta_blob_id: str = Field(..., alias='metaBlobId')
-    built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
-    force: Optional[bool] = None
+class Type(Enum):
+    default = 'DEFAULT'
+    fine_tune = 'FINE_TUNE'
+
+
+class ModelSource(SwBaseModel):
+    type: Optional[Type] = None
+    id: Optional[int] = None
 
 
 class CreateJobTemplateRequest(SwBaseModel):
@@ -193,7 +197,7 @@ class RevertModelVersionRequest(SwBaseModel):
     version_url: str = Field(..., alias='versionUrl')
 
 
-class Type(Enum):
+class Type1(Enum):
     evaluation = 'EVALUATION'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
@@ -217,7 +221,7 @@ class JobRequest(SwBaseModel):
     resource_pool: str = Field(..., alias='resourcePool')
     handler: Optional[str] = None
     step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
-    type: Optional[Type] = None
+    type: Optional[Type1] = None
     dev_mode: Optional[bool] = Field(None, alias='devMode')
     dev_password: Optional[str] = Field(None, alias='devPassword')
     dev_way: Optional[DevWay] = Field(None, alias='devWay')
@@ -332,14 +336,14 @@ class UploadResult(SwBaseModel):
     upload_id: Optional[int] = Field(None, alias='uploadId')
 
 
-class Type1(Enum):
+class Type2(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
 
 
 class DatasetBuildRequest(SwBaseModel):
-    type: Type1
+    type: Type2
     shared: Optional[bool] = None
     storage_path: str = Field(..., alias='storagePath')
 
@@ -512,7 +516,7 @@ class Flag(Enum):
     unchanged = 'unchanged'
 
 
-class Type2(Enum):
+class Type3(Enum):
     directory = 'directory'
     file = 'file'
 
@@ -522,7 +526,7 @@ class FileNode(SwBaseModel):
     signature: Optional[str] = None
     flag: Optional[Flag] = None
     mime: Optional[str] = None
-    type: Optional[Type2] = None
+    type: Optional[Type3] = None
     desc: Optional[str] = None
     size: Optional[str] = None
 
@@ -879,13 +883,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type3(Enum):
+class Type4(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type3
+    type: Type4
     name: str
     link: str
 
@@ -1186,7 +1190,7 @@ class Status2(Enum):
     unknown = 'UNKNOWN'
 
 
-class Type4(Enum):
+class Type5(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
@@ -1198,7 +1202,7 @@ class BuildRecordVo(SwBaseModel):
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
     status: Status2
-    type: Type4
+    type: Type5
     create_time: int = Field(..., alias='createTime')
 
 
@@ -1273,6 +1277,13 @@ class ResourcePool(SwBaseModel):
     metadata: Optional[Dict[str, str]] = None
     is_private: Optional[bool] = Field(None, alias='isPrivate')
     visible_user_ids: Optional[List[int]] = Field(None, alias='visibleUserIds')
+
+
+class CreateModelVersionRequest(SwBaseModel):
+    meta_blob_id: str = Field(..., alias='metaBlobId')
+    built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
+    model_source: Optional[ModelSource] = Field(None, alias='modelSource')
+    force: Optional[bool] = None
 
 
 class EventRequest(SwBaseModel):

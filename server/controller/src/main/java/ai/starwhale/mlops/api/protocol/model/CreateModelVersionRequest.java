@@ -35,5 +35,17 @@ public class CreateModelVersionRequest {
 
     String builtInRuntime;
 
+    ModelSource modelSource;
+
     boolean force = false;
+
+    @Data
+    public static class ModelSource {
+        ModelSourceType type;
+        Long id;
+    }
+
+    public enum ModelSourceType {
+        DEFAULT, FINE_TUNE
+    }
 }
