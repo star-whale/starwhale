@@ -9,6 +9,7 @@
  * ---------------------------------------------------------------
  */
 
+// @ts-ignore
 import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType } from "axios";
 import axios from "axios";
 
