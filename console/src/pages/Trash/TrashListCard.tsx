@@ -13,7 +13,6 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
-import { ButtonGroup } from '@starwhale/ui'
 
 export default function TrashListCard() {
     const [page] = usePage()
@@ -34,6 +33,47 @@ export default function TrashListCard() {
         )
     }, [filter, info.data])
 
+    const getActions = (trash: ITrashSchema) => [
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ConfirmButton
+                    title={t('trash.restore.confirm')}
+                    icon='Restore'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    tooltip={!hasText ? t('trash.restore.button') : undefined}
+                    onClick={async () => {
+                        await recoverTrash(projectId, trash.id)
+                        toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
+                        await info.refetch()
+                    }}
+                >
+                    {hasText ? t('trash.restore.button') : undefined}
+                </ConfirmButton>
+            ),
+        },
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ConfirmButton
+                    icon='delete'
+                    styleas={['menuoption', hasText ? undefined : 'highlight', 'negative']}
+                    title={t('trash.remove.confirm')}
+                    tooltip={!hasText ? t('trash.remove.button') : undefined}
+                    onClick={async () => {
+                        await removeTrash(projectId, trash.id)
+                        toaster.positive(t('trash.remove.success'), { autoHideDuration: 1000 })
+                        await info.refetch()
+                    }}
+                >
+                    {hasText ? t('trash.remove.button') : undefined}
+                </ConfirmButton>
+            ),
+        },
+    ]
+
     return (
         <Card title={t('trash.title')}>
             <div className={css({ marginBottom: '20px', width: '280px' })}>
@@ -44,6 +84,11 @@ export default function TrashListCard() {
                 />
             </div>
             <Table
+                renderActions={(rowIndex) => {
+                    const trash = data[rowIndex]
+                    if (!trash) return undefined
+                    return getActions(trash)
+                }}
                 isLoading={info.isLoading}
                 columns={[
                     t('trash.name'),
@@ -53,7 +98,6 @@ export default function TrashListCard() {
                     t('trash.trashedBy'),
                     t('trash.updatedTime'),
                     t('trash.retentionTime'),
-                    t('Action'),
                 ]}
                 data={
                     data?.map((trash) => {
@@ -65,32 +109,6 @@ export default function TrashListCard() {
                             trash.trashedBy,
                             trash.lastUpdatedTime && formatTimestampDateTime(trash.lastUpdatedTime),
                             trash.retentionTime && formatTimestampDateTime(trash.retentionTime),
-                            <ButtonGroup key='action'>
-                                <ConfirmButton
-                                    kind='tertiary'
-                                    title={t('trash.restore.confirm')}
-                                    tooltip={t('trash.restore.button')}
-                                    icon='Restore'
-                                    as='link'
-                                    onClick={async () => {
-                                        await recoverTrash(projectId, trash.id)
-                                        toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
-                                        await info.refetch()
-                                    }}
-                                />
-                                <ConfirmButton
-                                    as='link'
-                                    icon='delete'
-                                    negative
-                                    tooltip={t('trash.remove.button')}
-                                    title={t('trash.remove.confirm')}
-                                    onClick={async () => {
-                                        await removeTrash(projectId, trash.id)
-                                        toaster.positive(t('trash.remove.success'), { autoHideDuration: 1000 })
-                                        await info.refetch()
-                                    }}
-                                />
-                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

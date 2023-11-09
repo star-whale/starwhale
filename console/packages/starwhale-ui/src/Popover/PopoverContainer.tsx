@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { PLACEMENT, Popover } from 'baseui/popover'
+import { PLACEMENT, Popover, PopoverProps } from 'baseui/popover'
 import { createUseStyles } from 'react-jss'
-import { StatefulFilterMenu } from '../StatefulFilterMenu'
-import Checkbox from '../../Checkbox'
+import { StatefulFilterMenu } from './StatefulFilterMenu'
+import Checkbox from '../Checkbox'
 import { useSelections } from 'ahooks'
+import { mergeOverride } from '../base/helpers/overrides'
 
 export const useStyles = createUseStyles({
     label: {
@@ -30,9 +31,6 @@ export const useStyles = createUseStyles({
 })
 
 function SingleSelectMenu(props: any) {
-    // const trace = useTrace('single-select-menu')
-    // trace({ inputRef: props.inputRef })
-
     return (
         <StatefulFilterMenu
             // @ts-ignore cascade keydown event with input
@@ -41,16 +39,21 @@ function SingleSelectMenu(props: any) {
             onItemSelect={(args) => {
                 // @ts-ignore
                 props.onItemSelect?.(args)
-                props.onClose()
+                props.onClose?.()
             }}
-            overrides={{
-                List: {
-                    style: {
-                        maxHeight: '500px',
-                        maxWidth: '500px',
-                    },
-                },
-            }}
+            overrides={
+                mergeOverride(
+                    {
+                        List: {
+                            style: {
+                                maxHeight: '500px',
+                                maxWidth: '500px',
+                            },
+                        },
+                    } as any,
+                    props.overrides
+                ) as any
+            }
         />
     )
 }
@@ -98,7 +101,7 @@ function MultiSelectMenu(props: any) {
     }, [props.options, isSelected])
 
     const submit = () => {
-        props.onClose()
+        props.onClose?.()
         props.onItemIdsChange?.(selected)
     }
 
@@ -159,11 +162,29 @@ function PopoverContainer(props: {
     children: React.ReactNode
     inputRef?: React.RefObject<HTMLInputElement>
     Content?: React.FC<any>
+    mountNode?: HTMLElement
+    popperOptions?: any
+    overrides?: any
+    contentOverrides?: any
+    placement?: PopoverProps['placement']
+    autoClose?: boolean
+    triggerType?: PopoverProps['triggerType']
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
 
-    const { Content = SingleSelectMenu, inputRef, ...rest } = props
+    const {
+        Content = SingleSelectMenu,
+        inputRef,
+        mountNode,
+        popperOptions,
+        overrides,
+        placement = PLACEMENT.bottomLeft,
+        contentOverrides,
+        autoClose,
+        triggerType,
+        ...rest
+    } = props
 
     useEffect(() => {
         setIsOpen(props.isOpen)
@@ -173,20 +194,36 @@ function PopoverContainer(props: {
 
     return (
         <Popover
-            placement={PLACEMENT.bottomLeft}
+            triggerType={triggerType}
+            ignoreBoundary={false}
+            popperOptions={popperOptions}
+            mountNode={mountNode}
+            placement={placement}
             isOpen={isOpen}
             innerRef={ref}
-            overrides={{
-                Body: {
-                    props: {
-                        className: 'filter-popover',
-                    },
-                    style: {
-                        marginTop: '32px',
-                    },
-                },
-            }}
-            content={<Content {...rest} inputRef={inputRef} onClose={handleClose} />}
+            overrides={
+                mergeOverride(
+                    {
+                        Body: {
+                            props: {
+                                className: 'filter-popover',
+                            },
+                            style: {
+                                marginTop: '32px',
+                            },
+                        },
+                    } as any,
+                    overrides
+                ) as any
+            }
+            content={
+                <Content
+                    overrides={contentOverrides}
+                    {...rest}
+                    inputRef={inputRef}
+                    onClose={autoClose ? handleClose : () => {}}
+                />
+            }
         >
             <div>{props.children}</div>
         </Popover>

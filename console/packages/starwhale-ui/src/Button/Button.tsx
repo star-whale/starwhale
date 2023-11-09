@@ -20,6 +20,17 @@ export interface IExtendButtonProps extends IButtonProps {
     transparent?: boolean
     icondisable?: boolean
     iconnormal?: boolean
+    styleas?: (
+        | 'nopadding'
+        | 'negative'
+        | 'tooltip'
+        | 'transparent'
+        | 'icondisable'
+        | 'iconnormal'
+        | 'menuoption'
+        | 'highlight'
+        | undefined
+    )[]
 }
 
 function Button(
@@ -175,6 +186,7 @@ ForwardButton.defaultProps = {
 
 const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
     const [, theme] = themedUseStyletron()
+    const { styleas = [] } = props
     const STYLES = {
         nopadding: {
             BaseButton: {
@@ -264,15 +276,60 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                 },
             },
         },
+        // menu
+        menuoption: {
+            BaseButton: {
+                style: {
+                    'paddingTop': '8px',
+                    'paddingBottom': '8px',
+                    'paddingLeft': '12px',
+                    'paddingRight': '12px',
+                    'backgroundColor': 'transparent',
+                    'justifyContent': 'start',
+                    'gap': '3px',
+                    'color': '#02102B',
+                    ':hover': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                    ':focus': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                    ':active': {
+                        backgroundColor: 'transparent',
+                        color: '#02102B',
+                    },
+                },
+            },
+        },
+        highlight: {
+            BaseButton: {
+                style: {
+                    'paddingLeft': '8px',
+                    'paddingRight': '8px',
+                    'lineHeight': 1,
+                    'backgroundColor': 'transparent',
+                    'color': theme.colors.buttonPrimaryFill,
+                    ':hover': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                    ':focus': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                    ':active': {
+                        color: '#5181E0',
+                        backgroundColor: 'transparent',
+                    },
+                },
+            },
+        },
+        default: props.overrides || {},
     }
-    const overrides = [
-        props.nopadding ? STYLES.nopadding : {},
-        props.transparent ? STYLES.transparent : {},
-        props.negative ? STYLES.negative : {},
-        props.icondisable ? STYLES.icondisable : {},
-        props.iconnormal ? STYLES.iconnormal : {},
-        props.overrides ? props.overrides : {},
-    ].reduce(mergeOverrides, {})
+    const styles = [...styleas, 'default'].map((type) => type && STYLES?.[type]).filter(Boolean)
+    const overrides = styles.reduce(mergeOverrides, {})
 
     if (props.tooltip) {
         return (
@@ -299,6 +356,7 @@ ExtendButton.defaultProps = {
     className: undefined,
     tooltip: '',
     icondisable: undefined,
+    styleas: [],
 }
 
 export { ExtendButton }

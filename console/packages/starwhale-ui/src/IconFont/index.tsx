@@ -144,6 +144,7 @@ export type IconTypesT =
     | 'play'
     | 'top2'
     | 'txt'
+    | 'Detail'
 
 interface IIconFontProps {
     style?: React.CSSProperties
