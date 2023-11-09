@@ -41,8 +41,9 @@ public interface BuildRecordMapper {
     List<BuildRecordEntity> list(@Param("projectId") Long projectId);
 
     @Select("SELECT COUNT(r.id) FROM dataset_build_record r, task_info t "
-            + "WHERE r.task_id = t.id and (t.status != 'SUCCESS' and t.status != 'FAIL' and t.status != 'CANCELED') "
-            + "and r.project_id = #{projectId} AND r.dataset_name = #{datasetName} ")
+            + "WHERE r.task_id = t.id and "
+            + "(t.task_status != 'SUCCESS' and t.task_status != 'FAIL' and t.task_status != 'CANCELED') and "
+            + "r.project_id = #{projectId} AND r.dataset_name = #{datasetName} ")
     int selectBuildingsInOneProject(
             @Param("projectId") Long projectId, @Param("datasetName") String datasetName);
 
