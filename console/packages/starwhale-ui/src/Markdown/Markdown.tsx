@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactMarkdown, { Options, uriTransformer } from 'react-markdown'
-import './markdown.css'
+// import './markdown.css'
 // import remarkGfm from 'remark-gfm'
 // import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 
