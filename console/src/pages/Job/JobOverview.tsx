@@ -5,7 +5,6 @@ import { useProject } from '@project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Alias from '@/components/Alias'
-import { Text } from '@starwhale/ui/Text'
 import { TextLink } from '@/components/Link'
 
 export default function JobOverview() {
