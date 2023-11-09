@@ -115,10 +115,9 @@ const useCardStyles = createUseStyles({
         display: 'flex',
         justifyContent: 'space-between',
         color: ' rgba(2,16,43,0.60)',
-        // justifySelf: 'center',
     },
     descriptionText: {
-        lineHeight: '12px',
+        lineHeight: '18px',
         fontSize: '12px',
         whiteSpace: 'normal',
         display: '-webkit-box',

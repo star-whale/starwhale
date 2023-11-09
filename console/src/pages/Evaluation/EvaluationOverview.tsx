@@ -7,6 +7,7 @@ import { QueryTableRequest } from '@starwhale/core/datastore'
 import { useParams } from 'react-router-dom'
 import { Text } from '@starwhale/ui/Text'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
+import { TextLink } from '@/components/Link'
 
 function EvaluationOverview() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
@@ -37,17 +38,47 @@ function EvaluationOverview() {
 
     const record: Record<string, any> | undefined = info?.data?.records?.[0]
 
+    const datasetUri = record?.['sys/dataset_uris'].split(',')
+    const datasetLinkMap = record?.['sys/_dataset_uris']?.map((v: string, index: number) => {
+        const str = v.replace('project', 'projects').replace('dataset', 'datasets').replace('version', 'versions')
+        return (
+            <TextLink key={v} to={`/${str}/overview`} baseStyle={{ maxWidth: 'none' }}>
+                {datasetUri[index]}
+            </TextLink>
+        )
+    })
+
+    const runtimeUri = record?.['sys/runtime_uri']
+    const runtimeTo = record?.['sys/_runtime_uri']
+        .replace('project', 'projects')
+        .replace('runtime', 'runtimes')
+        .replace('version', 'versions')
+    const runtimeLink = (
+        <TextLink key={runtimeUri} to={`/${runtimeTo}/overview`} baseStyle={{ maxWidth: 'none' }}>
+            {runtimeUri}
+        </TextLink>
+    )
+
+    const modelUri = record?.['sys/model_uri']
+    const modelTo = record?.['sys/_model_uri']
+        .replace('project', 'projects')
+        .replace('model', 'models')
+        .replace('version', 'versions')
+    const modelLink = (
+        <TextLink key={modelUri} to={`/${modelTo}/overview`} baseStyle={{ maxWidth: 'none' }}>
+            {modelUri}
+        </TextLink>
+    )
+
+    // const modelTo = `/projects/${project?.id}/models/${job?.model?.id}/versions/${job?.model?.version?.id}/overview`
+    // const modelLink = (
+    //     <TextLink key={modelUri} to={modelTo} baseStyle={{ maxWidth: 'none' }}>
+    //         {modelUri}
+    //     </TextLink>
+    // )
+
     return (
-        <div
-            className='flex-column '
-            style={{
-                fontSize: '14px',
-                gridTemplateColumns: 'minmax(160px, max-content) 1fr',
-                display: 'grid',
-                overflow: 'auto',
-                gridTemplateRows: 'repeat(100,44px)',
-            }}
-        >
+        <div className='flex-column'>
             {!record && (
                 <BusyPlaceholder
                     type='notfound'
@@ -79,36 +110,46 @@ function EvaluationOverview() {
                             case 'sys/duration_ms':
                                 value = Number(value) > 0 ? durationToStr(value) : 0
                                 break
+                            case 'sys/step_spec':
+                                value = (
+                                    <div className='markdown-body'>
+                                        <pre>{value}</pre>
+                                    </div>
+                                )
+                                break
+                            case 'sys/model_uri':
+                                value = modelLink
+                                break
+                            case 'sys/runtime_uri':
+                                value = runtimeLink
+                                break
+                            case 'sys/dataset_uris':
+                                value = datasetLinkMap
+                                break
                             default:
                                 break
                         }
 
                         return (
-                            <React.Fragment key={label}>
-                                <div
-                                    style={{
-                                        color: 'rgba(2,16,43,0.60)',
-                                        borderBottom: '1px solid #EEF1F6',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    {label}
+                            <div
+                                key={label}
+                                style={{
+                                    display: 'flex',
+                                    gap: '20px',
+                                    borderBottom: '1px solid #EEF1F6',
+                                    lineHeight: '44px',
+                                    flexWrap: 'nowrap',
+                                    fontSize: '14px',
+                                    paddingLeft: '12px',
+                                }}
+                            >
+                                <div className='basis-250px overflow-hidden text-ellipsis flex-shrink-0 color-[rgba(2,16,43,0.60)]'>
+                                    <Text maxWidth='1000px' tooltip={<pre>{label}</pre>}>
+                                        {label}
+                                    </Text>{' '}
                                 </div>
-                                <div
-                                    className='line-clamp'
-                                    style={{
-                                        borderBottom: '1px solid #EEF1F6',
-                                        paddingLeft: '20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Text maxWidth='1000px' tooltip={<pre>{value}</pre>}>
-                                        {value}
-                                    </Text>
-                                </div>
-                            </React.Fragment>
+                                <div className='py-13px lh-18px'>{value}</div>
+                            </div>
                         )
                     })}
         </div>

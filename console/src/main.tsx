@@ -9,6 +9,7 @@ import { registerExtensions } from './components/Extensions'
 import { registerRoutes } from './routesUtils'
 import { registerLocales } from './i18n/locales'
 // for uno or tailwind
+import '@starwhale/ui/Markdown/markdown.css'
 import '@unocss/reset/tailwind.css'
 import 'virtual:uno.css'
 import { apiInit } from '@/api'
