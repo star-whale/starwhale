@@ -475,6 +475,36 @@ public class DatasetService {
             throw new SwValidationException(ValidSubject.SETTING,
                     "dataset build setting is required in system setting");
         }
+        List<StepSpec> stepSpecs = getStepSpecs(request);
+        String stepSpecOverWrites;
+        try {
+            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
+        } catch (JsonProcessingException e) {
+            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
+                    e);
+        }
+        var jobReq = JobCreateRequest.builder()
+                .project(project)
+                .resourcePool(systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool())
+                .stepSpecOverWrites(stepSpecOverWrites)
+                .jobType(JobType.BUILT_IN)
+                .user(userService.currentUserDetail())
+                .build();
+        Job job = jobCreator.createJob(jobReq);
+
+        var entity = BuildRecordEntity.builder()
+                .projectId(project.getId())
+                .taskId(job.getSteps().get(0).getTasks().get(0).getId())
+                .shared(request.getShared())
+                .datasetName(request.getDatasetName())
+                .storagePath(request.getStoragePath())
+                .type(request.getType())
+                .createdTime(new Date())
+                .build();
+        buildRecordMapper.insert(entity);
+    }
+
+    public List<StepSpec> getStepSpecs(CreateBuildRecordRequest request) {
         List<StepSpec> stepSpecs;
         try {
             String dsBuildSteps = virtualJobLoader.loadJobStepSpecs("dataset_build");
@@ -516,32 +546,7 @@ public class DatasetService {
             }
             stepSpec.setEnv(envs);
         });
-        String stepSpecOverWrites;
-        try {
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
-        } catch (JsonProcessingException e) {
-            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
-                    e);
-        }
-        var jobReq = JobCreateRequest.builder()
-                .project(project)
-                .resourcePool(systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool())
-                .stepSpecOverWrites(stepSpecOverWrites)
-                .jobType(JobType.BUILT_IN)
-                .user(userService.currentUserDetail())
-                .build();
-        Job job = jobCreator.createJob(jobReq);
-
-        var entity = BuildRecordEntity.builder()
-                .projectId(project.getId())
-                .taskId(job.getSteps().get(0).getTasks().get(0).getId())
-                .shared(request.getShared())
-                .datasetName(request.getDatasetName())
-                .storagePath(request.getStoragePath())
-                .type(request.getType())
-                .createdTime(new Date())
-                .build();
-        buildRecordMapper.insert(entity);
+        return stepSpecs;
     }
 
     public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, PageParams pageParams) {

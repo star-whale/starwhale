@@ -639,6 +639,59 @@ public class DatasetServiceTest {
     }
 
     @Test
+    public void testGetBuildSpecs() {
+        var request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.IMAGE)
+                .storagePath("storage-path")
+                .build();
+        var specs = service.getStepSpecs(request);
+        assertEquals(3, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.CSV)
+                .csv(CreateBuildRecordRequest.Csv.builder()
+                        .delimiter("-")
+                        .dialect(CreateBuildRecordRequest.Csv.Dialect.EXCEL)
+                        .quoteChar("'")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(6, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.JSON)
+                .json(CreateBuildRecordRequest.Json.builder()
+                        .fieldSelector("a.b.c")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(4, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.HUGGING_FACE)
+                .huggingFace(CreateBuildRecordRequest.HuggingFace.builder()
+                        .repo("pokemon")
+                        .subset("default")
+                        .split("train")
+                        .revision("123456")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(7, specs.get(0).getEnv().size());
+    }
+
+    @Test
     public void testListBuildRecord() {
         Long project = 1L;
         given(projectService.findProject(String.valueOf(project))).willReturn(Project.builder().id(project).build());
