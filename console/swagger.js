@@ -19,6 +19,7 @@ generateApi({
     //     },
     //     // ...
     // },
+    typePrefix: 'I',
     templates: PATH_TO_OUTPUT_DIR_TEMPLATE,
     httpClientType: 'axios', // or "fetch"
     defaultResponseAsSuccess: false,
@@ -28,13 +29,6 @@ generateApi({
     extractRequestParams: false,
     extractRequestBody: false,
     unwrapResponseData: true,
-    prettier: {
-        // By default prettier config is load from your project
-        printWidth: 120,
-        tabWidth: 2,
-        trailingComma: 'all',
-        parser: 'typescript',
-    },
     defaultResponseType: 'void',
     singleHttpClient: true,
     cleanOutput: false,

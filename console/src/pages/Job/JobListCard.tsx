@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction, pinJob } from '@job/services/job'
 import { usePage } from '@/hooks/usePage'
-import { ICreateJobSchema, IJobSchema, JobActionType, JobStatusType } from '@job/schemas/job'
+import { JobActionType, JobStatusType } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -22,6 +22,7 @@ import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
 import { ConfirmButton, VersionText } from '@starwhale/ui'
 import { ExposedButtonLink } from '@job/components/ExposedLink'
 import qs from 'qs'
+import { IJobRequest, IJobVo } from '@/api'
 
 interface IActionButtonProps {
     // eslint-disable-next-line
@@ -38,7 +39,7 @@ export default function JobListCard() {
     const { isPrivileged: canPinOrUnpin } = useAuthPrivileged({ role: useProjectRole().role, id: 'job.pinOrUnpin' })
 
     const handleCreateJob = useCallback(
-        async (data: ICreateJobSchema) => {
+        async (data: IJobRequest) => {
             await createJob(projectId, data)
             setIsCreateJobOpen(false)
             jobsInfo.refetch()
@@ -132,7 +133,7 @@ export default function JobListCard() {
         ),
     })
 
-    const getActions = (job: IJobSchema) => {
+    const getActions = (job: IJobVo) => {
         const statusActions = {
             [JobStatusType.CREATED]: [CancelButton(job.id), PauseButton(job.id)],
             [JobStatusType.RUNNING]: [CancelButton(job.id), PauseButton(job.id)],
@@ -212,7 +213,7 @@ export default function JobListCard() {
         >
             <Table
                 renderActions={(rowIndex) => {
-                    const job = jobsInfo.data?.list[rowIndex]
+                    const job = jobsInfo.data?.list?.[rowIndex]
                     if (!job) return undefined
                     return getActions(job)
                 }}
@@ -231,7 +232,7 @@ export default function JobListCard() {
                     t('Status'),
                 ]}
                 data={
-                    jobsInfo.data?.list.map((job) => {
+                    jobsInfo.data?.list?.map((job) => {
                         const pinBtnStyle: ConfigurationOverride = {
                             position: 'absolute',
                             top: 0,
@@ -283,7 +284,7 @@ export default function JobListCard() {
                             <VersionText key='modelVersion' version={job.modelVersion} />,
                             job.owner && <User user={job.owner} />,
                             job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
-                            typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
+                            durationToStr(job.duration),
                             job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
                             <JobStatus key='jobStatus' status={job.jobStatus as any} />,
                         ]

@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob } from '@job/services/job'
-import { ICreateJobSchema } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
@@ -25,6 +24,7 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
+import { IJobRequest } from '@/api'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -62,7 +62,7 @@ export default function EvaluationListCard() {
     const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>('currentViewId', {})
     const [changed, setChanged] = useState(false)
     const handleCreateJob = useCallback(
-        async (data: ICreateJobSchema) => {
+        async (data: IJobRequest) => {
             await createJob(projectId, data)
             await evaluationsInfo.refetch()
             setIsCreateJobOpen(false)

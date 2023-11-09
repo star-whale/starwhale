@@ -9,2505 +9,2263 @@
  * ---------------------------------------------------------------
  */
 
-export interface UserUpdateStateRequest {
-  isEnabled: boolean;
+export interface IUserUpdateStateRequest {
+    isEnabled: boolean
 }
 
-export interface ResponseMessageString {
-  code: string;
-  message: string;
-  data: string;
+export interface IResponseMessageString {
+    code: string
+    message: string
+    data: string
 }
 
-export interface UserUpdatePasswordRequest {
-  currentUserPwd: string;
-  newPwd: string;
+export interface IUserUpdatePasswordRequest {
+    currentUserPwd: string
+    newPwd: string
 }
 
-export interface UserRoleUpdateRequest {
-  currentUserPwd: string;
-  roleId: string;
+export interface IUserRoleUpdateRequest {
+    currentUserPwd: string
+    roleId: string
 }
 
-export interface UpdateProjectRequest {
-  /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
-  projectName?: string;
-  privacy?: string;
-  description?: string;
-  readme?: string;
+export interface IUpdateProjectRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
+    projectName?: string
+    privacy?: string
+    description?: string
+    readme?: string
 }
 
-export interface ResponseMessageObject {
-  code: string;
-  message: string;
-  data: object;
+export interface IResponseMessageObject {
+    code: string
+    message: string
+    data: object
 }
 
-export interface RuntimeTagRequest {
-  force?: boolean;
-  tag: string;
+export interface IRuntimeTagRequest {
+    force?: boolean
+    tag: string
 }
 
-export interface UpdateReportRequest {
-  /**
-   * @minLength 0
-   * @maxLength 255
-   */
-  title?: string;
-  /**
-   * @minLength 0
-   * @maxLength 255
-   */
-  description?: string;
-  content?: string;
-  shared?: boolean;
+export interface IUpdateReportRequest {
+    /**
+     * @minLength 0
+     * @maxLength 255
+     */
+    title?: string
+    /**
+     * @minLength 0
+     * @maxLength 255
+     */
+    description?: string
+    content?: string
+    shared?: boolean
 }
 
-export interface ModelUpdateRequest {
-  tag?: string;
-  built_in_runtime?: string;
+export interface IModelUpdateRequest {
+    tag?: string
+    built_in_runtime?: string
 }
 
-export interface JobModifyRequest {
-  comment: string;
+export interface IJobModifyRequest {
+    comment: string
 }
 
-export interface ApplySignedUrlRequest {
-  flag?: string;
-  pathPrefix: string;
-  /** @uniqueItems true */
-  files: string[];
+export interface IApplySignedUrlRequest {
+    flag?: string
+    pathPrefix: string
+    /** @uniqueItems true */
+    files: string[]
 }
 
-export interface ResponseMessageSignedUrlResponse {
-  code: string;
-  message: string;
-  data: SignedUrlResponse;
+export interface IResponseMessageSignedUrlResponse {
+    code: string
+    message: string
+    data: ISignedUrlResponse
 }
 
-export interface SignedUrlResponse {
-  pathPrefix?: string;
-  signedUrls?: Record<string, string>;
+export interface ISignedUrlResponse {
+    pathPrefix?: string
+    signedUrls?: Record<string, string>
 }
 
-export interface UserRequest {
-  /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,32}$ */
-  userName: string;
-  userPwd: string;
-  salt?: string;
+export interface IUserRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,32}$ */
+    userName: string
+    userPwd: string
+    salt?: string
 }
 
-export interface UserCheckPasswordRequest {
-  currentUserPwd: string;
+export interface IUserCheckPasswordRequest {
+    currentUserPwd: string
 }
 
-export interface Resource {
-  name?: string;
-  /** @format float */
-  max?: number;
-  /** @format float */
-  min?: number;
-  /** @format float */
-  defaults?: number;
+export interface IResource {
+    name?: string
+    /** @format float */
+    max?: number
+    /** @format float */
+    min?: number
+    /** @format float */
+    defaults?: number
 }
 
-export interface ResourcePool {
-  name?: string;
-  nodeSelector?: Record<string, string>;
-  resources?: Resource[];
-  tolerations?: Toleration[];
-  metadata?: Record<string, string>;
-  isPrivate?: boolean;
-  visibleUserIds?: number[];
+export interface IResourcePool {
+    name?: string
+    nodeSelector?: Record<string, string>
+    resources?: IResource[]
+    tolerations?: IToleration[]
+    metadata?: Record<string, string>
+    isPrivate?: boolean
+    visibleUserIds?: number[]
 }
 
-export interface Toleration {
-  key?: string;
-  operator?: string;
-  value?: string;
-  effect?: string;
-  /** @format int64 */
-  tolerationSeconds?: number;
+export interface IToleration {
+    key?: string
+    operator?: string
+    value?: string
+    effect?: string
+    /** @format int64 */
+    tolerationSeconds?: number
 }
 
-export interface UserRoleAddRequest {
-  currentUserPwd: string;
-  userId: string;
-  roleId: string;
+export interface IUserRoleAddRequest {
+    currentUserPwd: string
+    userId: string
+    roleId: string
 }
 
-export interface CreateProjectRequest {
-  /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
-  projectName: string;
-  privacy: string;
-  description: string;
+export interface ICreateProjectRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{2,80}$ */
+    projectName: string
+    privacy: string
+    description: string
 }
 
-export interface CreateModelVersionRequest {
-  metaBlobId: string;
-  builtInRuntime?: string;
-  force?: boolean;
+export interface ICreateModelVersionRequest {
+    metaBlobId: string
+    builtInRuntime?: string
+    force?: boolean
 }
 
-export interface CreateJobTemplateRequest {
-  name: string;
-  jobUrl: string;
+export interface ICreateJobTemplateRequest {
+    name: string
+    jobUrl: string
 }
 
-export interface ModelServingRequest {
-  modelVersionUrl: string;
-  runtimeVersionUrl: string;
-  resourcePool?: string;
-  /**
-   * @deprecated
-   * @format int64
-   */
-  ttlInSeconds?: number;
-  spec?: string;
+export interface IModelServingRequest {
+    modelVersionUrl: string
+    runtimeVersionUrl: string
+    resourcePool?: string
+    /**
+     * @deprecated
+     * @format int64
+     */
+    ttlInSeconds?: number
+    spec?: string
 }
 
 /**
  * Model Serving
  * Model Serving object
  */
-export interface ModelServingVo {
-  id: string;
-  baseUri?: string;
+export interface IModelServingVo {
+    id: string
+    baseUri?: string
 }
 
-export interface ResponseMessageModelServingVo {
-  code: string;
-  message: string;
-  /** Model Serving object */
-  data: ModelServingVo;
+export interface IResponseMessageModelServingVo {
+    code: string
+    message: string
+    /** Model Serving object */
+    data: IModelServingVo
 }
 
 /** user defined running configurations such environment variables */
-export interface RunEnvs {
-  envVars?: Record<string, string>;
+export interface IRunEnvs {
+    envVars?: Record<string, string>
 }
 
 /**
  * Runtime
  * Build runtime image result
  */
-export interface BuildImageResult {
-  success?: boolean;
-  message?: string;
+export interface IBuildImageResult {
+    success?: boolean
+    message?: string
 }
 
-export interface ResponseMessageBuildImageResult {
-  code: string;
-  message: string;
-  /** Build runtime image result */
-  data: BuildImageResult;
+export interface IResponseMessageBuildImageResult {
+    code: string
+    message: string
+    /** Build runtime image result */
+    data: IBuildImageResult
 }
 
-export interface RuntimeRevertRequest {
-  versionUrl: string;
+export interface IRuntimeRevertRequest {
+    versionUrl: string
 }
 
-export interface ClientRuntimeRequest {
-  runtime?: string;
-  project?: string;
-  force?: string;
-  manifest?: string;
+export interface IClientRuntimeRequest {
+    runtime?: string
+    project?: string
+    force?: string
+    manifest?: string
 }
 
-export interface CreateReportRequest {
-  /**
-   * @minLength 1
-   * @maxLength 255
-   */
-  title: string;
-  /**
-   * @minLength 0
-   * @maxLength 255
-   */
-  description?: string;
-  /**
-   * @minLength 1
-   * @maxLength 2147483647
-   */
-  content: string;
+export interface ICreateReportRequest {
+    /**
+     * @minLength 1
+     * @maxLength 255
+     */
+    title: string
+    /**
+     * @minLength 0
+     * @maxLength 255
+     */
+    description?: string
+    /**
+     * @minLength 1
+     * @maxLength 2147483647
+     */
+    content: string
 }
 
-export interface TransferReportRequest {
-  targetProjectUrl: string;
+export interface ITransferReportRequest {
+    targetProjectUrl: string
 }
 
-export interface ModelTagRequest {
-  force?: boolean;
-  tag: string;
+export interface IModelTagRequest {
+    force?: boolean
+    tag: string
 }
 
-export interface RevertModelVersionRequest {
-  versionUrl: string;
+export interface IRevertModelVersionRequest {
+    versionUrl: string
 }
 
-export interface JobRequest {
-  /** @format int64 */
-  modelVersionId?: number;
-  datasetVersionIds?: number[];
-  /** @format int64 */
-  runtimeVersionId?: number;
-  /** @format int64 */
-  timeToLiveInSec?: number;
-  /** @deprecated */
-  modelVersionUrl?: string;
-  /** @deprecated */
-  datasetVersionUrls?: string;
-  /** @deprecated */
-  runtimeVersionUrl?: string;
-  comment?: string;
-  resourcePool: string;
-  handler?: string;
-  stepSpecOverWrites?: string;
-  type?: "EVALUATION" | "TRAIN" | "FINE_TUNE" | "SERVING" | "BUILT_IN";
-  devMode?: boolean;
-  devPassword?: string;
-  devWay?: "VS_CODE";
+export interface IJobRequest {
+    modelVersionId?: string
+    datasetVersionIds?: string[]
+    runtimeVersionId?: string
+    /** @format int64 */
+    timeToLiveInSec?: number
+    /** @deprecated */
+    modelVersionUrl?: string
+    /** @deprecated */
+    datasetVersionUrls?: string
+    /** @deprecated */
+    runtimeVersionUrl?: string
+    comment?: string
+    resourcePool: string
+    handler?: string
+    stepSpecOverWrites?: string
+    type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
+    devMode?: boolean
+    devPassword?: string
+    devWay?: 'VS_CODE'
 }
 
-export interface ExecRequest {
-  command: string[];
+export interface IExecRequest {
+    command: string[]
 }
 
-export interface ExecResponse {
-  stdout?: string;
-  stderr?: string;
+export interface IExecResponse {
+    stdout?: string
+    stderr?: string
 }
 
-export interface ResponseMessageExecResponse {
-  code: string;
-  message: string;
-  data: ExecResponse;
+export interface IResponseMessageExecResponse {
+    code: string
+    message: string
+    data: IExecResponse
 }
 
-export interface JobModifyPinRequest {
-  pinned: boolean;
+export interface IJobModifyPinRequest {
+    pinned: boolean
 }
 
-export interface EventRequest {
-  eventType: "INFO" | "WARNING" | "ERROR";
-  source: "CLIENT" | "SERVER" | "NODE";
-  relatedResource: RelatedResource;
-  message: string;
-  data?: string;
-  /** @format int64 */
-  timestamp?: number;
+export interface IEventRequest {
+    eventType: 'INFO' | 'WARNING' | 'ERROR'
+    source: 'CLIENT' | 'SERVER' | 'NODE'
+    relatedResource: IRelatedResource
+    message: string
+    data?: string
+    /** @format int64 */
+    timestamp?: number
 }
 
-export interface RelatedResource {
-  eventResourceType: "JOB" | "TASK" | "RUN";
-  /** @format int64 */
-  id: number;
+export interface IRelatedResource {
+    eventResourceType: 'JOB' | 'TASK' | 'RUN'
+    /** @format int64 */
+    id: number
 }
 
-export interface ResponseMessageMapStringString {
-  code: string;
-  message: string;
-  data: Record<string, string>;
+export interface IResponseMessageMapStringString {
+    code: string
+    message: string
+    data: Record<string, string>
 }
 
-export interface ConfigRequest {
-  name: string;
-  content: string;
+export interface IConfigRequest {
+    name: string
+    content: string
 }
 
-export interface DatasetTagRequest {
-  force?: boolean;
-  tag: string;
+export interface IDatasetTagRequest {
+    force?: boolean
+    tag: string
 }
 
-export interface DataConsumptionRequest {
-  sessionId?: string;
-  consumerId?: string;
-  /** @format int32 */
-  batchSize?: number;
-  start?: string;
-  startType?: string;
-  startInclusive?: boolean;
-  end?: string;
-  endType?: string;
-  endInclusive?: boolean;
-  processedData?: DataIndexDesc[];
-  /** @deprecated */
-  serial?: boolean;
+export interface IDataConsumptionRequest {
+    sessionId?: string
+    consumerId?: string
+    /** @format int32 */
+    batchSize?: number
+    start?: string
+    startType?: string
+    startInclusive?: boolean
+    end?: string
+    endType?: string
+    endInclusive?: boolean
+    processedData?: IDataIndexDesc[]
+    /** @deprecated */
+    serial?: boolean
 }
 
-export interface DataIndexDesc {
-  start?: string;
-  startType?: string;
-  startInclusive?: boolean;
-  end?: string;
-  endType?: string;
-  endInclusive?: boolean;
+export interface IDataIndexDesc {
+    start?: string
+    startType?: string
+    startInclusive?: boolean
+    end?: string
+    endType?: string
+    endInclusive?: boolean
 }
 
-export interface NullableResponseMessageDataIndexDesc {
-  code: string;
-  message: string;
-  data?: DataIndexDesc;
+export interface INullableResponseMessageDataIndexDesc {
+    code: string
+    message: string
+    data?: IDataIndexDesc
 }
 
-export interface RevertDatasetRequest {
-  versionUrl: string;
+export interface IRevertDatasetRequest {
+    versionUrl: string
 }
 
-export interface DatasetUploadRequest {
-  /** @format int64 */
-  uploadId: number;
-  partName?: string;
-  signature?: string;
-  uri?: string;
-  desc?: "MANIFEST" | "SRC_TAR" | "SRC" | "MODEL" | "DATA" | "UNKNOWN";
-  phase: "MANIFEST" | "BLOB" | "END" | "CANCEL";
-  force?: string;
-  project: string;
-  swds: string;
+export interface IDatasetUploadRequest {
+    /** @format int64 */
+    uploadId: number
+    partName?: string
+    signature?: string
+    uri?: string
+    desc?: 'MANIFEST' | 'SRC_TAR' | 'SRC' | 'MODEL' | 'DATA' | 'UNKNOWN'
+    phase: 'MANIFEST' | 'BLOB' | 'END' | 'CANCEL'
+    force?: string
+    project: string
+    swds: string
 }
 
-export interface ResponseMessageUploadResult {
-  code: string;
-  message: string;
-  data: UploadResult;
+export interface IResponseMessageUploadResult {
+    code: string
+    message: string
+    data: IUploadResult
 }
 
-export interface UploadResult {
-  /** @format int64 */
-  uploadId?: number;
+export interface IUploadResult {
+    /** @format int64 */
+    uploadId?: number
 }
 
-export interface DatasetBuildRequest {
-  type: "IMAGE" | "VIDEO" | "AUDIO";
-  shared?: boolean;
-  storagePath: string;
+export interface IDatasetBuildRequest {
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    shared?: boolean
+    storagePath: string
 }
 
-export interface ResponseMessageMapObjectObject {
-  code: string;
-  message: string;
-  data: Record<string, object>;
+export interface IResponseMessageMapObjectObject {
+    code: string
+    message: string
+    data: Record<string, object>
 }
 
-export interface SftSpaceCreateRequest {
-  name: string;
-  desc: string;
+export interface IColumnSchemaDesc {
+    name?: string
+    /** @format int32 */
+    index?: number
+    type?: string
+    pythonType?: string
+    elementType?: IColumnSchemaDesc
+    keyType?: IColumnSchemaDesc
+    valueType?: IColumnSchemaDesc
+    attributes?: IColumnSchemaDesc[]
+    sparseKeyValuePairSchema?: Record<string, IKeyValuePairSchema>
 }
 
-export type DsInfo = object;
-
-export type ModelInfo = object;
-
-export interface PageInfoSftVo {
-  /** @format int64 */
-  total?: number;
-  list?: SftVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IKeyValuePairSchema {
+    keyType?: IColumnSchemaDesc
+    valueType?: IColumnSchemaDesc
 }
 
-export interface ResponseMessagePageInfoSftVo {
-  code: string;
-  message: string;
-  data: PageInfoSftVo;
+export interface IRecordDesc {
+    values: IRecordValueDesc[]
 }
 
-export interface SftVo {
-  /** @format int64 */
-  id?: number;
-  /** @format int64 */
-  jobId?: number;
-  status?: "CREATED" | "READY" | "PAUSED" | "RUNNING" | "CANCELLING" | "CANCELED" | "SUCCESS" | "FAIL" | "UNKNOWN";
-  /** @format int64 */
-  startTime?: number;
-  /** @format int64 */
-  endTime?: number;
-  trainDatasets?: DsInfo[];
-  evalDatasets?: DsInfo[];
-  baseModel?: ModelInfo;
-  targetModel?: ModelInfo;
+export interface IRecordValueDesc {
+    key: string
+    value?: object
 }
 
-export interface SftCreateRequest {
-  /** @format int64 */
-  modelVersionId?: number;
-  datasetVersionIds?: number[];
-  /** @format int64 */
-  runtimeVersionId?: number;
-  /** @format int64 */
-  timeToLiveInSec?: number;
-  /** @deprecated */
-  modelVersionUrl?: string;
-  /** @deprecated */
-  datasetVersionUrls?: string;
-  /** @deprecated */
-  runtimeVersionUrl?: string;
-  comment?: string;
-  resourcePool: string;
-  handler?: string;
-  stepSpecOverWrites?: string;
-  type?: "EVALUATION" | "TRAIN" | "FINE_TUNE" | "SERVING" | "BUILT_IN";
-  devMode?: boolean;
-  devPassword?: string;
-  devWay?: "VS_CODE";
-  evalDatasetVersionIds?: number[];
+export interface ITableSchemaDesc {
+    keyColumn?: string
+    columnSchemaList?: IColumnSchemaDesc[]
 }
 
-export interface ColumnSchemaDesc {
-  name?: string;
-  /** @format int32 */
-  index?: number;
-  type?: string;
-  pythonType?: string;
-  elementType?: ColumnSchemaDesc;
-  keyType?: ColumnSchemaDesc;
-  valueType?: ColumnSchemaDesc;
-  attributes?: ColumnSchemaDesc[];
-  sparseKeyValuePairSchema?: Record<string, KeyValuePairSchema>;
+export interface IUpdateTableRequest {
+    tableName?: string
+    tableSchemaDesc?: ITableSchemaDesc
+    records?: IRecordDesc[]
 }
 
-export interface KeyValuePairSchema {
-  keyType?: ColumnSchemaDesc;
-  valueType?: ColumnSchemaDesc;
+export interface IColumnDesc {
+    columnName?: string
+    alias?: string
 }
 
-export interface RecordDesc {
-  values: RecordValueDesc[];
+export interface IScanTableRequest {
+    tables?: ITableDesc[]
+    start?: string
+    startType?: string
+    startInclusive?: boolean
+    end?: string
+    endType?: string
+    endInclusive?: boolean
+    /** @format int32 */
+    limit?: number
+    keepNone?: boolean
+    rawResult?: boolean
+    encodeWithType?: boolean
+    ignoreNonExistingTable?: boolean
 }
 
-export interface RecordValueDesc {
-  key: string;
-  value?: object;
+export interface ITableDesc {
+    tableName?: string
+    columnPrefix?: string
+    columns?: IColumnDesc[]
+    keepNone?: boolean
+    revision?: string
 }
 
-export interface TableSchemaDesc {
-  keyColumn?: string;
-  columnSchemaList?: ColumnSchemaDesc[];
+export interface IColumnHintsDesc {
+    typeHints?: string[]
+    columnValueHints?: string[]
+    elementHints?: IColumnHintsDesc
+    keyHints?: IColumnHintsDesc
+    valueHints?: IColumnHintsDesc
 }
 
-export interface UpdateTableRequest {
-  tableName?: string;
-  tableSchemaDesc?: TableSchemaDesc;
-  records?: RecordDesc[];
+export interface IRecordListVo {
+    columnTypes?: IColumnSchemaDesc[]
+    columnHints?: Record<string, IColumnHintsDesc>
+    records?: Record<string, object>[]
+    lastKey?: string
 }
 
-export interface ColumnDesc {
-  columnName?: string;
-  alias?: string;
+export interface IResponseMessageRecordListVo {
+    code: string
+    message: string
+    data: IRecordListVo
 }
 
-export interface ScanTableRequest {
-  tables?: TableDesc[];
-  start?: string;
-  startType?: string;
-  startInclusive?: boolean;
-  end?: string;
-  endType?: string;
-  endInclusive?: boolean;
-  /** @format int32 */
-  limit?: number;
-  keepNone?: boolean;
-  rawResult?: boolean;
-  encodeWithType?: boolean;
-  ignoreNonExistingTable?: boolean;
+export interface IOrderByDesc {
+    columnName?: string
+    descending?: boolean
 }
 
-export interface TableDesc {
-  tableName?: string;
-  columnPrefix?: string;
-  columns?: ColumnDesc[];
-  keepNone?: boolean;
-  revision?: string;
+export interface IQueryTableRequest {
+    tableName?: string
+    columns?: IColumnDesc[]
+    orderBy?: IOrderByDesc[]
+    descending?: boolean
+    filter?: ITableQueryFilterDesc
+    /** @format int32 */
+    start?: number
+    /** @format int32 */
+    limit?: number
+    keepNone?: boolean
+    rawResult?: boolean
+    encodeWithType?: boolean
+    ignoreNonExistingTable?: boolean
+    revision?: string
 }
 
-export interface ColumnHintsDesc {
-  typeHints?: string[];
-  columnValueHints?: string[];
-  elementHints?: ColumnHintsDesc;
-  keyHints?: ColumnHintsDesc;
-  valueHints?: ColumnHintsDesc;
+export interface ITableQueryFilterDesc {
+    operator: string
+    operands?: ITableQueryOperandDesc[]
 }
 
-export interface RecordListVo {
-  columnTypes?: ColumnSchemaDesc[];
-  columnHints?: Record<string, ColumnHintsDesc>;
-  records?: Record<string, object>[];
-  lastKey?: string;
+export interface ITableQueryOperandDesc {
+    filter?: ITableQueryFilterDesc
+    columnName?: string
+    boolValue?: boolean
+    /** @format int64 */
+    intValue?: number
+    /** @format double */
+    floatValue?: number
+    stringValue?: string
+    bytesValue?: string
 }
 
-export interface ResponseMessageRecordListVo {
-  code: string;
-  message: string;
-  data: RecordListVo;
+export interface IListTablesRequest {
+    prefix?: string
+    /** @uniqueItems true */
+    prefixes?: string[]
 }
 
-export interface OrderByDesc {
-  columnName?: string;
-  descending?: boolean;
+export interface IResponseMessageTableNameListVo {
+    code: string
+    message: string
+    data: ITableNameListVo
 }
 
-export interface QueryTableRequest {
-  tableName?: string;
-  columns?: ColumnDesc[];
-  orderBy?: OrderByDesc[];
-  descending?: boolean;
-  filter?: TableQueryFilterDesc;
-  /** @format int32 */
-  start?: number;
-  /** @format int32 */
-  limit?: number;
-  keepNone?: boolean;
-  rawResult?: boolean;
-  encodeWithType?: boolean;
-  ignoreNonExistingTable?: boolean;
-  revision?: string;
+export interface ITableNameListVo {
+    tables?: string[]
 }
 
-export interface TableQueryFilterDesc {
-  operator: string;
-  operands?: TableQueryOperandDesc[];
+export type IFlushRequest = object
+
+export interface IInitUploadBlobRequest {
+    contentMd5: string
+    /** @format int64 */
+    contentLength: number
 }
 
-export interface TableQueryOperandDesc {
-  filter?: TableQueryFilterDesc;
-  columnName?: string;
-  boolValue?: boolean;
-  /** @format int64 */
-  intValue?: number;
-  /** @format double */
-  floatValue?: number;
-  stringValue?: string;
-  bytesValue?: string;
+export interface IInitUploadBlobResult {
+    status?: 'OK' | 'EXISTED'
+    blobId?: string
+    signedUrl?: string
 }
 
-export interface ListTablesRequest {
-  prefix?: string;
-  /** @uniqueItems true */
-  prefixes?: string[];
+export interface IResponseMessageInitUploadBlobResult {
+    code: string
+    message: string
+    data: IInitUploadBlobResult
 }
 
-export interface ResponseMessageTableNameListVo {
-  code: string;
-  message: string;
-  data: TableNameListVo;
+export interface ICompleteUploadBlobResult {
+    blobId?: string
 }
 
-export interface TableNameListVo {
-  tables?: string[];
+export interface IResponseMessageCompleteUploadBlobResult {
+    code: string
+    message: string
+    data: ICompleteUploadBlobResult
 }
 
-export type FlushRequest = object;
-
-export interface InitUploadBlobRequest {
-  contentMd5: string;
-  /** @format int64 */
-  contentLength: number;
+export interface IPageInfoUserVo {
+    /** @format int64 */
+    total?: number
+    list?: IUserVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface InitUploadBlobResult {
-  status?: "OK" | "EXISTED";
-  blobId?: string;
-  signedUrl?: string;
-}
-
-export interface ResponseMessageInitUploadBlobResult {
-  code: string;
-  message: string;
-  data: InitUploadBlobResult;
-}
-
-export interface CompleteUploadBlobResult {
-  blobId?: string;
-}
-
-export interface ResponseMessageCompleteUploadBlobResult {
-  code: string;
-  message: string;
-  data: CompleteUploadBlobResult;
-}
-
-export interface PageInfoUserVo {
-  /** @format int64 */
-  total?: number;
-  list?: UserVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
-}
-
-export interface ResponseMessagePageInfoUserVo {
-  code: string;
-  message: string;
-  data: PageInfoUserVo;
+export interface IResponseMessagePageInfoUserVo {
+    code: string
+    message: string
+    data: IPageInfoUserVo
 }
 
 /**
  * User
  * User object
  */
-export interface UserVo {
-  id: string;
-  name: string;
-  /** @format int64 */
-  createdTime: number;
-  isEnabled: boolean;
-  systemRole?: string;
-  projectRoles?: Record<string, string>;
+export interface IUserVo {
+    id: string
+    name: string
+    /** @format int64 */
+    createdTime: number
+    isEnabled: boolean
+    systemRole?: string
+    projectRoles?: Record<string, string>
 }
 
-export interface ResponseMessageUserVo {
-  code: string;
-  message: string;
-  /** User object */
-  data: UserVo;
+export interface IResponseMessageUserVo {
+    code: string
+    message: string
+    /** User object */
+    data: IUserVo
 }
 
 /**
  * Role
  * Project Role object
  */
-export interface ProjectMemberVo {
-  id: string;
-  /** User object */
-  user: UserVo;
-  /** Project object */
-  project: ProjectVo;
-  /** Role object */
-  role: RoleVo;
+export interface IProjectMemberVo {
+    id: string
+    /** User object */
+    user: IUserVo
+    /** Project object */
+    project: IProjectVo
+    /** Role object */
+    role: IRoleVo
 }
 
 /**
  * Project
  * Project object
  */
-export interface ProjectVo {
-  id: string;
-  name: string;
-  description?: string;
-  privacy: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner: UserVo;
-  statistics?: StatisticsVo;
+export interface IProjectVo {
+    id: string
+    name: string
+    description?: string
+    privacy: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner: IUserVo
+    statistics?: IStatisticsVo
 }
 
-export interface ResponseMessageListProjectMemberVo {
-  code: string;
-  message: string;
-  data: ProjectMemberVo[];
+export interface IResponseMessageListProjectMemberVo {
+    code: string
+    message: string
+    data: IProjectMemberVo[]
 }
 
 /**
  * Role
  * Role object
  */
-export interface RoleVo {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
+export interface IRoleVo {
+    id: string
+    name: string
+    code: string
+    description?: string
 }
 
-export interface StatisticsVo {
-  /** @format int32 */
-  modelCounts: number;
-  /** @format int32 */
-  datasetCounts: number;
-  /** @format int32 */
-  runtimeCounts: number;
-  /** @format int32 */
-  memberCounts: number;
-  /** @format int32 */
-  evaluationCounts: number;
+export interface IStatisticsVo {
+    /** @format int32 */
+    modelCounts: number
+    /** @format int32 */
+    datasetCounts: number
+    /** @format int32 */
+    runtimeCounts: number
+    /** @format int32 */
+    memberCounts: number
+    /** @format int32 */
+    evaluationCounts: number
 }
 
-export interface ResponseMessageSystemVersionVo {
-  code: string;
-  message: string;
-  /** System version */
-  data: SystemVersionVo;
+export interface IResponseMessageSystemVersionVo {
+    code: string
+    message: string
+    /** System version */
+    data: ISystemVersionVo
 }
 
 /**
  * Version
  * System version
  */
-export interface SystemVersionVo {
-  id?: string;
-  version?: string;
+export interface ISystemVersionVo {
+    id?: string
+    version?: string
 }
 
-export interface ResponseMessageListResourcePool {
-  code: string;
-  message: string;
-  data: ResourcePool[];
+export interface IResponseMessageListResourcePool {
+    code: string
+    message: string
+    data: IResourcePool[]
 }
 
 /**
  * Features
  * System features
  */
-export interface FeaturesVo {
-  disabled: string[];
+export interface IFeaturesVo {
+    disabled: string[]
 }
 
-export interface ResponseMessageFeaturesVo {
-  code: string;
-  message: string;
-  /** System features */
-  data: FeaturesVo;
+export interface IResponseMessageFeaturesVo {
+    code: string
+    message: string
+    /** System features */
+    data: IFeaturesVo
 }
 
 /**
  * Device
  * Device information
  */
-export interface DeviceVo {
-  name: string;
+export interface IDeviceVo {
+    name: string
 }
 
-export interface ResponseMessageListDeviceVo {
-  code: string;
-  message: string;
-  data: DeviceVo[];
+export interface IResponseMessageListDeviceVo {
+    code: string
+    message: string
+    data: IDeviceVo[]
 }
 
-export interface ResponseMessageListRoleVo {
-  code: string;
-  message: string;
-  data: RoleVo[];
+export interface IResponseMessageListRoleVo {
+    code: string
+    message: string
+    data: IRoleVo[]
 }
 
 /**
  * Report
  * Report object
  */
-export interface ReportVo {
-  /** @format int64 */
-  id: number;
-  uuid: string;
-  title: string;
-  content?: string;
-  description?: string;
-  shared?: boolean;
-  /** User object */
-  owner: UserVo;
-  /** @format int64 */
-  createdTime: number;
-  /** @format int64 */
-  modifiedTime: number;
+export interface IReportVo {
+    /** @format int64 */
+    id: number
+    uuid: string
+    title: string
+    content?: string
+    description?: string
+    shared?: boolean
+    /** User object */
+    owner: IUserVo
+    /** @format int64 */
+    createdTime: number
+    /** @format int64 */
+    modifiedTime: number
 }
 
-export interface ResponseMessageReportVo {
-  code: string;
-  message: string;
-  /** Report object */
-  data: ReportVo;
+export interface IResponseMessageReportVo {
+    code: string
+    message: string
+    /** Report object */
+    data: IReportVo
 }
 
-export interface PageInfoProjectVo {
-  /** @format int64 */
-  total?: number;
-  list?: ProjectVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoProjectVo {
+    /** @format int64 */
+    total?: number
+    list?: IProjectVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoProjectVo {
-  code: string;
-  message: string;
-  data: PageInfoProjectVo;
+export interface IResponseMessagePageInfoProjectVo {
+    code: string
+    message: string
+    data: IPageInfoProjectVo
 }
 
-export interface FileNode {
-  name?: string;
-  signature?: string;
-  flag?: "added" | "updated" | "deleted" | "unchanged";
-  mime?: string;
-  type?: "directory" | "file";
-  desc?: string;
-  size?: string;
+export interface IFileNode {
+    name?: string
+    signature?: string
+    flag?: 'added' | 'updated' | 'deleted' | 'unchanged'
+    mime?: string
+    type?: 'directory' | 'file'
+    desc?: string
+    size?: string
 }
 
-export interface ListFilesResult {
-  files?: FileNode[];
+export interface IListFilesResult {
+    files?: IFileNode[]
 }
 
-export interface ResponseMessageListFilesResult {
-  code: string;
-  message: string;
-  data: ListFilesResult;
+export interface IResponseMessageListFilesResult {
+    code: string
+    message: string
+    data: IListFilesResult
 }
 
-export interface ResponseMessageProjectVo {
-  code: string;
-  message: string;
-  /** Project object */
-  data: ProjectVo;
+export interface IResponseMessageProjectVo {
+    code: string
+    message: string
+    /** Project object */
+    data: IProjectVo
 }
 
-export interface PageInfoTrashVo {
-  /** @format int64 */
-  total?: number;
-  list?: TrashVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoTrashVo {
+    /** @format int64 */
+    total?: number
+    list?: ITrashVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoTrashVo {
-  code: string;
-  message: string;
-  data: PageInfoTrashVo;
+export interface IResponseMessagePageInfoTrashVo {
+    code: string
+    message: string
+    data: IPageInfoTrashVo
 }
 
-export interface TrashVo {
-  id?: string;
-  name?: string;
-  type?: string;
-  /** @format int64 */
-  trashedTime?: number;
-  /** @format int64 */
-  size?: number;
-  trashedBy?: string;
-  /** @format int64 */
-  lastUpdatedTime?: number;
-  /** @format int64 */
-  retentionTime?: number;
+export interface ITrashVo {
+    id?: string
+    name?: string
+    type?: string
+    /** @format int64 */
+    trashedTime?: number
+    /** @format int64 */
+    size?: number
+    trashedBy?: string
+    /** @format int64 */
+    lastUpdatedTime?: number
+    /** @format int64 */
+    retentionTime?: number
 }
 
-export interface JobTemplateVo {
-  /** @format int64 */
-  id?: number;
-  name?: string;
-  /** @format int64 */
-  jobId?: number;
+export interface IJobTemplateVo {
+    id: string
+    name: string
+    jobId: string
 }
 
-export interface ResponseMessageListJobTemplateVo {
-  code: string;
-  message: string;
-  data: JobTemplateVo[];
+export interface IResponseMessageListJobTemplateVo {
+    code: string
+    message: string
+    data: IJobTemplateVo[]
 }
 
-export interface ResponseMessageJobTemplateVo {
-  code: string;
-  message: string;
-  data: JobTemplateVo;
+export interface IResponseMessageJobTemplateVo {
+    code: string
+    message: string
+    data: IJobTemplateVo
 }
 
-export interface PageInfoRuntimeVo {
-  /** @format int64 */
-  total?: number;
-  list?: RuntimeVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoRuntimeVo {
+    /** @format int64 */
+    total?: number
+    list?: IRuntimeVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoRuntimeVo {
-  code: string;
-  message: string;
-  data: PageInfoRuntimeVo;
+export interface IResponseMessagePageInfoRuntimeVo {
+    code: string
+    message: string
+    data: IPageInfoRuntimeVo
 }
 
 /**
  * RuntimeVersion
  * Runtime version object
  */
-export interface RuntimeVersionVo {
-  tags?: string[];
-  latest: boolean;
-  id: string;
-  runtimeId: string;
-  name: string;
-  alias: string;
-  meta?: string;
-  image: string;
-  builtImage?: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner?: UserVo;
-  shared: boolean;
+export interface IRuntimeVersionVo {
+    tags?: string[]
+    latest: boolean
+    id: string
+    runtimeId: string
+    name: string
+    alias: string
+    meta?: string
+    image: string
+    builtImage?: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner?: IUserVo
+    shared: boolean
 }
 
 /**
  * Runtime
  * Runtime object
  */
-export interface RuntimeVo {
-  id: string;
-  name: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner: UserVo;
-  /** Runtime version object */
-  version: RuntimeVersionVo;
+export interface IRuntimeVo {
+    id: string
+    name: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner: IUserVo
+    /** Runtime version object */
+    version: IRuntimeVersionVo
 }
 
 /**
  * StorageFile
  * Storage file object
  */
-export interface FlattenFileVo {
-  name?: string;
-  size?: string;
+export interface IFlattenFileVo {
+    name?: string
+    size?: string
 }
 
-export interface ResponseMessageRuntimeInfoVo {
-  code: string;
-  message: string;
-  /** Runtime information object */
-  data: RuntimeInfoVo;
+export interface IResponseMessageRuntimeInfoVo {
+    code: string
+    message: string
+    /** Runtime information object */
+    data: IRuntimeInfoVo
 }
 
 /**
  * RuntimeInfo
  * Runtime information object
  */
-export interface RuntimeInfoVo {
-  /** Runtime version object */
-  versionInfo: RuntimeVersionVo;
-  id: string;
-  name: string;
-  versionId: string;
-  versionName: string;
-  versionAlias: string;
-  versionTag?: string;
-  versionMeta?: string;
-  manifest: string;
-  /** @format int32 */
-  shared: number;
-  /** @format int64 */
-  createdTime: number;
-  files?: FlattenFileVo[];
+export interface IRuntimeInfoVo {
+    /** Runtime version object */
+    versionInfo: IRuntimeVersionVo
+    id: string
+    name: string
+    versionId: string
+    versionName: string
+    versionAlias: string
+    versionTag?: string
+    versionMeta?: string
+    manifest: string
+    /** @format int32 */
+    shared: number
+    /** @format int64 */
+    createdTime: number
+    files?: IFlattenFileVo[]
 }
 
-export interface PageInfoRuntimeVersionVo {
-  /** @format int64 */
-  total?: number;
-  list?: RuntimeVersionVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoRuntimeVersionVo {
+    /** @format int64 */
+    total?: number
+    list?: IRuntimeVersionVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoRuntimeVersionVo {
-  code: string;
-  message: string;
-  data: PageInfoRuntimeVersionVo;
+export interface IResponseMessagePageInfoRuntimeVersionVo {
+    code: string
+    message: string
+    data: IPageInfoRuntimeVersionVo
 }
 
-export interface ResponseMessageListString {
-  code: string;
-  message: string;
-  data: string[];
+export interface IResponseMessageListString {
+    code: string
+    message: string
+    data: string[]
 }
 
-export interface ResponseMessageLong {
-  code: string;
-  message: string;
-  /** @format int64 */
-  data: number;
+export interface IResponseMessageLong {
+    code: string
+    message: string
+    /** @format int64 */
+    data: number
 }
 
-export interface ResponseMessageListRuntimeViewVo {
-  code: string;
-  message: string;
-  data: RuntimeViewVo[];
+export interface IResponseMessageListRuntimeViewVo {
+    code: string
+    message: string
+    data: IRuntimeViewVo[]
 }
 
 /**
  * Runtime
  * Runtime Version View object
  */
-export interface RuntimeVersionViewVo {
-  id: string;
-  versionName: string;
-  alias: string;
-  latest: boolean;
-  /** @format int32 */
-  shared: number;
-  /** @format int64 */
-  createdTime: number;
+export interface IRuntimeVersionViewVo {
+    id: string
+    versionName: string
+    alias: string
+    latest: boolean
+    /** @format int32 */
+    shared: number
+    /** @format int64 */
+    createdTime: number
 }
 
 /**
  * Runtime
  * Runtime View object
  */
-export interface RuntimeViewVo {
-  ownerName: string;
-  projectName: string;
-  runtimeId: string;
-  runtimeName: string;
-  shared: boolean;
-  versions: RuntimeVersionViewVo[];
+export interface IRuntimeViewVo {
+    ownerName: string
+    projectName: string
+    runtimeId: string
+    runtimeName: string
+    shared: boolean
+    versions: IRuntimeVersionViewVo[]
 }
 
-export interface PageInfoReportVo {
-  /** @format int64 */
-  total?: number;
-  list?: ReportVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoReportVo {
+    /** @format int64 */
+    total?: number
+    list?: IReportVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoReportVo {
-  code: string;
-  message: string;
-  data: PageInfoReportVo;
+export interface IResponseMessagePageInfoReportVo {
+    code: string
+    message: string
+    data: IPageInfoReportVo
 }
 
-export interface ContainerSpec {
-  image?: string;
-  cmds?: string[];
-  entrypoint?: string[];
+export interface IContainerSpec {
+    image?: string
+    cmds?: string[]
+    entrypoint?: string[]
 }
 
-export interface Env {
-  name?: string;
-  value?: string;
+export interface IEnv {
+    name?: string
+    value?: string
 }
 
 /**
  * Model
  * Model Version View Object
  */
-export interface ModelVersionViewVo {
-  id: string;
-  versionName: string;
-  alias: string;
-  latest: boolean;
-  tags?: string[];
-  /** @format int32 */
-  shared: number;
-  stepSpecs: StepSpec[];
-  builtInRuntime?: string;
-  /** @format int64 */
-  createdTime: number;
+export interface IModelVersionViewVo {
+    id: string
+    versionName: string
+    alias: string
+    latest: boolean
+    tags?: string[]
+    /** @format int32 */
+    shared: number
+    stepSpecs: IStepSpec[]
+    builtInRuntime?: string
+    /** @format int64 */
+    createdTime: number
 }
 
 /**
  * Model View
  * Model View Object
  */
-export interface ModelViewVo {
-  ownerName: string;
-  projectName: string;
-  modelId: string;
-  modelName: string;
-  shared: boolean;
-  versions: ModelVersionViewVo[];
+export interface IModelViewVo {
+    ownerName: string
+    projectName: string
+    modelId: string
+    modelName: string
+    shared: boolean
+    versions: IModelVersionViewVo[]
 }
 
-export interface ParameterSignature {
-  name: string;
-  required?: boolean;
-  multiple?: boolean;
+export interface IParameterSignature {
+    name: string
+    required?: boolean
+    multiple?: boolean
 }
 
-export interface ResponseMessageListModelViewVo {
-  code: string;
-  message: string;
-  data: ModelViewVo[];
+export interface IResponseMessageListModelViewVo {
+    code: string
+    message: string
+    data: IModelViewVo[]
 }
 
-export interface RuntimeResource {
-  type?: string;
-  /** @format float */
-  request?: number;
-  /** @format float */
-  limit?: number;
+export interface IRuntimeResource {
+    type?: string
+    /** @format float */
+    request?: number
+    /** @format float */
+    limit?: number
 }
 
-export interface StepSpec {
-  name: string;
-  /** @format int32 */
-  concurrency?: number;
-  /** @format int32 */
-  replicas: number;
-  /** @format int32 */
-  backoffLimit?: number;
-  needs?: string[];
-  resources?: RuntimeResource[];
-  env?: Env[];
-  /** @format int32 */
-  expose?: number;
-  virtual?: boolean;
-  job_name?: string;
-  show_name: string;
-  require_dataset?: boolean;
-  container_spec?: ContainerSpec;
-  ext_cmd_args?: string;
-  parameters_sig?: ParameterSignature[];
+export interface IStepSpec {
+    name: string
+    /** @format int32 */
+    concurrency?: number
+    /** @format int32 */
+    replicas: number
+    /** @format int32 */
+    backoffLimit?: number
+    needs?: string[]
+    resources?: IRuntimeResource[]
+    env?: IEnv[]
+    /** @format int32 */
+    expose?: number
+    virtual?: boolean
+    job_name?: string
+    show_name: string
+    require_dataset?: boolean
+    container_spec?: IContainerSpec
+    ext_cmd_args?: string
+    parameters_sig?: IParameterSignature[]
 }
 
 /**
  * Dataset
  * Dataset Version View object
  */
-export interface DatasetVersionViewVo {
-  id: string;
-  versionName: string;
-  alias?: string;
-  latest: boolean;
-  /** @format int32 */
-  shared: number;
-  /** @format int64 */
-  createdTime: number;
+export interface IDatasetVersionViewVo {
+    id: string
+    versionName: string
+    alias?: string
+    latest: boolean
+    /** @format int32 */
+    shared: number
+    /** @format int64 */
+    createdTime: number
 }
 
 /**
  * Dataset
  * Dataset View object
  */
-export interface DatasetViewVo {
-  ownerName: string;
-  projectName: string;
-  datasetId: string;
-  datasetName: string;
-  shared: boolean;
-  versions: DatasetVersionViewVo[];
+export interface IDatasetViewVo {
+    ownerName: string
+    projectName: string
+    datasetId: string
+    datasetName: string
+    shared: boolean
+    versions: IDatasetVersionViewVo[]
 }
 
-export interface ResponseMessageListDatasetViewVo {
-  code: string;
-  message: string;
-  data: DatasetViewVo[];
+export interface IResponseMessageListDatasetViewVo {
+    code: string
+    message: string
+    data: IDatasetViewVo[]
 }
 
 /**
  * ModelVersion
  * Model version object
  */
-export interface ModelVersionVo {
-  latest: boolean;
-  tags?: string[];
-  stepSpecs: StepSpec[];
-  id: string;
-  name: string;
-  alias: string;
-  /** @format int64 */
-  size?: number;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner?: UserVo;
-  shared: boolean;
-  builtInRuntime?: string;
+export interface IModelVersionVo {
+    latest: boolean
+    tags?: string[]
+    stepSpecs: IStepSpec[]
+    id: string
+    name: string
+    alias: string
+    /** @format int64 */
+    size?: number
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner?: IUserVo
+    shared: boolean
+    builtInRuntime?: string
 }
 
 /**
  * Model
  * Model object
  */
-export interface ModelVo {
-  id: string;
-  name: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner: UserVo;
-  /** Model version object */
-  version: ModelVersionVo;
+export interface IModelVo {
+    id: string
+    name: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner: IUserVo
+    /** Model version object */
+    version: IModelVersionVo
 }
 
-export interface PageInfoModelVo {
-  /** @format int64 */
-  total?: number;
-  list?: ModelVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoModelVo {
+    /** @format int64 */
+    total?: number
+    list?: IModelVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoModelVo {
-  code: string;
-  message: string;
-  data: PageInfoModelVo;
+export interface IResponseMessagePageInfoModelVo {
+    code: string
+    message: string
+    data: IPageInfoModelVo
 }
 
 /**
  * ModelInfo
  * Model information object
  */
-export interface ModelInfoVo {
-  /** Model version object */
-  versionInfo: ModelVersionVo;
-  id: string;
-  name: string;
-  versionAlias: string;
-  versionId: string;
-  versionName: string;
-  versionTag?: string;
-  /** @format int64 */
-  createdTime: number;
-  /** @format int32 */
-  shared: number;
+export interface IModelInfoVo {
+    /** Model version object */
+    versionInfo: IModelVersionVo
+    id: string
+    name: string
+    versionAlias: string
+    versionId: string
+    versionName: string
+    versionTag?: string
+    /** @format int64 */
+    createdTime: number
+    /** @format int32 */
+    shared: number
 }
 
-export interface ResponseMessageModelInfoVo {
-  code: string;
-  message: string;
-  /** Model information object */
-  data: ModelInfoVo;
+export interface IResponseMessageModelInfoVo {
+    code: string
+    message: string
+    /** Model information object */
+    data: IModelInfoVo
 }
 
-export interface PageInfoModelVersionVo {
-  /** @format int64 */
-  total?: number;
-  list?: ModelVersionVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoModelVersionVo {
+    /** @format int64 */
+    total?: number
+    list?: IModelVersionVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoModelVersionVo {
-  code: string;
-  message: string;
-  data: PageInfoModelVersionVo;
+export interface IResponseMessagePageInfoModelVersionVo {
+    code: string
+    message: string
+    data: IPageInfoModelVersionVo
 }
 
-export interface ResponseMessageMapStringListFileNode {
-  code: string;
-  message: string;
-  data: Record<string, FileNode[]>;
+export interface IResponseMessageMapStringListFileNode {
+    code: string
+    message: string
+    data: Record<string, IFileNode[]>
 }
 
 /**
  * DatasetVersion
  * Dataset version object
  */
-export interface DatasetVersionVo {
-  tags?: string[];
-  latest: boolean;
-  indexTable?: string;
-  id: string;
-  name: string;
-  alias?: string;
-  meta?: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner?: UserVo;
-  shared: boolean;
+export interface IDatasetVersionVo {
+    tags?: string[]
+    latest: boolean
+    indexTable?: string
+    id: string
+    name: string
+    alias?: string
+    meta?: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner?: IUserVo
+    shared: boolean
 }
 
 /**
  * Dataset
  * Dataset object
  */
-export interface DatasetVo {
-  id: string;
-  name: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner?: UserVo;
-  /** Dataset version object */
-  version: DatasetVersionVo;
+export interface IDatasetVo {
+    id: string
+    name: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner?: IUserVo
+    /** Dataset version object */
+    version: IDatasetVersionVo
 }
 
-export interface ExposedLinkVo {
-  type: "DEV_MODE" | "WEB_HANDLER";
-  name: string;
-  link: string;
+export interface IExposedLinkVo {
+    type: 'DEV_MODE' | 'WEB_HANDLER'
+    name: string
+    link: string
 }
 
 /**
  * Job
  * Job object
  */
-export interface JobVo {
-  exposedLinks: ExposedLinkVo[];
-  id: string;
-  uuid: string;
-  modelName: string;
-  modelVersion: string;
-  /** Model object */
-  model: ModelVo;
-  jobName?: string;
-  datasets?: string[];
-  datasetList?: DatasetVo[];
-  /** Runtime object */
-  runtime: RuntimeVo;
-  isBuiltinRuntime?: boolean;
-  device?: string;
-  /** @format int32 */
-  deviceAmount?: number;
-  /** User object */
-  owner: UserVo;
-  /** @format int64 */
-  createdTime: number;
-  /** @format int64 */
-  stopTime?: number;
-  jobStatus: "CREATED" | "READY" | "PAUSED" | "RUNNING" | "CANCELLING" | "CANCELED" | "SUCCESS" | "FAIL" | "UNKNOWN";
-  comment?: string;
-  stepSpec?: string;
-  resourcePool: string;
-  /** @format int64 */
-  duration?: number;
-  /** @format int64 */
-  pinnedTime?: number;
+export interface IJobVo {
+    exposedLinks: IExposedLinkVo[]
+    id: string
+    uuid: string
+    modelName: string
+    modelVersion: string
+    /** Model object */
+    model: IModelVo
+    jobName?: string
+    datasets?: string[]
+    datasetList?: IDatasetVo[]
+    /** Runtime object */
+    runtime: IRuntimeVo
+    isBuiltinRuntime?: boolean
+    device?: string
+    /** @format int32 */
+    deviceAmount?: number
+    /** User object */
+    owner: IUserVo
+    /** @format int64 */
+    createdTime: number
+    /** @format int64 */
+    stopTime?: number
+    jobStatus: 'CREATED' | 'READY' | 'PAUSED' | 'RUNNING' | 'CANCELLING' | 'CANCELED' | 'SUCCESS' | 'FAIL' | 'UNKNOWN'
+    comment?: string
+    stepSpec?: string
+    resourcePool: string
+    /** @format int64 */
+    duration?: number
+    /** @format int64 */
+    pinnedTime?: number
 }
 
-export interface PageInfoJobVo {
-  /** @format int64 */
-  total?: number;
-  list?: JobVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoJobVo {
+    /** @format int64 */
+    total?: number
+    list?: IJobVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoJobVo {
-  code: string;
-  message: string;
-  data: PageInfoJobVo;
+export interface IResponseMessagePageInfoJobVo {
+    code: string
+    message: string
+    data: IPageInfoJobVo
 }
 
-export interface ResponseMessageJobVo {
-  code: string;
-  message: string;
-  /** Job object */
-  data: JobVo;
+export interface IResponseMessageJobVo {
+    code: string
+    message: string
+    /** Job object */
+    data: IJobVo
 }
 
-export interface PageInfoTaskVo {
-  /** @format int64 */
-  total?: number;
-  list?: TaskVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoTaskVo {
+    /** @format int64 */
+    total?: number
+    list?: ITaskVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoTaskVo {
-  code: string;
-  message: string;
-  data: PageInfoTaskVo;
+export interface IResponseMessagePageInfoTaskVo {
+    code: string
+    message: string
+    data: IPageInfoTaskVo
 }
 
-export interface RunVo {
-  /** @format int64 */
-  id?: number;
-  /** @format int64 */
-  taskId?: number;
-  status?: "PENDING" | "RUNNING" | "FINISHED" | "FAILED";
-  ip?: string;
-  /** @format int64 */
-  startTime?: number;
-  /** @format int64 */
-  finishTime?: number;
-  failedReason?: string;
+export interface IRunVo {
+    /** @format int64 */
+    id?: number
+    /** @format int64 */
+    taskId?: number
+    status?: 'PENDING' | 'RUNNING' | 'FINISHED' | 'FAILED'
+    ip?: string
+    /** @format int64 */
+    startTime?: number
+    /** @format int64 */
+    finishTime?: number
+    failedReason?: string
 }
 
 /**
  * Task
  * Task object
  */
-export interface TaskVo {
-  id: string;
-  uuid: string;
-  /** @format int64 */
-  startedTime?: number;
-  /** @format int64 */
-  finishedTime?: number;
-  taskStatus:
-    | "CREATED"
-    | "READY"
-    | "ASSIGNING"
-    | "PAUSED"
-    | "PREPARING"
-    | "RUNNING"
-    | "RETRYING"
-    | "SUCCESS"
-    | "CANCELLING"
-    | "CANCELED"
-    | "FAIL"
-    | "UNKNOWN";
-  /** @format int32 */
-  retryNum?: number;
-  resourcePool: string;
-  stepName: string;
-  exposedLinks?: ExposedLinkVo[];
-  failedReason?: string;
-  runs?: RunVo[];
+export interface ITaskVo {
+    id: string
+    uuid: string
+    /** @format int64 */
+    startedTime?: number
+    /** @format int64 */
+    finishedTime?: number
+    taskStatus:
+        | 'CREATED'
+        | 'READY'
+        | 'ASSIGNING'
+        | 'PAUSED'
+        | 'PREPARING'
+        | 'RUNNING'
+        | 'RETRYING'
+        | 'SUCCESS'
+        | 'CANCELLING'
+        | 'CANCELED'
+        | 'FAIL'
+        | 'UNKNOWN'
+    /** @format int32 */
+    retryNum?: number
+    resourcePool: string
+    stepName: string
+    exposedLinks?: IExposedLinkVo[]
+    failedReason?: string
+    runs?: IRunVo[]
 }
 
-export interface ResponseMessageTaskVo {
-  code: string;
-  message: string;
-  /** Task object */
-  data: TaskVo;
+export interface IResponseMessageTaskVo {
+    code: string
+    message: string
+    /** Task object */
+    data: ITaskVo
 }
 
-export interface ResponseMessageListRunVo {
-  code: string;
-  message: string;
-  data: RunVo[];
+export interface IResponseMessageListRunVo {
+    code: string
+    message: string
+    data: IRunVo[]
 }
 
-export interface EventVo {
-  eventType: "INFO" | "WARNING" | "ERROR";
-  source: "CLIENT" | "SERVER" | "NODE";
-  relatedResource: RelatedResource;
-  message: string;
-  data?: string;
-  /** @format int64 */
-  timestamp?: number;
-  /** @format int64 */
-  id?: number;
+export interface IEventVo {
+    eventType: 'INFO' | 'WARNING' | 'ERROR'
+    source: 'CLIENT' | 'SERVER' | 'NODE'
+    relatedResource: IRelatedResource
+    message: string
+    data?: string
+    /** @format int64 */
+    timestamp?: number
+    /** @format int64 */
+    id?: number
 }
 
-export interface ResponseMessageListEventVo {
-  code: string;
-  message: string;
-  data: EventVo[];
+export interface IResponseMessageListEventVo {
+    code: string
+    message: string
+    data: IEventVo[]
 }
 
-export interface Graph {
-  /** @format int64 */
-  id?: number;
-  groupingNodes?: Record<string, GraphNode[]>;
-  edges?: GraphEdge[];
+export interface IGraph {
+    /** @format int64 */
+    id?: number
+    groupingNodes?: Record<string, IGraphNode[]>
+    edges?: IGraphEdge[]
 }
 
-export interface GraphEdge {
-  /** @format int64 */
-  from?: number;
-  /** @format int64 */
-  to?: number;
-  content?: string;
+export interface IGraphEdge {
+    /** @format int64 */
+    from?: number
+    /** @format int64 */
+    to?: number
+    content?: string
 }
 
-export interface GraphNode {
-  /** @format int64 */
-  id?: number;
-  type?: string;
-  content?: object;
-  group?: string;
-  /** @format int64 */
-  entityId?: number;
+export interface IGraphNode {
+    /** @format int64 */
+    id?: number
+    type?: string
+    content?: object
+    group?: string
+    /** @format int64 */
+    entityId?: number
 }
 
-export interface ResponseMessageGraph {
-  code: string;
-  message: string;
-  data: Graph;
-}
-
-export interface AttributeValueVo {
-  name?: string;
-  type?: string;
-  value?: string;
-}
-
-export interface PageInfoSummaryVo {
-  /** @format int64 */
-  total?: number;
-  list?: SummaryVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
-}
-
-export interface ResponseMessagePageInfoSummaryVo {
-  code: string;
-  message: string;
-  data: PageInfoSummaryVo;
-}
-
-/**
- * Evaluation
- * Evaluation Summary object
- */
-export interface SummaryVo {
-  id: string;
-  uuid: string;
-  projectId: string;
-  projectName: string;
-  modelName: string;
-  modelVersion: string;
-  datasets?: string;
-  runtime: string;
-  device?: string;
-  /** @format int32 */
-  deviceAmount?: number;
-  /** @format int64 */
-  createdTime: number;
-  /** @format int64 */
-  stopTime?: number;
-  owner: string;
-  /** @format int64 */
-  duration?: number;
-  jobStatus: "CREATED" | "READY" | "PAUSED" | "RUNNING" | "CANCELLING" | "CANCELED" | "SUCCESS" | "FAIL" | "UNKNOWN";
-  attributes?: AttributeValueVo[];
+export interface IResponseMessageGraph {
+    code: string
+    message: string
+    data: IGraph
 }
 
 /**
  * Evaluation
  * Evaluation View Config object
  */
-export interface ConfigVo {
-  name?: string;
-  content?: string;
-  /** @format int64 */
-  createTime?: number;
+export interface IConfigVo {
+    name?: string
+    content?: string
+    /** @format int64 */
+    createTime?: number
 }
 
-export interface ResponseMessageConfigVo {
-  code: string;
-  message: string;
-  /** Evaluation View Config object */
-  data: ConfigVo;
+export interface IResponseMessageConfigVo {
+    code: string
+    message: string
+    /** Evaluation View Config object */
+    data: IConfigVo
 }
 
-/**
- * Evaluation
- * Evaluation Attribute object
- */
-export interface AttributeVo {
-  name?: string;
-  type?: string;
+export interface IPageInfoDatasetVo {
+    /** @format int64 */
+    total?: number
+    list?: IDatasetVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessageListAttributeVo {
-  code: string;
-  message: string;
-  data: AttributeVo[];
-}
-
-export interface PageInfoDatasetVo {
-  /** @format int64 */
-  total?: number;
-  list?: DatasetVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
-}
-
-export interface ResponseMessagePageInfoDatasetVo {
-  code: string;
-  message: string;
-  data: PageInfoDatasetVo;
+export interface IResponseMessagePageInfoDatasetVo {
+    code: string
+    message: string
+    data: IPageInfoDatasetVo
 }
 
 /**
  * DatasetInfo
  * SWDataset information object
  */
-export interface DatasetInfoVo {
-  indexTable?: string;
-  /** Dataset version object */
-  versionInfo?: DatasetVersionVo;
-  id: string;
-  name: string;
-  versionId: string;
-  versionName: string;
-  versionAlias?: string;
-  versionTag?: string;
-  /** @format int32 */
-  shared: number;
-  /** @format int64 */
-  createdTime: number;
-  files?: FlattenFileVo[];
-  versionMeta: string;
+export interface IDatasetInfoVo {
+    indexTable?: string
+    /** Dataset version object */
+    versionInfo?: IDatasetVersionVo
+    id: string
+    name: string
+    versionId: string
+    versionName: string
+    versionAlias?: string
+    versionTag?: string
+    /** @format int32 */
+    shared: number
+    /** @format int64 */
+    createdTime: number
+    files?: IFlattenFileVo[]
+    versionMeta: string
 }
 
-export interface ResponseMessageDatasetInfoVo {
-  code: string;
-  message: string;
-  /** SWDataset information object */
-  data: DatasetInfoVo;
+export interface IResponseMessageDatasetInfoVo {
+    code: string
+    message: string
+    /** SWDataset information object */
+    data: IDatasetInfoVo
 }
 
-export interface PageInfoDatasetVersionVo {
-  /** @format int64 */
-  total?: number;
-  list?: DatasetVersionVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoDatasetVersionVo {
+    /** @format int64 */
+    total?: number
+    list?: IDatasetVersionVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoDatasetVersionVo {
-  code: string;
-  message: string;
-  data: PageInfoDatasetVersionVo;
+export interface IResponseMessagePageInfoDatasetVersionVo {
+    code: string
+    message: string
+    data: IPageInfoDatasetVersionVo
 }
 
-export interface BuildRecordVo {
-  id: string;
-  projectId: string;
-  taskId: string;
-  datasetName: string;
-  status:
-    | "CREATED"
-    | "READY"
-    | "ASSIGNING"
-    | "PAUSED"
-    | "PREPARING"
-    | "RUNNING"
-    | "RETRYING"
-    | "SUCCESS"
-    | "CANCELLING"
-    | "CANCELED"
-    | "FAIL"
-    | "UNKNOWN";
-  type: "IMAGE" | "VIDEO" | "AUDIO";
-  /** @format int64 */
-  createTime: number;
+export interface IBuildRecordVo {
+    id: string
+    projectId: string
+    taskId: string
+    datasetName: string
+    status:
+        | 'CREATED'
+        | 'READY'
+        | 'ASSIGNING'
+        | 'PAUSED'
+        | 'PREPARING'
+        | 'RUNNING'
+        | 'RETRYING'
+        | 'SUCCESS'
+        | 'CANCELLING'
+        | 'CANCELED'
+        | 'FAIL'
+        | 'UNKNOWN'
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    /** @format int64 */
+    createTime: number
 }
 
-export interface PageInfoBuildRecordVo {
-  /** @format int64 */
-  total?: number;
-  list?: BuildRecordVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoBuildRecordVo {
+    /** @format int64 */
+    total?: number
+    list?: IBuildRecordVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface ResponseMessagePageInfoBuildRecordVo {
-  code: string;
-  message: string;
-  data: PageInfoBuildRecordVo;
-}
-
-export interface PageInfoSftSpaceVo {
-  /** @format int64 */
-  total?: number;
-  list?: SftSpaceVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
-}
-
-export interface ResponseMessagePageInfoSftSpaceVo {
-  code: string;
-  message: string;
-  data: PageInfoSftSpaceVo;
-}
-
-export interface SftSpaceVo {
-  /** @format int64 */
-  id?: number;
-  name?: string;
-  description?: string;
-  /** @format int64 */
-  createdTime: number;
-  /** User object */
-  owner: UserVo;
+export interface IResponseMessagePageInfoBuildRecordVo {
+    code: string
+    message: string
+    data: IPageInfoBuildRecordVo
 }
 
 /**
  * Model Serving Status
  * Model Serving Status object
  */
-export interface ModelServingStatusVo {
-  /** @format int32 */
-  progress?: number;
-  events?: string;
+export interface IModelServingStatusVo {
+    /** @format int32 */
+    progress?: number
+    events?: string
 }
 
-export interface ResponseMessageModelServingStatusVo {
-  code: string;
-  message: string;
-  /** Model Serving Status object */
-  data: ModelServingStatusVo;
+export interface IResponseMessageModelServingStatusVo {
+    code: string
+    message: string
+    /** Model Serving Status object */
+    data: IModelServingStatusVo
 }
 
-export interface PageInfoPanelPluginVo {
-  /** @format int64 */
-  total?: number;
-  list?: PanelPluginVo[];
-  /** @format int32 */
-  pageNum?: number;
-  /** @format int32 */
-  pageSize?: number;
-  /** @format int32 */
-  size?: number;
-  /** @format int64 */
-  startRow?: number;
-  /** @format int64 */
-  endRow?: number;
-  /** @format int32 */
-  pages?: number;
-  /** @format int32 */
-  prePage?: number;
-  /** @format int32 */
-  nextPage?: number;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-  /** @format int32 */
-  navigatePages?: number;
-  navigatepageNums?: number[];
-  /** @format int32 */
-  navigateFirstPage?: number;
-  /** @format int32 */
-  navigateLastPage?: number;
+export interface IPageInfoPanelPluginVo {
+    /** @format int64 */
+    total?: number
+    list?: IPanelPluginVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
 }
 
-export interface PanelPluginVo {
-  id: string;
-  name: string;
-  version: string;
+export interface IPanelPluginVo {
+    id: string
+    name: string
+    version: string
 }
 
-export interface ResponseMessagePageInfoPanelPluginVo {
-  code: string;
-  message: string;
-  data: PageInfoPanelPluginVo;
+export interface IResponseMessagePageInfoPanelPluginVo {
+    code: string
+    message: string
+    data: IPageInfoPanelPluginVo
 }
 
-export interface ResponseMessageRuntimeSuggestionVo {
-  code: string;
-  message: string;
-  /** Model Serving object */
-  data: RuntimeSuggestionVo;
+export interface IResponseMessageRuntimeSuggestionVo {
+    code: string
+    message: string
+    /** Model Serving object */
+    data: IRuntimeSuggestionVo
 }
 
 /**
  * Model Serving
  * Model Serving object
  */
-export interface RuntimeSuggestionVo {
-  runtimes?: RuntimeVersionVo[];
+export interface IRuntimeSuggestionVo {
+    runtimes?: IRuntimeVersionVo[]
 }
 
-export interface UserRoleDeleteRequest {
-  currentUserPwd: string;
+export interface IUserRoleDeleteRequest {
+    currentUserPwd: string
 }
 
-export interface FileDeleteRequest {
-  pathPrefix: string;
-  /** @uniqueItems true */
-  files: string[];
+export interface IFileDeleteRequest {
+    pathPrefix: string
+    /** @uniqueItems true */
+    files: string[]
 }
 
-export type UpdateUserStateData = ResponseMessageString["data"];
+export type IUpdateUserStateData = IResponseMessageString
 
-export type UpdateUserPwdData = ResponseMessageString["data"];
+export type IUpdateUserPwdData = IResponseMessageString
 
-export type UpdateCurrentUserPasswordData = ResponseMessageString["data"];
+export type IUpdateCurrentUserPasswordData = IResponseMessageString
 
-export type CheckCurrentUserPasswordData = ResponseMessageString["data"];
+export type ICheckCurrentUserPasswordData = IResponseMessageString
 
-export type UpdateUserSystemRoleData = ResponseMessageString["data"];
+export type IUpdateUserSystemRoleData = IResponseMessageString
 
-export type DeleteUserSystemRoleData = ResponseMessageString["data"];
+export type IDeleteUserSystemRoleData = IResponseMessageString
 
-export type GetProjectByUrlData = ResponseMessageProjectVo["data"];
+export type IGetProjectByUrlData = IResponseMessageProjectVo
 
-export type UpdateProjectData = ResponseMessageString["data"];
+export type IUpdateProjectData = IResponseMessageString
 
-export type DeleteProjectByUrlData = ResponseMessageString["data"];
+export type IDeleteProjectByUrlData = IResponseMessageString
 
-export type RecoverTrashData = ResponseMessageString["data"];
+export type IRecoverTrashData = IResponseMessageString
 
-export type DeleteTrashData = ResponseMessageString["data"];
+export type IDeleteTrashData = IResponseMessageString
 
-export type UpdateRuntimeData = ResponseMessageObject["data"];
+export type IUpdateRuntimeData = IResponseMessageObject
 
-export type ModifyRuntimeData = ResponseMessageString["data"];
+export type IModifyRuntimeData = IResponseMessageString
 
-export type ShareRuntimeVersionData = ResponseMessageString["data"];
+export type IShareRuntimeVersionData = IResponseMessageString
 
-export type RecoverRuntimeData = ResponseMessageString["data"];
+export type IRecoverRuntimeData = IResponseMessageString
 
-export type ModifyProjectRoleData = ResponseMessageString["data"];
+export type IModifyProjectRoleData = IResponseMessageString
 
-export type DeleteProjectRoleData = ResponseMessageString["data"];
+export type IDeleteProjectRoleData = IResponseMessageString
 
-export type GetReportData = ResponseMessageReportVo["data"];
+export type IGetReportData = IResponseMessageReportVo
 
-export type ModifyReportData = ResponseMessageString["data"];
+export type IModifyReportData = IResponseMessageString
 
-export type DeleteReportData = ResponseMessageString["data"];
+export type IDeleteReportData = IResponseMessageString
 
-export type SharedReportData = ResponseMessageString["data"];
+export type ISharedReportData = IResponseMessageString
 
-export type ModifyModelData = ResponseMessageString["data"];
+export type IModifyModelData = IResponseMessageString
 
-export type HeadModelData = object;
+export type IHeadModelData = object
 
-export type ShareModelVersionData = ResponseMessageString["data"];
+export type IShareModelVersionData = IResponseMessageString
 
-export type RecoverModelData = ResponseMessageString["data"];
+export type IRecoverModelData = IResponseMessageString
 
-export type FindJobData = ResponseMessageJobVo["data"];
+export type IGetJobData = IResponseMessageJobVo
 
-export type ModifyJobCommentData = ResponseMessageString["data"];
+export type IModifyJobCommentData = IResponseMessageString
 
-export type RemoveJobData = ResponseMessageString["data"];
+export type IRemoveJobData = IResponseMessageString
 
-export type ShareDatasetVersionData = ResponseMessageString["data"];
+export type IShareDatasetVersionData = IResponseMessageString
 
-export type RecoverDatasetData = ResponseMessageString["data"];
+export type IRecoverDatasetData = IResponseMessageString
 
-export type RecoverProjectData = ResponseMessageString["data"];
+export type IRecoverProjectData = IResponseMessageString
 
-export type ApplySignedGetUrlsData = ResponseMessageSignedUrlResponse["data"];
+export type IApplySignedGetUrlsData = IResponseMessageSignedUrlResponse
 
-export type ApplySignedPutUrlsData = ResponseMessageSignedUrlResponse["data"];
+export type IApplySignedPutUrlsData = IResponseMessageSignedUrlResponse
 
-export type ListUserData = ResponseMessagePageInfoUserVo["data"];
+export type IListUserData = IResponseMessagePageInfoUserVo
 
-export type CreateUserData = ResponseMessageString["data"];
+export type ICreateUserData = IResponseMessageString
 
-export type InstanceStatusData = ResponseMessageString["data"];
+export type IInstanceStatusData = IResponseMessageString
 
-export type QuerySettingData = ResponseMessageString["data"];
+export type IQuerySettingData = IResponseMessageString
 
-export type UpdateSettingData = ResponseMessageString["data"];
+export type IUpdateSettingData = IResponseMessageString
 
-export type ListResourcePoolsData = ResponseMessageListResourcePool["data"];
+export type IListResourcePoolsData = IResponseMessageListResourcePool
 
-export type UpdateResourcePoolsData = ResponseMessageString["data"];
+export type IUpdateResourcePoolsData = IResponseMessageString
 
-export type ListSystemRolesData = ResponseMessageListProjectMemberVo["data"];
+export type IListSystemRolesData = IResponseMessageListProjectMemberVo
 
-export type AddUserSystemRoleData = ResponseMessageString["data"];
+export type IAddUserSystemRoleData = IResponseMessageString
 
-export type ListProjectData = ResponseMessagePageInfoProjectVo["data"];
+export type IListProjectData = IResponseMessagePageInfoProjectVo
 
-export type CreateProjectData = ResponseMessageString["data"];
+export type ICreateProjectData = IResponseMessageString
 
-export type CreateModelVersionData = any;
+export type ICreateModelVersionData = any
 
-export type SelectAllInProjectData = ResponseMessageListJobTemplateVo["data"];
+export type ISelectAllInProjectData = IResponseMessageListJobTemplateVo
 
-export type AddTemplateData = ResponseMessageString["data"];
+export type IAddTemplateData = IResponseMessageString
 
-export type CreateModelServingData = ResponseMessageModelServingVo["data"];
+export type ICreateModelServingData = IResponseMessageModelServingVo
 
-export type ListRuntimeVersionTagsData = ResponseMessageListString["data"];
+export type IListRuntimeVersionTagsData = IResponseMessageListString
 
-export type AddRuntimeVersionTagData = ResponseMessageString["data"];
+export type IAddRuntimeVersionTagData = IResponseMessageString
 
-export type BuildRuntimeImageData = ResponseMessageBuildImageResult["data"];
+export type IBuildRuntimeImageData = IResponseMessageBuildImageResult
 
-export type RevertRuntimeVersionData = ResponseMessageString["data"];
+export type IRevertRuntimeVersionData = IResponseMessageString
 
-export type UploadData = ResponseMessageString["data"];
+export type IUploadData = IResponseMessageString
 
-export type ListProjectRoleData = ResponseMessageListProjectMemberVo["data"];
+export type IListProjectRoleData = IResponseMessageListProjectMemberVo
 
-export type AddProjectRoleData = ResponseMessageString["data"];
+export type IAddProjectRoleData = IResponseMessageString
 
-export type ListReportsData = ResponseMessagePageInfoReportVo["data"];
+export type IListReportsData = IResponseMessagePageInfoReportVo
 
-export type CreateReportData = ResponseMessageString["data"];
+export type ICreateReportData = IResponseMessageString
 
-export type TransferData = ResponseMessageString["data"];
+export type ITransferData = IResponseMessageString
 
-export type ListModelVersionTagsData = ResponseMessageListString["data"];
+export type IListModelVersionTagsData = IResponseMessageListString
 
-export type AddModelVersionTagData = ResponseMessageString["data"];
+export type IAddModelVersionTagData = IResponseMessageString
 
-export type RevertModelVersionData = ResponseMessageString["data"];
+export type IRevertModelVersionData = IResponseMessageString
 
-export type ListJobsData = ResponseMessagePageInfoJobVo["data"];
+export type IListJobsData = IResponseMessagePageInfoJobVo
 
-export type CreateJobData = ResponseMessageString["data"];
+export type ICreateJobData = IResponseMessageString
 
-export type ActionData = ResponseMessageString["data"];
+export type IActionData = IResponseMessageString
 
-export type ExecData = ResponseMessageExecResponse["data"];
+export type IExecData = IResponseMessageExecResponse
 
-export type RecoverJobData = ResponseMessageString["data"];
+export type IRecoverJobData = IResponseMessageString
 
-export type ModifyJobPinStatusData = ResponseMessageString["data"];
+export type IModifyJobPinStatusData = IResponseMessageString
 
-export type GetEventsData = ResponseMessageListEventVo["data"];
+export type IGetEventsData = IResponseMessageListEventVo
 
-export type AddEventData = ResponseMessageString["data"];
+export type IAddEventData = IResponseMessageString
 
-export type SignLinksData = ResponseMessageMapStringString["data"];
+export type ISignLinksData = IResponseMessageMapStringString
 
-export type GetHashedBlobData = any;
+export type IGetHashedBlobData = any
 
-export type UploadHashedBlobData = ResponseMessageString["data"];
+export type IUploadHashedBlobData = IResponseMessageString
 
-export type HeadHashedBlobData = object;
+export type IHeadHashedBlobData = object
 
-export type GetViewConfigData = ResponseMessageConfigVo["data"];
+export type IGetViewConfigData = IResponseMessageConfigVo
 
-export type CreateViewConfigData = ResponseMessageString["data"];
+export type ICreateViewConfigData = IResponseMessageString
 
-export type ListDatasetVersionTagsData = ResponseMessageListString["data"];
+export type IListDatasetVersionTagsData = IResponseMessageListString
 
-export type AddDatasetVersionTagData = ResponseMessageString["data"];
+export type IAddDatasetVersionTagData = IResponseMessageString
 
-export type ConsumeNextDataData = NullableResponseMessageDataIndexDesc;
+export type IConsumeNextDataData = INullableResponseMessageDataIndexDesc
 
-export type RevertDatasetVersionData = ResponseMessageString["data"];
+export type IRevertDatasetVersionData = IResponseMessageString
 
-export type UploadDsData = ResponseMessageUploadResult["data"];
+export type IUploadDsData = IResponseMessageUploadResult
 
-export type BuildDatasetData = ResponseMessageString["data"];
+export type IBuildDatasetData = IResponseMessageString
 
-export type SignLinks1Data = ResponseMessageMapObjectObject["data"];
+export type ISignLinks1Data = IResponseMessageMapObjectObject
 
-export type GetHashedBlob1Data = any;
+export type IGetHashedBlob1Data = any
 
-export type UploadHashedBlob1Data = ResponseMessageString["data"];
+export type IUploadHashedBlob1Data = IResponseMessageString
 
-export type HeadHashedBlob1Data = object;
+export type IHeadHashedBlob1Data = object
 
-export type ListSftSpaceData = ResponseMessagePageInfoSftSpaceVo["data"];
+export type IGetPanelSettingData = IResponseMessageString
 
-export type CreateSftSpaceData = ResponseMessageString["data"];
+export type ISetPanelSettingData = IResponseMessageString
 
-export type ListSftData = ResponseMessagePageInfoSftVo["data"];
+export type IPluginListData = IResponseMessagePageInfoPanelPluginVo
 
-export type CreateSftData = ResponseMessageString["data"];
+export type IInstallPluginData = IResponseMessageString
 
-export type GetPanelSettingData = ResponseMessageString["data"];
+export type ISignLinks2Data = IResponseMessageMapStringString
 
-export type SetPanelSettingData = ResponseMessageString["data"];
+export type IUpdateTableData = IResponseMessageString
 
-export type PluginListData = ResponseMessagePageInfoPanelPluginVo["data"];
+export type IScanTableData = IResponseMessageRecordListVo
 
-export type InstallPluginData = ResponseMessageString["data"];
+export type IScanAndExportData = any
 
-export type SignLinks2Data = ResponseMessageMapStringString["data"];
+export type IQueryTableData = IResponseMessageRecordListVo
 
-export type UpdateTableData = ResponseMessageString["data"];
+export type IQueryAndExportData = any
 
-export type ScanTableData = ResponseMessageRecordListVo["data"];
+export type IListTablesData = IResponseMessageTableNameListVo
 
-export type ScanAndExportData = any;
+export type IFlushData = IResponseMessageString
 
-export type QueryTableData = ResponseMessageRecordListVo["data"];
+export type IInitUploadBlobData = IResponseMessageInitUploadBlobResult
 
-export type QueryAndExportData = any;
+export type ICompleteUploadBlobData = IResponseMessageCompleteUploadBlobResult
 
-export type ListTablesData = ResponseMessageTableNameListVo["data"];
+export type IHeadRuntimeData = object
 
-export type FlushData = ResponseMessageString["data"];
+export type IHeadDatasetData = object
 
-export type InitUploadBlobData = ResponseMessageInitUploadBlobResult["data"];
+export type IGetUserByIdData = IResponseMessageUserVo
 
-export type CompleteUploadBlobData = ResponseMessageCompleteUploadBlobResult["data"];
+export type IUserTokenData = IResponseMessageString
 
-export type HeadRuntimeData = object;
+export type IGetCurrentUserData = IResponseMessageUserVo
 
-export type HeadDatasetData = object;
+export type IGetCurrentUserRolesData = IResponseMessageListProjectMemberVo
 
-export type GetUserByIdData = ResponseMessageUserVo["data"];
+export type IGetCurrentVersionData = IResponseMessageSystemVersionVo
 
-export type UserTokenData = ResponseMessageString["data"];
+export type IQueryFeaturesData = IResponseMessageFeaturesVo
 
-export type GetCurrentUserData = ResponseMessageUserVo["data"];
+export type IListDeviceData = IResponseMessageListDeviceVo
 
-export type GetCurrentUserRolesData = ResponseMessageListProjectMemberVo["data"];
+export type IListRolesData = IResponseMessageListRoleVo
 
-export type GetCurrentVersionData = ResponseMessageSystemVersionVo["data"];
+export type IPreviewData = IResponseMessageReportVo
 
-export type QueryFeaturesData = ResponseMessageFeaturesVo["data"];
+export type IGetModelMetaBlobData = IResponseMessageString
 
-export type ListDeviceData = ResponseMessageListDeviceVo["data"];
-
-export type ListRolesData = ResponseMessageListRoleVo["data"];
-
-export type PreviewData = ResponseMessageReportVo["data"];
-
-export type GetModelMetaBlobData = ResponseMessageString["data"];
-
-export type ListFilesData = ResponseMessageListFilesResult["data"];
+export type IListFilesData = IResponseMessageListFilesResult
 
 /** @format binary */
-export type GetFileDataData = File;
+export type IGetFileDataData = File
 
-export type ListTrashData = ResponseMessagePageInfoTrashVo["data"];
+export type IListTrashData = IResponseMessagePageInfoTrashVo
 
-export type GetTemplateData = ResponseMessageJobTemplateVo["data"];
+export type IGetTemplateData = IResponseMessageJobTemplateVo
 
-export type DeleteTemplateData = ResponseMessageString["data"];
+export type IDeleteTemplateData = IResponseMessageString
 
-export type ListRuntimeData = ResponseMessagePageInfoRuntimeVo["data"];
+export type IListRuntimeData = IResponseMessagePageInfoRuntimeVo
 
-export type GetRuntimeInfoData = ResponseMessageRuntimeInfoVo["data"];
+export type IGetRuntimeInfoData = IResponseMessageRuntimeInfoVo
 
-export type DeleteRuntimeData = ResponseMessageString["data"];
+export type IDeleteRuntimeData = IResponseMessageString
 
-export type ListRuntimeVersionData = ResponseMessagePageInfoRuntimeVersionVo["data"];
+export type IListRuntimeVersionData = IResponseMessagePageInfoRuntimeVersionVo
 
-export type PullData = any;
+export type IPullData = any
 
-export type GetRuntimeVersionTagData = ResponseMessageLong["data"];
+export type IGetRuntimeVersionTagData = IResponseMessageLong
 
-export type ListRuntimeTreeData = ResponseMessageListRuntimeViewVo["data"];
+export type IListRuntimeTreeData = IResponseMessageListRuntimeViewVo
 
-export type SelectRecentlyInProjectData = ResponseMessageListJobTemplateVo["data"];
+export type ISelectRecentlyInProjectData = IResponseMessageListJobTemplateVo
 
-export type RecentRuntimeTreeData = ResponseMessageListRuntimeViewVo["data"];
+export type IRecentRuntimeTreeData = IResponseMessageListRuntimeViewVo
 
-export type RecentModelTreeData = ResponseMessageListModelViewVo["data"];
+export type IRecentModelTreeData = IResponseMessageListModelViewVo
 
-export type RecentDatasetTreeData = ResponseMessageListDatasetViewVo["data"];
+export type IRecentDatasetTreeData = IResponseMessageListDatasetViewVo
 
-export type GetProjectReadmeByUrlData = ResponseMessageString["data"];
+export type IGetProjectReadmeByUrlData = IResponseMessageString
 
-export type ListModelData = ResponseMessagePageInfoModelVo["data"];
+export type IListModelData = IResponseMessagePageInfoModelVo
 
-export type GetModelInfoData = ResponseMessageModelInfoVo["data"];
+export type IGetModelInfoData = IResponseMessageModelInfoVo
 
-export type DeleteModelData = ResponseMessageString["data"];
+export type IDeleteModelData = IResponseMessageString
 
-export type ListModelVersionData = ResponseMessagePageInfoModelVersionVo["data"];
+export type IListModelVersionData = IResponseMessagePageInfoModelVersionVo
 
-export type GetModelVersionTagData = ResponseMessageLong["data"];
+export type IGetModelVersionTagData = IResponseMessageLong
 
-export type GetModelDiffData = ResponseMessageMapStringListFileNode["data"];
+export type IGetModelDiffData = IResponseMessageMapStringListFileNode
 
-export type ListModelTreeData = ResponseMessageListModelViewVo["data"];
+export type IListModelTreeData = IResponseMessageListModelViewVo
 
-export type ListTasksData = ResponseMessagePageInfoTaskVo["data"];
+export type IListTasksData = IResponseMessagePageInfoTaskVo
 
-export type GetTaskData = ResponseMessageTaskVo["data"];
+export type IGetTaskData = IResponseMessageTaskVo
 
-export type GetRunsData = ResponseMessageListRunVo["data"];
+export type IGetRunsData = IResponseMessageListRunVo
 
-export type GetJobDagData = ResponseMessageGraph["data"];
+export type IGetJobDagData = IResponseMessageGraph
 
-export type ListEvaluationSummaryData = ResponseMessagePageInfoSummaryVo["data"];
+export type IListDatasetData = IResponseMessagePageInfoDatasetVo
 
-export type ListAttributesData = ResponseMessageListAttributeVo["data"];
+export type IGetDatasetInfoData = IResponseMessageDatasetInfoVo
 
-export type ListDatasetData = ResponseMessagePageInfoDatasetVo["data"];
+export type IDeleteDatasetData = IResponseMessageString
 
-export type GetDatasetInfoData = ResponseMessageDatasetInfoVo["data"];
+export type IListDatasetVersionData = IResponseMessagePageInfoDatasetVersionVo
 
-export type DeleteDatasetData = ResponseMessageString["data"];
+export type IPullDsData = any
 
-export type ListDatasetVersionData = ResponseMessagePageInfoDatasetVersionVo["data"];
+export type IGetDatasetVersionTagData = IResponseMessageLong
 
-export type PullDsData = any;
+export type IListBuildRecordsData = IResponseMessagePageInfoBuildRecordVo
 
-export type GetDatasetVersionTagData = ResponseMessageLong["data"];
+export type IListDatasetTreeData = IResponseMessageListDatasetViewVo
 
-export type ListBuildRecordsData = ResponseMessagePageInfoBuildRecordVo["data"];
+export type IPullUriContentData = any
 
-export type ListDatasetTreeData = ResponseMessageListDatasetViewVo["data"];
+export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo
 
-export type PullUriContentData = any;
+export type IOfflineLogsData = IResponseMessageListString
 
-export type GetModelServingStatusData = ResponseMessageModelServingStatusVo["data"];
+export type ILogContentData = string
 
-export type OfflineLogsData = ResponseMessageListString["data"];
+export type IGetRuntimeSuggestionData = IResponseMessageRuntimeSuggestionVo
 
-export type LogContentData = string;
+export type IApplyPathPrefixData = IResponseMessageString
 
-export type GetRuntimeSuggestionData = ResponseMessageRuntimeSuggestionVo["data"];
+export type IPullUriContent1Data = any
 
-export type ApplyPathPrefixData = ResponseMessageString["data"];
+export type IDeletePathData = IResponseMessageString
 
-export type PullUriContent1Data = any;
+export type IDeleteRuntimeVersionTagData = IResponseMessageString
 
-export type DeletePathData = ResponseMessageString["data"];
+export type IDeleteModelVersionTagData = IResponseMessageString
 
-export type DeleteRuntimeVersionTagData = ResponseMessageString["data"];
+export type IDeleteDatasetVersionTagData = IResponseMessageString
 
-export type DeleteModelVersionTagData = ResponseMessageString["data"];
-
-export type DeleteDatasetVersionTagData = ResponseMessageString["data"];
-
-export type UninstallPluginData = ResponseMessageString["data"];
+export type IUninstallPluginData = IResponseMessageString

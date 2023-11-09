@@ -19,7 +19,8 @@ import { useModelVersion } from '@model/hooks/useModelVersion'
 import ModelVersionSelector from '@model/components/ModelVersionSelector'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { listJobs } from '@job/services/job'
-import { IJobSchema, JobStatusType } from '@job/schemas/job'
+import { JobStatusType } from '@job/schemas/job'
+import { IJobVo } from '@/api'
 
 const useStyles = createUseStyles({
     tagWrapper: {
@@ -43,7 +44,7 @@ export interface IModelLayoutProps {
 
 interface IModelVersionContextProps {
     modelVersionId: string
-    servingJobs?: IJobSchema[]
+    servingJobs?: IJobVo[]
 }
 
 const ModelVersionContext = React.createContext<IModelVersionContextProps | undefined>(undefined)
@@ -69,14 +70,14 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
     const history = useHistory()
     const { setModelVersion } = useModelVersion()
     const { query } = useQueryArgs()
-    const [servingJobs, setServingJobs] = useState<IJobSchema[]>()
+    const [servingJobs, setServingJobs] = useState<IJobVo[]>()
 
     const modelVersionInfo = useFetchModelVersion(projectId, modelId, modelVersionId)
 
     useEffect(() => {
         setModelLoading(modelInfo.isLoading)
         if (modelInfo.isSuccess) {
-            if (modelInfo.data.versionName !== model?.versionName) {
+            if (modelInfo.data.versionInfo.name !== model?.versionName) {
                 setModel(modelInfo.data)
             }
         } else if (modelInfo.isLoading) {
@@ -92,7 +93,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
 
     useEffect(() => {
         listJobs(projectId, { swmpId: modelVersionId, pageNum: 1, pageSize: 9999 }).then((res) => {
-            const jobWithExposed = res.list.filter((job) => {
+            const jobWithExposed = res?.list?.filter((job) => {
                 return job.jobStatus === JobStatusType.RUNNING && job.exposedLinks && job.exposedLinks.length > 0
             })
             setServingJobs(jobWithExposed)

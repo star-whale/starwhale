@@ -1,13 +1,13 @@
 import axios from 'axios'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { IProjectRoleSchema } from '@project/schemas/project'
+import { IListQuerySchema } from '@/domain/base/schemas/list'
 import {
-    IUserSchema,
-    ILoginUserSchema,
     IChangePasswordSchema,
     ICloudLoginRespSchema,
+    ILoginUserSchema,
     ISignupUserSchema,
+    IUserSchema,
 } from '../schemas/user'
+import { IPageInfoUserVo, IUserVo } from '@/api'
 
 export async function loginUser(data: ILoginUserSchema): Promise<IUserSchema> {
     const bodyFormData = new FormData()
@@ -24,26 +24,15 @@ export async function loginUser(data: ILoginUserSchema): Promise<IUserSchema> {
     return resp.data
 }
 
-export async function fetchUser(userName: string): Promise<IUserSchema> {
-    const resp = await axios.get<IUserSchema>(`/api/v1/users/${userName}`)
-    return resp.data
-}
-
-export async function fetchCurrentUser(): Promise<IUserSchema> {
-    const resp = await axios.get<IUserSchema>('/api/v1/user/current', {
+export async function fetchCurrentUser(): Promise<IUserVo> {
+    const resp = await axios.get<IUserVo>('/api/v1/user/current', {
         params: { silent: true },
     })
     return resp.data
 }
 
-export async function fetchCurrentUserRoles(projectId?: string): Promise<IProjectRoleSchema[]> {
-    const config = { params: { projectUrl: projectId ?? '0' } }
-    const resp = await axios.get<IProjectRoleSchema[]>('/api/v1/user/current/role', config)
-    return resp.data
-}
-
-export async function listUsers(query: IListQuerySchema): Promise<IListSchema<IUserSchema>> {
-    const resp = await axios.get<IListSchema<IUserSchema>>('/api/v1/user', {
+export async function listUsers(query: IListQuerySchema): Promise<IPageInfoUserVo> {
+    const resp = await axios.get<IPageInfoUserVo>('/api/v1/user', {
         params: query,
     })
     return resp.data

@@ -17,11 +17,6 @@ export interface IUserSchema extends IResourceSchema {
     projectRoles: Record<string, Role>
 }
 
-export interface IRegisterUserSchema {
-    userName: string
-    userPwd: string
-}
-
 export interface ILoginUserSchema {
     userName: string
     userPwd: string
@@ -31,16 +26,6 @@ export interface ILoginUserSchema {
 export interface ISignupUserSchema extends ILoginUserSchema {
     agreement: boolean
     callback: string
-}
-
-export interface IUpdateUserSchema {
-    userName: string
-    isEnabled: boolean
-}
-
-export interface ICreateUserSchema {
-    userName: string
-    userPwd: string
 }
 
 export interface IChangePasswordSchema {

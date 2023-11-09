@@ -1,17 +1,9 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import Card from '@/components/Card'
-import {
-    addModelVersionTag,
-    createModelVersion,
-    deleteModelVersionTag,
-    revertModelVersion,
-} from '@model/services/modelVersion'
+import { addModelVersionTag, deleteModelVersionTag, revertModelVersion } from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
-import { ICreateModelVersionSchema } from '@model/schemas/modelVersion'
-import ModelVersionForm from '@model/components/ModelVersionForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
@@ -26,6 +18,7 @@ import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { VersionText } from '@starwhale/ui'
 import User from '@user/components/User'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -33,15 +26,6 @@ export default function ModelVersionListCard() {
     const history = useHistory()
 
     const modelsInfo = useFetchModelVersions(projectId, modelId, page)
-    const [isCreateModelVersionOpen, setIsCreateModelVersionOpen] = useState(false)
-    const handleCreateModelVersion = useCallback(
-        async (data: ICreateModelVersionSchema) => {
-            await createModelVersion(projectId, modelId, data)
-            await modelsInfo.refetch()
-            setIsCreateModelVersionOpen(false)
-        },
-        [modelsInfo, projectId, modelId]
-    )
     const [t] = useTranslation()
     const { hasCliMate, doPull } = useCliMate()
     const tagReadOnly = !useAccess('tag.edit')
@@ -85,7 +69,7 @@ export default function ModelVersionListCard() {
                     t('Action'),
                 ]}
                 data={
-                    modelsInfo.data?.list.map((model, i) => {
+                    modelsInfo.data?.list?.map((model, i) => {
                         return [
                             <TextLink
                                 key={modelId}
@@ -96,7 +80,7 @@ export default function ModelVersionListCard() {
                             <EditableAlias
                                 key='alias'
                                 readOnly={tagReadOnly}
-                                resource={model}
+                                resource={model as IHasTagSchema}
                                 onAddTag={(tag) => handleTagAdd(model.id, tag)}
                                 onRemoveTag={(tag) => handelTagRemove(model.id, tag)}
                             />,
@@ -171,18 +155,6 @@ export default function ModelVersionListCard() {
                     },
                 }}
             />
-            <Modal
-                isOpen={isCreateModelVersionOpen}
-                onClose={() => setIsCreateModelVersionOpen(false)}
-                closeable
-                animate
-                autoFocus
-            >
-                <ModalHeader>{t('create sth', [t('Model Version')])}</ModalHeader>
-                <ModalBody>
-                    <ModelVersionForm onSubmit={handleCreateModelVersion} />
-                </ModalBody>
-            </Modal>
         </Card>
     )
 }

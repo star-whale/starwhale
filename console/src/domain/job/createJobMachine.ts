@@ -1,13 +1,11 @@
 import { createMachine, assign } from 'xstate'
-import { IModelTreeSchema } from '../model/schemas/model'
-import { IJobSchema } from './schemas/job'
+import { IJobVo, IModelViewVo } from '@/api'
 
 const initialStateName = 'init'
 
 export type JobCreateEvent =
     | { type: 'USEREDITING' }
     | { type: 'APIRERUN' }
-    | { type: 'USEREDITING' }
     | { type: 'MODELTREEFETCHED' }
     | { type: 'RESET' }
     | { type: 'MODELCHANGED' }
@@ -97,8 +95,8 @@ export const jobCreateMachine = createMachine(
             events: {} as JobCreateEvent,
         },
         context: {
-            modelTree: [] as IModelTreeSchema[],
-            job: {} as IJobSchema,
+            modelTree: [] as IModelViewVo[],
+            job: {} as IJobVo,
             modelId: '',
             modelVersionHandler: '',
         },

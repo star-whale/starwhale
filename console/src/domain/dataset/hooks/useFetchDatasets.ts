@@ -4,8 +4,5 @@ import qs from 'qs'
 import { listDatasets } from '../services/dataset'
 
 export function useFetchDatasets(projectId: string, query: IListQuerySchema & { name?: string }) {
-    const datasetsInfo = useQuery(`fetchDatasets:${projectId}:${qs.stringify(query)}`, () =>
-        listDatasets(projectId, query)
-    )
-    return datasetsInfo
+    return useQuery(`fetchDatasets:${projectId}:${qs.stringify(query)}`, () => listDatasets(projectId, query))
 }

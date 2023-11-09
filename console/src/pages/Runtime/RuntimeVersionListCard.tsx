@@ -20,8 +20,9 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 import useCliMate from '@/hooks/useCliMate'
-import { IRuntimeVersionSchema } from '@runtime/schemas/runtimeVersion'
 import { VersionText } from '@starwhale/ui/Text'
+import { IHasTagSchema } from '@base/schemas/resource'
+import { IRuntimeVersionVo } from '@/api'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -29,7 +30,7 @@ export default function RuntimeVersionListCard() {
     const runtimesInfo = useFetchRuntimeVersions(projectId, runtimeId, page)
     const [t] = useTranslation()
     const handleRevert = React.useCallback(
-        async (data: IRuntimeVersionSchema) => {
+        async (data: IRuntimeVersionVo) => {
             await revertRuntimeVersion(projectId, runtimeId, data.id)
             toaster.positive(t('runtime version reverted'), { autoHideDuration: 2000 })
             await runtimesInfo.refetch()
@@ -59,7 +60,7 @@ export default function RuntimeVersionListCard() {
             isLoading={runtimesInfo.isLoading}
             columns={[t('Runtime Version'), t('Alias'), t('Shared'), t('Created'), t('Owner'), t('Action')]}
             data={
-                runtimesInfo.data?.list.map((runtime, i) => {
+                runtimesInfo.data?.list?.map((runtime, i) => {
                     return [
                         <TextLink
                             key={runtime.id}
@@ -69,7 +70,7 @@ export default function RuntimeVersionListCard() {
                         </TextLink>,
                         <EditableAlias
                             key='alias'
-                            resource={runtime}
+                            resource={runtime as IHasTagSchema}
                             readOnly={tagReadOnly}
                             onAddTag={(tag) => handleTagAdd(runtime.id, tag)}
                             onRemoveTag={(tag) => handelTagRemove(runtime.id, tag)}

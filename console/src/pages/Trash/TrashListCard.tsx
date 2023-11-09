@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
-import { useFetchTrashs } from '@/domain/trash/hooks/useFetchTrashs'
+import { useFetchTrashes } from '@/domain/trash/hooks/useFetchTrashes'
 import { useStyletron } from 'baseui'
 import { QueryInput } from '@starwhale/ui/Input'
-import { ITrashSchema } from '@/domain/trash/schemas/trash'
 import { useParams } from 'react-router-dom'
 import { recoverTrash, removeTrash } from '@/domain/trash/services/trash'
 import Table from '@/components/Table'
@@ -13,13 +12,14 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
+import { ITrashVo } from '@/api'
 
 export default function TrashListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ trashId: string; projectId: string }>()
-    const info = useFetchTrashs(projectId, page)
+    const info = useFetchTrashes(projectId, page)
     const [filter, setFilter] = useState('')
-    const [data, setData] = useState<ITrashSchema[]>([])
+    const [data, setData] = useState<ITrashVo[]>([])
     const [css] = useStyletron()
     const [t] = useTranslation()
 
@@ -33,7 +33,7 @@ export default function TrashListCard() {
         )
     }, [filter, info.data])
 
-    const getActions = (trash: ITrashSchema) => [
+    const getActions = (trash: ITrashVo) => [
         {
             access: true,
             quickAccess: true,
@@ -44,6 +44,9 @@ export default function TrashListCard() {
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     tooltip={!hasText ? t('trash.restore.button') : undefined}
                     onClick={async () => {
+                        if (!trash.id) {
+                            return
+                        }
                         await recoverTrash(projectId, trash.id)
                         toaster.positive(t('trash.restore.success'), { autoHideDuration: 1000 })
                         await info.refetch()
@@ -63,6 +66,9 @@ export default function TrashListCard() {
                     title={t('trash.remove.confirm')}
                     tooltip={!hasText ? t('trash.remove.button') : undefined}
                     onClick={async () => {
+                        if (!trash.id) {
+                            return
+                        }
                         await removeTrash(projectId, trash.id)
                         toaster.positive(t('trash.remove.success'), { autoHideDuration: 1000 })
                         await info.refetch()

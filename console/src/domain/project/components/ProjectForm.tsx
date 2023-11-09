@@ -1,19 +1,19 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
 import Select from '@starwhale/ui/Select'
-import { RadioGroup, Radio } from '@starwhale/ui/Radio'
+import { Radio, RadioGroup } from '@starwhale/ui/Radio'
 import { FormControl } from 'baseui/form-control'
 import { Textarea } from 'baseui/textarea'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { IUserSchema } from '@user/schemas/user'
 import { createUseStyles } from 'react-jss'
 import Input from '@starwhale/ui/Input'
-import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
+import { ICreateProjectSchema } from '../schemas/project'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { useToggle } from 'ahooks'
+import { IProjectVo, IUserVo } from '@/api'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
 
@@ -27,7 +27,7 @@ const useStyles = createUseStyles({
 })
 
 export interface IProjectFormProps {
-    project?: IProjectSchema
+    project?: IProjectVo
     onSubmit: (data: ICreateProjectSchema, readmeRedirect: boolean) => Promise<void>
 }
 
@@ -83,7 +83,7 @@ const Visibility = ({ value, onChange }: IVisibilityProps) => {
 }
 
 type IOwnerProps = IControlledProps & {
-    data?: IUserSchema
+    data?: IUserVo
 }
 
 const Owner = ({ value, onChange, data }: IOwnerProps) => {

@@ -21,7 +21,8 @@ import yaml from 'js-yaml'
 import Shared from '@/components/Shared'
 import { QueryInput } from '@starwhale/ui/Input'
 import _ from 'lodash'
-import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
+import { IDatasetVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -51,7 +52,7 @@ export default function DatasetListCard() {
     const isAccessDatasetUpload = useAccess('dataset.upload')
     const isAccessDatasetDelete = useAccess('dataset.delete')
 
-    const getActions = (data: IDatasetSchema) => [
+    const getActions = (data: IDatasetVo) => [
         {
             access: true,
             quickAccess: true,
@@ -150,7 +151,7 @@ export default function DatasetListCard() {
                 </div>
                 <Table
                     renderActions={(rowIndex) => {
-                        const data = datasetsInfo.data?.list[rowIndex]
+                        const data = datasetsInfo.data?.list?.[rowIndex]
                         if (!data) return undefined
                         return getActions(data)
                     }}
@@ -165,7 +166,7 @@ export default function DatasetListCard() {
                         t('Created'),
                     ]}
                     data={
-                        datasetsInfo.data?.list.map((dataset) => {
+                        datasetsInfo.data?.list?.map((dataset) => {
                             let counts
                             try {
                                 const meta = yaml.load(dataset.version?.meta || '') as any
@@ -176,7 +177,9 @@ export default function DatasetListCard() {
                             return [
                                 dataset.name,
                                 <VersionText key='name' version={dataset.version?.name ?? '-'} />,
-                                dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
+                                dataset.version ? (
+                                    <Alias key='alias' alias={getAliasStr(dataset.version as IHasTagSchema)} />
+                                ) : null,
                                 <Shared key='shared' shared={dataset.version?.shared} isTextShow />,
                                 counts,
                                 dataset.owner && <User user={dataset.owner} />,

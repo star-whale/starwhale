@@ -1,9 +1,9 @@
 import axios from 'axios'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { ITrashSchema } from '../schemas/trash'
+import { IListQuerySchema } from '@/domain/base/schemas/list'
+import { IPageInfoTrashVo } from '@/api'
 
-export async function listTrashs(projectId: string, query: IListQuerySchema): Promise<IListSchema<ITrashSchema>> {
-    const resp = await axios.get<IListSchema<ITrashSchema>>(`/api/v1/project/${projectId}/trash`, { params: query })
+export async function listTrashes(projectId: string, query: IListQuerySchema): Promise<IPageInfoTrashVo> {
+    const resp = await axios.get<IPageInfoTrashVo>(`/api/v1/project/${projectId}/trash`, { params: query })
     return resp.data
 }
 

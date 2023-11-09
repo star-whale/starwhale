@@ -1,12 +1,7 @@
 import { IPrivileges } from '@/api/const'
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 
-export type IBaseImageSchema = IResourceSchema
 export type IDeviceSchema = IResourceSchema
-
-export interface IDeleteAgentSchema {
-    serialNumber: string
-}
 
 export interface ISystemVersionSchema {
     id: string

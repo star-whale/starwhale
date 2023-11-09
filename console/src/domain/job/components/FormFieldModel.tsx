@@ -10,7 +10,7 @@ import MonacoEditor from '@starwhale/ui/MonacoEditor'
 import { createUseStyles } from 'react-jss'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
-import { StepSpec } from '@/domain/model/schemas/modelVersion'
+import { IStepSpec } from '@/api'
 
 const useStyles = createUseStyles({
     modelField: {
@@ -32,9 +32,9 @@ function FormFieldModel({
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
     eventEmitter: EventEmitter<any>
-    stepSource?: StepSpec[]
+    stepSource?: IStepSpec[]
     setModelTree: (obj: any) => void
-    fullStepSource?: StepSpec[]
+    fullStepSource?: IStepSpec[]
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
@@ -61,7 +61,7 @@ function FormFieldModel({
         if ('modelVersionHandler' in _changes && fullStepSource) {
             form.setFieldsValue({
                 stepSpecOverWrites: yaml.dump(
-                    fullStepSource.filter((v: StepSpec) => v?.job_name === _changes.modelVersionHandler)
+                    fullStepSource.filter((v: IStepSpec) => v?.job_name === _changes.modelVersionHandler)
                 ),
             })
         }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import Table from '@/components/Table'
 import Button, { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
@@ -7,10 +7,9 @@ import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useFetchUsers } from '@user/hooks/useUser'
 import { useStyletron } from 'baseui'
-import { IUserSchema } from '@user/schemas/user'
-import { changeUserState, createUser, changeUserPasswd } from '@user/services/user'
+import { changeUserPasswd, changeUserState, createUser } from '@user/services/user'
 import { toaster } from 'baseui/toast'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
+import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import NewUserForm from '@user/components/NewUserForm'
 import generatePassword from '@/utils/passwordGenerator'
 import Input, { QueryInput } from '@starwhale/ui/Input'
@@ -19,6 +18,7 @@ import PasswordForm from '@user/components/PasswordForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { Toggle } from '@starwhale/ui/Select/Toggle'
+import { IUserVo } from '@/api'
 
 interface IPasswordResultProps {
     title: string
@@ -37,11 +37,11 @@ export default function UserManagement() {
     }, [page])
     const users = useFetchUsers($page)
     const [css] = useStyletron()
-    const [data, updateData] = useState<IUserSchema[]>([])
+    const [data, updateData] = useState<IUserVo[]>([])
     const [filter, updateFilter] = useState('')
     const [showAddUser, setShowAddUser] = useState(false)
     const [passwordResult, setPasswordResult] = useState<IPasswordResultProps | undefined>()
-    const [modifyingUser, setModifyingUser] = useState<IUserSchema | undefined>(undefined)
+    const [modifyingUser, setModifyingUser] = useState<IUserVo | undefined>(undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
 

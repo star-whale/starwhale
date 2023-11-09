@@ -43,21 +43,21 @@ export default function DatasetVersionSelector({
     useEffect(() => {
         if (autoSelected) {
             if (value) {
-                const item = datasetVersionsInfo.data?.list.find((v) => v.id === value)
+                const item = datasetVersionsInfo.data?.list?.find((v) => v.id === value)
                 if (!item) {
-                    onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+                    onChange?.(datasetVersionsInfo.data?.list?.[0]?.id ?? '')
                 }
                 return
             }
 
-            if (datasetVersionsInfo.data) onChange?.(datasetVersionsInfo.data?.list[0]?.id ?? '')
+            if (datasetVersionsInfo.data) onChange?.(datasetVersionsInfo.data?.list?.[0]?.id ?? '')
         }
     }, [value, autoSelected, datasetId, datasetVersionsInfo.data, onChange])
 
     useEffect(() => {
         if (datasetVersionsInfo.isSuccess) {
             const ops =
-                datasetVersionsInfo.data?.list.map((item) => ({
+                datasetVersionsInfo.data?.list?.map((item) => ({
                     id: item.id,
                     label: <DatasetLabel version={item} />,
                 })) ?? []

@@ -1,38 +1,31 @@
 import { createGlobalState } from 'react-hooks-global-state'
-import { IUserSchema } from '@user/schemas/user'
-import { IProjectSchema } from '@project/schemas/project'
-import { IModelDetailSchema } from '@model/schemas/model'
-import { IModelVersionDetailSchema } from '@model/schemas/modelVersion'
-import { IDatasetDetailSchema } from '@/domain/dataset/schemas/dataset'
-import { IDatasetVersionDetailSchema } from '@/domain/dataset/schemas/datasetVersion'
-import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { Role } from '@/api/const'
-import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import { ThemeType } from '@starwhale/ui/theme'
 import { ISystemFeaturesSchema } from '@/domain/setting/schemas/system'
+import { IDatasetInfoVo, IJobVo, IModelInfoVo, IProjectVo, IRuntimeInfoVo, IUserVo } from '@/api'
 
 const initialState = {
     token: undefined as string | undefined,
     themeType: 'deep' as ThemeType,
-    currentUser: undefined as IUserSchema | undefined,
-    user: undefined as IUserSchema | undefined,
+    currentUser: undefined as IUserVo | undefined,
+    user: undefined as IUserVo | undefined,
     userLoading: false,
-    project: undefined as IProjectSchema | undefined,
+    project: undefined as IProjectVo | undefined,
     projectLoading: false,
-    model: undefined as IModelDetailSchema | undefined,
+    model: undefined as IModelInfoVo | undefined,
     modelLoading: false,
-    modelVersion: undefined as IModelVersionDetailSchema | undefined,
+    modelVersion: undefined as IModelInfoVo | undefined,
     modelVersionLoading: false,
-    dataset: undefined as IDatasetDetailSchema | undefined,
+    dataset: undefined as IDatasetInfoVo | undefined,
     datasetLoading: false,
-    datasetVersion: undefined as IDatasetVersionDetailSchema | undefined,
+    datasetVersion: undefined as IDatasetInfoVo | undefined,
     datasetVersionLoading: false,
-    runtime: undefined as IRuntimeDetailSchema | undefined,
+    runtime: undefined as IRuntimeInfoVo | undefined,
     runtimeLoading: false,
-    runtimeVersion: undefined as IRuntimeDetailSchema | undefined,
+    runtimeVersion: undefined as IRuntimeInfoVo | undefined,
     runtimeVersionLoading: false,
-    job: undefined as IJobSchema | undefined,
+    job: undefined as IJobVo | undefined,
     jobLoading: false,
     task: undefined as ITaskDetailSchema | undefined,
     taskLoading: false,
