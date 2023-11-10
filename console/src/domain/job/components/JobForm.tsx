@@ -30,7 +30,7 @@ export interface IJobFormProps {
 
 async function getJobByTemplate(projectId: string, templateId: string) {
     const template = await fetchJobTemplate(projectId, templateId)
-    return fetchJob(projectId, template.jobId)
+    return fetchJob(projectId, String(template.jobId))
 }
 
 export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
