@@ -94,31 +94,31 @@ const QUICK_TOP_OFFSET = 5
 function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, actions, mountNode }: TableActionsPropsT) {
     const $focusActions = useCreation(() => {
         const validActions = actions?.filter((action) => action.access)
+
+        const noneQuickActions = validActions?.filter((action) => !action.quickAccess) ?? []
+        const quickActions = validActions?.filter((action) => action.quickAccess) ?? []
+        const renderer = (action, index) => {
+            return {
+                type: index,
+                label: <action.component key={index} hasText />,
+            }
+        }
+
         return [
-            ...(validActions
-                ?.filter((action) => action.quickAccess)
-                .map((action, index) => {
-                    return {
-                        type: index,
-                        label: <action.component key={index} hasText />,
-                    }
-                }) ?? []),
-            {
-                type: -1,
-                label: (
-                    <div className='py-4px w-full bg-[#fff]'>
-                        <p className=' h-1px bg-[#EEF1F6]' />
-                    </div>
-                ),
-            },
-            ...(validActions
-                ?.filter((action) => !action.quickAccess)
-                .map((action, index) => {
-                    return {
-                        type: index,
-                        label: <action.component key={index} hasText />,
-                    }
-                }) ?? []),
+            ...quickActions.map(renderer),
+            ...(noneQuickActions.length > 0
+                ? [
+                      {
+                          type: -1,
+                          label: (
+                              <div className='py-4px w-full bg-[#fff]'>
+                                  <p className=' h-1px bg-[#EEF1F6]' />
+                              </div>
+                          ),
+                      },
+                  ]
+                : []),
+            ...noneQuickActions.map(renderer),
         ]
     }, [isFocus])
 
@@ -206,6 +206,8 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
                                             },
                                             style: {
                                                 marginTop: '0px',
+                                                boxShadow: '#CFD7E6 0px 2px 2px',
+                                                backgroundColor: '#F5F8FF',
                                             },
                                         },
                                     }}

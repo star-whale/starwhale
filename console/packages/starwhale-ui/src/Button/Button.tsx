@@ -54,7 +54,7 @@ function Button(
 
     if (icon && !props.startEnhancer) {
         // eslint-disable-next-line no-param-reassign
-        props.startEnhancer = () => <IconFont type={icon} size={16} />
+        props.startEnhancer = () => <IconFont type={icon} size={children ? 14 : 16} />
     }
 
     if (as === 'link') {
@@ -86,6 +86,8 @@ function Button(
                             color: '#5181E0',
                             backgroundColor: 'transparent',
                         },
+                        'alignItems': 'center',
+                        'fontWeight': '400',
                     },
                 },
             },
