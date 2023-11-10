@@ -61,6 +61,7 @@ import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
 import ClientLogin from '@/pages/Auth/ClientLogin'
 import JobServings from '@/pages/Job/JobServings'
 import ModelVersionServings from '@/pages/Model/ModelVersionServings'
+import SftSpaceListCard from './pages/Space/SpaceSftListCard'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -302,7 +303,7 @@ const Routes = () => {
                                         />
                                         <Route
                                             exact
-                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/readme'
+                                            path='/projects/:projectId/models/: /versions/:modelVersionId/readme'
                                             component={ModelReadmeOverview}
                                         />
                                         <Route
@@ -386,6 +387,11 @@ const Routes = () => {
                                         />
                                         <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
                                         <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/sft-spaces'
+                                            component={SftSpaceListCard}
+                                        />
                                         <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
                                     </Switch>
                                 </ProjectLayout>

@@ -805,6 +805,29 @@ const report = {
     },
 }
 
+const sft = {
+    'fine-tuning': {
+        en: 'Fine-tuning',
+        zh: 'Fine-tuning',
+    },
+    'sft.space.title': {
+        en: 'Fine-tuning',
+        zh: 'Fint-tuning',
+    },
+    'sft.space.id': {
+        en: 'Fine-tuning ID',
+        zh: 'Fine-tuning ID',
+    },
+    'sft.space.name': {
+        en: 'Fine-tuning Name',
+        zh: 'Fine-tuning 名称',
+    },
+    'sft.space.action.edit': {
+        en: 'Edit',
+        zh: '编辑',
+    },
+}
+
 const table = {
     'table.column.manage': {
         en: 'Manage Columns',
@@ -2068,6 +2091,7 @@ const locales0 = {
     ...widget,
     ...ui,
     ...quickstart,
+    ...sft,
 }
 
 // eslint-disable-next-line import/no-mutable-exports

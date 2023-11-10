@@ -38,6 +38,8 @@ import {
     ICreateProjectRequest,
     ICreateReportData,
     ICreateReportRequest,
+    ICreateSftData,
+    ICreateSftSpaceData,
     ICreateUserData,
     ICreateViewConfigData,
     IDataConsumptionRequest,
@@ -61,6 +63,7 @@ import {
     IExecData,
     IExecRequest,
     IFileDeleteRequest,
+    IFindJobData,
     IFlushData,
     IFlushRequest,
     IGetCurrentUserData,
@@ -73,7 +76,6 @@ import {
     IGetHashedBlob1Data,
     IGetHashedBlobData,
     IGetJobDagData,
-    IGetJobData,
     IGetModelDiffData,
     IGetModelInfoData,
     IGetModelMetaBlobData,
@@ -103,12 +105,14 @@ import {
     IJobModifyPinRequest,
     IJobModifyRequest,
     IJobRequest,
+    IListAttributesData,
     IListBuildRecordsData,
     IListDatasetData,
     IListDatasetTreeData,
     IListDatasetVersionData,
     IListDatasetVersionTagsData,
     IListDeviceData,
+    IListEvaluationSummaryData,
     IListFilesData,
     IListJobsData,
     IListModelData,
@@ -124,6 +128,8 @@ import {
     IListRuntimeTreeData,
     IListRuntimeVersionData,
     IListRuntimeVersionTagsData,
+    IListSftData,
+    IListSftSpaceData,
     IListSystemRolesData,
     IListTablesData,
     IListTablesRequest,
@@ -177,6 +183,8 @@ import {
     ISelectAllInProjectData,
     ISelectRecentlyInProjectData,
     ISetPanelSettingData,
+    ISftCreateRequest,
+    ISftSpaceCreateRequest,
     IShareDatasetVersionData,
     IShareModelVersionData,
     IShareRuntimeVersionData,
@@ -194,6 +202,7 @@ import {
     IUpdateResourcePoolsData,
     IUpdateRuntimeData,
     IUpdateSettingData,
+    IUpdateSftSpaceData,
     IUpdateTableData,
     IUpdateTableRequest,
     IUpdateUserPwdData,
@@ -717,14 +726,14 @@ export class Api<SecurityDataType = unknown> {
      * No description
      *
      * @tags Job
-     * @name GetJob
+     * @name FindJob
      * @summary Job information
      * @request GET:/api/v1/project/{projectUrl}/job/{jobUrl}
      * @secure
-     * @response `200` `IGetJobData` OK
+     * @response `200` `IFindJobData` OK
      */
-    getJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
-        this.http.request<IGetJobData, any>({
+    findJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
+        this.http.request<IFindJobData, any>({
             path: `/api/v1/project/${projectUrl}/job/${jobUrl}`,
             method: 'GET',
             secure: true,
@@ -808,6 +817,25 @@ export class Api<SecurityDataType = unknown> {
             path: `/api/v1/project/${projectUrl}/dataset/${datasetUrl}/recover`,
             method: 'PUT',
             secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags Sft
+     * @name UpdateSftSpace
+     * @summary Update SFT space
+     * @request PUT:/api/v1/project/{projectId}/sft/space/{spaceId}
+     * @secure
+     * @response `200` `IUpdateSftSpaceData` OK
+     */
+    updateSftSpace = (projectId: number, spaceId: number, data: ISftSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<IUpdateSftSpaceData, any>({
+            path: `/api/v1/project/${projectId}/sft/space/${spaceId}`,
+            method: 'PUT',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
             ...params,
         })
     /**
@@ -2031,6 +2059,77 @@ export class Api<SecurityDataType = unknown> {
             ...params,
         })
     /**
+     * No description
+     *
+     * @tags Sft
+     * @name ListSftSpace
+     * @summary Get the list of SFT spaces
+     * @request GET:/api/v1/project/{projectId}/sft/space
+     * @secure
+     * @response `200` `IListSftSpaceData` OK
+     */
+    listSftSpace = (
+        projectId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListSftSpaceData, any>({
+            path: `/api/v1/project/${projectId}/sft/space`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags Sft
+     * @name CreateSftSpace
+     * @summary Create SFT space
+     * @request POST:/api/v1/project/{projectId}/sft/space
+     * @secure
+     * @response `200` `ICreateSftSpaceData` OK
+     */
+    createSftSpace = (projectId: number, data: ISftSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateSftSpaceData, any>({
+            path: `/api/v1/project/${projectId}/sft/space`,
+            method: 'POST',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags Sft
+     * @name CreateSft
+     * @summary Create SFT
+     * @request POST:/api/v1/project/{projectId}/sft/space/{spaceId}/create
+     * @secure
+     * @response `200` `ICreateSftData` OK
+     */
+    createSft = (projectId: number, spaceId: number, data: ISftCreateRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateSftData, any>({
+            path: `/api/v1/project/${projectId}/sft/space/${spaceId}/create`,
+            method: 'POST',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+    /**
      * @description Get panel setting by project and key
      *
      * @tags Panel
@@ -3223,6 +3322,57 @@ export class Api<SecurityDataType = unknown> {
     /**
      * No description
      *
+     * @tags Evaluation
+     * @name ListEvaluationSummary
+     * @summary List Evaluation Summary
+     * @request GET:/api/v1/project/{projectUrl}/evaluation
+     * @secure
+     * @response `200` `IListEvaluationSummaryData` OK
+     */
+    listEvaluationSummary = (
+        projectUrl: string,
+        query: {
+            filter: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListEvaluationSummaryData, any>({
+            path: `/api/v1/project/${projectUrl}/evaluation`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags Evaluation
+     * @name ListAttributes
+     * @summary List Evaluation Summary Attributes
+     * @request GET:/api/v1/project/{projectUrl}/evaluation/view/attribute
+     * @secure
+     * @response `200` `IListAttributesData` OK
+     */
+    listAttributes = (projectUrl: string, params: RequestParams = {}) =>
+        this.http.request<IListAttributesData, any>({
+            path: `/api/v1/project/${projectUrl}/evaluation/view/attribute`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
      * @tags Dataset
      * @name ListDataset
      * @summary Get the list of the datasets
@@ -3460,6 +3610,40 @@ export class Api<SecurityDataType = unknown> {
     ) =>
         this.http.request<IPullUriContentData, any>({
             path: `/api/v1/project/${projectName}/dataset/${datasetName}/uri`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags Sft
+     * @name ListSft
+     * @summary List SFT
+     * @request GET:/api/v1/project/{projectId}/sft/space/{spaceId}/list
+     * @secure
+     * @response `200` `IListSftData` OK
+     */
+    listSft = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListSftData, any>({
+            path: `/api/v1/project/${projectId}/sft/space/${spaceId}/list`,
             method: 'GET',
             query: query,
             secure: true,

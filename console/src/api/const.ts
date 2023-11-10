@@ -30,6 +30,9 @@ export const Privileges = {
     'job.pause': true,
     'job.resume': true,
     'job.saveas': true,
+    'sft.space.create': true,
+    'sft.space.update': true,
+    'sft.space.delete': true,
     // menu
     'project.menu.trash': true,
     // global

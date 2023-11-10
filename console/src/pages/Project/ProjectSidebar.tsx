@@ -32,6 +32,12 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(overview)\/?/,
             },
             {
+                title: t('fine-tuning'),
+                path: `/projects/${projectId}/sft-spaces`,
+                icon: <IconFont type='overview' size={16} />,
+                activePathPattern: /\/(sft-spaces)\/?/,
+            },
+            {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
                 icon: <IconFont type='Model' size={16} />,
