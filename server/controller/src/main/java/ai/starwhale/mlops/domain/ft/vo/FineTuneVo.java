@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.ft.vo;
 
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,13 +30,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FineTuneVo {
 
+    @NotNull
     Long id;
+    @NotNull
     Long jobId;
+    @NotNull
     JobStatus status;
+    @NotNull
     Long startTime;
     Long endTime;
     List<DsInfo> trainDatasets;
     List<DsInfo> evalDatasets;
+    @NotNull
     ModelInfo baseModel;
     ModelInfo targetModel;
 

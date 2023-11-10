@@ -66,7 +66,7 @@ class JobModifyRequest(SwBaseModel):
     comment: str
 
 
-class SftSpaceCreateRequest(SwBaseModel):
+class FineTuneSpaceCreateRequest(SwBaseModel):
     name: str
     description: str
 
@@ -363,7 +363,7 @@ class Type2(Enum):
     built_in = 'BUILT_IN'
 
 
-class SftCreateRequest(SwBaseModel):
+class FineTuneCreateRequest(SwBaseModel):
     model_version_id: Optional[int] = Field(None, alias='modelVersionId')
     dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
     runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
@@ -1263,19 +1263,53 @@ class ResponseMessagePageInfoBuildRecordVo(SwBaseModel):
     data: PageInfoBuildRecordVo
 
 
-class SftSpaceVo(SwBaseModel):
-    id: Optional[int] = None
-    name: Optional[str] = None
+class ModelServingStatusVo(SwBaseModel):
+    progress: Optional[int] = None
+    events: Optional[str] = None
+
+
+class ResponseMessageModelServingStatusVo(SwBaseModel):
+    code: str
+    message: str
+    data: ModelServingStatusVo
+
+
+class FineTuneSpaceVo(SwBaseModel):
+    id: int
+    name: str
     description: Optional[str] = None
     created_time: int = Field(..., alias='createdTime')
     owner: UserVo
 
 
+class PageInfoFineTuneSpaceVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[FineTuneSpaceVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoFineTuneSpaceVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoFineTuneSpaceVo
+
+
 class DsInfo(SwBaseModel):
-    pass
-
-
-class ModelInfo(SwBaseModel):
     pass
 
 
@@ -1291,27 +1325,8 @@ class Status3(Enum):
     unknown = 'UNKNOWN'
 
 
-class SftVo(SwBaseModel):
-    id: Optional[int] = None
-    job_id: Optional[int] = Field(None, alias='jobId')
-    status: Optional[Status3] = None
-    start_time: Optional[int] = Field(None, alias='startTime')
-    end_time: Optional[int] = Field(None, alias='endTime')
-    train_datasets: Optional[List[DsInfo]] = Field(None, alias='trainDatasets')
-    eval_datasets: Optional[List[DsInfo]] = Field(None, alias='evalDatasets')
-    base_model: Optional[ModelInfo] = Field(None, alias='baseModel')
-    target_model: Optional[ModelInfo] = Field(None, alias='targetModel')
-
-
-class ModelServingStatusVo(SwBaseModel):
-    progress: Optional[int] = None
-    events: Optional[str] = None
-
-
-class ResponseMessageModelServingStatusVo(SwBaseModel):
-    code: str
-    message: str
-    data: ModelServingStatusVo
+class ModelInfo(SwBaseModel):
+    pass
 
 
 class PanelPluginVo(SwBaseModel):
@@ -1648,9 +1663,21 @@ class ResponseMessagePageInfoSummaryVo(SwBaseModel):
     data: PageInfoSummaryVo
 
 
-class PageInfoSftSpaceVo(SwBaseModel):
+class FineTuneVo(SwBaseModel):
+    id: int
+    job_id: int = Field(..., alias='jobId')
+    status: Status3
+    start_time: int = Field(..., alias='startTime')
+    end_time: Optional[int] = Field(None, alias='endTime')
+    train_datasets: Optional[List[DsInfo]] = Field(None, alias='trainDatasets')
+    eval_datasets: Optional[List[DsInfo]] = Field(None, alias='evalDatasets')
+    base_model: ModelInfo = Field(..., alias='baseModel')
+    target_model: Optional[ModelInfo] = Field(None, alias='targetModel')
+
+
+class PageInfoFineTuneVo(SwBaseModel):
     total: Optional[int] = None
-    list: Optional[List[SftSpaceVo]] = None
+    list: Optional[List[FineTuneVo]] = None
     page_num: Optional[int] = Field(None, alias='pageNum')
     page_size: Optional[int] = Field(None, alias='pageSize')
     size: Optional[int] = None
@@ -1669,37 +1696,10 @@ class PageInfoSftSpaceVo(SwBaseModel):
     navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ResponseMessagePageInfoSftSpaceVo(SwBaseModel):
+class ResponseMessagePageInfoFineTuneVo(SwBaseModel):
     code: str
     message: str
-    data: PageInfoSftSpaceVo
-
-
-class PageInfoSftVo(SwBaseModel):
-    total: Optional[int] = None
-    list: Optional[List[SftVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoSftVo(SwBaseModel):
-    code: str
-    message: str
-    data: PageInfoSftVo
+    data: PageInfoFineTuneVo
 
 
 class PageInfoPanelPluginVo(SwBaseModel):
