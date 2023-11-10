@@ -3,9 +3,9 @@ import Shared from '@/components/Shared'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
-import { IDatasetTreeSchema } from '../schemas/dataset'
-import { IDatasetTreeVersionSchema } from '../schemas/datasetVersion'
 import { getAliasStr } from '@base/utils/alias'
+import { IDatasetVersionViewVo, IDatasetVersionVo, IDatasetViewVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export const DatasetLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -24,9 +24,9 @@ export const DatasetLabelText = themedStyled('div', () => ({
     fontFamily: 'Roboto Mono',
 }))
 
-export function getDatasetLabel(version: IDatasetTreeVersionSchema, dataset?: IDatasetTreeSchema) {
+export function getDatasetLabel(version: IDatasetVersionViewVo, dataset?: IDatasetViewVo) {
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = version?.versionName
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
@@ -41,15 +41,15 @@ export function DatasetLabel({
     isProjectShow = false,
     style = {},
 }: {
-    version: IDatasetTreeVersionSchema
-    dataset?: IDatasetTreeSchema
+    version: IDatasetVersionViewVo | IDatasetVersionVo
+    dataset?: IDatasetViewVo
     isProjectShow?: boolean
     style?: React.CSSProperties
 }) {
-    const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={getAliasStr(version)} />
+    const share = <Shared shared={!!version.shared} isTextShow={false} />
+    const alias = <Alias alias={getAliasStr(version as IHasTagSchema)} />
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = (version as IDatasetVersionViewVo)?.versionName ?? (version as IDatasetVersionVo)?.name
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)

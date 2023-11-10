@@ -6,7 +6,7 @@ import { ICreateProjectSchema } from '@project/schemas/project'
 import ProjectForm from '@project/components/ProjectForm'
 import useTranslation from '@/hooks/useTranslation'
 import { SIZE as ButtonSize } from 'baseui/button'
-import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { useFetchProjects } from '@project/hooks/useFetchProjects'
 import IconFont from '@starwhale/ui/IconFont'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -16,7 +16,6 @@ import cn from 'classnames'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
-import { IProjectSchema } from '@/domain/project/schemas/project'
 import { IconLink, TextLink } from '@/components/Link'
 import WithAuth from '@/api/WithAuth'
 import { toaster } from 'baseui/toast'
@@ -32,9 +31,10 @@ import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
 import Checkbox from '@starwhale/ui/Checkbox'
 import QuickStart from '@/domain/project/components/QuickStart'
 import { useHistory } from 'react-router'
+import { IProjectVo } from '@/api'
 
 type IProjectCardProps = {
-    project: IProjectSchema
+    project: IProjectVo
     onRefresh?: () => void
     onEdit?: () => void
 }
@@ -115,10 +115,9 @@ const useCardStyles = createUseStyles({
         display: 'flex',
         justifyContent: 'space-between',
         color: ' rgba(2,16,43,0.60)',
-        // justifySelf: 'center',
     },
     descriptionText: {
-        lineHeight: '12px',
+        lineHeight: '18px',
         fontSize: '12px',
         whiteSpace: 'normal',
         display: '-webkit-box',
@@ -240,7 +239,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             to={`/projects/${project.id}/evaluations`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
-                                content: `${t('Evaluations')}:${project?.statistics.evaluationCounts}`,
+                                content: `${t('Evaluations')}:${project?.statistics?.evaluationCounts}`,
                             }}
                         >
                             <IconFont
@@ -248,7 +247,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
-                            <span>{project?.statistics.evaluationCounts}</span>
+                            <span>{project?.statistics?.evaluationCounts}</span>
                         </IconLink>
                     </div>
                     <div className={styles.statisticsItem}>
@@ -256,7 +255,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             to={`/projects/${project.id}/models`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
-                                content: `${t('Models')}:${project?.statistics.modelCounts}`,
+                                content: `${t('Models')}:${project?.statistics?.modelCounts}`,
                             }}
                         >
                             <IconFont
@@ -264,7 +263,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
-                            <span>{project?.statistics.modelCounts}</span>
+                            <span>{project?.statistics?.modelCounts}</span>
                         </IconLink>
                     </div>
                     <div className={styles.statisticsItem}>
@@ -272,7 +271,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             to={`/projects/${project.id}/datasets`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
-                                content: `${t('Datasets')}:${project?.statistics.datasetCounts}`,
+                                content: `${t('Datasets')}:${project?.statistics?.datasetCounts}`,
                             }}
                         >
                             <IconFont
@@ -280,7 +279,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
-                            <span>{project?.statistics.datasetCounts}</span>
+                            <span>{project?.statistics?.datasetCounts}</span>
                         </IconLink>
                     </div>
                     <div className={styles.statisticsItem}>
@@ -288,7 +287,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             to={`/projects/${project.id}/runtimes`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
-                                content: `${t('Runtimes')}:${project?.statistics.runtimeCounts}`,
+                                content: `${t('Runtimes')}:${project?.statistics?.runtimeCounts}`,
                             }}
                         >
                             <IconFont
@@ -296,7 +295,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
-                            <span>{project?.statistics.datasetCounts}</span>
+                            <span>{project?.statistics?.datasetCounts}</span>
                         </IconLink>
                     </div>
 
@@ -305,7 +304,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             to={`/projects/${project.id}/overview`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
-                                content: `${t('Members')}:${project?.statistics.memberCounts}`,
+                                content: `${t('Members')}:${project?.statistics?.memberCounts}`,
                             }}
                         >
                             <IconFont
@@ -313,7 +312,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                 size={12}
                                 style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
                             />
-                            <span>{project?.statistics.memberCounts}</span>
+                            <span>{project?.statistics?.memberCounts}</span>
                         </IconLink>
                     </div>
                 </div>
@@ -482,7 +481,7 @@ export default function ProjectListCard() {
     const projectsInfo = useFetchProjects(page)
     const [filter, setFilter] = useState('')
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
-    const [editProject, setEditProject] = useState<IProjectSchema>()
+    const [editProject, setEditProject] = useState<IProjectVo>()
     const [onlyMyProject, setOnlyMyProject] = useLocalStorage('onlyMyProject', true)
     const history = useHistory()
 
@@ -510,7 +509,7 @@ export default function ProjectListCard() {
         [projectsInfo, editProject, history]
     )
 
-    const [data, setData] = useState<IProjectSchema[]>([])
+    const [data, setData] = useState<IProjectVo[]>([])
     const [css] = useStyletron()
     const [t] = useTranslation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -526,7 +525,7 @@ export default function ProjectListCard() {
                 })
                 .filter((i) => {
                     if (onlyMyProject) {
-                        return i.owner?.name === currentUser?.name || currentUser?.projectRoles[i.id]
+                        return i.owner?.name === currentUser?.name || currentUser?.projectRoles?.[i.id]
                     }
                     return true
                 })

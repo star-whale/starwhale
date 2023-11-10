@@ -4,8 +4,7 @@ import qs from 'qs'
 import { listModelVersions } from '../services/modelVersion'
 
 export function useFetchModelVersions(projectId: string, modelId: string, query: IListQuerySchema) {
-    const modelVersionsInfo = useQuery(`fetchModelVersions:${projectId}:${modelId}:${qs.stringify(query)}`, () =>
+    return useQuery(`fetchModelVersions:${projectId}:${modelId}:${qs.stringify(query)}`, () =>
         listModelVersions(projectId, modelId, query)
     )
-    return modelVersionsInfo
 }

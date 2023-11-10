@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { ICreateDatasetFormSchema, IDatasetSchema } from '../schemas/dataset'
+import { ICreateDatasetFormSchema } from '../schemas/dataset'
 import { createUseStyles } from 'react-jss'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import User from '@/domain/user/components/User'
@@ -13,6 +13,7 @@ import { DraggerUpload } from '@starwhale/ui/Upload'
 import Button from '@starwhale/ui/Button'
 import Shared from '@/components/Shared'
 import Input from '@starwhale/ui/Input'
+import { IDatasetVo } from '@/api'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateDatasetFormSchema>()
 
@@ -50,7 +51,7 @@ const useStyles = createUseStyles({
 })
 
 export interface IDatasetFormProps {
-    dataset?: IDatasetSchema
+    dataset?: IDatasetVo
     onSubmit: (data: ICreateDatasetFormSchema) => Promise<void>
 }
 

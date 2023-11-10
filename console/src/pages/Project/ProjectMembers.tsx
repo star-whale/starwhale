@@ -148,20 +148,21 @@ export default function ProjectMembers() {
                             </WithCurrentAuth>
                         </div>,
                         user.createdTime && formatTimestampDateTime(user.createdTime),
-                        <WithCurrentAuth id='member.delete' key={id}>
-                            <ConfirmButton
-                                as='link'
-                                icon='delete'
-                                negative
-                                tooltip={t('Remove Project Member')}
-                                title={t('Remove Project Role Confirm')}
-                                onClick={async () => {
-                                    await removeProjectRole(projectId, id)
-                                    toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
-                                    await members.refetch()
-                                }}
-                            />
-                        </WithCurrentAuth>,
+                        <div key={id} className='flex'>
+                            <WithCurrentAuth id='member.delete'>
+                                <ConfirmButton
+                                    icon='delete'
+                                    styleas={['negative']}
+                                    tooltip={t('Remove Project Member')}
+                                    title={t('Remove Project Role Confirm')}
+                                    onClick={async () => {
+                                        await removeProjectRole(projectId, id)
+                                        toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
+                                        await members.refetch()
+                                    }}
+                                />
+                            </WithCurrentAuth>
+                        </div>,
                     ]) ?? []
                 }
             />

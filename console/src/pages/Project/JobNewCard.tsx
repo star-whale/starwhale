@@ -2,11 +2,11 @@ import React, { useCallback } from 'react'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import JobForm from '@job/components/JobForm'
-import { ICreateJobSchema } from '@job/schemas/job'
 import { createJob, fetchJob } from '@job/services/job'
 import { useHistory, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useQueryArgs } from '@starwhale/core/utils'
+import { IJobRequest } from '@/api'
 
 export default function JobNewCard() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -14,7 +14,7 @@ export default function JobNewCard() {
     const [t] = useTranslation()
     const history = useHistory()
     const handleSubmit = useCallback(
-        async (data: ICreateJobSchema) => {
+        async (data: IJobRequest) => {
             if (!projectId) {
                 return
             }

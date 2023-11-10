@@ -53,9 +53,6 @@ const useStyles = createUseStyles({
         '& .table-columns-pinned': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
-        '& .table-headers-pinned > div:last-child .header-cell': {
-            borderRight: '1px solid rgb(207, 215, 230)',
-        },
     },
 })
 

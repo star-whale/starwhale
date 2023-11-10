@@ -82,9 +82,12 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
             // update id
             jobFlattenEntity.setId(entity.getId());
             // add rel
-            Set<Long> datasetVersionIds = jobFlattenEntity.getDatasetIdVersionMap().keySet();
-            if (!CollectionUtils.isEmpty(datasetVersionIds)) {
-                datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
+            // TODO: move this to eval or ft domain
+            if (!CollectionUtils.isEmpty(jobFlattenEntity.getDatasetIdVersionMap())) {
+                Set<Long> datasetVersionIds = jobFlattenEntity.getDatasetIdVersionMap().keySet();
+                if (!CollectionUtils.isEmpty(datasetVersionIds)) {
+                    datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
+                }
             }
             // TODO: only sync evaluation repo
             if (jobFlattenEntity.getType() == JobType.EVALUATION) {

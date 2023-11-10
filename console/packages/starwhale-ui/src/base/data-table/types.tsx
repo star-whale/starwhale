@@ -92,9 +92,9 @@ export type BatchActionT = {
 }
 
 export type RowActionT = {
-    label: string
-    onClick: (args: { event: React.SyntheticEvent<HTMLButtonElement>; row: RowT }) => any
-    renderIcon: React.Component<{ size: number }>
+    label?: string
+    onClick?: (args: { event: React.SyntheticEvent<HTMLButtonElement>; row: RowT }) => any
+    renderIcon?: React.Component<{ size: number }>
     renderButton?: React.Component<any>
 }
 

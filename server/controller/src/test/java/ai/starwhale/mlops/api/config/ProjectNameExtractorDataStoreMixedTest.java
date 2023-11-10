@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.api.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,17 +32,20 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.security.ProjectNameExtractorDataStoreMixed;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.template.TemplateDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.report.ReportDao;
 import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
@@ -77,7 +82,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 datasetDao,
                 runtimeDao,
                 reportDao,
-                templateDao);
+                templateDao
+        );
     }
 
     @Test
@@ -93,7 +99,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v1/datastore/listTables");
         when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(new ByteArrayInputStream(
-                    objectMapper.writeValueAsBytes(new ListTablesRequest("project/x", Set.of())))));
+                objectMapper.writeValueAsBytes(new ListTablesRequest("project/x", Set.of())))));
         Set<String> strings = projectNameExtractorDataStoreMixed.extractProjectName(request);
         Assertions.assertIterableEquals(Set.of("x"), strings);
     }
@@ -157,9 +163,9 @@ public class ProjectNameExtractorDataStoreMixedTest {
         }
 
         when(projectService.findProject("p1")).thenReturn(Project.builder().id(1L).build());
-        when(runtimeDao.findById(1L)).thenReturn(RuntimeEntity.builder().projectId(1L).build());
-        when(datasetDao.findById(2L)).thenReturn(DatasetEntity.builder().projectId(1L).build());
-        when(modelDao.findById(3L)).thenReturn(ModelEntity.builder().projectId(1L).build());
+        when(runtimeDao.findById(1L)).thenReturn(RuntimeEntity.builder().id(1L).projectId(1L).build());
+        when(datasetDao.findById(2L)).thenReturn(DatasetEntity.builder().id(2L).projectId(1L).build());
+        when(modelDao.findById(3L)).thenReturn(ModelEntity.builder().id(3L).projectId(1L).build());
         when(jobDao.findById(4L)).thenReturn(JobEntity.builder().projectId(1L).build());
         when(reportDao.findById(5L)).thenReturn(ReportEntity.builder().projectId(1L).build());
 
@@ -243,6 +249,136 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/runtime/r2/foo/bar/?a=b&c=d",
                 "/api/v1/project/p1/dataset/d2",
                 "/api/v1/project/p1/model/m2"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+        }
+
+        // test runtime version
+        for (var uri : List.of(
+                "/api/v1/project/p1/runtime/1/version/2",
+                "/api/v1/project/p1/runtime/1/version/2/foo/bar",
+                "/api/v1/project/p1/runtime/1/version/2/foo/bar/",
+                "/api/v1/project/p1/runtime/1/version/2/foo/bar?a=b",
+                "/api/v1/project/p1/runtime/1/version/2/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/runtime/1/version/2/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            clearInvocations(runtimeDao);
+            when(runtimeDao.findVersionById(2L)).thenReturn(RuntimeVersionEntity.builder().runtimeId(1L).build());
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+            verify(runtimeDao).findVersionById(2L);
+        }
+
+        clearInvocations(runtimeDao);
+        // test runtime with name version
+        for (var uri : List.of(
+                "/api/v1/project/p1/runtime/1/version/v2",
+                "/api/v1/project/p1/runtime/1/version/v2/foo/bar",
+                "/api/v1/project/p1/runtime/1/version/v2/foo/bar/",
+                "/api/v1/project/p1/runtime/1/version/v2/foo/bar?a=b",
+                "/api/v1/project/p1/runtime/1/version/v2/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/runtime/1/version/v2/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+        }
+        verify(runtimeDao, never()).findVersionById(2L);
+
+        // test dataset version
+        for (var uri : List.of(
+                "/api/v1/project/p1/dataset/2/version/3",
+                "/api/v1/project/p1/dataset/2/version/3/foo/bar",
+                "/api/v1/project/p1/dataset/2/version/3/foo/bar/",
+                "/api/v1/project/p1/dataset/2/version/3/foo/bar?a=b",
+                "/api/v1/project/p1/dataset/2/version/3/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/dataset/2/version/3/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            clearInvocations(datasetDao);
+            when(datasetDao.findVersionById(3L)).thenReturn(DatasetVersionEntity.builder().datasetId(2L).build());
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+            verify(datasetDao).findVersionById(3L);
+        }
+
+        clearInvocations(datasetDao);
+        // test dataset with name version
+        for (var uri : List.of(
+                "/api/v1/project/p1/dataset/2/version/v3",
+                "/api/v1/project/p1/dataset/2/version/v3/foo/bar",
+                "/api/v1/project/p1/dataset/2/version/v3/foo/bar/",
+                "/api/v1/project/p1/dataset/2/version/v3/foo/bar?a=b",
+                "/api/v1/project/p1/dataset/2/version/v3/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/dataset/2/version/v3/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+        }
+        verify(datasetDao, never()).findVersionById(3L);
+
+        // test model version
+        for (var uri : List.of(
+                "/api/v1/project/p1/model/3/version/4",
+                "/api/v1/project/p1/model/3/version/4/foo/bar",
+                "/api/v1/project/p1/model/3/version/4/foo/bar/",
+                "/api/v1/project/p1/model/3/version/4/foo/bar?a=b",
+                "/api/v1/project/p1/model/3/version/4/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/model/3/version/4/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            clearInvocations(modelDao);
+            when(modelDao.findVersionById(4L)).thenReturn(ModelVersionEntity.builder().modelId(3L).build());
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+            verify(modelDao).findVersionById(4L);
+        }
+
+        clearInvocations(modelDao);
+        // test model with name version
+        for (var uri : List.of(
+                "/api/v1/project/p1/model/3/version/v4",
+                "/api/v1/project/p1/model/3/version/v4/foo/bar",
+                "/api/v1/project/p1/model/3/version/v4/foo/bar/",
+                "/api/v1/project/p1/model/3/version/v4/foo/bar?a=b",
+                "/api/v1/project/p1/model/3/version/v4/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/model/3/version/v4/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+        }
+        verify(modelDao, never()).findVersionById(4L);
+
+        // test non-exist runtime version
+        for (var uri : List.of(
+                "/api/v1/project/p1/runtime/1/version/7",
+                "/api/v1/project/p1/runtime/1/version/7/foo/bar",
+                "/api/v1/project/p1/runtime/1/version/7/foo/bar/",
+                "/api/v1/project/p1/runtime/1/version/7/foo/bar?a=b",
+                "/api/v1/project/p1/runtime/1/version/7/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/runtime/1/version/7/foo/bar/?a=b&c=d"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            clearInvocations(runtimeDao);
+            when(runtimeDao.findVersionById(7L)).thenReturn(null);
+            Assertions.assertThrows(SwNotFoundException.class,
+                    () -> projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request));
+            verify(runtimeDao).findVersionById(7L);
+        }
+
+        // test fake job uri that has version
+        for (var uri : List.of(
+                "/api/v1/project/p1/job/4/version/7",
+                "/api/v1/project/p1/job/4/version/7/foo/bar",
+                "/api/v1/project/p1/job/4/version/7/foo/bar/",
+                "/api/v1/project/p1/job/4/version/7/foo/bar?a=b",
+                "/api/v1/project/p1/job/4/version/7/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/job/4/version/7/foo/bar/?a=b&c=d"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             // no exception

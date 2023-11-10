@@ -1,0 +1,9 @@
+accelerate>=0.16.0
+torchvision==0.15.2
+transformers>=4.25.1
+datasets==2.13.0
+diffusers==0.17.1
+ftfy
+tensorboard
+Jinja2
+starwhale[online-server] >= 0.6.0 # for online serving

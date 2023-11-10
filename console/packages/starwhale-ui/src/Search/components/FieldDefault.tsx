@@ -1,5 +1,5 @@
 import React from 'react'
-import PopoverContainer, { Label, MultiSelectMenu, SingleSelectMenu } from './PopoverContainer'
+import { Label, PopoverContainer, MultiSelectMenu, SingleSelectMenu } from '../../Popover'
 
 function FieldDefault({ options: renderOptions = [], optionFilter = () => true, isEditing = false, ...rest }) {
     return (

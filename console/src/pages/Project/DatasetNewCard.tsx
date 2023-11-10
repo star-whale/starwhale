@@ -11,7 +11,7 @@ const DatasetForm = React.lazy(
 )
 
 export default function DatasetNewCard() {
-    const { projectId, datasetId } = useParams<{ projectId: string; datasetId: string }>()
+    const { projectId } = useParams<{ projectId: string; datasetId: string }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
     const history = useHistory()
@@ -22,14 +22,13 @@ export default function DatasetNewCard() {
                 return
             }
             await createDataset(projectId, data.datasetName, {
-                datasetId,
                 type: data.upload?.type as any,
-                shared: data.shared,
+                shared: !!data.shared,
                 storagePath: data.upload?.storagePath,
             })
             history.push(`/projects/${projectId}/datasets`)
         },
-        [projectId, datasetId, history]
+        [projectId, history]
     )
 
     return (

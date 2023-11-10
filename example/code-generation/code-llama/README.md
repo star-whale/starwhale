@@ -40,7 +40,7 @@ swcli model cp code-llama-7b-instruct https://cloud.starwhale.cn/project/starwha
 
 When using `--runtime xxx` in the `swcli model build` command, the Starwhale Model Package will include the runtime as its builtin runtime.
 
-Running Online Evaluation in Standalone instance
+Running Online Evaluation in Standalone Instance
 ------
 
 ```bash

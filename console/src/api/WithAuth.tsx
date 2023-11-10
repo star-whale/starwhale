@@ -2,15 +2,15 @@ import React, { useMemo } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { IUserSchema } from '@user/schemas/user'
 import { IPrivileges, Privileges, Role, RolePrivilege } from './const'
 import { useSystemFeatures } from '@/domain/setting/hooks/useSystemFeatures'
 import { ISystemFeaturesSchema } from '@/domain/setting/schemas/system'
+import { IUserVo } from '@/api'
 
 const isRolePrivilege = (role: Role, id: string) => RolePrivilege[role]?.[id] ?? false
 const isSystemDisablePrivilege = (systemFeatures: ISystemFeaturesSchema | undefined, id: keyof IPrivileges) =>
     systemFeatures?.disabled?.includes(id)
-const isAdminPrivilege = (user: IUserSchema) => user.systemRole === Role.OWNER
+const isAdminPrivilege = (user: IUserVo) => user.systemRole === Role.OWNER
 const isWrongKey = (id: string) => !(id in Privileges)
 const isCommunity = import.meta.env.VITE_EXTENDS !== 'true'
 

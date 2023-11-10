@@ -82,6 +82,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
 
     private static final Pattern RESOURCE_PATTERN =
             Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report|template)/([^/]+).*$");
+    private static final Pattern RESOURCE_VERSION_PATTERN =
+            Pattern.compile("^/project/([^/]+)/(runtime|dataset|model)/([^/]+)/version/([^/]+).*$");
 
     public ProjectNameExtractorDataStoreMixed(
             @Value("${sw.controller.api-prefix}") String apiPrefix,
@@ -92,7 +94,9 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             ModelDao modelDao,
             DatasetDao datasetDao,
             RuntimeDao runtimeDao,
-            ReportDao reportDao, TemplateDao templateDao) {
+            ReportDao reportDao,
+            TemplateDao templateDao
+    ) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
         this.projectService = projectService;
@@ -235,6 +239,49 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         }
         if (resource == null || !resource.getProjectId().equals(projectEntity.getId())) {
             throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE, resourceUrl);
+        }
+
+        // validate the resource version
+        if (!Set.of("runtime", "dataset", "model").contains(resourceType)) {
+            return;
+        }
+        matcher = RESOURCE_VERSION_PATTERN.matcher(path);
+        if (!matcher.matches()) {
+            return;
+        }
+        // version may be uuid, tag or id
+        // we only validate the version id
+        String version = matcher.group(4);
+        if (!idConverter.isId(version)) {
+            return;
+        }
+
+        var raise = false;
+        switch (resourceType) {
+            case "runtime":
+                var runtimeVersion = runtimeDao.findVersionById(idConverter.revert(version));
+                if (runtimeVersion == null || !resource.getId().equals(runtimeVersion.getRuntimeId())) {
+                    raise = true;
+                }
+                break;
+            case "dataset":
+                var datasetVersion = datasetDao.findVersionById(idConverter.revert(version));
+                if (datasetVersion == null || !resource.getId().equals(datasetVersion.getDatasetId())) {
+                    raise = true;
+                }
+                break;
+            case "model":
+                var modelVersion = modelDao.findVersionById(idConverter.revert(version));
+                if (modelVersion == null || !resource.getId().equals(modelVersion.getModelId())) {
+                    raise = true;
+                }
+                break;
+            default:
+                log.error("should not reach here for resource type {}", resourceType);
+                break;
+        }
+        if (raise) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE_VERSION, version);
         }
     }
 }

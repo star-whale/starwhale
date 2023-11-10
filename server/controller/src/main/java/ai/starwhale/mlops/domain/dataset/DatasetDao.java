@@ -21,7 +21,6 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
@@ -40,7 +39,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class DatasetDao implements BundleAccessor, BundleVersionAccessor,
+public class DatasetDao implements BundleAccessor, BundleVersionAccessor<DatasetVersionEntity>,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     private final DatasetMapper datasetMapper;
@@ -124,23 +123,23 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor,
     }
 
     @Override
-    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+    public DatasetVersionEntity findVersionById(Long bundleVersionId) {
         return datasetVersionMapper.find(bundleVersionId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
+    public DatasetVersionEntity findVersionByAliasAndBundleId(String alias, Long bundleId) {
         Long versionOrder = versionAliasConvertor.revert(alias);
         return datasetVersionMapper.findByVersionOrder(versionOrder, bundleId);
     }
 
     @Override
-    public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
+    public DatasetVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return datasetVersionMapper.findByNameAndDatasetId(name, bundleId, false);
     }
 
     @Override
-    public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
+    public DatasetVersionEntity findLatestVersionByBundleId(Long bundleId) {
         return datasetVersionMapper.findByLatest(bundleId);
     }
 

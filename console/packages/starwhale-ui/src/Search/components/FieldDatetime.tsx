@@ -1,5 +1,5 @@
 import React from 'react'
-import PopoverContainer, { Label } from './PopoverContainer'
+import { Label, PopoverContainer } from '../../Popover'
 import { useTrace } from '@starwhale/core'
 import FieldInput from './FieldInput'
 import moment from 'moment'

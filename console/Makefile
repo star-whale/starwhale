@@ -10,6 +10,23 @@ install-dev-tools:
 install-dependencies:
 	yarn
 
+OPEN_API_URL ?= "https://cloud.starwhale.cn"
+gen-api:
+	./node_modules/.bin/swagger-typescript-api \
+		-p $(OPEN_API_URL)/v3/api-docs/Api \
+		--no-client \
+		-r \
+		--union-enums \
+		--type-prefix 'I' \
+		--templates src/api/template \
+		--unwrap-response-data \
+		--axios \
+		--single-http-client \
+		--responses \
+		--extract-response-body \
+		--modular \
+		--output src/api/server
+
 e2e-local:
 	cd playwright && yarn && npx playwright install && \
 		yarn test

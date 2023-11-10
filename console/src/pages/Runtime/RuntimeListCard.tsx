@@ -7,17 +7,18 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
-import { TextLink } from '@/components/Link'
-import { ButtonGroup, ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
+import { ConfirmButton, ExtendButton, QueryInput } from '@starwhale/ui'
 import { VersionText } from '@starwhale/ui/Text'
 import Alias from '@/components/Alias'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess } from '@/api/WithAuth'
 import { getAliasStr } from '@base/utils/alias'
 import { removeRuntime } from '@/domain/runtime/services/runtime'
 import Shared from '@/components/Shared'
 import _ from 'lodash'
+import { IRuntimeVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -32,6 +33,93 @@ export default function RuntimeListCard() {
 
     const [t] = useTranslation()
 
+    const isAccessRuntimeImageBuild = useAccess('runtime.image.build')
+    const isAccessRUntimeDelete = useAccess('runtime.delete')
+
+    const getActions = (runtime: IRuntimeVo) => [
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='Detail'
+                    tooltip={!hasText ? t('View Details') : undefined}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() =>
+                        history.push(
+                            `/projects/${projectId}/runtimes/${runtime.id}/versions/${runtime.version?.id}/meta`
+                        )
+                    }
+                >
+                    {hasText ? t('View Details') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='a-Versionhistory'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/runtimes/${runtime.id}`)}
+                >
+                    {hasText ? t('Version History') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: isAccessRuntimeImageBuild,
+            component: ({ hasText }) => {
+                const isBuilt = !!runtime.version?.builtImage
+                const text = isBuilt ? t('runtime.image.built') : t('runtime.image.build')
+
+                return (
+                    <ExtendButton
+                        disabled={isBuilt}
+                        styleas={['menuoption', hasText ? undefined : 'highlight', isBuilt ? 'icondisable' : undefined]}
+                        icon={isBuilt ? 'a-ImageBuilt' : 'a-BuildImage'}
+                        onClick={async () => {
+                            const result = await buildImageForRuntimeVersion(projectId, runtime.id, runtime.version.id)
+                            if (result.success) {
+                                toaster.positive(result.message, {
+                                    autoHideDuration: 1000,
+                                })
+                            } else {
+                                toaster.negative(result.message, {
+                                    autoHideDuration: 2000,
+                                })
+                            }
+                        }}
+                    >
+                        {hasText ? text : undefined}
+                    </ExtendButton>
+                )
+            },
+        },
+        {
+            access: isAccessRUntimeDelete,
+            component: ({ hasText }) => (
+                <ConfirmButton
+                    title={`${runtime.name} ${t('runtime.remove.confirm')}`}
+                    isFull
+                    icon='delete'
+                    styleas={['menuoption', 'negative']}
+                    onClick={async () => {
+                        await removeRuntime(projectId, runtime.id)
+                        toaster.positive(t('runtime.remove.success'), {
+                            autoHideDuration: 1000,
+                        })
+                        runtimesInfo.refetch()
+                    }}
+                >
+                    {hasText ? t('runtime.remove.button') : undefined}
+                </ConfirmButton>
+            ),
+        },
+    ]
+
     return (
         <Card title={t('Runtimes')}>
             <div className='max-w-280px mb-10px'>
@@ -43,6 +131,11 @@ export default function RuntimeListCard() {
                 />
             </div>
             <Table
+                renderActions={(rowIndex) => {
+                    const data = runtimesInfo.data?.list?.[rowIndex]
+                    if (!data) return undefined
+                    return getActions(data)
+                }}
                 isLoading={runtimesInfo.isLoading}
                 columns={[
                     t('sth name', [t('Runtime')]),
@@ -52,74 +145,19 @@ export default function RuntimeListCard() {
                     t('Image'),
                     t('Owner'),
                     t('Created'),
-                    t('Action'),
                 ]}
                 data={
-                    runtimesInfo.data?.list.map((runtime) => {
+                    runtimesInfo.data?.list?.map((runtime) => {
                         return [
-                            <TextLink
-                                key={runtime.id}
-                                to={`/projects/${projectId}/runtimes/${runtime.id}/versions/${runtime.version?.id}/meta`}
-                            >
-                                {runtime.name}
-                            </TextLink>,
+                            runtime.name,
                             <VersionText key='name' version={runtime.version?.name ?? '-'} />,
-                            runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
+                            runtime.version && (
+                                <Alias key='alias' alias={getAliasStr(runtime.version as IHasTagSchema)} />
+                            ),
                             <Shared key='shared' shared={runtime.version?.shared} isTextShow />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.version?.createdTime && formatTimestampDateTime(runtime.version?.createdTime),
-                            <ButtonGroup key='action'>
-                                <ExtendButton
-                                    as='link'
-                                    icon='a-Versionhistory'
-                                    tooltip={t('Version History')}
-                                    onClick={() => history.push(`/projects/${projectId}/runtimes/${runtime.id}`)}
-                                />
-                                <WithCurrentAuth id='runtime.image.build'>
-                                    <ExtendButton
-                                        disabled={!!runtime.version?.builtImage}
-                                        icondisable={!!runtime.version?.builtImage}
-                                        as='link'
-                                        icon={runtime.version?.builtImage ? 'a-ImageBuilt' : 'a-BuildImage'}
-                                        tooltip={
-                                            runtime.version?.builtImage
-                                                ? t('runtime.image.built')
-                                                : t('runtime.image.build')
-                                        }
-                                        onClick={async () => {
-                                            const result = await buildImageForRuntimeVersion(
-                                                projectId,
-                                                runtime.id,
-                                                runtime.version.id
-                                            )
-                                            if (result.success) {
-                                                toaster.positive(result.message, {
-                                                    autoHideDuration: 1000,
-                                                })
-                                            } else {
-                                                toaster.negative(result.message, {
-                                                    autoHideDuration: 2000,
-                                                })
-                                            }
-                                        }}
-                                    />
-                                </WithCurrentAuth>
-                                <WithCurrentAuth id='runtime.delete'>
-                                    <ConfirmButton
-                                        tooltip={t('runtime.remove.button')}
-                                        title={t('runtime.remove.confirm')}
-                                        as='link'
-                                        negative
-                                        icon='delete'
-                                        onClick={async () => {
-                                            await removeRuntime(projectId, runtime.id)
-                                            toaster.positive(t('runtime.remove.success'), { autoHideDuration: 1000 })
-                                            history.push(`/projects/${projectId}/runtimes`)
-                                        }}
-                                    />
-                                </WithCurrentAuth>
-                            </ButtonGroup>,
                         ]
                     }) ?? []
                 }

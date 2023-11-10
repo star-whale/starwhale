@@ -1,0 +1,9 @@
+api_version: 1.1
+dependencies:
+  - requirements.txt
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+mode: venv
+name: Stable-diffusion-v1-4

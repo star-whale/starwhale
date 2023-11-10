@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob } from '@job/services/job'
-import { ICreateJobSchema } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
@@ -14,7 +13,7 @@ import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDa
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { toaster } from 'baseui/toast'
-import { BusyPlaceholder, Button } from '@starwhale/ui'
+import { BusyPlaceholder, Button, ExtendButton } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
@@ -25,6 +24,7 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
+import { IJobRequest } from '@/api'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -62,7 +62,7 @@ export default function EvaluationListCard() {
     const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>('currentViewId', {})
     const [changed, setChanged] = useState(false)
     const handleCreateJob = useCallback(
-        async (data: ICreateJobSchema) => {
+        async (data: IJobRequest) => {
             await createJob(projectId, data)
             await evaluationsInfo.refetch()
             setIsCreateJobOpen(false)
@@ -169,6 +169,39 @@ export default function EvaluationListCard() {
                 <BusyPlaceholder />
             </Card>
         )
+
+    // const isAccessOnlineEval = useAccess('online-eval')
+    const getActions = (row: any) => [
+        {
+            access: true,
+            quickAccess: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='Detail'
+                    tooltip={t('View Details')}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/evaluations/${row?.id}/results`)}
+                >
+                    {hasText ? t('View Details') : undefined}
+                </ExtendButton>
+            ),
+        },
+        {
+            access: true,
+            component: ({ hasText }) => (
+                <ExtendButton
+                    isFull
+                    icon='tasks'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/jobs/${row?.id}/tasks`)}
+                >
+                    {hasText ? t('View Tasks') : undefined}
+                </ExtendButton>
+            ),
+        },
+    ]
+
     return (
         <Card
             title={t('Evaluations')}
@@ -191,6 +224,7 @@ export default function EvaluationListCard() {
             <GridResizerVertical
                 top={() => (
                     <GridCombineTable
+                        rowActions={getActions as any}
                         title={t('evaluation.title')}
                         titleOfCompare={t('compare.title')}
                         store={useEvaluationStore}

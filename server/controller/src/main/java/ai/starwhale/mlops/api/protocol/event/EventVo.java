@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"id"})
 public class EventVo extends Event {
     Long id;
 }

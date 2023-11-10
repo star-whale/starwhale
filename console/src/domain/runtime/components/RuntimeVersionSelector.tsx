@@ -43,21 +43,21 @@ export default function RuntimeVersionSelector({
     useEffect(() => {
         if (autoSelected) {
             if (value) {
-                const item = runtimeVersionsInfo.data?.list.find((v) => v.id === value)
+                const item = runtimeVersionsInfo.data?.list?.find((v) => v.id === value)
                 if (!item) {
-                    onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
+                    onChange?.(runtimeVersionsInfo.data?.list?.[0]?.id ?? '')
                 }
                 return
             }
 
-            if (runtimeVersionsInfo.data) onChange?.(runtimeVersionsInfo.data?.list[0]?.id ?? '')
+            if (runtimeVersionsInfo.data) onChange?.(runtimeVersionsInfo.data?.list?.[0]?.id ?? '')
         }
     }, [value, autoSelected, runtimeId, runtimeVersionsInfo.data, onChange])
 
     useEffect(() => {
         if (runtimeVersionsInfo.isSuccess) {
             const ops =
-                runtimeVersionsInfo.data?.list.map((item) => ({
+                runtimeVersionsInfo.data?.list?.map((item) => ({
                     id: item.id,
                     label: <RuntimeLabel version={item} />,
                 })) ?? []

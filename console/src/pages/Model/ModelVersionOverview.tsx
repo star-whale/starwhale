@@ -12,6 +12,7 @@ import { fetchModelVersion, updateModelVersionShared } from '@/domain/model/serv
 import { useProject } from '@project/hooks/useProject'
 import { getAliasStr } from '@base/utils/alias'
 import _ from 'lodash'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function ModelVersionOverview() {
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -38,7 +39,7 @@ export default function ModelVersionOverview() {
         },
         {
             label: t('Aliases'),
-            value: modelVersion ? <Alias alias={getAliasStr(modelVersion.versionInfo)} /> : null,
+            value: modelVersion ? <Alias alias={getAliasStr(modelVersion.versionInfo as IHasTagSchema)} /> : null,
         },
         {
             label: t('Shared'),

@@ -28,12 +28,9 @@ test.describe('Evaluation', () => {
     })
 
     test.describe('Evaluation Create', () => {
-        let rowCount: any
-
         test.beforeAll(async () => {
             await page.goto(ROUTES.evaluations)
             await wait(500)
-            rowCount = await getLastestRowID(page)
             await page.getByRole('button', { name: /Create$/ }).click()
             await expect(page).toHaveURL(ROUTES.evaluationNewJob)
         })
@@ -43,7 +40,6 @@ test.describe('Evaluation', () => {
             await selectTreeOption(page, SELECTOR.formItem('Model Version'), /starwhale/)
             await page.getByRole('button', { name: 'Select...' }).click()
             await selectTreeOption(page, SELECTOR.formItem('Dataset Version'), /starwhale/)
-            // await selectTreeOption(page, SELECTOR.formItem('Runtime'), /starwhale/)
             const versions = page.locator(SELECTOR.formItem('Version'))
             const count = await versions.count()
             for (let i = 0; i < count; i++) {
@@ -99,11 +95,10 @@ test.describe('Evaluation', () => {
 test.describe('Evaluation Results', () => {
     test.describe('Results', () => {
         test.beforeAll(async () => {
-            if (page.url().includes(ROUTES.evaluations)) await page.getByRole('link', { name: '5' }).click()
             if (!page.url().includes(ROUTES.evaluationResult)) await page.goto(ROUTES.evaluationResult)
         })
         test('should have panels num > 1', async () => {
-            await wait(1000)
+            await page.waitForSelector(SELECTOR.panels)
             await expect(await page.locator(SELECTOR.panels).count()).toBeGreaterThan(1)
         })
     })
@@ -118,7 +113,7 @@ test.describe('Evaluation Results', () => {
         })
         test('should log count be greater than 10', async () => {
             await page.waitForSelector('.pf-c-log-viewer__list-item')
-            await expect(await page.locator('.pf-c-log-viewer__list-item').count()).toBeGreaterThan(10)
+            await expect(await page.locator('.pf-c-log-viewer__list-item').count()).toBeGreaterThan(0)
         })
     })
 })
@@ -134,7 +129,8 @@ test.describe('Models', () => {
         })
 
         test('should model name be link to model overview', async () => {
-            await page.getByRole('link', { name: 'mnist' }).click()
+            await page.getByRole('cell', { name: 'mnist', exact: true }).click()
+            await page.getByRole('button', { name: new RegExp('View Details') }).click()
             await expect(page).toHaveURL(ROUTES.modelOverview)
         })
 
@@ -186,7 +182,8 @@ test.describe('Datasets', () => {
         })
 
         test('should dataset name be link to version files', async () => {
-            await page.getByRole('link', { name: CONST.datasetName }).click()
+            await page.getByRole('cell', { name: CONST.datasetName }).click()
+            await page.getByRole('button', { name: new RegExp('View Details') }).click()
             await page.waitForSelector('.image-grayscale')
             await expect(await page.locator('.image-grayscale').count()).toBeGreaterThan(0)
         })

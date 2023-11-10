@@ -2,12 +2,13 @@ import React from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJob } from '@job/services/job'
-import { ExposedLinkType, IExposedLinkSchema } from '@job/schemas/job'
+import { ExposedLinkType } from '@job/schemas/job'
+import { IExposedLinkVo } from '@/api'
 
 export default function JobServings() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(['fetchJob', projectId, jobId], () => fetchJob(projectId, jobId))
-    const [serving, setServing] = React.useState<IExposedLinkSchema>()
+    const [serving, setServing] = React.useState<IExposedLinkVo>()
     React.useEffect(() => {
         if (jobInfo.isSuccess) {
             const job = jobInfo.data

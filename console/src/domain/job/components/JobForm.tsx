@@ -3,12 +3,10 @@ import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import Divider from '@/components/Divider'
-import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
-import { ICreateJobFormSchema, ICreateJobSchema, IJobSchema, RuntimeType } from '../schemas/job'
-import { IModelTreeSchema } from '@/domain/model/schemas/model'
+import { ICreateJobFormSchema, RuntimeType } from '../schemas/job'
 import { useQueryArgs } from '@starwhale/core/utils'
 import FormFieldRuntime from './FormFieldRuntime'
 import { useEventEmitter } from 'ahooks'
@@ -20,25 +18,25 @@ import { useMachine } from '@xstate/react'
 import { jobCreateMachine } from '../createJobMachine'
 import FormFieldTemplate from './FormFieldTemplate'
 import { fetchJob, fetchJobTemplate } from '../services/job'
+import { IJobRequest, IJobVo, IModelVersionViewVo, IModelViewVo, IStepSpec } from '@/api'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
 export interface IJobFormProps {
-    job?: IJobSchema
-    onSubmit: (data: ICreateJobSchema) => Promise<void>
+    job?: IJobVo
+    onSubmit: (data: IJobRequest) => Promise<void>
     autoFill?: boolean
 }
 
 async function getJobByTemplate(projectId: string, templateId: string) {
     const template = await fetchJobTemplate(projectId, templateId)
-    const job = await fetchJob(projectId, template.jobId)
-    return job
+    return fetchJob(projectId, template.jobId)
 }
 
 export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
-    const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
+    const [modelTree, setModelTree] = useState<IModelViewVo[]>([])
     const [resource, setResource] = React.useState<any>()
     const [, forceUpdate] = useReducer((x) => x + 1, 0)
     const [loading, setLoading] = useState(false)
@@ -54,9 +52,9 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     const stepSpecOverWrites = form.getFieldValue('stepSpecOverWrites') as string
     const _modelVersionId = form.getFieldValue('modelVersionUrl')
 
-    const modelVersion: IModelVersionSchema | undefined = React.useMemo(() => {
+    const modelVersion: IModelVersionViewVo | undefined = React.useMemo(() => {
         if (!modelTree || !_modelVersionId) return undefined
-        let version: IModelVersionSchema | undefined
+        let version: IModelVersionViewVo | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
                 if (versionTmp.id === _modelVersionId) {
@@ -67,21 +65,21 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
         return version
     }, [modelTree, _modelVersionId])
 
-    const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
+    const fullStepSource: IStepSpec[] | undefined = React.useMemo(() => {
         if (!modelVersion) return undefined
         return modelVersion?.stepSpecs ?? []
     }, [modelVersion])
 
-    const stepSource: StepSpec[] | undefined = React.useMemo(() => {
+    const stepSource: IStepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
         if (stepSpecOverWrites) {
             try {
-                return (yaml.load(stepSpecOverWrites) ?? []) as StepSpec[]
+                return (yaml.load(stepSpecOverWrites) ?? []) as IStepSpec[]
             } catch (e) {
                 return []
             }
         }
-        return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
+        return fullStepSource.filter((v: IStepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
     const checkStepSource = useCallback(
@@ -178,12 +176,12 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     }, [send, modelTree, query.modelId, query.modelVersionHandler])
 
     const doReFilled = useCallback(
-        (_job: IJobSchema, _modelTree: IModelTreeSchema[]) => {
+        (_job: IJobVo, _modelTree: IModelViewVo[]) => {
             const tmp = _job
             if (!tmp || !_modelTree) return false
 
             // eslint-disable-next-line
-            let modelVersion: IModelVersionSchema | undefined
+            let modelVersion: IModelVersionViewVo | undefined
             _modelTree?.forEach((v) =>
                 v.versions.forEach((versionTmp) => {
                     if (versionTmp.id === tmp.model?.version?.id) {
@@ -233,7 +231,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                 case 'editFilled':
                 case 'autoFilled': {
                     // eslint-disable-next-line
-                    let modelVersion: IModelVersionSchema | undefined
+                    let modelVersion: IModelVersionViewVo | undefined
                     ctx.modelTree?.forEach((v) =>
                         v.versions.forEach((versionTmp) => {
                             if (versionTmp.id === form.getFieldValue('modelVersionUrl')) {
@@ -257,7 +255,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                         ...toUpdate,
                         modelVersionHandler: handler,
                         stepSpecOverWrites: yaml.dump(
-                            modelVersion.stepSpecs.filter((v: StepSpec) => v?.job_name === handler)
+                            modelVersion.stepSpecs.filter((v: IStepSpec) => v?.job_name === handler)
                         ),
                     })
 
@@ -269,7 +267,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                 }
                 case 'autoFilledByModelId': {
                     if (!ctx.modelTree) return
-                    let tmp: IModelVersionSchema | undefined
+                    let tmp: IModelVersionViewVo | undefined
                     if (ctx.modelTree && ctx.modelId) {
                         ctx.modelTree?.forEach((v) => {
                             if (v.modelId === ctx.modelId) {
@@ -283,7 +281,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                             modelVersionUrl: tmp.id,
                             modelVersionHandler: handler,
                             stepSpecOverWrites: yaml.dump(
-                                tmp.stepSpecs.filter((v: StepSpec) => v?.job_name === handler)
+                                tmp.stepSpecs.filter((v: IStepSpec) => v?.job_name === handler)
                             ),
                         })
                     }

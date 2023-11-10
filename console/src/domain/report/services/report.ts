@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { IListSchema } from '@starwhale/core'
-import { IReportDetailSchema, IReportSchema } from '@/domain/report/schemas/report'
+import { IReportSchema } from '@/domain/report/schemas/report'
 import { IListQuerySchema } from '@base/schemas/list'
+import { IReportVo } from '@/api'
 
 export async function listReports(project: string, query: IListQuerySchema): Promise<IListSchema<IReportSchema>> {
     const { data } = await axios.get<IListSchema<IReportSchema>>(`/api/v1/project/${project}/report`, {
@@ -10,13 +11,13 @@ export async function listReports(project: string, query: IListQuerySchema): Pro
     return data
 }
 
-export async function fetchReport(project: string, reportId: string): Promise<IReportDetailSchema> {
-    const { data } = await axios.get<IReportDetailSchema>(`/api/v1/project/${project}/report/${reportId}`)
+export async function fetchReport(project: string, reportId: string): Promise<IReportVo> {
+    const { data } = await axios.get<IReportVo>(`/api/v1/project/${project}/report/${reportId}`)
     return data
 }
 
-export async function fetchReportPreview(reportId: string): Promise<IReportDetailSchema> {
-    const { data } = await axios.get<IReportDetailSchema>(`/api/v1/report/${reportId}/preview`)
+export async function fetchReportPreview(reportId: string): Promise<IReportVo> {
+    const { data } = await axios.get<IReportVo>(`/api/v1/report/${reportId}/preview`)
     return data
 }
 
@@ -27,8 +28,8 @@ export async function createReport(
         content?: string
         description?: string
     }
-): Promise<IReportDetailSchema> {
-    const { data } = await axios.post<IReportDetailSchema>(`/api/v1/project/${project}/report`, report)
+): Promise<string> {
+    const { data } = await axios.post<string>(`/api/v1/project/${project}/report`, report)
     return data
 }
 

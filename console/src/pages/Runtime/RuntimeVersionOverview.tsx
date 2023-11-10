@@ -11,6 +11,7 @@ import { useParams } from 'react-router-dom'
 import { MonoText } from '@/components/Text'
 import { useProject } from '@project/hooks/useProject'
 import { getAliasStr } from '@base/utils/alias'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function RuntimeVersionOverview() {
     const { projectId, runtimeId, runtimeVersionId } = useParams<{
@@ -34,7 +35,7 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Aliases'),
-            value: runtimeVersion ? <Alias alias={getAliasStr(runtimeVersion.versionInfo)} /> : null,
+            value: runtimeVersion ? <Alias alias={getAliasStr(runtimeVersion.versionInfo as IHasTagSchema)} /> : null,
         },
         {
             label: t('Shared'),

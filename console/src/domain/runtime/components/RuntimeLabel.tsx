@@ -3,9 +3,9 @@ import Shared from '@/components/Shared'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
-import { IRuntimeTreeSchema } from '../schemas/runtime'
-import { IRuntimeTreeVersionSchema } from '../schemas/runtimeVersion'
 import { getAliasStr } from '@base/utils/alias'
+import { IRuntimeVersionViewVo, IRuntimeVersionVo, IRuntimeViewVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export const RuntimeLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -24,9 +24,9 @@ export const RuntimeLabelText = themedStyled('div', () => ({
     fontFamily: 'Roboto Mono',
 }))
 
-export function getRuntimeLabel(version: IRuntimeTreeVersionSchema, runtime?: IRuntimeTreeSchema) {
+export function getRuntimeLabel(version: IRuntimeVersionViewVo, runtime?: IRuntimeViewVo) {
     const p = runtime ? [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = version?.versionName
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version?.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
@@ -40,15 +40,15 @@ export function RuntimeLabel({
     isProjectShow = false,
     style = {},
 }: {
-    version: IRuntimeTreeVersionSchema
-    runtime?: IRuntimeTreeSchema
+    version: IRuntimeVersionViewVo | IRuntimeVersionVo
+    runtime?: IRuntimeViewVo
     isProjectShow?: boolean
     style?: React.CSSProperties
 }) {
-    const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={getAliasStr(version)} />
+    const share = <Shared shared={!!version.shared} isTextShow={false} />
+    const alias = <Alias alias={getAliasStr(version as IHasTagSchema)} />
     const p = runtime ? [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = (version as IRuntimeVersionViewVo)?.versionName ?? (version as IRuntimeVersionVo)?.name
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)

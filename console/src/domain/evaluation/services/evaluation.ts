@@ -1,19 +1,6 @@
 import axios from 'axios'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { IEvaluationSchema, IEvaluationViewSchema, IEvaluationAttributeValue } from '../schemas/evaluation'
-
-export async function listEvaluations(
-    projectId: string,
-    query: IListQuerySchema
-): Promise<IListSchema<IEvaluationSchema>> {
-    const resp = await axios.get<IListSchema<IEvaluationSchema>>(`/api/v1/project/${projectId}/evaluation`, {
-        params: {
-            ...query,
-            filter: '',
-        },
-    })
-    return resp.data
-}
+import { IListQuerySchema } from '@/domain/base/schemas/list'
+import { IEvaluationAttributeValue, IEvaluationViewSchema } from '../schemas/evaluation'
 
 export async function listEvaluationAttrs(
     projectId: string,

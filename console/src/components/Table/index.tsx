@@ -1,28 +1,85 @@
-import React from 'react'
-import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
+import React, { startTransition } from 'react'
+import { TableProps as BaseTableProps } from 'baseui/table-semantic'
+import TableSemantic from './TableSemantic'
 import { Skeleton } from 'baseui/skeleton'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { BusyPlaceholder } from '@starwhale/ui'
 import { Pagination } from '@starwhale/ui/Pagination'
+import { useEventCallback } from '@starwhale/core'
+import { useClickAway, useCreation } from 'ahooks'
+import TableActions, { TableActionsT } from '@starwhale/ui/GridTable/components/TableActions'
 
 export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     paginationProps?: IPaginationProps
     data?: any
+    renderActions?: (rowIndex: any) => TableActionsT
 }
 
-export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
+export default function Table({ isLoading, columns, data, overrides, paginationProps, renderActions }: ITableProps) {
     const [, theme] = themedUseStyletron()
     const [page, setPage] = usePage()
+    const [selectedRowIndex, setSelectedRowIndex] = React.useState<number | undefined>(undefined)
+    const [rowRect, setRowRect] = React.useState<{ left: number; top: number } | null>(null)
+    const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
+    const [isFocus, setIsFocus] = React.useState(false)
+    const ref = React.useRef<HTMLElement>(null)
+
+    useClickAway(() => {
+        if (!isFocus) setSelectedRowIndex(undefined)
+        setIsFocus(false)
+    }, ref)
+
+    const handleRowHighlight = useEventCallback(({ event, rowIndex }) => {
+        if (isFocus) return
+
+        startTransition(() => {
+            const tr = event.currentTarget.getBoundingClientRect()
+            setSelectedRowIndex(rowIndex)
+            setRowRect({
+                left: tr.left + tr.width,
+                top: tr.top,
+            })
+        })
+    })
+
+    const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
+        setIsFocus(true)
+        setSelectedRowIndex(rowIndex)
+        setRect({
+            left: event.clientX,
+            top: event.clientY,
+        })
+    })
+
+    const actions = useCreation(() => {
+        if (selectedRowIndex === undefined || !renderActions) return undefined
+
+        return renderActions?.(selectedRowIndex)
+    }, [selectedRowIndex, isFocus])
 
     return (
         <>
+            <TableActions
+                actions={actions}
+                isFocus={isFocus}
+                selectedRowIndex={selectedRowIndex}
+                focusRect={rect}
+                rowRect={rowRect}
+            />
             <TableSemantic
                 isLoading={isLoading}
                 columns={columns}
-                data={data as any}
+                data={data}
+                onRowSelect={handleRowSelect}
+                onRowHighlight={handleRowHighlight}
                 overrides={{
+                    TableBody: {
+                        props: {
+                            ref,
+                        },
+                    },
                     TableBodyRow: {
                         style: {
                             'cursor': 'pointer',
@@ -32,12 +89,6 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             },
                             ':hover .pin-button': {
                                 display: 'block !important',
-                            },
-                        },
-                        props: {
-                            // eslint-disable-next-line
-                            onClick: (e: React.MouseEvent) => {
-                                // e.currentTarget.querySelector('a')?.click()
                             },
                         },
                     },
@@ -61,17 +112,20 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                         },
                     },
                     TableBodyCell: {
-                        style: {
-                            paddingTop: 0,
-                            paddingBottom: 0,
-                            paddingLeft: '20px',
-                            paddingRight: '0px',
-                            lineHeight: '44px',
-                            whiteSpace: 'nowrap',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            borderBottomColor: '#EEF1F6',
-                            verticalAlign: 'middle',
+                        style: ({ $rowIndex }) => {
+                            return {
+                                paddingTop: 0,
+                                paddingBottom: 0,
+                                paddingLeft: '20px',
+                                paddingRight: '0px',
+                                lineHeight: '44px',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                borderBottomColor: '#EEF1F6',
+                                verticalAlign: 'middle',
+                                backgroundColor: $rowIndex === selectedRowIndex ? '#DEE9FF' : 'none',
+                            }
                         },
                     },
                     ...overrides,

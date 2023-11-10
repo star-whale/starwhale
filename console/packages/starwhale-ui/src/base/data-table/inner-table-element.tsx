@@ -1,11 +1,12 @@
 import React from 'react'
 import cn from 'classnames'
 import { themedUseStyletron } from '../../theme/styletron'
-import { HeaderContext } from './headers/header'
+import { HEADER_ROW_HEIGHT, HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
 import { ColumnT } from './types'
 import Headers from './headers/headers'
 import { VariableSizeGrid } from '../react-window'
+import TableActions from '../../GridTable/components/TableActions'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -235,17 +236,19 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         </div>
     )
 
+    const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
+    const innerRef = React.useRef<HTMLDivElement | undefined>(undefined)
+
     return (
         <>
             {Pinned}
             <div
                 // @ts-ignore
-                ref={ref}
+                ref={innerRef}
                 className='table-inner min-w-full absolute flex-1 flex'
                 // @ts-ignore
                 style={{
                     ...props.style,
-                    // transform: `translate3d(${ctx.scrollLeft}px, 0px, 0px)`,
                 }}
                 onMouseLeave={ctx?.onRowMouseLeave}
             >
@@ -253,6 +256,25 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage as any}</LoadingOrEmptyMessage>}
                 {viewState === RENDERING && $children}
                 {$background}
+                {ctx.rowActions &&
+                    Boolean(ctx.rowActions.length) &&
+                    ctx.rowHighlightIndex >= 0 &&
+                    Boolean(highlightedRow) &&
+                    !ctx.isScrollingX && (
+                        <TableActions
+                            actions={
+                                typeof ctx.rowActions === 'function' ? ctx.rowActions(highlightedRow) : ctx.rowActions
+                            }
+                            isFocus={false}
+                            selectedRowIndex={ctx.rowHighlightIndex}
+                            focusRect={{}}
+                            mountNode={innerRef?.current}
+                            rowRect={{
+                                left: ctx.width,
+                                top: ctx.rowHighlightIndex * ctx.rowHeight,
+                            }}
+                        />
+                    )}
             </div>
         </>
     )

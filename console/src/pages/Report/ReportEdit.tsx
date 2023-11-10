@@ -77,7 +77,7 @@ export default function ReportEdit() {
         if (data) {
             setTitle(data.title)
             setDescription(data.description || '')
-            setContent(data.content)
+            setContent(data.content || '')
         }
     }, [data])
 

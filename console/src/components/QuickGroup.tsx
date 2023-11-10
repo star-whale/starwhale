@@ -2,6 +2,7 @@ import React from 'react'
 import { ExtendButton } from '@starwhale/ui'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view/types'
+import { useMount } from 'ahooks'
 
 export enum QuickGroupEnum {
     latest = 'latest',
@@ -31,6 +32,10 @@ function QuickGroup({
         ...filters,
     }
     const quickGroup = value
+
+    useMount(() => {
+        onChange?.(QuickGroupEnum.current, filterFunctions[QuickGroupEnum.current])
+    })
 
     return (
         <div>

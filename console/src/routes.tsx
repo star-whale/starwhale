@@ -60,6 +60,7 @@ import JobOverview from './pages/Job/JobOverview'
 import EvaluationOverview from './pages/Evaluation/EvaluationOverview'
 import ClientLogin from '@/pages/Auth/ClientLogin'
 import JobServings from '@/pages/Job/JobServings'
+import ModelVersionServings from '@/pages/Model/ModelVersionServings'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -308,6 +309,11 @@ const Routes = () => {
                                             exact
                                             path='/projects/:projectId/models/:modelId/versions/:modelVersionId/files'
                                             component={ModelVersionOverviewFiles}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/servings'
+                                            component={ModelVersionServings}
                                         />
                                         <Redirect to='/projects/:projectId/models/:modelId' />
                                     </Switch>

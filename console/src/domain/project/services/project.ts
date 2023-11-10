@@ -1,10 +1,11 @@
 import axios from 'axios'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { IListQuerySchema } from '@/domain/base/schemas/list'
 import { IUserRoleSchema } from '@user/schemas/user'
-import { ICreateProjectSchema, IUpdateProjectSchema, IProjectSchema, IProjectRoleSchema } from '../schemas/project'
+import { ICreateProjectSchema, IProjectRoleSchema, IProjectSchema, IUpdateProjectSchema } from '../schemas/project'
+import { IPageInfoProjectVo } from '@/api'
 
-export async function listProjects(query: IListQuerySchema & { sort?: string }): Promise<IListSchema<IProjectSchema>> {
-    const resp = await axios.get<IListSchema<IProjectSchema>>('/api/v1/project', { params: query })
+export async function listProjects(query: IListQuerySchema & { sort?: string }): Promise<IPageInfoProjectVo> {
+    const resp = await axios.get<IPageInfoProjectVo>('/api/v1/project', { params: query })
     return resp.data
 }
 

@@ -2051,6 +2051,10 @@ const locales0 = {
         en: 'Done',
         zh: '完成',
     },
+    'View Details': {
+        en: 'View Details',
+        zh: '查看详情',
+    },
     ...basic,
     ...dataset,
     ...model,
