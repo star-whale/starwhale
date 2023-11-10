@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
@@ -74,6 +75,7 @@ class FineTuneAppServiceTest {
                 fineTuneMapper,
                 jobMapper,
                 jobSpecParser,
+                new IdConverter(),
                 modelDao,
                 "instanceuri",
                 datasetDao

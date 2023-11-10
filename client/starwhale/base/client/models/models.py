@@ -215,9 +215,9 @@ class DevWay(Enum):
 
 
 class JobRequest(SwBaseModel):
-    model_version_id: Optional[int] = Field(None, alias='modelVersionId')
-    dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
-    runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
+    model_version_id: Optional[str] = Field(None, alias='modelVersionId')
+    dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
+    runtime_version_id: Optional[str] = Field(None, alias='runtimeVersionId')
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
@@ -371,9 +371,9 @@ class Type3(Enum):
 
 
 class FineTuneCreateRequest(SwBaseModel):
-    model_version_id: Optional[int] = Field(None, alias='modelVersionId')
-    dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
-    runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
+    model_version_id: Optional[str] = Field(None, alias='modelVersionId')
+    dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
+    runtime_version_id: Optional[str] = Field(None, alias='runtimeVersionId')
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
@@ -590,9 +590,9 @@ class TrashVo(SwBaseModel):
 
 
 class JobTemplateVo(SwBaseModel):
-    id: Optional[int] = None
-    name: Optional[str] = None
-    job_id: Optional[int] = Field(None, alias='jobId')
+    id: str
+    name: str
+    job_id: str = Field(..., alias='jobId')
 
 
 class ResponseMessageListJobTemplateVo(SwBaseModel):
@@ -1089,31 +1089,6 @@ class GraphNode(SwBaseModel):
     entity_id: Optional[int] = Field(None, alias='entityId')
 
 
-class AttributeValueVo(SwBaseModel):
-    name: Optional[str] = None
-    type: Optional[str] = None
-    value: Optional[str] = None
-
-
-class SummaryVo(SwBaseModel):
-    id: str
-    uuid: str
-    project_id: str = Field(..., alias='projectId')
-    project_name: str = Field(..., alias='projectName')
-    model_name: str = Field(..., alias='modelName')
-    model_version: str = Field(..., alias='modelVersion')
-    datasets: Optional[str] = None
-    runtime: str
-    device: Optional[str] = None
-    device_amount: Optional[int] = Field(None, alias='deviceAmount')
-    created_time: int = Field(..., alias='createdTime')
-    stop_time: Optional[int] = Field(None, alias='stopTime')
-    owner: str
-    duration: Optional[int] = None
-    job_status: JobStatus = Field(..., alias='jobStatus')
-    attributes: Optional[List[AttributeValueVo]] = None
-
-
 class ConfigVo(SwBaseModel):
     name: Optional[str] = None
     content: Optional[str] = None
@@ -1124,17 +1099,6 @@ class ResponseMessageConfigVo(SwBaseModel):
     code: str
     message: str
     data: ConfigVo
-
-
-class AttributeVo(SwBaseModel):
-    name: Optional[str] = None
-    type: Optional[str] = None
-
-
-class ResponseMessageListAttributeVo(SwBaseModel):
-    code: str
-    message: str
-    data: List[AttributeVo]
 
 
 class PageInfoDatasetVo(SwBaseModel):
@@ -1651,33 +1615,6 @@ class ResponseMessageGraph(SwBaseModel):
     code: str
     message: str
     data: Graph
-
-
-class PageInfoSummaryVo(SwBaseModel):
-    total: Optional[int] = None
-    list: Optional[List[SummaryVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoSummaryVo(SwBaseModel):
-    code: str
-    message: str
-    data: PageInfoSummaryVo
 
 
 class FineTuneVo(SwBaseModel):

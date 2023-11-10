@@ -127,7 +127,7 @@ public class JobControllerTest {
     public void testFindJob() {
         given(jobServiceForWeb.findJob(same("p1"), same("j1")))
                 .willReturn(JobVo.builder().id("j1").build());
-        var resp = controller.findJob("p1", "j1");
+        var resp = controller.getJob("p1", "j1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),

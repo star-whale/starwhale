@@ -45,7 +45,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -189,7 +188,6 @@ public class JobConverter {
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
         var runtime = findRuntimeByVersionIds(jobEntity.getRuntimeVersionId());
         var datasetList = findDatasetVersionsByJobId(jobEntity.getId());
-        var datasetVersions = datasetList.stream().map(ds -> ds.getVersion().getName()).collect(Collectors.toList());
         Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
         return JobVo.builder()
@@ -204,7 +202,6 @@ public class JobConverter {
                 .runtime(runtime)
                 .builtinRuntime(null == runtime ? null : runtime.getVersion().getName()
                         .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
-                .datasets(datasetVersions)
                 .datasetList(datasetList)
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())

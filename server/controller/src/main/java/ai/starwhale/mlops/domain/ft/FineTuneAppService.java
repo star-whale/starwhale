@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.ft;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.Constants;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
@@ -65,6 +66,8 @@ public class FineTuneAppService {
 
     private final JobSpecParser jobSpecParser;
 
+    private final IdConverter idConverter;
+
     final ModelDao modelDao;
 
     private final DatasetDao datasetDao;
@@ -72,7 +75,11 @@ public class FineTuneAppService {
     final String instanceUri;
 
     public FineTuneAppService(
-            JobCreator jobCreator, FineTuneMapper fineTuneMapper, JobMapper jobMapper, JobSpecParser jobSpecParser,
+            JobCreator jobCreator,
+            FineTuneMapper fineTuneMapper,
+            JobMapper jobMapper,
+            JobSpecParser jobSpecParser,
+            IdConverter idConverter,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
             DatasetDao datasetDao
@@ -81,6 +88,7 @@ public class FineTuneAppService {
         this.fineTuneMapper = fineTuneMapper;
         this.jobMapper = jobMapper;
         this.jobSpecParser = jobSpecParser;
+        this.idConverter = idConverter;
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
         this.instanceUri = instanceUri;
@@ -97,16 +105,16 @@ public class FineTuneAppService {
                 .jobId(-1L)
                 .spaceId(spaceId)
                 .evalDatasets(request.getEvalDatasetVersionIds())
-                .trainDatasets(request.getDatasetVersionIds())
-                .baseModelVersionId(request.getModelVersionId())
+                .trainDatasets(idConverter.revertList(request.getDatasetVersionIds()))
+                .baseModelVersionId(idConverter.revert(request.getModelVersionId()))
                 .build();
         fineTuneMapper.add(ft);
         request = addEnvToRequest(ft.getId(), request);
         Job job = jobCreator.createJob(
                 UserJobCreateRequest.builder()
-                        .modelVersionId(request.getModelVersionId())
-                        .runtimeVersionId(request.getRuntimeVersionId())
-                        .datasetVersionIds(request.getDatasetVersionIds())
+                        .modelVersionId(idConverter.revert(request.getModelVersionId()))
+                        .runtimeVersionId(idConverter.revert(request.getRuntimeVersionId()))
+                        .datasetVersionIds(idConverter.revertList(request.getDatasetVersionIds()))
                         .devMode(request.isDevMode())
                         .devPassword(request.getDevPassword())
                         .ttlInSec(request.getTimeToLiveInSec())
@@ -136,7 +144,8 @@ public class FineTuneAppService {
         try {
             steps = StringUtils.hasText(stepSpecOverWrites)
                     ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
-                    : jobSpecParser.parseStepFromYaml(stepSpecOfModelVersion(request.getModelVersionId()), handler);
+                    : jobSpecParser.parseStepFromYaml(
+                    stepSpecOfModelVersion(idConverter.revert(request.getModelVersionId())), handler);
             for (var s : steps) {
                 List<Env> env = s.getEnv();
                 if (null == env) {

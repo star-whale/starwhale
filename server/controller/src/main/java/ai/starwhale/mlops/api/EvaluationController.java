@@ -18,27 +18,21 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
-import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.EvaluationFileStorage;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
-import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
@@ -74,17 +68,6 @@ public class EvaluationController {
         this.evaluationFileStorage = evaluationFileStorage;
     }
 
-    @Operation(summary = "List Evaluation Summary Attributes")
-    @GetMapping(value = "/project/{projectUrl}/evaluation/view/attribute",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(
-            @PathVariable String projectUrl
-    ) {
-        List<AttributeVo> vos = evaluationService.listAttributeVo();
-        return ResponseEntity.ok(Code.success.asResponse(vos));
-    }
-
     @Operation(summary = "Get View Config")
     @GetMapping(
             value = "/project/{projectUrl}/evaluation/view/config",
@@ -118,28 +101,6 @@ public class EvaluationController {
             );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
-    }
-
-    @Operation(summary = "List Evaluation Summary")
-    @GetMapping(
-            value = "/project/{projectUrl}/evaluation",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(
-            @PathVariable String projectUrl,
-            @RequestParam String filter,
-            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize
-    ) {
-        PageInfo<SummaryVo> vos = evaluationService.listEvaluationSummary(
-                projectUrl,
-                SummaryFilter.parse(filter),
-                PageParams.builder()
-                        .pageNum(pageNum)
-                        .pageSize(pageSize)
-                        .build()
-        );
-        return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
     @Operation(summary = "Upload a hashed BLOB to evaluation object store",

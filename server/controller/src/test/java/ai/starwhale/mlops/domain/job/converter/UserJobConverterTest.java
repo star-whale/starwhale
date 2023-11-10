@@ -107,11 +107,11 @@ class UserJobConverterTest {
 
         // new version request
         req.setModelVersionUrl(null);
-        req.setModelVersionId(1L);
+        req.setModelVersionId("1");
         req.setRuntimeVersionUrl(null);
-        req.setRuntimeVersionId(2L);
+        req.setRuntimeVersionId("2");
         req.setDatasetVersionUrls(null);
-        req.setDatasetVersionIds(List.of(3L, 4L));
+        req.setDatasetVersionIds(List.of("3", "4"));
 
         resp = userJobConverter.convert(projectId, req);
         assertEquals("test", resp.getResourcePool());

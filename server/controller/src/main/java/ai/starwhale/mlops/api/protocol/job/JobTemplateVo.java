@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api.protocol.job;
 
 import ai.starwhale.mlops.domain.job.template.bo.Template;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,14 +26,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JobTemplateVo {
-    private Long id;
+    @NotNull
+    private String id;
+
+    @NotNull
     private String name;
-    private Long jobId;
+
+    @NotNull
+    private String jobId;
 
     public static JobTemplateVo fromBo(Template jobTemplate) {
         if (jobTemplate == null) {
             return null;
         }
-        return new JobTemplateVo(jobTemplate.getId(), jobTemplate.getName(), jobTemplate.getJobId());
+        return new JobTemplateVo(
+                jobTemplate.getId().toString(),
+                jobTemplate.getName(),
+                jobTemplate.getJobId().toString()
+        );
     }
 }
