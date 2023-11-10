@@ -29,6 +29,7 @@ import {
     ICompleteUploadBlobData,
     IConfigRequest,
     IConsumeNextDataData,
+    ICreateFineTuneData,
     ICreateJobData,
     ICreateJobTemplateRequest,
     ICreateModelServingData,
@@ -38,8 +39,7 @@ import {
     ICreateProjectRequest,
     ICreateReportData,
     ICreateReportRequest,
-    ICreateSftData,
-    ICreateSftSpaceData,
+    ICreateSpaceData,
     ICreateUserData,
     ICreateViewConfigData,
     IDataConsumptionRequest,
@@ -64,6 +64,8 @@ import {
     IExecRequest,
     IFileDeleteRequest,
     IFindJobData,
+    IFineTuneCreateRequest,
+    IFineTuneSpaceCreateRequest,
     IFlushData,
     IFlushRequest,
     IGetCurrentUserData,
@@ -114,6 +116,7 @@ import {
     IListDeviceData,
     IListEvaluationSummaryData,
     IListFilesData,
+    IListFineTuneData,
     IListJobsData,
     IListModelData,
     IListModelTreeData,
@@ -128,8 +131,7 @@ import {
     IListRuntimeTreeData,
     IListRuntimeVersionData,
     IListRuntimeVersionTagsData,
-    IListSftData,
-    IListSftSpaceData,
+    IListSpaceData,
     IListSystemRolesData,
     IListTablesData,
     IListTablesRequest,
@@ -183,8 +185,6 @@ import {
     ISelectAllInProjectData,
     ISelectRecentlyInProjectData,
     ISetPanelSettingData,
-    ISftCreateRequest,
-    ISftSpaceCreateRequest,
     IShareDatasetVersionData,
     IShareModelVersionData,
     IShareRuntimeVersionData,
@@ -202,7 +202,7 @@ import {
     IUpdateResourcePoolsData,
     IUpdateRuntimeData,
     IUpdateSettingData,
-    IUpdateSftSpaceData,
+    IUpdateSpaceData,
     IUpdateTableData,
     IUpdateTableRequest,
     IUpdateUserPwdData,
@@ -822,25 +822,6 @@ export class Api<SecurityDataType = unknown> {
     /**
      * No description
      *
-     * @tags Sft
-     * @name UpdateSftSpace
-     * @summary Update SFT space
-     * @request PUT:/api/v1/project/{projectId}/sft/space/{spaceId}
-     * @secure
-     * @response `200` `IUpdateSftSpaceData` OK
-     */
-    updateSftSpace = (projectId: number, spaceId: number, data: ISftSpaceCreateRequest, params: RequestParams = {}) =>
-        this.http.request<IUpdateSftSpaceData, any>({
-            path: `/api/v1/project/${projectId}/sft/space/${spaceId}`,
-            method: 'PUT',
-            body: data,
-            secure: true,
-            type: ContentType.Json,
-            ...params,
-        })
-    /**
-     * No description
-     *
      * @tags Project
      * @name RecoverProject
      * @summary Recover a project
@@ -853,6 +834,25 @@ export class Api<SecurityDataType = unknown> {
             path: `/api/v1/project/${projectId}/recover`,
             method: 'PUT',
             secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name UpdateSpace
+     * @summary Update fine-tune space
+     * @request PUT:/api/v1/project/{projectId}/ftspace/{spaceId}
+     * @secure
+     * @response `200` `IUpdateSpaceData` OK
+     */
+    updateSpace = (projectId: number, spaceId: number, data: IFineTuneSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<IUpdateSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}`,
+            method: 'PUT',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
             ...params,
         })
     /**
@@ -2061,14 +2061,14 @@ export class Api<SecurityDataType = unknown> {
     /**
      * No description
      *
-     * @tags Sft
-     * @name ListSftSpace
-     * @summary Get the list of SFT spaces
-     * @request GET:/api/v1/project/{projectId}/sft/space
+     * @tags FineTune
+     * @name ListSpace
+     * @summary Get the list of fine-tune spaces
+     * @request GET:/api/v1/project/{projectId}/ftspace
      * @secure
-     * @response `200` `IListSftSpaceData` OK
+     * @response `200` `IListSpaceData` OK
      */
-    listSftSpace = (
+    listSpace = (
         projectId: number,
         query?: {
             /**
@@ -2084,8 +2084,8 @@ export class Api<SecurityDataType = unknown> {
         },
         params: RequestParams = {}
     ) =>
-        this.http.request<IListSftSpaceData, any>({
-            path: `/api/v1/project/${projectId}/sft/space`,
+        this.http.request<IListSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace`,
             method: 'GET',
             query: query,
             secure: true,
@@ -2094,16 +2094,16 @@ export class Api<SecurityDataType = unknown> {
     /**
      * No description
      *
-     * @tags Sft
-     * @name CreateSftSpace
-     * @summary Create SFT space
-     * @request POST:/api/v1/project/{projectId}/sft/space
+     * @tags FineTune
+     * @name CreateSpace
+     * @summary Create fine-tune space
+     * @request POST:/api/v1/project/{projectId}/ftspace
      * @secure
-     * @response `200` `ICreateSftSpaceData` OK
+     * @response `200` `ICreateSpaceData` OK
      */
-    createSftSpace = (projectId: number, data: ISftSpaceCreateRequest, params: RequestParams = {}) =>
-        this.http.request<ICreateSftSpaceData, any>({
-            path: `/api/v1/project/${projectId}/sft/space`,
+    createSpace = (projectId: number, data: IFineTuneSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace`,
             method: 'POST',
             body: data,
             secure: true,
@@ -2113,16 +2113,50 @@ export class Api<SecurityDataType = unknown> {
     /**
      * No description
      *
-     * @tags Sft
-     * @name CreateSft
-     * @summary Create SFT
-     * @request POST:/api/v1/project/{projectId}/sft/space/{spaceId}/create
+     * @tags FineTune
+     * @name ListFineTune
+     * @summary List fine-tune
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
      * @secure
-     * @response `200` `ICreateSftData` OK
+     * @response `200` `IListFineTuneData` OK
      */
-    createSft = (projectId: number, spaceId: number, data: ISftCreateRequest, params: RequestParams = {}) =>
-        this.http.request<ICreateSftData, any>({
-            path: `/api/v1/project/${projectId}/sft/space/${spaceId}/create`,
+    listFineTune = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListFineTuneData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name CreateFineTune
+     * @summary Create fine-tune
+     * @request POST:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
+     * @secure
+     * @response `200` `ICreateFineTuneData` OK
+     */
+    createFineTune = (projectId: number, spaceId: number, data: IFineTuneCreateRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateFineTuneData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
             method: 'POST',
             body: data,
             secure: true,
@@ -3610,40 +3644,6 @@ export class Api<SecurityDataType = unknown> {
     ) =>
         this.http.request<IPullUriContentData, any>({
             path: `/api/v1/project/${projectName}/dataset/${datasetName}/uri`,
-            method: 'GET',
-            query: query,
-            secure: true,
-            ...params,
-        })
-    /**
-     * No description
-     *
-     * @tags Sft
-     * @name ListSft
-     * @summary List SFT
-     * @request GET:/api/v1/project/{projectId}/sft/space/{spaceId}/list
-     * @secure
-     * @response `200` `IListSftData` OK
-     */
-    listSft = (
-        projectId: number,
-        spaceId: number,
-        query?: {
-            /**
-             * @format int32
-             * @default 1
-             */
-            pageNum?: number
-            /**
-             * @format int32
-             * @default 10
-             */
-            pageSize?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        this.http.request<IListSftData, any>({
-            path: `/api/v1/project/${projectId}/sft/space/${spaceId}/list`,
             method: 'GET',
             query: query,
             secure: true,

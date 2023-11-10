@@ -8,23 +8,23 @@ import { useHistory, useParams } from 'react-router-dom'
 import User from '@/domain/user/components/User'
 import { Button, ExtendButton } from '@starwhale/ui'
 import { useAccess } from '@/api/WithAuth'
-import { ISftSpaceVo, api } from '@/api'
+import { IFineTuneSpaceVo, api } from '@/api'
 import { useQuery } from 'react-query'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import SpaceForm from '@/domain/space/components/SpaceForm'
 import { useEventCallback } from '@starwhale/core'
 
-export default function SftSpaceListCard() {
+export default function FineTuneSpaceListCard() {
     const [page] = usePage()
     const history = useHistory()
     const { projectId } = useParams<{ projectId: any }>()
     const [isOpen, setIsOpen] = React.useState(false)
-    const [editRow, setEditRow] = React.useState<ISftSpaceVo>()
+    const [editRow, setEditRow] = React.useState<IFineTuneSpaceVo>()
 
     const info = useQuery(
-        ['listSftSpace', projectId],
+        ['listFTSpace', projectId],
         () =>
-            api.listSftSpace(projectId, {
+            api.listSpace(projectId, {
                 ...page,
             }),
         {
@@ -34,11 +34,11 @@ export default function SftSpaceListCard() {
 
     const [t] = useTranslation()
 
-    const isAccessCreate = useAccess('sft.space.create')
-    const isAccessUpdate = useAccess('sft.space.update')
-    // const isAccessDelete = useAccess('sft.space.delete')
+    const isAccessCreate = useAccess('ft.space.create')
+    const isAccessUpdate = useAccess('ft.space.update')
+    // const isAccessDelete = useAccess('ft.space.delete')
 
-    const getActions = (data: ISftSpaceVo) => [
+    const getActions = (data: IFineTuneSpaceVo) => [
         {
             access: true,
             quickAccess: true,
@@ -66,23 +66,23 @@ export default function SftSpaceListCard() {
                         setIsOpen(true)
                     }}
                 >
-                    {hasText ? t('sft.space.action.edit') : undefined}
+                    {hasText ? t('ft.space.action.edit') : undefined}
                 </ExtendButton>
             ),
         },
     ]
 
-    const handleCreate = useEventCallback(async (data: ISftSpaceVo) => {
-        await api.createSftSpace(projectId, {
+    const handleCreate = useEventCallback(async (data: IFineTuneSpaceVo) => {
+        await api.createSpace(projectId, {
             name: data.name as string,
             description: data.description as string,
         })
         await info.refetch()
         setIsOpen(false)
     })
-    const handleEdit = useEventCallback(async ({ id, ...data }: ISftSpaceVo) => {
+    const handleEdit = useEventCallback(async ({ id, ...data }: IFineTuneSpaceVo) => {
         if (!id) return
-        await api.updateSftSpace(projectId, id, {
+        await api.updateSpace(projectId, id, {
             name: data.name as string,
             description: data.description as string,
         })
@@ -92,7 +92,7 @@ export default function SftSpaceListCard() {
 
     return (
         <Card
-            title={t('sft.space.title')}
+            title={t('ft.space.title')}
             extra={
                 isAccessCreate && (
                     <Button
@@ -114,7 +114,7 @@ export default function SftSpaceListCard() {
                     return getActions(data)
                 }}
                 isLoading={info.isLoading}
-                columns={[t('sft.space.id'), t('sft.space.name'), t('Owner'), t('Created'), t('Description')]}
+                columns={[t('ft.space.id'), t('ft.space.name'), t('Owner'), t('Created'), t('Description')]}
                 data={
                     info.data?.list?.map((data) => {
                         return [
@@ -137,11 +137,11 @@ export default function SftSpaceListCard() {
             />
             <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} closeable animate autoFocus>
                 <ModalHeader>
-                    {editRow ? t('edit sth', [t('sft.space.title')]) : t('create sth', [t('sft.space.title')])}
+                    {editRow ? t('edit sth', [t('ft.space.title')]) : t('create sth', [t('ft.space.title')])}
                 </ModalHeader>
                 <ModalBody>
                     <SpaceForm
-                        label={t('sft.space.title')}
+                        label={t('ft.space.title')}
                         data={editRow}
                         onSubmit={editRow ? handleEdit : handleCreate}
                     />

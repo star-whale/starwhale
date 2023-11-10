@@ -72,7 +72,7 @@ export interface IJobModifyRequest {
     comment: string
 }
 
-export interface ISftSpaceCreateRequest {
+export interface IFineTuneSpaceCreateRequest {
     name: string
     description: string
 }
@@ -396,7 +396,7 @@ export interface IResponseMessageMapObjectObject {
     data: Record<string, object>
 }
 
-export interface ISftCreateRequest {
+export interface IFineTuneCreateRequest {
     /** @format int64 */
     modelVersionId?: number
     datasetVersionIds?: number[]
@@ -1985,115 +1985,6 @@ export interface IResponseMessagePageInfoBuildRecordVo {
     data: IPageInfoBuildRecordVo
 }
 
-export interface IPageInfoSftSpaceVo {
-    /** @format int64 */
-    total?: number
-    list?: ISftSpaceVo[]
-    /** @format int32 */
-    pageNum?: number
-    /** @format int32 */
-    pageSize?: number
-    /** @format int32 */
-    size?: number
-    /** @format int64 */
-    startRow?: number
-    /** @format int64 */
-    endRow?: number
-    /** @format int32 */
-    pages?: number
-    /** @format int32 */
-    prePage?: number
-    /** @format int32 */
-    nextPage?: number
-    isFirstPage?: boolean
-    isLastPage?: boolean
-    hasPreviousPage?: boolean
-    hasNextPage?: boolean
-    /** @format int32 */
-    navigatePages?: number
-    navigatepageNums?: number[]
-    /** @format int32 */
-    navigateFirstPage?: number
-    /** @format int32 */
-    navigateLastPage?: number
-}
-
-export interface IResponseMessagePageInfoSftSpaceVo {
-    code: string
-    message: string
-    data: IPageInfoSftSpaceVo
-}
-
-export interface ISftSpaceVo {
-    /** @format int64 */
-    id?: number
-    name?: string
-    description?: string
-    /** @format int64 */
-    createdTime: number
-    /** User object */
-    owner: IUserVo
-}
-
-export type IDsInfo = object
-
-export type IModelInfo = object
-
-export interface IPageInfoSftVo {
-    /** @format int64 */
-    total?: number
-    list?: ISftVo[]
-    /** @format int32 */
-    pageNum?: number
-    /** @format int32 */
-    pageSize?: number
-    /** @format int32 */
-    size?: number
-    /** @format int64 */
-    startRow?: number
-    /** @format int64 */
-    endRow?: number
-    /** @format int32 */
-    pages?: number
-    /** @format int32 */
-    prePage?: number
-    /** @format int32 */
-    nextPage?: number
-    isFirstPage?: boolean
-    isLastPage?: boolean
-    hasPreviousPage?: boolean
-    hasNextPage?: boolean
-    /** @format int32 */
-    navigatePages?: number
-    navigatepageNums?: number[]
-    /** @format int32 */
-    navigateFirstPage?: number
-    /** @format int32 */
-    navigateLastPage?: number
-}
-
-export interface IResponseMessagePageInfoSftVo {
-    code: string
-    message: string
-    data: IPageInfoSftVo
-}
-
-export interface ISftVo {
-    /** @format int64 */
-    id?: number
-    /** @format int64 */
-    jobId?: number
-    status?: 'CREATED' | 'READY' | 'PAUSED' | 'RUNNING' | 'CANCELLING' | 'CANCELED' | 'SUCCESS' | 'FAIL' | 'UNKNOWN'
-    /** @format int64 */
-    startTime?: number
-    /** @format int64 */
-    endTime?: number
-    trainDatasets?: IDsInfo[]
-    evalDatasets?: IDsInfo[]
-    baseModel?: IModelInfo
-    targetModel?: IModelInfo
-}
-
 /**
  * Model Serving Status
  * Model Serving Status object
@@ -2109,6 +2000,115 @@ export interface IResponseMessageModelServingStatusVo {
     message: string
     /** Model Serving Status object */
     data: IModelServingStatusVo
+}
+
+export interface IFineTuneSpaceVo {
+    /** @format int64 */
+    id: number
+    name: string
+    description?: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner: IUserVo
+}
+
+export interface IPageInfoFineTuneSpaceVo {
+    /** @format int64 */
+    total?: number
+    list?: IFineTuneSpaceVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
+}
+
+export interface IResponseMessagePageInfoFineTuneSpaceVo {
+    code: string
+    message: string
+    data: IPageInfoFineTuneSpaceVo
+}
+
+export type IDsInfo = object
+
+export interface IFineTuneVo {
+    /** @format int64 */
+    id: number
+    /** @format int64 */
+    jobId: number
+    status: 'CREATED' | 'READY' | 'PAUSED' | 'RUNNING' | 'CANCELLING' | 'CANCELED' | 'SUCCESS' | 'FAIL' | 'UNKNOWN'
+    /** @format int64 */
+    startTime: number
+    /** @format int64 */
+    endTime?: number
+    trainDatasets?: IDsInfo[]
+    evalDatasets?: IDsInfo[]
+    baseModel: IModelInfo
+    targetModel?: IModelInfo
+}
+
+export type IModelInfo = object
+
+export interface IPageInfoFineTuneVo {
+    /** @format int64 */
+    total?: number
+    list?: IFineTuneVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
+}
+
+export interface IResponseMessagePageInfoFineTuneVo {
+    code: string
+    message: string
+    data: IPageInfoFineTuneVo
 }
 
 export interface IPageInfoPanelPluginVo {
@@ -2241,9 +2241,9 @@ export type IShareDatasetVersionData = IResponseMessageString['data']
 
 export type IRecoverDatasetData = IResponseMessageString['data']
 
-export type IUpdateSftSpaceData = IResponseMessageString['data']
-
 export type IRecoverProjectData = IResponseMessageString['data']
+
+export type IUpdateSpaceData = IResponseMessageString['data']
 
 export type IApplySignedGetUrlsData = IResponseMessageSignedUrlResponse['data']
 
@@ -2353,11 +2353,13 @@ export type IUploadHashedBlob1Data = IResponseMessageString['data']
 
 export type IHeadHashedBlob1Data = object
 
-export type IListSftSpaceData = IResponseMessagePageInfoSftSpaceVo['data']
+export type IListSpaceData = IResponseMessagePageInfoFineTuneSpaceVo['data']
 
-export type ICreateSftSpaceData = IResponseMessageString['data']
+export type ICreateSpaceData = IResponseMessageString['data']
 
-export type ICreateSftData = IResponseMessageString['data']
+export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
+
+export type ICreateFineTuneData = IResponseMessageString['data']
 
 export type IGetPanelSettingData = IResponseMessageString['data']
 
@@ -2489,8 +2491,6 @@ export type IListBuildRecordsData = IResponseMessagePageInfoBuildRecordVo['data'
 export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 
 export type IPullUriContentData = any
-
-export type IListSftData = IResponseMessagePageInfoSftVo['data']
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
 

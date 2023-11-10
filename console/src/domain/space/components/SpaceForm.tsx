@@ -6,11 +6,11 @@ import { isModified } from '@/utils'
 import { Textarea } from 'baseui/textarea'
 import { createUseStyles } from 'react-jss'
 import Input from '@starwhale/ui/Input'
-import { ISftSpaceCreateRequest, ISftSpaceVo } from '@/api'
+import { IFineTuneSpaceCreateRequest, IFineTuneSpaceVo } from '@/api'
 import { useEventCallback } from '@starwhale/core'
 import _ from 'lodash'
 
-const { Form, FormItem } = createForm<ISftSpaceCreateRequest>()
+const { Form, FormItem } = createForm<IFineTuneSpaceCreateRequest>()
 
 const useStyles = createUseStyles({
     project: {},
@@ -22,8 +22,8 @@ const useStyles = createUseStyles({
 })
 
 export interface IFormProps {
-    data?: ISftSpaceVo
-    onSubmit: (data: ISftSpaceVo) => Promise<void>
+    data?: IFineTuneSpaceVo
+    onSubmit: (data: IFineTuneSpaceVo) => Promise<void>
     label?: string
 }
 
@@ -31,7 +31,7 @@ export default function SpaceForm({ data, label, onSubmit }: IFormProps) {
     const [t] = useTranslation()
     const styles = useStyles()
 
-    const [values, setValues] = useState<ISftSpaceVo | undefined>(data)
+    const [values, setValues] = useState<IFineTuneSpaceVo | undefined>(data)
 
     const [loading, setLoading] = useState(false)
 

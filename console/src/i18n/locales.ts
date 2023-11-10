@@ -805,24 +805,24 @@ const report = {
     },
 }
 
-const sft = {
+const ft = {
     'fine-tuning': {
         en: 'Fine-tuning',
         zh: 'Fine-tuning',
     },
-    'sft.space.title': {
+    'ft.space.title': {
         en: 'Fine-tuning',
         zh: 'Fint-tuning',
     },
-    'sft.space.id': {
+    'ft.space.id': {
         en: 'Fine-tuning ID',
         zh: 'Fine-tuning ID',
     },
-    'sft.space.name': {
+    'ft.space.name': {
         en: 'Fine-tuning Name',
         zh: 'Fine-tuning 名称',
     },
-    'sft.space.action.edit': {
+    'ft.space.action.edit': {
         en: 'Edit',
         zh: '编辑',
     },
@@ -2091,7 +2091,7 @@ const locales0 = {
     ...widget,
     ...ui,
     ...quickstart,
-    ...sft,
+    ...ft,
 }
 
 // eslint-disable-next-line import/no-mutable-exports
