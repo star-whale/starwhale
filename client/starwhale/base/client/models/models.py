@@ -66,6 +66,11 @@ class JobModifyRequest(SwBaseModel):
     comment: str
 
 
+class SftSpaceCreateRequest(SwBaseModel):
+    name: str
+    description: str
+
+
 class ApplySignedUrlRequest(SwBaseModel):
     flag: Optional[str] = None
     path_prefix: str = Field(..., alias='pathPrefix')
@@ -350,6 +355,35 @@ class ResponseMessageMapObjectObject(SwBaseModel):
     data: Dict[str, Dict[str, Any]]
 
 
+class Type2(Enum):
+    evaluation = 'EVALUATION'
+    train = 'TRAIN'
+    fine_tune = 'FINE_TUNE'
+    serving = 'SERVING'
+    built_in = 'BUILT_IN'
+
+
+class SftCreateRequest(SwBaseModel):
+    model_version_id: Optional[int] = Field(None, alias='modelVersionId')
+    dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
+    runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
+    time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
+    model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
+    dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
+    runtime_version_url: Optional[str] = Field(None, alias='runtimeVersionUrl')
+    comment: Optional[str] = None
+    resource_pool: str = Field(..., alias='resourcePool')
+    handler: Optional[str] = None
+    step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
+    type: Optional[Type2] = None
+    dev_mode: Optional[bool] = Field(None, alias='devMode')
+    dev_password: Optional[str] = Field(None, alias='devPassword')
+    dev_way: Optional[DevWay] = Field(None, alias='devWay')
+    eval_dataset_version_ids: Optional[List[int]] = Field(
+        None, alias='evalDatasetVersionIds'
+    )
+
+
 class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
@@ -512,7 +546,7 @@ class Flag(Enum):
     unchanged = 'unchanged'
 
 
-class Type2(Enum):
+class Type3(Enum):
     directory = 'directory'
     file = 'file'
 
@@ -522,7 +556,7 @@ class FileNode(SwBaseModel):
     signature: Optional[str] = None
     flag: Optional[Flag] = None
     mime: Optional[str] = None
-    type: Optional[Type2] = None
+    type: Optional[Type3] = None
     desc: Optional[str] = None
     size: Optional[str] = None
 
@@ -879,13 +913,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type3(Enum):
+class Type4(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type3
+    type: Type4
     name: str
     link: str
 
@@ -1186,7 +1220,7 @@ class Status2(Enum):
     unknown = 'UNKNOWN'
 
 
-class Type4(Enum):
+class Type5(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
@@ -1198,7 +1232,7 @@ class BuildRecordVo(SwBaseModel):
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
     status: Status2
-    type: Type4
+    type: Type5
     create_time: int = Field(..., alias='createTime')
 
 
@@ -1227,6 +1261,46 @@ class ResponseMessagePageInfoBuildRecordVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoBuildRecordVo
+
+
+class SftSpaceVo(SwBaseModel):
+    id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    created_time: int = Field(..., alias='createdTime')
+    owner: UserVo
+
+
+class DsInfo(SwBaseModel):
+    pass
+
+
+class ModelInfo(SwBaseModel):
+    pass
+
+
+class Status3(Enum):
+    created = 'CREATED'
+    ready = 'READY'
+    paused = 'PAUSED'
+    running = 'RUNNING'
+    cancelling = 'CANCELLING'
+    canceled = 'CANCELED'
+    success = 'SUCCESS'
+    fail = 'FAIL'
+    unknown = 'UNKNOWN'
+
+
+class SftVo(SwBaseModel):
+    id: Optional[int] = None
+    job_id: Optional[int] = Field(None, alias='jobId')
+    status: Optional[Status3] = None
+    start_time: Optional[int] = Field(None, alias='startTime')
+    end_time: Optional[int] = Field(None, alias='endTime')
+    train_datasets: Optional[List[DsInfo]] = Field(None, alias='trainDatasets')
+    eval_datasets: Optional[List[DsInfo]] = Field(None, alias='evalDatasets')
+    base_model: Optional[ModelInfo] = Field(None, alias='baseModel')
+    target_model: Optional[ModelInfo] = Field(None, alias='targetModel')
 
 
 class ModelServingStatusVo(SwBaseModel):
@@ -1572,6 +1646,60 @@ class ResponseMessagePageInfoSummaryVo(SwBaseModel):
     code: str
     message: str
     data: PageInfoSummaryVo
+
+
+class PageInfoSftSpaceVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[SftSpaceVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoSftSpaceVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoSftSpaceVo
+
+
+class PageInfoSftVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[SftVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoSftVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoSftVo
 
 
 class PageInfoPanelPluginVo(SwBaseModel):
