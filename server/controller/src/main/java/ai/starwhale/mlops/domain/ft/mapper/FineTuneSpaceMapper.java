@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.mapper;
+package ai.starwhale.mlops.domain.ft.mapper;
 
-import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -26,7 +26,7 @@ import org.apache.ibatis.annotations.UpdateProvider;
 import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
-public interface SftSpaceMapper {
+public interface FineTuneSpaceMapper {
 
     String COLUMNS = "id,           \n"
             + "project_id,      \n"
@@ -36,14 +36,14 @@ public interface SftSpaceMapper {
             + "created_time, \n"
             + "modified_time ";
 
-    @Insert("insert into sft_space"
+    @Insert("insert into fine_tune_space"
             + " (project_id, owner_id, name, description)"
             + " values (#{projectId}, #{ownerId}, #{name},#{description})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    int add(SftSpaceEntity spaceEntity);
+    int add(FineTuneSpaceEntity spaceEntity);
 
-    @Select("select " + COLUMNS + " from sft_space where project_id = #{projectId} order by id desc")
-    List<SftSpaceEntity> list(Long projectId);
+    @Select("select " + COLUMNS + " from fine_tune_space where project_id = #{projectId} order by id desc")
+    List<FineTuneSpaceEntity> list(Long projectId);
 
 
     @UpdateProvider(value = UpdateSqlProvider.class, method = "update")
@@ -53,7 +53,7 @@ public interface SftSpaceMapper {
         public static String update(Long spaceId, String name, String description) {
             return new SQL() {
                 {
-                    UPDATE("sft_space");
+                    UPDATE("fine_tune_space");
                     if (null != name) {
                         SET("name=#{name}");
                     }

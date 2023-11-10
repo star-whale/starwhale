@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-CREATE TABLE IF NOT EXISTS `sft_space`
+CREATE TABLE IF NOT EXISTS `fine_tune_space`
 (
     `id`            bigint       NOT NULL AUTO_INCREMENT COMMENT 'PK',
     `project_id`      bigint NOT NULL,
@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS `sft_space`
     `created_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE INDEX `uk_sft_space_project` (`project_id`, `name`) USING BTREE
+    UNIQUE INDEX `uk_ft_space_project` (`project_id`, `name`) USING BTREE
 );
 
-CREATE TABLE IF NOT EXISTS `sft`
+CREATE TABLE IF NOT EXISTS `fine_tune`
 (
     `id`                        bigint       NOT NULL AUTO_INCREMENT COMMENT 'PK',
     `space_id`                   bigint NOT NULL,
@@ -39,6 +39,6 @@ CREATE TABLE IF NOT EXISTS `sft`
     `created_time`              datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time`             datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE INDEX `idx_sft_job` (`job_id`) USING BTREE,
-    INDEX `idx_sft_space` (`space_id`, `created_time`) USING BTREE
+    UNIQUE INDEX `idx_ft_job` (`job_id`) USING BTREE,
+    INDEX `idx_ft_space` (`space_id`, `created_time`) USING BTREE
 );

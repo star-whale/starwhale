@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.sft;
+package ai.starwhale.mlops.api.protocol.ft;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import javax.validation.constraints.NotNull;
@@ -27,8 +27,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SftSpaceVo {
+public class FineTuneSpaceVo {
+    @NotNull
     private Long id;
+    @NotNull
     private String name;
     private String description;
     @NotNull

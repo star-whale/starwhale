@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft;
+package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,8 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.user.UserVo;
-import ai.starwhale.mlops.domain.sft.mapper.SftSpaceMapper;
-import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -32,26 +32,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-class SftSpaceServiceTest {
+class FineTuneSpaceServiceTest {
 
-    SftSpaceMapper sftSpaceMapper;
+    FineTuneSpaceMapper fineTuneSpaceMapper;
     UserService userService;
 
-    SftSpaceService sftSpaceService;
+    FineTuneSpaceService fineTuneSpaceService;
 
     @BeforeEach
     public void setup() {
-        sftSpaceMapper = mock(SftSpaceMapper.class);
+        fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         userService = mock(UserService.class);
-        sftSpaceService = new SftSpaceService(sftSpaceMapper, userService);
+        fineTuneSpaceService = new FineTuneSpaceService(fineTuneSpaceMapper, userService);
     }
 
     @Test
     void createSpace() {
-        ArgumentCaptor<SftSpaceEntity> argumentCaptor = ArgumentCaptor.forClass(SftSpaceEntity.class);
-        sftSpaceService.createSpace(1L, "sn", "desc", 2L);
-        verify(sftSpaceMapper).add(argumentCaptor.capture());
-        SftSpaceEntity args = argumentCaptor.getValue();
+        ArgumentCaptor<FineTuneSpaceEntity> argumentCaptor = ArgumentCaptor.forClass(FineTuneSpaceEntity.class);
+        fineTuneSpaceService.createSpace(1L, "sn", "desc", 2L);
+        verify(fineTuneSpaceMapper).add(argumentCaptor.capture());
+        FineTuneSpaceEntity args = argumentCaptor.getValue();
         Assertions.assertEquals(1L, args.getProjectId());
         Assertions.assertEquals("sn", args.getName());
         Assertions.assertEquals("desc", args.getDescription());
@@ -61,8 +61,8 @@ class SftSpaceServiceTest {
 
     @Test
     void listSpace() {
-        when(sftSpaceMapper.list(any())).thenReturn(List.of(
-                SftSpaceEntity.builder().build()
+        when(fineTuneSpaceMapper.list(any())).thenReturn(List.of(
+                FineTuneSpaceEntity.builder().build()
         ));
         when(userService.findUserById(1L)).thenReturn(UserVo.builder().build());
         when(userService.findUserById(2L)).thenReturn(UserVo.builder().build());
@@ -70,7 +70,7 @@ class SftSpaceServiceTest {
 
     @Test
     void updateSpace() {
-        sftSpaceService.updateSpace(1L, "nm", "ds");
-        verify(sftSpaceMapper).update(eq(1L), eq("nm"), eq("ds"));
+        fineTuneSpaceService.updateSpace(1L, "nm", "ds");
+        verify(fineTuneSpaceMapper).update(eq(1L), eq("nm"), eq("ds"));
     }
 }

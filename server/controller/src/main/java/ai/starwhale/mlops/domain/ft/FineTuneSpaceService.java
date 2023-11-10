@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft;
+package ai.starwhale.mlops.domain.ft;
 
-import ai.starwhale.mlops.api.protocol.sft.SftSpaceVo;
-import ai.starwhale.mlops.domain.sft.mapper.SftSpaceMapper;
-import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -26,19 +26,19 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SftSpaceService {
+public class FineTuneSpaceService {
 
-    final SftSpaceMapper sftSpaceMapper;
+    final FineTuneSpaceMapper fineTuneSpaceMapper;
     final UserService userService;
 
-    public SftSpaceService(SftSpaceMapper sftSpaceMapper, UserService userService) {
-        this.sftSpaceMapper = sftSpaceMapper;
+    public FineTuneSpaceService(FineTuneSpaceMapper fineTuneSpaceMapper, UserService userService) {
+        this.fineTuneSpaceMapper = fineTuneSpaceMapper;
         this.userService = userService;
     }
 
     public void createSpace(Long projectId, String name, String description, Long userId) {
-        sftSpaceMapper.add(
-                SftSpaceEntity.builder()
+        fineTuneSpaceMapper.add(
+                FineTuneSpaceEntity.builder()
                         .projectId(projectId)
                         .name(name)
                         .description(description)
@@ -47,11 +47,11 @@ public class SftSpaceService {
         );
     }
 
-    public PageInfo<SftSpaceVo> listSpace(Long projectId, Integer pageNum, Integer pageSize) {
+    public PageInfo<FineTuneSpaceVo> listSpace(Long projectId, Integer pageNum, Integer pageSize) {
         try (var ph = PageHelper.startPage(pageNum, pageSize)) {
-            return PageInfo.of(sftSpaceMapper.list(projectId)
+            return PageInfo.of(fineTuneSpaceMapper.list(projectId)
                                        .stream()
-                                       .map(spaceEntity -> SftSpaceVo.builder()
+                                       .map(spaceEntity -> FineTuneSpaceVo.builder()
                                                .id(spaceEntity.getId())
                                                .name(spaceEntity.getName())
                                                .description(spaceEntity.getDescription())
@@ -63,6 +63,6 @@ public class SftSpaceService {
     }
 
     public void updateSpace(Long spaceId, String name, String description) {
-        sftSpaceMapper.update(spaceId, name, description);
+        fineTuneSpaceMapper.update(spaceId, name, description);
     }
 }

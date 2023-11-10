@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft;
+package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.sft.SftCreateRequest;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobCreator;
@@ -34,8 +34,8 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.sft.mapper.SftMapper;
-import ai.starwhale.mlops.domain.sft.po.SftEntity;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
+import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -45,11 +45,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-class SftServiceTest {
+class FineTuneServiceTest {
 
     JobCreator jobCreator;
 
-    SftMapper sftMapper;
+    FineTuneMapper fineTuneMapper;
 
     JobMapper jobMapper;
 
@@ -59,19 +59,19 @@ class SftServiceTest {
 
     DatasetDao datasetDao;
 
-    SftService sftService;
+    FineTuneService fineTuneService;
 
     @BeforeEach
     public void setup() {
         jobCreator = mock(JobCreator.class);
-        sftMapper = mock(SftMapper.class);
+        fineTuneMapper = mock(FineTuneMapper.class);
         jobMapper = mock(JobMapper.class);
         jobSpecParser = mock(JobSpecParser.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
-        sftService = new SftService(
+        fineTuneService = new FineTuneService(
                 jobCreator,
-                sftMapper,
+                fineTuneMapper,
                 jobMapper,
                 jobSpecParser,
                 modelDao,
@@ -81,40 +81,40 @@ class SftServiceTest {
     }
 
     @Test
-    void createSft() throws JsonProcessingException {
+    void createFt() throws JsonProcessingException {
         doAnswer(new Answer() {
             public Object answer(InvocationOnMock invocation) {
                 Object[] args = invocation.getArguments();
-                ((SftEntity) args[0]).setId(123L);
+                ((FineTuneEntity) args[0]).setId(123L);
                 return null; // void method, so return null
             }
-        }).when(sftMapper).add(any());
+        }).when(fineTuneMapper).add(any());
         when(jobCreator.createJob(any())).thenReturn(Job.builder().id(22L).build());
 
-        SftCreateRequest request = new SftCreateRequest();
+        FineTuneCreateRequest request = new FineTuneCreateRequest();
         request.setStepSpecOverWrites("aaa");
         request.setEvalDatasetVersionIds(List.of(1L));
         when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        sftService.createSft(1L, Project.builder().build(), request, User.builder().build());
+        fineTuneService.createFineTune(1L, Project.builder().build(), request, User.builder().build());
 
-        verify(sftMapper).updateJobId(123L, 22L);
+        verify(fineTuneMapper).updateJobId(123L, 22L);
 
     }
 
     @Test
-    void listSft() {
-        when(sftMapper.list(anyLong())).thenReturn(List.of(SftEntity.builder().jobId(1L).build()));
+    void listFt() {
+        when(fineTuneMapper.list(anyLong())).thenReturn(List.of(FineTuneEntity.builder().jobId(1L).build()));
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
-        Assertions.assertEquals(1, sftService.listSft(1L, 1, 1).getSize());
+        Assertions.assertEquals(1, fineTuneService.list(1L, 1, 1).getSize());
     }
 
     @Test
-    void evalSft() {
+    void evalFt() {
     }
 
     @Test
-    void releaseSft() {
+    void releaseFt() {
     }
 }

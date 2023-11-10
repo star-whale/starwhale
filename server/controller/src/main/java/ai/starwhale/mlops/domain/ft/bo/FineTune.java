@@ -14,27 +14,18 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.po;
+package ai.starwhale.mlops.domain.ft.bo;
 
-import ai.starwhale.mlops.common.BaseEntity;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Data
-@SuperBuilder
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class SftEntity extends BaseEntity {
+public class FineTune {
     private Long id;
     private Long spaceId;
     private Long jobId;
-    private List<Long> evalDatasets;
-    private List<Long> trainDatasets;
+    private List<String> evalDatasets;
+    private List<String> trailDatasets;
     private Long baseModelVersionId;
     private Long targetModelVersionId;
 }

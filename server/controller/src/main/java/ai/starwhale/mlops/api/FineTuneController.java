@@ -18,14 +18,14 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.sft.SftCreateRequest;
-import ai.starwhale.mlops.api.protocol.sft.SftSpaceCreateRequest;
-import ai.starwhale.mlops.api.protocol.sft.SftSpaceVo;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.sft.SftService;
-import ai.starwhale.mlops.domain.sft.SftSpaceService;
-import ai.starwhale.mlops.domain.sft.vo.SftVo;
+import ai.starwhale.mlops.domain.ft.FineTuneService;
+import ai.starwhale.mlops.domain.ft.FineTuneSpaceService;
+import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,49 +48,49 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @Validated
 @RestController
-@Tag(name = "Sft")
+@Tag(name = "FineTune")
 @RequestMapping("${sw.controller.api-prefix}")
-public class SftController {
+public class FineTuneController {
 
     final ProjectService projectService;
     final UserService userService;
-    final SftSpaceService sftSpaceService;
+    final FineTuneSpaceService fineTuneSpaceService;
 
-    final SftService sftService;
+    final FineTuneService fineTuneService;
 
-    public SftController(
+    public FineTuneController(
             ProjectService projectService,
             UserService userService,
-            SftSpaceService sftSpaceService,
-            SftService sftService
+            FineTuneSpaceService fineTuneSpaceService,
+            FineTuneService fineTuneService
     ) {
         this.projectService = projectService;
         this.userService = userService;
-        this.sftSpaceService = sftSpaceService;
-        this.sftService = sftService;
+        this.fineTuneSpaceService = fineTuneSpaceService;
+        this.fineTuneService = fineTuneService;
     }
 
-    @Operation(summary = "Get the list of SFT spaces")
-    @GetMapping(value = "/project/{projectId}/sft/space", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of fine-tune spaces")
+    @GetMapping(value = "/project/{projectId}/ftspace", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<PageInfo<SftSpaceVo>>> listSftSpace(
+    public ResponseEntity<ResponseMessage<PageInfo<FineTuneSpaceVo>>> listSpace(
             @PathVariable("projectId") Long projectId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
-        PageInfo<SftSpaceVo> pageInfo = sftSpaceService.listSpace(projectId, pageNum, pageSize);
+        PageInfo<FineTuneSpaceVo> pageInfo = fineTuneSpaceService.listSpace(projectId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
 
-    @Operation(summary = "Create SFT space")
-    @PostMapping(value = "/project/{projectId}/sft/space", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Create fine-tune space")
+    @PostMapping(value = "/project/{projectId}/ftspace", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> createSftSpace(
+    public ResponseEntity<ResponseMessage<String>> createSpace(
             @PathVariable("projectId") Long projectId,
-            @RequestBody SftSpaceCreateRequest body
+            @RequestBody FineTuneSpaceCreateRequest body
     ) {
-        sftSpaceService.createSpace(
+        fineTuneSpaceService.createSpace(
                 projectId,
                 body.getName(),
                 body.getDescription(),
@@ -99,15 +99,15 @@ public class SftController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "Update SFT space")
-    @PutMapping(value = "/project/{projectId}/sft/space/{spaceId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Update fine-tune space")
+    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> updateSftSpace(
+    public ResponseEntity<ResponseMessage<String>> updateSpace(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestBody SftSpaceCreateRequest body
+            @RequestBody FineTuneSpaceCreateRequest body
     ) {
-        sftSpaceService.updateSpace(
+        fineTuneSpaceService.updateSpace(
                 spaceId,
                 body.getName(),
                 body.getDescription()
@@ -115,16 +115,16 @@ public class SftController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "Create SFT")
-    @PostMapping(value = "/project/{projectId}/sft/space/{spaceId}/create", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Create fine-tune")
+    @PostMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> createSft(
+    public ResponseEntity<ResponseMessage<String>> createFineTune(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @Valid @RequestBody SftCreateRequest request
+            @Valid @RequestBody FineTuneCreateRequest request
     ) {
 
-        sftService.createSft(
+        fineTuneService.createFineTune(
                 spaceId,
                 projectService.findProject(projectId),
                 request,
@@ -134,17 +134,17 @@ public class SftController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "List SFT")
-    @GetMapping(value = "/project/{projectId}/sft/space/{spaceId}/list", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "List fine-tune")
+    @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<PageInfo<SftVo>>> listSft(
+    public ResponseEntity<ResponseMessage<PageInfo<FineTuneVo>>> listFineTune(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
 
-        PageInfo<SftVo> pageInfo = sftService.listSft(spaceId, pageNum, pageSize);
+        PageInfo<FineTuneVo> pageInfo = fineTuneService.list(spaceId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 }

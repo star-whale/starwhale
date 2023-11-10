@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.sft;
+package ai.starwhale.mlops.api.protocol.ft;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,7 +22,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class SftCreateRequest extends JobRequest {
+public class FineTuneCreateRequest extends JobRequest {
 
     @JsonProperty("evalDatasetVersionIds")
     private List<Long> evalDatasetVersionIds;

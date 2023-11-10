@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.mapper;
+package ai.starwhale.mlops.domain.ft.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
-import ai.starwhale.mlops.domain.sft.po.SftEntity;
+import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,12 +29,12 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-class SftMapperTest extends MySqlContainerHolder {
+class FineTuneMapperTest extends MySqlContainerHolder {
 
     @Autowired
-    SftMapper sftMapper;
+    FineTuneMapper fineTuneMapper;
 
-    SftEntity sft = SftEntity.builder()
+    FineTuneEntity ft = FineTuneEntity.builder()
             .spaceId(11L)
             .jobId(12L)
             .evalDatasets(List.of(1L, 2L, 3L))
@@ -46,11 +46,11 @@ class SftMapperTest extends MySqlContainerHolder {
     @BeforeEach
     public void setup() {
 
-        add(sft);
-        Assertions.assertNotNull(sft.getId());
+        add(ft);
+        Assertions.assertNotNull(ft.getId());
 
         add(
-                SftEntity.builder()
+                FineTuneEntity.builder()
                         .spaceId(11L)
                         .jobId(13L)
                         .evalDatasets(List.of(12L, 22L, 32L))
@@ -61,7 +61,7 @@ class SftMapperTest extends MySqlContainerHolder {
         );
 
         add(
-                SftEntity.builder()
+                FineTuneEntity.builder()
                         .spaceId(12L)
                         .jobId(14L)
                         .evalDatasets(List.of(13L, 23L, 33L))
@@ -73,42 +73,42 @@ class SftMapperTest extends MySqlContainerHolder {
 
     }
 
-    void add(SftEntity sft) {
-        sftMapper.add(sft);
+    void add(FineTuneEntity ft) {
+        fineTuneMapper.add(ft);
     }
 
     @Test
     void list() {
-        List<SftEntity> list = sftMapper.list(11L);
+        List<FineTuneEntity> list = fineTuneMapper.list(11L);
         Assertions.assertEquals(2L, list.size());
-        list = sftMapper.list(12L);
+        list = fineTuneMapper.list(12L);
         Assertions.assertEquals(1L, list.size());
-        SftEntity sftEntity = list.get(0);
-        Assertions.assertNotNull(sftEntity.getId());
-        Assertions.assertEquals(12L, sftEntity.getSpaceId());
-        Assertions.assertEquals(14L, sftEntity.getJobId());
-        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), sftEntity.getEvalDatasets());
-        Assertions.assertIterableEquals(List.of(43L, 53L), sftEntity.getTrainDatasets());
-        Assertions.assertEquals(33L, sftEntity.getBaseModelVersionId());
-        Assertions.assertEquals(3L, sftEntity.getTargetModelVersionId());
+        FineTuneEntity fineTuneEntity = list.get(0);
+        Assertions.assertNotNull(fineTuneEntity.getId());
+        Assertions.assertEquals(12L, fineTuneEntity.getSpaceId());
+        Assertions.assertEquals(14L, fineTuneEntity.getJobId());
+        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getEvalDatasets());
+        Assertions.assertIterableEquals(List.of(43L, 53L), fineTuneEntity.getTrainDatasets());
+        Assertions.assertEquals(33L, fineTuneEntity.getBaseModelVersionId());
+        Assertions.assertEquals(3L, fineTuneEntity.getTargetModelVersionId());
     }
 
     @Test
-    void findSftByJob() {
-        SftEntity sftEntity = sftMapper.findSftByJob(14L);
-        Assertions.assertNotNull(sftEntity.getId());
-        Assertions.assertEquals(12L, sftEntity.getSpaceId());
-        Assertions.assertEquals(14L, sftEntity.getJobId());
-        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), sftEntity.getEvalDatasets());
-        Assertions.assertIterableEquals(List.of(43L, 53L), sftEntity.getTrainDatasets());
-        Assertions.assertEquals(33L, sftEntity.getBaseModelVersionId());
-        Assertions.assertEquals(3L, sftEntity.getTargetModelVersionId());
+    void findFtByJob() {
+        FineTuneEntity fineTuneEntity = fineTuneMapper.findByJob(14L);
+        Assertions.assertNotNull(fineTuneEntity.getId());
+        Assertions.assertEquals(12L, fineTuneEntity.getSpaceId());
+        Assertions.assertEquals(14L, fineTuneEntity.getJobId());
+        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getEvalDatasets());
+        Assertions.assertIterableEquals(List.of(43L, 53L), fineTuneEntity.getTrainDatasets());
+        Assertions.assertEquals(33L, fineTuneEntity.getBaseModelVersionId());
+        Assertions.assertEquals(3L, fineTuneEntity.getTargetModelVersionId());
     }
 
     @Test
     void testModelId() {
-        sftMapper.updateTargetModel(sft.getId(), 555L);
-        SftEntity sftByJob = sftMapper.findSftByJob(12L);
-        Assertions.assertEquals(555L, sftByJob.getTargetModelVersionId());
+        fineTuneMapper.updateTargetModel(ft.getId(), 555L);
+        FineTuneEntity ft = fineTuneMapper.findByJob(12L);
+        Assertions.assertEquals(555L, ft.getTargetModelVersionId());
     }
 }

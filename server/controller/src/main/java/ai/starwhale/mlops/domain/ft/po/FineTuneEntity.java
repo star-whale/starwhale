@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.sft;
+package ai.starwhale.mlops.domain.ft.po;
 
-import javax.validation.constraints.NotNull;
+import ai.starwhale.mlops.common.BaseEntity;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-public class SftSpaceCreateRequest {
-
-    @NotNull
-    String name;
-
-    @NotNull
-    String description;
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class FineTuneEntity extends BaseEntity {
+    private Long id;
+    private Long spaceId;
+    private Long jobId;
+    private List<Long> evalDatasets;
+    private List<Long> trainDatasets;
+    private Long baseModelVersionId;
+    private Long targetModelVersionId;
 }

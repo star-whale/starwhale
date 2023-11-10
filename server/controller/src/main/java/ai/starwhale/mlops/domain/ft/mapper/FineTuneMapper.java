@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.mapper;
+package ai.starwhale.mlops.domain.ft.mapper;
 
-import ai.starwhale.mlops.domain.sft.po.SftEntity;
+import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -27,7 +27,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 @Mapper
-public interface SftMapper {
+public interface FineTuneMapper {
     String COLUMNS = "id,           \n"
             + "space_id,      \n"
             + "job_id,       \n"
@@ -38,32 +38,32 @@ public interface SftMapper {
             + "created_time, \n"
             + "modified_time ";
 
-    @Insert("insert into sft"
+    @Insert("insert into fine_tune"
             + " (space_id, job_id, eval_datasets, train_datasets, base_model_version_id, target_model_version_id)"
-            + " values (#{spaceId}, #{jobId}, #{evalDatasets, typeHandler=ai.starwhale.mlops.domain.sft.mapper"
+            + " values (#{spaceId}, #{jobId}, #{evalDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper"
             + ".ListStringTypeHandler}"
-            + ",#{trainDatasets, typeHandler=ai.starwhale.mlops.domain.sft.mapper.ListStringTypeHandler},"
+            + ",#{trainDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper.ListStringTypeHandler},"
             + " #{baseModelVersionId}, #{targetModelVersionId})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    void add(SftEntity sftEntity);
+    void add(FineTuneEntity fineTuneEntity);
 
     @Results({
             @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
             @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
     })
-    @Select("select " + COLUMNS + " from sft where space_id = #{spaceId} order by id desc")
-    List<SftEntity> list(Long spaceId);
+    @Select("select " + COLUMNS + " from fine_tune where space_id = #{spaceId} order by id desc")
+    List<FineTuneEntity> list(Long spaceId);
 
     @Results({
             @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
             @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
     })
-    @Select("select " + COLUMNS + " from sft where job_id = #{jobId}")
-    SftEntity findSftByJob(Long jobId);
+    @Select("select " + COLUMNS + " from fine_tune where job_id = #{jobId}")
+    FineTuneEntity findByJob(Long jobId);
 
-    @Update("update sft set target_model_version_id = #{targetModelVersionId} where id = #{sftId}")
-    int updateTargetModel(Long sftId, Long targetModelVersionId);
+    @Update("update fine_tune set target_model_version_id = #{targetModelVersionId} where id = #{id}")
+    int updateTargetModel(Long id, Long targetModelVersionId);
 
-    @Update("update sft set job_id = #{jobId} where id = #{sftId}")
-    int updateJobId(Long sftId, Long jobId);
+    @Update("update fine_tune set job_id = #{jobId} where id = #{id}")
+    int updateJobId(Long id, Long jobId);
 }

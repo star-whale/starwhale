@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.bo;
+package ai.starwhale.mlops.domain.ft.bo;
 
-public class SftSpace {
+public class FineTuneSpace {
 
     private Long id;
     private Long projectId;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.vo;
+package ai.starwhale.mlops.domain.ft.vo;
 
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.List;
@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SftVo {
+public class FineTuneVo {
 
     Long id;
     Long jobId;

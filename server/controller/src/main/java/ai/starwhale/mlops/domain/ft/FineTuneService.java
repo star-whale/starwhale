@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft;
+package ai.starwhale.mlops.domain.ft;
 
-import ai.starwhale.mlops.api.protocol.sft.SftCreateRequest;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -32,9 +32,9 @@ import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.sft.mapper.SftMapper;
-import ai.starwhale.mlops.domain.sft.po.SftEntity;
-import ai.starwhale.mlops.domain.sft.vo.SftVo;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
+import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
+import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -54,11 +54,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Service
-public class SftService {
+public class FineTuneService {
 
     final JobCreator jobCreator;
 
-    final SftMapper sftMapper;
+    final FineTuneMapper fineTuneMapper;
 
     final JobMapper jobMapper;
 
@@ -70,14 +70,14 @@ public class SftService {
 
     final String instanceUri;
 
-    public SftService(
-            JobCreator jobCreator, SftMapper sftMapper, JobMapper jobMapper, JobSpecParser jobSpecParser,
+    public FineTuneService(
+            JobCreator jobCreator, FineTuneMapper fineTuneMapper, JobMapper jobMapper, JobSpecParser jobSpecParser,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
             DatasetDao datasetDao
     ) {
         this.jobCreator = jobCreator;
-        this.sftMapper = sftMapper;
+        this.fineTuneMapper = fineTuneMapper;
         this.jobMapper = jobMapper;
         this.jobSpecParser = jobSpecParser;
         this.modelDao = modelDao;
@@ -86,21 +86,21 @@ public class SftService {
     }
 
 
-    public void createSft(
+    public void createFineTune(
             Long spaceId,
             Project project,
-            SftCreateRequest request,
+            FineTuneCreateRequest request,
             User creator
     ) {
-        SftEntity sft = SftEntity.builder()
+        FineTuneEntity ft = FineTuneEntity.builder()
                 .jobId(-1L)
                 .spaceId(spaceId)
                 .evalDatasets(request.getEvalDatasetVersionIds())
                 .trainDatasets(request.getDatasetVersionIds())
                 .baseModelVersionId(request.getModelVersionId())
                 .build();
-        sftMapper.add(sft);
-        request = addEnvToRequest(sft.getId(), request);
+        fineTuneMapper.add(ft);
+        request = addEnvToRequest(ft.getId(), request);
         Job job = jobCreator.createJob(
                 UserJobCreateRequest.builder()
                         .modelVersionId(request.getModelVersionId())
@@ -118,10 +118,10 @@ public class SftService {
                         .jobType(JobType.FINE_TUNE)
                         .build()
         );
-        sftMapper.updateJobId(sft.getId(), job.getId());
+        fineTuneMapper.updateJobId(ft.getId(), job.getId());
     }
 
-    private SftCreateRequest addEnvToRequest(Long id, SftCreateRequest request) {
+    private FineTuneCreateRequest addEnvToRequest(Long id, FineTuneCreateRequest request) {
         var stepSpecOverWrites = request.getStepSpecOverWrites();
         var handler = request.getHandler();
         if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
@@ -154,9 +154,9 @@ public class SftService {
                         );
 
                     }).collect(Collectors.joining(" "));
-                    env.add(new Env("SW_FT_VALIDATION_DATASETS", evalDataSetUris));
+                    env.add(new Env("SW_VALIDATION_DATASET_URI", evalDataSetUris));
                 }
-                env.add(new Env("SW_SFTID", id.toString()));
+                env.add(new Env("SW_FINE_TUNE_ID", id.toString()));
                 s.setEnv(env);
                 s.verifyStepSpecArgs();
             }
@@ -174,17 +174,17 @@ public class SftService {
     }
 
 
-    public PageInfo<SftVo> listSft(Long spaceId, Integer pageNum, Integer pageSize) {
+    public PageInfo<FineTuneVo> list(Long spaceId, Integer pageNum, Integer pageSize) {
         try (var ph = PageHelper.startPage(pageNum, pageSize)) {
-            return PageInfo.of(sftMapper.list(spaceId).stream().map(sftEntity -> {
-                Long jobId = sftEntity.getJobId();
+            return PageInfo.of(fineTuneMapper.list(spaceId).stream().map(fineTuneEntity -> {
+                Long jobId = fineTuneEntity.getJobId();
                 JobEntity job = jobMapper.findJobById(jobId);
-                sftEntity.getEvalDatasets();
-                sftEntity.getTrainDatasets();
-                sftEntity.getBaseModelVersionId();
-                sftEntity.getTargetModelVersionId();
-                return SftVo.builder()
-                        .id(sftEntity.getId())
+                fineTuneEntity.getEvalDatasets();
+                fineTuneEntity.getTrainDatasets();
+                fineTuneEntity.getBaseModelVersionId();
+                fineTuneEntity.getTargetModelVersionId();
+                return FineTuneVo.builder()
+                        .id(fineTuneEntity.getId())
                         .jobId(jobId)
                         .status(job.getJobStatus())
                         .startTime(job.getCreatedTime().getTime())
@@ -198,11 +198,11 @@ public class SftService {
         }
     }
 
-    public void evalSft(List<Long> evalDatasetIds, Long runtimeId, String handerSpec, Map<String, String> envs) {
+    public void evalFt(List<Long> evalDatasetIds, Long runtimeId, String handerSpec, Map<String, String> envs) {
 
     }
 
-    public void releaseSft(Long sftId) {
+    public void releaseFt(Long ftId) {
 
     }
 }

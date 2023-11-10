@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.sft.po;
+package ai.starwhale.mlops.api.protocol.ft;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import lombok.AllArgsConstructor;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.validation.annotation.Validated;
 
 @Data
-@SuperBuilder
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class SftSpaceEntity extends BaseEntity {
-    private Long id;
-    private Long projectId;
-    private Long ownerId;
-    private String name;
-    private String description;
+@Validated
+public class FineTuneSpaceCreateRequest {
+
+    @NotNull
+    String name;
+
+    @NotNull
+    String description;
 }
