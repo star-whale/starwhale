@@ -104,7 +104,7 @@ ds_build_and_upload () {
     fi;
     if [ -n "$DATASET_BUILD_DIR_PREFIX" ]; then
       echo "-->[Preparing] Downloading files..."
-      BUILD_DIR=$DATASET_BUILD_NAME
+      BUILD_DIR="$DATASET_BUILD_NAME"
       mkdir -p "$BUILD_DIR"
       cd "$BUILD_DIR"
 
@@ -122,7 +122,7 @@ ds_build_and_upload () {
       cd -
     fi
 
-    cmd="swcli dataset build -n $DATASET_BUILD_NAME"
+    cmd="swcli dataset build -n '$DATASET_BUILD_NAME'"
     if [ "$DATASET_BUILD_TYPE" = "IMAGE" ]; then
       cmd="$cmd -if $BUILD_DIR"
     elif [ "$DATASET_BUILD_TYPE" = "VIDEO" ]; then
@@ -132,33 +132,33 @@ ds_build_and_upload () {
     elif [ "$DATASET_BUILD_TYPE" = "CSV" ]; then
       cmd="$cmd -c $BUILD_DIR"
       if [ -n "$DATASET_BUILD_CSV_DIALECT" ]; then
-        cmd="$cmd --dialect $DATASET_BUILD_CSV_DIALECT"
+        cmd="$cmd --dialect '$DATASET_BUILD_CSV_DIALECT'"
       fi
       if [ -n "$DATASET_BUILD_CSV_DELIMITER" ]; then
-        cmd="$cmd --delimiter $DATASET_BUILD_CSV_DELIMITER"
+        cmd="$cmd --delimiter '$DATASET_BUILD_CSV_DELIMITER'"
       fi
       if [ -n "$DATASET_BUILD_CSV_QUOTECHAR" ]; then
-        cmd="$cmd --quotechar $DATASET_BUILD_CSV_QUOTECHAR"
+        cmd="$cmd --quotechar '$DATASET_BUILD_CSV_QUOTECHAR'"
       fi
     elif [ "$DATASET_BUILD_TYPE" = "JSON" ]; then
       cmd="$cmd -jf $BUILD_DIR"
       if [ -n "$DATASET_BUILD_JSON_FIELD_SELECTOR" ]; then
-        cmd="$cmd --field-selector $DATASET_BUILD_JSON_FIELD_SELECTOR"
+        cmd="$cmd --field-selector '$DATASET_BUILD_JSON_FIELD_SELECTOR'"
       fi
     elif [ "$DATASET_BUILD_TYPE" = "HUGGINGFACE" ]; then
       if [ -z "$DATASET_BUILD_HF_REPO" ]; then
         echo "-->[Error] Build dataset by HuggingFace required env: DATASET_BUILD_HF_REPO."
         exit 1
       fi
-      cmd="$cmd -hf $DATASET_BUILD_HF_REPO"
+      cmd="$cmd -hf '$DATASET_BUILD_HF_REPO'"
       if [ -n "$DATASET_BUILD_HF_SUBSET" ]; then
-        cmd="$cmd --subset $DATASET_BUILD_HF_SUBSET"
+        cmd="$cmd --subset '$DATASET_BUILD_HF_SUBSET'"
       fi
       if [ -n "$DATASET_BUILD_HF_SPLIT" ]; then
-        cmd="$cmd --split $DATASET_BUILD_HF_SPLIT"
+        cmd="$cmd --split '$DATASET_BUILD_HF_SPLIT'"
       fi
       if [ -n "$DATASET_BUILD_HF_REVISION" ]; then
-        cmd="$cmd --revision $DATASET_BUILD_HF_REVISION"
+        cmd="$cmd --revision '$DATASET_BUILD_HF_REVISION'"
       fi
     else
       echo "Unknown type: $DATASET_BUILD_TYPE" && exit 1
