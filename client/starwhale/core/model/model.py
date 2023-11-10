@@ -378,6 +378,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         version: str = "",
         run_handler: str = "",
         dataset_uris: t.List[str] | None = None,
+        finetune_val_dataset_uris: t.List[str] | None = None,
         dataset_head: int = 0,
         scheduler_run_args: t.Dict[str, t.Any] | None = None,
         forbid_snapshot: bool = False,
@@ -386,6 +387,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         handler_args: t.List[str] | None = None,
     ) -> Resource:
         dataset_uris = dataset_uris or []
+        finetune_val_dataset_uris = finetune_val_dataset_uris or []
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
 
@@ -423,6 +425,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             steps=steps,
             handler_args=handler_args or [],
             dataset_head=dataset_head,
+            finetune_val_dataset_uris=finetune_val_dataset_uris,
+            model_name=model_config.name,
         )
         scheduler_status = RunStatus.START
         error_message = ""
@@ -454,6 +458,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 handler_name=job_name,
                 error_message=error_message,
                 finished_at=now_str(),
+                finetune_validation_datasets=finetune_val_dataset_uris,
             )
 
             ensure_file(
@@ -951,6 +956,7 @@ class CloudModel(CloudBundleModelMixin, Model):
         model_uri: str | Resource,
         run_handler: str,
         dataset_uris: t.Sequence[str | Resource] | None = None,
+        finetune_val_dataset_uris: t.Sequence[str | Resource] | None = None,
         runtime_uri: str | Resource | None = None,
         resource_pool: str = DEFAULT_RESOURCE_POOL,
         ttl: int = 0,
@@ -1006,6 +1012,8 @@ class CloudModel(CloudBundleModelMixin, Model):
         runtime_id = (
             runtime_uri.info()["versionId"] if isinstance(runtime_uri, Resource) else ""
         )
+
+        # TODO: support finetune validation dataset uris for server/cloud side
 
         kwargs: t.Dict = dict(
             model_version_url=model_info.version_id,

@@ -25,6 +25,8 @@ class Context:
         run_project: t.Optional[Project] = None,
         log_project: t.Optional[Project] = None,
         dataset_head: int = 0,
+        finetune_val_dataset_uris: t.List[str] | None = None,
+        model_name: str = "",
     ):
         self.run_project = run_project or Project()
         self.log_project = log_project or self.run_project
@@ -35,6 +37,8 @@ class Context:
         self.dataset_uris = dataset_uris or []
         self.workdir = workdir or Path(".")
         self.dataset_head = dataset_head
+        self.finetune_val_dataset_uris = finetune_val_dataset_uris or []
+        self.model_name = model_name
 
     def __str__(self) -> str:
         return f"step:{self.step}, index:{self.index}/{self.total}"

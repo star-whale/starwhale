@@ -1,6 +1,6 @@
 # pip install -q transformers accelerate starwhale
 import os
-from typing import Any
+from typing import Any, List
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +13,7 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 
-from starwhale import Context, dataset, handler, fine_tune, evaluation, pass_context
+from starwhale import dataset, handler, finetune, evaluation
 from starwhale.api import model as swmp
 
 ROOTDIR = Path(__file__).parent
@@ -75,16 +75,8 @@ ds_key_selectors = {
 }
 
 
-@pass_context
-@fine_tune()
-def ft(context: Context) -> None:
-    ft_inner(context=context)
-
-
-def ft_inner(
-    context: Context = None,
-    swds: str = "mkqa/version/latest",
-) -> None:
+@finetune
+def ft(train_datasets: List[str]) -> None:
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
         from download_model import download
@@ -98,8 +90,7 @@ def ft_inner(
         checkpoint, torch_dtype="auto", device_map="auto"
     )
     max_length = 100
-    swds_name = context.dataset_uris[0] if context else swds
-    sw_dataset = dataset(swds_name, readonly=True, create="forbid")
+    sw_dataset = dataset(train_datasets[0], readonly=True, create="forbid")
     sw_dataset = sw_dataset.with_loader_config(
         field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )

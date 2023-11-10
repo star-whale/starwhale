@@ -1,11 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Callable, Optional
+import typing as t
+from pathlib import Path
+from functools import wraps
 
+from starwhale.utils import console
 from starwhale.consts import DecoratorInjectAttr
+from starwhale.base.context import Context
+from starwhale.api._impl.model import build as build_starwhale_model
 
 
-def fine_tune(*args: Any, **kw: Any) -> Any:
+# TODO: support arguments
+# TODO: support model exclude_patterns
+def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
     """
     This function can be used as a decorator to define a fine-tune function.
 
@@ -13,18 +20,27 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
         resources: [Dict, optional] Resources for the predict task, such as memory, gpu etc. Current only supports
             the cloud instance.
         needs: [List[Callable], optional] The list of functions that the fine-tune function depends on.
+        require_train_datasets: [bool, optional] Whether the fine-tune function requires train datasets. Default is True.
+            When the argument is True, the fine-tune function will receive the train datasets as the first argument.
+        require_validation_datasets: [bool, optional] Whether the fine-tune function requires validation datasets. Default is False.
+            When the argument is True, the fine-tune function will receive the validation datasets as the second argument(if require_train_datasets=True) or as the first argument(if require_train_datasets=False).
+        auto_build_model: [bool, optional] Whether to automatically build the starwhale model. Default is True.
+        model_modules: [List[str|object], optional] The search models for model building.   Default is None.
+            The search modules supports object(function, class or module) or str(example: "to.path.module", "to.path.module:object").
+            If the argument is not specified, the search modules are the imported modules.
 
     Examples:
     ```python
-    from starwhale import fine_tune
+    from starwhale import finetune
 
-    @fine_tune
-    def ft():
+    @finetune
+    def ft(train_datasets, validation_datasets):
         ...
 
-    @fine_tune(resources={"nvidia.com/gpu": 1}, needs=[prepare_handler])
-    def ft():
+    @finetune(resources={"nvidia.com/gpu": 1}, needs=[prepare_handler], require_validation_datasets=False)
+    def ft(train_datasets):
         ...
+
     ```
 
     Returns:
@@ -32,29 +48,79 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     """
 
     if len(args) == 1 and len(kw) == 0 and callable(args[0]):
-        return fine_tune()(args[0])
+        return finetune()(args[0])
     else:
+        require_train_datasets = kw.get("require_train_datasets", True)
+        require_validation_datasets = kw.get("require_validation_datasets", False)
+        auto_build_model = kw.get("auto_build_model", True)
+        model_modules = kw.get("model_modules")
+        workdir = Path.cwd()
 
-        def _wrap(func: Callable) -> Any:
-            _register_ft(func, resources=kw.get("resources"), needs=kw.get("needs"))
-            setattr(func, DecoratorInjectAttr.FineTune, True)
-            return func
+        def _register_wrapper(func: t.Callable) -> t.Any:
+            _register_ft(
+                func=func,
+                resources=kw.get("resources"),
+                needs=kw.get("needs"),
+                require_train_datasets=require_train_datasets,
+                require_validation_datasets=require_validation_datasets,
+                auto_build_model=auto_build_model,
+            )
 
-    return _wrap
+            @wraps(func)
+            def _run_wrapper(*args: t.Any, **kw: t.Any) -> t.Any:
+                ctx = Context.get_runtime_context()
+
+                inject_args = []
+                if require_train_datasets:
+                    if not ctx.dataset_uris:
+                        raise RuntimeError(
+                            "train datasets are required, use `--dataset` to specify the train datasets in `swcli model run` command."
+                        )
+                    inject_args.append(ctx.dataset_uris)
+                if require_validation_datasets:
+                    if not ctx.finetune_val_dataset_uris:
+                        raise RuntimeError(
+                            "validation datasets are required, use `--val-dataset` to specify the validation datasets in `swcli model run` command."
+                        )
+                    inject_args.append(ctx.finetune_val_dataset_uris)
+
+                # TODO: support arguments from command line
+                ret = func(*inject_args)
+
+                if auto_build_model:
+                    console.info(f"building starwhale model package from {workdir}")
+                    build_starwhale_model(
+                        name=ctx.model_name, modules=model_modules, workdir=workdir
+                    )
+
+                return ret
+
+            return _run_wrapper
+
+    return _register_wrapper
 
 
 def _register_ft(
-    func: Callable,
-    resources: Optional[Dict[str, Any]] = None,
-    needs: Optional[List[Callable]] = None,
+    func: t.Callable,
+    resources: t.Optional[t.Dict[str, t.Any]] = None,
+    needs: t.Optional[t.List[t.Callable]] = None,
+    require_train_datasets: bool = True,
+    require_validation_datasets: bool = False,
+    auto_build_model: bool = True,
 ) -> None:
     from .job import Handler
 
     Handler.register(
-        name="fine_tune",
+        name="finetune",
         resources=resources,
         replicas=1,
         needs=needs,
-        require_dataset=True,
+        require_dataset=require_train_datasets or require_validation_datasets,
+        extra_kwargs=dict(
+            require_train_datasets=require_train_datasets,
+            require_validation_datasets=require_validation_datasets,
+            auto_build_model=auto_build_model,
+        ),
         built_in=True,
     )(func)
+    setattr(func, DecoratorInjectAttr.FineTune, True)

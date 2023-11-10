@@ -746,14 +746,17 @@ def handle(context): ...
             ]
         }
 
-    def test_fine_tune_deco(self) -> None:
+    @patch("starwhale.api._impl.experiment.build_starwhale_model")
+    def test_finetune_deco(self, mock_build: MagicMock) -> None:
         content = """
-from starwhale import fine_tune
+from starwhale import finetune
 
-@fine_tune
-def ft1(): ...
+@finetune(require_validation_datasets=True)
+def ft1(train_datasets, val_datasets):
+    assert train_datasets == ["train-ds"]
+    assert val_datasets == ["val-ds"]
 
-@fine_tune(needs=[ft1], resources={'nvidia.com/gpu': 1})
+@finetune(needs=[ft1], resources={'nvidia.com/gpu': 1}, require_validation_datasets=False, require_train_datasets=False, auto_build_model=False)
 def ft2(): ...
 """
         self._ensure_py_script(content)
@@ -761,11 +764,12 @@ def ft2(): ...
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
         jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+
         assert jobs_info == {
             "mock_user_module:ft1": [
                 StepSpecClient(
                     name="mock_user_module:ft1",
-                    show_name="fine_tune",
+                    show_name="finetune",
                     func_name="ft1",
                     module_name="mock_user_module",
                     require_dataset=True,
@@ -776,12 +780,17 @@ def ft2(): ...
                     parameters_sig=[],
                     cls_name="",
                     ext_cmd_args="",
+                    extra_kwargs={
+                        "auto_build_model": True,
+                        "require_train_datasets": True,
+                        "require_validation_datasets": True,
+                    },
                 ),
             ],
             "mock_user_module:ft2": [
                 StepSpecClient(
                     name="mock_user_module:ft1",
-                    show_name="fine_tune",
+                    show_name="finetune",
                     func_name="ft1",
                     module_name="mock_user_module",
                     require_dataset=True,
@@ -792,13 +801,18 @@ def ft2(): ...
                     parameters_sig=[],
                     cls_name="",
                     ext_cmd_args="",
+                    extra_kwargs={
+                        "auto_build_model": True,
+                        "require_train_datasets": True,
+                        "require_validation_datasets": True,
+                    },
                 ),
                 StepSpecClient(
                     name="mock_user_module:ft2",
-                    show_name="fine_tune",
+                    show_name="finetune",
                     func_name="ft2",
                     module_name="mock_user_module",
-                    require_dataset=True,
+                    require_dataset=False,
                     resources=[
                         RuntimeResource(
                             limit=1,
@@ -812,9 +826,34 @@ def ft2(): ...
                     parameters_sig=[],
                     cls_name="",
                     ext_cmd_args="",
+                    extra_kwargs={
+                        "auto_build_model": False,
+                        "require_train_datasets": False,
+                        "require_validation_datasets": False,
+                    },
                 ),
             ],
         }
+
+        _, steps = Step.get_steps_from_yaml("mock_user_module:ft2", yaml_path)
+        scheduler = Scheduler(
+            run_project=Project("test"),
+            version="test",
+            workdir=self.workdir,
+            dataset_uris=["train-ds"],
+            finetune_val_dataset_uris=["val-ds"],
+            steps=steps,
+            model_name="mock_model_name",
+        )
+        results = scheduler.run()
+        assert mock_build.call_count == 1
+        assert mock_build.call_args[1]["name"] == "mock_model_name"
+        assert mock_build.call_args[1]["modules"] is None
+
+        assert {
+            "mock_user_module:ft1",
+            "mock_user_module:ft2",
+        } == {r.name for r in results}
 
     def test_handler_deco(self) -> None:
         content = """

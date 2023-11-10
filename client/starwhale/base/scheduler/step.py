@@ -154,6 +154,8 @@ class StepExecutor:
         task_num: int = 0,
         handler_args: t.List[str] | None = None,
         dataset_head: int = 0,
+        finetune_val_dataset_uris: t.List[str] | None = None,
+        model_name: str = "",
     ) -> None:
         self.step = step
         self.task_num = step.task_num if task_num <= 0 else task_num
@@ -164,6 +166,8 @@ class StepExecutor:
         self.version = version
         self.handler_args = handler_args or []
         self.dataset_head = dataset_head
+        self.finetune_val_dataset_uris = finetune_val_dataset_uris
+        self.model_name = model_name
 
     def __str__(self) -> str:
         return f"StepExecutor: step-{self.step}, version-{self.version}"
@@ -187,6 +191,8 @@ class StepExecutor:
                     dataset_uris=self.dataset_uris,
                     dataset_head=self.dataset_head,
                     workdir=self.workdir,
+                    finetune_val_dataset_uris=self.finetune_val_dataset_uris,
+                    model_name=self.model_name,
                 ),
                 handler_args=self.handler_args,
                 step=self.step,
