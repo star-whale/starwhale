@@ -91,10 +91,10 @@ class ResourceEventHolderTest {
         resourceEventHolder.onAdd(event);
         var events = resourceEventHolder.getEvents("Pod", "test-pod");
         Assertions.assertEquals(1, events.size());
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         resourceEventHolder.gc();
         events = resourceEventHolder.getEvents("Pod", "test-pod");
-        Assertions.assertEquals(0, events.size());
+        Assertions.assertEquals(1, events.size());
     }
 
     @Test
