@@ -25,7 +25,7 @@ public class FineTune {
     private Long spaceId;
     private Long jobId;
     private List<String> evalDatasets;
-    private List<String> trailDatasets;
+    private List<String> trainDatasets;
     private Long baseModelVersionId;
     private Long targetModelVersionId;
 }
