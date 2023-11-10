@@ -23,5 +23,7 @@ public enum BuildType {
     IMAGE,
     VIDEO,
     AUDIO,
-    // TODO : add more build type (HANDLER,YAML,JSON,JSONL,CSV,)
+    JSON,
+    CSV,
+    HUGGING_FACE,
 }

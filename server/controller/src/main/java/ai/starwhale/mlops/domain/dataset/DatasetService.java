@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.build.BuildType;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
@@ -459,9 +460,8 @@ public class DatasetService {
 
     public void build(CreateBuildRecordRequest request) {
         var project = projectService.findProject(request.getProjectUrl());
-        var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
-                project.getId(), request.getDatasetName());
-        if (buildings.size() > 0) {
+        var buildings = buildRecordMapper.selectBuildingsInOneProject(project.getId(), request.getDatasetName());
+        if (buildings > 0) {
             throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                     "The dataset:{0} in project:{1} is already in building.",
                     request.getDatasetName(), project.getName()
@@ -475,31 +475,7 @@ public class DatasetService {
             throw new SwValidationException(ValidSubject.SETTING,
                     "dataset build setting is required in system setting");
         }
-        List<StepSpec> stepSpecs;
-        try {
-            String dsBuildSteps = virtualJobLoader.loadJobStepSpecs("dataset_build");
-            stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(dsBuildSteps);
-        } catch (JsonProcessingException e) {
-            throw new SwValidationException(ValidSubject.SETTING,
-                    "dataset spec not valid in your $SW_JOB_VIRTUAL_SPECS_PATH");
-        } catch (IOException e) {
-            throw new SwValidationException(ValidSubject.SETTING,
-                    "dataset spec not found in your $SW_JOB_VIRTUAL_SPECS_PATH");
-        }
-        if (CollectionUtils.isEmpty(stepSpecs)) {
-            throw new SwValidationException(ValidSubject.SETTING,
-                    "dataset spec is empty in your $SW_JOB_VIRTUAL_SPECS_PATH");
-        }
-        stepSpecs.forEach(stepSpec -> {
-            List<Env> env = stepSpec.getEnv();
-            if (null == env) {
-                env = new ArrayList<>();
-            }
-            env.add(new Env("DATASET_BUILD_NAME", request.getDatasetName()));
-            env.add(new Env("DATASET_BUILD_TYPE", String.valueOf(request.getType())));
-            env.add(new Env("DATASET_BUILD_DIR_PREFIX", request.getStoragePath()));
-            stepSpec.setEnv(env);
-        });
+        List<StepSpec> stepSpecs = getStepSpecs(request);
         String stepSpecOverWrites;
         try {
             stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
@@ -526,6 +502,51 @@ public class DatasetService {
                 .createdTime(new Date())
                 .build();
         buildRecordMapper.insert(entity);
+    }
+
+    public List<StepSpec> getStepSpecs(CreateBuildRecordRequest request) {
+        List<StepSpec> stepSpecs;
+        try {
+            String dsBuildSteps = virtualJobLoader.loadJobStepSpecs("dataset_build");
+            stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(dsBuildSteps);
+        } catch (JsonProcessingException e) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec not valid in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        } catch (IOException e) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec not found in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        }
+        if (CollectionUtils.isEmpty(stepSpecs)) {
+            throw new SwValidationException(ValidSubject.SETTING,
+                    "dataset spec is empty in your $SW_JOB_VIRTUAL_SPECS_PATH");
+        }
+        stepSpecs.forEach(stepSpec -> {
+            List<Env> envs = stepSpec.getEnv();
+            if (null == envs) {
+                envs = new ArrayList<>();
+            }
+            envs.add(new Env("DATASET_BUILD_NAME", request.getDatasetName()));
+            envs.add(new Env("DATASET_BUILD_TYPE", String.valueOf(request.getType())));
+            if (StringUtils.hasText(request.getStoragePath())) {
+                envs.add(new Env("DATASET_BUILD_DIR_PREFIX", request.getStoragePath()));
+            }
+            if (request.getType() == BuildType.JSON && request.getJson() != null) {
+                envs.add(new Env("DATASET_BUILD_JSON_FIELD_SELECTOR", request.getJson().getFieldSelector()));
+            }
+            if (request.getType() == BuildType.CSV && request.getCsv() != null) {
+                envs.add(new Env("DATASET_BUILD_CSV_DIALECT", request.getCsv().getDialect().toString()));
+                envs.add(new Env("DATASET_BUILD_CSV_DELIMITER", request.getCsv().getDelimiter()));
+                envs.add(new Env("DATASET_BUILD_CSV_QUOTECHAR", request.getCsv().getQuoteChar()));
+            }
+            if (request.getType() == BuildType.HUGGING_FACE && request.getHuggingFace() != null) {
+                envs.add(new Env("DATASET_BUILD_HF_REPO", request.getHuggingFace().getRepo()));
+                envs.add(new Env("DATASET_BUILD_HF_SUBSET", request.getHuggingFace().getSubset()));
+                envs.add(new Env("DATASET_BUILD_HF_SPLIT", request.getHuggingFace().getSplit()));
+                envs.add(new Env("DATASET_BUILD_HF_REVISION", request.getHuggingFace().getRevision()));
+            }
+            stepSpec.setEnv(envs);
+        });
+        return stepSpecs;
     }
 
     public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, PageParams pageParams) {

@@ -599,8 +599,7 @@ public class DatasetServiceTest {
 
         // case3: create and not exist the same name, but already building a same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true)).willReturn(null);
-        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
-                .willReturn(List.of(BuildRecordEntity.builder().build()));
+        given(buildRecordMapper.selectBuildingsInOneProject(projectId, datasetName)).willReturn(1);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
                 .datasetName(datasetName)
                 .projectUrl(String.valueOf(projectId))
@@ -608,7 +607,7 @@ public class DatasetServiceTest {
         );
 
         // case4: insert to db failed
-        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
+        given(buildRecordMapper.selectBuildingsInOneProject(projectId, datasetName)).willReturn(0);
         given(buildRecordMapper.insert(any())).willReturn(0);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
                 .datasetName(datasetName)
@@ -637,6 +636,59 @@ public class DatasetServiceTest {
                 .projectUrl(String.valueOf(projectId))
                 .storagePath("storage-path")
                 .build());
+    }
+
+    @Test
+    public void testGetBuildSpecs() {
+        var request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.IMAGE)
+                .storagePath("storage-path")
+                .build();
+        var specs = service.getStepSpecs(request);
+        assertEquals(3, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.CSV)
+                .csv(CreateBuildRecordRequest.Csv.builder()
+                        .delimiter("-")
+                        .dialect(CreateBuildRecordRequest.Csv.Dialect.EXCEL)
+                        .quoteChar("'")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(6, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.JSON)
+                .json(CreateBuildRecordRequest.Json.builder()
+                        .fieldSelector("a.b.c")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(4, specs.get(0).getEnv().size());
+
+        request = CreateBuildRecordRequest.builder()
+                .projectUrl("project-url")
+                .datasetName("dataset-name")
+                .type(BuildType.HUGGING_FACE)
+                .huggingFace(CreateBuildRecordRequest.HuggingFace.builder()
+                        .repo("pokemon")
+                        .subset("default")
+                        .split("train")
+                        .revision("123456")
+                        .build())
+                .storagePath("storage-path")
+                .build();
+        specs = service.getStepSpecs(request);
+        assertEquals(7, specs.get(0).getEnv().size());
     }
 
     @Test

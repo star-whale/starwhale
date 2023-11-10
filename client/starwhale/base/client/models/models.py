@@ -336,6 +336,9 @@ class Type1(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
+    json = 'JSON'
+    csv = 'CSV'
+    hugging_face = 'HUGGING_FACE'
 
 
 class DatasetBuildRequest(SwBaseModel):
@@ -1190,6 +1193,9 @@ class Type4(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
+    json = 'JSON'
+    csv = 'CSV'
+    hugging_face = 'HUGGING_FACE'
 
 
 class BuildRecordVo(SwBaseModel):
