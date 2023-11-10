@@ -270,7 +270,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                             focusRect={{}}
                             mountNode={innerRef?.current}
                             rowRect={{
-                                left: ctx.width,
+                                left: ctx.width + ctx.scrollLeft,
                                 top: ctx.rowHighlightIndex * ctx.rowHeight,
                             }}
                         />
