@@ -26,5 +26,5 @@ public class SftSpaceCreateRequest {
     String name;
 
     @NotNull
-    String desc;
+    String description;
 }

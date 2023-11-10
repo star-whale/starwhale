@@ -92,7 +92,7 @@ public class SftController {
         sftSpaceService.createSpace(
                 projectId,
                 body.getName(),
-                body.getDesc(),
+                body.getDescription(),
                 new IdConverter().revert(userService.currentUser().getId())
         );
         return ResponseEntity.ok(Code.success.asResponse(""));
@@ -118,7 +118,7 @@ public class SftController {
     }
 
     @Operation(summary = "List SFT")
-    @PostMapping(value = "/project/{projectId}/sft/space/{spaceId}/list", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectId}/sft/space/{spaceId}/list", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     public ResponseEntity<ResponseMessage<PageInfo<SftVo>>> listSft(
             @PathVariable("projectId") Long projectId,

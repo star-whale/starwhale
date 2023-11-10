@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.sft.mapper;
 
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.sft.po.SftSpaceEntity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -28,7 +29,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-class SftSpaceMapperTest {
+class SftSpaceMapperTest extends MySqlContainerHolder {
 
     @Autowired
     SftSpaceMapper sftSpaceMapper;
