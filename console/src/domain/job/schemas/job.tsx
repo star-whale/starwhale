@@ -1,10 +1,3 @@
-import { IResourceSchema } from '@/domain/base/schemas/resource'
-import { IDeviceSchema } from '@/domain/setting/schemas/system'
-import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
-import { IUserSchema } from '@user/schemas/user'
-import { IModelSchema } from '@/domain/model/schemas/model'
-import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
-
 export enum JobActionType {
     CANCEL = 'cancel',
     PAUSE = 'pause',
@@ -52,35 +45,6 @@ export enum EventSource {
     NODE = 'NODE',
 }
 
-export interface IJobSchema extends IResourceSchema {
-    uuid: string
-    name: string
-    owner?: IUserSchema
-    modelName?: string
-    modelVersion?: string
-    datasets?: string[]
-    datasetList?: IDatasetSchema[]
-    runtime?: IRuntimeSchema
-    model?: IModelSchema
-    device?: IDeviceSchema
-    deviceAmount?: number
-    duration: number
-    jobStatus: JobStatusType
-    resourcePool?: string
-    comment?: string
-    stopTime?: number
-    createdTime?: number
-    pinnedTime?: number
-    exposedLinks?: IExposedLinkSchema[]
-    isTimeToLiveInSec?: boolean
-    timeToLiveInSec?: number
-    isBuiltinRuntime?: boolean
-    jobName?: string
-    stepSpec: string
-}
-
-export type IJobDetailSchema = IJobSchema
-
 export interface ICreateJobSchema {
     modelVersionUrl: string
     datasetVersionUrls?: string
@@ -109,23 +73,6 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'datasetVer
     isTimeToLiveInSec?: boolean
     timeToLiveInSec?: number
     templateId?: number
-}
-
-export type IJobResultSchema = any
-
-export interface IExecInTaskSchema {
-    stdout: string
-    stderr: string
-}
-
-export interface IJobTemplateSchema {
-    id: string
-    name: string
-    jobId: number
-}
-export interface ICeateJobTemplateSchema {
-    name: string
-    jobUrl: string
 }
 
 export interface IJobEventSchema {

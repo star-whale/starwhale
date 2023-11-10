@@ -1,18 +1,10 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import Card from '@/components/Card'
-import {
-    addDatasetVersionTag,
-    createDatasetVersion,
-    deleteDatasetVersionTag,
-    revertDatasetVersion,
-} from '@dataset/services/datasetVersion'
+import { addDatasetVersionTag, deleteDatasetVersionTag, revertDatasetVersion } from '@dataset/services/datasetVersion'
 import { usePage } from '@/hooks/usePage'
-import { ICreateDatasetVersionSchema } from '@dataset/schemas/datasetVersion'
-import DatasetVersionForm from '@dataset/components/DatasetVersionForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
@@ -26,6 +18,7 @@ import useCliMate from '@/hooks/useCliMate'
 import { EditableAlias } from '@/components/Alias'
 import yaml from 'js-yaml'
 import { VersionText } from '@starwhale/ui'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -33,16 +26,6 @@ export default function DatasetVersionListCard() {
     const [t] = useTranslation()
 
     const datasetVersionsInfo = useFetchDatasetVersions(projectId, datasetId, page)
-    const [isCreateDatasetVersionOpen, setIsCreateDatasetVersionOpen] = useState(false)
-    const handleCreateDatasetVersion = useCallback(
-        async (data: ICreateDatasetVersionSchema) => {
-            await createDatasetVersion(projectId, datasetId, data)
-            await datasetVersionsInfo.refetch()
-            setIsCreateDatasetVersionOpen(false)
-        },
-        [datasetVersionsInfo, datasetId, projectId]
-    )
-
     const handleAction = useCallback(
         async (datasetVersionId) => {
             await revertDatasetVersion(projectId, datasetId, datasetVersionId)
@@ -86,7 +69,7 @@ export default function DatasetVersionListCard() {
                         t('Action'),
                     ]}
                     data={
-                        datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
+                        datasetVersionsInfo.data?.list?.map((datasetVersion, i) => {
                             let counts
                             try {
                                 const meta = yaml.load(datasetVersion.meta || '') as any
@@ -103,7 +86,7 @@ export default function DatasetVersionListCard() {
                                 </TextLink>,
                                 <EditableAlias
                                     key='alias'
-                                    resource={datasetVersion}
+                                    resource={datasetVersion as IHasTagSchema}
                                     readOnly={tagReadOnly}
                                     onAddTag={(tag) => handleTagAdd(datasetVersion.id, tag)}
                                     onRemoveTag={(tag) => handelTagRemove(datasetVersion.id, tag)}
@@ -151,18 +134,6 @@ export default function DatasetVersionListCard() {
                         },
                     }}
                 />
-                <Modal
-                    isOpen={isCreateDatasetVersionOpen}
-                    onClose={() => setIsCreateDatasetVersionOpen(false)}
-                    closeable
-                    animate
-                    autoFocus
-                >
-                    <ModalHeader>{t('create sth', [t('Dataset Version')])}</ModalHeader>
-                    <ModalBody>
-                        <DatasetVersionForm onSubmit={handleCreateDatasetVersion} />
-                    </ModalBody>
-                </Modal>
             </Card>
 
             {/* {cardRef.current && (

@@ -1,29 +1,3 @@
-import { IResourceSchema } from '@/domain/base/schemas/resource'
-import { IUserSchema } from '@user/schemas/user'
-import { IDatasetFileSchema, IDatasetTreeVersionSchema, IDatasetVersionSchema } from './datasetVersion'
-
-export interface IDatasetSchema extends IResourceSchema {
-    name: string
-    owner?: IUserSchema
-    version?: IDatasetVersionSchema
-}
-
-export interface IDatasetDetailSchema {
-    id?: string
-    name?: string
-    createdTime?: number
-    versionMeta?: string
-    versionName?: string
-    versionTag?: string
-    versionAlias?: string
-    files?: Array<IDatasetFileSchema>
-    indexTable?: string
-    shared?: boolean
-}
-
-export interface IUpdateDatasetSchema {
-    description?: string
-}
 export interface ICreateDatasetFormSchema {
     datasetName: string
     shared?: number
@@ -31,21 +5,6 @@ export interface ICreateDatasetFormSchema {
         storagePath?: string
         type?: string
     }
-}
-
-export interface ICreateDatasetQuerySchema {
-    datasetId?: string
-    shared?: number
-    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
-    storagePath: string
-}
-
-export interface IDatasetTreeSchema {
-    ownerName: string
-    projectName: string
-    datasetName: string
-    shared: boolean
-    versions: IDatasetTreeVersionSchema[]
 }
 
 export interface IDatasetTaskBuildSchema {

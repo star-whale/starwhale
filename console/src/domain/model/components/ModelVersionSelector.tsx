@@ -2,27 +2,26 @@ import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useQuery, UseQueryResult } from 'react-query'
-import { IListSchema } from '@/domain/base/schemas/list'
 import { listModelVersions } from '../services/modelVersion'
-import { IModelVersionSchema } from '../schemas/modelVersion'
 import { useEventCallback } from '@starwhale/core/utils'
 import { ModelLabel } from './ModelLabel'
+import { IModelVersionVo, IPageInfoModelVersionVo } from '@/api'
 
 export interface IModelVersionSelectorProps {
     projectId: string
     modelId?: string
     value?: string
-    onChange?: (newValue: string, item: IModelVersionSchema) => void
+    onChange?: (newValue: string, item: IModelVersionVo) => void
     overrides?: ISelectProps['overrides']
     disabled?: boolean
     autoSelected?: boolean
 }
 
-export interface IDataSelectorRef<T> {
-    getData: () => UseQueryResult<IListSchema<T>>
+interface IDataSelectorRef<T> {
+    getData: () => UseQueryResult<T>
 }
 
-const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersionSelectorProps>(
+const ModelVersionSelector = React.forwardRef<IDataSelectorRef<IPageInfoModelVersionVo>, IModelVersionSelectorProps>(
     (
         {
             projectId,
@@ -61,7 +60,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         )
 
         const handelChange = useEventCallback((id?: string) => {
-            const item = data?.list.find((v) => v.id === id)
+            const item = data?.list?.find((v) => v.id === id)
             if (!item || !id) return
             onChange?.(id, item)
         })
@@ -82,7 +81,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         const $options = React.useMemo(() => {
             if (!isSuccess) return []
             const ops =
-                data?.list.map((item) => ({
+                data?.list?.map((item) => ({
                     id: item.id,
                     label: <ModelLabel version={item} />,
                 })) ?? []

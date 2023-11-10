@@ -17,7 +17,8 @@ import { getAliasStr } from '@base/utils/alias'
 import { removeRuntime } from '@/domain/runtime/services/runtime'
 import Shared from '@/components/Shared'
 import _ from 'lodash'
-import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
+import { IRuntimeVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -35,7 +36,7 @@ export default function RuntimeListCard() {
     const isAccessRuntimeImageBuild = useAccess('runtime.image.build')
     const isAccessRUntimeDelete = useAccess('runtime.delete')
 
-    const getActions = (runtime: IRuntimeSchema) => [
+    const getActions = (runtime: IRuntimeVo) => [
         {
             access: true,
             quickAccess: true,
@@ -131,7 +132,7 @@ export default function RuntimeListCard() {
             </div>
             <Table
                 renderActions={(rowIndex) => {
-                    const data = runtimesInfo.data?.list[rowIndex]
+                    const data = runtimesInfo.data?.list?.[rowIndex]
                     if (!data) return undefined
                     return getActions(data)
                 }}
@@ -146,11 +147,13 @@ export default function RuntimeListCard() {
                     t('Created'),
                 ]}
                 data={
-                    runtimesInfo.data?.list.map((runtime) => {
+                    runtimesInfo.data?.list?.map((runtime) => {
                         return [
                             runtime.name,
                             <VersionText key='name' version={runtime.version?.name ?? '-'} />,
-                            runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
+                            runtime.version && (
+                                <Alias key='alias' alias={getAliasStr(runtime.version as IHasTagSchema)} />
+                            ),
                             <Shared key='shared' shared={runtime.version?.shared} isTextShow />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,

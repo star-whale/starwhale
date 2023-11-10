@@ -50,7 +50,7 @@ export default function ModelMultiSelector({
     useEffect(() => {
         if (modelsInfo.isSuccess) {
             setOptions(
-                modelsInfo.data?.list.map((item) => ({
+                modelsInfo.data?.list?.map((item) => ({
                     id: getId(item),
                     label: item.name,
                 })) ?? []

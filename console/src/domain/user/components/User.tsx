@@ -1,9 +1,9 @@
 import React from 'react'
-import { IUserSchema } from '@user/schemas/user'
 import Text, { ITextProps } from '@/components/Text'
+import { IUserVo } from '@/api'
 
 export interface IUserProps {
-    user?: IUserSchema
+    user?: IUserVo
     style?: React.CSSProperties
     size?: ITextProps['size']
 }

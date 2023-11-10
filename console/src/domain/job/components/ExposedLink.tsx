@@ -1,11 +1,12 @@
 import React from 'react'
-import { ExposedLinkType, IExposedLinkSchema } from '@job/schemas/job'
+import { ExposedLinkType } from '@job/schemas/job'
 import IconFont, { IconTypesT } from '@starwhale/ui/IconFont'
 import Link from '@/components/Link/Link'
 import { ExtendButton, IExtendButtonProps } from '@starwhale/ui'
+import { IExposedLinkVo } from '@/api'
 
 export interface IExposedLinkProps {
-    data: IExposedLinkSchema
+    data: IExposedLinkVo
 }
 
 const VSCODE_NAME = 'VS_CODE'

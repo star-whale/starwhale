@@ -3,16 +3,17 @@ import { Block } from 'baseui/block'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import Input from '@starwhale/ui/Input'
-import { IChangePasswordSchema, IUserSchema } from '@user/schemas/user'
-import { shouldBeEqual, minLength } from '@/components/Form/validators'
-import { RadioGroup, Radio } from '@starwhale/ui/Radio'
+import { IChangePasswordSchema } from '@user/schemas/user'
+import { minLength, shouldBeEqual } from '@/components/Form/validators'
+import { Radio, RadioGroup } from '@starwhale/ui/Radio'
 import { useStyletron } from 'baseui'
 import { checkUserPasswd } from '@user/services/user'
 import { passwordMinLength } from '@/consts'
 import Button from '@starwhale/ui/Button'
+import { IUserVo } from '@/api'
 
 export interface IPasswordFormProps {
-    currentUser?: IUserSchema
+    currentUser?: IUserVo
     admin?: boolean
     onSubmit: (data: IChangePasswordSchema) => Promise<void>
 }

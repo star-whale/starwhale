@@ -2,10 +2,10 @@ import Alias from '@/components/Alias'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
-import { IModelTreeVersionSchema, IModelVersionSchema } from '../schemas/modelVersion'
-import { IModelTreeSchema } from '../schemas/model'
 import Shared from '@/components/Shared'
 import { getAliasStr } from '@base/utils/alias'
+import { IModelVersionViewVo, IModelVersionVo, IModelViewVo } from '@/api'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export const ModelLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -27,9 +27,9 @@ export const ModelLabelText = themedStyled('div', () => ({
     flexShrink: 0,
 }))
 
-export function getModelLabel(version: IModelTreeVersionSchema, model?: IModelTreeSchema) {
+export function getModelLabel(version: IModelVersionViewVo, model?: IModelViewVo) {
     const p = model ? [model.ownerName, model.projectName, model.modelName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = version.versionName
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version?.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
@@ -44,15 +44,15 @@ export function ModelLabel({
     isProjectShow = false,
     style = {},
 }: {
-    version: IModelVersionSchema & { versionName?: string }
-    model?: IModelTreeSchema
+    version: IModelVersionVo | IModelVersionViewVo
+    model?: IModelViewVo
     isProjectShow?: boolean
     style?: React.CSSProperties
 }) {
-    const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={getAliasStr(version)} />
+    const share = <Shared shared={!!version.shared} isTextShow={false} />
+    const alias = <Alias alias={getAliasStr(version as IHasTagSchema)} />
     const p = model ? [model.ownerName, model.projectName, model.modelName].join('/') : ''
-    const name = version?.versionName ?? version?.name
+    const name = (version as IModelVersionViewVo)?.versionName ?? (version as IModelVersionVo)?.name
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)

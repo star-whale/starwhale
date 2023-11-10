@@ -3,11 +3,10 @@ import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import Card from '@/components/Card'
 import { ICreateProjectSchema } from '@project/schemas/project'
-import { fetchProject, changeProject, fetchProjectReadme } from '@project/services/project'
+import { changeProject, fetchProject, fetchProjectReadme } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
 import { useHistory } from 'react-router-dom'
-import { IProjectSchema } from '@/domain/project/schemas/project'
 import { createUseStyles } from 'react-jss'
 import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMembers'
 import { useQuery } from 'react-query'
@@ -19,9 +18,10 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import TiptapEditor from '@starwhale/ui/TiptapEditor'
 import _ from 'lodash'
 import { useEventCallback } from '@starwhale/core'
+import { IProjectVo } from '@/api'
 
 type IProjectCardProps = {
-    project: IProjectSchema
+    project: IProjectVo
     onEdit?: () => void
 }
 

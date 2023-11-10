@@ -15,8 +15,8 @@ export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DD HH:mm:ss
     return moment.tz(Number(s), moment.tz.guess()).format(format ?? dateTimeFormat)
 }
 
-export function durationToStr(v: number) {
-    if (v < 0) return '-'
+export function durationToStr(v: number | undefined) {
+    if (!v || v < 0) return '-'
     if (_.isNaN(v)) return v
 
     const units = ['μs', 'ms', 's', 'm', 'h', 'd']

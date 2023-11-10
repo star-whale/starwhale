@@ -11,6 +11,7 @@ import { Alias } from '@/components/Alias'
 import { MonoText } from '@/components/Text'
 import { useProject } from '@project/hooks/useProject'
 import { getAliasStr } from '@base/utils/alias'
+import { IHasTagSchema } from '@base/schemas/resource'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
@@ -30,11 +31,11 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText maxWidth='400px'>{dataset?.versionInfo.name ?? '-'} </MonoText>,
+            value: <MonoText maxWidth='400px'>{dataset?.versionInfo?.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),
-            value: dataset ? <Alias alias={getAliasStr(dataset.versionInfo)} /> : null,
+            value: dataset ? <Alias alias={getAliasStr(dataset.versionInfo as IHasTagSchema)} /> : null,
         },
         {
             label: t('dataset.overview.shared'),
@@ -47,9 +48,9 @@ export default function DatasetVersionOverview() {
                         gap: '4px',
                     }}
                 >
-                    <Shared shared={dataset?.versionInfo.shared} isTextShow />
+                    <Shared shared={dataset?.versionInfo?.shared} isTextShow />
                     <Toggle
-                        value={dataset?.versionInfo.shared}
+                        value={dataset?.versionInfo?.shared}
                         onChange={async (v) => {
                             try {
                                 await updateDatasetVersionShared(projectId, datasetId, datasetVersionId, v)
@@ -66,7 +67,7 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Created At'),
-            value: dataset?.versionInfo.createdTime && formatTimestampDateTime(dataset.versionInfo.createdTime),
+            value: dataset?.versionInfo?.createdTime && formatTimestampDateTime(dataset.versionInfo.createdTime),
         },
     ].filter((item) => {
         // hide shared if project is private

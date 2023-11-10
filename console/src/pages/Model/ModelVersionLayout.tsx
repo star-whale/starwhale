@@ -19,7 +19,7 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     useEffect(() => {
         setModelLoading(modelInfo.isLoading)
         if (modelInfo.isSuccess) {
-            if (modelInfo.data.versionName !== model?.versionName) {
+            if (modelInfo.data.versionInfo.name !== model?.versionName) {
                 setModel(modelInfo.data)
             }
         } else if (modelInfo.isLoading) {
@@ -31,7 +31,7 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     const modelName = model?.versionName ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
-        const items = [
+        return [
             {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
@@ -45,7 +45,6 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
                 path: `/projects/${projectId}/models/${modelId}/versions`,
             },
         ]
-        return items
     }, [modelName, t, projectId, modelId])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>

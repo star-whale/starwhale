@@ -64,7 +64,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         pageNum: 1,
         pageSize: 1,
     })
-    const datatore = useFetchDatastoreByTable(getQueryParams(datasetVersion?.versionInfo.indexTable), true)
+    const datatore = useFetchDatastoreByTable(getQueryParams(datasetVersion?.versionInfo?.indexTable), true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [

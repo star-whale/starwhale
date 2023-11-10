@@ -348,9 +348,6 @@ export default function Header() {
                             <Avatar name={currentUser.name} isTooltip={false} />
                             <div className={classNames(styles.userAvatarInfo, 'text-ellipsis')}>
                                 <span className={styles.userAvatarName}>{currentUser.name}</span>
-                                {currentUser.email && (
-                                    <p className={styles.userAvatarEmail}>{currentUser.email ?? ''}</p>
-                                )}
                             </div>
                         </div>
                         <div className={styles.divider} />

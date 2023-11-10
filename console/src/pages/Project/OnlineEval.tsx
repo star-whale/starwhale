@@ -142,7 +142,9 @@ export default function OnlineEval() {
 
     useEffect(() => {
         if (modelInfo.isSuccess || modelVersionInfo.isSuccess) {
-            const versionName = modelVersionId ? modelVersionInfo?.data?.versionInfo.name : modelInfo?.data?.versionName
+            const versionName = modelVersionId
+                ? modelVersionInfo?.data?.versionInfo.name
+                : modelInfo?.data?.versionInfo.name
             const modelName = modelInfo?.data?.name
             if (!modelName || !versionName) {
                 return
@@ -232,7 +234,7 @@ export default function OnlineEval() {
         modelInfo.isSuccess,
         modelVersionInfo.isSuccess,
         modelInfo?.data?.name,
-        modelInfo?.data?.versionName,
+        modelInfo?.data?.versionInfo.name,
         modelVersionInfo?.data?.versionInfo.name,
     ])
 

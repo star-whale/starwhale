@@ -90,8 +90,8 @@ export default function DatasetVersionFiles() {
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
     const { revision } = React.useMemo(() => {
-        return getMeta(datasetVersion?.versionInfo.meta as string)
-    }, [datasetVersion?.versionInfo.meta])
+        return getMeta(datasetVersion?.versionInfo?.meta as string)
+    }, [datasetVersion?.versionInfo?.meta])
     const { query } = useQueryArgs()
     const extra = React.useMemo(() => {
         return {
@@ -114,8 +114,8 @@ export default function DatasetVersionFiles() {
     })
 
     const { records, columnTypes, columnHints } = useFetchDatastoreByTable(
-        getQueryParams(datasetVersion?.versionInfo.indexTable, extra),
-        !!datasetVersion?.versionInfo.indexTable
+        getQueryParams(datasetVersion?.versionInfo?.indexTable, extra),
+        !!datasetVersion?.versionInfo?.indexTable
     )
 
     const $columns = useDatastoreColumns({
