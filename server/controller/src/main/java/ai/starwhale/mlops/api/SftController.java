@@ -39,6 +39,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -94,6 +95,22 @@ public class SftController {
                 body.getName(),
                 body.getDescription(),
                 new IdConverter().revert(userService.currentUser().getId())
+        );
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
+    @Operation(summary = "Update SFT space")
+    @PutMapping(value = "/project/{projectId}/sft/space/{spaceId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> updateSftSpace(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @RequestBody SftSpaceCreateRequest body
+    ) {
+        sftSpaceService.updateSpace(
+                spaceId,
+                body.getName(),
+                body.getDescription()
         );
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
