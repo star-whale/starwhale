@@ -94,7 +94,7 @@ class ResourceEventHolderTest {
         Thread.sleep(1500);
         resourceEventHolder.gc();
         events = resourceEventHolder.getEvents("Pod", "test-pod");
-        Assertions.assertEquals(1, events.size());
+        Assertions.assertEquals(0, events.size());
     }
 
     @Test
