@@ -134,7 +134,7 @@ class TaskExecutor:
                         func()
                 else:
                     raise NoSupportError(
-                        f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
+                        f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict, @evaluate or @finetune decorator"
                     )
         else:
             # TODO: support user custom class and function with arguments

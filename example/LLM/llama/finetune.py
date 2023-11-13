@@ -21,8 +21,7 @@ from transformers import (
 from peft.tuners.lora import LoraLayer
 from torch.nn.utils.rnn import pad_sequence
 
-from starwhale import model as starwhale_model
-from starwhale import Context, dataset, fine_tune
+from starwhale import dataset, finetune
 
 try:
     from .utils import (
@@ -50,31 +49,17 @@ max_train_steps = os.environ.get("MAX_TRAIN_STEPS", 18)  # 1875
 max_eval_steps = os.environ.get("MAX_EVAL_STEPS", 1)  # 187
 
 
-@fine_tune(resources={"nvidia.com/gpu": 1})
-def llama_fine_tuning():
-    ctx = Context.get_runtime_context()
-
-    if len(ctx.dataset_uris) == 2:
-        # TODO: use more graceful way to get train and eval dataset
-        train_dataset = dataset(ctx.dataset_uris[0], readonly=True, create="forbid")
-        eval_dataset = dataset(ctx.dataset_uris[1], readonly=True, create="forbid")
-    elif len(ctx.dataset_uris) == 1:
-        train_dataset = dataset(ctx.dataset_uris[0], readonly=True, create="forbid")
-        eval_dataset = None
-    else:
-        # TODO: support multiple datasets
-        raise ValueError("Only support 1 or 2 datasets(train and eval dataset) for now")
-
-    train_llama(
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-    )
+@finetune(
+    resources={"nvidia.com/gpu": 1},
+    require_train_datasets=True,
+    require_validation_datasets=True,
+    model_modules=[copilot_predict],
+)
+def llama_fine_tuning(train_datasets: t.List[str], eval_datasets: t.List[str]):
+    # TODO: support multiple datasets
+    train_llama(train_dataset=train_datasets[0], eval_dataset=eval_datasets[0])
     model_name = get_model_name()
     prepare_model_package(model_name, skip_adapter=False)
-    starwhale_model.build(
-        name=f"llama-{model_name}-qlora-ft",
-        modules=[llama_fine_tuning, copilot_predict],
-    )
 
 
 def get_accelerate_model(

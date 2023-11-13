@@ -1,6 +1,6 @@
 # pip install -q transformers accelerate starwhale
 import os
-from typing import Any
+from typing import Any, List
 from pathlib import Path
 
 import tqdm
@@ -13,8 +13,7 @@ from transformers import (
     BloomTokenizerFast,
 )
 
-from starwhale import Context, dataset, fine_tune, evaluation, pass_context
-from starwhale.api import model as swmp
+from starwhale import dataset, finetune, evaluation
 
 ROOTDIR = Path(__file__).parent
 
@@ -63,12 +62,6 @@ def ppl(data: dict, external: dict):
     return result
 
 
-@pass_context
-@fine_tune()
-def ft(context: Context) -> None:
-    ft_inner(context=context)
-
-
 ds_key_selectors = {
     "webqsp": {
         "rawquestion": "instruction",
@@ -81,10 +74,8 @@ ds_key_selectors = {
 }
 
 
-def ft_inner(
-    context: Context = None,
-    swds: str = "mkqa/version/latest",
-) -> None:
+@finetune
+def ft(train_datasets: List[str]) -> None:
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
         from download_model import download
@@ -95,8 +86,7 @@ def ft_inner(
         checkpoint, torch_dtype="auto", device_map="auto"
     )
 
-    swds_name = context.dataset_uris[0] if context else swds
-    sw_dataset = dataset(swds_name, readonly=True, create="forbid")
+    sw_dataset = dataset(train_datasets[0], readonly=True, create="forbid")
     sw_dataset = sw_dataset.with_loader_config(
         field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )
@@ -123,11 +113,6 @@ def ft_inner(
         data_collator=data_collator,
     )
     trainer.train()
-    swmp.build(
-        workdir=ROOTDIR,
-        name=os.getenv("BLOOM_MODEL_NAME") or "bloom",
-        modules=[ft],
-    )
 
 
 class ModifiedTrainer(Trainer):
@@ -170,7 +155,3 @@ def swds2hgds(swds) -> Any:
             }
 
     return Dataset.from_generator(my_gen)
-
-
-if __name__ == "__main__":
-    ft_inner()

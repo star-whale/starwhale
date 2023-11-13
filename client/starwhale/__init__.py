@@ -17,7 +17,7 @@ from starwhale.utils.debug import init_logger
 from starwhale.api.instance import login, logout
 from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import Evaluation, PipelineHandler
-from starwhale.api.experiment import fine_tune
+from starwhale.api.experiment import finetune
 from starwhale.base.data_type import (
     Line,
     Link,
@@ -42,6 +42,9 @@ dataset = Dataset.dataset
 handler = Handler.register
 job = Job.get
 
+ft = finetune
+fine_tune = finetune
+
 __all__ = [
     "__version__",
     "model",
@@ -54,6 +57,8 @@ __all__ = [
     "Dataset",
     "dataset",
     "evaluation",
+    "ft",
+    "finetune",
     "fine_tune",
     "handler",
     "pass_context",

@@ -1,5 +1,5 @@
-from ._impl.experiment import fine_tune
+from ._impl.experiment import finetune
 
 __all__ = [
-    "fine_tune",
+    "finetune",
 ]

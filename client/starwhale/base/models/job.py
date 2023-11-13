@@ -20,6 +20,7 @@ class JobManifest(SwBaseModel):
     handler_name: Optional[str]  # added from v0.5.12
     error_message: Optional[str]
     finished_at: str
+    finetune_validation_datasets: Optional[List[str]]
 
 
 class LocalJobInfo(SwBaseModel):

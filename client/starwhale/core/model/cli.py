@@ -5,11 +5,7 @@ import typing as t
 from pathlib import Path
 
 import click
-from click_option_group import (
-    optgroup,
-    MutuallyExclusiveOptionGroup,
-    RequiredMutuallyExclusiveOptionGroup,
-)
+from click_option_group import optgroup, RequiredMutuallyExclusiveOptionGroup
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.cli import AliasedGroup
@@ -463,7 +459,7 @@ def _recover(model: str, force: bool) -> None:
     required=False,
     envvar=SWEnv.dataset_uri,
     multiple=True,
-    help=f"dataset uri, env is {SWEnv.dataset_uri}",
+    help=f"dataset uri, env is {SWEnv.dataset_uri}. For finetune, the argument is used for train dataset",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-dh",
@@ -473,7 +469,7 @@ def _recover(model: str, force: bool) -> None:
     type=int,
     show_default=True,
     help="[ONLY STANDALONE]For debugging purpose, every prediction task will, at most, consume the first n rows from every dataset."
-    "When the value is less than or equal to 0, all samples will be used.",
+    "When the value is less than or equal to 0, all samples will be used. This option is useful for all datasets.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--in-container",
@@ -500,11 +496,6 @@ def _recover(model: str, force: bool) -> None:
     default="default",
     type=str,
     help="resource pool for server side",
-)
-@optgroup.group(
-    "\n ** Runtime Environment Selectors",
-    cls=MutuallyExclusiveOptionGroup,
-    help="The selector of runtime environment. If not set, model run in the current shell environment.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-r",
@@ -546,6 +537,17 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY STANDALONE]Forbid to use packaged runtime in the model",
     hidden=True,
 )
+@optgroup.group("\n  ** Finetune Options")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "finetune_val_datasets",
+    "-vd",
+    "--validation-dataset",
+    "--val-dataset",
+    required=False,
+    envvar=SWEnv.finetune_validation_dataset_uri,
+    multiple=True,
+    help=f"validation dataset uri for finetune, env is {SWEnv.finetune_validation_dataset_uri}",
+)
 @click.argument("handler_args", nargs=-1)
 def _run(
     workdir: str,
@@ -556,6 +558,7 @@ def _run(
     run_project: str,
     log_project: str,
     datasets: t.List[str],
+    finetune_val_datasets: t.List[str],
     dataset_head: int,
     in_container: bool,
     runtime: str,
@@ -600,6 +603,10 @@ def _run(
         \b
         # --> run with dataset of head 10
         swcli model run --uri mnist --dataset-head 10 --dataset mnist
+
+        \b
+        # --> run with finetune validation dataset
+        swcli model run --workdir . -m mnist.finetune --dataset mnist --val-dataset mnist-val
     """
     # TODO: support run model in cluster mode
     run_project_uri = Project(run_project)
@@ -630,6 +637,7 @@ def _run(
                 "log project must be consistent with run project in server mode"
             )
 
+        # TODO: support finetune val dataset in server mode
         ModelTermView.run_in_server(
             project_uri=run_project_uri,
             model_uri=uri,
@@ -669,6 +677,7 @@ def _run(
             version=version,
             run_handler=handler,
             dataset_uris=datasets,
+            finetune_val_dataset_uris=finetune_val_datasets,
             dataset_head=dataset_head,
             runtime_uri=runtime_uri,
             forbid_snapshot=forbid_snapshot,

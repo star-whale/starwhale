@@ -19,7 +19,7 @@ def context_handle(ctx: Context) -> t.Any:
 
 
 @fine_tune
-def ft() -> None:
+def ft(train_datasets: t.List) -> None:
     ...
 
 

@@ -26,6 +26,8 @@ class Scheduler:
         run_project: t.Optional[Project] = None,
         log_project: t.Optional[Project] = None,
         dataset_head: int = 0,
+        finetune_val_dataset_uris: t.List[str] | None = None,
+        model_name: str = "",
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
@@ -36,6 +38,8 @@ class Scheduler:
         self.version = version
         self.handler_args = handler_args or []
         self.dataset_head = dataset_head
+        self.finetune_val_dataset_uris = finetune_val_dataset_uris
+        self.model_name = model_name
 
     def run(
         self,
@@ -78,6 +82,8 @@ class Scheduler:
                     version=self.version,
                     handler_args=self.handler_args,
                     dataset_head=self.dataset_head,
+                    finetune_val_dataset_uris=self.finetune_val_dataset_uris,
+                    model_name=self.model_name,
                 )
                 for v in vertices_to_run
             ]
@@ -118,6 +124,7 @@ class Scheduler:
             workdir=self.workdir,
             version=self.version,
             dataset_head=self.dataset_head,
+            finetune_val_dataset_uris=self.finetune_val_dataset_uris,
         ).execute()
 
         console.info(
@@ -147,8 +154,10 @@ class Scheduler:
                 total=task_num,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
+                finetune_val_dataset_uris=self.finetune_val_dataset_uris,
                 dataset_head=self.dataset_head,
                 workdir=self.workdir,
+                model_name=self.model_name,
             ),
             step=_step,
             workdir=self.workdir,
