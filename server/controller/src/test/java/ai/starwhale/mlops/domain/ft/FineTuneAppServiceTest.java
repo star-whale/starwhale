@@ -23,12 +23,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
+import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
@@ -103,6 +104,7 @@ class FineTuneAppServiceTest {
                 datasetDao,
                 fineTuneSpaceMapper,
                 userJobConverter,
+                mock(EventService.class),
                 mock(JobConverter.class),
                 mock(ModelService.class),
                 mock(DatasetService.class)
@@ -120,9 +122,9 @@ class FineTuneAppServiceTest {
         }).when(fineTuneMapper).add(any());
         when(jobCreator.createJob(any())).thenReturn(Job.builder().id(22L).build());
 
-        FineTuneCreateRequest request = new FineTuneCreateRequest();
+        var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
-        request.setEvalDatasetVersionIds(List.of(1L));
+        request.setEvalDatasetVersionIds(List.of("1"));
         when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
