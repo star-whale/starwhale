@@ -146,7 +146,7 @@ public class JobController {
     @Operation(summary = "Job information")
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    public ResponseEntity<ResponseMessage<JobVo>> findJob(
+    public ResponseEntity<ResponseMessage<JobVo>> getJob(
             @PathVariable String projectUrl,
             @PathVariable String jobUrl
     ) {

@@ -18,6 +18,8 @@ package ai.starwhale.mlops.common;
 
 import ai.starwhale.mlops.exception.ConvertException;
 import cn.hutool.core.util.StrUtil;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -44,6 +46,20 @@ public class IdConverter implements Converter<Long, String> {
         } catch (NumberFormatException e) {
             throw new ConvertException("Convert ID: number format error.", e);
         }
+    }
+
+    public List<String> convertList(List<Long> ids) throws ConvertException {
+        if (ids == null) {
+            return null;
+        }
+        return ids.stream().map(this::convert).collect(Collectors.toList());
+    }
+
+    public List<Long> revertList(List<String> strIds) throws ConvertException {
+        if (strIds == null) {
+            return null;
+        }
+        return strIds.stream().map(this::revert).collect(Collectors.toList());
     }
 
     public boolean isId(String str) {

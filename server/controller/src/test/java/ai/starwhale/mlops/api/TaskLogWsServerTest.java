@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -65,7 +66,7 @@ public class TaskLogWsServerTest {
 
         final Long taskId = 1L;
         when(session.getId()).thenReturn("1");
-        when(idConvertor.revert(any())).thenReturn(taskId);
+        when(idConvertor.revert(anyString())).thenReturn(taskId);
         when(logK8sCollector.readLine(any())).thenReturn("foo");
         server.onOpen(session, "1");
         verify(logCollectorFactory).streamingCollector(Run.builder().id(2L).build());

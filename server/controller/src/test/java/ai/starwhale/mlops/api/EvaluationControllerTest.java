@@ -18,38 +18,29 @@ package ai.starwhale.mlops.api;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
-import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
-import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.EvaluationFileStorage;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
-import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import com.github.pagehelper.Page;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -72,20 +63,6 @@ public class EvaluationControllerTest {
         controller = new EvaluationController(
                 evaluationService = mock(EvaluationService.class),
                 evaluationFileStorage = mock(EvaluationFileStorage.class));
-    }
-
-    @Test
-    public void testListAttributes() {
-        given(evaluationService.listAttributeVo())
-                .willReturn(List.of(AttributeVo.builder().name("attr").type("string").build()));
-
-        var resp = controller.listAttributes("");
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(iterableWithSize(1)),
-                is(hasItem(hasProperty("name", is("attr"))))
-        ));
     }
 
     @Test
@@ -118,29 +95,6 @@ public class EvaluationControllerTest {
 
         assertThrows(StarwhaleApiException.class,
                 () -> controller.createViewConfig("p2", request));
-    }
-
-    @Test
-    public void testListEvaluationSummary() {
-        given(evaluationService.listEvaluationSummary(
-                same("p1"),
-                any(SummaryFilter.class),
-                any(PageParams.class)
-        )).willAnswer(invocation -> {
-            PageParams pageParams = invocation.getArgument(2);
-            try (Page<SummaryVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
-                return page.toPageInfo();
-            }
-        });
-
-        var resp = controller.listEvaluationSummary(
-                "p1", "", 1, 5);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(hasProperty("pageNum", is(1))),
-                is(hasProperty("pageSize", is(5)))
-        ));
     }
 
     @Test

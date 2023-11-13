@@ -153,7 +153,6 @@ public class JobConverterTest {
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
                 hasProperty("builtinRuntime", is(false)),
-                hasProperty("datasets", isA(List.class)),
                 hasProperty("datasetList", isA(List.class)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),

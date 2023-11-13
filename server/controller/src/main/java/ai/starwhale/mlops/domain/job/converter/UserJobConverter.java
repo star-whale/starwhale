@@ -107,8 +107,8 @@ public class UserJobConverter {
             runtimeVersionId = runtimeVersion.getId();
 
         }
-        var datasets = request.getDatasetVersionIds();
-        if (datasets == null) {
+        List<Long> datasets = null;
+        if (request.getDatasetVersionIds() == null) {
             var datasetUrls = request.getDatasetVersionUrls();
             if (StringUtils.hasText(datasetUrls)) {
                 // convert datasetUrls to datasetIds
@@ -123,6 +123,8 @@ public class UserJobConverter {
                 datasets = converted;
                 log.warn("datasetVersionUrls is deprecated, please use datasetVersionIds instead");
             }
+        } else {
+            datasets = idConvertor.revertList(request.getDatasetVersionIds());
         }
 
         return UserJobCreateRequest.builder()
@@ -219,9 +221,9 @@ public class UserJobConverter {
     }
 
     @Nullable
-    private Long findId(Long id, String url, String nameForMsg) throws SwValidationException {
-        if (id != null) {
-            return id;
+    private Long findId(String id, String url, String nameForMsg) throws SwValidationException {
+        if (StringUtils.hasText(id)) {
+            return idConvertor.revert(id);
         }
         if (StringUtils.hasText(url)) {
             if (!idConvertor.isId(url)) {

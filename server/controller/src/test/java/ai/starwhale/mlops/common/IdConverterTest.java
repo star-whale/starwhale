@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,16 +37,19 @@ public class IdConverterTest {
 
     @Test
     public void testConvert() {
-        var res = idConvertor.convert(null);
+        var res = idConvertor.convert((Long) null);
         assertThat(res, nullValue());
 
         res = idConvertor.convert(11L);
         assertThat(res, is("11"));
+
+        var listRes = idConvertor.convertList(List.of(11L, 22L));
+        assertThat(listRes, is(List.of("11", "22")));
     }
 
     @Test
     public void testRevert() {
-        var res = idConvertor.revert(null);
+        var res = idConvertor.revert((String) null);
         assertThat(res, nullValue());
 
         res = idConvertor.revert("");
@@ -59,6 +63,9 @@ public class IdConverterTest {
 
         assertThrows(ConvertException.class,
                 () -> idConvertor.revert("a123"));
+
+        var listRes = idConvertor.revertList(List.of("11", "22"));
+        assertThat(listRes, is(List.of(11L, 22L)));
     }
 
     @Test
