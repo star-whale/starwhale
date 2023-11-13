@@ -151,7 +151,14 @@ export interface ICreateProjectRequest {
 export interface ICreateModelVersionRequest {
     metaBlobId: string
     builtInRuntime?: string
+    modelSource?: IModelSource
     force?: boolean
+}
+
+export interface IModelSource {
+    type?: 'DEFAULT' | 'FINE_TUNE'
+    /** @format int64 */
+    id?: number
 }
 
 export interface ICreateJobTemplateRequest {
@@ -385,7 +392,7 @@ export interface IUploadResult {
 }
 
 export interface IDatasetBuildRequest {
-    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'JSON' | 'CSV' | 'HUGGING_FACE'
     shared?: boolean
     storagePath: string
 }
@@ -1941,7 +1948,7 @@ export interface IBuildRecordVo {
         | 'CANCELED'
         | 'FAIL'
         | 'UNKNOWN'
-    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'JSON' | 'CSV' | 'HUGGING_FACE'
     /** @format int64 */
     createTime: number
 }
