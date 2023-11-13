@@ -391,6 +391,31 @@ class FineTuneCreateRequest(SwBaseModel):
     )
 
 
+class FineTuneEvalCreateRequest(SwBaseModel):
+    model_version_id: Optional[int] = Field(None, alias='modelVersionId')
+    dataset_version_ids: Optional[List[int]] = Field(None, alias='datasetVersionIds')
+    runtime_version_id: Optional[int] = Field(None, alias='runtimeVersionId')
+    time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
+    model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
+    dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
+    runtime_version_url: Optional[str] = Field(None, alias='runtimeVersionUrl')
+    comment: Optional[str] = None
+    resource_pool: str = Field(..., alias='resourcePool')
+    handler: Optional[str] = None
+    step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
+    type: Optional[Type3] = None
+    dev_mode: Optional[bool] = Field(None, alias='devMode')
+    dev_password: Optional[str] = Field(None, alias='devPassword')
+    dev_way: Optional[DevWay] = Field(None, alias='devWay')
+    space_id: Optional[int] = Field(None, alias='spaceId')
+
+
+class ResponseMessageLong(SwBaseModel):
+    code: str
+    message: str
+    data: int
+
+
 class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
@@ -553,7 +578,7 @@ class Flag(Enum):
     unchanged = 'unchanged'
 
 
-class Type4(Enum):
+class Type5(Enum):
     directory = 'directory'
     file = 'file'
 
@@ -563,7 +588,7 @@ class FileNode(SwBaseModel):
     signature: Optional[str] = None
     flag: Optional[Flag] = None
     mime: Optional[str] = None
-    type: Optional[Type4] = None
+    type: Optional[Type5] = None
     desc: Optional[str] = None
     size: Optional[str] = None
 
@@ -681,12 +706,6 @@ class ResponseMessageListString(SwBaseModel):
     code: str
     message: str
     data: List[str]
-
-
-class ResponseMessageLong(SwBaseModel):
-    code: str
-    message: str
-    data: int
 
 
 class RuntimeVersionViewVo(SwBaseModel):
@@ -922,13 +941,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type5(Enum):
+class Type6(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type5
+    type: Type6
     name: str
     link: str
 
@@ -1193,7 +1212,7 @@ class Status2(Enum):
     unknown = 'UNKNOWN'
 
 
-class Type6(Enum):
+class Type7(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
@@ -1208,7 +1227,7 @@ class BuildRecordVo(SwBaseModel):
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
     status: Status2
-    type: Type6
+    type: Type7
     create_time: int = Field(..., alias='createTime')
 
 
