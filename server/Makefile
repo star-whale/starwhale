@@ -11,12 +11,5 @@ ci-package-with-unit-test:
 ci-package-with-unit-test-report:
 	mvn -B -e clean package jacoco:report
 
-test:
-	docker volume create --name ${MVN_VOLUME} && \
-	docker run --rm -v ${MVN_VOLUME}:/app ${MVN_IMG} /bin/sh -c "chown $(shell id -u):$(shell id -g) -R /app" && \
-	docker run --rm -u $(shell id -u):$(shell id -g) \
-		-e MAVEN_CONFIG=/var/maven/.m2 \
-		-v ${MVN_VOLUME}:/var/maven/.m2 \
-		-v $(shell pwd):/app \
-		-w /app ${MVN_IMG} \
-		mvn -Duser.home=/var/maven -e test
+show-junit-log:
+	find . -type f -path "*sw-test-output/*.txt" -exec tail -n +1 {} +

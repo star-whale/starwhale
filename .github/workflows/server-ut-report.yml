@@ -64,6 +64,14 @@ jobs:
           COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
         run: make ci-package-with-unit-test-report
 
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-ut-logs
+          path: ./server/**/*sw-test-output/*.txt
+          retention-days: 2
+
       - name: Publish coverage to codecov
         uses: codecov/codecov-action@v3
         with:
