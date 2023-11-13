@@ -39,6 +39,12 @@ public class CreateModelVersionRequest {
 
     boolean force = false;
 
+    public CreateModelVersionRequest(String metaBlobId, String builtInRuntime, boolean force) {
+        this.metaBlobId = metaBlobId;
+        this.builtInRuntime = builtInRuntime;
+        this.force = force;
+    }
+
     @Data
     public static class ModelSource {
         ModelSourceType type;

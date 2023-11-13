@@ -362,7 +362,7 @@ class ResponseMessageMapObjectObject(SwBaseModel):
     data: Dict[str, Dict[str, Any]]
 
 
-class Type2(Enum):
+class Type3(Enum):
     evaluation = 'EVALUATION'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
@@ -382,7 +382,7 @@ class FineTuneCreateRequest(SwBaseModel):
     resource_pool: str = Field(..., alias='resourcePool')
     handler: Optional[str] = None
     step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
-    type: Optional[Type2] = None
+    type: Optional[Type3] = None
     dev_mode: Optional[bool] = Field(None, alias='devMode')
     dev_password: Optional[str] = Field(None, alias='devPassword')
     dev_way: Optional[DevWay] = Field(None, alias='devWay')
@@ -553,7 +553,7 @@ class Flag(Enum):
     unchanged = 'unchanged'
 
 
-class Type3(Enum):
+class Type4(Enum):
     directory = 'directory'
     file = 'file'
 
@@ -563,7 +563,7 @@ class FileNode(SwBaseModel):
     signature: Optional[str] = None
     flag: Optional[Flag] = None
     mime: Optional[str] = None
-    type: Optional[Type3] = None
+    type: Optional[Type4] = None
     desc: Optional[str] = None
     size: Optional[str] = None
 
@@ -920,13 +920,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type4(Enum):
+class Type5(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type4
+    type: Type5
     name: str
     link: str
 
@@ -1227,7 +1227,7 @@ class Status2(Enum):
     unknown = 'UNKNOWN'
 
 
-class Type5(Enum):
+class Type6(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
@@ -1242,7 +1242,7 @@ class BuildRecordVo(SwBaseModel):
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
     status: Status2
-    type: Type5
+    type: Type6
     create_time: int = Field(..., alias='createTime')
 
 
