@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
+import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -136,5 +138,39 @@ class ModelVersionMapperTest extends MySqlContainerHolder {
         assertEquals("job2", mv.getJobs());
         assertEquals("blob2", mv.getMetaBlobId());
         assertEquals(123L, mv.getStorageSize());
+    }
+
+    @Test
+    public void testList() {
+        var model = ModelEntity.builder()
+                .projectId(1L)
+                .ownerId(1L)
+                .modelName("model1")
+                .build();
+        modelMapper.insert(model);
+        var modelVersion = ModelVersionEntity.builder()
+                .modelId(model.getId())
+                .versionName("v1")
+                .jobs("")
+                .ownerId(1L)
+                .build();
+        modelVersionMapper.insert(modelVersion);
+        var modelVersionDraft = ModelVersionEntity.builder()
+                .modelId(model.getId())
+                .versionName("v2")
+                .jobs("")
+                .draft(true)
+                .ownerId(1L)
+                .build();
+        modelVersionMapper.insert(modelVersionDraft);
+
+        List<ModelVersionEntity> list = modelVersionMapper.list(model.getId(), null, false);
+        Assertions.assertEquals(1, list.size());
+        ModelVersionEntity mv = list.get(0);
+        assertEquals("v1", mv.getVersionName());
+        List<ModelVersionEntity> listDraft = modelVersionMapper.list(model.getId(), null, true);
+        Assertions.assertEquals(1, listDraft.size());
+        ModelVersionEntity mvD = listDraft.get(0);
+        assertEquals("v2", mvD.getVersionName());
     }
 }

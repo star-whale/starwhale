@@ -52,6 +52,7 @@ import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.blob.BlobService;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.ft.FineTuneDomainService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -228,6 +229,9 @@ public class ModelServiceTest extends MySqlContainerHolder {
     private ModelDao modelDao;
     @Autowired
     private StorageAccessService storageAccessService;
+
+    @Autowired
+    private FineTuneDomainService fineTuneDomainService;
 
     private static final LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
 
@@ -776,7 +780,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 mock(HotJobHolder.class),
                 mock(TrashService.class),
                 mock(JobSpecParser.class),
-                mock(BlobService.class)
+                mock(BlobService.class),
+                fineTuneDomainService
         );
 
         // public project
@@ -981,7 +986,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 mock(HotJobHolder.class),
                 mock(TrashService.class),
                 mock(JobSpecParser.class),
-                blobService
+                blobService,
+                fineTuneDomainService
         );
         var file = ModelPackageStorage.File.newBuilder()
                 .setSize(1L)

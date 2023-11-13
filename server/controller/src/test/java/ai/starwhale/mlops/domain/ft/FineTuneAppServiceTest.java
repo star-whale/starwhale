@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-class FineTuneServiceTest {
+class FineTuneAppServiceTest {
 
     JobCreator jobCreator;
 
@@ -59,7 +59,7 @@ class FineTuneServiceTest {
 
     DatasetDao datasetDao;
 
-    FineTuneService fineTuneService;
+    FineTuneAppService fineTuneAppService;
 
     @BeforeEach
     public void setup() {
@@ -69,7 +69,7 @@ class FineTuneServiceTest {
         jobSpecParser = mock(JobSpecParser.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
-        fineTuneService = new FineTuneService(
+        fineTuneAppService = new FineTuneAppService(
                 jobCreator,
                 fineTuneMapper,
                 jobMapper,
@@ -97,7 +97,7 @@ class FineTuneServiceTest {
         when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        fineTuneService.createFineTune(1L, Project.builder().build(), request, User.builder().build());
+        fineTuneAppService.createFineTune(1L, Project.builder().build(), request, User.builder().build());
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
 
@@ -107,7 +107,7 @@ class FineTuneServiceTest {
     void listFt() {
         when(fineTuneMapper.list(anyLong())).thenReturn(List.of(FineTuneEntity.builder().jobId(1L).build()));
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
-        Assertions.assertEquals(1, fineTuneService.list(1L, 1, 1).getSize());
+        Assertions.assertEquals(1, fineTuneAppService.list(1L, 1, 1).getSize());
     }
 
     @Test

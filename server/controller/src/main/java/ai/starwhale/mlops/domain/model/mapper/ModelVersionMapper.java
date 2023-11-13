@@ -35,15 +35,17 @@ import org.apache.ibatis.jdbc.SQL;
 public interface ModelVersionMapper {
 
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, "
-            + " created_time, modified_time, jobs, status, meta_blob_id, storage_size, shared, built_in_runtime";
+            + " created_time, modified_time, jobs, status, meta_blob_id, storage_size, shared, draft, built_in_runtime";
 
     String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, m.model_name, m.id as model_id,"
-            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.storage_size, built_in_runtime,"
+            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, draft, v.storage_size, built_in_runtime,"
             + " v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
-    List<ModelVersionEntity> list(@Param("modelId") Long modelId,
-            @Param("namePrefix") String namePrefix);
+    List<ModelVersionEntity> list(
+            @Param("modelId") Long modelId,
+            @Param("namePrefix") String namePrefix, @Param("draft") boolean draft
+    );
 
     @Select("select " + COLUMNS + " from model_version where id = #{id}")
     ModelVersionEntity find(@Param("id") Long id);
@@ -80,7 +82,7 @@ public interface ModelVersionMapper {
             "inner join user_info as u on u.id = m.owner_id",
             "where",
             // models in current project or other project but is shared
-            "   (m.project_id = #{projectId} or (m.project_id != #{projectId} and v.shared = 1))",
+            "   (m.project_id = #{projectId} or (m.project_id != #{projectId} and v.shared = 1 and v.draft = 0))",
             "   and m.deleted_time = 0",
             "   and j.owner_id = #{userId}", // jobs in current user
             "   and j.project_id = #{projectId}", // jobs in current project
@@ -90,7 +92,8 @@ public interface ModelVersionMapper {
             "</script>"
     })
     List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsed(
-            @Param("projectId") Long projectId, @Param("userId") Long userId, @Param("limit") Integer limit);
+            @Param("projectId") Long projectId, @Param("userId") Long userId, @Param("limit") Integer limit
+    );
 
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
@@ -101,6 +104,7 @@ public interface ModelVersionMapper {
             + " and m.deleted_time = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
+            + " and v.draft = 0"
             + " and p.id != #{excludeProjectId}"
             + " order by m.id desc, v.version_order desc")
     List<ModelVersionViewEntity> listModelVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
@@ -119,10 +123,10 @@ public interface ModelVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into model_version "
-            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared, "
+            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared, draft, "
             + "storage_size)"
             + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{jobs}, "
-            + "#{builtInRuntime}, #{metaBlobId}, #{shared}, #{storageSize})")
+            + "#{builtInRuntime}, #{metaBlobId}, #{shared}, #{draft}, #{storageSize})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 
@@ -141,18 +145,23 @@ public interface ModelVersionMapper {
     @Select("select " + COLUMNS + " from model_version"
             + " where version_order = #{versionOrder}"
             + " and model_id = #{modelId}")
-    ModelVersionEntity findByVersionOrder(@Param("versionOrder") Long versionOrder,
-            @Param("modelId") Long modelId);
+    ModelVersionEntity findByVersionOrder(
+            @Param("versionOrder") Long versionOrder,
+            @Param("modelId") Long modelId
+    );
 
     class ModelVersionProvider {
 
-        public String listSql(@Param("modelId") Long modelId,
-                @Param("namePrefix") String namePrefix) {
+        public String listSql(
+                @Param("modelId") Long modelId,
+                @Param("namePrefix") String namePrefix, @Param("draft") Boolean draft
+        ) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
                     FROM("model_version");
                     WHERE("model_id = #{modelId}");
+                    WHERE("draft = #{draft}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
                     }
@@ -161,8 +170,10 @@ public interface ModelVersionMapper {
             }.toString();
         }
 
-        public String findByNameAndModelIdSql(@Param("versionName") String versionName,
-                @Param("modelId") Long modelId) {
+        public String findByNameAndModelIdSql(
+                @Param("versionName") String versionName,
+                @Param("modelId") Long modelId
+        ) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);

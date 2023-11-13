@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.model;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest.ModelSourceType;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
@@ -42,6 +43,7 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
+import ai.starwhale.mlops.domain.ft.FineTuneDomainService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -138,6 +140,8 @@ public class ModelService {
     @Setter
     private BundleManager bundleManager;
 
+    private final FineTuneDomainService fineTuneService;
+
     public ModelService(
             ModelMapper modelMapper,
             ModelVersionMapper modelVersionMapper,
@@ -152,7 +156,8 @@ public class ModelService {
             HotJobHolder jobHolder,
             TrashService trashService,
             JobSpecParser jobSpecParser,
-            BlobService blobService
+            BlobService blobService,
+            FineTuneDomainService fineTuneService
     ) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
@@ -166,6 +171,7 @@ public class ModelService {
         this.jobHolder = jobHolder;
         this.trashService = trashService;
         this.jobSpecParser = jobSpecParser;
+        this.fineTuneService = fineTuneService;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -254,7 +260,7 @@ public class ModelService {
     }
 
     public List<ModelInfoVo> listModelInfoOfModel(ModelEntity model) {
-        List<ModelVersionEntity> versions = modelVersionMapper.list(model.getId(), null);
+        List<ModelVersionEntity> versions = modelVersionMapper.list(model.getId(), null, false);
         if (versions == null || versions.isEmpty()) {
             return List.of();
         }
@@ -352,7 +358,7 @@ public class ModelService {
         Long modelId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getModelUrl()));
 
         try (var pager = PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize())) {
-            var entities = modelVersionMapper.list(modelId, query.getVersionName());
+            var entities = modelVersionMapper.list(modelId, query.getVersionName(), false);
             var latest = modelVersionMapper.findByLatest(modelId);
             var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
             return PageUtil.toPageInfo(entities, item -> {
@@ -577,16 +583,26 @@ public class ModelService {
             throw new SwProcessException(ErrorType.STORAGE, "read jobs.yaml error", e);
         }
         if (modelVersionEntity == null) {
+            boolean sourcedFromFineTune = null != createModelVersionRequest.getModelSource()
+                    && createModelVersionRequest.getModelSource().getType() == ModelSourceType.FINE_TUNE
+                    && null != createModelVersionRequest.getModelSource().getId();
             modelVersionEntity = ModelVersionEntity.builder()
                     .modelId(modelEntity.getId())
                     .ownerId(ownerId)
                     .versionName(version)
                     .metaBlobId(metaBlobId)
                     .builtInRuntime(createModelVersionRequest.getBuiltInRuntime())
+                    .draft(sourcedFromFineTune)
                     .jobs(jobs)
                     .storageSize(storageSize)
                     .build();
             this.modelVersionMapper.insert(modelVersionEntity);
+            if (sourcedFromFineTune) {
+                fineTuneService.attachTargetModel(
+                        createModelVersionRequest.getModelSource().getId(),
+                        modelVersionEntity
+                );
+            }
             RevertManager.create(this.bundleManager, this.modelDao)
                     .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
         } else {
