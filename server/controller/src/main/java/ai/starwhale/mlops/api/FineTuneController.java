@@ -75,8 +75,6 @@ public class FineTuneController {
             FineTuneAppService fineTuneAppService,
             FeaturesProperties featuresProperties,
             UserJobConverter userJobConverter) {
-
-    ) {
         this.projectService = projectService;
         this.userService = userService;
         this.fineTuneSpaceService = fineTuneSpaceService;
