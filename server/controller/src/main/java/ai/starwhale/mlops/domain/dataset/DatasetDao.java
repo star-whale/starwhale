@@ -50,8 +50,8 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor<Dataset
     private final VersionAliasConverter versionAliasConvertor;
 
     public DatasetDao(DatasetMapper datasetMapper, DatasetVersionMapper datasetVersionMapper,
-            JobDatasetVersionMapper jobDatasetVersionMapper,
-            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
+                      JobDatasetVersionMapper jobDatasetVersionMapper,
+                      IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
         this.jobDatasetVersionMapper = jobDatasetVersionMapper;
@@ -66,7 +66,7 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor<Dataset
         DatasetVersionEntity entity = datasetVersionMapper.findByNameAndDatasetId(versionUrl, datasetId, false);
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    String.format("Unable to find Dataset Version %s", versionUrl));
+                                          String.format("Unable to find Dataset Version %s", versionUrl));
         }
         return entity.getId();
     }
@@ -80,12 +80,12 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor<Dataset
         }
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    String.format("Unable to find Dataset Version %s", versionUrl));
+                                          String.format("Unable to find Dataset Version %s", versionUrl));
         }
         DatasetEntity datasetEntity = datasetMapper.find(entity.getDatasetId());
         if (null == datasetEntity) {
             throw new SwNotFoundException(ResourceType.BUNDLE,
-                "Can not find dataset" + entity.getDatasetId());
+                                          "Can not find dataset" + entity.getDatasetId());
         }
         return DatasetVersion.fromEntity(datasetEntity, entity);
     }
@@ -98,7 +98,7 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor<Dataset
         DatasetEntity datasetEntity = datasetMapper.find(versionEntity.getDatasetId());
         if (null == datasetEntity) {
             throw new SwNotFoundException(ResourceType.BUNDLE,
-                    "Can not find dataset" + versionEntity.getDatasetId());
+                                          "Can not find dataset" + versionEntity.getDatasetId());
         }
         return DatasetVersion.fromEntity(datasetEntity, versionEntity);
     }
