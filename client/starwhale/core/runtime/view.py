@@ -440,6 +440,7 @@ class RuntimeTermViewRich(RuntimeTermView):
                     "tags": [i.version.alias] + (i.version.tags or []),
                     "shared": i.version.shared != 0,
                     "image": i.version.image,
+                    "size": 0,
                     "created_at": CloudRequestMixed.fmt_timestamp(
                         i.version.created_time
                     ),
