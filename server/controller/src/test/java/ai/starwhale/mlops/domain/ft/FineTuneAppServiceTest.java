@@ -28,9 +28,11 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -78,7 +80,8 @@ class FineTuneAppServiceTest {
                 new IdConverter(),
                 modelDao,
                 "instanceuri",
-                datasetDao
+                datasetDao,
+                mock(FineTuneSpaceMapper.class), mock(UserJobConverter.class)//todo
         );
     }
 

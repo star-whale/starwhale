@@ -80,6 +80,14 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor<ModelVers
         return entity;
     }
 
+    public void add(ModelEntity model) {
+        modelMapper.insert(model);
+    }
+
+    public void releaseModelVersion(Long versionId, Long modelId) {
+        versionMapper.updateModelRef(versionId, modelId);
+    }
+
     @Override
     public BundleEntity findById(Long id) {
         return modelMapper.find(id);
