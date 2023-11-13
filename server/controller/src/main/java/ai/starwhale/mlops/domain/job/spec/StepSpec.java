@@ -82,6 +82,12 @@ public class StepSpec {
     @JsonProperty("require_dataset")
     private Boolean requireDataset;
 
+    @JsonProperty("require_train_datasets")
+    private Boolean requireTrainDataset;
+
+    @JsonProperty("require_validation_datasets")
+    private Boolean requireValidationDataset;
+
     @JsonProperty("container_spec")
     ContainerSpec containerSpec;
 
