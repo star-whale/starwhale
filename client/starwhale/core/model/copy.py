@@ -482,16 +482,26 @@ async def upload_model(
             console.print("uploading metadata...")
             blob_id = await _upload_meta_blobs(meta_blobs)
             runtime_version = await runtime_version_recv.receive()
+
+        _request_json: t.Dict = {
+            "metaBlobId": blob_id,
+            "builtInRuntime": runtime_version,
+            "force": force,
+        }
+        _finetune_id = os.environ.get("SW_SERVER_TRIGGERED_FINETUNE_ID")
+        if _finetune_id is not None:
+            _request_json["modelSource"] = {
+                "type": "FINE_TUNE",
+                "id": int(_finetune_id),
+            }
         await _http_request(
             "POST",
-            path=f"/project/{dest_uri.project.id}"
-            + f"/model/{dest_uri.name}"
-            + f"/version/{dest_uri.version}/completeUpload",
-            json={
-                "metaBlobId": blob_id,
-                "builtInRuntime": runtime_version,
-                "force": force,
-            },
+            path=(
+                f"/project/{dest_uri.project.id}"
+                f"/model/{dest_uri.name}"
+                f"/version/{dest_uri.version}/completeUpload"
+            ),
+            json=_request_json,
             replace=False,
         )
         console.print("metadata uploaded")

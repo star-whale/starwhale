@@ -822,11 +822,13 @@ class TestBundleCopy(BaseTestCase):
             swmp_path / "src" / "empty_dir", swmp_path / "src" / "empty_dir_symlink"
         )
         os.symlink(swmp_path / "src" / "empty", swmp_path / "src" / "empty_symlink")
-        BundleCopy(
-            src_uri="mnist/v1",
-            dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
-            typ=ResourceType.model,
-        ).do()
+
+        with patch.dict(os.environ, {"SW_SERVER_TRIGGERED_FINETUNE_ID": "1111"}):
+            BundleCopy(
+                src_uri="mnist/v1",
+                dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
+                typ=ResourceType.model,
+            ).do()
 
         rm.request(
             HTTPMethod.GET,
