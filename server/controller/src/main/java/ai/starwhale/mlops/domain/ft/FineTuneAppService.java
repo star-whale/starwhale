@@ -73,7 +73,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class FineTuneAppService {
 
-    static  final String EVALUATION_SUMMARY_TABLE_FORMAT = "finetune/%d/eval/summary";
+    static  final String EVALUATION_SUMMARY_TABLE_FORMAT = "ftspace/%d/eval/summary";
 
     private final FeaturesProperties featuresProperties;
 
