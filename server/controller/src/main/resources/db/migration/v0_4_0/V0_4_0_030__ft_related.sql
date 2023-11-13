@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `fine_tune_space`
     `project_id`      bigint NOT NULL,
     `owner_id`  bigint     NOT NULL,
     `name` varchar(32) NOT NULL,
-    `description`  varchar(255)  NOT NULL,
+    `description`  varchar(255)  NULL,
     `created_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified_time` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
