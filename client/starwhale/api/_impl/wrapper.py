@@ -105,7 +105,9 @@ class Evaluation(Logger):
         ] = (
             lambda name: f"eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{name}"
         )
-        self._eval_summary_table_name = os.getenv("SW_EVALUATION_SUMMARY_TABLE", "eval/summary")
+        self._eval_summary_table_name = os.getenv(
+            "SW_EVALUATION_SUMMARY_TABLE", "eval/summary"
+        )
         self._data_store = data_store.get_data_store(
             project.instance.url, project.instance.token
         )
