@@ -34,6 +34,7 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -54,7 +55,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Service
-public class FineTuneService {
+public class FineTuneAppService {
 
     final JobCreator jobCreator;
 
@@ -70,7 +71,7 @@ public class FineTuneService {
 
     final String instanceUri;
 
-    public FineTuneService(
+    public FineTuneAppService(
             JobCreator jobCreator, FineTuneMapper fineTuneMapper, JobMapper jobMapper, JobSpecParser jobSpecParser,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
@@ -154,9 +155,9 @@ public class FineTuneService {
                         );
 
                     }).collect(Collectors.joining(" "));
-                    env.add(new Env("SW_VALIDATION_DATASET_URI", evalDataSetUris));
+                    env.add(new Env("SW_FINETUNE_VALIDATION_DATASET_URI", evalDataSetUris));
                 }
-                env.add(new Env("SW_FINE_TUNE_ID", id.toString()));
+                env.add(new Env("SW_SERVER_TRIGGERED_FINETUNE_ID", id.toString()));
                 s.setEnv(env);
                 s.verifyStepSpecArgs();
             }
@@ -204,5 +205,9 @@ public class FineTuneService {
 
     public void releaseFt(Long ftId) {
 
+    }
+
+    public void attachTargetModel(Long id, ModelVersionEntity modelVersionEntity) {
+        fineTuneMapper.updateTargetModel(id, modelVersionEntity.getId());
     }
 }

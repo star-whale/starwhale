@@ -22,7 +22,7 @@ import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.ft.FineTuneService;
+import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.ft.FineTuneSpaceService;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -56,18 +56,18 @@ public class FineTuneController {
     final UserService userService;
     final FineTuneSpaceService fineTuneSpaceService;
 
-    final FineTuneService fineTuneService;
+    final FineTuneAppService fineTuneAppService;
 
     public FineTuneController(
             ProjectService projectService,
             UserService userService,
             FineTuneSpaceService fineTuneSpaceService,
-            FineTuneService fineTuneService
+            FineTuneAppService fineTuneAppService
     ) {
         this.projectService = projectService;
         this.userService = userService;
         this.fineTuneSpaceService = fineTuneSpaceService;
-        this.fineTuneService = fineTuneService;
+        this.fineTuneAppService = fineTuneAppService;
     }
 
     @Operation(summary = "Get the list of fine-tune spaces")
@@ -124,7 +124,7 @@ public class FineTuneController {
             @Valid @RequestBody FineTuneCreateRequest request
     ) {
 
-        fineTuneService.createFineTune(
+        fineTuneAppService.createFineTune(
                 spaceId,
                 projectService.findProject(projectId),
                 request,
@@ -144,7 +144,7 @@ public class FineTuneController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
 
-        PageInfo<FineTuneVo> pageInfo = fineTuneService.list(spaceId, pageNum, pageSize);
+        PageInfo<FineTuneVo> pageInfo = fineTuneAppService.list(spaceId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 }

@@ -57,6 +57,9 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
     @Builder.Default
     private Boolean shared = false;
 
+    @Builder.Default
+    private Boolean draft = false;
+
     @Override
     public String getName() {
         return versionName;
