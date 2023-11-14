@@ -275,16 +275,20 @@ public class ColumnSchema {
                 }
                 if (schema.getAttributes() != null) {
                     for (var attr : schema.getAttributes()) {
-                        var attrSchema = this.sparseElementSchema.get(attr.getIndex());
+                        ColumnSchema attrSchema = null;
+                        if (this.sparseElementSchema != null) {
+                            attrSchema = this.sparseElementSchema.get(attr.getIndex());
+                        }
+                        var name = attr.getName() == null ? "element" : attr.getName();
                         if (attrSchema == null) {
-                            attrSchema = new ColumnSchema(attr.getName(), 0);
+                            attrSchema = new ColumnSchema(name, 0);
                         }
                         var attrWal = attrSchema.getDiff(attr);
                         if (attrWal != null) {
                             if (ret == null) {
                                 ret = Wal.ColumnSchema.newBuilder();
                             }
-                            ret.addAttributes(attrWal.setColumnName(attr.getName()).setColumnIndex(attr.getIndex()));
+                            ret.addAttributes(attrWal.setColumnName(name).setColumnIndex(attr.getIndex()));
                         }
                     }
                 }
@@ -313,7 +317,10 @@ public class ColumnSchema {
                     for (var entry : schema.getSparseKeyValuePairSchema().entrySet()) {
                         var index = entry.getKey();
                         var pairDesc = entry.getValue();
-                        var pair = this.sparseKeyValueSchema.get(index);
+                        Pair<ColumnSchema, ColumnSchema> pair = null;
+                        if (this.sparseKeyValueSchema != null) {
+                            pair = this.sparseKeyValueSchema.get(index);
+                        }
                         if (pair == null) {
                             pair = Pair.of(new ColumnSchema(pairDesc.getKeyType(), 0),
                                     new ColumnSchema(pairDesc.getValueType(), 0));
@@ -386,7 +393,9 @@ public class ColumnSchema {
                 if (this.elementSchema == null) {
                     this.elementSchema = new ColumnSchema("element", 0);
                 }
-                this.elementSchema.update(schema.getElementType());
+                if (schema.hasElementType()) {
+                    this.elementSchema.update(schema.getElementType());
+                }
                 if (!schema.getAttributesList().isEmpty()) {
                     if (this.sparseElementSchema == null) {
                         this.sparseElementSchema = new HashMap<>();
