@@ -221,10 +221,10 @@ public class FineTuneAppService {
         }
         Long targetModelVersionId = ft.getTargetModelVersionId();
         if (null == targetModelVersionId) {
-            throw new SwNotFoundException(ResourceType.FINE_TUNE, "target model not found");
+            throw new SwNotFoundException(ResourceType.FINE_TUNE, "target model has not been generated yet");
         }
         ModelVersionEntity modelVersion = modelDao.getModelVersion(targetModelVersionId.toString());
-        if (modelVersion.getDraft() == false) {
+        if (!modelVersion.getDraft()) {
             throw new SwValidationException(
                     ValidSubject.MODEL,
                     "model has been released to modelId: " + modelVersion.getModelId()

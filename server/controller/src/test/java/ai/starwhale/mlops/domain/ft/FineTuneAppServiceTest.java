@@ -30,16 +30,22 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -53,6 +59,7 @@ class FineTuneAppServiceTest {
     JobCreator jobCreator;
 
     FineTuneMapper fineTuneMapper;
+    FineTuneSpaceMapper fineTuneSpaceMapper;
 
     JobMapper jobMapper;
 
@@ -72,6 +79,9 @@ class FineTuneAppServiceTest {
         jobSpecParser = mock(JobSpecParser.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
+        UserJobConverter jobConverter = mock(UserJobConverter.class);
+        when(jobConverter.convert(any(), any())).thenReturn(UserJobCreateRequest.builder().build());
+        fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         fineTuneAppService = new FineTuneAppService(
                 jobCreator,
                 fineTuneMapper,
@@ -81,7 +91,7 @@ class FineTuneAppServiceTest {
                 modelDao,
                 "instanceuri",
                 datasetDao,
-                mock(FineTuneSpaceMapper.class), mock(UserJobConverter.class)//todo
+                fineTuneSpaceMapper, jobConverter//todo
         );
     }
 
@@ -102,7 +112,7 @@ class FineTuneAppServiceTest {
         when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        fineTuneAppService.createFineTune(1L, Project.builder().build(), request, User.builder().build());
+        fineTuneAppService.createFineTune(1L, Project.builder().id(1L).build(), request, User.builder().build());
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
 
@@ -121,5 +131,63 @@ class FineTuneAppServiceTest {
 
     @Test
     void releaseFt() {
+        User creator = User.builder().build();
+        when(fineTuneMapper.findById(1L)).thenReturn(null);
+        Assertions.assertThrows(SwNotFoundException.class, () -> {
+            fineTuneAppService.releaseFt(1L, "", null);
+        });
+
+        when(fineTuneMapper.findById(2L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(null)
+                        .build()
+        );
+        Assertions.assertThrows(SwNotFoundException.class, () -> {
+            fineTuneAppService.releaseFt(2L, "", null);
+        });
+
+        when(fineTuneMapper.findById(3L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(4L)
+                        .build()
+        );
+        when(modelDao.getModelVersion("4")).thenReturn(ModelVersionEntity
+                                                               .builder()
+                                                               .draft(false)
+                                                               .build());
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            fineTuneAppService.releaseFt(3L, "", null);
+        });
+
+        when(fineTuneMapper.findById(5L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(6L)
+                        .spaceId(1L)
+                        .build()
+        );
+        when(modelDao.getModelVersion("6")).thenReturn(ModelVersionEntity
+                                                               .builder()
+                                                               .modelId(10L)
+                                                               .modelName("aac")
+                                                               .draft(true)
+                                                               .build());
+        fineTuneAppService.releaseFt(5L, null, creator);
+        verify(modelDao).releaseModelVersion(6L, 10L);
+
+
+        when(fineTuneSpaceMapper.findById(anyLong())).thenReturn(FineTuneSpaceEntity.builder().projectId(1L).build());
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) {
+                Object[] args = invocation.getArguments();
+                ((ModelEntity) args[0]).setId(123L);
+                return null; // void method, so return null
+            }
+        }).when(modelDao).add(any());
+        fineTuneAppService.releaseFt(5L, "aab", creator);
+        verify(modelDao).releaseModelVersion(6L, 123L);
+
+        when(modelDao.findByNameForUpdate(any(), anyLong())).thenReturn(ModelEntity.builder().id(124L).build());
+        fineTuneAppService.releaseFt(5L, "aabc", creator);
+        verify(modelDao).releaseModelVersion(6L, 124L);
     }
 }
