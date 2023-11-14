@@ -33,6 +33,7 @@ public class FeaturesProperties {
     public static final String FEATURE_JOB_RESUME = "job-resume";
     public static final String FEATURE_JOB_DEV = "job-dev";
     public static final String FEATURE_JOB_PROXY = "job-proxy";
+    public static final String FEATURE_FINE_TUNE = "fine-tune";
 
     List<String> disabled;
 
@@ -58,5 +59,9 @@ public class FeaturesProperties {
 
     public boolean isJobProxyEnabled() {
         return featureEnabled(FEATURE_JOB_PROXY);
+    }
+
+    public boolean isFineTuneEnabled() {
+        return featureEnabled(FEATURE_FINE_TUNE);
     }
 }

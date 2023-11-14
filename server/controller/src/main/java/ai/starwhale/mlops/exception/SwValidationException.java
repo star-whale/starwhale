@@ -71,7 +71,8 @@ public class SwValidationException extends StarwhaleException {
         ONLINE_EVAL("015", "Online Eval"),
         UPGRADE("016", "Upgrade"),
         TAG("017", "Resource Tag"),
-        REPORT("018", "Report");
+        REPORT("018", "Report"),
+        FINE_TUNE("019", "Fine Tune");
         final String code;
         final String tipSubject;
 

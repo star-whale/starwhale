@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
@@ -65,6 +66,8 @@ import org.springframework.util.StringUtils;
 @Service
 public class FineTuneAppService {
 
+    private final FeaturesProperties featuresProperties;
+
     final JobCreator jobCreator;
 
     final FineTuneMapper fineTuneMapper;
@@ -86,6 +89,7 @@ public class FineTuneAppService {
     final UserJobConverter userJobConverter;
 
     public FineTuneAppService(
+            FeaturesProperties featuresProperties,
             JobCreator jobCreator,
             FineTuneMapper fineTuneMapper,
             JobMapper jobMapper,
@@ -97,6 +101,7 @@ public class FineTuneAppService {
             FineTuneSpaceMapper fineTuneSpaceMapper,
             UserJobConverter userJobConverter
     ) {
+        this.featuresProperties = featuresProperties;
         this.jobCreator = jobCreator;
         this.fineTuneMapper = fineTuneMapper;
         this.jobMapper = jobMapper;
@@ -117,6 +122,7 @@ public class FineTuneAppService {
             FineTuneCreateRequest request,
             User creator
     ) {
+        this.checkFeatureEnabled();
         FineTuneEntity ft = FineTuneEntity.builder()
                 .jobId(-1L)
                 .spaceId(spaceId)
@@ -186,6 +192,7 @@ public class FineTuneAppService {
 
 
     public PageInfo<FineTuneVo> list(Long spaceId, Integer pageNum, Integer pageSize) {
+        this.checkFeatureEnabled();
         try (var ph = PageHelper.startPage(pageNum, pageSize)) {
             return PageInfo.of(fineTuneMapper.list(spaceId).stream().map(fineTuneEntity -> {
                 Long jobId = fineTuneEntity.getJobId();
@@ -258,5 +265,14 @@ public class FineTuneAppService {
 
     public void attachTargetModel(Long id, ModelVersionEntity modelVersionEntity) {
         fineTuneMapper.updateTargetModel(id, modelVersionEntity.getId());
+    }
+
+    private void checkFeatureEnabled() throws StarwhaleApiException {
+        if (!this.featuresProperties.isFineTuneEnabled()) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.FINE_TUNE, "fine-tune feature is disabled"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
     }
 }
