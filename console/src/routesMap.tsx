@@ -102,11 +102,6 @@ const authed = {
                     path: '/auth/client',
                     component: ClientLogin,
                 },
-                {
-                    from: '/auth/:path?',
-                    to: '/auth/client',
-                    component: Redirect,
-                },
             ],
         },
         {
@@ -250,7 +245,7 @@ const authed = {
                     component: ModelVersionOverview,
                 },
                 {
-                    path: '/projects/:projectId/models/: /versions/:modelVersionId/readme',
+                    path: '/projects/:projectId/models/:modelId/versions/:modelVersionId/readme',
                     component: ModelReadmeOverview,
                 },
                 {
@@ -307,7 +302,6 @@ const authed = {
                     component: TrashListCard,
                 },
                 {
-                    from: '/projects/:projectId/trashes',
                     to: '/projects/:projectId/trashes',
                     component: Redirect,
                 },

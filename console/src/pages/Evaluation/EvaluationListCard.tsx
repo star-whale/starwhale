@@ -181,7 +181,9 @@ export default function EvaluationListCard() {
                     icon='Detail'
                     tooltip={t('View Details')}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => history.push(`/projects/${projectId}/evaluations/${row?.id}/results`)}
+                    onClick={() => {
+                        history.push(`/projects/${projectId}/evaluations/${row?.data?.['sys/id']?.value}/results`)
+                    }}
                 >
                     {hasText ? t('View Details') : undefined}
                 </ExtendButton>
@@ -194,7 +196,7 @@ export default function EvaluationListCard() {
                     isFull
                     icon='tasks'
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => history.push(`/projects/${projectId}/jobs/${row?.id}/tasks`)}
+                    onClick={() => history.push(`/projects/${projectId}/jobs/${row?.data?.['sys/id']?.value}/tasks`)}
                 >
                     {hasText ? t('View Tasks') : undefined}
                 </ExtendButton>
