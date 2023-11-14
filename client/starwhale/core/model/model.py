@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import copy
 import json
-import shutil
 import typing as t
 import tarfile
 from abc import ABCMeta, abstractmethod
@@ -40,7 +39,6 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_RESOURCE_POOL,
     DEFAULT_JOBS_FILE_NAME,
-    SW_EVALUATION_EXAMPLE_DIR,
     DEFAULT_STARWHALE_API_VERSION,
     EVALUATION_SVC_META_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
@@ -76,7 +74,6 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
-from starwhale.api._impl.service import Hijack
 from starwhale.base.models.model import (
     File,
     JobHandlers,
@@ -263,16 +260,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def _gen_model_serving(self, search_modules: t.List[str], workdir: Path) -> None:
         console.debug(f"generating model serving config for {self.uri} ...")
-        rc_dir = str(
-            self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
-            / SW_EVALUATION_EXAMPLE_DIR
-        )
         # render spec
-        svc = self._get_service(search_modules, workdir, hijack=Hijack(True, rc_dir))
+        svc = self._get_service(search_modules, workdir)
         file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
         spec = svc.get_spec()
-        ensure_file(file, json.dumps(spec, indent=4), parents=True)
-        if len(spec) == 0:
+        ensure_file(file, json.dumps(spec.to_dict(), indent=4), parents=True)
+        if len(spec.apis) == 0:
             return
 
         # make virtual handler to make the model serving can be used in model run
@@ -292,20 +285,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
         Handler._register(h, func)
 
-        if len(svc.example_resources) == 0:
-            return
-
-        # check duplicate file names, do not support using examples with same name in different dir
-        names = set([os.path.basename(i) for i in svc.example_resources])
-        if len(names) != len(svc.example_resources):
-            raise NoSupportError("duplicate file names in examples")
-
-        # copy example resources for online evaluation in server instance
-        dst = self.store.hidden_sw_dir / SW_EVALUATION_EXAMPLE_DIR
-        ensure_dir(dst)
-        for f in svc.example_resources:
-            shutil.copy2(f, dst)
-
     def _render_eval_layout(self, workdir: Path) -> None:
         # render eval layout
         eval_layout = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME
@@ -315,10 +294,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ensure_file(dst, json.dumps(content), parents=True)
 
     @staticmethod
-    def _get_service(
-        search_modules: t.List[str], pkg: Path, hijack: t.Optional[Hijack] = None
-    ) -> Service:
-        from starwhale.api._impl.service import internal_api_list
+    def _get_service(search_modules: t.List[str], pkg: Path) -> Service:
+        from starwhale.api._impl.service.service import internal_api_list
 
         apis = dict()
 
@@ -358,7 +335,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         for api in apis.values():
             svc.add_api_instance(api)
 
-        svc.hijack = hijack
         return svc
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:

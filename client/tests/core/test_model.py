@@ -57,6 +57,8 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
 from starwhale.core.runtime.process import Process
+from starwhale.api._impl.service.types import ServiceType
+from starwhale.api._impl.service.service import Api, ServiceSpec
 from starwhale.base.client.models.models import (
     UserVo,
     ModelVo,
@@ -132,7 +134,16 @@ class StandaloneModelTestCase(TestCase):
         m_copy_dir.return_value = 0
 
         svc = MagicMock(spec=Service)
-        svc.get_spec.return_value = {"foo": "bar"}
+        svc.get_spec.return_value = ServiceSpec(
+            version="0.0.1",
+            apis=[
+                Api(
+                    func=lambda x: x,
+                    uri="",
+                    inference_type=ServiceType.QUESTION_ANSWERING,
+                )
+            ],
+        )
         svc.example_resources = []
         m_get_service.return_value = svc
 
@@ -1362,7 +1373,12 @@ def test_build_with_custom_config_file(
     ensure_file(example, "fake image content")
 
     svc = MagicMock(spec=Service)
-    svc.get_spec.return_value = {"foo": "bar"}
+    svc.get_spec.return_value = ServiceSpec(
+        version="1",
+        apis=[
+            Api(func=lambda x: x, uri="", inference_type=ServiceType.QUESTION_ANSWERING)
+        ],
+    )
     svc.example_resources = [example]
     m_get_service.return_value = svc
 
@@ -1399,7 +1415,6 @@ def test_build_with_custom_config_file(
     assert bundle_path.exists()
     assert (bundle_path / "src").exists()
     assert (bundle_path / "src" / DefaultYAMLName.MODEL).exists()
-    assert (bundle_path / "src" / ".starwhale" / "examples" / "example.png").exists()
 
 
 @patch("starwhale.core.model.model.generate_jobs_yaml")

@@ -123,14 +123,14 @@ module.exports = {
         },
         'import/resolver': {
             alias: {
-                map: [['@', './src']],
+                map: [['@', './src', './client']],
                 extensions: ['.tsx', '.ts', '.js', '.jsx'],
             },
         },
     },
     overrides: [
         {
-            files: ['*.js'],
+            files: ['./**/*.{ts,tsx}'],
             rules: {
                 '@typescript-eslint/no-var-requires': 'off',
             },
