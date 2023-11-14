@@ -50,7 +50,7 @@ for image in "${starwhale_images[@]}"; do
     target_repo_tags2=$(./regctl tag -v error ls "$target_registry_read_only"/"$target_repo_name2"/"$image")
 
     while IFS= read -r line; do
-        copy_image "$source_repo_name/$image:$line" "$target_repo_name2/$image:$line"
+        copy_image "$source_repo_name/$image:$line" "$target_repo_name1/$image:$line"
     done < <(comm -23 <(sort <<< "$source_repo_tags") <(sort <<< "$target_repo_tags1"))
     while IFS= read -r line; do
         copy_image "$source_repo_name/$image:$line" "$target_repo_name2/$image:$line"
