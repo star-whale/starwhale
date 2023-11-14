@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
@@ -38,6 +39,7 @@ import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -62,6 +64,8 @@ class FineTuneAppServiceTest {
 
     FineTuneAppService fineTuneAppService;
 
+    FeaturesProperties featuresProperties;
+
     @BeforeEach
     public void setup() {
         jobCreator = mock(JobCreator.class);
@@ -70,7 +74,10 @@ class FineTuneAppServiceTest {
         jobSpecParser = mock(JobSpecParser.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
+        featuresProperties = mock(FeaturesProperties.class);
+        when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
         fineTuneAppService = new FineTuneAppService(
+                featuresProperties,
                 jobCreator,
                 fineTuneMapper,
                 jobMapper,
@@ -118,5 +125,20 @@ class FineTuneAppServiceTest {
 
     @Test
     void releaseFt() {
+    }
+
+    @Test
+    void testFeatureDisabled() {
+        when(featuresProperties.isFineTuneEnabled()).thenReturn(false);
+        Assertions.assertThrows(StarwhaleApiException.class,
+                () -> fineTuneAppService.createFineTune(
+                        1L,
+                        Project.builder().build(),
+                        new FineTuneCreateRequest(),
+                        User.builder().build()
+                )
+        );
+
+        Assertions.assertThrows(StarwhaleApiException.class, () -> fineTuneAppService.list(1L, 1, 1));
     }
 }
