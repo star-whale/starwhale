@@ -4,6 +4,7 @@ import { BaseNavTabs } from '../components/BaseNavTabs'
 import BaseLayout from './BaseLayout'
 import ProjectSidebar from './Project/ProjectSidebar'
 import { useAuth } from '@/api/Auth'
+import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 
 export interface IBaseSubLayoutProps {
     header?: React.ReactNode
@@ -25,6 +26,11 @@ export default function BaseSubLayout({
     contentStyle,
 }: IBaseSubLayoutProps) {
     const { standaloneMode } = useAuth()
+
+    const { isInline } = useRouteInlineContext()
+
+    if (isInline) return children
+
     return (
         <BaseLayout
             extra={extra}

@@ -14,6 +14,20 @@ import SpaceForm from '@/domain/space/components/SpaceForm'
 import { useEventCallback } from '@starwhale/core'
 import { useToggle } from 'ahooks'
 import ProjectListCard from '../Project/ProjectListCard'
+import { useRouteContext } from '@/contexts/RouteContext'
+
+const Right = () => {
+    const { RoutesInline } = useRouteContext()
+
+    if (!RoutesInline) return null
+
+    return (
+        <RoutesInline>
+            <Link to='/projects'>1</Link>
+            <Link to='/projects2'>2</Link>
+        </RoutesInline>
+    )
+}
 
 export default function FineTuneListCard() {
     const [page] = usePage()
@@ -87,15 +101,7 @@ export default function FineTuneListCard() {
     const [expand, { toggle }] = useToggle(true)
     const [fullscreen, { toggle: toggleFullscreen }] = useToggle(false)
 
-    const right = (
-        <MemoryRouter>
-            <Route path='/projects' component={ProjectListCard} />
-            <Route path='/projects2' component={ProjectListCard} />
-
-            <Link to='/projects'>1</Link>
-            <Link to='/projects2'>2</Link>
-        </MemoryRouter>
-    )
+    const right = <Right />
 
     if (fullscreen) {
         return right

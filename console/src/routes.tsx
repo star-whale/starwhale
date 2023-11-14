@@ -9,6 +9,8 @@ import Pending, { NoneBackgroundPending } from '@/pages/Home/Pending'
 import { useAuth } from '@/api/Auth'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import { unauthed, authed } from './routesMap'
+import RoutesInlineRender from './routesInline'
+import { RouteContext } from './contexts/RouteContext'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -28,8 +30,6 @@ const Routes = () => {
     const unauthedRoutes = getUnauthedRoutes(unauthed)
     const authedRoutes = getAuthedRoutes(authed)
 
-    console.log(authedRoutes)
-
     if (!token) {
         return (
             <React.Suspense fallback={<Pending />}>
@@ -45,21 +45,24 @@ const Routes = () => {
         )
     }
 
+    const RoutesInline: React.FC<any> = ({ children }) => (
+        <RoutesInlineRender routes={authedRoutes}>{children}</RoutesInlineRender>
+    )
+
     return (
-        <React.Suspense fallback={<NoneBackgroundPending />}>
-            <BrowserRouter>
-                <div className={styles.root}>
-                    <Route>
-                        <ApiHeader />
-                        {standaloneMode ? null : <Header />}
-                        <Switch>
-                            {/* extends */}
-                            {authedRoutes}
-                        </Switch>
-                    </Route>
-                </div>
-            </BrowserRouter>
-        </React.Suspense>
+        <RouteContext.Provider value={{ RoutesInline }}>
+            <React.Suspense fallback={<NoneBackgroundPending />}>
+                <BrowserRouter>
+                    <div className={styles.root}>
+                        <Route>
+                            <ApiHeader />
+                            {standaloneMode ? null : <Header />}
+                            <Switch>{authedRoutes}</Switch>
+                        </Route>
+                    </div>
+                </BrowserRouter>
+            </React.Suspense>
+        </RouteContext.Provider>
     )
 }
 
