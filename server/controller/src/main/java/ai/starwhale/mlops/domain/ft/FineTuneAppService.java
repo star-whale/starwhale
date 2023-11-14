@@ -110,6 +110,7 @@ public class FineTuneAppService {
     }
 
 
+    @Transactional
     public void createFineTune(
             Long spaceId,
             Project project,
@@ -198,7 +199,7 @@ public class FineTuneAppService {
                         .jobId(jobId)
                         .status(job.getJobStatus())
                         .startTime(job.getCreatedTime().getTime())
-                        .endTime(job.getFinishedTime().getTime())
+                        .endTime(null != job.getFinishedTime() ? job.getFinishedTime().getTime() : null)
                         .evalDatasets(List.of())//TODO
                         .trainDatasets(List.of())//TODO
                         .baseModel(null)//TODO
@@ -224,7 +225,10 @@ public class FineTuneAppService {
         }
         ModelVersionEntity modelVersion = modelDao.getModelVersion(targetModelVersionId.toString());
         if (modelVersion.getDraft() == false) {
-            throw new SwValidationException(ValidSubject.MODEL, "model has been released to modelId: " + modelVersion.getModelId());
+            throw new SwValidationException(
+                    ValidSubject.MODEL,
+                    "model has been released to modelId: " + modelVersion.getModelId()
+            );
         }
         Long modelId;
         if (!StringUtils.hasText(modelName) || modelVersion.getModelName().equals(modelName)) {
