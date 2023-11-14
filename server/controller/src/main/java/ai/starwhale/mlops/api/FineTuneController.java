@@ -151,7 +151,7 @@ public class FineTuneController {
     @Operation(summary = "release fine-tune")
     @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/release", produces =
             MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> releaseFt(
             @RequestParam Long ftId,
             @RequestParam(required = false) String modelName
