@@ -218,18 +218,6 @@ table {
     align-items: center;
     justify-content: center;
 }
-.content-full {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-width: 0;
-}
-.content-full-scroll {
-    display: flex;
-    flex-direction: column;
-    overflow: auto;
-    min-width: 0;
-}
 @keyframes logo-width {
     0% {
         width: 0%;

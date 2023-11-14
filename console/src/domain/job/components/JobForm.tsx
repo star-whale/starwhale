@@ -19,6 +19,7 @@ import { jobCreateMachine } from '../createJobMachine'
 import FormFieldTemplate from './FormFieldTemplate'
 import { fetchJob, fetchJobTemplate } from '../services/job'
 import { IJobRequest, IJobVo, IModelVersionViewVo, IModelViewVo, IStepSpec } from '@/api'
+import { isModified } from '../../../../packages/starwhale-ui/src/utils/index'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -100,11 +101,11 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             send('USEREDITING')
             setLoading(true)
             const tmp = {
-                datasetVersionUrls: values_.datasetVersionUrls?.join(','),
+                datasetVersionIds: values_.datasetVersionUrls as any,
                 resourcePool: resource?.resourceId ?? resource?.name,
                 stepSpecOverWrites: values_.stepSpecOverWrites,
-                runtimeVersionUrl: values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
-                modelVersionUrl: values_.modelVersionUrl,
+                runtimeVersionId: (values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl) as any,
+                modelVersionId: Number(values_.modelVersionUrl),
                 devMode: values_.devMode,
                 devPassword: values_.devPassword,
                 timeToLiveInSec: values_.timeToLiveInSec,
@@ -157,8 +158,14 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     const getResourcePoolProps = () => ({ resource, setResource })
     const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
 
+    // v1 require_dataset
+    // v2 -> require_train_datasets or require_dataset
+    //       require_validation_datasets
     const isModifiedDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset)
+        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset || v.require_train_datasets)
+    }, [stepSource])
+    const isModifiedValidationDataset = React.useMemo(() => {
+        return stepSource?.some((v) => v.require_validation_datasets)
     }, [stepSource])
 
     useEffect(() => {

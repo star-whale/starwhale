@@ -4,23 +4,25 @@ import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table'
-import { useHistory, useParams } from 'react-router-dom'
+import { Link, MemoryRouter, Route, StaticRouter, useHistory, useParams } from 'react-router-dom'
 import User from '@/domain/user/components/User'
-import { Button, ExtendButton } from '@starwhale/ui'
+import { Button, ExtendButton, GridResizer, Toggle } from '@starwhale/ui'
 import { useAccess } from '@/api/WithAuth'
 import { IFineTuneSpaceVo, api } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import SpaceForm from '@/domain/space/components/SpaceForm'
 import { useEventCallback } from '@starwhale/core'
+import { useToggle } from 'ahooks'
+import ProjectListCard from '../Project/ProjectListCard'
 
-export default function FineTuneSpaceListCard() {
+export default function FineTuneListCard() {
     const [page] = usePage()
     const history = useHistory()
-    const { projectId } = useParams<{ projectId: any }>()
+    const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const [isOpen, setIsOpen] = React.useState(false)
     const [editRow, setEditRow] = React.useState<IFineTuneSpaceVo>()
 
-    const info = api.useListSpace(projectId, {
+    const info = api.useListFineTune(projectId, spaceId, {
         ...page,
     })
 
@@ -82,63 +84,63 @@ export default function FineTuneSpaceListCard() {
         setIsOpen(false)
     })
 
+    const [expand, { toggle }] = useToggle(true)
+    const [fullscreen, { toggle: toggleFullscreen }] = useToggle(false)
+
+    const right = (
+        <MemoryRouter>
+            <Route path='/projects' component={ProjectListCard} />
+            <Route path='/projects2' component={ProjectListCard} />
+
+            <Link to='/projects'>1</Link>
+            <Link to='/projects2'>2</Link>
+        </MemoryRouter>
+    )
+
+    if (fullscreen) {
+        return right
+    }
+
     return (
-        <Card
-            title={t('ft.space.title')}
-            extra={
-                isAccessCreate && (
-                    <Button
-                        size='compact'
-                        onClick={() => {
-                            setEditRow(undefined)
-                            setIsOpen(true)
-                        }}
-                    >
-                        {t('create')}
-                    </Button>
-                )
-            }
-        >
-            <Table
-                renderActions={(rowIndex) => {
-                    const data = info.data?.list?.[rowIndex]
-                    if (!data) return undefined
-                    return getActions(data)
-                }}
-                isLoading={info.isLoading}
-                columns={[t('ft.space.id'), t('ft.space.name'), t('Owner'), t('Created'), t('Description')]}
-                data={
-                    info.data?.list?.map((data) => {
-                        return [
-                            data.id,
-                            data.name,
-                            data.owner && <User user={data.owner} />,
-                            data.createdTime && formatTimestampDateTime(data.createdTime),
-                            data.description,
-                        ]
-                    }) ?? []
-                }
-                paginationProps={{
-                    start: info.data?.pageNum,
-                    count: info.data?.pageSize,
-                    total: info.data?.total,
-                    afterPageChange: () => {
-                        info.refetch()
-                    },
-                }}
+        <>
+            <Toggle onChange={toggle} />
+            <Toggle onChange={toggleFullscreen} />
+            <GridResizer
+                left={() => (
+                    <div className='flex-col content-full'>
+                        <Table
+                            renderActions={(rowIndex) => {
+                                const data = info.data?.list?.[rowIndex]
+                                if (!data) return undefined
+                                return getActions(data)
+                            }}
+                            isLoading={info.isLoading}
+                            columns={[t('ft.space.id'), t('ft.space.name'), t('Owner'), t('Created'), t('Description')]}
+                            data={
+                                info.data?.list?.map((data) => {
+                                    return [
+                                        data.id,
+                                        data.name,
+                                        data.owner && <User user={data.owner} />,
+                                        data.createdTime && formatTimestampDateTime(data.createdTime),
+                                        data.description,
+                                    ]
+                                }) ?? []
+                            }
+                            paginationProps={{
+                                start: info.data?.pageNum,
+                                count: info.data?.pageSize,
+                                total: info.data?.total,
+                                afterPageChange: () => {
+                                    info.refetch()
+                                },
+                            }}
+                        />
+                    </div>
+                )}
+                right={() => right}
+                isResizeable={expand}
             />
-            <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} closeable animate autoFocus>
-                <ModalHeader>
-                    {editRow ? t('edit sth', [t('ft.space.title')]) : t('create sth', [t('ft.space.title')])}
-                </ModalHeader>
-                <ModalBody>
-                    <SpaceForm
-                        label={t('ft.space.title')}
-                        data={editRow}
-                        onSubmit={editRow ? handleEdit : handleCreate}
-                    />
-                </ModalBody>
-            </Modal>
-        </Card>
+        </>
     )
 }
