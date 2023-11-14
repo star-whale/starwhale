@@ -27,6 +27,7 @@ import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
@@ -35,12 +36,14 @@ import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -83,8 +86,8 @@ class FineTuneAppServiceTest {
         jobSpecParser = mock(JobSpecParser.class);
         modelDao = mock(ModelDao.class);
         datasetDao = mock(DatasetDao.class);
-        UserJobConverter jobConverter = mock(UserJobConverter.class);
-        when(jobConverter.convert(any(), any())).thenReturn(UserJobCreateRequest.builder().build());
+        UserJobConverter userJobConverter = mock(UserJobConverter.class);
+        when(userJobConverter.convert(any(), any())).thenReturn(UserJobCreateRequest.builder().build());
         fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         featuresProperties = mock(FeaturesProperties.class);
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
@@ -98,7 +101,11 @@ class FineTuneAppServiceTest {
                 modelDao,
                 "instanceuri",
                 datasetDao,
-                fineTuneSpaceMapper, jobConverter//todo
+                fineTuneSpaceMapper,
+                userJobConverter,
+                mock(JobConverter.class),
+                mock(ModelService.class),
+                mock(DatasetService.class)
         );
     }
 

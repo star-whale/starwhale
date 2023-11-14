@@ -17,11 +17,13 @@
 package ai.starwhale.mlops.domain.ft;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
@@ -31,6 +33,7 @@ import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -38,6 +41,7 @@ import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -88,6 +92,12 @@ public class FineTuneAppService {
 
     final UserJobConverter userJobConverter;
 
+    final JobConverter jobConverter;
+
+    final ModelService modelService;
+
+    final DatasetService datasetService;
+
     public FineTuneAppService(
             FeaturesProperties featuresProperties,
             JobCreator jobCreator,
@@ -99,7 +109,10 @@ public class FineTuneAppService {
             @Value("${sw.instance-uri}") String instanceUri,
             DatasetDao datasetDao,
             FineTuneSpaceMapper fineTuneSpaceMapper,
-            UserJobConverter userJobConverter
+            UserJobConverter userJobConverter,
+            JobConverter jobConverter,
+            ModelService modelService,
+            DatasetService datasetService
     ) {
         this.featuresProperties = featuresProperties;
         this.jobCreator = jobCreator;
@@ -112,6 +125,9 @@ public class FineTuneAppService {
         this.instanceUri = instanceUri;
         this.fineTuneSpaceMapper = fineTuneSpaceMapper;
         this.userJobConverter = userJobConverter;
+        this.jobConverter = jobConverter;
+        this.modelService = modelService;
+        this.datasetService = datasetService;
     }
 
 
@@ -200,17 +216,21 @@ public class FineTuneAppService {
                 fineTuneEntity.getEvalDatasets();
                 fineTuneEntity.getTrainDatasets();
                 fineTuneEntity.getBaseModelVersionId();
-                fineTuneEntity.getTargetModelVersionId();
+                ModelVo mv = null;
+                Long targetModelVersionId = fineTuneEntity.getTargetModelVersionId();
+                if (null != targetModelVersionId) {
+                    List<ModelVo> modelVos = modelService.findModelByVersionId(List.of(targetModelVersionId));
+                    if (!CollectionUtils.isEmpty(modelVos)) {
+                        mv = modelVos.get(0);
+                    }
+                }
+
                 return FineTuneVo.builder()
                         .id(fineTuneEntity.getId())
-                        .jobId(jobId)
-                        .status(job.getJobStatus())
-                        .startTime(job.getCreatedTime().getTime())
-                        .endTime(null != job.getFinishedTime() ? job.getFinishedTime().getTime() : null)
-                        .evalDatasets(List.of())//TODO
-                        .trainDatasets(List.of())//TODO
-                        .baseModel(null)//TODO
-                        .targetModel(null)//TODO
+                        .job(jobConverter.convert(job))
+                        .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
+                        .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
+                        .targetModel(mv)
                         .build();
             }).collect(Collectors.toList()));
         }
