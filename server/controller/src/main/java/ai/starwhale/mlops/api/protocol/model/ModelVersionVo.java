@@ -70,7 +70,11 @@ public class ModelVersionVo implements Serializable {
     @NotNull
     private List<StepSpec> stepSpecs;
 
+    @NotNull
+    @JsonProperty("draft")
+    private Boolean draft;
+
     public static ModelVersionVo empty() {
-        return new ModelVersionVo("", "", "", false, List.of(), 0L, -1L, UserVo.empty(), false, "", List.of());
+        return new ModelVersionVo("", "", "", false, List.of(), 0L, -1L, UserVo.empty(), false, "", List.of(), false);
     }
 }

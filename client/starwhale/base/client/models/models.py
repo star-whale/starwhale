@@ -813,6 +813,7 @@ class ModelVersionVo(SwBaseModel):
     owner: Optional[UserVo] = None
     shared: bool
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
+    draft: bool
 
 
 class ModelVo(SwBaseModel):
