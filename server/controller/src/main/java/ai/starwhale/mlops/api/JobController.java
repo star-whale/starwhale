@@ -40,6 +40,7 @@ import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.event.EventService;
+import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
@@ -80,6 +81,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class JobController {
 
     private final JobServiceForWeb jobServiceForWeb;
+    private final FineTuneAppService fineTuneAppService;
     private final TaskService taskService;
     private final ModelServingService modelServingService;
     private final RuntimeSuggestionService runtimeSuggestionService;
@@ -94,7 +96,7 @@ public class JobController {
 
     public JobController(
             JobServiceForWeb jobServiceForWeb,
-            TaskService taskService,
+            FineTuneAppService fineTuneAppService, TaskService taskService,
             ModelServingService modelServingService,
             RuntimeSuggestionService runtimeSuggestionService,
             IdConverter idConvertor,
@@ -105,6 +107,7 @@ public class JobController {
             UserJobConverter userJobConverter
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
+        this.fineTuneAppService = fineTuneAppService;
         this.taskService = taskService;
         this.modelServingService = modelServingService;
         this.runtimeSuggestionService = runtimeSuggestionService;
@@ -207,9 +210,24 @@ public class JobController {
             throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
                     HttpStatus.BAD_REQUEST);
         }
-
-        var req = userJobConverter.convert(projectUrl, jobRequest);
-        Long jobId = jobServiceForWeb.createJob(req);
+        Long jobId;
+        switch (jobRequest.getType()) {
+            case FINE_TUNE:
+                if (jobRequest.getSpaceId() != null) {
+                    jobId = fineTuneAppService.createFineTune(projectUrl, jobRequest.getSpaceId(), jobRequest);
+                    break;
+                }
+            case EVALUATION:
+                if (jobRequest.getSpaceId() != null) {
+                    jobId = fineTuneAppService.createEvaluationJob(projectUrl, jobRequest.getSpaceId(), jobRequest);
+                    break;
+                }
+            case TRAIN:
+            case SERVING:
+            default:
+                var req = userJobConverter.convert(projectUrl, jobRequest);
+                jobId = jobServiceForWeb.createJob(req);
+        }
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

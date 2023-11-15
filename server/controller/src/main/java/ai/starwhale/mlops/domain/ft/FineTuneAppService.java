@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.ft;
 
-import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
@@ -47,7 +46,6 @@ import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
@@ -73,7 +71,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class FineTuneAppService {
 
-    static  final String EVALUATION_SUMMARY_TABLE_FORMAT = "ftspace/%d/eval/summary";
+    static final String EVALUATION_SUMMARY_TABLE_FORMAT = "ftspace/%d/eval/summary";
 
     private final FeaturesProperties featuresProperties;
 
@@ -141,11 +139,10 @@ public class FineTuneAppService {
 
 
     @Transactional
-    public void createFineTune(
+    public Long createFineTune(
+            String projectId,
             Long spaceId,
-            Project project,
-            JobRequest request,
-            User creator
+            JobRequest request
     ) {
         this.checkFeatureEnabled();
         FineTuneEntity ft = FineTuneEntity.builder()
@@ -159,7 +156,7 @@ public class FineTuneAppService {
         // add ft env to spec
         var datasets = request.getEvalDatasetVersionIds();
         request.setStepSpecOverWrites(rewriteSpecEnvForRequest(
-                request.getModelVersionId(),
+                idConverter.revert(request.getModelVersionId()),
                 request.getHandler(),
                 request.getStepSpecOverWrites(),
                 () -> {
@@ -184,20 +181,22 @@ public class FineTuneAppService {
                 }
         ));
         request.setType(JobType.FINE_TUNE);
-        Job job = jobCreator.createJob(userJobConverter.convert(project.getId().toString(), request));
+        Job job = jobCreator.createJob(userJobConverter.convert(projectId, request));
         fineTuneMapper.updateJobId(ft.getId(), job.getId());
+        return job.getId();
     }
 
-    public Long createEvaluationJob(Long spaceId, UserJobCreateRequest request) {
+    public Long createEvaluationJob(String projectId, Long spaceId, JobRequest request) {
         // add ft eval's env to spec
         request.setStepSpecOverWrites(rewriteSpecEnvForRequest(
-                request.getModelVersionId(),
+                idConverter.revert(request.getModelVersionId()),
                 request.getHandler(),
                 request.getStepSpecOverWrites(),
                 () -> List.of(new Env("SW_EVALUATION_SUMMARY_TABLE",
                         String.format(EVALUATION_SUMMARY_TABLE_FORMAT, spaceId)))
         ));
-        var jobId = jobCreator.createJob(request).getId();
+        request.setType(JobType.EVALUATION);
+        var jobId = jobCreator.createJob(userJobConverter.convert(projectId, request)).getId();
         eventService.addInternalJobInfoEvent(jobId, "Evaluation Job created");
         return jobId;
     }

@@ -18,8 +18,6 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
-import ai.starwhale.mlops.api.protocol.ft.FineTuneEvalCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -30,14 +28,10 @@ import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -128,25 +122,6 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "Create fine-tune")
-    @PostMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> createFineTune(
-            @PathVariable("projectId") Long projectId,
-            @PathVariable("spaceId") Long spaceId,
-            @Valid @RequestBody FineTuneCreateRequest request
-    ) {
-
-        fineTuneAppService.createFineTune(
-                spaceId,
-                projectService.findProject(projectId),
-                request,
-                userService.currentUserDetail()
-
-        );
-        return ResponseEntity.ok(Code.success.asResponse(""));
-    }
-
     @Operation(summary = "List fine-tune")
     @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
@@ -173,23 +148,4 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "Create fine-tune evaluation")
-    @PostMapping(value = "/project/{projectId}/ftspace/{spaceId}/eval", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<Long>> createEvaluation(
-            @PathVariable("projectId") Long projectId,
-            @PathVariable("spaceId") Long spaceId,
-            @Valid @RequestBody FineTuneEvalCreateRequest jobRequest
-    ) {
-        if (jobRequest.isDevMode() && !featuresProperties.isJobDevEnabled()) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(SwValidationException.ValidSubject.JOB, "dev mode is not enabled"),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        var req = userJobConverter.convert(String.valueOf(projectId), jobRequest);
-        Long jobId = fineTuneAppService.createEvaluationJob(spaceId, req);
-
-        return ResponseEntity.ok(Code.success.asResponse(jobId));
-    }
 }

@@ -127,11 +127,17 @@ public class UserJobConverter {
             datasets = idConvertor.revertList(request.getDatasetVersionIds());
         }
 
+        List<Long> evalDatasets = null;
+        if (request.getEvalDatasetVersionIds() != null) {
+            evalDatasets = idConvertor.revertList(request.getEvalDatasetVersionIds());
+        }
+
         return UserJobCreateRequest.builder()
                 .project(project)
                 .modelVersionId(modelVersionId)
                 .runtimeVersionId(runtimeVersionId)
                 .datasetVersionIds(datasets)
+
                 .comment(request.getComment())
                 .resourcePool(request.getResourcePool())
                 .handler(request.getHandler())

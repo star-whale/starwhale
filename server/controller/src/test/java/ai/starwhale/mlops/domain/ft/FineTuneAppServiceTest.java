@@ -94,7 +94,7 @@ class FineTuneAppServiceTest {
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
-                jobCreator,
+                projectService, userService, jobCreator,
                 fineTuneMapper,
                 jobMapper,
                 jobSpecParser,
@@ -214,7 +214,7 @@ class FineTuneAppServiceTest {
                 () -> fineTuneAppService.createFineTune(
                         1L,
                         Project.builder().build(),
-                        new FineTuneCreateRequest(),
+                        new JobRequest(),
                         User.builder().build()
                 )
         );

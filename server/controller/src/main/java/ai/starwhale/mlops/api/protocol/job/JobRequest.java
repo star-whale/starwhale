@@ -42,8 +42,13 @@ public class JobRequest implements Serializable {
     private String runtimeVersionUrl;
 
     private String modelVersionId;
-    private List<String> datasetVersionIds;
     private String runtimeVersionId;
+
+    private List<String> datasetVersionIds;
+    private List<String> evalDatasetVersionIds;
+
+    @JsonProperty("spaceId")
+    private Long spaceId;
 
     @JsonProperty("comment")
     private String comment;
