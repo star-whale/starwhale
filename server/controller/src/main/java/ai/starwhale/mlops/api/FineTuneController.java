@@ -154,9 +154,11 @@ public class FineTuneController {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> releaseFt(
             @RequestParam Long ftId,
-            @RequestParam(required = false) String modelName
+            @RequestParam(required = false) String nonExistingModelName,
+            @RequestParam(required = false) Long existingModelId
+
     ) {
-        fineTuneAppService.releaseFt(ftId, modelName, userService.currentUserDetail());
+        fineTuneAppService.releaseFt(ftId, existingModelId, nonExistingModelName, userService.currentUserDetail());
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 }
