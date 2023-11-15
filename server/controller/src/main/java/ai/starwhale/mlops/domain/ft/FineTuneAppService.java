@@ -177,6 +177,16 @@ public class FineTuneAppService {
                         env.add(new Env("SW_FINETUNE_VALIDATION_DATASET_URI", evalDataSetUris));
                     }
                     env.add(new Env("SW_SERVER_TRIGGERED_FINETUNE_ID", ft.getId().toString()));
+                    List<ModelVo> modelVersions =
+                            modelService.findModelByVersionId(List.of(idConverter.revert(request.getModelVersionId())));
+                    if(CollectionUtils.isEmpty(modelVersions)) {
+                        throw new StarwhaleApiException(
+                                new SwValidationException(ValidSubject.JOB, "no model found for the requested version"),
+                                HttpStatus.BAD_REQUEST
+                        );
+                    }
+                    ModelVo modelVo = modelVersions.get(0);
+                    env.add(new Env("SW_FINETUNE_TARGET_MODEL", modelVo.getName()));
                     return env;
                 }
         ));
