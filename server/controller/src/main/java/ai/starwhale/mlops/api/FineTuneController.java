@@ -147,4 +147,16 @@ public class FineTuneController {
         PageInfo<FineTuneVo> pageInfo = fineTuneAppService.list(spaceId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
+
+    @Operation(summary = "release fine-tune")
+    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/release", produces =
+            MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> releaseFt(
+            @RequestParam Long ftId,
+            @RequestParam(required = false) String modelName
+    ) {
+        fineTuneAppService.releaseFt(ftId, modelName, userService.currentUserDetail());
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
 }

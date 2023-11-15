@@ -45,6 +45,9 @@ public interface FineTuneSpaceMapper {
     @Select("select " + COLUMNS + " from fine_tune_space where project_id = #{projectId} order by id desc")
     List<FineTuneSpaceEntity> list(Long projectId);
 
+    @Select("select " + COLUMNS + " from fine_tune_space where id = #{id}")
+    FineTuneSpaceEntity findById(Long id);
+
 
     @UpdateProvider(value = UpdateSqlProvider.class, method = "update")
     int update(Long spaceId, String name, String description);

@@ -61,6 +61,13 @@ public interface FineTuneMapper {
     @Select("select " + COLUMNS + " from fine_tune where job_id = #{jobId}")
     FineTuneEntity findByJob(Long jobId);
 
+    @Results({
+            @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
+            @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
+    })
+    @Select("select " + COLUMNS + " from fine_tune where id = #{id}")
+    FineTuneEntity findById(Long id);
+
     @Update("update fine_tune set target_model_version_id = #{targetModelVersionId} where id = #{id}")
     int updateTargetModel(Long id, Long targetModelVersionId);
 

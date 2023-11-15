@@ -44,7 +44,8 @@ public class SwNotFoundException extends StarwhaleException {
         USER("001", "User"),
         PROJECT("002", "Project"),
         BUNDLE("003", "Starwhale Bundle"),
-        BUNDLE_VERSION("004", "Starwhale Bundle Version");
+        BUNDLE_VERSION("004", "Starwhale Bundle Version"),
+        FINE_TUNE("005", "Starwhale Finetune");
         final String code;
         final String tipSubject;
 

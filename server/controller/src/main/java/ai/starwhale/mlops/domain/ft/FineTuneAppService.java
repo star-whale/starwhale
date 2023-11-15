@@ -20,15 +20,18 @@ import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
+import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.Env;
@@ -36,9 +39,12 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -53,6 +59,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -77,6 +84,10 @@ public class FineTuneAppService {
 
     final String instanceUri;
 
+    final FineTuneSpaceMapper fineTuneSpaceMapper;
+
+    final UserJobConverter userJobConverter;
+
     public FineTuneAppService(
             FeaturesProperties featuresProperties,
             JobCreator jobCreator,
@@ -86,7 +97,9 @@ public class FineTuneAppService {
             IdConverter idConverter,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
-            DatasetDao datasetDao
+            DatasetDao datasetDao,
+            FineTuneSpaceMapper fineTuneSpaceMapper,
+            UserJobConverter userJobConverter
     ) {
         this.featuresProperties = featuresProperties;
         this.jobCreator = jobCreator;
@@ -97,9 +110,12 @@ public class FineTuneAppService {
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
         this.instanceUri = instanceUri;
+        this.fineTuneSpaceMapper = fineTuneSpaceMapper;
+        this.userJobConverter = userJobConverter;
     }
 
 
+    @Transactional
     public void createFineTune(
             Long spaceId,
             Project project,
@@ -116,23 +132,8 @@ public class FineTuneAppService {
                 .build();
         fineTuneMapper.add(ft);
         request = addEnvToRequest(ft.getId(), request);
-        Job job = jobCreator.createJob(
-                UserJobCreateRequest.builder()
-                        .modelVersionId(idConverter.revert(request.getModelVersionId()))
-                        .runtimeVersionId(idConverter.revert(request.getRuntimeVersionId()))
-                        .datasetVersionIds(idConverter.revertList(request.getDatasetVersionIds()))
-                        .devMode(request.isDevMode())
-                        .devPassword(request.getDevPassword())
-                        .ttlInSec(request.getTimeToLiveInSec())
-                        .project(project)
-                        .user(creator)
-                        .comment(request.getComment())
-                        .resourcePool(request.getResourcePool())
-                        .handler(request.getHandler())
-                        .stepSpecOverWrites(request.getStepSpecOverWrites())
-                        .jobType(JobType.FINE_TUNE)
-                        .build()
-        );
+        request.setType(JobType.FINE_TUNE);
+        Job job = jobCreator.createJob(userJobConverter.convert(project.getId().toString(), request));
         fineTuneMapper.updateJobId(ft.getId(), job.getId());
     }
 
@@ -205,7 +206,7 @@ public class FineTuneAppService {
                         .jobId(jobId)
                         .status(job.getJobStatus())
                         .startTime(job.getCreatedTime().getTime())
-                        .endTime(job.getFinishedTime().getTime())
+                        .endTime(null != job.getFinishedTime() ? job.getFinishedTime().getTime() : null)
                         .evalDatasets(List.of())//TODO
                         .trainDatasets(List.of())//TODO
                         .baseModel(null)//TODO
@@ -219,7 +220,46 @@ public class FineTuneAppService {
 
     }
 
-    public void releaseFt(Long ftId) {
+    @Transactional
+    public void releaseFt(Long ftId, String modelName, User user) {
+        FineTuneEntity ft = fineTuneMapper.findById(ftId);
+        if (null == ft) {
+            throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
+        }
+        Long targetModelVersionId = ft.getTargetModelVersionId();
+        if (null == targetModelVersionId) {
+            throw new SwNotFoundException(ResourceType.FINE_TUNE, "target model has not been generated yet");
+        }
+        ModelVersionEntity modelVersion = modelDao.getModelVersion(targetModelVersionId.toString());
+        if (!modelVersion.getDraft()) {
+            throw new SwValidationException(
+                    ValidSubject.MODEL,
+                    "model has been released to modelId: " + modelVersion.getModelId()
+            );
+        }
+        Long modelId;
+        if (!StringUtils.hasText(modelName) || modelVersion.getModelName().equals(modelName)) {
+            modelId = modelVersion.getModelId();
+        } else {
+            //release to a new model
+            FineTuneSpaceEntity ftSpace = fineTuneSpaceMapper.findById(ft.getSpaceId());
+            Long projectId = ftSpace.getProjectId();
+            BundleEntity modelEntity = this.modelDao.findByNameForUpdate(modelName, projectId);
+            if (null == modelEntity) {
+                //create model
+                ModelEntity model = ModelEntity.builder()
+                        .ownerId(user.getId())
+                        .projectId(projectId)
+                        .modelName(modelName)
+                        .build();
+                modelDao.add(model);
+                modelId = model.getId();
+            } else {
+                modelId = modelEntity.getId();
+            }
+        }
+        // update model version model id to new model and set draft to false
+        modelDao.releaseModelVersion(targetModelVersionId, modelId);
 
     }
 
