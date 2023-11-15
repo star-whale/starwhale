@@ -47,7 +47,6 @@ import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -94,7 +93,7 @@ class FineTuneAppServiceTest {
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
-                projectService, userService, jobCreator,
+                jobCreator,
                 fineTuneMapper,
                 jobMapper,
                 jobSpecParser,
@@ -128,7 +127,7 @@ class FineTuneAppServiceTest {
         when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        fineTuneAppService.createFineTune(1L, Project.builder().id(1L).build(), request, User.builder().build());
+        fineTuneAppService.createFineTune("1", 1L, request);
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
 
@@ -212,10 +211,9 @@ class FineTuneAppServiceTest {
         when(featuresProperties.isFineTuneEnabled()).thenReturn(false);
         Assertions.assertThrows(StarwhaleApiException.class,
                 () -> fineTuneAppService.createFineTune(
+                        "1",
                         1L,
-                        Project.builder().build(),
-                        new JobRequest(),
-                        User.builder().build()
+                        new JobRequest()
                 )
         );
 

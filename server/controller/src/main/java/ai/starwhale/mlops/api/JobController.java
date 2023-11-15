@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
@@ -211,24 +212,13 @@ public class JobController {
                     HttpStatus.BAD_REQUEST);
         }
         Long jobId;
-        switch (jobRequest.getType()) {
-            case FINE_TUNE:
-                if (jobRequest.getSpaceId() != null) {
-                    jobId = fineTuneAppService.createFineTune(projectUrl, jobRequest.getSpaceId(), jobRequest);
-                    break;
-                }
-            case EVALUATION:
-                if (jobRequest.getSpaceId() != null) {
-                    jobId = fineTuneAppService.createEvaluationJob(projectUrl, jobRequest.getSpaceId(), jobRequest);
-                    break;
-                }
-            case TRAIN:
-            case SERVING:
-            default:
-                var req = userJobConverter.convert(projectUrl, jobRequest);
-                jobId = jobServiceForWeb.createJob(req);
+        if (jobRequest.getType() == JobType.FINE_TUNE && jobRequest.getSpaceId() != null) {
+            jobId = fineTuneAppService.createFineTune(projectUrl, jobRequest.getSpaceId(), jobRequest);
+        } else if (jobRequest.getType() == JobType.EVALUATION && jobRequest.getSpaceId() != null) {
+            jobId = fineTuneAppService.createEvaluationJob(projectUrl, jobRequest.getSpaceId(), jobRequest);
+        } else {
+            jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
         }
-
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 
