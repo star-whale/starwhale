@@ -287,6 +287,7 @@ class TestJob(BaseTestCase):
                         "createdTime": 1697042331000,
                         "owner": None,
                         "shared": True,
+                        "draft": False,
                         "stepSpecs": [
                             {
                                 "name": "mnist.evaluator:MNISTInference.predict",
