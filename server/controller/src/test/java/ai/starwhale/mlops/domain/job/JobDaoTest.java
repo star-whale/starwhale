@@ -27,12 +27,12 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +64,8 @@ public class JobDaoTest {
         given(jobBoConverter.fromEntity(job2))
                 .willReturn(Job.builder().id(2L).uuid("job-uuid-2").build());
 
-        jobDao = new JobDao(mock(JobRepo.class), jobMapper, datasetVersionMapper, new IdConverter(), jobBoConverter);
+        jobDao = new JobDao(
+                mock(EvaluationRepo.class), jobMapper, datasetVersionMapper, new IdConverter(), jobBoConverter);
     }
 
     @Test

@@ -490,7 +490,7 @@ public class DatasetService {
                 .jobType(JobType.BUILT_IN)
                 .user(userService.currentUserDetail())
                 .build();
-        Job job = jobCreator.createJob(jobReq);
+        Job job = jobCreator.createJob(jobReq, entity -> {});
 
         var entity = BuildRecordEntity.builder()
                 .projectId(project.getId())

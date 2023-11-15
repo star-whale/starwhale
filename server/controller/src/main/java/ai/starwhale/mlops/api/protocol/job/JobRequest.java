@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,9 +48,6 @@ public class JobRequest implements Serializable {
     private List<String> datasetVersionIds;
     private List<String> evalDatasetVersionIds;
 
-    @JsonProperty("spaceId")
-    private Long spaceId;
-
     @JsonProperty("comment")
     private String comment;
 
@@ -62,6 +60,12 @@ public class JobRequest implements Serializable {
 
     @JsonProperty("stepSpecOverWrites")
     private String stepSpecOverWrites;
+
+    @JsonProperty("bizType")
+    private BizType bizType;
+
+    @JsonProperty("bizId")
+    private String bizId;
 
     @JsonProperty("type")
     private JobType type = JobType.EVALUATION;

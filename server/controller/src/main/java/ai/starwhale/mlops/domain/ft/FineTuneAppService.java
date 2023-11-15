@@ -196,9 +196,10 @@ public class FineTuneAppService {
                         String.format(EVALUATION_SUMMARY_TABLE_FORMAT, spaceId)))
         ));
         request.setType(JobType.EVALUATION);
-        var jobId = jobCreator.createJob(userJobConverter.convert(projectId, request)).getId();
-        eventService.addInternalJobInfoEvent(jobId, "Evaluation Job created");
-        return jobId;
+        // sync to datastore after created
+        var job = jobCreator.createJob(userJobConverter.convert(projectId, request));
+        eventService.addInternalJobInfoEvent(job.getId(), "Evaluation Job created");
+        return job.getId();
     }
 
     private String rewriteSpecEnvForRequest(

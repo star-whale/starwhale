@@ -734,7 +734,7 @@ public class RuntimeService {
                 .jobType(JobType.BUILT_IN)
                 .user(userService.currentUserDetail())
                 .build();
-        Job job = jobCreator.createJob(jobReq);
+        Job job = jobCreator.createJob(jobReq, entity -> {});
         return new BuildImageResult(true, job.getId().toString());
 
     }

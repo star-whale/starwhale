@@ -14,43 +14,43 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.storage;
+package ai.starwhale.mlops.domain.evaluation.storage;
 
-import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DatasetUrisViewColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.INT32;
-import static ai.starwhale.mlops.domain.job.JobSchema.INT64;
-import static ai.starwhale.mlops.domain.job.JobSchema.IsDeletedColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.JobTypeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelUriViewColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.NameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.OwnerIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ResourcePoolColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ResultOutputPathColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeNameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeUriViewColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
-import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.tableSchemaDesc;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.CommentColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.CreatedTimeColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DatasetUrisColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DatasetUrisViewColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DevModeColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DurationColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.FinishTimeColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.INT32;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.INT64;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.IsDeletedColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.JobStatusColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.JobTypeColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.KeyColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.LongIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriViewColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModifiedTimeColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.NameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.OwnerIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.OwnerNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ProjectIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ResourcePoolColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ResultOutputPathColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeUriColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeUriViewColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeVersionColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeVersionIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.STRING;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.StepSpecColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.tableSchemaDesc;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -89,7 +89,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 @Service
-public class JobRepo {
+public class EvaluationRepo {
     private final DataStore store;
     private final ProjectService projectService;
     private final ModelService modelService;
@@ -97,10 +97,10 @@ public class JobRepo {
     private final JobMapper mainStore;
     private final ObjectMapper objectMapper;
 
-    public JobRepo(DataStore store,
-                   @Lazy ProjectService projectService,
-                   @Lazy ModelService modelService,
-                   @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
+    public EvaluationRepo(DataStore store,
+                          @Lazy ProjectService projectService,
+                          @Lazy ModelService modelService,
+                          @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
         this.store = store;
         this.projectService = projectService;
         this.modelService = modelService;

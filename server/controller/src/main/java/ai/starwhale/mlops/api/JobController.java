@@ -41,6 +41,7 @@ import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.ModelServingService;
@@ -208,14 +209,19 @@ public class JobController {
             @Valid @RequestBody JobRequest jobRequest
     ) {
         if (jobRequest.isDevMode() && !featuresProperties.isJobDevEnabled()) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
-                    HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
+                    HttpStatus.BAD_REQUEST
+            );
         }
-        Long jobId;
-        if (jobRequest.getType() == JobType.FINE_TUNE && jobRequest.getSpaceId() != null) {
-            jobId = fineTuneAppService.createFineTune(projectUrl, jobRequest.getSpaceId(), jobRequest);
-        } else if (jobRequest.getType() == JobType.EVALUATION && jobRequest.getSpaceId() != null) {
-            jobId = fineTuneAppService.createEvaluationJob(projectUrl, jobRequest.getSpaceId(), jobRequest);
+        Long jobId = null;
+        if (jobRequest.getBizType() == BizType.FINE_TUNE) {
+            Long spaceId = idConvertor.revert(jobRequest.getBizId());
+            if (jobRequest.getType() == JobType.FINE_TUNE) {
+                jobId = fineTuneAppService.createFineTune(projectUrl, spaceId, jobRequest);
+            } else if (jobRequest.getType() == JobType.EVALUATION) {
+                jobId = fineTuneAppService.createEvaluationJob(projectUrl, spaceId, jobRequest);
+            }
         } else {
             jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
         }

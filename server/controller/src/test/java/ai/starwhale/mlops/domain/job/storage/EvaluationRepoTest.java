@@ -16,14 +16,14 @@
 
 package ai.starwhale.mlops.domain.job.storage;
 
-import static ai.starwhale.mlops.domain.job.JobSchema.JobStatusColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.NameColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.JobStatusColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.KeyColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.LongIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.NameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ProjectIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeVersionIdColumn;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
+import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -61,9 +62,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class JobRepoTest {
+public class EvaluationRepoTest {
 
-    private JobRepo jobRepo;
+    private EvaluationRepo jobRepo;
 
     private DataStore dataStore;
 
@@ -82,7 +83,8 @@ public class JobRepoTest {
         this.userService = mock(UserService.class);
         this.dataStore = mock(DataStore.class);
         this.jobMapper = mock(JobMapper.class);
-        jobRepo = new JobRepo(dataStore, projectService, modelService, userService, jobMapper, new ObjectMapper());
+        jobRepo = new EvaluationRepo(
+                dataStore, projectService, modelService, userService, jobMapper, new ObjectMapper());
     }
 
     @Test
