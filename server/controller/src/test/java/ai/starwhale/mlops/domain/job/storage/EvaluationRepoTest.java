@@ -136,11 +136,11 @@ public class EvaluationRepoTest {
                 .update(eq(table), any(), anyList());
 
         jobRepo.recoverJob(table, job);
-        verify(dataStore, times(5))
+        verify(dataStore, times(4))
                 .update(eq(table), any(), anyList());
 
         jobRepo.updateJobComment(table, job, "test1");
-        verify(dataStore, times(6))
+        verify(dataStore, times(5))
                 .update(eq(table), any(), anyList());
 
         reset(dataStore);
