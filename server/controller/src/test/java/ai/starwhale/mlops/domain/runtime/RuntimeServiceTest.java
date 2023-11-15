@@ -634,10 +634,10 @@ public class RuntimeServiceTest {
                 .builtImage(null)
                 .build());
         when(bundleManager.getBundle(any())).thenReturn(RuntimeEntity.builder().runtimeName("rt").build());
-        when(jobCreator.createJob(any(), any())).thenReturn(Job.builder().id(1L).build());
+        when(jobCreator.createJob(any())).thenReturn(Job.builder().id(1L).build());
         service.dockerize("project-1", "v1", "v1", new RunEnvs(Map.of("k", "v")));
         var argumentCaptor = ArgumentCaptor.forClass(JobCreateRequest.class);
-        verify(jobCreator, times(1)).createJob(argumentCaptor.capture(), any());
+        verify(jobCreator, times(1)).createJob(argumentCaptor.capture());
         var req = argumentCaptor.getValue();
         assertEquals(project, req.getProject());
         assertEquals("rc", req.getResourcePool());
@@ -686,7 +686,7 @@ public class RuntimeServiceTest {
     public void testDockerizeWontDo() {
         when(bundleManager.getBundleVersion(any())).thenReturn(RuntimeVersionEntity.builder().builtImage("x").build());
         service.dockerize("project-1", "rt", "v1", null);
-        verify(jobCreator, never()).createJob(any(), any());
+        verify(jobCreator, never()).createJob(any());
     }
 
 

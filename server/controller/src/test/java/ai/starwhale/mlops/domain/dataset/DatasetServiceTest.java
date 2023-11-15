@@ -189,7 +189,7 @@ public class DatasetServiceTest {
         bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         jobCreator = mock(JobCreator.class);
-        when(jobCreator.createJob(any(), any())).thenReturn(new JobMockHolder().mockJob());
+        when(jobCreator.createJob(any())).thenReturn(new JobMockHolder().mockJob());
         service = new DatasetService(
                 projectService,
                 datasetMapper,

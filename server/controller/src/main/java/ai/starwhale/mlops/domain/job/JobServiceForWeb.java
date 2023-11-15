@@ -165,12 +165,7 @@ public class JobServiceForWeb {
 
     @Transactional
     public Long createJob(UserJobCreateRequest request) {
-        var job = jobCreator.createJob(request, (entity -> {
-            // sync to datastore when type is eval
-            if (entity.getType() == JobType.EVALUATION) {
-                evaluationRepo.addJob(entity);
-            }
-        }));
+        var job = jobCreator.createJob(request);
         eventService.addInternalJobInfoEvent(job.getId(), "Job created");
         return job.getId();
     }

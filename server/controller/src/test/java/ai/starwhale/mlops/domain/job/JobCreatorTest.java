@@ -170,11 +170,11 @@ public class JobCreatorTest {
                 .build();
 
         // handler and stepSpec could only have one
-        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq, entity -> {}));
+        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 
         jobReq.setHandler(null);
         jobReq.setStepSpecOverWrites(null);
-        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq, entity -> {}));
+        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 
 
         var userJobReq = UserJobCreateRequest.builder()
@@ -207,13 +207,13 @@ public class JobCreatorTest {
 
         given(userJobConverter.convert(userJobReq)).willReturn(flatten);
 
-        var res = jobCreator.createJob(userJobReq, entity -> {});
+        var res = jobCreator.createJob(userJobReq);
         assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> !jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == null && jobFlattenEntity.getDevPassword() == null));
 
         flatten.devMode(true).devWay(DevWay.VS_CODE).devPassword("");
-        res = jobCreator.createJob(userJobReq, entity -> {});
+        res = jobCreator.createJob(userJobReq);
         assertThat(res, is(Job.builder().id(1L).type(JobType.EVALUATION).build()));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().isEmpty()));

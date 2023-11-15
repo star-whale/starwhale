@@ -79,14 +79,9 @@ public class JobCreator {
         this.userJobConverter = userJobConverter;
     }
 
-    @FunctionalInterface
-    public interface JobCreationLifeCycle {
-        void afterCreation(JobFlattenEntity entity);
-    }
-
     @Transactional
     @WriteOperation
-    public Job createJob(JobCreateRequest request, JobCreationLifeCycle jobCreationLifeCycle) {
+    public Job createJob(JobCreateRequest request) {
         String jobUuid = IdUtil.simpleUUID();
 
         JobFlattenEntity.JobFlattenEntityBuilder builder;
@@ -155,7 +150,6 @@ public class JobCreator {
                 .build();
 
         jobDao.addJob(jobEntity);
-        jobCreationLifeCycle.afterCreation(jobEntity);
         var jobId = jobEntity.getId();
         log.info("Job has been created. ID={}", jobId);
 

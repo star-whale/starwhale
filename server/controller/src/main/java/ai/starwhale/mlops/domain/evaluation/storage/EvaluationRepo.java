@@ -53,30 +53,21 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.StepSpecCol
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.tableSchemaDesc;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
-import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
-import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
-import ai.starwhale.mlops.datastore.OrderByDesc;
-import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.user.UserService;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -94,40 +85,22 @@ public class EvaluationRepo {
     private final ProjectService projectService;
     private final ModelService modelService;
     private final UserService userService;
-    private final JobMapper mainStore;
     private final ObjectMapper objectMapper;
 
     public EvaluationRepo(DataStore store,
                           @Lazy ProjectService projectService,
                           @Lazy ModelService modelService,
-                          @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
+                          @Lazy UserService userService, ObjectMapper objectMapper) {
         this.store = store;
         this.projectService = projectService;
         this.modelService = modelService;
         this.userService = userService;
-        this.mainStore = mainStore;
         this.objectMapper = objectMapper;
     }
 
-    private List<String> tableNames() {
-        var projects = projectService.listProjects();
-        return projects.stream()
-                .map(Project::getId)
-                .map(this::tableName)
-                .collect(Collectors.toList());
-    }
-
-    private String tableName(Long projectId) {
-        /*
-         * such as project/starwhale/eval/summary
-         */
-        String tableNameFormat = "project/%s/eval/summary";
-        return String.format(tableNameFormat, projectId);
-    }
-
-    public int addJob(JobFlattenEntity jobEntity) {
+    public int addJob(String table, JobFlattenEntity jobEntity) {
         store.update(
-                this.tableName(jobEntity.getProject().getId()),
+                table,
                 tableSchemaDesc,
                 List.of(convertToRecord(jobEntity))
         );
@@ -232,154 +205,19 @@ public class EvaluationRepo {
                         origin::get));
     }
 
-    public List<JobFlattenEntity> listJobs(Long projectId, Long modelId) {
-        var andConditions = new ArrayList<>();
-        andConditions.add(TableQueryFilter.builder()
-                .operator(TableQueryFilter.Operator.EQUAL)
-                .operands(List.of(
-                        new TableQueryFilter.Column(IsDeletedColumn),
-                        new TableQueryFilter.Constant(ColumnType.INT32, 0)))
-                .build());
-
-        if (Objects.nonNull(modelId)) {
-            andConditions.add(TableQueryFilter.builder()
-                    .operator(TableQueryFilter.Operator.EQUAL)
-                    .operands(List.of(
-                            new TableQueryFilter.Column(ModelVersionIdColumn),
-                            new TableQueryFilter.Constant(ColumnType.INT64, modelId)))
-                    .build());
-        }
-        var filter = TableQueryFilter.builder()
-                .operator(TableQueryFilter.Operator.AND)
-                .operands(andConditions)
-                .build();
-
-        var project = projectService.findProject(projectId);
-
-        return getJobEntities(project, filter);
-    }
-
-    public List<JobFlattenEntity> findJobByStatusIn(List<JobStatus> jobStatuses) {
-        var filter = TableQueryFilter.builder()
-                .operator(TableQueryFilter.Operator.AND)
-                .operands(
-                        List.of(
-                                TableQueryFilter.builder()
-                                        .operator(TableQueryFilter.Operator.OR)
-                                        .operands(jobStatuses.stream()
-                                                .map(status -> (Object) TableQueryFilter.builder()
-                                                        .operator(TableQueryFilter.Operator.EQUAL)
-                                                        .operands(List.of(
-                                                                new TableQueryFilter.Column(JobStatusColumn),
-                                                                new TableQueryFilter.Constant(ColumnType.STRING,
-                                                                        status.name()))
-                                                        ).build())
-                                                .collect(Collectors.toList()))
-                                        .build(),
-                                TableQueryFilter.builder()
-                                        .operator(TableQueryFilter.Operator.EQUAL)
-                                        .operands(List.of(
-                                                new TableQueryFilter.Column(IsDeletedColumn),
-                                                new TableQueryFilter.Constant(ColumnType.INT32, 0)))
-                                        .build()
-                        ))
-                .build();
-
-        List<JobFlattenEntity> results = new ArrayList<>();
-        // find all projects
-        var projects = projectService.listProjects();
-        for (Project project : projects) {
-            results.addAll(this.getJobEntities(project, filter));
-        }
-        return results;
-    }
-
-    public List<ObjectCountEntity> countJob(List<Long> projectIds) {
-        List<ObjectCountEntity> results = new ArrayList<>();
-        var filter = TableQueryFilter.builder()
-                .operator(TableQueryFilter.Operator.EQUAL)
-                .operands(List.of(
-                        new TableQueryFilter.Column(IsDeletedColumn),
-                        new TableQueryFilter.Constant(ColumnType.INT32, 0)))
-                .build();
-        for (Long projectId : projectIds) {
-            var project = projectService.findProject(projectId);
-            if (project == null) {
-                continue;
-            }
-            results.add(ObjectCountEntity.builder()
-                    .projectId(projectId)
-                    .count(this.getJobEntities(project, filter).size())
-                    .build());
-        }
-        return results;
-    }
-
-    @NotNull
-    private List<JobFlattenEntity> getJobEntities(Project project, TableQueryFilter filter) {
-        var results = new ArrayList<JobFlattenEntity>();
-
-        var table = this.tableName(project.getId());
-        var it = new Iterator<List<JobFlattenEntity>>() {
-            boolean finished = false;
-            final DataStoreQueryRequest request = DataStoreQueryRequest.builder()
-                    .tableName(table)
-                    .filter(filter)
-                    .start(0)
-                    .orderBy(List.of(OrderByDesc.builder().columnName(CreatedTimeColumn).descending(true).build()))
-                    .rawResult(true)
-                    .build();
-
-            @Override
-            public boolean hasNext() {
-                return !finished;
-            }
-
-            @Override
-            public List<JobFlattenEntity> next() {
-                var records = store.query(request).getRecords();
-                if (records.isEmpty()) {
-                    finished = true;
-                    return List.of();
-                }
-                // update for next request
-                request.setStart(request.getStart() + records.size());
-
-                var entities = objectMapper.convertValue(records, new TypeReference<List<JobFlattenEntity>>() {
-                });
-                // populate bean
-                for (JobFlattenEntity job : entities) {
-                    job.setProject(project);
-                    job.setModelVersion(modelService.findModelVersion(job.getModelVersionId()));
-                    job.setOwner(userService.loadUserById(job.getOwnerId()));
-                }
-                return entities;
-            }
-        };
-        while (it.hasNext()) {
-            results.addAll(it.next());
-        }
-        return results;
-
-    }
-
-
-    public void updateJobStatus(Long jobId, JobStatus jobStatus) {
-        var job = mainStore.findJobById(jobId);
+    public void updateJobStatus(String table, Job job, JobStatus jobStatus) {
         if (!evaluationJob(job)) {
             return;
         }
-        this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+        this.updateByUuid(table, job.getUuid(),
                 List.of(ColumnRecord.builder().property(JobStatusColumn).type(STRING).value(jobStatus.name()).build()));
     }
 
-    public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
-        var job = mainStore.findJobById(jobId);
+    public void updateJobFinishedTime(String table, Job job, Date finishedTime, Long duration) {
         if (!evaluationJob(job)) {
             return;
         }
-        this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), List.of(
+        this.updateByUuid(table, job.getUuid(), List.of(
                         ColumnRecord.builder()
                                 .property(FinishTimeColumn)
                                 .type(INT64)
@@ -393,62 +231,32 @@ public class EvaluationRepo {
                 ));
     }
 
-    public int updateJobComment(Long jobId, String comment) {
-        var job = mainStore.findJobById(jobId);
+    public int updateJobComment(String table, Job job, String comment) {
         if (!evaluationJob(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+        return this.updateByUuid(table, job.getUuid(),
                 List.of(ColumnRecord.builder().property(CommentColumn).type(STRING).value(comment).build()));
     }
 
-    public int updateJobCommentByUuid(String uuid, String comment) {
-        var job = mainStore.findJobByUuid(uuid);
-        if (!evaluationJob(job)) {
-            return 0;
-        }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
-                List.of(ColumnRecord.builder().property(CommentColumn).type(STRING).value(comment).build()));
-    }
-
-    public int removeJob(Long jobId) {
-        var job = mainStore.findJobById(jobId);
+    public int removeJob(String table, Job job) {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+        return this.updateByUuid(table, job.getUuid(),
                 List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("1").build()));
     }
 
-    private static boolean evaluationJob(JobEntity job) {
+    public int recoverJob(String table, Job job) {
+        if (!evaluationJob(job)) {
+            return 0;
+        }
+        return this.updateByUuid(table, job.getUuid(), List.of(
+                ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("0").build()));
+    }
+
+    private static boolean evaluationJob(Job job) {
         return !Objects.isNull(job) && job.getType() == JobType.EVALUATION;
-    }
-
-    public int removeJobByUuid(String uuid) {
-        var job = mainStore.findJobByUuid(uuid);
-        if (!evaluationJob(job)) {
-            return 0;
-        }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
-                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("1").build()));
-    }
-
-    public int recoverJob(Long jobId) {
-        var job = mainStore.findJobById(jobId);
-        if (!evaluationJob(job)) {
-            return 0;
-        }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
-                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("0").build()));
-    }
-
-    public int recoverJobByUuid(String uuid) {
-        var job = mainStore.findJobByUuid(uuid);
-        if (!evaluationJob(job)) {
-            return 0;
-        }
-        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
-                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("0").build()));
     }
 
     @Data

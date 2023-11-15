@@ -20,7 +20,6 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
-import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
@@ -44,19 +43,19 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class JobDao implements BundleAccessor, RecoverAccessor {
 
-    private final EvaluationRepo evaluationRepo;
+    private final List<JobUpdateWatcher> updateWatchers;
     private final JobMapper jobMapper;
     private final JobDatasetVersionMapper datasetVersionMapper;
     private final IdConverter idConvertor;
     private final JobBoConverter jobBoConverter;
 
     public JobDao(
-            EvaluationRepo evaluationRepo,
+            List<JobUpdateWatcher> updateWatchers,
             JobMapper jobMapper,
             JobDatasetVersionMapper datasetVersionMapper,
             IdConverter idConvertor,
             JobBoConverter jobBoConverter) {
-        this.evaluationRepo = evaluationRepo;
+        this.updateWatchers = updateWatchers;
         this.jobMapper = jobMapper;
         this.datasetVersionMapper = datasetVersionMapper;
         this.idConvertor = idConvertor;
@@ -90,6 +89,9 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                     datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
                 }
             }
+            updateWatchers.stream()
+                    .filter(watcher -> watcher.match(entity.getBizType(), entity.getType()))
+                    .forEach(watcher -> watcher.onCreate(jobFlattenEntity));
             return true;
         }
         return false;
@@ -135,15 +137,18 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         return jobBoConverter.fromEntity(jobMapper.findJobById(jobId));
     }
 
-    public void updateJobStatus(Long jobId, JobStatus jobStatus) {
-        jobMapper.updateJobStatus(List.of(jobId), jobStatus);
-        evaluationRepo.updateJobStatus(jobId, jobStatus);
+    public void updateJobStatus(Job job, JobStatus jobStatus) {
+        jobMapper.updateJobStatus(List.of(job.getId()), jobStatus);
+        updateWatchers.stream()
+                .filter(watcher -> watcher.match(job.getBizType(), job.getType()))
+                .forEach(watcher -> watcher.onUpdateStatus(job, jobStatus));
     }
 
-    public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
-        jobMapper.updateJobFinishedTime(List.of(jobId), finishedTime, duration);
-
-        evaluationRepo.updateJobFinishedTime(jobId, finishedTime, duration);
+    public void updateJobFinishedTime(Job job, Date finishedTime, Long duration) {
+        jobMapper.updateJobFinishedTime(List.of(job.getId()), finishedTime, duration);
+        updateWatchers.stream()
+                .filter(watcher -> watcher.match(job.getBizType(), job.getType()))
+                .forEach(watcher -> watcher.onUpdateFinishTime(job, finishedTime, duration));
     }
 
     public boolean updateJobComment(Long jobId, String comment) {
