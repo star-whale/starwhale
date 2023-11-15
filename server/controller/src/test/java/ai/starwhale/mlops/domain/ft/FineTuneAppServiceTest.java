@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -33,6 +34,7 @@ import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
+import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
@@ -78,6 +80,8 @@ class FineTuneAppServiceTest {
 
     FeaturesProperties featuresProperties;
 
+    JobConverter jobConverter;
+
     @BeforeEach
     public void setup() {
         jobCreator = mock(JobCreator.class);
@@ -91,6 +95,7 @@ class FineTuneAppServiceTest {
         fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         featuresProperties = mock(FeaturesProperties.class);
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
+        jobConverter = mock(JobConverter.class);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
                 jobCreator,
@@ -103,7 +108,7 @@ class FineTuneAppServiceTest {
                 datasetDao,
                 fineTuneSpaceMapper,
                 userJobConverter,
-                mock(JobConverter.class),
+                jobConverter,
                 mock(ModelService.class),
                 mock(DatasetService.class)
         );
@@ -137,6 +142,16 @@ class FineTuneAppServiceTest {
         when(fineTuneMapper.list(anyLong())).thenReturn(List.of(FineTuneEntity.builder().jobId(1L).build()));
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
         Assertions.assertEquals(1, fineTuneAppService.list(1L, 1, 1).getSize());
+    }
+
+    @Test
+    void ftInfo() {
+        when(fineTuneMapper.findById(anyLong())).thenReturn(FineTuneEntity.builder().jobId(1L).build());
+        when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
+        JobVo jobVo = JobVo.builder().build();
+        when(jobConverter.convert(any())).thenReturn(jobVo);
+        FineTuneVo fineTuneVo = fineTuneAppService.ftInfo(1L);
+        Assertions.assertEquals(jobVo, fineTuneVo.getJob());
     }
 
     @Test

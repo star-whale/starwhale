@@ -148,6 +148,19 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
+    @Operation(summary = "Get fine-tune info")
+    @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/{ftId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<FineTuneVo>> fineTuneInfo(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @PathVariable("ftId") Long ftId
+    ) {
+
+        FineTuneVo ftInfo = fineTuneAppService.ftInfo(ftId);
+        return ResponseEntity.ok(Code.success.asResponse(ftInfo));
+    }
+
     @Operation(summary = "release fine-tune")
     @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/release", produces =
             MediaType.APPLICATION_JSON_VALUE)
