@@ -258,7 +258,6 @@ client_test() {
   fi
   popd
   popd
-
 }
 
 api_test() {

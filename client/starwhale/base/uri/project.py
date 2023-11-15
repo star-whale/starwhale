@@ -1,13 +1,10 @@
-import os
 import urllib
 from typing import Any, Optional
 from functools import lru_cache
 
 import requests
 
-from starwhale.consts.env import SWEnv
 from starwhale.utils.retry import http_retry
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.exceptions import UriTooShortException
 
@@ -60,7 +57,11 @@ class Project:
             self.id = (
                 self.name
                 if self.name.isdigit()
-                else str(get_remote_project_id(self.instance.url, self.name))
+                else str(
+                    get_remote_project_id(
+                        self.instance.url, self.instance.token, self.name
+                    )
+                )
             )
         else:
             self.id = self.name
@@ -112,15 +113,12 @@ class Project:
 
 @lru_cache(maxsize=None)
 @http_retry
-def get_remote_project_id(instance_uri: str, project: str) -> Any:
+def get_remote_project_id(instance_uri: str, token: str, project: str) -> Any:
     resp = requests.get(
         urllib.parse.urljoin(instance_uri, f"/api/v1/project/{project}"),
         headers={
             "Content-Type": "application/json; charset=utf-8",
-            "Authorization": (
-                SWCliConfigMixed().get_sw_token(instance=instance_uri)
-                or os.getenv(SWEnv.instance_token, "")
-            ),
+            "Authorization": token,
         },
         timeout=60,
     )

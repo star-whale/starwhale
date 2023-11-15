@@ -37,6 +37,7 @@ from starwhale.base.models.model import ModelListType, LocalModelInfo
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
+from starwhale.base.client.models.models import ModelVo
 
 
 class ModelTermView(BaseTermView, TagViewMixin):
@@ -439,11 +440,26 @@ class ModelTermViewRich(ModelTermView):
         _models, _pager = super().list(
             project_uri, fullname, show_removed, page, size, filters
         )
-        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
-            "tags": lambda x: ",".join(x),
-            "size": lambda x: pretty_bytes(x),
-            "runtime": cls.place_holder_for_empty(""),
-        }
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = dict()
+        if _models and isinstance(_models[0], ModelVo):
+            custom_column.update(
+                {
+                    "tags": lambda x: ",".join(
+                        [x["version"]["alias"]] + (x["version"]["tags"] or [])
+                    ),
+                    "size": lambda x: pretty_bytes(x["version"]["size"]),
+                    "owner": lambda x: x["name"],
+                    "version": lambda x: x["name"],
+                    "shared": lambda x: str(x["version"]["shared"]),
+                }
+            )
+        else:
+            custom_column.update(
+                {
+                    "tags": lambda x: ",".join(x),
+                    "size": lambda x: pretty_bytes(x or 0),
+                }
+            )
 
         cls.print_header(project_uri)
         cls.print_table("Model List", _models, custom_column=custom_column)

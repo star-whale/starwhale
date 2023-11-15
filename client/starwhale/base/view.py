@@ -275,6 +275,7 @@ class BaseTermView(SWCliConfigMixed):
         custom_table: t.Optional[t.Dict[str, t.Any]] = None,
         allowed_keys: t.Optional[t.List[str]] = None,
     ) -> None:
+        custom_column = custom_column or {}
         default_attr = {
             "title": title,
             "box": box.SIMPLE,
@@ -295,6 +296,14 @@ class BaseTermView(SWCliConfigMixed):
                 if custom_header and idx in custom_header:
                     extra = custom_header[idx]
                 table.add_column(snake_to_camel(field), **extra)
+            for custom_column_key in custom_column:
+                if custom_column_key not in row:
+                    table.add_column(
+                        snake_to_camel(custom_column_key),
+                        justify="left",
+                        style="cyan",
+                        no_wrap=True,
+                    )
 
         header_inited = False
         for row in data:
@@ -311,7 +320,9 @@ class BaseTermView(SWCliConfigMixed):
                 if not is_renderable(col):
                     col = pretty.Pretty(col)
                 rendered_row.append(col)
-
+            for custom_column_key in custom_column:
+                if custom_column_key not in row:
+                    rendered_row.append(custom_column[custom_column_key](row))
             row_ext: t.Dict[str, t.Any] = {}
             if custom_row:
                 row_ext = custom_row(row) or {}

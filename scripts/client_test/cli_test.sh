@@ -29,3 +29,5 @@ bash "$SCRIPT_DIR"/update_controller_setting.sh
 for i in $@; do
     python3 "$SCRIPT_DIR"/cli_test.py --sw_repo_path "$REPO_PATH" --case $i --work_dir "$WORK_DIR" --server_url "$CONTROLLER_URL" || exit 1
 done
+
+SW_CLI_CONFIG="$WORK_DIR"/config.yaml . "$SCRIPT_DIR"/cli_exec.sh
