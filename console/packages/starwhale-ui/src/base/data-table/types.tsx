@@ -29,7 +29,7 @@ export type SharedColumnOptionsT<ValueT> = {
     fillWidth?: boolean
     filterable?: boolean
     // flowlint-next-line unclear-type:off
-    mapDataToValue: (data: any) => ValueT
+    mapDataToValue?: (data: any) => ValueT
     maxWidth?: number
     minWidth?: number
     sortable?: boolean

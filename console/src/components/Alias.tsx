@@ -8,6 +8,8 @@ import useTranslation from '@/hooks/useTranslation'
 import { expandBorder, expandBorderRadius, expandPadding } from '@starwhale/ui/utils'
 
 export function Alias({ alias = '' }: { alias?: string }) {
+    if (!alias) return null
+    
     return (
         <div style={{ display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
             {alias.split(',').map((item, index) => {

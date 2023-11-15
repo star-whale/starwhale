@@ -391,7 +391,7 @@ const authed = {
                     component: ProjectOverview,
                 },
                 {
-                    path: '/projects/:projectId/ft-spaces',
+                    path: '/projects/:projectId/spaces',
                     component: FineTuneSpaceListCard,
                 },
                 {

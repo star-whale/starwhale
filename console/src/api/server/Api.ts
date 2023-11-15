@@ -67,7 +67,6 @@ import {
     IExecData,
     IExecRequest,
     IFileDeleteRequest,
-    IFindJobData,
     IFineTuneCreateRequest,
     IFineTuneSpaceCreateRequest,
     IFlushData,
@@ -82,6 +81,7 @@ import {
     IGetHashedBlob1Data,
     IGetHashedBlobData,
     IGetJobDagData,
+    IGetJobData,
     IGetModelDiffData,
     IGetModelInfoData,
     IGetModelMetaBlobData,
@@ -111,14 +111,12 @@ import {
     IJobModifyPinRequest,
     IJobModifyRequest,
     IJobRequest,
-    IListAttributesData,
     IListBuildRecordsData,
     IListDatasetData,
     IListDatasetTreeData,
     IListDatasetVersionData,
     IListDatasetVersionTagsData,
     IListDeviceData,
-    IListEvaluationSummaryData,
     IListFilesData,
     IListFineTuneData,
     IListJobsData,
@@ -173,6 +171,7 @@ import {
     IRecoverProjectData,
     IRecoverRuntimeData,
     IRecoverTrashData,
+    IReleaseFtData,
     IRemoveJobData,
     IResourcePool,
     IRevertDatasetRequest,
@@ -771,28 +770,24 @@ export class Api<SecurityDataType = unknown> {
      * No description
      *
      * @tags Job
-     * @name FindJob
+     * @name GetJob
      * @summary Job information
      * @request GET:/api/v1/project/{projectUrl}/job/{jobUrl}
      * @secure
-     * @response `200` `IFindJobData` OK
+     * @response `200` `IGetJobData` OK
      */
-    findJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
-        this.http.request<IFindJobData, any>({
+    getJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
+        this.http.request<IGetJobData, any>({
             path: `/api/v1/project/${projectUrl}/job/${jobUrl}`,
             method: 'GET',
             secure: true,
             ...params,
         })
 
-    useFindJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
-        useQuery(
-            qs.stringify(['findJob', projectUrl, jobUrl, params]),
-            () => this.findJob(projectUrl, jobUrl, params),
-            {
-                enabled: [projectUrl, jobUrl].every(Boolean),
-            }
-        )
+    useGetJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['getJob', projectUrl, jobUrl, params]), () => this.getJob(projectUrl, jobUrl, params), {
+            enabled: [projectUrl, jobUrl].every(Boolean),
+        })
     /**
      * No description
      *
@@ -912,6 +907,34 @@ export class Api<SecurityDataType = unknown> {
             body: data,
             secure: true,
             type: ContentType.Json,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ReleaseFt
+     * @summary release fine-tune
+     * @request PUT:/api/v1/project/{projectId}/ftspace/{spaceId}/ft/release
+     * @secure
+     * @response `200` `IReleaseFtData` OK
+     */
+    releaseFt = (
+        projectId: string,
+        spaceId: string,
+        query: {
+            /** @format int64 */
+            ftId: number
+            modelName?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IReleaseFtData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft/release`,
+            method: 'PUT',
+            query: query,
+            secure: true,
             ...params,
         })
 
@@ -4266,87 +4289,6 @@ export class Api<SecurityDataType = unknown> {
                 enabled: [projectUrl, jobUrl].every(Boolean),
             }
         )
-    /**
-     * No description
-     *
-     * @tags Evaluation
-     * @name ListEvaluationSummary
-     * @summary List Evaluation Summary
-     * @request GET:/api/v1/project/{projectUrl}/evaluation
-     * @secure
-     * @response `200` `IListEvaluationSummaryData` OK
-     */
-    listEvaluationSummary = (
-        projectUrl: string,
-        query: {
-            filter: string
-            /**
-             * @format int32
-             * @default 1
-             */
-            pageNum?: number
-            /**
-             * @format int32
-             * @default 10
-             */
-            pageSize?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        this.http.request<IListEvaluationSummaryData, any>({
-            path: `/api/v1/project/${projectUrl}/evaluation`,
-            method: 'GET',
-            query: query,
-            secure: true,
-            ...params,
-        })
-
-    useListEvaluationSummary = (
-        projectUrl: string,
-        query: {
-            filter: string
-            /**
-             * @format int32
-             * @default 1
-             */
-            pageNum?: number
-            /**
-             * @format int32
-             * @default 10
-             */
-            pageSize?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        useQuery(
-            qs.stringify(['listEvaluationSummary', projectUrl, query, params]),
-            () => this.listEvaluationSummary(projectUrl, query, params),
-            {
-                enabled: [projectUrl, query].every(Boolean),
-            }
-        )
-    /**
-     * No description
-     *
-     * @tags Evaluation
-     * @name ListAttributes
-     * @summary List Evaluation Summary Attributes
-     * @request GET:/api/v1/project/{projectUrl}/evaluation/view/attribute
-     * @secure
-     * @response `200` `IListAttributesData` OK
-     */
-    listAttributes = (projectUrl: string, params: RequestParams = {}) =>
-        this.http.request<IListAttributesData, any>({
-            path: `/api/v1/project/${projectUrl}/evaluation/view/attribute`,
-            method: 'GET',
-            secure: true,
-            ...params,
-        })
-
-    useListAttributes = (projectUrl: string, params: RequestParams = {}) =>
-        useQuery(qs.stringify(['listAttributes', projectUrl, params]), () => this.listAttributes(projectUrl, params), {
-            enabled: [projectUrl].every(Boolean),
-        })
     /**
      * No description
      *

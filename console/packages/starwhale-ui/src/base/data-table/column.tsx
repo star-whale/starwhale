@@ -55,7 +55,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
                 className={cn(
                     'column-cell',
                     css({
-                        ...theme.typography.font200,
+                        // ...theme.typography.font200,
                         boxSizing: 'border-box',
                         color: theme.colors.contentPrimary,
                         padding: '0',

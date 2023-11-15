@@ -826,6 +826,98 @@ const ft = {
         en: 'Edit',
         zh: '编辑',
     },
+    'ft.id': {
+        en: 'Runs ID',
+        zh: 'Runs ID',
+    },
+    'ft.job.output_draft_model_name': {
+        en: 'Output Draft Model Name',
+        zh: '模型草案名称',
+    },
+    'ft.job.output_draft_model_version_alias': {
+        en: 'Output Draft Model Version Alias',
+        zh: '模型草案版本别名',
+    },
+    'ft.job.output_draft_model_version': {
+        en: 'Output Draft Model Version',
+        zh: '模型版本',
+    },
+    'ft.job.output_model_name': {
+        en: 'Output Model Name',
+        zh: '精调产出模型',
+    },
+    'ft.job.output_model_version_alias': {
+        en: 'Output Model Version Alias',
+        zh: '精调产出模型版本别名',
+    },
+    'ft.job.output_model_version': {
+        en: 'Output Model Version',
+        zh: '精调产出模型版本',
+    },
+    'ft.job.building_mode': {
+        en: 'Building Mode',
+        zh: 'SFT模型构建方式',
+    },
+    'ft.base.model.name': {
+        en: 'Base Model Name',
+        zh: '基准模型名称',
+    },
+    'ft.base.model.version_alias': {
+        en: 'Base Model Version Alias',
+        zh: '基准模型版本别名',
+    },
+    'ft.base.model.version': {
+        en: 'Base Model Version',
+        zh: '基准模型版本',
+    },
+    'ft.training_dataset.name': {
+        en: 'Training Dataset Name',
+        zh: '训练数据集名称',
+    },
+    'ft.training_dataset.version_alias': {
+        en: 'Training Dataset Version Alias',
+        zh: '训练数据集版本别名',
+    },
+    'ft.validation_dataset.name': {
+        en: 'Validation Dataset Name',
+        zh: '验证数据集名称',
+    },
+    'ft.validation_dataset.version_alias': {
+        en: 'Validation Dataset Version Alias',
+        zh: '验证数据集版本别名',
+    },
+    'ft.dataset.name': {
+        en: 'Dataset Name',
+        zh: '数据集名称',
+    },
+    'ft.dataset.version_alias': {
+        en: 'Dataset Version Alias',
+        zh: '数据集版本别名',
+    },
+    'ft.dataset.version': {
+        en: 'Dataset Version',
+        zh: '数据集版本',
+    },
+    'ft.runtime.name': {
+        en: 'Runtime Name',
+        zh: '运行时名称',
+    },
+    'ft.runtime.version_alias': {
+        en: 'Runtime Version Alias',
+        zh: '运行时版本别名',
+    },
+    'ft.runtime.version': {
+        en: 'Runtime Version',
+        zh: '运行时版本',
+    },
+    'ft.handler': {
+        en: 'Handler',
+        zh: '处理器',
+    },
+    'ft.step_specification': {
+        en: 'Step Specification',
+        zh: '参数',
+    },
 }
 
 const table = {

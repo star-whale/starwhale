@@ -258,11 +258,9 @@ export interface IRevertModelVersionRequest {
 }
 
 export interface IJobRequest {
-    /** @format int64 */
-    modelVersionId?: number
-    datasetVersionIds?: number[]
-    /** @format int64 */
-    runtimeVersionId?: number
+    modelVersionId?: string
+    datasetVersionIds?: string[]
+    runtimeVersionId?: string
     /** @format int64 */
     timeToLiveInSec?: number
     /** @deprecated */
@@ -404,11 +402,9 @@ export interface IResponseMessageMapObjectObject {
 }
 
 export interface IFineTuneCreateRequest {
-    /** @format int64 */
-    modelVersionId?: number
-    datasetVersionIds?: number[]
-    /** @format int64 */
-    runtimeVersionId?: number
+    modelVersionId?: string
+    datasetVersionIds?: string[]
+    runtimeVersionId?: string
     /** @format int64 */
     timeToLiveInSec?: number
     /** @deprecated */
@@ -926,11 +922,9 @@ export interface ITrashVo {
 }
 
 export interface IJobTemplateVo {
-    /** @format int64 */
-    id?: number
-    name?: string
-    /** @format int64 */
-    jobId?: number
+    id: string
+    name: string
+    jobId: string
 }
 
 export interface IResponseMessageListJobTemplateVo {
@@ -1262,6 +1256,8 @@ export interface IStepSpec {
     job_name?: string
     show_name: string
     require_dataset?: boolean
+    require_train_datasets?: boolean
+    require_validation_datasets?: boolean
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
@@ -1718,78 +1714,6 @@ export interface IResponseMessageGraph {
     data: IGraph
 }
 
-export interface IAttributeValueVo {
-    name?: string
-    type?: string
-    value?: string
-}
-
-export interface IPageInfoSummaryVo {
-    /** @format int64 */
-    total?: number
-    list?: ISummaryVo[]
-    /** @format int32 */
-    pageNum?: number
-    /** @format int32 */
-    pageSize?: number
-    /** @format int32 */
-    size?: number
-    /** @format int64 */
-    startRow?: number
-    /** @format int64 */
-    endRow?: number
-    /** @format int32 */
-    pages?: number
-    /** @format int32 */
-    prePage?: number
-    /** @format int32 */
-    nextPage?: number
-    isFirstPage?: boolean
-    isLastPage?: boolean
-    hasPreviousPage?: boolean
-    hasNextPage?: boolean
-    /** @format int32 */
-    navigatePages?: number
-    navigatepageNums?: number[]
-    /** @format int32 */
-    navigateFirstPage?: number
-    /** @format int32 */
-    navigateLastPage?: number
-}
-
-export interface IResponseMessagePageInfoSummaryVo {
-    code: string
-    message: string
-    data: IPageInfoSummaryVo
-}
-
-/**
- * Evaluation
- * Evaluation Summary object
- */
-export interface ISummaryVo {
-    id: string
-    uuid: string
-    projectId: string
-    projectName: string
-    modelName: string
-    modelVersion: string
-    datasets?: string
-    runtime: string
-    device?: string
-    /** @format int32 */
-    deviceAmount?: number
-    /** @format int64 */
-    createdTime: number
-    /** @format int64 */
-    stopTime?: number
-    owner: string
-    /** @format int64 */
-    duration?: number
-    jobStatus: 'CREATED' | 'READY' | 'PAUSED' | 'RUNNING' | 'CANCELLING' | 'CANCELED' | 'SUCCESS' | 'FAIL' | 'UNKNOWN'
-    attributes?: IAttributeValueVo[]
-}
-
 /**
  * Evaluation
  * Evaluation View Config object
@@ -1806,21 +1730,6 @@ export interface IResponseMessageConfigVo {
     message: string
     /** Evaluation View Config object */
     data: IConfigVo
-}
-
-/**
- * Evaluation
- * Evaluation Attribute object
- */
-export interface IAttributeVo {
-    name?: string
-    type?: string
-}
-
-export interface IResponseMessageListAttributeVo {
-    code: string
-    message: string
-    data: IAttributeVo[]
 }
 
 export interface IPageInfoDatasetVo {
@@ -2059,25 +1968,16 @@ export interface IResponseMessagePageInfoFineTuneSpaceVo {
     data: IPageInfoFineTuneSpaceVo
 }
 
-export type IDsInfo = object
-
 export interface IFineTuneVo {
     /** @format int64 */
     id: number
-    /** @format int64 */
-    jobId: number
-    status: 'CREATED' | 'READY' | 'PAUSED' | 'RUNNING' | 'CANCELLING' | 'CANCELED' | 'SUCCESS' | 'FAIL' | 'UNKNOWN'
-    /** @format int64 */
-    startTime: number
-    /** @format int64 */
-    endTime?: number
-    trainDatasets?: IDsInfo[]
-    evalDatasets?: IDsInfo[]
-    baseModel: IModelInfo
-    targetModel?: IModelInfo
+    /** Job object */
+    job: IJobVo
+    trainDatasets: IDatasetVo[]
+    evalDatasets?: IDatasetVo[]
+    /** Model object */
+    targetModel: IModelVo
 }
-
-export type IModelInfo = object
 
 export interface IPageInfoFineTuneVo {
     /** @format int64 */
@@ -2238,7 +2138,7 @@ export type IShareModelVersionData = IResponseMessageString['data']
 
 export type IRecoverModelData = IResponseMessageString['data']
 
-export type IFindJobData = IResponseMessageJobVo['data']
+export type IGetJobData = IResponseMessageJobVo['data']
 
 export type IModifyJobCommentData = IResponseMessageString['data']
 
@@ -2251,6 +2151,8 @@ export type IRecoverDatasetData = IResponseMessageString['data']
 export type IRecoverProjectData = IResponseMessageString['data']
 
 export type IUpdateSpaceData = IResponseMessageString['data']
+
+export type IReleaseFtData = IResponseMessageString['data']
 
 export type IApplySignedGetUrlsData = IResponseMessageSignedUrlResponse['data']
 
@@ -2476,10 +2378,6 @@ export type IGetTaskData = IResponseMessageTaskVo['data']
 export type IGetRunsData = IResponseMessageListRunVo['data']
 
 export type IGetJobDagData = IResponseMessageGraph['data']
-
-export type IListEvaluationSummaryData = IResponseMessagePageInfoSummaryVo['data']
-
-export type IListAttributesData = IResponseMessageListAttributeVo['data']
 
 export type IListDatasetData = IResponseMessagePageInfoDatasetVo['data']
 

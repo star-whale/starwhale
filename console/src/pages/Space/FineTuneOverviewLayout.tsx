@@ -33,7 +33,7 @@ export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProp
             },
             {
                 title: spaceId,
-                path: `/projects/${projectId}/spaces/${spaceId}/fineTunes`,
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tunes`,
             },
         ]
         return items

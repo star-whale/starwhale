@@ -15,6 +15,7 @@ import { useEventCallback } from '@starwhale/core'
 import { useToggle } from 'ahooks'
 import ProjectListCard from '../Project/ProjectListCard'
 import { useRouteContext } from '@/contexts/RouteContext'
+import FineTuneRunsListCard from './FineTuneRunsListCard'
 
 const Right = () => {
     const { RoutesInline } = useRouteContext()
@@ -98,7 +99,7 @@ export default function FineTuneListCard() {
         setIsOpen(false)
     })
 
-    const [expand, { toggle }] = useToggle(true)
+    const [expand, { toggle }] = useToggle(false)
     const [fullscreen, { toggle: toggleFullscreen }] = useToggle(false)
 
     const right = <Right />
@@ -114,34 +115,7 @@ export default function FineTuneListCard() {
             <GridResizer
                 left={() => (
                     <div className='flex-col content-full'>
-                        <Table
-                            renderActions={(rowIndex) => {
-                                const data = info.data?.list?.[rowIndex]
-                                if (!data) return undefined
-                                return getActions(data)
-                            }}
-                            isLoading={info.isLoading}
-                            columns={[t('ft.space.id'), t('ft.space.name'), t('Owner'), t('Created'), t('Description')]}
-                            data={
-                                info.data?.list?.map((data) => {
-                                    return [
-                                        data.id,
-                                        data.name,
-                                        data.owner && <User user={data.owner} />,
-                                        data.createdTime && formatTimestampDateTime(data.createdTime),
-                                        data.description,
-                                    ]
-                                }) ?? []
-                            }
-                            paginationProps={{
-                                start: info.data?.pageNum,
-                                count: info.data?.pageSize,
-                                total: info.data?.total,
-                                afterPageChange: () => {
-                                    info.refetch()
-                                },
-                            }}
-                        />
+                        <FineTuneRunsListCard />
                     </div>
                 )}
                 right={() => right}
