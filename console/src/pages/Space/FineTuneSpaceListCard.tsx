@@ -85,6 +85,7 @@ export default function FineTuneSpaceListCard() {
     return (
         <Card
             title={t('ft.space.title')}
+            className='content-full'
             extra={
                 isAccessCreate && (
                     <Button

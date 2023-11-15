@@ -4,22 +4,16 @@ import { IFineTuneVo, api } from '@/api'
 import { useHistory, useParams } from 'react-router-dom'
 import { usePage } from '@/hooks/usePage'
 import FineTuneRunsTable from './FineTuneRunsTable'
+import FineTuneRunsTableCard from './FineTuneRunsTableCard'
 
-export default function FineTuneRunsListCard() {
+export default function FineTuneRunsListCard({ isExpand, onView, viewId, data }) {
     const [t] = useTranslation()
-    const [expandId, setExpandId] = React.useState<number | undefined>(undefined)
-    const [current, setCurrent] = React.useState<string | undefined>(undefined)
     const ref = React.useRef<HTMLDivElement>(null)
     const [page] = usePage()
-    const history = useHistory()
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
-    const info = api.useListFineTune(projectId, spaceId, {
-        ...page,
-    })
-    const sources = info?.data?.list ?? []
 
     return (
-        <div ref={ref} className='task-event-list overflow-hidden h-full'>
+        <div ref={ref} className='ft-list content-full'>
             {/* <div className='grid gap-20px grid-cols-[280px_1fr_16px_16px] mb-20px'>
                 <div className='flex-1'>
                     <Search
@@ -29,7 +23,11 @@ export default function FineTuneRunsListCard() {
                     />
                 </div>
             </div> */}
-            <FineTuneRunsTable data={info?.data} />
+            {isExpand ? (
+                <FineTuneRunsTableCard data={data} onView={onView} viewId={viewId} />
+            ) : (
+                <FineTuneRunsTable data={data} onView={onView} viewId={viewId} />
+            )}
         </div>
     )
 }

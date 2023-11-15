@@ -2050,6 +2050,10 @@ const locales0 = {
         en: 'Created At',
         zh: '创建于',
     },
+    'Created by': {
+        en: 'Created by',
+        zh: '创建者',
+    },
     'Aliases': {
         en: 'Aliases',
         zh: '别名',

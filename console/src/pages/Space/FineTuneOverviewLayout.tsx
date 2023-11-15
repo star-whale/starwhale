@@ -28,7 +28,7 @@ export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProp
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('FineTune Spacess'),
+                title: t('FineTune Spaces'),
                 path: `/projects/${projectId}/spaces`,
             },
             {
@@ -76,11 +76,11 @@ export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProp
 
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className='content-full h-full'>
                 <div style={{ marginBottom: '20px' }}>
                     <BaseNavTabs navItems={navItems} />
                 </div>
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+                <div className='content-full h-full'>{children}</div>
             </div>
         </BaseSubLayout>
     )

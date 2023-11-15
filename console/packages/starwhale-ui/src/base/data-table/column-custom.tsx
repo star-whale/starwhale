@@ -17,7 +17,7 @@ type OptionsT<ValueT, FilterParamsT> = {
     sortFn?: (valueA: ValueT, valueB: ValueT) => number
     getFilters?: () => FilterT | undefined
     buildFilters?: (builder, args: FilterT) => FilterT
-    columnable?:boolean
+    columnable?: boolean
 } & SharedColumnOptionsT<ValueT>
 
 function CustomColumn<ValueT, FilterParamsT>(options: OptionsT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {

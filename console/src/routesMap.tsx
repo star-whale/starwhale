@@ -57,6 +57,8 @@ import FineTuneSpaceListCard from './pages/Space/FineTuneSpaceListCard'
 import FineTuneListCard from './pages/Space/FineTuneListCard'
 import FineTuneOverviewLayout from './pages/Space/FineTuneOverviewLayout'
 import FineTuneNewCard from './pages/Project/FineTuneNewCard'
+import FineTuneOverview from './pages/Space/FineTuneOverview'
+import FineTuneRunOverviewLayout from './pages/Space/FineTuneRunOverviewLayout'
 
 const unauthed = {
     component: LoginLayout,
@@ -279,7 +281,22 @@ const authed = {
             ],
         },
         {
-            path: '/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?',
+            path: '/projects/:projectId/spaces/:spaceId/:path/:fineTuneId/:path',
+            component: FineTuneRunOverviewLayout,
+            routes: [
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?/overview',
+                    component: FineTuneOverview,
+                },
+                {
+                    to: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId/overview',
+                    component: Redirect,
+                },
+            ],
+        },
+
+        {
+            path: '/projects/:projectId/spaces/:spaceId/:path?',
             component: FineTuneOverviewLayout,
             routes: [
                 {

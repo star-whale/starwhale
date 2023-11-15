@@ -41,6 +41,7 @@ export type SharedColumnOptionsT<ValueT> = {
     renderCell?: RenderCellT<ValueT>
     columnType?: { name: string; type: string }
     columnable?: boolean
+    isRenderRawCell?: boolean
 }
 
 export type RenderCellT<ValueT> = React.FC<{
@@ -64,7 +65,7 @@ export type RenderFilterT<ValueT, FilterParamsT> = React.FC<{
 }>
 
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
-    kind: ColumnsT
+    kind?: ColumnsT
     sortable: boolean
     renderCell: RenderCellT<ValueT>
     renderFilter: RenderFilterT<ValueT, FilterParamsT>

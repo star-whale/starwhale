@@ -1,126 +1,107 @@
 import React from 'react'
-import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
-import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import Table from '@/components/Table'
-import { Link, MemoryRouter, Route, StaticRouter, useHistory, useParams } from 'react-router-dom'
-import User from '@/domain/user/components/User'
-import { Button, ExtendButton, GridResizer, Toggle } from '@starwhale/ui'
-import { useAccess } from '@/api/WithAuth'
-import { IFineTuneSpaceVo, api } from '@/api'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import SpaceForm from '@/domain/space/components/SpaceForm'
-import { useEventCallback } from '@starwhale/core'
-import { useToggle } from 'ahooks'
-import ProjectListCard from '../Project/ProjectListCard'
+import { useHistory, useParams, useRouteMatch } from 'react-router-dom'
 import { useRouteContext } from '@/contexts/RouteContext'
 import FineTuneRunsListCard from './FineTuneRunsListCard'
+import { ExtendButton } from '@starwhale/ui'
+import { api } from '@/api'
+import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
+import { useBoolean, useCreation, useToggle } from 'ahooks'
+import { headerHeight } from '@/consts'
 
-const Right = () => {
+const RouteBar = ({ onClose, onFullScreen, fullscreen }) => {
+    const history = useHistory()
+    const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?/overview')
+
+    console.log(match)
+
+    console.log(history, history.length)
+
+    // @ts-ignore
+    const isLastOne = history.index === 0
+
+    return (
+        <div className='ft-route-bar absolute right-20px top-20px z-1 gap-16px flex'>
+            <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
+            {!fullscreen && (
+                <ExtendButton
+                    icon='close'
+                    styleas={['iconnormal', 'nopadding']}
+                    onClick={() => (isLastOne ? onClose?.() : history.go(-1))}
+                />
+            )}
+        </div>
+    )
+}
+
+const RouteOverview = ({ url, onClose, title }) => {
     const { RoutesInline } = useRouteContext()
+    const [fullscreen, { toggle }] = useBoolean(false)
 
     if (!RoutesInline) return null
 
     return (
-        <RoutesInline>
-            <Link to='/projects'>1</Link>
-            <Link to='/projects2'>2</Link>
-        </RoutesInline>
+        <div
+            className='ft-route border-1 p-20px content-full relative bg-white'
+            style={
+                fullscreen
+                    ? {
+                          position: 'fixed',
+                          top: headerHeight,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 100,
+                      }
+                    : undefined
+            }
+        >
+            <div className='h-56px w-full'>{title}</div>
+            <div className='content-full'>
+                <RoutesInline initialEntries={url && [url]} key={url}>
+                    <RouteBar onClose={onClose} fullscreen={fullscreen} onFullScreen={toggle} />
+                </RoutesInline>
+            </div>
+        </div>
     )
 }
 
 export default function FineTuneListCard() {
     const [page] = usePage()
-    const history = useHistory()
+    const [t] = useTranslation()
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
-    const [isOpen, setIsOpen] = React.useState(false)
-    const [editRow, setEditRow] = React.useState<IFineTuneSpaceVo>()
-
+    const [expandFineTuneId, setExpandFineTuneId] = React.useState<number | undefined>(undefined)
+    //
+    const { renderCell } = useFineTuneColumns()
     const info = api.useListFineTune(projectId, spaceId, {
         ...page,
     })
+    //
+    const isExpand = !!expandFineTuneId
+    const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${expandFineTuneId}/overview`
 
-    const [t] = useTranslation()
-
-    const isAccessCreate = useAccess('ft.space.create')
-    const isAccessUpdate = useAccess('ft.space.update')
-    // const isAccessDelete = useAccess('ft.space.delete')
-
-    const getActions = (data: IFineTuneSpaceVo) => [
-        {
-            access: true,
-            quickAccess: true,
-            component: ({ hasText }) => (
-                <ExtendButton
-                    isFull
-                    icon='Detail'
-                    tooltip={!hasText ? t('View Details') : undefined}
-                    styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => history.push(`/projects/${projectId}/spaces/${data.id}`)}
-                >
-                    {hasText ? t('View Details') : undefined}
-                </ExtendButton>
-            ),
-        },
-        {
-            access: isAccessUpdate,
-            component: ({ hasText }) => (
-                <ExtendButton
-                    isFull
-                    icon='a-Versionhistory'
-                    styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => {
-                        setEditRow(data)
-                        setIsOpen(true)
-                    }}
-                >
-                    {hasText ? t('ft.space.action.edit') : undefined}
-                </ExtendButton>
-            ),
-        },
-    ]
-
-    const handleCreate = useEventCallback(async (data: IFineTuneSpaceVo) => {
-        await api.createSpace(projectId, {
-            name: data.name as string,
-            description: data.description as string,
-        })
-        await info.refetch()
-        setIsOpen(false)
-    })
-    const handleEdit = useEventCallback(async ({ id, ...data }: IFineTuneSpaceVo) => {
-        if (!id) return
-        await api.updateSpace(projectId, id, {
-            name: data.name as string,
-            description: data.description as string,
-        })
-        await info.refetch()
-        setIsOpen(false)
-    })
-
-    const [expand, { toggle }] = useToggle(false)
-    const [fullscreen, { toggle: toggleFullscreen }] = useToggle(false)
-
-    const right = <Right />
-
-    if (fullscreen) {
-        return right
-    }
+    const title = useCreation(() => {
+        const fineTune = info.data?.list?.find((v) => v.id === expandFineTuneId)
+        const renderer = renderCell(fineTune)
+        if (!fineTune) return null
+        return (
+            <>
+                <div className='flex items-center font-600'>{renderer('baseModelName')}</div>
+                <div className='flex-1 items-center mt-12px mb-auto'>{renderer('baseModelVersionAlias')}</div>
+            </>
+        )
+    }, [expandFineTuneId])
 
     return (
-        <>
-            <Toggle onChange={toggle} />
-            <Toggle onChange={toggleFullscreen} />
-            <GridResizer
-                left={() => (
-                    <div className='flex-col content-full'>
-                        <FineTuneRunsListCard />
-                    </div>
-                )}
-                right={() => right}
-                isResizeable={expand}
+        <div className={`grid gap-20px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
+            <FineTuneRunsListCard
+                data={info.data}
+                isExpand={isExpand}
+                onView={setExpandFineTuneId}
+                viewId={expandFineTuneId}
             />
-        </>
+            {isExpand && <RouteOverview title={title} url={url} onClose={() => setExpandFineTuneId(undefined)} />}
+        </div>
     )
 }

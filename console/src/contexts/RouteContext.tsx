@@ -1,7 +1,8 @@
 import React from 'react'
+import { MemoryRouterProps } from 'react-router'
 
 interface IRouteContext {
-    RoutesInline?: React.FC<{ children?: any }>
+    RoutesInline?: React.FC<MemoryRouterProps>
 }
 
 const RouteContext = React.createContext<IRouteContext | undefined>(undefined)

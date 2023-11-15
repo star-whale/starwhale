@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Switch, Route } from 'react-router-dom'
+import { BrowserRouter, Switch, Route, MemoryRouterProps } from 'react-router-dom'
 import { createUseStyles } from 'react-jss'
 import ApiHeader from '@/api/ApiHeader'
 import Header from '@/components/Header'
@@ -45,8 +45,10 @@ const Routes = () => {
         )
     }
 
-    const RoutesInline: React.FC<any> = ({ children }) => (
-        <RoutesInlineRender routes={authedRoutes}>{children}</RoutesInlineRender>
+    const RoutesInline: React.FC<MemoryRouterProps> = ({ children, ...rest }) => (
+        <RoutesInlineRender routes={authedRoutes} {...rest}>
+            {children}
+        </RoutesInlineRender>
     )
 
     return (
