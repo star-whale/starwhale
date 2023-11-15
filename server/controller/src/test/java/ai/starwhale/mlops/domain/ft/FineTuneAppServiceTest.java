@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -124,7 +125,7 @@ class FineTuneAppServiceTest {
         var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
         request.setEvalDatasetVersionIds(List.of("1"));
-        when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
+        when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
         fineTuneAppService.createFineTune("1", 1L, request);
