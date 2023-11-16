@@ -49,6 +49,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.event.EventService;
+import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobServiceForWeb;
 import ai.starwhale.mlops.domain.job.ModelServingService;
@@ -71,6 +72,8 @@ public class JobControllerTest {
 
     private JobServiceForWeb jobServiceForWeb;
 
+    private FineTuneAppService fineTuneAppService;
+
     private TaskService taskService;
 
     private ModelServingService modelServingService;
@@ -84,6 +87,7 @@ public class JobControllerTest {
     @BeforeEach
     public void setUp() {
         jobServiceForWeb = mock(JobServiceForWeb.class);
+        fineTuneAppService = mock(FineTuneAppService.class);
         taskService = mock(TaskService.class);
         modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
@@ -91,6 +95,7 @@ public class JobControllerTest {
         featuresProperties = new FeaturesProperties();
         controller = new JobController(
                 jobServiceForWeb,
+                fineTuneAppService,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
@@ -292,6 +297,7 @@ public class JobControllerTest {
         featuresProperties.setDisabled(disabled);
         var controller = new JobController(
                 jobServiceForWeb,
+                fineTuneAppService,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
@@ -315,7 +321,7 @@ public class JobControllerTest {
         featuresProperties.setDisabled(disabled);
         var controller = new JobController(
                 jobServiceForWeb,
-                taskService,
+                fineTuneAppService, taskService,
                 modelServingService,
                 runtimeSuggestionService,
                 new IdConverter(),

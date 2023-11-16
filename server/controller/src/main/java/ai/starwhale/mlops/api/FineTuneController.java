@@ -18,19 +18,19 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.ft.FineTuneSpaceService;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
+import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,16 +58,23 @@ public class FineTuneController {
 
     final FineTuneAppService fineTuneAppService;
 
+    final FeaturesProperties featuresProperties;
+
+    final UserJobConverter userJobConverter;
+
     public FineTuneController(
             ProjectService projectService,
             UserService userService,
             FineTuneSpaceService fineTuneSpaceService,
-            FineTuneAppService fineTuneAppService
-    ) {
+            FineTuneAppService fineTuneAppService,
+            FeaturesProperties featuresProperties,
+            UserJobConverter userJobConverter) {
         this.projectService = projectService;
         this.userService = userService;
         this.fineTuneSpaceService = fineTuneSpaceService;
         this.fineTuneAppService = fineTuneAppService;
+        this.featuresProperties = featuresProperties;
+        this.userJobConverter = userJobConverter;
     }
 
     @Operation(summary = "Get the list of fine-tune spaces")
@@ -115,25 +122,6 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
-    @Operation(summary = "Create fine-tune")
-    @PostMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> createFineTune(
-            @PathVariable("projectId") Long projectId,
-            @PathVariable("spaceId") Long spaceId,
-            @Valid @RequestBody FineTuneCreateRequest request
-    ) {
-
-        fineTuneAppService.createFineTune(
-                spaceId,
-                projectService.findProject(projectId),
-                request,
-                userService.currentUserDetail()
-
-        );
-        return ResponseEntity.ok(Code.success.asResponse(""));
-    }
-
     @Operation(summary = "List fine-tune")
     @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
@@ -146,6 +134,19 @@ public class FineTuneController {
 
         PageInfo<FineTuneVo> pageInfo = fineTuneAppService.list(spaceId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Operation(summary = "Get fine-tune info")
+    @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/{ftId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<FineTuneVo>> fineTuneInfo(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @PathVariable("ftId") Long ftId
+    ) {
+
+        FineTuneVo ftInfo = fineTuneAppService.ftInfo(ftId);
+        return ResponseEntity.ok(Code.success.asResponse(ftInfo));
     }
 
     @Operation(summary = "release fine-tune")
@@ -161,4 +162,5 @@ public class FineTuneController {
         fineTuneAppService.releaseFt(ftId, existingModelId, nonExistingModelName, userService.currentUserDetail());
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
+
 }

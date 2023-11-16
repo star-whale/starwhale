@@ -20,6 +20,8 @@
     j.finished_time as job_finished_time,
     j.duration_ms as job_duration_ms,
     j.job_status,
+    j.biz_type,
+    j.biz_id,
     j.job_type,
     j.runtime_version_id as runtime_version_id,
     j.result_output_path as job_result_output_path,
@@ -181,6 +183,8 @@
     owner_id,
     finished_time,
     job_status,
+    biz_type,
+    biz_id,
     job_type,
     runtime_version_id,
     result_output_path,
@@ -197,6 +201,8 @@
     #{job.ownerId},
     #{job.finishedTime},
     #{job.jobStatus},
+    #{job.bizType},
+    #{job.bizId},
     #{job.type},
     #{job.runtimeVersionId},
     #{job.resultOutputPath},
@@ -221,6 +227,8 @@
     <result property="finishedTime" column="job_finished_time"/>
     <result property="durationMs" column="job_duration_ms"/>
     <result property="jobStatus" column="job_status"/>
+    <result property="bizType" column="biz_type"/>
+    <result property="bizId" column="biz_id"/>
     <result property="type" column="job_type"/>
     <result property="resultOutputPath" column="job_result_output_path"/>
     <result property="stepSpec" column="step_spec"/>

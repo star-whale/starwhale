@@ -370,7 +370,7 @@ public class DatasetService {
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
-        if (versionIds.isEmpty()) {
+        if (CollectionUtils.isEmpty(versionIds)) {
             return List.of();
         }
         List<DatasetVersionEntity> versions = datasetVersionMapper.findByIds(Joiner.on(",").join(versionIds));

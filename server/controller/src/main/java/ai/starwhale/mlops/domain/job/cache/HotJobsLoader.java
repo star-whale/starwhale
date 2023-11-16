@@ -82,7 +82,7 @@ public class HotJobsLoader implements RollingUpdateStatusListener {
                 jobLoader.load(job, false);
             } catch (Exception e) {
                 log.error("loading hotting job failed {}", job.getId(), e);
-                jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
+                jobDao.updateJobStatus(job, JobStatus.FAIL);
             }
         });
         log.info("hot jobs loaded");
