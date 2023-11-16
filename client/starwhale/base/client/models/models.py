@@ -1265,24 +1265,39 @@ class ResponseMessagePageInfoFineTuneSpaceVo(SwBaseModel):
     data: PageInfoFineTuneSpaceVo
 
 
-class DsInfo(SwBaseModel):
-    pass
+class FineTuneVo(SwBaseModel):
+    id: int
+    job: JobVo
+    train_datasets: List[DatasetVo] = Field(..., alias='trainDatasets')
+    eval_datasets: Optional[List[DatasetVo]] = Field(None, alias='evalDatasets')
+    target_model: ModelVo = Field(..., alias='targetModel')
 
 
-class Status3(Enum):
-    created = 'CREATED'
-    ready = 'READY'
-    paused = 'PAUSED'
-    running = 'RUNNING'
-    cancelling = 'CANCELLING'
-    canceled = 'CANCELED'
-    success = 'SUCCESS'
-    fail = 'FAIL'
-    unknown = 'UNKNOWN'
+class PageInfoFineTuneVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[FineTuneVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
 
 
-class ModelInfo(SwBaseModel):
-    pass
+class ResponseMessagePageInfoFineTuneVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoFineTuneVo
 
 
 class PanelPluginVo(SwBaseModel):
@@ -1597,45 +1612,6 @@ class ResponseMessageGraph(SwBaseModel):
     code: str
     message: str
     data: Graph
-
-
-class FineTuneVo(SwBaseModel):
-    id: int
-    job_id: int = Field(..., alias='jobId')
-    status: Status3
-    start_time: int = Field(..., alias='startTime')
-    end_time: Optional[int] = Field(None, alias='endTime')
-    train_datasets: Optional[List[DsInfo]] = Field(None, alias='trainDatasets')
-    eval_datasets: Optional[List[DsInfo]] = Field(None, alias='evalDatasets')
-    base_model: ModelInfo = Field(..., alias='baseModel')
-    target_model: Optional[ModelInfo] = Field(None, alias='targetModel')
-
-
-class PageInfoFineTuneVo(SwBaseModel):
-    total: Optional[int] = None
-    list: Optional[List[FineTuneVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoFineTuneVo(SwBaseModel):
-    code: str
-    message: str
-    data: PageInfoFineTuneVo
 
 
 class PageInfoPanelPluginVo(SwBaseModel):
