@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -143,7 +144,7 @@ public class JobBoConverterTest {
                 List.of(TaskEntity.builder().build(), TaskEntity.builder().build()));
 
         SystemSettingService systemSettingService = new SystemSettingService(
-                mock(SystemSettingMapper.class), List.of(), null, new DockerSetting(), null);
+                mock(SystemSettingMapper.class), List.of(), mock(RunTimeProperties.class), new DockerSetting(), null);
         systemSettingService.updateSetting("---\n"
                 + "dockerSetting:\n"
                 + "  registryForPull: \"\"\n"
