@@ -14,6 +14,7 @@ export const RuntimeLabelContainer = themedStyled('div', () => ({
     alignItems: 'center',
     height: '100%',
     width: '100%',
+    overflow: 'hidden',
 }))
 
 export const RuntimeLabelText = themedStyled('div', () => ({

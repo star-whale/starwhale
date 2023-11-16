@@ -18,7 +18,11 @@ export default function FineTuneNewCard() {
             if (!projectId) {
                 return
             }
-            await api.createFineTune(projectId, spaceId, data)
+            await api.createFineTune(projectId, spaceId, {
+                ...data,
+                bizType: 'FINE_TUNE',
+                bizId: spaceId,
+            })
             history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
         },
         [projectId, spaceId, history]
@@ -32,7 +36,7 @@ export default function FineTuneNewCard() {
 
     return (
         <Card title={t('Run Model')}>
-            <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} />
+            <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} enableTemplate={false} />
         </Card>
     )
 }

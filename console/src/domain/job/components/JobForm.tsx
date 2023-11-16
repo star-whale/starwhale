@@ -19,7 +19,6 @@ import { jobCreateMachine } from '../createJobMachine'
 import FormFieldTemplate from './FormFieldTemplate'
 import { fetchJob, fetchJobTemplate } from '../services/job'
 import { IJobRequest, IJobVo, IModelVersionViewVo, IModelViewVo, IStepSpec } from '@/api'
-import { isModified } from '../../../../packages/starwhale-ui/src/utils/index'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -27,6 +26,7 @@ export interface IJobFormProps {
     job?: IJobVo
     onSubmit: (data: IJobRequest) => Promise<void>
     autoFill?: boolean
+    enableTemplate?: boolean
 }
 
 async function getJobByTemplate(projectId: string, templateId: string) {
@@ -34,7 +34,7 @@ async function getJobByTemplate(projectId: string, templateId: string) {
     return fetchJob(projectId, String(template.jobId))
 }
 
-export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
+export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate = true }: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelViewVo[]>([])
@@ -212,6 +212,8 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
         [form]
     )
 
+    console.log(stepSource)
+
     useEffect(() => {
         const subscription = service.subscribe((curr) => {
             const ctx = curr.context
@@ -312,7 +314,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             {/* template */}
-            <FormFieldTemplate {...sharedFormProps} />
+            {enableTemplate && <FormFieldTemplate {...sharedFormProps} />}
             {/* env config */}
             <Divider orientation='top'>{t('Environment')}</Divider>
             <FormFieldResourceExtend {...sharedFormProps} {...getResourcePoolProps()} />
