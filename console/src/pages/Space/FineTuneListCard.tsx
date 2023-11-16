@@ -43,7 +43,7 @@ const RouteOverview = ({ url, onClose, title }) => {
 
     return (
         <div
-            className='ft-route border-1 p-20px content-full relative bg-white'
+            className='ft-route border-1 p-20px content-full relative bg-white rounded-sm'
             style={
                 fullscreen
                     ? {

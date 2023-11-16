@@ -2018,6 +2018,12 @@ export interface IResponseMessagePageInfoFineTuneVo {
     data: IPageInfoFineTuneVo
 }
 
+export interface IResponseMessageFineTuneVo {
+    code: string
+    message: string
+    data: IFineTuneVo
+}
+
 export interface IPageInfoPanelPluginVo {
     /** @format int64 */
     total?: number
@@ -2398,6 +2404,8 @@ export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 export type IPullUriContentData = any
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
+
+export type IFineTuneInfoData = IResponseMessageFineTuneVo['data']
 
 export type IOfflineLogsData = IResponseMessageListString['data']
 

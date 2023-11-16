@@ -7,16 +7,18 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import Alias from '@/components/Alias'
 import { TextLink } from '@/components/Link'
 import { api } from '@/api'
+import { useParams } from 'react-router-dom'
 
 export default function FineTuneOverview() {
-    const { job } = useJob()
-    const { project } = useProject()
     const [t] = useTranslation()
-    const projectId = project?.id
+
+    const { projectId, spaceId, fineTuneId } = useParams<{ projectId: any; spaceId: any; fineTuneId; any }>()
+    const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
+    const { job } = info.data || {}
 
     const datasetUris = job?.datasetList?.map((v) => {
-        const uri = `project/${project?.name}/dataset/${v?.name}/version/${v?.version?.name}`
-        const to = `/projects/${project?.id}/datasets/${v?.id}/versions/${v?.version?.id}/overview`
+        const uri = `project/${1}/dataset/${v?.name}/version/${v?.version?.name}`
+        const to = `/projects/${projectId}/datasets/${v?.id}/versions/${v?.version?.id}/overview`
         return (
             <TextLink key={uri} to={to} baseStyle={{ maxWidth: 'none' }}>
                 {uri}
@@ -24,16 +26,16 @@ export default function FineTuneOverview() {
         )
     })
 
-    const modelUri = `project/${project?.name}/model/${job?.modelName}/version/${job?.modelVersion}`
-    const modelTo = `/projects/${project?.id}/models/${job?.model?.id}/versions/${job?.model?.version?.id}/overview`
+    const modelUri = `project/${1}/model/${job?.modelName}/version/${job?.modelVersion}`
+    const modelTo = `/projects/${projectId}/models/${job?.model?.id}/versions/${job?.model?.version?.id}/overview`
     const modelLink = (
         <TextLink key={modelUri} to={modelTo} baseStyle={{ maxWidth: 'none' }}>
             {modelUri}
         </TextLink>
     )
 
-    const runtimeUri = `project/${project?.name}/runtime/${job?.runtime?.name}/version/${job?.runtime?.version?.name}`
-    const runtimeTo = `/projects/${project?.id}/runtimes/${job?.runtime?.id}/versions/${job?.runtime?.version?.id}/overview`
+    const runtimeUri = `project/${1}/runtime/${job?.runtime?.name}/version/${job?.runtime?.version?.name}`
+    const runtimeTo = `/projects/${projectId}/runtimes/${job?.runtime?.id}/versions/${job?.runtime?.version?.id}/overview`
     const runtimeLink = (
         <TextLink key={runtimeUri} to={runtimeTo} baseStyle={{ maxWidth: 'none' }}>
             {runtimeUri}

@@ -274,11 +274,10 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     />
                 </div>
                 <CSVLink data={csv} filename={t('job.event.download.filename')} className='f-c-c'>
-                    <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} />
+                    <ExtendButton styleas={['iconnormal', 'nopadding']} icon='download' tooltip={t('download')} />
                 </CSVLink>
                 <ExtendButton
-                    iconnormal
-                    nopadding
+                    styleas={['iconnormal', 'nopadding']}
                     icon='fullscreen'
                     tooltip={t('fullscreen')}
                     onClick={() => toggle(true)}

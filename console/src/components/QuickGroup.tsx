@@ -50,7 +50,7 @@ function QuickGroup({
                                 // setQuickGroup(item.key as QuickGroupEnum)
                                 onChange?.(item.key, filterFunctions[item.key])
                             }}
-                            transparent
+                            styleas={['transparent']}
                             overrides={{
                                 BaseButton: {
                                     style: {

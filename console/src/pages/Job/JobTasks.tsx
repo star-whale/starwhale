@@ -11,7 +11,6 @@ import { Tabs, Tab } from 'baseui/tabs'
 import { mergeOverrides, expandPadding, expandBorder } from '@starwhale/ui/utils'
 import { useQueryArgs } from '@starwhale/core'
 import { fetchJobEvents } from '@/domain/job/services/job'
-import { useParams } from 'react-router-dom'
 import TaskEventListCard from './TaskEventListCard'
 import { useQuery } from 'react-query'
 import { useUpdateEffect } from 'ahooks'
@@ -52,16 +51,18 @@ function TaskLogViewer({ taskId, sources, activeKey }: any) {
     )
 }
 
-export default function JobTasks() {
+export default function JobTasks({ params }: { params: { projectId: string; jobId: string } }) {
     const [t] = useTranslation()
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, any>>({})
     const [currentEvents, setCurrentEvents] = useState<Record<string, any>>({})
-    const { projectId, jobId } = useParams<{ projectId: string; jobId: string }>()
+    const { projectId, jobId } = params
     const { query, updateQuery } = useQueryArgs()
     const { taskId, active: activeKey } = query
     const { data: task } = useQuery([projectId, jobId, taskId], () => fetchTask(projectId, jobId, taskId), {
         enabled: !!taskId,
     })
+
+    console.log(params)
 
     useUpdateEffect(() => {
         setCurrentEvents({})
@@ -124,9 +125,9 @@ export default function JobTasks() {
     return (
         <div data-type='job-tasks' className='flex-1 w-full flex-col min-h-0 overflow-auto'>
             <div className='min-h-320px'>
-                <TaskListCard />
+                <TaskListCard params={params} />
             </div>
-            <div className='h-580px content-full [role="tab"]:text-ellipsis'>
+            <div className='content-full [role="tab"]:text-ellipsis flex-none h-580px '>
                 {hasSource && (
                     <Tabs
                         onChange={(args) => {

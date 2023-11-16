@@ -31,7 +31,7 @@ export default function FineTuneRunOverviewLayout({ children }: IFineTuneLayoutP
             {
                 title: t('Tasks'),
                 path: `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${fineTuneId}/tasks`,
-                pattern: '/\\/files\\/?',
+                pattern: '/\\/tasks\\/?',
             },
         ]
         return items
@@ -41,16 +41,7 @@ export default function FineTuneRunOverviewLayout({ children }: IFineTuneLayoutP
         <BaseSubLayout>
             <div className='content-full h-full'>
                 <div style={{ marginBottom: '20px' }}>
-                    <BaseNavTabs
-                        navItems={navItems}
-                        tabsOverrides={{
-                            TabList: {
-                                style: {
-                                    justifyContent: 'center',
-                                },
-                            },
-                        }}
-                    />
+                    <BaseNavTabs navItems={navItems} align='center' />
                 </div>
                 <div className='content-full h-full'>{children}</div>
             </div>

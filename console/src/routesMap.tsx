@@ -59,6 +59,8 @@ import FineTuneOverviewLayout from './pages/Space/FineTuneOverviewLayout'
 import FineTuneNewCard from './pages/Project/FineTuneNewCard'
 import FineTuneOverview from './pages/Space/FineTuneOverview'
 import FineTuneRunOverviewLayout from './pages/Space/FineTuneRunOverviewLayout'
+import JobTaskListCard from './pages/Job/JobTaskListCard'
+import FineTuneRunsTaskListCard from './pages/Space/FineTuneRunsTaskListCard'
 
 const unauthed = {
     component: LoginLayout,
@@ -130,7 +132,7 @@ const authed = {
                 },
                 {
                     path: '/projects/:projectId/evaluations/:jobId/tasks',
-                    component: JobTasks,
+                    component: JobTaskListCard,
                 },
                 {
                     from: '/projects/:projectId/evaluations/:jobId',
@@ -149,7 +151,7 @@ const authed = {
                 },
                 {
                     path: '/projects/:projectId/jobs/:jobId/tasks',
-                    component: JobTasks,
+                    component: JobTaskListCard,
                 },
                 {
                     path: '/projects/:projectId/jobs/:jobId/results',
@@ -287,6 +289,10 @@ const authed = {
                 {
                     path: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?/overview',
                     component: FineTuneOverview,
+                },
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?/tasks',
+                    component: FineTuneRunsTaskListCard,
                 },
                 {
                     to: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId/overview',

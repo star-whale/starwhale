@@ -68,6 +68,7 @@ import {
     IExecRequest,
     IFileDeleteRequest,
     IFineTuneCreateRequest,
+    IFineTuneInfoData,
     IFineTuneSpaceCreateRequest,
     IFlushData,
     IFlushRequest,
@@ -4716,6 +4717,32 @@ export class Api<SecurityDataType = unknown> {
             () => this.getModelServingStatus(projectId, servingId, params),
             {
                 enabled: [projectId, servingId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name FineTuneInfo
+     * @summary Get fine-tune info
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft/{ftId}
+     * @secure
+     * @response `200` `IFineTuneInfoData` OK
+     */
+    fineTuneInfo = (projectId: number, spaceId: number, ftId: number, params: RequestParams = {}) =>
+        this.http.request<IFineTuneInfoData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft/${ftId}`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+
+    useFineTuneInfo = (projectId: number, spaceId: number, ftId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['fineTuneInfo', projectId, spaceId, ftId, params]),
+            () => this.fineTuneInfo(projectId, spaceId, ftId, params),
+            {
+                enabled: [projectId, spaceId, ftId].every(Boolean),
             }
         )
     /**
