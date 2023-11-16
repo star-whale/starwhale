@@ -259,8 +259,9 @@ export interface IRevertModelVersionRequest {
 
 export interface IJobRequest {
     modelVersionId?: string
-    datasetVersionIds?: string[]
     runtimeVersionId?: string
+    datasetVersionIds?: string[]
+    evalDatasetVersionIds?: string[]
     /** @format int64 */
     timeToLiveInSec?: number
     /** @deprecated */
@@ -273,6 +274,8 @@ export interface IJobRequest {
     resourcePool: string
     handler?: string
     stepSpecOverWrites?: string
+    bizType?: 'FINE_TUNE'
+    bizId?: string
     type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     devMode?: boolean
     devPassword?: string
@@ -399,29 +402,6 @@ export interface IResponseMessageMapObjectObject {
     code: string
     message: string
     data: Record<string, object>
-}
-
-export interface IFineTuneCreateRequest {
-    modelVersionId?: string
-    datasetVersionIds?: string[]
-    runtimeVersionId?: string
-    /** @format int64 */
-    timeToLiveInSec?: number
-    /** @deprecated */
-    modelVersionUrl?: string
-    /** @deprecated */
-    datasetVersionUrls?: string
-    /** @deprecated */
-    runtimeVersionUrl?: string
-    comment?: string
-    resourcePool: string
-    handler?: string
-    stepSpecOverWrites?: string
-    type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
-    devMode?: boolean
-    devPassword?: string
-    devWay?: 'VS_CODE'
-    evalDatasetVersionIds?: number[]
 }
 
 export interface IColumnSchemaDesc {
@@ -1316,6 +1296,7 @@ export interface IModelVersionVo {
     owner?: IUserVo
     shared: boolean
     builtInRuntime?: string
+    draft: boolean
 }
 
 /**
@@ -2272,10 +2253,6 @@ export type IListSpaceData = IResponseMessagePageInfoFineTuneSpaceVo['data']
 
 export type ICreateSpaceData = IResponseMessageString['data']
 
-export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
-
-export type ICreateFineTuneData = IResponseMessageString['data']
-
 export type IGetPanelSettingData = IResponseMessageString['data']
 
 export type ISetPanelSettingData = IResponseMessageString['data']
@@ -2404,6 +2381,8 @@ export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 export type IPullUriContentData = any
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
+
+export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
 
 export type IFineTuneInfoData = IResponseMessageFineTuneVo['data']
 

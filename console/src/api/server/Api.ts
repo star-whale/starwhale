@@ -33,7 +33,6 @@ import {
     ICompleteUploadBlobData,
     IConfigRequest,
     IConsumeNextDataData,
-    ICreateFineTuneData,
     ICreateJobData,
     ICreateJobTemplateRequest,
     ICreateModelServingData,
@@ -67,7 +66,6 @@ import {
     IExecData,
     IExecRequest,
     IFileDeleteRequest,
-    IFineTuneCreateRequest,
     IFineTuneInfoData,
     IFineTuneSpaceCreateRequest,
     IFlushData,
@@ -927,7 +925,9 @@ export class Api<SecurityDataType = unknown> {
         query: {
             /** @format int64 */
             ftId: number
-            modelName?: string
+            nonExistingModelName?: string
+            /** @format int64 */
+            existingModelId?: number
         },
         params: RequestParams = {}
     ) =>
@@ -2473,85 +2473,6 @@ export class Api<SecurityDataType = unknown> {
     createSpace = (projectId: number, data: IFineTuneSpaceCreateRequest, params: RequestParams = {}) =>
         this.http.request<ICreateSpaceData, any>({
             path: `/api/v1/project/${projectId}/ftspace`,
-            method: 'POST',
-            body: data,
-            secure: true,
-            type: ContentType.Json,
-            ...params,
-        })
-
-    /**
-     * No description
-     *
-     * @tags FineTune
-     * @name ListFineTune
-     * @summary List fine-tune
-     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
-     * @secure
-     * @response `200` `IListFineTuneData` OK
-     */
-    listFineTune = (
-        projectId: number,
-        spaceId: number,
-        query?: {
-            /**
-             * @format int32
-             * @default 1
-             */
-            pageNum?: number
-            /**
-             * @format int32
-             * @default 10
-             */
-            pageSize?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        this.http.request<IListFineTuneData, any>({
-            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
-            method: 'GET',
-            query: query,
-            secure: true,
-            ...params,
-        })
-
-    useListFineTune = (
-        projectId: number,
-        spaceId: number,
-        query?: {
-            /**
-             * @format int32
-             * @default 1
-             */
-            pageNum?: number
-            /**
-             * @format int32
-             * @default 10
-             */
-            pageSize?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        useQuery(
-            qs.stringify(['listFineTune', projectId, spaceId, query, params]),
-            () => this.listFineTune(projectId, spaceId, query, params),
-            {
-                enabled: [projectId, spaceId].every(Boolean),
-            }
-        )
-    /**
-     * No description
-     *
-     * @tags FineTune
-     * @name CreateFineTune
-     * @summary Create fine-tune
-     * @request POST:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
-     * @secure
-     * @response `200` `ICreateFineTuneData` OK
-     */
-    createFineTune = (projectId: number, spaceId: number, data: IFineTuneCreateRequest, params: RequestParams = {}) =>
-        this.http.request<ICreateFineTuneData, any>({
-            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
             method: 'POST',
             body: data,
             secure: true,
@@ -4717,6 +4638,65 @@ export class Api<SecurityDataType = unknown> {
             () => this.getModelServingStatus(projectId, servingId, params),
             {
                 enabled: [projectId, servingId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ListFineTune
+     * @summary List fine-tune
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
+     * @secure
+     * @response `200` `IListFineTuneData` OK
+     */
+    listFineTune = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListFineTuneData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    useListFineTune = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listFineTune', projectId, spaceId, query, params]),
+            () => this.listFineTune(projectId, spaceId, query, params),
+            {
+                enabled: [projectId, spaceId].every(Boolean),
             }
         )
     /**

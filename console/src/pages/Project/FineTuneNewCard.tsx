@@ -6,7 +6,7 @@ import { fetchJob } from '@job/services/job'
 import { useHistory, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useQueryArgs } from '@starwhale/core/utils'
-import { IFineTuneCreateRequest, IJobRequest, api } from '@/api'
+import { IJobRequest, api } from '@/api'
 
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
@@ -18,8 +18,9 @@ export default function FineTuneNewCard() {
             if (!projectId) {
                 return
             }
-            await api.createFineTune(projectId, spaceId, {
+            await api.createJob(projectId, {
                 ...data,
+                type: 'FINE_TUNE',
                 bizType: 'FINE_TUNE',
                 bizId: spaceId,
             })
