@@ -1,5 +1,4 @@
 import io
-import os
 import random
 
 import torch
@@ -102,7 +101,6 @@ def cmp(ppl_result):
 @api(
     gradio.Image(type="filepath"),
     [gradio.Image(type="pil"), gradio.Json()],
-    examples=[[os.path.join(os.path.dirname(__file__), "../FudanPed00001.png")]],
 )
 def handler(file: str):
     with open(file, "rb") as f:

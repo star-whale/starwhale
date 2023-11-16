@@ -122,7 +122,6 @@ def generate_mask(img: Image) -> t.List[t.Dict]:
 @api(
     gradio.Image(type="filepath", label="Input Image"),
     [gradio.Image(type="numpy", label="Masked Image"), gradio.JSON(label="Masks Info")],
-    uri="/mask",
 )
 def generate_mask_view(file: t.Any) -> t.Any:
     with open(file, "rb") as f:

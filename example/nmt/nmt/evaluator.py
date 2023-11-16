@@ -92,7 +92,6 @@ class NMTPipeline(PipelineHandler):
     @api(
         gradio.Text(label="en"),
         gradio.Text(label="fr"),
-        examples=["i m not afraid to die .", "i study mathematics ."],
     )
     def online_eval(self, content: str):
         return self.ppl({"english": Text(content)})

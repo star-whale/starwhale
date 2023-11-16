@@ -6,6 +6,7 @@ from pathlib import Path
 import dill
 import numpy as np
 import torch
+import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
@@ -18,6 +19,7 @@ from starwhale import (
     pass_context,
     multi_classification,
 )
+from starwhale.api.service import api
 from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import Net
@@ -112,6 +114,9 @@ class CustomPipelineHandler:
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
+    @api(
+        inputs=gradio.Sketchpad(shape=(28, 28), image_mode="L"), outputs=gradio.Label()
+    )
     def draw(self, data: np.ndarray) -> t.Any:
         _image_array = PILImage.fromarray(data.astype("int8"), mode="L")
         _image = transforms.Compose(
@@ -120,6 +125,7 @@ class CustomPipelineHandler:
         output = self.model(torch.stack([_image]).to(self.device))
         return {i: p for i, p in enumerate(np.exp(output.tolist()).tolist()[0])}
 
+    @api(inputs=gradio.File(), outputs=gradio.Label())
     def upload_bin_file(self, file: t.Any) -> t.Any:
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))

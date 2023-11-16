@@ -54,7 +54,6 @@ def predict_image(data: t.Dict) -> t.Dict:
 @api(
     gradio.Image(type="filepath"),
     gradio.Json(title="Prediction"),
-    examples=[ROOT_DIR / "kitty.jpeg"],
 )
 def predict_image_view(file: t.Any) -> t.Any:
     with open(file, "rb") as f:
