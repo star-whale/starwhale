@@ -65,7 +65,10 @@ class Service:
         return ServiceSpec(version="0.0.1", apis=list(self.apis.values()))
 
     def add_api(self, func: t.Callable, uri: str, inference_type: ServiceType) -> None:
-        _api = Api(func=func, uri=f"{uri}", inference_type=inference_type)
+        if uri in self.apis:
+            raise ValueError(f"Duplicate api uri: {uri}")
+
+        _api = Api(func=func, uri=uri, inference_type=inference_type)
         self.apis[uri] = _api
 
     def add_api_instance(self, _api: Api) -> None:
