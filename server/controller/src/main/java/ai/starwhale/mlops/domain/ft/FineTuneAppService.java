@@ -179,7 +179,7 @@ public class FineTuneAppService {
                     env.add(new Env("SW_SERVER_TRIGGERED_FINETUNE_ID", ft.getId().toString()));
                     List<ModelVo> modelVersions =
                             modelService.findModelByVersionId(List.of(idConverter.revert(request.getModelVersionId())));
-                    if(CollectionUtils.isEmpty(modelVersions)) {
+                    if (CollectionUtils.isEmpty(modelVersions)) {
                         throw new StarwhaleApiException(
                                 new SwValidationException(ValidSubject.JOB, "no model found for the requested version"),
                                 HttpStatus.BAD_REQUEST

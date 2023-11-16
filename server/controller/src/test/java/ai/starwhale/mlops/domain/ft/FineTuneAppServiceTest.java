@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -79,6 +81,8 @@ class FineTuneAppServiceTest {
 
     FeaturesProperties featuresProperties;
 
+    ModelService modelService;
+
     @BeforeEach
     public void setup() {
         jobCreator = mock(JobCreator.class);
@@ -92,6 +96,7 @@ class FineTuneAppServiceTest {
         fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         featuresProperties = mock(FeaturesProperties.class);
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
+        modelService = mock(ModelService.class);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
                 jobCreator,
@@ -106,7 +111,7 @@ class FineTuneAppServiceTest {
                 userJobConverter,
                 mock(EventService.class),
                 mock(JobConverter.class),
-                mock(ModelService.class),
+                modelService,
                 mock(DatasetService.class)
         );
     }
@@ -125,9 +130,11 @@ class FineTuneAppServiceTest {
         var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
         request.setEvalDatasetVersionIds(List.of("1"));
+        request.setModelVersionId("1");
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
+        when(modelService.findModelByVersionId(anyList())).thenReturn(List.of(ModelVo.empty()));
         fineTuneAppService.createFineTune("1", 1L, request);
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
