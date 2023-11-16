@@ -84,10 +84,10 @@ public class SystemSettingService implements CommandLineRunner {
                 systemSetting.setPypiSetting(Pypi.empty());
             }
             if (null == systemSetting.getImageBuild()) {
-                systemSetting.setImageBuild(RunTimeProperties.RunConfig.empty());
+                systemSetting.setImageBuild(runTimeProperties.getImageBuild());
             }
             if (null == systemSetting.getDatasetBuild()) {
-                systemSetting.setDatasetBuild(RunTimeProperties.RunConfig.empty());
+                systemSetting.setDatasetBuild(runTimeProperties.getDatasetBuild());
             }
             if (null == systemSetting.getDockerSetting()) {
                 systemSetting.setDockerSetting(DockerSetting.empty());
@@ -147,6 +147,12 @@ public class SystemSettingService implements CommandLineRunner {
                 if (CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
                     systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
                 }
+                if (null == systemSetting.getImageBuild()) {
+                    systemSetting.setImageBuild(runTimeProperties.getImageBuild());
+                }
+                if (null == systemSetting.getDatasetBuild()) {
+                    systemSetting.setDatasetBuild(runTimeProperties.getDatasetBuild());
+                }
                 listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
                 log.error("corrupted system setting yaml {}", setting.getContent());
@@ -157,6 +163,8 @@ public class SystemSettingService implements CommandLineRunner {
             systemSetting.setPypiSetting(runTimeProperties.getPypi());
             systemSetting.setCondaSetting(runTimeProperties.getCondarc());
             systemSetting.setDockerSetting(dockerSetting);
+            systemSetting.setImageBuild(runTimeProperties.getImageBuild());
+            systemSetting.setDatasetBuild(runTimeProperties.getDatasetBuild());
             systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
         }
 

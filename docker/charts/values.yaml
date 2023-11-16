@@ -83,6 +83,9 @@ controller:
   auth:
     username: starwhale
     password: abcd1234
+  setting:
+    dsBuildCliVersion: ""
+    dsBuildPythonVersion: "3.10"
   containerPort: 8082
   managementPort: 9082
   ingress:

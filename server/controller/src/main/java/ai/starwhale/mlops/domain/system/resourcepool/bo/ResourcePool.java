@@ -59,6 +59,7 @@ public class ResourcePool {
                 .nodeSelector(Map.of())
                 .resources(List.of(
                         new Resource(ResourceOverwriteSpec.RESOURCE_CPU),
+                        new Resource(ResourceOverwriteSpec.RESOURCE_GPU),
                         new Resource(ResourceOverwriteSpec.RESOURCE_MEMORY)
                 ))
                 .build();
