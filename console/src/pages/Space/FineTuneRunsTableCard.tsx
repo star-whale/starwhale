@@ -11,7 +11,7 @@ function FineTuneCard({ ft, onClick, viewId }) {
 
     return (
         <div
-            className='flex px-10px py-16px border-1 rounded-sm h-110px gap-10px lh-none overflow-hidden'
+            className='flex px-10px py-16px border-1 rounded-sm h-110px gap-10px lh-none overflow-hidden flex-shrink-0'
             onClick={onClick}
             role='button'
             tabIndex={0}
@@ -49,7 +49,7 @@ export default function FineTuneRunsTableCard({
     viewId?: any
 }) {
     return (
-        <div className='ft-table-card content-full gap-10px'>
+        <div className='ft-table-card content-full-scroll gap-10px pr-5px'>
             {data?.list?.map((ft) => {
                 return <FineTuneCard key={ft.id} ft={ft} onClick={() => onView?.(ft.id)} viewId={viewId} />
             })}

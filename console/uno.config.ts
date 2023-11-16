@@ -1,4 +1,5 @@
 import { defineConfig, presetAttributify, presetTypography, presetUno } from 'unocss'
+import { presetScrollbar } from 'unocss-preset-scrollbar'
 
 export default defineConfig({
     // ...UnoCSS options
@@ -22,6 +23,7 @@ export default defineConfig({
     presets: [
         //presetAttributify(),
         presetUno(),
+        presetScrollbar(),
         presetTypography({
             cssExtend: {},
         }),
@@ -35,7 +37,7 @@ export default defineConfig({
             'text-16 inline-block cursor-pointer select-none opacity-75 transition duration-200 ease-in-out hover:opacity-100 hover:text-primary !outline-none',
         ],
         ['content-full', 'flex flex-col overflow-hidden min-w-0 w-full flex-1'],
-        ['content-full-scroll', 'flex flex-col overflow-scroll min-w-0 flex-1'],
+        ['content-full-scroll', 'flex flex-col overflow-scroll min-w-0 flex-1 '],
     ],
     rules: [
         ['card-shadow', { 'box-shadow': '0 2px 8px 0 rgba(0,0,0,0.20); ' }],

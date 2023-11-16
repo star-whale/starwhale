@@ -143,11 +143,7 @@ export default function FineTuneListCard() {
     }, [expandFineTuneId])
 
     return (
-        <div
-            className={`grid gap-20px content-full overflow-visible ${
-                isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'
-            }`}
-        >
+        <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
             <FineTuneRunsListCard
                 data={info.data}
                 isExpand={isExpand}
