@@ -12,8 +12,7 @@ export interface IFineTuneLayoutProps {
 }
 
 export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
-    const { projectId, fineTuneId, spaceId } = useParams<{
-        fineTuneId: string
+    const { projectId, spaceId } = useParams<{
         projectId: string
         spaceId: any
     }>()
@@ -41,11 +40,11 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                 path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-runs`,
                 pattern: '/\\/fine-tune-runs\\/?',
             },
-            {
-                title: t('ft.online_eval'),
-                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
-                pattern: '/\\/fine-tune-evals\\/?',
-            },
+            // {
+            //     title: t('ft.online_eval'),
+            //     path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
+            //     pattern: '/\\/fine-tune-evals\\/?',
+            // },
         ]
         return items
     }, [projectId, spaceId, t])

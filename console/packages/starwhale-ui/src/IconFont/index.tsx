@@ -145,7 +145,7 @@ export type IconTypesT =
     | 'top2'
     | 'txt'
     | 'Detail'
-    | 'finetuing'
+    | 'finetuning'
     | 'release'
 
 interface IIconFontProps {

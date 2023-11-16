@@ -132,9 +132,15 @@ function useFineTuneColumns() {
             title: t('ft.job.output_model_name'),
             key: 'targetModelName',
             mapDataToValue: (data: DataT) => data.targetModel?.name,
+            renderCell: ({ value: alias, data }) => (
+                <>
+                    {data?.job?.targetModel?.version.draft ? 'draft' : 'released'}
+                    <Alias alias={alias} />
+                </>
+            ),
         }),
         AliasColumn({
-            title: t('ft.job.output_draft_model_version_alias'),
+            title: t('ft.job.output_model_version_alias'),
             key: 'targetModelVersionAlias',
             mapDataToValue: (data: DataT) => data.targetModel?.version.alias,
         }),
@@ -163,7 +169,7 @@ function useFineTuneColumns() {
         const { renderCell: RenderCell, mapDataToValue } = columnMap[key] ?? {}
         if (!RenderCell || !mapDataToValue) return null
         // @ts-ignore
-        return <RenderCell value={mapDataToValue(row)} />
+        return <RenderCell value={mapDataToValue(row)} data={row} />
     }
 
     return { columns, columnMap, renderCell }
