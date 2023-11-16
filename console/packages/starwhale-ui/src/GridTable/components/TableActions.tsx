@@ -120,7 +120,7 @@ function TableActions({ selectedRowIndex = -1, isFocus, focusRect, rowRect, acti
                 : []),
             ...noneQuickActions.map(renderer),
         ]
-    }, [isFocus])
+    }, [actions, isFocus])
 
     const [$quickActions, $quickMoreActions] = useCreation(() => {
         return [
