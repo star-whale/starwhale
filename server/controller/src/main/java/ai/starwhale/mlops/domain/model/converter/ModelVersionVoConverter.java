@@ -60,6 +60,7 @@ public class ModelVersionVoConverter {
                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                     .size(entity.getStorageSize())
                     .shared(entity.getShared())
+                    .draft(entity.getDraft())
                     .build();
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);

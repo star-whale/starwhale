@@ -775,6 +775,7 @@ class StandaloneModelTestCase(TestCase):
                 alias="v2",
                 created_time=5,
                 shared=False,
+                draft=False,
             ),
         )
         mock_list.return_value = ([model_foo, model_foo], {})
@@ -1200,6 +1201,7 @@ class CloudModelTest(TestCase):
                         "createdTime": 1697042331000,
                         "owner": None,
                         "shared": True,
+                        "draft": False,
                         "stepSpecs": [
                             {
                                 "name": "mnist.evaluator:MNISTInference.predict",
@@ -1247,6 +1249,7 @@ class CloudModelTest(TestCase):
                     "versionTag": "t1",
                     "createdTime": 1697042331000,
                     "shared": 1,
+                    "draft": False,
                     "id": "1",
                 }
             },
