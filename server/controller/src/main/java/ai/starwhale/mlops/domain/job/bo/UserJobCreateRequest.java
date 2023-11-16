@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.bo;
 
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.DevWay;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -34,6 +35,9 @@ public class UserJobCreateRequest extends JobCreateRequest {
     Long runtimeVersionId;
 
     List<Long> datasetVersionIds;
+
+    BizType bizType;
+    String bizId;
 
     boolean devMode;
     DevWay devWay;

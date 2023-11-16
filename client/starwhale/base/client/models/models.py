@@ -202,6 +202,10 @@ class RevertModelVersionRequest(SwBaseModel):
     version_url: str = Field(..., alias='versionUrl')
 
 
+class BizType(Enum):
+    fine_tune = 'FINE_TUNE'
+
+
 class Type1(Enum):
     evaluation = 'EVALUATION'
     train = 'TRAIN'
@@ -216,8 +220,11 @@ class DevWay(Enum):
 
 class JobRequest(SwBaseModel):
     model_version_id: Optional[str] = Field(None, alias='modelVersionId')
-    dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
     runtime_version_id: Optional[str] = Field(None, alias='runtimeVersionId')
+    dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
+    eval_dataset_version_ids: Optional[List[str]] = Field(
+        None, alias='evalDatasetVersionIds'
+    )
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
     dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
@@ -226,6 +233,8 @@ class JobRequest(SwBaseModel):
     resource_pool: str = Field(..., alias='resourcePool')
     handler: Optional[str] = None
     step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
+    biz_type: Optional[BizType] = Field(None, alias='bizType')
+    biz_id: Optional[str] = Field(None, alias='bizId')
     type: Optional[Type1] = None
     dev_mode: Optional[bool] = Field(None, alias='devMode')
     dev_password: Optional[str] = Field(None, alias='devPassword')
@@ -360,35 +369,6 @@ class ResponseMessageMapObjectObject(SwBaseModel):
     code: str
     message: str
     data: Dict[str, Dict[str, Any]]
-
-
-class Type3(Enum):
-    evaluation = 'EVALUATION'
-    train = 'TRAIN'
-    fine_tune = 'FINE_TUNE'
-    serving = 'SERVING'
-    built_in = 'BUILT_IN'
-
-
-class FineTuneCreateRequest(SwBaseModel):
-    model_version_id: Optional[str] = Field(None, alias='modelVersionId')
-    dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
-    runtime_version_id: Optional[str] = Field(None, alias='runtimeVersionId')
-    time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
-    model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
-    dataset_version_urls: Optional[str] = Field(None, alias='datasetVersionUrls')
-    runtime_version_url: Optional[str] = Field(None, alias='runtimeVersionUrl')
-    comment: Optional[str] = None
-    resource_pool: str = Field(..., alias='resourcePool')
-    handler: Optional[str] = None
-    step_spec_over_writes: Optional[str] = Field(None, alias='stepSpecOverWrites')
-    type: Optional[Type3] = None
-    dev_mode: Optional[bool] = Field(None, alias='devMode')
-    dev_password: Optional[str] = Field(None, alias='devPassword')
-    dev_way: Optional[DevWay] = Field(None, alias='devWay')
-    eval_dataset_version_ids: Optional[List[int]] = Field(
-        None, alias='evalDatasetVersionIds'
-    )
 
 
 class RecordValueDesc(SwBaseModel):
@@ -553,7 +533,7 @@ class Flag(Enum):
     unchanged = 'unchanged'
 
 
-class Type4(Enum):
+class Type3(Enum):
     directory = 'directory'
     file = 'file'
 
@@ -563,7 +543,7 @@ class FileNode(SwBaseModel):
     signature: Optional[str] = None
     flag: Optional[Flag] = None
     mime: Optional[str] = None
-    type: Optional[Type4] = None
+    type: Optional[Type3] = None
     desc: Optional[str] = None
     size: Optional[str] = None
 
@@ -922,13 +902,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type5(Enum):
+class Type4(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type5
+    type: Type4
     name: str
     link: str
 
@@ -1193,7 +1173,7 @@ class Status2(Enum):
     unknown = 'UNKNOWN'
 
 
-class Type6(Enum):
+class Type5(Enum):
     image = 'IMAGE'
     video = 'VIDEO'
     audio = 'AUDIO'
@@ -1208,7 +1188,7 @@ class BuildRecordVo(SwBaseModel):
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
     status: Status2
-    type: Type6
+    type: Type5
     create_time: int = Field(..., alias='createTime')
 
 

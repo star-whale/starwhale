@@ -118,6 +118,10 @@ spec:
               value: {{ .Values.controller.job.cacheDirHostPath }}/job
             - name: SW_INSTANCE_URI
               value: "http://controller:{{ .Values.controller.containerPort }}"
+            - name: SW_DATASET_BUILD_CLI_VERSION
+              value: "{{ .Values.image.server.tag | default .Values.controller.setting.dsBuildCliVersion }}"
+            - name: SW_DATASET_BUILD_PYTHON_VERSION
+              value: "{{ .Values.controller.setting.dsBuildPythonVersion }}"
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
             {{- if .Values.minio.ingress }}

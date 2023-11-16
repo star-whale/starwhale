@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,11 +26,13 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.ft.FineTuneCreateRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
@@ -48,7 +51,6 @@ import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -108,6 +110,7 @@ class FineTuneAppServiceTest {
                 datasetDao,
                 fineTuneSpaceMapper,
                 userJobConverter,
+                mock(EventService.class),
                 jobConverter,
                 mock(ModelService.class),
                 mock(DatasetService.class)
@@ -125,13 +128,13 @@ class FineTuneAppServiceTest {
         }).when(fineTuneMapper).add(any());
         when(jobCreator.createJob(any())).thenReturn(Job.builder().id(22L).build());
 
-        FineTuneCreateRequest request = new FineTuneCreateRequest();
+        var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
-        request.setEvalDatasetVersionIds(List.of(1L));
-        when(datasetDao.getDatasetVersion(anyLong())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
+        request.setEvalDatasetVersionIds(List.of("1"));
+        when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        fineTuneAppService.createFineTune(1L, Project.builder().id(1L).build(), request, User.builder().build());
+        fineTuneAppService.createFineTune("1", 1L, request);
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
 
@@ -225,10 +228,9 @@ class FineTuneAppServiceTest {
         when(featuresProperties.isFineTuneEnabled()).thenReturn(false);
         Assertions.assertThrows(StarwhaleApiException.class,
                 () -> fineTuneAppService.createFineTune(
+                        "1",
                         1L,
-                        Project.builder().build(),
-                        new FineTuneCreateRequest(),
-                        User.builder().build()
+                        new JobRequest()
                 )
         );
 

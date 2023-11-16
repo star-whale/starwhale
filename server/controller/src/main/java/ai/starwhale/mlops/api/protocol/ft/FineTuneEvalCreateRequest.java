@@ -18,12 +18,13 @@ package ai.starwhale.mlops.api.protocol.ft;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class FineTuneCreateRequest extends JobRequest {
+@EqualsAndHashCode(callSuper = true)
+public class FineTuneEvalCreateRequest extends JobRequest {
 
-    @JsonProperty("evalDatasetVersionIds")
-    private List<Long> evalDatasetVersionIds;
+    @JsonProperty("spaceId")
+    private Long spaceId;
 }

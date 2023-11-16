@@ -27,7 +27,6 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.time.Instant;
@@ -44,18 +43,19 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class JobDao implements BundleAccessor, RecoverAccessor {
 
-    private final JobRepo jobRepo;
+    private final List<JobUpdateWatcher> updateWatchers;
     private final JobMapper jobMapper;
     private final JobDatasetVersionMapper datasetVersionMapper;
     private final IdConverter idConvertor;
     private final JobBoConverter jobBoConverter;
 
-    public JobDao(JobRepo jobRepo,
+    public JobDao(
+            List<JobUpdateWatcher> updateWatchers,
             JobMapper jobMapper,
             JobDatasetVersionMapper datasetVersionMapper,
             IdConverter idConvertor,
             JobBoConverter jobBoConverter) {
-        this.jobRepo = jobRepo;
+        this.updateWatchers = updateWatchers;
         this.jobMapper = jobMapper;
         this.datasetVersionMapper = datasetVersionMapper;
         this.idConvertor = idConvertor;
@@ -89,12 +89,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                     datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
                 }
             }
-            // TODO: only sync evaluation repo
-            if (jobFlattenEntity.getType() == JobType.EVALUATION) {
-                return jobRepo.addJob(jobFlattenEntity) > 0;
-            }
+            updateWatchers.stream()
+                    .filter(watcher -> watcher.match(entity.getBizType(), entity.getType()))
+                    .forEach(watcher -> watcher.onCreate(jobFlattenEntity));
             return true;
-
         }
         return false;
     }
@@ -139,19 +137,22 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         return jobBoConverter.fromEntity(jobMapper.findJobById(jobId));
     }
 
-    public void updateJobStatus(Long jobId, JobStatus jobStatus) {
-        jobMapper.updateJobStatus(List.of(jobId), jobStatus);
-        jobRepo.updateJobStatus(jobId, jobStatus);
+    public void updateJobStatus(Job job, JobStatus jobStatus) {
+        jobMapper.updateJobStatus(List.of(job.getId()), jobStatus);
+        updateWatchers.stream()
+                .filter(watcher -> watcher.match(job.getBizType(), job.getType()))
+                .forEach(watcher -> watcher.onUpdateStatus(job, jobStatus));
     }
 
-    public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
-        jobMapper.updateJobFinishedTime(List.of(jobId), finishedTime, duration);
-
-        jobRepo.updateJobFinishedTime(jobId, finishedTime, duration);
+    public void updateJobFinishedTime(Job job, Date finishedTime, Long duration) {
+        jobMapper.updateJobFinishedTime(List.of(job.getId()), finishedTime, duration);
+        updateWatchers.stream()
+                .filter(watcher -> watcher.match(job.getBizType(), job.getType()))
+                .forEach(watcher -> watcher.onUpdateFinishTime(job, finishedTime, duration));
     }
 
     public boolean updateJobComment(Long jobId, String comment) {
-        return jobMapper.updateJobComment(jobId, comment) > 0 && jobRepo.updateJobComment(jobId, comment) > 0;
+        return jobMapper.updateJobComment(jobId, comment) > 0;
     }
 
     public boolean updateJobComment(String jobUrl, String comment) {
@@ -163,15 +164,15 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     }
 
     public boolean updateJobCommentByUuid(String uuid, String comment) {
-        return jobMapper.updateJobCommentByUuid(uuid, comment) > 0 && jobRepo.updateJobCommentByUuid(uuid, comment) > 0;
+        return jobMapper.updateJobCommentByUuid(uuid, comment) > 0;
     }
 
     public boolean removeJob(Long jobId) {
-        return jobMapper.removeJob(jobId) > 0 && jobRepo.removeJob(jobId) > 0;
+        return jobMapper.removeJob(jobId) > 0;
     }
 
     public boolean removeJobByUuid(String uuid) {
-        return jobMapper.removeJobByUuid(uuid) > 0 && jobRepo.removeJobByUuid(uuid) > 0;
+        return jobMapper.removeJobByUuid(uuid) > 0;
     }
 
     public Job findJob(String jobUrl) {
@@ -218,7 +219,7 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
 
     @Override
     public Boolean recover(Long id) {
-        return jobMapper.recoverJob(id) > 0 && jobRepo.recoverJob(id) > 0;
+        return jobMapper.recoverJob(id) > 0;
     }
 
     @Override

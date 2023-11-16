@@ -28,11 +28,11 @@ sw:
   runtime:
     image-build:
       resource-pool: ${SW_IMAGE_BUILD_RESOURCE_POOL:default}
-      image: ${SW_IMAGE_BUILD_IMAGE:gcr.io/kaniko-project/executor:latest}
+      image: ${SW_IMAGE_BUILD_IMAGE:docker-registry.starwhale.cn/star-whale/runtime-dockerizing:latest}
     dataset-build:
       resource-pool: ${SW_DATASET_BUILD_RESOURCE_POOL:default}
       image: ${SW_DATASET_BUILD_IMAGE:docker-registry.starwhale.cn/star-whale/dataset_builder:latest}
-      client-version: ${SW_DATASET_BUILD_CLI_VERSION:0.5.6}
+      client-version: ${SW_DATASET_BUILD_CLI_VERSION:}
       python-version: ${SW_DATASET_BUILD_PYTHON_VERSION:3.10}
     pypi:
       index-url: ${SW_PYPI_INDEX_URL:}
