@@ -270,8 +270,16 @@ public class FineTuneAppService {
 
     }
 
+    /**
+     * release fintuned model to either existingModelId or nonExistingModelName
+     *
+     * @param ftId release fintuned model to
+     * @param existingModelId either existingModelId
+     * @param nonExistingModelName or nonExistingModelName
+     * @param user by user
+     */
     @Transactional
-    public void releaseFt(Long ftId, String modelName, User user) {
+    public void releaseFt(Long ftId, Long existingModelId, String nonExistingModelName, User user) {
         FineTuneEntity ft = fineTuneMapper.findById(ftId);
         if (null == ft) {
             throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
@@ -288,33 +296,36 @@ public class FineTuneAppService {
             );
         }
         Long modelId;
-        if (!StringUtils.hasText(modelName) || modelVersion.getModelName().equals(modelName)) {
-            modelId = modelVersion.getModelId();
-        } else {
-            //release to a new model
+        if (null != existingModelId) {
+            if (!existingModelId.equals(modelVersion.getModelId())) {
+                ModelEntity model = modelDao.getModel(existingModelId);
+                if (null == model) {
+                    throw new SwNotFoundException(
+                            ResourceType.BUNDLE,
+                            "modelId not found: "
+                    );
+                }
+            }
+            modelId = existingModelId;
+        } else if (StringUtils.hasText(nonExistingModelName)) {
             FineTuneSpaceEntity ftSpace = fineTuneSpaceMapper.findById(ft.getSpaceId());
             Long projectId = ftSpace.getProjectId();
-            BundleEntity modelEntity = this.modelDao.findByNameForUpdate(modelName, projectId);
-            if (null == modelEntity) {
-                //create model
-                ModelEntity model = ModelEntity.builder()
-                        .ownerId(user.getId())
-                        .projectId(projectId)
-                        .modelName(modelName)
-                        .build();
-                modelDao.add(model);
-                modelId = model.getId();
-            } else {
-                modelId = modelEntity.getId();
+            BundleEntity modelEntity = this.modelDao.findByNameForUpdate(nonExistingModelName, projectId);
+            if (null != modelEntity) {
+                throw new SwValidationException(ValidSubject.MODEL, "model name existed");
             }
+            ModelEntity model = ModelEntity.builder()
+                    .ownerId(user.getId())
+                    .projectId(projectId)
+                    .modelName(nonExistingModelName)
+                    .build();
+            modelDao.add(model);
+            modelId = model.getId();
+        } else {
+            throw new SwValidationException(ValidSubject.MODEL, "nonExistingModelName xor existingModelId is required");
         }
         // update model version model id to new model and set draft to false
         modelDao.releaseModelVersion(targetModelVersionId, modelId);
-
-    }
-
-    public void attachTargetModel(Long id, ModelVersionEntity modelVersionEntity) {
-        fineTuneMapper.updateTargetModel(id, modelVersionEntity.getId());
     }
 
     private void checkFeatureEnabled() throws StarwhaleApiException {
