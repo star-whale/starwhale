@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
@@ -85,6 +86,8 @@ public class JobServiceForWeb {
 
     private final TrashService trashService;
 
+    private final EvaluationRepo evaluationRepo;
+
     private final JobCreator jobCreator;
 
     public JobServiceForWeb(
@@ -99,7 +102,8 @@ public class JobServiceForWeb {
             TrashService trashService,
             SwTaskScheduler swTaskScheduler,
             JobCreator jobCreator,
-            EventService eventService
+            EventService eventService,
+            EvaluationRepo evaluationRepo
     ) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
@@ -113,6 +117,7 @@ public class JobServiceForWeb {
         this.swTaskScheduler = swTaskScheduler;
         this.jobCreator = jobCreator;
         this.eventService = eventService;
+        this.evaluationRepo = evaluationRepo;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -160,9 +165,9 @@ public class JobServiceForWeb {
 
     @Transactional
     public Long createJob(UserJobCreateRequest request) {
-        var jobId = jobCreator.createJob(request).getId();
-        eventService.addInternalJobInfoEvent(jobId, "Job created");
-        return jobId;
+        var job = jobCreator.createJob(request);
+        eventService.addInternalJobInfoEvent(job.getId(), "Job created");
+        return job.getId();
     }
 
     @Transactional

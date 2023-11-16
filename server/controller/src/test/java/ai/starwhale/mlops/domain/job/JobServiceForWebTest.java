@@ -45,6 +45,7 @@ import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -127,8 +128,8 @@ public class JobServiceForWebTest {
                 trashService,
                 swTaskScheduler,
                 mock(JobCreator.class),
-                eventService
-        );
+                eventService,
+                mock(EvaluationRepo.class));
     }
 
     @Test

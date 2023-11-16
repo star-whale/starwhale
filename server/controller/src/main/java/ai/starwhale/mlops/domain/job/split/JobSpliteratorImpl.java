@@ -172,7 +172,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
         }
         // update job status
         job.setStatus(JobStatus.READY);
-        jobDao.updateJobStatus(job.getId(), JobStatus.READY);
+        jobDao.updateJobStatus(job, JobStatus.READY);
         return stepEntities;
     }
 }

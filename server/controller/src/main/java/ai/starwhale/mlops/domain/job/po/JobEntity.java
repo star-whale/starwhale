@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -73,6 +74,10 @@ public class JobEntity extends BaseEntity implements BundleEntity {
     private String comment;
 
     private Integer isDeleted;
+
+    private BizType bizType;
+
+    private String bizId;
 
     private JobType type;
 

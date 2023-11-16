@@ -136,6 +136,8 @@ public class UserJobConverter {
                 .resourcePool(request.getResourcePool())
                 .handler(request.getHandler())
                 .stepSpecOverWrites(request.getStepSpecOverWrites())
+                .bizType(request.getBizType())
+                .bizId(request.getBizId())
                 .jobType(request.getType())
                 .devMode(request.isDevMode())
                 .devWay(request.getDevWay())
@@ -189,6 +191,8 @@ public class UserJobConverter {
         var devMode = request.isDevMode();
 
         return JobFlattenEntity.builder()
+                .bizType(request.getBizType())
+                .bizId(request.getBizId())
                 .owner(request.getUser())
                 .runtimeUri(String.format(FORMATTER_URI_ARTIFACT, runtime.getProjectId(), "runtime", runtime.getId(),
                         runtimeVersion.getId()))

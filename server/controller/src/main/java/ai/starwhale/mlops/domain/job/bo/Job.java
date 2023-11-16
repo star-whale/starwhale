@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -77,6 +78,9 @@ public class Job extends TimeConcern {
      * the status of a job
      */
     JobStatus status;
+
+    BizType bizType;
+    String bizId;
 
     JobType type;
 
