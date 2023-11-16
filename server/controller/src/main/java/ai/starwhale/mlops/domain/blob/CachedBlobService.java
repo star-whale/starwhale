@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.baidu.StorageAccessServiceBos;
+import ai.starwhale.mlops.storage.ksyun.StorageAccessServiceKsyun;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
@@ -52,6 +53,9 @@ public class CachedBlobService implements BlobService {
                     break;
                 case "baidu":
                     storageAccessService = new StorageAccessServiceBos(cacheConfig);
+                    break;
+                case "ksyun":
+                    storageAccessService = new StorageAccessServiceKsyun(cacheConfig);
                     break;
                 case "memory":
                     // for test only
