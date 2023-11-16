@@ -21,11 +21,13 @@ import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.autofit.aliyun.CompatibleStorageAccessServiceBuilderAliyun;
 import ai.starwhale.mlops.storage.autofit.baidu.CompatibleStorageAccessServiceBuilderBos;
 import ai.starwhale.mlops.storage.autofit.fs.CompatibleStorageAccessServiceBuilderFs;
+import ai.starwhale.mlops.storage.autofit.ksyun.CompatibleStorageAccessServiceBuilderKsyun;
 import ai.starwhale.mlops.storage.autofit.minio.CompatibleStorageAccessServiceBuilderMinio;
 import ai.starwhale.mlops.storage.autofit.qcloud.CompatibleStorageAccessServiceBuilderQcloud;
 import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceBuilderS3;
 import ai.starwhale.mlops.storage.baidu.StorageAccessServiceBos;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
+import ai.starwhale.mlops.storage.ksyun.StorageAccessServiceKsyun;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
@@ -57,6 +59,11 @@ public class StorageAccessConfig {
     @Bean
     public CompatibleStorageAccessServiceBuilderBos compatibleStorageAccessServiceBuilderBos() {
         return new CompatibleStorageAccessServiceBuilderBos();
+    }
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderKsyun compatibleStorageAccessServiceBuilderKsyun() {
+        return new CompatibleStorageAccessServiceBuilderKsyun();
     }
 
     @Bean
@@ -97,6 +104,12 @@ public class StorageAccessConfig {
     @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "baidu")
     public StorageAccessService bos(StorageProperties storageProperties) {
         return new StorageAccessServiceBos(storageProperties.getS3Config());
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "ksyun")
+    public StorageAccessService ksyun(StorageProperties storageProperties) {
+        return new StorageAccessServiceKsyun(storageProperties.getS3Config());
     }
 
     @Bean
