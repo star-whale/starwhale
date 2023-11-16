@@ -270,8 +270,8 @@ public class FineTuneAppService {
         return FineTuneVo.builder()
                 .id(fineTuneEntity.getId())
                 .job(jobConverter.convert(job))
-                .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
-                .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
+                .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
+                .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
                 .targetModel(mv)
                 .build();
     }
