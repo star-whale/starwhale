@@ -3,32 +3,27 @@ import React, { useMemo } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { BaseNavTabs } from '@/components/BaseNavTabs'
-import { usePage } from '@/hooks/usePage'
-import { useQueryArgs } from '@/hooks/useQueryArgs'
-import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { useAccess } from '@/api/WithAuth'
 import Button from '@starwhale/ui/Button'
+import { BaseSimpleNavTabs } from '@/components/BaseSimpleNavTabs'
 
 export interface IFineTuneLayoutProps {
     children: React.ReactNode
 }
 
-export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProps) {
+export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     const { projectId, fineTuneId, spaceId } = useParams<{
         fineTuneId: string
         projectId: string
         spaceId: any
     }>()
-    const { query, updateQuery } = useQueryArgs()
-    const [page] = usePage()
     const history = useHistory()
     const [t] = useTranslation()
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('FineTune Spaces'),
+                title: t('fine-tuning'),
                 path: `/projects/${projectId}/spaces`,
             },
             {
@@ -39,27 +34,23 @@ export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProp
         return items
     }, [projectId, spaceId, t])
 
-    const pageParams = useMemo(() => {
-        return { ...page, ...query }
-    }, [page, query])
-
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('Runs'),
-                path: `/projects/${projectId}/spaces/${spaceId}/fine-tunes`,
-                pattern: '/\\/meta\\/?',
+                title: t('ft.runs'),
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-runs`,
+                pattern: '/\\/fine-tune-runs\\/?',
             },
             {
-                title: t('online eval'),
-                path: `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${fineTuneId}/online-evals`,
-                pattern: '/\\/files\\/?',
+                title: t('ft.online_eval'),
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
+                pattern: '/\\/fine-tune-evals\\/?',
             },
         ]
         return items
-    }, [projectId, fineTuneId, t, pageParams])
+    }, [projectId, spaceId, t])
 
-    const isAccessCreate = useAccess('Create')
+    const isAccessCreate = useAccess('ft.run.create')
 
     const extra = (
         <Button
@@ -72,16 +63,13 @@ export default function FineTuneOverviewLayout({ children }: IFineTuneLayoutProp
         </Button>
     )
 
-    const { activeItemId } = useRouterActivePath(navItems)
-
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
-            <div className='content-full h-full'>
-                <div style={{ marginBottom: '20px' }}>
-                    <BaseNavTabs navItems={navItems} />
-                </div>
-                <div className='content-full h-full'>{children}</div>
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={isAccessCreate && extra}>
+            <div className='absolute left-1/2 translate-x-[-50%]'>
+                <BaseSimpleNavTabs navItems={navItems} />
             </div>
+
+            <div className='content-full h-full'>{children}</div>
         </BaseSubLayout>
     )
 }

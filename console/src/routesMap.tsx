@@ -55,12 +55,13 @@ import JobServings from '@/pages/Job/JobServings'
 import ModelVersionServings from '@/pages/Model/ModelVersionServings'
 import FineTuneSpaceListCard from './pages/Space/FineTuneSpaceListCard'
 import FineTuneListCard from './pages/Space/FineTuneListCard'
-import FineTuneOverviewLayout from './pages/Space/FineTuneOverviewLayout'
+import FineTuneOverviewLayout from './pages/Space/FineTuneLayout'
 import FineTuneNewCard from './pages/Project/FineTuneNewCard'
 import FineTuneOverview from './pages/Space/FineTuneOverview'
 import FineTuneRunOverviewLayout from './pages/Space/FineTuneRunOverviewLayout'
 import JobTaskListCard from './pages/Job/JobTaskListCard'
 import FineTuneRunsTaskListCard from './pages/Space/FineTuneRunsTaskListCard'
+import FineTuneLayout from './pages/Space/FineTuneLayout'
 
 const unauthed = {
     component: LoginLayout,
@@ -303,15 +304,19 @@ const authed = {
 
         {
             path: '/projects/:projectId/spaces/:spaceId/:path?',
-            component: FineTuneOverviewLayout,
+            component: FineTuneLayout,
             routes: [
                 {
-                    path: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?',
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',
+                    component: FineTuneListCard,
+                },
+
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-evals',
                     component: FineTuneListCard,
                 },
                 {
-                    from: '/projects/:projectId/spaces/:spaceId/:path*',
-                    to: '/projects/:projectId/spaces/:spaceId/fine-tunes',
+                    to: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',
                     component: Redirect,
                 },
             ],

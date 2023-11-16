@@ -826,6 +826,14 @@ const ft = {
         en: 'Edit',
         zh: '编辑',
     },
+    'ft.runs': {
+        en: 'Runs',
+        zh: 'Runs',
+    },
+    'ft.online_eval': {
+        en: 'Online Evaluation',
+        zh: '在线评测',
+    },
     'ft.id': {
         en: 'Runs ID',
         zh: 'Runs ID',

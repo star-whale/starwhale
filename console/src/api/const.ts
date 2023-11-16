@@ -33,6 +33,7 @@ export const Privileges = {
     'ft.space.create': true,
     'ft.space.update': true,
     'ft.space.delete': true,
+    'ft.run.create': true,
     // menu
     'project.menu.trash': true,
     // global
