@@ -66,6 +66,7 @@
             "createdTime": 1685593961000,
             "owner": null,
             "shared": 0,
+            "draft": false,
             "builtInRuntime": null
           }
         },

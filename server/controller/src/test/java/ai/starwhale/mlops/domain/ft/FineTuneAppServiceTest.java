@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -37,6 +38,7 @@ import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
+import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
@@ -82,6 +84,8 @@ class FineTuneAppServiceTest {
     FeaturesProperties featuresProperties;
 
     ModelService modelService;
+    User creator = User.builder().build();
+    JobConverter jobConverter;
 
     @BeforeEach
     public void setup() {
@@ -97,6 +101,7 @@ class FineTuneAppServiceTest {
         featuresProperties = mock(FeaturesProperties.class);
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
         modelService = mock(ModelService.class);
+        jobConverter = mock(JobConverter.class);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
                 jobCreator,
@@ -110,7 +115,7 @@ class FineTuneAppServiceTest {
                 fineTuneSpaceMapper,
                 userJobConverter,
                 mock(EventService.class),
-                mock(JobConverter.class),
+                jobConverter,
                 modelService,
                 mock(DatasetService.class)
         );
@@ -149,39 +154,68 @@ class FineTuneAppServiceTest {
     }
 
     @Test
+    void ftInfo() {
+        when(fineTuneMapper.findById(anyLong())).thenReturn(FineTuneEntity.builder().jobId(1L).build());
+        when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
+        JobVo jobVo = JobVo.builder().build();
+        when(jobConverter.convert(any())).thenReturn(jobVo);
+        FineTuneVo fineTuneVo = fineTuneAppService.ftInfo(1L);
+        Assertions.assertEquals(jobVo, fineTuneVo.getJob());
+    }
+
+    @Test
     void evalFt() {
     }
 
     @Test
     void releaseFt() {
-        User creator = User.builder().build();
-        when(fineTuneMapper.findById(1L)).thenReturn(null);
-        Assertions.assertThrows(SwNotFoundException.class, () -> {
-            fineTuneAppService.releaseFt(1L, "", null);
-        });
-
-        when(fineTuneMapper.findById(2L)).thenReturn(
+        when(fineTuneMapper.findById(5L)).thenReturn(
                 FineTuneEntity.builder()
-                        .targetModelVersionId(null)
+                        .targetModelVersionId(6L)
+                        .spaceId(1L)
                         .build()
         );
-        Assertions.assertThrows(SwNotFoundException.class, () -> {
-            fineTuneAppService.releaseFt(2L, "", null);
-        });
-
-        when(fineTuneMapper.findById(3L)).thenReturn(
-                FineTuneEntity.builder()
-                        .targetModelVersionId(4L)
-                        .build()
-        );
-        when(modelDao.getModelVersion("4")).thenReturn(ModelVersionEntity
+        when(modelDao.findByNameForUpdate(any(), anyLong())).thenReturn(ModelEntity.builder().id(124L).build());
+        when(modelDao.getModelVersion("6")).thenReturn(ModelVersionEntity
                                                                .builder()
-                                                               .draft(false)
+                                                               .modelId(10L)
+                                                               .modelName("aac")
+                                                               .draft(true)
                                                                .build());
+        when(fineTuneSpaceMapper.findById(anyLong())).thenReturn(FineTuneSpaceEntity.builder().projectId(1L).build());
         Assertions.assertThrows(SwValidationException.class, () -> {
-            fineTuneAppService.releaseFt(3L, "", null);
+            fineTuneAppService.releaseFt(5L, null, "aabc", creator);
         });
+    }
 
+    @Test
+    void releaseAndCreateNew() {
+        when(fineTuneMapper.findById(5L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(6L)
+                        .spaceId(1L)
+                        .build()
+        );
+        when(fineTuneSpaceMapper.findById(anyLong())).thenReturn(FineTuneSpaceEntity.builder().projectId(1L).build());
+        when(modelDao.getModelVersion("6")).thenReturn(ModelVersionEntity
+                                                               .builder()
+                                                               .modelId(10L)
+                                                               .modelName("aac")
+                                                               .draft(true)
+                                                               .build());
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) {
+                Object[] args = invocation.getArguments();
+                ((ModelEntity) args[0]).setId(123L);
+                return null; // void method, so return null
+            }
+        }).when(modelDao).add(any());
+        fineTuneAppService.releaseFt(5L, null, "aab", creator);
+        verify(modelDao).releaseModelVersion(6L, 123L);
+    }
+
+    @Test
+    void releaseSuccessWithBaseModel() {
         when(fineTuneMapper.findById(5L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(6L)
@@ -194,24 +228,44 @@ class FineTuneAppServiceTest {
                                                                .modelName("aac")
                                                                .draft(true)
                                                                .build());
-        fineTuneAppService.releaseFt(5L, null, creator);
+        fineTuneAppService.releaseFt(5L, 10L, null, creator);
         verify(modelDao).releaseModelVersion(6L, 10L);
+    }
 
+    @Test
+    void testTargetVersionReleased() {
+        when(fineTuneMapper.findById(3L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(4L)
+                        .build()
+        );
+        when(modelDao.getModelVersion("4")).thenReturn(ModelVersionEntity
+                                                               .builder()
+                                                               .draft(false)
+                                                               .build());
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            fineTuneAppService.releaseFt(3L, 1L, "", null);
+        });
+    }
 
-        when(fineTuneSpaceMapper.findById(anyLong())).thenReturn(FineTuneSpaceEntity.builder().projectId(1L).build());
-        doAnswer(new Answer() {
-            public Object answer(InvocationOnMock invocation) {
-                Object[] args = invocation.getArguments();
-                ((ModelEntity) args[0]).setId(123L);
-                return null; // void method, so return null
-            }
-        }).when(modelDao).add(any());
-        fineTuneAppService.releaseFt(5L, "aab", creator);
-        verify(modelDao).releaseModelVersion(6L, 123L);
+    @Test
+    void testTargetVersionNull() {
+        when(fineTuneMapper.findById(2L)).thenReturn(
+                FineTuneEntity.builder()
+                        .targetModelVersionId(null)
+                        .build()
+        );
+        Assertions.assertThrows(SwNotFoundException.class, () -> {
+            fineTuneAppService.releaseFt(2L, 1L, "", null);
+        });
+    }
 
-        when(modelDao.findByNameForUpdate(any(), anyLong())).thenReturn(ModelEntity.builder().id(124L).build());
-        fineTuneAppService.releaseFt(5L, "aabc", creator);
-        verify(modelDao).releaseModelVersion(6L, 124L);
+    @Test
+    void testReleaseFtNotFound() {
+        when(fineTuneMapper.findById(1L)).thenReturn(null);
+        Assertions.assertThrows(SwNotFoundException.class, () -> {
+            fineTuneAppService.releaseFt(1L, 1L, "", null);
+        });
     }
 
     @Test

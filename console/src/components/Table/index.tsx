@@ -45,6 +45,11 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     })
 
     const handleRowSelect = useEventCallback(({ rowIndex, event }) => {
+        if (isFocus) {
+            setIsFocus(false)
+            return
+        }
+
         setIsFocus(true)
         setSelectedRowIndex(rowIndex)
         setRect({
@@ -124,7 +129,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                                 overflow: 'hidden',
                                 borderBottomColor: '#EEF1F6',
                                 verticalAlign: 'middle',
-                                backgroundColor: $rowIndex === selectedRowIndex ? '#DEE9FF' : 'none',
+                                backgroundColor: isFocus && $rowIndex === selectedRowIndex ? '#DEE9FF' : 'none',
                             }
                         },
                     },

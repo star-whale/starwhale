@@ -162,6 +162,7 @@ class TestJob(BaseTestCase):
                     alias="v2",
                     created_time=789,
                     shared=False,
+                    draft=False,
                 ),
             ),
             runtime=RuntimeVo(
@@ -286,6 +287,7 @@ class TestJob(BaseTestCase):
                         "createdTime": 1697042331000,
                         "owner": None,
                         "shared": True,
+                        "draft": False,
                         "stepSpecs": [
                             {
                                 "name": "mnist.evaluator:MNISTInference.predict",
@@ -333,6 +335,7 @@ class TestJob(BaseTestCase):
                     "versionTag": "t1",
                     "createdTime": 1697042331000,
                     "shared": 1,
+                    "draft": False,
                     "id": "1",
                 }
             },

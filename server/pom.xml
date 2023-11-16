@@ -37,6 +37,7 @@
         <minio.version>8.4.4</minio.version>
         <tencentoss.version>5.6.153</tencentoss.version>
         <baiduoss.version>0.10.252</baiduoss.version>
+        <ks3.version>1.0.5</ks3.version>
         <test.mybatis.version>2.2.2</test.mybatis.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -219,6 +220,11 @@
                 <groupId>com.baidubce</groupId>
                 <artifactId>bce-java-sdk</artifactId>
                 <version>${baiduoss.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ksyun</groupId>
+                <artifactId>ks3-kss-java-sdk</artifactId>
+                <version>${ks3.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.parquet</groupId>
