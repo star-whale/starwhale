@@ -1301,6 +1301,12 @@ class ResponseMessagePageInfoFineTuneVo(SwBaseModel):
     data: PageInfoFineTuneVo
 
 
+class ResponseMessageFineTuneVo(SwBaseModel):
+    code: str
+    message: str
+    data: FineTuneVo
+
+
 class PanelPluginVo(SwBaseModel):
     id: str
     name: str

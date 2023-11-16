@@ -239,30 +239,31 @@ public class FineTuneAppService {
     public PageInfo<FineTuneVo> list(Long spaceId, Integer pageNum, Integer pageSize) {
         this.checkFeatureEnabled();
         try (var ph = PageHelper.startPage(pageNum, pageSize)) {
-            return PageInfo.of(fineTuneMapper.list(spaceId).stream().map(fineTuneEntity -> {
-                Long jobId = fineTuneEntity.getJobId();
-                JobEntity job = jobMapper.findJobById(jobId);
-                fineTuneEntity.getEvalDatasets();
-                fineTuneEntity.getTrainDatasets();
-                fineTuneEntity.getBaseModelVersionId();
-                ModelVo mv = null;
-                Long targetModelVersionId = fineTuneEntity.getTargetModelVersionId();
-                if (null != targetModelVersionId) {
-                    List<ModelVo> modelVos = modelService.findModelByVersionId(List.of(targetModelVersionId));
-                    if (!CollectionUtils.isEmpty(modelVos)) {
-                        mv = modelVos.get(0);
-                    }
-                }
-
-                return FineTuneVo.builder()
-                        .id(fineTuneEntity.getId())
-                        .job(jobConverter.convert(job))
-                        .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
-                        .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
-                        .targetModel(mv)
-                        .build();
-            }).collect(Collectors.toList()));
+            return PageInfo.of(fineTuneMapper.list(spaceId)
+                                       .stream()
+                                       .map(fineTuneEntity -> buildFineTuneVo(fineTuneEntity))
+                                       .collect(Collectors.toList()));
         }
+    }
+
+    private FineTuneVo buildFineTuneVo(FineTuneEntity fineTuneEntity) {
+        Long jobId = fineTuneEntity.getJobId();
+        JobEntity job = jobMapper.findJobById(jobId);
+        ModelVo mv = null;
+        Long targetModelVersionId = fineTuneEntity.getTargetModelVersionId();
+        if (null != targetModelVersionId) {
+            List<ModelVo> modelVos = modelService.findModelByVersionId(List.of(targetModelVersionId));
+            if (!CollectionUtils.isEmpty(modelVos)) {
+                mv = modelVos.get(0);
+            }
+        }
+        return FineTuneVo.builder()
+                .id(fineTuneEntity.getId())
+                .job(jobConverter.convert(job))
+                .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
+                .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
+                .targetModel(mv)
+                .build();
     }
 
     public void evalFt(List<Long> evalDatasetIds, Long runtimeId, String handerSpec, Map<String, String> envs) {
@@ -323,5 +324,13 @@ public class FineTuneAppService {
                     HttpStatus.BAD_REQUEST
             );
         }
+    }
+
+    public FineTuneVo ftInfo(Long ftId) {
+        FineTuneEntity fineTuneEntity = fineTuneMapper.findById(ftId);
+        if (null == fineTuneEntity) {
+            throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
+        }
+        return buildFineTuneVo(fineTuneEntity);
     }
 }
