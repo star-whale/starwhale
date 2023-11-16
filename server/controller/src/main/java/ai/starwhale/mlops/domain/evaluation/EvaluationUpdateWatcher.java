@@ -46,7 +46,7 @@ public class EvaluationUpdateWatcher implements JobUpdateWatcher {
     @Override
     public void onCreate(JobFlattenEntity job) {
         var res = evaluationRepo.addJob(String.format(TABLE_NAME_FORMAT, job.getProject().getId()), job) > 0;
-        if (res) {
+        if (!res) {
             throw new SwProcessException(ErrorType.DATASTORE, "Sync evaluation job failed");
         }
     }

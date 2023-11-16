@@ -48,7 +48,7 @@ public class FineTuneEvaluationUpdateWatcher implements JobUpdateWatcher {
     public void onCreate(JobFlattenEntity job) {
         var res = evaluationRepo.addJob(
                 String.format(TABLE_NAME_FORMAT, job.getProject().getId(), job.getBizId()), job) > 0;
-        if (res) {
+        if (!res) {
             throw new SwProcessException(ErrorType.DATASTORE, "Sync fine-tune evaluation job failed");
         }
     }
