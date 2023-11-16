@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.domain.job.JobType;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
@@ -34,7 +36,6 @@ public class JobCreateRequest {
 
     String comment;
     String resourcePool;
-    String handler;
-    String stepSpecOverWrites;
+    List<StepSpec> stepSpecOverWrites;
     JobType jobType;
 }

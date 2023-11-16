@@ -38,9 +38,9 @@ import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +52,6 @@ public class JobCreatorTest {
     private StoragePathCoordinator storagePathCoordinator;
     private JobDao jobDao;
     private JobUpdateHelper jobUpdateHelper;
-
-    private SystemSettingService systemSettingService;
-    private JobSpecParser jobSpecParser;
 
     private JobCreator jobCreator;
     private UserJobConverter userJobConverter;
@@ -75,24 +72,20 @@ public class JobCreatorTest {
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
                 .willReturn(2L);
-        systemSettingService = mock(SystemSettingService.class);
         jobUpdateHelper = mock(JobUpdateHelper.class);
         userJobConverter = mock(UserJobConverter.class);
-        jobSpecParser = new JobSpecParser();
         jobCreator = new JobCreator(
                 jobSpliterator,
                 jobLoader,
                 storagePathCoordinator,
                 jobDao,
                 jobUpdateHelper,
-                systemSettingService,
-                jobSpecParser,
                 userJobConverter
         );
     }
 
     @Test
-    public void testCreateJob() {
+    public void testCreateJob() throws JsonProcessingException {
         String fullJobSpec = "mnist.evaluator:MNISTInference.cmp:\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
@@ -164,15 +157,13 @@ public class JobCreatorTest {
                 });
 
         var jobReq = JobCreateRequest.builder()
-                .handler("mnist.evaluator:MNISTInference.cmp")
-                .stepSpecOverWrites(overviewJobSpec)
+                .stepSpecOverWrites(new JobSpecParser().parseAndFlattenStepFromYaml(overviewJobSpec))
                 .jobType(JobType.EVALUATION)
                 .build();
 
         // handler and stepSpec could only have one
         assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 
-        jobReq.setHandler(null);
         jobReq.setStepSpecOverWrites(null);
         assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
 

@@ -20,7 +20,6 @@ import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ON
 
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.ModelServing;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
@@ -41,8 +40,6 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.SwProcessException;
-import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -254,13 +251,6 @@ public class ModelServingService {
             stepSpec.setResources(finalResources);
         });
 
-        String stepSpecOverWrites;
-        try {
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
-        } catch (JsonProcessingException e) {
-            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs", e);
-        }
-
         // TODO refine model serving create request
         // do validation and convert
         var modelVersionId = idConverter.revert(modelVersionUrl);
@@ -272,7 +262,7 @@ public class ModelServingService {
                 .runtimeVersionId(runtimeVersionId)
                 .comment("model online evaluation")
                 .resourcePool(resourcePool.getName())
-                .stepSpecOverWrites(stepSpecOverWrites)
+                .stepSpecOverWrites(stepSpecs)
                 .jobType(JobType.BUILT_IN)
                 .build();
 

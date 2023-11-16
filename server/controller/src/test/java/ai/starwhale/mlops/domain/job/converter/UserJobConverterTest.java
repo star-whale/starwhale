@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -40,6 +41,7 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -59,6 +61,9 @@ class UserJobConverterTest {
     private RuntimeDao runtimeDao;
     private DatasetDao datasetDao;
 
+    private SystemSettingService systemSettingService;
+    private JobSpecParser jobSpecParser;
+
     @BeforeEach
     void setUp() {
         projectService = mock(ProjectService.class);
@@ -67,6 +72,8 @@ class UserJobConverterTest {
         modelDao = mock(ModelDao.class);
         runtimeDao = mock(RuntimeDao.class);
         datasetDao = mock(DatasetDao.class);
+        systemSettingService = mock(SystemSettingService.class);
+        jobSpecParser = new JobSpecParser();
 
         userJobConverter = new UserJobConverter(
                 idConverter,
@@ -75,7 +82,9 @@ class UserJobConverterTest {
                 userService,
                 modelDao,
                 runtimeDao,
-                datasetDao
+                datasetDao,
+                jobSpecParser,
+                systemSettingService
         );
     }
 
@@ -84,6 +93,7 @@ class UserJobConverterTest {
         var projectId = "1";
         var req = new JobRequest();
         req.setResourcePool("test");
+        //.handler("mnist.evaluator:MNISTInference.cmp")
         req.setHandler("handler");
         req.setDevMode(false);
 
