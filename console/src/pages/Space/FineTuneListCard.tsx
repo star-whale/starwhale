@@ -148,6 +148,7 @@ export default function FineTuneListCard() {
                 data={info.data}
                 isExpand={isExpand}
                 onView={setExpandFineTuneId}
+                onRefresh={() => info.refetch()}
                 viewId={expandFineTuneId}
             />
             {isExpand && <RouteOverview title={title} url={url} onClose={() => setExpandFineTuneId(undefined)} />}

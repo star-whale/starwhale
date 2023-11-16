@@ -145,6 +145,8 @@ export type IconTypesT =
     | 'top2'
     | 'txt'
     | 'Detail'
+    | 'finetuing'
+    | 'release'
 
 interface IIconFontProps {
     style?: React.CSSProperties

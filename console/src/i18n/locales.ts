@@ -866,6 +866,30 @@ const ft = {
         en: 'Building Mode',
         zh: 'SFT模型构建方式',
     },
+    'ft.job.model.release': {
+        en: 'Release',
+        zh: '发布',
+    },
+    'ft.job.model.release.mode': {
+        en: 'Release Mode',
+        zh: '发布模式',
+    },
+    'ft.job.model.release.mode.create': {
+        en: 'Build a new model',
+        zh: '构建新模型',
+    },
+    'ft.job.model.release.mode.append': {
+        en: 'Build a new version of an existing model',
+        zh: '构建已有模型的新版本',
+    },
+    'ft.job.model.release.mode.exsit': {
+        en: 'Existing model name',
+        zh: '已有模型名称',
+    },
+    'ft.job.model.release.succes': {
+        en: 'Release Success',
+        zh: '发布成功',
+    },
     'ft.base.model.name': {
         en: 'Base Model Name',
         zh: '基准模型名称',

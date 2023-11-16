@@ -6,7 +6,7 @@ import { usePage } from '@/hooks/usePage'
 import FineTuneRunsTable from './FineTuneRunsTable'
 import FineTuneRunsTableCard from './FineTuneRunsTableCard'
 
-export default function FineTuneRunsListCard({ isExpand, onView, viewId, data }) {
+export default function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
     const [t] = useTranslation()
     const ref = React.useRef<HTMLDivElement>(null)
     const [page] = usePage()
@@ -26,7 +26,7 @@ export default function FineTuneRunsListCard({ isExpand, onView, viewId, data })
             {isExpand ? (
                 <FineTuneRunsTableCard data={data} onView={onView} viewId={viewId} />
             ) : (
-                <FineTuneRunsTable data={data} onView={onView} viewId={viewId} />
+                <FineTuneRunsTable data={data} onView={onView} viewId={viewId} onRefresh={onRefresh} />
             )}
         </div>
     )
