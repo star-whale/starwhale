@@ -79,7 +79,6 @@ public class JobCreator {
         this.userJobConverter = userJobConverter;
     }
 
-
     @Transactional
     @WriteOperation
     public Job createJob(JobCreateRequest request) {

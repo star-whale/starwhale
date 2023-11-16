@@ -69,9 +69,9 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao).updateJobStatus(mockJob, desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
-        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobFinishedTime(eq(mockJob),
                 argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
     }
 
@@ -93,9 +93,9 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao, times(1)).updateJobStatus(mockJob, desiredStatus);
         verify(hotJobHolder, times(0)).remove(mockJob.getId());
-        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobFinishedTime(eq(mockJob),
                 argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
         Thread.sleep(100); // wait for async status update
         Assertions.assertEquals(TaskStatus.CANCELLING, luckTask.getStatus());
@@ -120,8 +120,8 @@ public class JobUpdateHelperTest {
         Thread.sleep(1L);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-        verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
-        verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
+        verify(jobDao).updateJobStatus(mockJob, desiredStatus);
+        verify(jobDao).updateJobFinishedTime(eq(mockJob),
                 argThat(d -> d.getTime() > 0), argThat(d -> d >= 0));
 
     }
@@ -143,7 +143,7 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(JobStatus.RUNNING, mockJob.getStatus());
-        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+        verify(jobDao, times(1)).updateJobStatus(mockJob, desiredStatus);
     }
 
     @Test
@@ -173,7 +173,7 @@ public class JobUpdateHelperTest {
         mockJob.setStatus(JobStatus.RUNNING);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(JobStatus.CANCELED, mockJob.getStatus());
-        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), JobStatus.CANCELED);
+        verify(jobDao, times(1)).updateJobStatus(mockJob, JobStatus.CANCELED);
         verify(hotJobHolder, times(1)).remove(mockJob.getId());
     }
 }

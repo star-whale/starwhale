@@ -137,6 +137,8 @@ public class JobBoConverter {
                                  .build())
                 .jobRuntime(jobRuntime)
                 .status(jobEntity.getJobStatus())
+                .bizType(jobEntity.getBizType())
+                .bizId(jobEntity.getBizId())
                 .type(jobEntity.getType())
                 .model(model)
                 .stepSpecs(stepSpecs)

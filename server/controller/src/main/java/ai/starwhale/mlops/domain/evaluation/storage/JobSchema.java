@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.evaluation.storage;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
