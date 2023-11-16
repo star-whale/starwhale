@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useLayoutEffect } from 'react'
 import { usePage } from '@/hooks/usePage'
 import useTranslation from '@/hooks/useTranslation'
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom'
@@ -7,19 +7,30 @@ import FineTuneRunsListCard from './FineTuneRunsListCard'
 import { ExtendButton } from '@starwhale/ui'
 import { api } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
-import { useBoolean, useCreation, useToggle } from 'ahooks'
+import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
+import { useUpdateEffect } from 'react-use'
+import { useEventCallback } from '@starwhale/core'
 
-const RouteBar = ({ onClose, onFullScreen, fullscreen }) => {
+const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes/(.*)?/'
+
+const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
+    const [isRoot, setIsRoot] = React.useState(false)
     const history = useHistory()
-    const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId?/overview')
 
-    console.log(match)
-
-    console.log(history, history.length)
-
-    // @ts-ignore
-    const isLastOne = history.index === 0
+    useEffect(() => {
+        const unsubscribe = history?.listen((location) => {
+            const isFineTune = Boolean(location.pathname.match(FINT_TUNE_ROUTE))
+            onLocationChange?.({
+                history,
+                location,
+            })
+            setIsRoot(isFineTune)
+        })
+        return () => {
+            unsubscribe()
+        }
+    }, [history, onLocationChange])
 
     return (
         <div className='ft-route-bar absolute right-20px top-20px z-1 gap-16px flex'>
@@ -28,7 +39,7 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen }) => {
                 <ExtendButton
                     icon='close'
                     styleas={['iconnormal', 'nopadding']}
-                    onClick={() => (isLastOne ? onClose?.() : history.go(-1))}
+                    onClick={() => (isRoot ? onClose?.() : history.go(-1))}
                 />
             )}
         </div>
@@ -38,30 +49,68 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen }) => {
 const RouteOverview = ({ url, onClose, title }) => {
     const { RoutesInline } = useRouteContext()
     const [fullscreen, { toggle }] = useBoolean(false)
+    const [isRouteAtFineTune, setIsRouteAtFineTune] = React.useState(true)
+    const ref = React.useRef<HTMLDivElement>(null)
+    const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
+
+    const handelInlineLocationChange = useEventCallback(({ history, location, match }) => {
+        setIsRouteAtFineTune(Boolean(location.pathname.match(FINT_TUNE_ROUTE)))
+    })
+
+    useEffect(() => {
+        setIsRouteAtFineTune(Boolean(url?.match(FINT_TUNE_ROUTE)))
+    }, [url])
+
+    useLayoutEffect(() => {
+        if (!ref.current) return
+        const table = ref.current.getBoundingClientRect()
+        setRect({
+            left: table?.left,
+            top: table?.top,
+        })
+    }, [ref])
 
     if (!RoutesInline) return null
 
     return (
-        <div
-            className='ft-route border-1 p-20px content-full relative bg-white rounded-sm'
-            style={
-                fullscreen
-                    ? {
-                          position: 'fixed',
-                          top: headerHeight,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          zIndex: 100,
-                      }
-                    : undefined
-            }
-        >
-            <div className='h-56px w-full'>{title}</div>
-            <div className='content-full'>
-                <RoutesInline initialEntries={url && [url]} key={url}>
-                    <RouteBar onClose={onClose} fullscreen={fullscreen} onFullScreen={toggle} />
-                </RoutesInline>
+        <div className='ft-route relative content-full' ref={ref}>
+            <div
+                className={`ft-route flex-col relative border-1 bg-white rounded-sm ${
+                    !isRouteAtFineTune && 'card-shadow-md overflow-visible mg-4px'
+                }`}
+                style={
+                    fullscreen
+                        ? {
+                              position: 'fixed',
+                              top: headerHeight,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              zIndex: 100,
+                          }
+                        : {
+                              position: 'fixed',
+                              top: rect?.top,
+                              left: rect?.left,
+                              right: '20px',
+                              bottom: 0,
+                              zIndex: 100,
+                          }
+                }
+            >
+                <div className={`h-56px w-full p-20px ${!isRouteAtFineTune && 'border-b'}`}>
+                    {isRouteAtFineTune && title}
+                </div>
+                <div className='content-full p-20px '>
+                    <RoutesInline initialEntries={url && [url]} key={url}>
+                        <RouteBar
+                            onClose={onClose}
+                            fullscreen={fullscreen}
+                            onFullScreen={toggle}
+                            onLocationChange={handelInlineLocationChange}
+                        />
+                    </RoutesInline>
+                </div>
             </div>
         </div>
     )
@@ -88,13 +137,17 @@ export default function FineTuneListCard() {
         return (
             <>
                 <div className='flex items-center font-600'>{renderer('baseModelName')}</div>
-                <div className='flex-1 items-center mt-12px mb-auto'>{renderer('baseModelVersionAlias')}</div>
+                <div className='flex-1 items-center mt-6px mb-auto'>{renderer('baseModelVersionAlias')}</div>
             </>
         )
     }, [expandFineTuneId])
 
     return (
-        <div className={`grid gap-20px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
+        <div
+            className={`grid gap-20px content-full overflow-visible ${
+                isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'
+            }`}
+        >
             <FineTuneRunsListCard
                 data={info.data}
                 isExpand={isExpand}

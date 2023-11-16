@@ -167,7 +167,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
 
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className='content-full'>
                 {modelVersionId && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '280px 120px 280px', gap: '21px' }}>
@@ -245,7 +245,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                     </div>
                 )}
                 {modelVersionId && <BaseNavTabs navItems={navItems} />}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+                <div className='content-full-scroll'>
                     <ModelVersionContext.Provider value={{ modelVersionId, servingJobs }}>
                         {children}
                     </ModelVersionContext.Provider>
