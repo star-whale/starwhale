@@ -222,8 +222,8 @@ class JobRequest(SwBaseModel):
     model_version_id: Optional[str] = Field(None, alias='modelVersionId')
     runtime_version_id: Optional[str] = Field(None, alias='runtimeVersionId')
     dataset_version_ids: Optional[List[str]] = Field(None, alias='datasetVersionIds')
-    eval_dataset_version_ids: Optional[List[str]] = Field(
-        None, alias='evalDatasetVersionIds'
+    validation_dataset_version_ids: Optional[List[str]] = Field(
+        None, alias='validationDatasetVersionIds'
     )
     time_to_live_in_sec: Optional[int] = Field(None, alias='timeToLiveInSec')
     model_version_url: Optional[str] = Field(None, alias='modelVersionUrl')
@@ -1270,7 +1270,9 @@ class FineTuneVo(SwBaseModel):
     id: int
     job: JobVo
     train_datasets: List[DatasetVo] = Field(..., alias='trainDatasets')
-    eval_datasets: Optional[List[DatasetVo]] = Field(None, alias='evalDatasets')
+    validation_datasets: Optional[List[DatasetVo]] = Field(
+        None, alias='validationDatasets'
+    )
     target_model: ModelVo = Field(..., alias='targetModel')
 
 
