@@ -81,7 +81,7 @@ public class JobParserTest {
                 new Env("EVAL_DATASET", "imagenet"),
                 new Env("EVAL_MODEL", "resnet50")
             ));
-        Assertions.assertTrue(stepMetaDatas.get(2).getRequireTrainDataset());
-        Assertions.assertFalse(stepMetaDatas.get(2).getRequireValidationDataset());
+        Assertions.assertTrue(stepMetaDatas.get(2).getExtraParams().getRequireTrainDatasets());
+        Assertions.assertFalse(stepMetaDatas.get(2).getExtraParams().getRequireValidationDatasets());
     }
 }
