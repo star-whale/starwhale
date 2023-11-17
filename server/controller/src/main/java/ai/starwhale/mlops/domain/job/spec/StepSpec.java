@@ -83,6 +83,7 @@ public class StepSpec {
     private Boolean requireDataset;
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExtraParams {
         @JsonProperty("auto_build_model")
         private Boolean autoBuildModel;
