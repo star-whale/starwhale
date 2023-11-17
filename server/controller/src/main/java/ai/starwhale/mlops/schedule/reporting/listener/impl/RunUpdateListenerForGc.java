@@ -21,6 +21,9 @@ import ai.starwhale.mlops.domain.run.bo.RunStatus;
 import ai.starwhale.mlops.schedule.executor.RunExecutor;
 import ai.starwhale.mlops.schedule.log.RunLogSaver;
 import ai.starwhale.mlops.schedule.reporting.listener.RunUpdateListener;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.time.Instant;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -58,7 +61,24 @@ public class RunUpdateListenerForGc implements RunUpdateListener {
     public void onRunUpdate(Run run) {
         RunStatus runStatus = run.getStatus();
         if (runStatus == RunStatus.FAILED || runStatus == RunStatus.FINISHED) {
-            runLogSaver.saveLog(run);
+            try {
+                Retry.decorateCheckedRunnable(
+                                Retry.of("save run log", RetryConfig.custom()
+                                        .maxAttempts(3)
+                                        .intervalFunction(
+                                                IntervalFunction.ofExponentialRandomBackoff(
+                                                        100,
+                                                        2.0,
+                                                        0.5,
+                                                        10000
+                                                )
+                                        )
+                                        .build()), () -> runLogSaver.saveLog(run)
+                        )
+                        .run();
+            } catch (Throwable e) {
+                log.warn("save run log failed", e);
+            }
             if (deletionDelayMilliseconds <= 0) {
                 runExecutor.remove(run);
                 log.debug("delete run {}", run.getId());
