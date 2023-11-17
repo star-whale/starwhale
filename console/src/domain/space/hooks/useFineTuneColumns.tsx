@@ -169,11 +169,11 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
             key: 'targetModelVersionAlias',
             mapDataToValue: (data: DataT) => data.targetModel?.version.alias,
             renderCell: ({ value: alias, data }) => (
-                <div className='flex gap-2px'>
-                    {data?.job?.targetModel?.version.draft === false && (
+                <div className='flex gap-2px lh-none'>
+                    {data?.targetModel?.version.draft === true && (
                         <StatusTag>{t('ft.job.model.release.mode.draft')}</StatusTag>
                     )}
-                    {data?.job?.targetModel?.version.draft === true && (
+                    {data?.targetModel?.version.draft === false && (
                         <StatusTag kind='positive'>{t('ft.job.model.release.mode.released')}</StatusTag>
                     )}
                     <Alias alias={alias} />
