@@ -130,7 +130,7 @@ class FineTuneAppServiceTest {
 
         var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
-        request.setEvalDatasetVersionIds(List.of("1"));
+        request.setValidationDatasetVersionIds(List.of("1"));
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
