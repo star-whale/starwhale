@@ -1,8 +1,8 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { ExtendButton, VersionText, MonoText } from '@starwhale/ui'
+import { FilterString, FilterDatetime, FilterNumberical, ValueT, Operators } from '@starwhale/ui'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import { IDatasetVo, IFineTuneVo, IUserVo } from '@/api'
+import { IDatasetVo, IFineTuneVo, IPageInfoFineTuneVo, IUserVo } from '@/api'
 import User from '@/domain/user/components/User'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Alias from '@/components/Alias'
@@ -23,6 +23,8 @@ const datasetsToStr = (datasets: IDatasetVo[]) => {
 
 function IDColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
+        // @ts-ignore
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => String(data.id),
         ...shared,
         ...options,
@@ -38,6 +40,7 @@ function OwnerColumn(options: SharedColumnOptionsT<IUserVo>): ColumnT<IUserVo, a
 }
 function JobStatusColumn(options: SharedColumnOptionsT<JobStatusType>): ColumnT<JobStatusType, any> {
     return CustomColumn({
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => data.job?.jobStatus as JobStatusType,
         renderCell: ({ value: jobStatus }) => <JobStatus status={jobStatus as any} />,
         ...shared,
@@ -46,6 +49,7 @@ function JobStatusColumn(options: SharedColumnOptionsT<JobStatusType>): ColumnT<
 }
 function DateTimeColumn(options: SharedColumnOptionsT<number | undefined>): ColumnT<number | undefined, any> {
     return CustomColumn({
+        buildFilters: FilterDatetime,
         mapDataToValue: (data: DataT) => data.job?.createdTime,
         renderCell: ({ value: timestamp }) => timestamp && timestamp > 0 && formatTimestampDateTime(timestamp),
         ...shared,
@@ -54,6 +58,7 @@ function DateTimeColumn(options: SharedColumnOptionsT<number | undefined>): Colu
 }
 function DurationColumn(options: SharedColumnOptionsT<number | undefined>): ColumnT<number | undefined, any> {
     return CustomColumn({
+        buildFilters: FilterNumberical,
         mapDataToValue: (data: DataT) => data.job?.duration,
         renderCell: ({ value: duration }) => duration && duration > 0 && durationToStr(duration),
         ...shared,
@@ -62,6 +67,8 @@ function DurationColumn(options: SharedColumnOptionsT<number | undefined>): Colu
 }
 function ResourcePoolColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
+        // @ts-ignore
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => data.job?.resourcePool,
         ...shared,
         ...options,
@@ -69,20 +76,17 @@ function ResourcePoolColumn(options: SharedColumnOptionsT<string>): ColumnT<stri
 }
 function ModelColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
+        // @ts-ignore
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => data.job?.model?.name,
         ...shared,
         ...options,
     })
 }
-// function VersionColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
-//     return CustomColumn({
-//         mapDataToValue: (data: DataT) => data.job?.model?.version.name,
-//         renderCell: ({ value: version }) => <VersionText version={version} />,
-//         ...options,
-//     })
-// }
+
 function AliasColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return CustomColumn({
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => data.job?.model?.version.alias,
         renderCell: ({ value: alias }) => <Alias alias={alias} />,
         ...shared,
@@ -91,20 +95,32 @@ function AliasColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any
 }
 function DatasetColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
+        // @ts-ignore
+        buildFilters: FilterString,
         mapDataToValue: (data: DataT) => datasetsToStr(data.job?.datasetList ?? []),
         ...shared,
         ...options,
     })
 }
 
+// function VersionColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
+//     return CustomColumn({
+//         mapDataToValue: (data: DataT) => data.job?.model?.version.name,
+//         renderCell: ({ value: version }) => <VersionText version={version} />,
+//         ...options,
+//     })
+// }
 // VersionColumn({
 //     title: t('ft.job.output_draft_model_version'),
 //     key: t('ft.job.output_draft_model_version'),
 //     mapDataToValue: (data: DataT) => data.targetModel?.version.name,
 // }),
 
-function useFineTuneColumns() {
+function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo } = {}) {
     const [t] = useTranslation()
+    const [queries, setQueries] = React.useState<ValueT[]>([])
+
+    const { list = [] } = _data
 
     const columns = [
         IDColumn({ title: t('ft.id'), key: 'id' }),
@@ -165,6 +181,16 @@ function useFineTuneColumns() {
     ]
     const columnMap = _.keyBy(columns, 'key')
 
+    const fields = columns.filter((v) => v.buildFilters)
+
+    const fieldOptions = fields.map(({ key, title }) => {
+        return {
+            id: key,
+            type: key,
+            label: title,
+        }
+    })
+
     const renderCell = (row) => (key) => {
         const { renderCell: RenderCell, mapDataToValue } = columnMap[key] ?? {}
         if (!RenderCell || !mapDataToValue) return null
@@ -172,7 +198,41 @@ function useFineTuneColumns() {
         return <RenderCell value={mapDataToValue(row)} data={row} />
     }
 
-    return { columns, columnMap, renderCell }
+    const getFilters = (key = 'id') => {
+        const { mapDataToValue, buildFilters } = columnMap[key] ?? {}
+        if (!mapDataToValue || !buildFilters) return undefined
+        const values = list.map(mapDataToValue as any).filter((v) => (_.isNumber(v) ? true : Boolean(v)))
+        const valueHints = new Set(values)
+        const valueOptions = [...valueHints].map((v) => ({
+            id: v,
+            type: v,
+            label: v,
+        }))
+        return buildFilters({
+            fieldOptions,
+            valueOptions,
+        })
+    }
+
+    const $listFiltered = React.useMemo(() => {
+        const set = new Set(list.map((__, idx) => idx))
+        Array.from(queries || new Set(), (f) => f).forEach(({ property, op, value }: any) => {
+            const filterFn = Operators[op]?.buildFilter?.({ value } as any)
+            const { mapDataToValue } = columnMap[property] ?? {}
+
+            if (!mapDataToValue) return
+
+            Array.from(set).forEach((idx) => {
+                if (filterFn && !filterFn(mapDataToValue(list[idx]))) {
+                    set.delete(idx)
+                }
+            })
+        })
+
+        return [...set].map((idx) => list[idx])
+    }, [list, queries, columnMap])
+
+    return { columns, columnMap, renderCell, getFilters, list: $listFiltered, queries, setQueries }
 }
 
 export { useFineTuneColumns }

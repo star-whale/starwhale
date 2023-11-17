@@ -838,6 +838,10 @@ const ft = {
         en: 'Runs ID',
         zh: 'Runs ID',
     },
+    'ft.job.new': {
+        en: 'Create Fine-tuning Job',
+        zh: '新建 Fine-tuning 任务',
+    },
     'ft.job.output_draft_model_name': {
         en: 'Output Draft Model Name',
         zh: '模型草案名称',
@@ -864,7 +868,7 @@ const ft = {
     },
     'ft.job.building_mode': {
         en: 'Building Mode',
-        zh: 'SFT模型构建方式',
+        zh: '模型构建方式',
     },
     'ft.job.model.release': {
         en: 'Release',

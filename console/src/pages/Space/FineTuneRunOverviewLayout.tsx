@@ -1,14 +1,9 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
-import { useHistory, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
-import { usePage } from '@/hooks/usePage'
-import { useQueryArgs } from '@/hooks/useQueryArgs'
-import { useRouterActivePath } from '@/hooks/useRouterActivePath'
-import { useAccess } from '@/api/WithAuth'
-import Button from '@starwhale/ui/Button'
 
 export interface IFineTuneLayoutProps {
     children: React.ReactNode

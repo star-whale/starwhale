@@ -2,7 +2,7 @@ import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { IPageInfoFineTuneVo } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
-import Checkbox from '@starwhale/ui/Checkbox'
+// import Checkbox from '@starwhale/ui/Checkbox'
 
 function FineTuneCard({ ft, onClick, viewId }) {
     const [t] = useTranslation()
@@ -40,17 +40,17 @@ function FineTuneCard({ ft, onClick, viewId }) {
 }
 
 export default function FineTuneRunsTableCard({
-    data,
+    list,
     viewId,
     onView,
 }: {
-    data?: IPageInfoFineTuneVo
+    list?: IPageInfoFineTuneVo['list']
     onView?: (id: number) => void
     viewId?: any
 }) {
     return (
         <div className='ft-table-card content-full-scroll gap-10px pr-5px'>
-            {data?.list?.map((ft) => {
+            {list?.map((ft) => {
                 return <FineTuneCard key={ft.id} ft={ft} onClick={() => onView?.(ft.id)} viewId={viewId} />
             })}
         </div>

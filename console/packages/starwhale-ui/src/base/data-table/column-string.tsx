@@ -34,6 +34,7 @@ export function StringCell(props: any) {
 
 function StringColumn(options: OptionsT): StringColumnT {
     return Column({
+        ...options,
         kind: COLUMNS.STRING,
         cellBlockAlign: options.cellBlockAlign,
         buildFilter: function (params) {

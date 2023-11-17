@@ -7,6 +7,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest } from '@/api'
+import { ExtendButton } from '@starwhale/ui/Button'
 
 export default function JobNewCard() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -31,7 +32,18 @@ export default function JobNewCard() {
     })
 
     return (
-        <Card title={t('Run Model')}>
+        <Card
+            title={
+                <div className='flex gap-10px font-18px font-800'>
+                    <ExtendButton
+                        icon='arrow_left'
+                        styleas={['iconnormal', 'nopadding']}
+                        onClick={() => history.go(-1)}
+                    />
+                    {t('Run Model')}
+                </div>
+            }
+        >
             <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} />
         </Card>
     )

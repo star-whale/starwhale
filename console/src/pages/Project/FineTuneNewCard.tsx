@@ -7,6 +7,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest, api } from '@/api'
+import { ExtendButton } from '@starwhale/ui'
 
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
@@ -36,7 +37,18 @@ export default function FineTuneNewCard() {
     })
 
     return (
-        <Card title={t('Run Model')}>
+        <Card
+            title={
+                <div className='flex gap-10px font-18px font-800'>
+                    <ExtendButton
+                        icon='arrow_left'
+                        styleas={['iconnormal', 'nopadding']}
+                        onClick={() => history.go(-1)}
+                    />
+                    {t('ft.job.new')}
+                </div>
+            }
+        >
             <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} enableTemplate={false} />
         </Card>
     )

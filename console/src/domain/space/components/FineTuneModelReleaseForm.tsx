@@ -43,7 +43,7 @@ const Mode = ({ value, onChange }: any) => {
         </RadioGroup>
     )
 }
-export default function FineTuneModelReleaseForm({ data, onSubmit }: IFormProps) {
+export default function FineTuneModelReleaseForm({ onSubmit }: IFormProps) {
     const [t] = useTranslation()
     const styles = useStyles()
     const { projectId } = useParams<{ projectId: any }>()

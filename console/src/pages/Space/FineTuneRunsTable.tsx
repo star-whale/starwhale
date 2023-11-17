@@ -1,19 +1,19 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { ExtendButton } from '@starwhale/ui'
-import { IFineTuneVo, IPageInfoFineTuneVo, api } from '@/api'
+import { IFineTuneVo } from '@/api'
 import Table from '@/components/Table'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useAccess } from '@/api/WithAuth'
 import { FineTuneModelReleaseModal } from '@/domain/space/components/FineTuneModelReleaseForm'
 
 export default function FineTuneRunsTable({
-    data,
+    list,
     isLoading,
     onView,
     onRefresh,
 }: {
-    data?: IPageInfoFineTuneVo
+    list: IFineTuneVo[]
     isLoading?: boolean
     onView?: (id: number) => void
     onRefresh?: any
@@ -67,13 +67,13 @@ export default function FineTuneRunsTable({
         <>
             <Table
                 renderActions={(rowIndex) => {
-                    const ft = data?.list?.[rowIndex]
+                    const ft = list?.[rowIndex]
                     if (!ft) return undefined
                     return getActions(ft)
                 }}
                 isLoading={isLoading}
                 columns={columns.map((v) => v.title)}
-                data={data?.list?.map((ft) => {
+                data={list?.map((ft) => {
                     // @ts-ignore
                     return columns.map((v) => <v.renderCell key={v.key} value={v.mapDataToValue?.(ft)} />)
                 })}

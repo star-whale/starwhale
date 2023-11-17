@@ -1,33 +1,31 @@
 import React from 'react'
-import useTranslation from '@/hooks/useTranslation'
-import { IFineTuneVo, api } from '@/api'
-import { useHistory, useParams } from 'react-router-dom'
-import { usePage } from '@/hooks/usePage'
 import FineTuneRunsTable from './FineTuneRunsTable'
 import FineTuneRunsTableCard from './FineTuneRunsTableCard'
+import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
+import Search from '@starwhale/ui/Search'
 
-export default function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
-    const [t] = useTranslation()
+function FineTuneSearchBar({ getFilters, queries, setQueries }) {
+    return <Search value={queries} getFilters={getFilters} onChange={setQueries} />
+}
+
+function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
     const ref = React.useRef<HTMLDivElement>(null)
-    const [page] = usePage()
-    const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
+
+    const { list, getFilters, queries, setQueries } = useFineTuneColumns({ data })
 
     return (
         <div ref={ref} className='ft-list content-full'>
-            {/* <div className='grid gap-20px grid-cols-[280px_1fr_16px_16px] mb-20px'>
-                <div className='flex-1'>
-                    <Search
-                        value={queries}
-                        getFilters={(key) => (attrs.find((v) => v.key === key) || attrs[0])?.getFilters()}
-                        onChange={setQueries as any}
-                    />
-                </div>
-            </div> */}
+            <div className={`${isExpand ? 'w-full' : 'w-360px'} mb-20px`}>
+                <FineTuneSearchBar data={data} getFilters={getFilters} queries={queries} setQueries={setQueries} />
+            </div>
             {isExpand ? (
-                <FineTuneRunsTableCard data={data} onView={onView} viewId={viewId} />
+                <FineTuneRunsTableCard list={list} onView={onView} viewId={viewId} />
             ) : (
-                <FineTuneRunsTable data={data} onView={onView} viewId={viewId} onRefresh={onRefresh} />
+                <FineTuneRunsTable list={list} onView={onView} onRefresh={onRefresh} />
             )}
         </div>
     )
 }
+
+export { FineTuneRunsListCard, FineTuneSearchBar }
+export default FineTuneRunsListCard
