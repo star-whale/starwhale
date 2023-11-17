@@ -40,7 +40,7 @@ public interface FineTuneMapper {
 
     @Insert("insert into fine_tune "
             + "(space_id, job_id, validation_datasets, train_datasets, base_model_version_id, target_model_version_id)"
-            + " values (#{spaceId}, #{jobId}, #{evalDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper"
+            + " values (#{spaceId}, #{jobId}, #{validationDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper"
             + ".ListStringTypeHandler}"
             + ",#{trainDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper.ListStringTypeHandler},"
             + " #{baseModelVersionId}, #{targetModelVersionId})")
