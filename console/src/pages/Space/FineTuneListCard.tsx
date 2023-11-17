@@ -45,7 +45,7 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange, extraAc
             </div>
 
             <div className='flex flex-shrink-0 gap-16px'>
-                {extraActions}
+                {isRoot && extraActions}
                 <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
                 {!fullscreen && (
                     <ExtendButton
