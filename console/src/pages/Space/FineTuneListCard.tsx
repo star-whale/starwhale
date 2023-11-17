@@ -10,10 +10,11 @@ import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
 import { useEventCallback } from '@starwhale/core'
+import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
 
-const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes/(.*)?'
+const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes'
 
-const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
+const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange, extraActions }) => {
     const [isRoot, setIsRoot] = React.useState(true)
     const history = useHistory()
 
@@ -42,7 +43,9 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
                     />
                 )}
             </div>
+
             <div className='flex flex-shrink-0 gap-16px'>
+                {extraActions}
                 <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
                 {!fullscreen && (
                     <ExtendButton
@@ -61,12 +64,13 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
     )
 }
 
-const RouteOverview = ({ url, onClose, title }) => {
+const RouteOverview = ({ url, onClose, title, params }) => {
     const { RoutesInline } = useRouteContext()
     const [fullscreen, { toggle }] = useBoolean(false)
     const [isRouteAtFineTune, setIsRouteAtFineTune] = React.useState(true)
     const ref = React.useRef<HTMLDivElement>(null)
     const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
+    const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
 
     const handelInlineLocationChange = useEventCallback(({ history, location, match }) => {
         setIsRouteAtFineTune(Boolean(location.pathname.match(FINT_TUNE_ROUTE)))
@@ -101,7 +105,7 @@ const RouteOverview = ({ url, onClose, title }) => {
                               left: 0,
                               right: 0,
                               bottom: 0,
-                              zIndex: 100,
+                              zIndex: 11,
                           }
                         : {
                               position: 'fixed',
@@ -109,7 +113,7 @@ const RouteOverview = ({ url, onClose, title }) => {
                               left: rect?.left,
                               right: '20px',
                               bottom: 0,
-                              zIndex: 100,
+                              zIndex: 11,
                           }
                 }
             >
@@ -123,6 +127,7 @@ const RouteOverview = ({ url, onClose, title }) => {
                             fullscreen={fullscreen}
                             onFullScreen={toggle}
                             onLocationChange={handelInlineLocationChange}
+                            extraActions={<FineTuneJobActionGroup {...params} />}
                         />
                     </RoutesInline>
                 </div>
@@ -133,7 +138,6 @@ const RouteOverview = ({ url, onClose, title }) => {
 
 export default function FineTuneListCard() {
     const [page] = usePage()
-    const [t] = useTranslation()
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const [expandFineTuneId, setExpandFineTuneId] = React.useState<number | undefined>(undefined)
     //
@@ -144,9 +148,9 @@ export default function FineTuneListCard() {
     //
     const isExpand = !!expandFineTuneId
     const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${expandFineTuneId}/overview`
+    const fineTune = info.data?.list?.find((v) => v.id === expandFineTuneId)
 
     const title = useCreation(() => {
-        const fineTune = info.data?.list?.find((v) => v.id === expandFineTuneId)
         const renderer = renderCell(fineTune)
         if (!fineTune) return null
         return (
@@ -166,7 +170,20 @@ export default function FineTuneListCard() {
                 onRefresh={() => info.refetch()}
                 viewId={expandFineTuneId}
             />
-            {isExpand && <RouteOverview title={title} url={url} onClose={() => setExpandFineTuneId(undefined)} />}
+            {isExpand && (
+                <RouteOverview
+                    params={{
+                        projectId,
+                        spaceId,
+                        fineTuneId: fineTune?.id,
+                        jobId: fineTune?.job?.id,
+                        job: fineTune?.job,
+                    }}
+                    title={title}
+                    url={url}
+                    onClose={() => setExpandFineTuneId(undefined)}
+                />
+            )}
         </div>
     )
 }
