@@ -1482,6 +1482,7 @@ export interface IJobVo {
     /** Model object */
     model: IModelVo
     jobName?: string
+    jobType?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     datasets?: string[]
     datasetList?: IDatasetVo[]
     /** Runtime object */

@@ -27,6 +27,7 @@ export interface IJobFormProps {
     onSubmit: (data: IJobRequest) => Promise<void>
     autoFill?: boolean
     enableTemplate?: boolean
+    validationDatasets?: any[]
 }
 
 async function getJobByTemplate(projectId: string, templateId: string) {
@@ -34,7 +35,13 @@ async function getJobByTemplate(projectId: string, templateId: string) {
     return fetchJob(projectId, String(template.jobId))
 }
 
-export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate = true }: IJobFormProps) {
+export default function JobForm({
+    job,
+    onSubmit,
+    autoFill = true,
+    enableTemplate = true,
+    validationDatasets,
+}: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelViewVo[]>([])
@@ -208,10 +215,12 @@ export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate
                 modelVersionUrl: modelVersion ? tmp.model?.version?.id : undefined,
                 modelVersionHandler: tmp.jobName,
                 stepSpecOverWrites: tmp.stepSpec,
+                validationDatasetVersionUrls: validationDatasets?.map((v) => v.version?.id) as string[],
             })
             forceUpdate()
             return true
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [form]
     )
 

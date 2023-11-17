@@ -107,6 +107,7 @@ export default function FineTuneJobActionGroup({
     projectId,
     jobId,
     spaceId,
+    fineTuneId,
     job,
     children,
     hasText = false,
@@ -118,6 +119,7 @@ export default function FineTuneJobActionGroup({
     projectId?: string
     jobId?: string
     spaceId?: string
+    fineTuneId?: string
     job?: IJobVo
 }) {
     const [t] = useTranslation()
@@ -220,7 +222,7 @@ export default function FineTuneJobActionGroup({
             onClick={() =>
                 history.push(
                     `/projects/${projectId}/new_fine_tune/${spaceId}?${qs.stringify({
-                        rid: jobId,
+                        fineTuneId,
                     })}`
                 )
             }

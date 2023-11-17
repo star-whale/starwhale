@@ -2,9 +2,7 @@ import React, { useCallback } from 'react'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import JobForm from '@job/components/JobForm'
-import { fetchJob } from '@job/services/job'
 import { useHistory, useParams } from 'react-router-dom'
-import { useQuery } from 'react-query'
 import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest, api } from '@/api'
 import { ExtendButton } from '@starwhale/ui'
@@ -30,11 +28,9 @@ export default function FineTuneNewCard() {
         [projectId, spaceId, history]
     )
     // rerun job id
-    const { rid } = query
-    const info = useQuery(`fetchJobs:${projectId}:${rid}`, () => fetchJob(projectId, rid), {
-        refetchOnWindowFocus: false,
-        enabled: !!rid,
-    })
+    const { fineTuneId } = query
+    const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
+    const job = info?.data?.job
 
     return (
         <Card
@@ -49,7 +45,13 @@ export default function FineTuneNewCard() {
                 </div>
             }
         >
-            <JobForm onSubmit={handleSubmit} job={info.data} autoFill={!rid} enableTemplate={false} />
+            <JobForm
+                onSubmit={handleSubmit}
+                job={job}
+                autoFill={!job}
+                enableTemplate={false}
+                validationDatasets={info?.data?.validationDatasets}
+            />
         </Card>
     )
 }
