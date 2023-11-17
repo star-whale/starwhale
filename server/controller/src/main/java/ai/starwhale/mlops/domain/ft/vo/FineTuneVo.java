@@ -38,7 +38,7 @@ public class FineTuneVo {
     JobVo job;
     @NotNull
     List<DatasetVo> trainDatasets;
-    List<DatasetVo> evalDatasets;
+    List<DatasetVo> validationDatasets;
     @NotNull
     ModelVo targetModel;
 

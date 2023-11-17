@@ -31,16 +31,16 @@ public interface FineTuneMapper {
     String COLUMNS = "id,           \n"
             + "space_id,      \n"
             + "job_id,       \n"
-            + "eval_datasets,     \n"
+            + "validation_datasets,     \n"
             + "train_datasets,     \n"
             + "base_model_version_id,     \n"
             + "target_model_version_id,     \n"
             + "created_time, \n"
             + "modified_time ";
 
-    @Insert("insert into fine_tune"
-            + " (space_id, job_id, eval_datasets, train_datasets, base_model_version_id, target_model_version_id)"
-            + " values (#{spaceId}, #{jobId}, #{evalDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper"
+    @Insert("insert into fine_tune "
+            + "(space_id, job_id, validation_datasets, train_datasets, base_model_version_id, target_model_version_id)"
+            + " values (#{spaceId}, #{jobId}, #{validationDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper"
             + ".ListStringTypeHandler}"
             + ",#{trainDatasets, typeHandler=ai.starwhale.mlops.domain.ft.mapper.ListStringTypeHandler},"
             + " #{baseModelVersionId}, #{targetModelVersionId})")
@@ -48,21 +48,33 @@ public interface FineTuneMapper {
     void add(FineTuneEntity fineTuneEntity);
 
     @Results({
-            @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
+            @Result(
+                    property = "validationDatasets",
+                    column = "validation_datasets",
+                    typeHandler = ListStringTypeHandler.class
+            ),
             @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
     })
     @Select("select " + COLUMNS + " from fine_tune where space_id = #{spaceId} order by id desc")
     List<FineTuneEntity> list(Long spaceId);
 
     @Results({
-            @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
+            @Result(
+                    property = "validationDatasets",
+                    column = "validation_datasets",
+                    typeHandler = ListStringTypeHandler.class
+            ),
             @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
     })
     @Select("select " + COLUMNS + " from fine_tune where job_id = #{jobId}")
     FineTuneEntity findByJob(Long jobId);
 
     @Results({
-            @Result(property = "evalDatasets", column = "eval_datasets", typeHandler = ListStringTypeHandler.class),
+            @Result(
+                    property = "validationDatasets",
+                    column = "validation_datasets",
+                    typeHandler = ListStringTypeHandler.class
+            ),
             @Result(property = "trainDatasets", column = "train_datasets", typeHandler = ListStringTypeHandler.class)
     })
     @Select("select " + COLUMNS + " from fine_tune where id = #{id}")

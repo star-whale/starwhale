@@ -33,7 +33,7 @@ public class FineTuneEntity extends BaseEntity {
     private Long id;
     private Long spaceId;
     private Long jobId;
-    private List<Long> evalDatasets;
+    private List<Long> validationDatasets;
     private List<Long> trainDatasets;
     private Long baseModelVersionId;
     private Long targetModelVersionId;

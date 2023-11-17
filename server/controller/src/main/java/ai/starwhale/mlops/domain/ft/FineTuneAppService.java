@@ -148,13 +148,13 @@ public class FineTuneAppService {
         FineTuneEntity ft = FineTuneEntity.builder()
                 .jobId(-1L)
                 .spaceId(spaceId)
-                .evalDatasets(idConverter.revertList(request.getEvalDatasetVersionIds()))
+                .validationDatasets(idConverter.revertList(request.getValidationDatasetVersionIds()))
                 .trainDatasets(idConverter.revertList(request.getDatasetVersionIds()))
                 .baseModelVersionId(idConverter.revert(request.getModelVersionId()))
                 .build();
         fineTuneMapper.add(ft);
         // add ft env to spec
-        var datasets = request.getEvalDatasetVersionIds();
+        var datasets = request.getValidationDatasetVersionIds();
         request.setStepSpecOverWrites(rewriteSpecEnvForRequest(
                 idConverter.revert(request.getModelVersionId()),
                 request.getHandler(),
@@ -260,7 +260,7 @@ public class FineTuneAppService {
         return FineTuneVo.builder()
                 .id(fineTuneEntity.getId())
                 .job(jobConverter.convert(job))
-                .evalDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getEvalDatasets()))
+                .validationDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getValidationDatasets()))
                 .trainDatasets(datasetService.findDatasetsByVersionIds(fineTuneEntity.getTrainDatasets()))
                 .targetModel(mv)
                 .build();
