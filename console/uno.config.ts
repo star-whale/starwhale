@@ -32,6 +32,7 @@ export default defineConfig({
         ['wh-full', 'w-full h-full'],
         ['flex-col', 'flex flex-col'],
         ['f-c-c', 'flex justify-center items-center'],
+        ['f-l-c', 'flex justify-start items-center'],
         [
             'icon-btn',
             'text-16 inline-block cursor-pointer select-none opacity-75 transition duration-200 ease-in-out hover:opacity-100 hover:text-primary !outline-none',

@@ -61,7 +61,7 @@ export default function FineTuneRunsTable({
         },
     ]
 
-    const { columns } = useFineTuneColumns()
+    const { columns, renderCell } = useFineTuneColumns()
 
     return (
         <>
@@ -75,7 +75,7 @@ export default function FineTuneRunsTable({
                 columns={columns.map((v) => v.title)}
                 data={list?.map((ft) => {
                     // @ts-ignore
-                    return columns.map((v) => <v.renderCell key={v.key} value={v.mapDataToValue?.(ft)} />)
+                    return columns.map((v) => renderCell(ft)(v.key))
                 })}
             />
             <FineTuneModelReleaseModal data={releaseFT} isOpen={isOpen} setIsOpen={setIsOpen} onRefresh={onRefresh} />

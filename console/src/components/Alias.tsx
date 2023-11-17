@@ -9,16 +9,15 @@ import { expandBorder, expandBorderRadius, expandPadding } from '@starwhale/ui/u
 
 export function Alias({ alias = '' }: { alias?: string }) {
     if (!alias) return null
-    
+
     return (
-        <div style={{ display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
+        <div style={{ display: 'inline-flex', gap: '2px', alignItems: 'center', lineHeight: '1' }}>
             {alias.split(',').map((item, index) => {
                 return (
                     <span
                         key={index}
                         style={{
                             fontSize: '14px',
-                            lineHeight: '14px',
                             borderRadius: '4px',
                             backgroundColor: '#F5F8FF',
                             border: '1px solid #CFD7E6 ',

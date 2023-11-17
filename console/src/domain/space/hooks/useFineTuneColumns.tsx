@@ -22,6 +22,18 @@ const datasetsToStr = (datasets: IDatasetVo[]) => {
     return datasets?.flatMap((dataset) => [dataset.name, dataset.version.alias]).join(',') ?? ''
 }
 
+const datasetsToCell = (datasets: IDatasetVo[]) => {
+    const tmp = datasets?.map((dataset, index) => (
+        <div key={index} className='items-center px-8px py-5px rounded-4px flex gap-4px bg-[#EEF1F6] lh-none'>
+            {dataset.name}
+            <Alias alias={dataset.version.alias} />
+        </div>
+    ))
+    if (!datasets || datasets.length === 0) return null
+
+    return <div className='f-l-c gap-3px h-24px w-auto'>{tmp}</div>
+}
+
 function IDColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
         // @ts-ignore
@@ -138,12 +150,14 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
         DatasetColumn({
             title: t('ft.training_dataset.name'),
             key: 'trainDatasets',
-            mapDataToValue: (data: DataT) => datasetsToStr(data.trainDatasets ?? []),
+            mapDataToValue: (data: DataT) => datasetsToStr(data?.trainDatasets ?? []),
+            renderCell: ({ data }) => datasetsToCell(data?.trainDatasets ?? []),
         }),
         DatasetColumn({
             title: t('ft.validation_dataset.name'),
             key: 'validationDatasets',
-            mapDataToValue: (data: DataT) => datasetsToStr(data.validationDatasets ?? []),
+            mapDataToValue: (data: DataT) => datasetsToStr(data?.validationDatasets ?? []),
+            renderCell: ({ data }) => datasetsToCell(data?.validationDatasets ?? []),
         }),
         ModelColumn({
             title: t('ft.job.output_model_name'),
