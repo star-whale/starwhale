@@ -725,6 +725,12 @@ class Env(SwBaseModel):
     value: Optional[str] = None
 
 
+class ExtraParams(SwBaseModel):
+    auto_build_model: Optional[bool] = None
+    require_train_datasets: Optional[bool] = None
+    require_validation_datasets: Optional[bool] = None
+
+
 class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
@@ -750,8 +756,7 @@ class StepSpec(SwBaseModel):
     job_name: Optional[str] = None
     show_name: str
     require_dataset: Optional[bool] = None
-    require_train_datasets: Optional[bool] = None
-    require_validation_datasets: Optional[bool] = None
+    extra_kwargs: Optional[ExtraParams] = None
     container_spec: Optional[ContainerSpec] = None
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
@@ -914,6 +919,14 @@ class ExposedLinkVo(SwBaseModel):
     link: str
 
 
+class JobType(Enum):
+    evaluation = 'EVALUATION'
+    train = 'TRAIN'
+    fine_tune = 'FINE_TUNE'
+    serving = 'SERVING'
+    built_in = 'BUILT_IN'
+
+
 class JobStatus(Enum):
     created = 'CREATED'
     ready = 'READY'
@@ -934,6 +947,7 @@ class JobVo(SwBaseModel):
     model_version: str = Field(..., alias='modelVersion')
     model: ModelVo
     job_name: Optional[str] = Field(None, alias='jobName')
+    job_type: Optional[JobType] = Field(None, alias='jobType')
     datasets: Optional[List[str]] = None
     dataset_list: Optional[List[DatasetVo]] = Field(None, alias='datasetList')
     runtime: RuntimeVo
