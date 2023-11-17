@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from pathlib import Path
 from functools import wraps
@@ -90,7 +91,9 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
                 if auto_build_model:
                     console.info(f"building starwhale model package from {workdir}")
                     build_starwhale_model(
-                        name=ctx.model_name, modules=model_modules, workdir=workdir
+                        name=os.environ.get("SW_FINETUNE_TARGET_MODEL", ctx.model_name),
+                        modules=model_modules,
+                        workdir=workdir,
                     )
 
                 return ret

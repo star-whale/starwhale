@@ -81,6 +81,7 @@ class FineTuneAppServiceTest {
 
     FeaturesProperties featuresProperties;
 
+    ModelService modelService;
     User creator = User.builder().build();
     JobConverter jobConverter;
 
@@ -97,6 +98,7 @@ class FineTuneAppServiceTest {
         fineTuneSpaceMapper = mock(FineTuneSpaceMapper.class);
         featuresProperties = mock(FeaturesProperties.class);
         when(featuresProperties.isFineTuneEnabled()).thenReturn(true);
+        modelService = mock(ModelService.class);
         jobConverter = mock(JobConverter.class);
         fineTuneAppService = new FineTuneAppService(
                 featuresProperties,
@@ -112,7 +114,7 @@ class FineTuneAppServiceTest {
                 userJobConverter,
                 mock(EventService.class),
                 jobConverter,
-                mock(ModelService.class),
+                modelService,
                 mock(DatasetService.class)
         );
     }
@@ -131,9 +133,11 @@ class FineTuneAppServiceTest {
         var request = new JobRequest();
         request.setStepSpecOverWrites("aaa");
         request.setValidationDatasetVersionIds(List.of("1"));
+        request.setModelVersionId("1");
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
+        when(modelDao.findVersionById(anyLong())).thenReturn(ModelVersionEntity.builder().build());
         fineTuneAppService.createFineTune("1", 1L, request);
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
