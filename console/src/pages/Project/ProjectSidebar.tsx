@@ -34,7 +34,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
             {
                 title: t('fine-tuning'),
                 path: `/projects/${projectId}/spaces`,
-                icon: <IconFont type='finetuing' size={16} />,
+                icon: <IconFont type='finetuning' size={16} />,
                 activePathPattern: /\/(spaces)\/?/,
             },
             {

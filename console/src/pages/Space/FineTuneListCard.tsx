@@ -11,10 +11,10 @@ import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
 import { useEventCallback } from '@starwhale/core'
 
-const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes/(.*)?/'
+const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes/(.*)?'
 
 const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
-    const [isRoot, setIsRoot] = React.useState(false)
+    const [isRoot, setIsRoot] = React.useState(true)
     const history = useHistory()
 
     useEffect(() => {
@@ -32,15 +32,31 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange }) => {
     }, [history, onLocationChange])
 
     return (
-        <div className='ft-route-bar absolute right-20px top-20px z-1 gap-16px flex'>
-            <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
-            {!fullscreen && (
-                <ExtendButton
-                    icon='close'
-                    styleas={['iconnormal', 'nopadding']}
-                    onClick={() => (isRoot ? onClose?.() : history.go(-1))}
-                />
-            )}
+        <div className='ft-route-bar absolute left-20px right-20px top-20px z-1 gap-16px flex justify-between'>
+            <div className=''>
+                {!isRoot && (
+                    <ExtendButton
+                        icon='arrow_left'
+                        styleas={['iconnormal', 'nopadding']}
+                        onClick={() => history.go(-1)}
+                    />
+                )}
+            </div>
+            <div className='flex flex-shrink-0 gap-16px'>
+                <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
+                {!fullscreen && (
+                    <ExtendButton
+                        icon='close'
+                        styleas={['iconnormal', 'nopadding']}
+                        onClick={() => {
+                            if (isRoot) return onClose?.()
+                            // @ts-ignore
+                            if (history.entries?.[0]) return history.replace(history.entries[0])
+                            return history.go(-1)
+                        }}
+                    />
+                )}
+            </div>
         </div>
     )
 }
