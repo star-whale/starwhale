@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.ft;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -27,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -139,7 +137,7 @@ class FineTuneAppServiceTest {
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
         when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
-        when(modelService.findModelByVersionId(anyList())).thenReturn(List.of(ModelVo.empty()));
+        when(modelDao.findVersionById(anyLong())).thenReturn(ModelVersionEntity.builder().build());
         fineTuneAppService.createFineTune("1", 1L, request);
 
         verify(fineTuneMapper).updateJobId(123L, 22L);
