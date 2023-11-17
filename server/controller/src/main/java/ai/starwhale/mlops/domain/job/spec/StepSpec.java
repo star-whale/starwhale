@@ -82,11 +82,27 @@ public class StepSpec {
     @JsonProperty("require_dataset")
     private Boolean requireDataset;
 
+    static class ExtraParams {
+        @JsonProperty("auto_build_model")
+        private Boolean autoBuildModel;
+        @JsonProperty("require_train_datasets")
+        private Boolean requireTrainDatasets;
+        @JsonProperty("require_validation_datasets")
+        private Boolean requireValidationDatasets;
+    }
+
+    @JsonProperty("extra_kwargs")
+    private ExtraParams extraParams;
+
     @JsonProperty("require_train_datasets")
-    private Boolean requireTrainDataset;
+    public Boolean getRequireTrainDataset() {
+        return extraParams != null ? extraParams.requireTrainDatasets : null;
+    }
 
     @JsonProperty("require_validation_datasets")
-    private Boolean requireValidationDataset;
+    public  Boolean getRequireValidationDataset() {
+        return  extraParams != null ? extraParams.requireValidationDatasets : null;
+    }
 
     @JsonProperty("container_spec")
     ContainerSpec containerSpec;
