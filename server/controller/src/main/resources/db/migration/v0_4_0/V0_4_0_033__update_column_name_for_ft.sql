@@ -14,18 +14,4 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.ft.bo;
-
-import java.util.List;
-import lombok.Data;
-
-@Data
-public class FineTune {
-    private Long id;
-    private Long spaceId;
-    private Long jobId;
-    private List<String> validationDatasets;
-    private List<String> trainDatasets;
-    private Long baseModelVersionId;
-    private Long targetModelVersionId;
-}
+ALTER TABLE fine_tune CHANGE eval_datasets validation_datasets JSON NULL;

@@ -62,7 +62,7 @@ public interface ModelVersionMapper {
     @Update("update model_version set shared = #{shared} where id = #{id}")
     int updateShared(@Param("id") Long id, @Param("shared") Boolean shared);
 
-    @Update("update model_version set model_id = #{modelId} and draft = 0 where id = #{id}")
+    @Update("update model_version set model_id = #{modelId}, draft = 0 where id = #{id}")
     int updateModelRef(@Param("id") Long id, @Param("modelId") Long modelId);
 
     @Select("select " + VERSION_VIEW_COLUMNS

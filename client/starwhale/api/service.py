@@ -1,9 +1,7 @@
-from ._impl.service import Api, api, Input, Output, Service
+from starwhale.api._impl.service.service import api, Service, ServiceType
 
 __all__ = [
     "Service",
-    "Api",
     "api",
-    "Input",
-    "Output",
+    "ServiceType",
 ]

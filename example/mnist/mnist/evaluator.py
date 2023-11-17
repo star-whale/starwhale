@@ -3,12 +3,10 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image, PipelineHandler, multi_classification
-from starwhale.api.service import api
 
 try:
     from .model import Net
@@ -32,13 +30,6 @@ class MNISTInference(PipelineHandler):
         data_tensor = self._pre(data["img"])
         output = self.model(data_tensor)
         return self._post(output)
-
-    @api(gradio.File(), gradio.Label())
-    def upload_bin_file(self, file: t.Any) -> t.Any:
-        with open(file.name, "rb") as f:
-            data = Image(f.read(), shape=(28, 28, 1))
-        _, prob = self.predict({"img": data})
-        return {i: p for i, p in enumerate(prob)}
 
     @multi_classification(
         confusion_matrix_normalize="all",

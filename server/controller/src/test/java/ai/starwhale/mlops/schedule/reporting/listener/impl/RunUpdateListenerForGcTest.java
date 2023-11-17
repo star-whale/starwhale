@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.schedule.reporting.listener.impl;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -31,6 +33,8 @@ import java.util.concurrent.DelayQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class RunUpdateListenerForGcTest {
 
@@ -90,5 +94,45 @@ public class RunUpdateListenerForGcTest {
             runUpdateListenerForGc.processTaskDeletion();
             verify(runExecutor, times(1)).remove(run);
         }
+    }
+
+    @Test
+    public void testLogSaverRetry() {
+        doAnswer(new Answer<Void>() {
+            private int count = 0;
+
+            public Void answer(InvocationOnMock invocation) {
+                count++;
+                if (count < 2) {
+                    throw new RuntimeException("");
+                }
+                return null;
+            }
+        }).when(runLogSaver).saveLog(any());
+        runUpdateListenerForGc = new RunUpdateListenerForGc(runLogSaver, 1L, runExecutor);
+        Run run = Run.builder()
+                .id(1L)
+                .status(RunStatus.FINISHED)
+                .build();
+        runUpdateListenerForGc.onRunUpdate(run);
+        verify(runLogSaver, times(2)).saveLog(run);
+    }
+
+    @Test
+    public void testLogExceptionQuite() {
+        doAnswer(new Answer<Void>() {
+
+            public Void answer(InvocationOnMock invocation) {
+                throw new RuntimeException("");
+            }
+        }).when(runLogSaver).saveLog(any());
+        runUpdateListenerForGc = new RunUpdateListenerForGc(runLogSaver, -1L, runExecutor);
+        Run run = Run.builder()
+                .id(1L)
+                .status(RunStatus.FINISHED)
+                .build();
+        runUpdateListenerForGc.onRunUpdate(run);
+        verify(runLogSaver, times(3)).saveLog(run);
+        verify(runExecutor).remove(run);
     }
 }

@@ -3,14 +3,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image
 from starwhale import model as starwhale_model
 from starwhale import evaluation, multi_classification
-from starwhale.api.service import api
 
 try:
     from .model import Net
@@ -69,14 +67,6 @@ def evaluate_results(predict_result_iter: t.Iterator) -> t.Tuple:
         result.append(_data["output"][0])
         pr.append(_data["output"][1])
     return label, result, pr
-
-
-@api(gradio.File(), gradio.Label())
-def predict_view(file: t.Any) -> t.Any:
-    with open(file.name, "rb") as f:
-        data = Image(f.read(), shape=(28, 28, 1))
-    _, prob = predict_image({"img": data})
-    return {i: p for i, p in enumerate(prob)}
 
 
 def load_model() -> Net:

@@ -37,7 +37,7 @@ class FineTuneMapperTest extends MySqlContainerHolder {
     FineTuneEntity ft = FineTuneEntity.builder()
             .spaceId(11L)
             .jobId(12L)
-            .evalDatasets(List.of(1L, 2L, 3L))
+            .validationDatasets(List.of(1L, 2L, 3L))
             .trainDatasets(List.of(4L, 5L))
             .baseModelVersionId(13L)
             .targetModelVersionId(null)
@@ -53,7 +53,7 @@ class FineTuneMapperTest extends MySqlContainerHolder {
                 FineTuneEntity.builder()
                         .spaceId(11L)
                         .jobId(13L)
-                        .evalDatasets(List.of(12L, 22L, 32L))
+                        .validationDatasets(List.of(12L, 22L, 32L))
                         .trainDatasets(List.of(42L, 52L))
                         .baseModelVersionId(23L)
                         .targetModelVersionId(null)
@@ -64,7 +64,7 @@ class FineTuneMapperTest extends MySqlContainerHolder {
                 FineTuneEntity.builder()
                         .spaceId(12L)
                         .jobId(14L)
-                        .evalDatasets(List.of(13L, 23L, 33L))
+                        .validationDatasets(List.of(13L, 23L, 33L))
                         .trainDatasets(List.of(43L, 53L))
                         .baseModelVersionId(33L)
                         .targetModelVersionId(3L)
@@ -87,7 +87,7 @@ class FineTuneMapperTest extends MySqlContainerHolder {
         Assertions.assertNotNull(fineTuneEntity.getId());
         Assertions.assertEquals(12L, fineTuneEntity.getSpaceId());
         Assertions.assertEquals(14L, fineTuneEntity.getJobId());
-        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getEvalDatasets());
+        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getValidationDatasets());
         Assertions.assertIterableEquals(List.of(43L, 53L), fineTuneEntity.getTrainDatasets());
         Assertions.assertEquals(33L, fineTuneEntity.getBaseModelVersionId());
         Assertions.assertEquals(3L, fineTuneEntity.getTargetModelVersionId());
@@ -99,7 +99,7 @@ class FineTuneMapperTest extends MySqlContainerHolder {
         Assertions.assertNotNull(fineTuneEntity.getId());
         Assertions.assertEquals(12L, fineTuneEntity.getSpaceId());
         Assertions.assertEquals(14L, fineTuneEntity.getJobId());
-        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getEvalDatasets());
+        Assertions.assertIterableEquals(List.of(13L, 23L, 33L), fineTuneEntity.getValidationDatasets());
         Assertions.assertIterableEquals(List.of(43L, 53L), fineTuneEntity.getTrainDatasets());
         Assertions.assertEquals(33L, fineTuneEntity.getBaseModelVersionId());
         Assertions.assertEquals(3L, fineTuneEntity.getTargetModelVersionId());

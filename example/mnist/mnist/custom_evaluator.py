@@ -6,7 +6,6 @@ from pathlib import Path
 import dill
 import numpy as np
 import torch
-import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
@@ -19,14 +18,11 @@ from starwhale import (
     pass_context,
     multi_classification,
 )
-from starwhale.api.service import Service
 from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
-
-svc = Service()
 
 
 class CustomPipelineHandler:
@@ -129,14 +125,3 @@ class CustomPipelineHandler:
             data = Image(f.read(), shape=(28, 28, 1))
         _, prob = self.ppl({"img": data})
         return {i: p for i, p in enumerate(prob[0])}
-
-    @handler(name="custom_service", expose=8080)
-    def custom_service(self) -> None:
-        svc.add_api(
-            gradio.Sketchpad(shape=(28, 28), image_mode="L"),
-            gradio.Label(),
-            self.draw,
-            "sketchpad",
-        )
-        svc.add_api(gradio.File(), gradio.Label(), self.upload_bin_file, "file")
-        svc.serve(addr="0.0.0.0", port=8080)

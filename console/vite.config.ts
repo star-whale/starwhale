@@ -90,6 +90,7 @@ export default defineConfig(({ mode }) => ({
             GIT_COMMIT_HASH: JSON.stringify(commitNumber),
         },
     },
+    rollupInputOptions: {},
     server: {
         proxy: {
             ...extendProxies,
@@ -117,6 +118,12 @@ export default defineConfig(({ mode }) => ({
         target: 'esnext',
         // minify: false,
         // sourcemap: true,
+        rollupOptions: {
+            input: {
+                main: path.resolve(projectRootDir, 'index.html'),
+                modelServing: path.resolve(projectRootDir, 'client/index.html'),
+            },
+        },
     },
     resolve: {
         alias,

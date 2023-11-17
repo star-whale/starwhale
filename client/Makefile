@@ -9,6 +9,7 @@ check:
 clean:
 	rm -rf dist/*
 
+SKIP_UI_BUILD ?= 0
 build-ui:
 	[ "${SKIP_UI_BUILD}" = "1" ] || make -C ../console install-dev-tools
 	[ "${SKIP_UI_BUILD}" = "1" ] || make -C ../console build-all
