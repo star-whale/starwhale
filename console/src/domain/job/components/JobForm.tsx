@@ -109,6 +109,7 @@ export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate
                 devMode: values_.devMode,
                 devPassword: values_.devPassword,
                 timeToLiveInSec: values_.timeToLiveInSec,
+                validationDatasetVersionIds: values_.validationDatasetVersionUrls as any,
             }
             if (values_.rawType && !checkStepSource(values_.stepSpecOverWrites)) {
                 setLoading(false)
@@ -162,10 +163,12 @@ export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate
     // v2 -> require_train_datasets or require_dataset
     //       require_validation_datasets
     const isModifiedDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset || v.require_train_datasets)
+        return stepSource?.some(
+            (v) => v.require_dataset === null || v.require_dataset || v.extra_kwargs?.require_train_datasets
+        )
     }, [stepSource])
     const isModifiedValidationDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.require_validation_datasets)
+        return stepSource?.some((v) => v.extra_kwargs?.require_validation_datasets)
     }, [stepSource])
 
     useEffect(() => {
@@ -211,8 +214,6 @@ export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate
         },
         [form]
     )
-
-    console.log(stepSource)
 
     useEffect(() => {
         const subscription = service.subscribe((curr) => {
@@ -324,6 +325,14 @@ export default function JobForm({ job, onSubmit, autoFill = true, enableTemplate
             {/* dataset config */}
             {isModifiedDataset && <Divider orientation='top'>{t('Datasets')}</Divider>}
             {isModifiedDataset && <FormFieldDataset {...sharedFormProps} />}
+            {isModifiedValidationDataset && (
+                <FormFieldDataset
+                    {...sharedFormProps}
+                    label={t('ft.validation_dataset.name')}
+                    name='validationDatasetVersionUrls'
+                    required={false}
+                />
+            )}
             {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <FormFieldRuntime {...sharedFormProps} {...getRuntimeProps()} />

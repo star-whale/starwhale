@@ -9,16 +9,22 @@ function FormFieldDataset({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     form,
     FormItem,
+    label,
+    name = 'datasetVersionUrls',
+    required = true,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
+    label?: string
+    name?: keyof ICreateJobFormSchema
+    required?: boolean
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
 
     return (
         <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-            <FormItem label={t('Dataset Version')} name='datasetVersionUrls' required>
+            <FormItem label={label || t('Dataset Version')} name={name} required={required}>
                 <DatasetTreeSelector projectId={projectId} multiple />
             </FormItem>
         </div>

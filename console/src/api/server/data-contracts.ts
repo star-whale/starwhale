@@ -261,7 +261,7 @@ export interface IJobRequest {
     modelVersionId?: string
     runtimeVersionId?: string
     datasetVersionIds?: string[]
-    evalDatasetVersionIds?: string[]
+    validationDatasetVersionIds?: string[]
     /** @format int64 */
     timeToLiveInSec?: number
     /** @deprecated */
@@ -1168,6 +1168,12 @@ export interface IEnv {
     value?: string
 }
 
+export interface IExtraParams {
+    auto_build_model?: boolean
+    require_train_datasets?: boolean
+    require_validation_datasets?: boolean
+}
+
 /**
  * Model
  * Model Version View Object
@@ -1236,8 +1242,7 @@ export interface IStepSpec {
     job_name?: string
     show_name: string
     require_dataset?: boolean
-    require_train_datasets?: boolean
-    require_validation_datasets?: boolean
+    extra_kwargs?: IExtraParams
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
@@ -1955,7 +1960,7 @@ export interface IFineTuneVo {
     /** Job object */
     job: IJobVo
     trainDatasets: IDatasetVo[]
-    evalDatasets?: IDatasetVo[]
+    validationDatasets?: IDatasetVo[]
     /** Model object */
     targetModel: IModelVo
 }

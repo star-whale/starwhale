@@ -63,6 +63,7 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'datasetVer
     datasetId: string
     datasetVersionId: string
     datasetVersionUrls?: Array<string>
+    validationDatasetVersionUrls?: Array<string>
     resourcePool: string
     resourcePoolTmp?: string
     stepSpecOverWrites: string

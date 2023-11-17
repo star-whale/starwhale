@@ -10,6 +10,7 @@ import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import type { SharedColumnOptionsT, ColumnT } from '@starwhale/ui/base/data-table/types'
 import { JobStatusType } from '@/domain/job/schemas/job'
 import _ from 'lodash'
+import StatusTag from '@/components/Tag/StatusTag'
 
 type DataT = IFineTuneVo
 
@@ -141,25 +142,31 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
         }),
         DatasetColumn({
             title: t('ft.validation_dataset.name'),
-            key: 'evalDatasets',
-            mapDataToValue: (data: DataT) => datasetsToStr(data.evalDatasets ?? []),
+            key: 'validationDatasets',
+            mapDataToValue: (data: DataT) => datasetsToStr(data.validationDatasets ?? []),
         }),
         ModelColumn({
             title: t('ft.job.output_model_name'),
             key: 'targetModelName',
             mapDataToValue: (data: DataT) => data.targetModel?.name,
-            renderCell: ({ value: alias, data }) => (
-                <>
-                    {data?.job?.targetModel?.version.draft ? 'draft' : 'released'}
-                    <Alias alias={alias} />
-                </>
-            ),
         }),
         AliasColumn({
             title: t('ft.job.output_model_version_alias'),
             key: 'targetModelVersionAlias',
             mapDataToValue: (data: DataT) => data.targetModel?.version.alias,
+            renderCell: ({ value: alias, data }) => (
+                <div className='flex gap-2px'>
+                    {data?.job?.targetModel?.version.draft === false && (
+                        <StatusTag>{t('ft.job.model.release.mode.draft')}</StatusTag>
+                    )}
+                    {data?.job?.targetModel?.version.draft === true && (
+                        <StatusTag kind='positive'>{t('ft.job.model.release.mode.released')}</StatusTag>
+                    )}
+                    <Alias alias={alias} />
+                </div>
+            ),
         }),
+        JobStatusColumn({ title: t('Status'), key: 'status' }),
         ResourcePoolColumn({ title: t('Resource Pool'), key: 'resourcePool' }),
         OwnerColumn({ title: t('Owner'), key: 'owner' }),
         DateTimeColumn({
@@ -177,7 +184,6 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
             key: 'duration',
             mapDataToValue: (data: DataT) => data.job?.duration,
         }),
-        JobStatusColumn({ title: t('Status'), key: 'status' }),
     ]
     const columnMap = _.keyBy(columns, 'key')
 

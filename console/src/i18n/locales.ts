@@ -878,6 +878,14 @@ const ft = {
         en: 'Release Mode',
         zh: '发布模式',
     },
+    'ft.job.model.release.mode.draft': {
+        en: 'Draft',
+        zh: '未发布',
+    },
+    'ft.job.model.release.mode.released': {
+        en: 'Released',
+        zh: '已发布',
+    },
     'ft.job.model.release.mode.create': {
         en: 'Build a new model',
         zh: '构建新模型',
