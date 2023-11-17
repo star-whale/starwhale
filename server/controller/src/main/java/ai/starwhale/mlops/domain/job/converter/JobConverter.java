@@ -192,6 +192,7 @@ public class JobConverter {
 
         return JobVo.builder()
                 .id(idConvertor.convert(jobEntity.getId()))
+                .jobType(jobEntity.getType())
                 .uuid(jobEntity.getJobUuid())
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())

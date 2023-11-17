@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -59,6 +60,9 @@ public class JobVo implements Serializable {
 
     @JsonProperty("jobName")
     private String jobName;
+
+    @JsonProperty("jobType")
+    private JobType jobType;
 
     @JsonProperty("datasets")
     @Valid
