@@ -168,7 +168,8 @@
     "build:extend": "rm -rf build/* && NODE_OPTIONS='--max-old-space-size=5120' vite build --mode extend --emptyOutDir false",
     "serve": "vite preview",
     "test": "jest --config jest.config.ts",
-    "test:coverage": "jest --coverage --config jest.config.ts"
+    "test:coverage": "jest --coverage --config jest.config.ts",
+    "start:client": "vite serve client"
   },
   "eslintConfig": {
     "extends": [

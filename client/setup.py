@@ -36,6 +36,7 @@ install_requires = [
     "GitPython>=3.1.24",
     "filelock",
     "fastapi",
+    "orjson",  # for web server, e.g. sw job info --web
     "protobuf>=3.19.0",
     "types-protobuf>=3.19.0",
     "lz4>=3.1.10",
@@ -51,8 +52,7 @@ install_requires = [
 extras_require = {
     "image": ["pillow"],
     "audio": ["soundfile"],
-    "serve": ["gradio", "uvicorn"],
-    "online-serve": ["gradio~=3.15.0"],
+    "serve": ["uvicorn"],
 }
 
 all_requires = list(

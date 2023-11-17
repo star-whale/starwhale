@@ -16,7 +16,7 @@ from starwhale.utils import console, now_str
 from starwhale.consts import RunStatus, CURRENT_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType, PredictLogMode
-from starwhale.api.service import Input, Output, Service
+from starwhale.api.service import Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
@@ -388,11 +388,6 @@ class PipelineHandler(metaclass=ABCMeta):
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME
         ensure_file(fpath, status)
-
-    def add_api(
-        self, input: Input, output: Output, func: t.Callable, name: str
-    ) -> None:
-        self.svc.add_api(input, output, func, name)
 
     def serve(self, addr: str, port: int) -> None:
         self.svc.serve(addr, port)

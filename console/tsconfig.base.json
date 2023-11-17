@@ -19,7 +19,7 @@
         "types": ["vite/client", "node", "jest"],
         "noImplicitAny": false
     },
-    "include": ["src", "types", "packages", "extensions"],
+    "include": ["src", "types", "packages", "extensions", "client"],
     "exclude": [
         "packages/starwhale-ui/src/base/**",
         "packages/starwhale-ui/src/base/tree-view",
