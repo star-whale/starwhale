@@ -1,6 +1,4 @@
 import React, { useEffect, useLayoutEffect } from 'react'
-import { usePage } from '@/hooks/usePage'
-import useTranslation from '@/hooks/useTranslation'
 import { useHistory, useParams } from 'react-router-dom'
 import { useRouteContext } from '@/contexts/RouteContext'
 import FineTuneRunsListCard from './FineTuneRunsListCard'
@@ -9,11 +7,11 @@ import { api } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
-import { useEventCallback, useIfChanged } from '@starwhale/core'
+import { useEventCallback } from '@starwhale/core'
 import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 
-const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes'
+const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tune'
 
 const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange, extraActions }) => {
     const [isRoot, setIsRoot] = React.useState(true)
@@ -71,9 +69,8 @@ const RouteOverview = ({ url, onClose, title, params }) => {
     const [isRouteAtFineTune, setIsRouteAtFineTune] = React.useState(true)
     const ref = React.useRef<HTMLDivElement>(null)
     const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
-    const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
 
-    const handelInlineLocationChange = useEventCallback(({ history, location, match }) => {
+    const handelInlineLocationChange = useEventCallback(({ location }) => {
         setIsRouteAtFineTune(Boolean(location.pathname.match(FINT_TUNE_ROUTE)))
     })
 
@@ -148,7 +145,7 @@ export default function FineTuneListCard() {
     const isExpand = !!fineTuneId
     const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${fineTuneId}/overview`
     const fineTune = React.useMemo(
-        () => info.data?.list?.find((v) => v.id === fineTuneId),
+        () => info.data?.list?.find((v) => String(v.id) === fineTuneId),
         [fineTuneId, info.data?.list]
     )
 
@@ -162,8 +159,6 @@ export default function FineTuneListCard() {
             </>
         )
     }, [fineTuneId, fineTune])
-
-    console.log(fineTune)
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>

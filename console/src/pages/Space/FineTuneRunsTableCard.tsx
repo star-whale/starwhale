@@ -2,7 +2,7 @@ import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { IPageInfoFineTuneVo } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
-import { useEventCallback, useIfChanged } from '@starwhale/core'
+import { useEventCallback } from '@starwhale/core'
 import { useCreation } from 'ahooks'
 
 function FineTuneCard({ ft, onClick, viewId }) {

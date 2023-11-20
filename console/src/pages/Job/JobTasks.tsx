@@ -62,8 +62,6 @@ export default function JobTasks({ params }: { params: { projectId: string; jobI
         enabled: !!taskId,
     })
 
-    console.log(params)
-
     useUpdateEffect(() => {
         setCurrentEvents({})
         setCurrentLogFiles({})

@@ -12,6 +12,7 @@ import { JobStatusType } from '@/domain/job/schemas/job'
 import _ from 'lodash'
 import StatusTag from '@/components/Tag/StatusTag'
 import { useEventCallback } from '@starwhale/core'
+import { useParams } from 'react-router'
 
 type DataT = IFineTuneVo
 
@@ -160,14 +161,15 @@ const OVERVIEW_COLUMNS_KEYS = [
     'resourcePool',
     'targetModelName',
     'targetModelVersionAlias',
-    'targetModelVersion',
+    'linkedTargetModelVersion',
     'baseModelName',
     'baseModelVersionAlias',
+    'linkedBaseModelVersion',
     'trainDatasets',
     'validationDatasets',
     'runtimeName',
-    'runtimeVersion',
     'runtimeVersionAlias',
+    'linkedRuntimeVersion',
     'handler',
     'stepSpec',
 ]
@@ -178,6 +180,7 @@ function useFineTuneColumns({
 }: { data?: IPageInfoFineTuneVo; keys?: any[] } = {}) {
     const [t] = useTranslation()
     const [queries, setQueries] = React.useState<ValueT[]>([])
+    const { projectId } = useParams<{ projectId: string }>()
 
     const { list = [] } = _data
 
@@ -210,7 +213,7 @@ function useFineTuneColumns({
                 title: t('ft.job.output_model_name'),
                 key: 'targetModelName',
                 mapDataToValue: (data: DataT) => data.targetModel?.name,
-                renderCell: ({ value: name }) => <Text content={name}>{name}</Text>,
+                renderCell: ({ value: name }) => <Text>{name}</Text>,
             }),
             AliasColumn({
                 title: t('ft.job.output_model_version_alias'),
@@ -252,7 +255,6 @@ function useFineTuneColumns({
                 mapDataToValue: (data: DataT) => data.job?.duration,
             }),
             // overview columns
-
             RawColumn({
                 title: t('ft.runtime.name'),
                 key: 'runtimeName',
@@ -283,6 +285,39 @@ function useFineTuneColumns({
                     </div>
                 ),
             }),
+            // linked base model name
+            ModelColumn({
+                title: t('ft.base.model.version'),
+                key: 'linkedBaseModelVersion',
+                mapDataToValue: (data: DataT) => data.job?.model?.version?.name,
+                renderCell: ({ value: version, data }: { value: string; data: DataT }) => {
+                    const { model } = data.job
+                    const to = `/projects/${projectId}/models/${model?.id}/versions/${model?.version?.id}/overview`
+                    return <VersionText content={version} version={version} to={to} />
+                },
+            }),
+            // linked target model version
+            VersionColumn({
+                title: t('ft.job.output_model_version'),
+                key: 'linkedTargetModelVersion',
+                mapDataToValue: (data: DataT) => data.targetModel?.version.name,
+                renderCell: ({ value: version, data }: { value: string; data: DataT }) => {
+                    const { targetModel } = data
+                    const to = `/projects/${projectId}/models/${targetModel?.id}/versions/${targetModel?.version?.id}/overview`
+                    return <VersionText content={version} version={version} to={to} />
+                },
+            }),
+            // linked runtime version
+            VersionColumn({
+                title: t('ft.runtime.version'),
+                key: 'linkedRuntimeVersion',
+                mapDataToValue: (data: DataT) => data.job?.runtime?.version?.name,
+                renderCell: ({ value: version, data }: { value: string; data: DataT }) => {
+                    const { runtime } = data.job
+                    const to = `/projects/${projectId}/runtimes/${runtime?.id}/versions/${runtime?.version?.id}/overview`
+                    return <VersionText content={version} version={version} to={to} />
+                },
+            }),
             // RawColumn({
             //     title: t('job.debug.mode'),
             //     key: 'stepSpec',
@@ -290,7 +325,7 @@ function useFineTuneColumns({
             //     renderCell: ({ value }) => ,
             // }),
         ],
-        [t]
+        [t, projectId]
     )
 
     const columnMap = React.useMemo(() => _.keyBy($columns, 'key'), [$columns])
