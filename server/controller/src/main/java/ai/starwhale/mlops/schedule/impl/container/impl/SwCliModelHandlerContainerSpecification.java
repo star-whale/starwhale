@@ -160,8 +160,12 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
 
         // for online eval
         if (task.getStep().getSpec() != null && task.getStep().getSpec().getExpose() != 0) {
-            coreContainerEnvs.put("SW_ONLINE_SERVING_ROOT_PATH",
-                    webServerInTask.generateServiceRoot(task.getId(), task.getStep().getSpec().getExpose()));
+            var root = webServerInTask.generateServiceRoot(task.getId(), task.getStep().getSpec().getExpose());
+            coreContainerEnvs.put("SW_ONLINE_SERVING_ROOT_PATH", root);
+
+            // hack for gradio
+            // https://github.com/gradio-app/gradio/blob/2780d067f9f801016c0254de679b56794859abed/gradio/blocks.py#L601
+            coreContainerEnvs.put("GRADIO_ROOT_PATH", root);
         }
 
         return coreContainerEnvs;
