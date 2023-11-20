@@ -6,6 +6,8 @@ import FieldDatetime from '../components/FieldDatetime'
 
 const normalize = (v: string) => ['..', v.split('/').pop()].join('/')
 
+const defaultRenderFieldLabel = (value: any) => (typeof value === 'string' ? normalize(value) : value)
+
 function FilterBuilder(options: FilterT = {}): FilterT {
     return {
         kind: options.kind,
@@ -26,9 +28,7 @@ function FilterBuilder(options: FilterT = {}): FilterT {
                     onItemSelect={({ item }) => rest.onChange?.(item.type)}
                 >
                     {isEditing && rest.renderInput?.()}
-                    {!isEditing && (
-                        <Label {...rest}>{typeof rest.value === 'string' ? normalize(rest.value) : rest.value}</Label>
-                    )}
+                    {!isEditing && <Label {...rest}>{renderOptions.find((v) => v.id === rest.value)?.label}</Label>}
                 </PopoverContainer>
             )
         },
@@ -56,6 +56,7 @@ function FilterBuilder(options: FilterT = {}): FilterT {
         },
         renderFieldValue: FieldDefault,
         renderValue: options?.renderValue ?? undefined,
+        renderFieldLabel: options?.renderFieldLabel ?? defaultRenderFieldLabel,
         ...options,
     }
 }
