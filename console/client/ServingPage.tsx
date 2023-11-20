@@ -3,8 +3,8 @@ import axios from 'axios'
 import { useQuery } from 'react-query'
 import { Select } from '@starwhale/ui'
 import _ from 'lodash'
-import QuestionAnswering from './QuestionAnswering'
-import { IApiSchema, InferenceType, ISpecSchema } from './schemas'
+import LLMChat from './pages/llm/LLMChat'
+import { IApiSchema, InferenceType, ISpecSchema } from './schemas/api'
 
 const fetchSpec = async () => {
     const { data } = await axios.get<ISpecSchema>('/api/spec')
@@ -44,7 +44,7 @@ export default function ServingPage() {
                     }}
                 />
             )}
-            {currentApi?.inference_type === InferenceType.QUESTION_ANSWERING && <QuestionAnswering api={currentApi} />}
+            {currentApi?.inference_type === InferenceType.LLM_CHAT && <LLMChat api={currentApi} />}
         </div>
     )
 }
