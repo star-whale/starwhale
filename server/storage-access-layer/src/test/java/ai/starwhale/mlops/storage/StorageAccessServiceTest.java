@@ -163,7 +163,6 @@ public class StorageAccessServiceTest {
     }
 
     // test using real aliyun account
-    @Disabled
     @Test
     public void testAliyun() throws Exception {
         this.run(new StorageAccessServiceAliyun(
@@ -171,7 +170,7 @@ public class StorageAccessServiceTest {
                                 .bucket("aliyun")
                                 .accessKey("ak")
                                 .secretKey("sk")
-                                .endpoint("endpoint")
+                                .endpoint(s3Mock.getHttpEndpoint())
                                 .hugeFileThreshold(10 * 1024 * 1024)
                                 .hugeFilePartSize(5 * 1024 * 1024)
                                 .build()),
@@ -184,7 +183,6 @@ public class StorageAccessServiceTest {
                         .bucket("minio")
                         .accessKey("ak")
                         .secretKey("sk")
-                        .region("us-west-1")
                         .endpoint(s3Mock.getHttpEndpoint())
                         .hugeFileThreshold(10 * 1024 * 1024)
                         .hugeFilePartSize(5 * 1024 * 1024)
@@ -203,10 +201,11 @@ public class StorageAccessServiceTest {
     public void testQcloud() throws Exception {
         this.run(new StorageAccessServiceQcloud(
                         S3Config.builder()
-                                .bucket("bucket")
-                                .accessKey("ak")
-                                .secretKey("sk")
-                                .region("ap-beijing")
+                                .bucket("")
+                                .accessKey("")
+                                .secretKey("")
+                                .region("")
+                                .endpoint("cos.ap-beijing.myqcloud.com")
                                 .hugeFileThreshold(10 * 1024 * 1024)
                                 .hugeFilePartSize(5 * 1024 * 1024)
                                 .build()),
@@ -219,10 +218,10 @@ public class StorageAccessServiceTest {
     public void testBos() throws Exception {
         this.run(new StorageAccessServiceBos(
                         S3Config.builder()
-                                .bucket("bucket")
-                                .accessKey("ak")
-                                .secretKey("sk")
-                                .region("BJ")
+                                .bucket("")
+                                .accessKey("")
+                                .secretKey("")
+                                .endpoint("bj.bcebos.com")
                                 .hugeFileThreshold(10 * 1024 * 1024)
                                 .hugeFilePartSize(5 * 1024 * 1024)
                                 .build()),
@@ -235,10 +234,10 @@ public class StorageAccessServiceTest {
     public void testKsyun() throws Exception {
         this.run(new StorageAccessServiceKsyun(
                         S3Config.builder()
-                                .bucket("bucket")
-                                .accessKey("ak")
-                                .secretKey("sk")
-                                .endpoint("endpoint")
+                                .bucket("")
+                                .accessKey("")
+                                .secretKey("")
+                                .endpoint("ks3-cn-beijing.ksyuncs.com")
                                 .hugeFileThreshold(10 * 1024 * 1024)
                                 .hugeFilePartSize(5 * 1024 * 1024)
                                 .build()),

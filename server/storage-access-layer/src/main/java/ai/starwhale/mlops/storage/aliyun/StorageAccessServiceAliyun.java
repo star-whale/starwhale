@@ -18,7 +18,7 @@ package ai.starwhale.mlops.storage.aliyun;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.NopCloserInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
@@ -51,17 +51,12 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StorageAccessServiceAliyun implements StorageAccessService {
-
-    private final String bucket;
-
-    private final long partSize;
+public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
 
     private final OSS ossClient;
 
     public StorageAccessServiceAliyun(S3Config s3Config) {
-        this.bucket = s3Config.getBucket();
-        this.partSize = s3Config.getHugeFilePartSize();
+        super(s3Config);
 
         var config = new ClientBuilderConfiguration();
         config.setRequestTimeoutEnabled(true);
@@ -80,7 +75,7 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
             var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
             return new StorageObjectInfo(true,
                     resp.getContentLength(),
-                    md5sum ? resp.getETag().replace("\"", "") : null,
+                    md5sum ? resp.getETag().replace("\"", "").toLowerCase() : null,
                     MetaHelper.mapToString(resp.getUserMetadata()));
         } catch (OSSException e) {
             if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {

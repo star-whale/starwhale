@@ -17,16 +17,22 @@
 package ai.starwhale.mlops.storage.s3;
 
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 public class S3Config {
 
     private String bucket;
@@ -41,14 +47,29 @@ public class S3Config {
         this.bucket = tokens.get("bucket");
         this.accessKey = tokens.get("ak");
         this.secretKey = tokens.get("sk");
-        this.endpoint = tokens.get("endpoint");
         this.region = tokens.get("region");
-        this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
-        this.hugeFilePartSize = Long.parseLong(tokens.get("hugeFilePartSize"));
+        this.endpoint = tokens.get("endpoint");
+        try {
+            this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
+        } catch (Exception e) {
+            log.error("failed to parse hugeFileThreshold", e);
+        }
+        try {
+            this.hugeFilePartSize = Long.parseLong(tokens.get("hugeFilePartSize"));
+        } catch (Exception e) {
+            log.error("failed to parse hugeFilePartSize", e);
+        }
     }
 
-    public boolean overWriteEndPoint() {
-        return null != endpoint && !endpoint.isBlank();
+    public URL getEndpointUrl() {
+        try {
+            if (this.endpoint.contains("://")) {
+                return new URL(this.endpoint);
+            } else {
+                return new URL("http://" + this.endpoint);
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
-
 }

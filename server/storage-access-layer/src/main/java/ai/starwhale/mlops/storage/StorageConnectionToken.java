@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.autofit;
+package ai.starwhale.mlops.storage;
 
 import java.util.Map;
 import java.util.Objects;

@@ -17,22 +17,9 @@
 package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
-import ai.starwhale.mlops.storage.autofit.aliyun.CompatibleStorageAccessServiceBuilderAliyun;
-import ai.starwhale.mlops.storage.autofit.baidu.CompatibleStorageAccessServiceBuilderBos;
-import ai.starwhale.mlops.storage.autofit.fs.CompatibleStorageAccessServiceBuilderFs;
-import ai.starwhale.mlops.storage.autofit.ksyun.CompatibleStorageAccessServiceBuilderKsyun;
-import ai.starwhale.mlops.storage.autofit.minio.CompatibleStorageAccessServiceBuilderMinio;
-import ai.starwhale.mlops.storage.autofit.qcloud.CompatibleStorageAccessServiceBuilderQcloud;
-import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceBuilderS3;
-import ai.starwhale.mlops.storage.baidu.StorageAccessServiceBos;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
-import ai.starwhale.mlops.storage.ksyun.StorageAccessServiceKsyun;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
-import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
-import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
-import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,85 +29,18 @@ import org.springframework.context.annotation.Configuration;
 public class StorageAccessConfig {
 
     @Bean
-    public CompatibleStorageAccessServiceBuilderFs compatibleStorageAccessServiceBuilderFs() {
-        return new CompatibleStorageAccessServiceBuilderFs();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderAliyun compatibleStorageAccessServiceBuilderAliyun() {
-        return new CompatibleStorageAccessServiceBuilderAliyun();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderQcloud compatibleStorageAccessServiceBuilderQcloud() {
-        return new CompatibleStorageAccessServiceBuilderQcloud();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderBos compatibleStorageAccessServiceBuilderBos() {
-        return new CompatibleStorageAccessServiceBuilderBos();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderKsyun compatibleStorageAccessServiceBuilderKsyun() {
-        return new CompatibleStorageAccessServiceBuilderKsyun();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderMinio compatibleStorageAccessServiceBuilderMinio() {
-        return new CompatibleStorageAccessServiceBuilderMinio();
-    }
-
-    @Bean
-    public CompatibleStorageAccessServiceBuilderS3 compatibleStorageAccessServiceBuilderS3() {
-        return new CompatibleStorageAccessServiceBuilderS3();
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
-    public StorageAccessService fs(StorageProperties storageProperties) {
-        return new StorageAccessServiceFile(storageProperties.getFsConfig());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "s3")
-    public StorageAccessService s3(StorageProperties storageProperties) {
-        return new StorageAccessServiceS3(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "aliyun")
-    public StorageAccessService aliyun(StorageProperties storageProperties) {
-        return new StorageAccessServiceAliyun(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "tencent")
-    public StorageAccessService qcloud(StorageProperties storageProperties) {
-        return new StorageAccessServiceQcloud(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "baidu")
-    public StorageAccessService bos(StorageProperties storageProperties) {
-        return new StorageAccessServiceBos(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "ksyun")
-    public StorageAccessService ksyun(StorageProperties storageProperties) {
-        return new StorageAccessServiceKsyun(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "minio", matchIfMissing = true)
-    public StorageAccessService minio(StorageProperties storageProperties) {
-        return new StorageAccessServiceMinio(storageProperties.getS3Config());
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "memory")
-    public StorageAccessService memory(StorageProperties storageProperties) {
-        return new StorageAccessServiceMemory();
+    @ConfigurationProperties(prefix = "sw.storage")
+    public StorageAccessService storageAccessService(StorageProperties storageProperties) {
+        switch (storageProperties.getType().toLowerCase()) {
+            case "memory":
+                return new StorageAccessServiceMemory();
+            case "fs":
+            case "file":
+                return new StorageAccessServiceFile(storageProperties.getFsConfig());
+            default:
+                return StorageAccessService.getS3LikeStorageAccessService(
+                        storageProperties.getType(),
+                        storageProperties.getS3Config());
+        }
     }
 }
