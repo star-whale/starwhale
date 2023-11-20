@@ -163,4 +163,30 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
+    @Operation(summary = "import from common eval summary")
+    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/eval/import", produces =
+            MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> importEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+
+    ) {
+
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
+    @Operation(summary = "export to common eval summary")
+    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/eval/export", produces =
+            MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> exportEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+
+    ) {
+
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
 }
