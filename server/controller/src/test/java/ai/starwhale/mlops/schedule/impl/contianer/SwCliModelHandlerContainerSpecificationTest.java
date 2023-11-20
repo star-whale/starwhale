@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
 
 public class SwCliModelHandlerContainerSpecificationTest {
 
-    static final String CONDARC = "channels:\n"
+    static final String CONDA_RC = "channels:\n"
             + "  - defaults\n"
             + "show_channel_urls: true\n"
             + "default_channels:\n"
@@ -159,7 +159,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
     @Test
     public void testEnvs() throws JsonProcessingException {
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
+                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDA_RC);
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         var webServerInTask = mock(WebServerInTask.class);
@@ -191,13 +191,14 @@ public class SwCliModelHandlerContainerSpecificationTest {
 
         var envWithSourceRoot = new HashMap<>(expectedEnvsRun);
         envWithSourceRoot.put("SW_ONLINE_SERVING_ROOT_PATH", "/gateway/1/1234");
+        envWithSourceRoot.put("GRADIO_ROOT_PATH", "/gateway/1/1234");
         assertMapEquals(envWithSourceRoot, csWithExposed.getContainerEnvs());
     }
 
     @Test
     public void testDevMode() throws IOException {
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
+                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDA_RC);
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         var webServerInTask = mock(WebServerInTask.class);
