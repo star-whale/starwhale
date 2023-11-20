@@ -339,5 +339,8 @@ public class EvaluationRepo {
         return uuids.size();
     }
 
+    public void sync(String srcTable, List<String> ids, String dstTable) {
+
+    }
 
 }

@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @Slf4j
 @Validated
@@ -167,26 +168,28 @@ public class FineTuneController {
     }
 
     @Operation(summary = "import from common eval summary")
-    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/eval/import", produces =
-            MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/eval/import", produces = MediaType.APPLICATION_JSON_VALUE
+    )
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> importEval(
             @PathVariable("projectId") Long projectId,
-            @PathVariable("spaceId") Long spaceId
-
+            @PathVariable("spaceId") Long spaceId,
+            @RequestParam("srcIds") List<String> srcIds
     ) {
 
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
     @Operation(summary = "export to common eval summary")
-    @PutMapping(value = "/project/{projectId}/ftspace/{spaceId}/eval/export", produces =
-            MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/eval/export", produces = MediaType.APPLICATION_JSON_VALUE
+    )
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> exportEval(
             @PathVariable("projectId") Long projectId,
-            @PathVariable("spaceId") Long spaceId
-
+            @PathVariable("spaceId") Long spaceId,
+            @RequestParam("ids") List<String> ids
     ) {
 
         return ResponseEntity.ok(Code.success.asResponse(""));
