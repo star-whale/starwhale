@@ -12,7 +12,11 @@ from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
 from starwhale.base.uri.project import Project
 from starwhale.base.models.model import JobHandlers, StepSpecClient
-from starwhale.base.client.models.models import RuntimeResource, ParameterSignature
+from starwhale.base.client.models.models import (
+    FineTune,
+    RuntimeResource,
+    ParameterSignature,
+)
 
 
 class JobTestCase(unittest.TestCase):
@@ -782,9 +786,11 @@ def ft2(): ...
                     ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": True,
-                        "require_train_datasets": True,
-                        "require_validation_datasets": True,
                     },
+                    fine_tune=FineTune(
+                        require_train_datasets=True,
+                        require_validation_datasets=True,
+                    ),
                 ),
             ],
             "mock_user_module:ft2": [
@@ -803,9 +809,11 @@ def ft2(): ...
                     ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": True,
-                        "require_train_datasets": True,
-                        "require_validation_datasets": True,
                     },
+                    fine_tune=FineTune(
+                        require_train_datasets=True,
+                        require_validation_datasets=True,
+                    ),
                 ),
                 StepSpecClient(
                     name="mock_user_module:ft2",
@@ -828,9 +836,11 @@ def ft2(): ...
                     ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": False,
-                        "require_train_datasets": False,
-                        "require_validation_datasets": False,
                     },
+                    fine_tune=FineTune(
+                        require_train_datasets=False,
+                        require_validation_datasets=False,
+                    ),
                 ),
             ],
         }
