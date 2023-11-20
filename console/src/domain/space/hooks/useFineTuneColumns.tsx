@@ -75,7 +75,9 @@ function DateTimeColumn(options: SharedColumnOptionsT<number | undefined>): Colu
     return CustomColumn({
         buildFilters: FilterDatetime,
         mapDataToValue: (data: DataT) => data.job?.createdTime,
-        renderCell: ({ value: timestamp }) => timestamp && timestamp > 0 && formatTimestampDateTime(timestamp),
+        renderCell: ({ value: timestamp }) => (
+            <>{timestamp && timestamp > 0 ? formatTimestampDateTime(timestamp) : '-'}</>
+        ),
         ...shared,
         ...options,
     })
@@ -84,7 +86,7 @@ function DurationColumn(options: SharedColumnOptionsT<number | undefined>): Colu
     return CustomColumn({
         buildFilters: FilterNumberical,
         mapDataToValue: (data: DataT) => data.job?.duration,
-        renderCell: ({ value: duration }) => duration && duration > 0 && durationToStr(duration),
+        renderCell: ({ value: duration }) => <>{duration && duration > 0 ? durationToStr(duration) : '-'}</>,
         ...shared,
         ...options,
     })

@@ -31,10 +31,11 @@ export default function BaseSubLayout({
 
     const { isInline } = useRouteInlineContext()
 
-    if (isInline) return children
+    if (isInline) return <>{children}</>
 
     return (
         <BaseLayout
+            // eslint-disable-next-line
             middle={middle}
             extra={extra}
             breadcrumbItems={breadcrumbItems}

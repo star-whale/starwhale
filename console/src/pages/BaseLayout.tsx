@@ -45,6 +45,8 @@ export interface IBaseLayoutProps {
     contentStyle?: React.CSSProperties
     style?: React.CSSProperties
     className?: string
+    // eslint-disable-next-line
+    middle?: any
 }
 
 export default function BaseLayout({
@@ -62,7 +64,7 @@ export default function BaseLayout({
 
     const { isInline } = useRouteInlineContext()
 
-    if (isInline) return children
+    if (isInline) return <>{children}</>
 
     return (
         <main

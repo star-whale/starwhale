@@ -127,7 +127,7 @@ export function FineTuneModelReleaseModal({ isOpen, setIsOpen, data, onRefresh }
             <ModalHeader>{`${t('Model')} ${t('ft.job.model.release')}`}</ModalHeader>
             <ModalBody>
                 <div className='bt-1px bb-1px pt-20px'>
-                    <FineTuneModelReleaseForm onSubmit={handleSubmit} data={data} />
+                    <FineTuneModelReleaseForm onSubmit={handleSubmit} />
                 </div>
             </ModalBody>
         </Modal>
