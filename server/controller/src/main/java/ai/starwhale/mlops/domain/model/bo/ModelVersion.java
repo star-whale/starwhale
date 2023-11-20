@@ -48,7 +48,7 @@ public class ModelVersion {
         return ModelVersion.builder()
                 .id(entity.getId())
                 .modelId(entity.getModelId())
-                .name(entity.getName())
+                .name(entity.getModelName())
                 .ownerId(entity.getOwnerId())
                 .tag(entity.getVersionTag())
                 .jobs(entity.getJobs())

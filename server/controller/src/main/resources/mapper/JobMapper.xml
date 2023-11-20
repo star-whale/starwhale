@@ -92,6 +92,24 @@
     order by pinned_time desc, job_id desc
   </select>
 
+  <select id="listBizJobs" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and project_id = #{projectId}
+      and biz_type = #{bizType}
+      and job_is_deleted = 0
+    </where>
+    <if test="bizId != null and bizId != ''">
+      and biz_id = #{bizId}
+    </if>
+    <if test="jobType != null and jobType != ''">
+      and job_type = #{jobType}
+    </if>
+    <if test="modelVersionId != null and modelVersionId != ''">
+      and model_version_id = #{modelVersionId}
+    </if>
+  </select>
+
   <select id="findJobById" resultMap="jobResultMap">
     <include refid="select_jobs"/>
     <where>

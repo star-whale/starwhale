@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -65,6 +66,7 @@ public class JobMapperTest extends MySqlContainerHolder {
     JobEntity jobPaused;
     JobEntity jobCreated;
     JobEntity jobBuiltIn;
+    JobEntity jobFineTuneEval;
 
     @BeforeEach
     public void initData() {
@@ -104,20 +106,31 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .devMode(true)
                 .autoReleaseTime(new Date(123 * 1000L))
                 .projectId(project.getId()).ownerId(user.getId()).build();
+        jobFineTuneEval = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.CREATED)
+                .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
+                .resultOutputPath("")
+                .bizType(BizType.FINE_TUNE)
+                .bizId("1")
+                .type(JobType.EVALUATION)
+                .stepSpec("stepSpec2")
+                .devMode(false)
+                .autoReleaseTime(new Date(123 * 1000L))
+                .projectId(project.getId()).ownerId(user.getId()).build();
         jobMapper.addJob(jobPaused);
         jobMapper.addJob(jobCreated);
         jobMapper.addJob(jobBuiltIn);
+        jobMapper.addJob(jobFineTuneEval);
     }
 
     @Test
     public void testListJobs() {
         List<JobEntity> jobEntities = jobMapper.listJobs(project.getId(), null);
-        Assertions.assertEquals(3, jobEntities.size());
+        Assertions.assertEquals(4, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
         jobEntities = jobMapper.listJobs(project.getId(), modelVersionEntity.getId());
-        Assertions.assertEquals(3, jobEntities.size());
+        Assertions.assertEquals(4, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
@@ -130,24 +143,48 @@ public class JobMapperTest extends MySqlContainerHolder {
         if (jobEntity.getType() == JobType.BUILT_IN) {
             return jobBuiltIn;
         }
+        if (jobEntity.getBizType() == BizType.FINE_TUNE && jobEntity.getType() == JobType.EVALUATION) {
+            return jobFineTuneEval;
+        }
         return jobEntity.getJobStatus() == JobStatus.PAUSED ? jobPaused : jobCreated;
     }
 
     @Test
     public void testListUserJobs() {
         List<JobEntity> jobEntities = jobMapper.listUserJobs(project.getId(), null);
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
         jobEntities = jobMapper.listUserJobs(project.getId(), modelVersionEntity.getId());
-        Assertions.assertEquals(2, jobEntities.size());
+        Assertions.assertEquals(3, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
         jobEntities = jobMapper.listUserJobs(project.getId(), modelVersionEntity.getId() + 1234L);
         Assertions.assertIterableEquals(List.of(), jobEntities);
 
+    }
+
+    @Test
+    public void testListBizJobs() {
+        List<JobEntity> jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, null, null);
+        Assertions.assertEquals(1, jobs.size());
+
+        jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), "1", JobType.EVALUATION.name(), null);
+        Assertions.assertEquals(1, jobs.size());
+
+        jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, JobType.EVALUATION.name(), null);
+        Assertions.assertEquals(1, jobs.size());
+
+        jobs = jobMapper.listBizJobs(
+                project.getId(),
+                BizType.FINE_TUNE.name(),
+                null,
+                JobType.EVALUATION.name(),
+                modelVersionEntity.getId() + 1234L
+        );
+        Assertions.assertIterableEquals(List.of(), jobs);
     }
 
     @Test
@@ -187,13 +224,13 @@ public class JobMapperTest extends MySqlContainerHolder {
         validateJob(jobPaused, user, project, modelVersionEntity, jobEntities.get(0));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED));
-        Assertions.assertEquals(3, jobEntities.size());
+        Assertions.assertEquals(4, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));
 
         jobEntities = jobMapper.findJobByStatusIn(List.of(JobStatus.PAUSED, JobStatus.CREATED, JobStatus.FAIL));
-        Assertions.assertEquals(3, jobEntities.size());
+        Assertions.assertEquals(4, jobEntities.size());
         jobEntities.forEach(
                 jobEntity -> validateJob(getExpectedJob(jobEntity), user,
                         project, modelVersionEntity, jobEntity));

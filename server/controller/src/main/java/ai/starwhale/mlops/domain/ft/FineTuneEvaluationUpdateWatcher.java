@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.ft;
 
+import static ai.starwhale.mlops.domain.ft.FineTuneAppService.FULL_EVALUATION_SUMMARY_TABLE_FORMAT;
+
 import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -31,8 +33,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class FineTuneEvaluationUpdateWatcher implements JobUpdateWatcher {
 
-    private static final String TABLE_NAME_FORMAT = "project/%s/ftspace/%s/eval/summary";
-
     private final EvaluationRepo evaluationRepo;
 
     public FineTuneEvaluationUpdateWatcher(EvaluationRepo evaluationRepo) {
@@ -47,7 +47,8 @@ public class FineTuneEvaluationUpdateWatcher implements JobUpdateWatcher {
     @Override
     public void onCreate(JobFlattenEntity job) {
         var res = evaluationRepo.addJob(
-                String.format(TABLE_NAME_FORMAT, job.getProject().getId(), job.getBizId()), job) > 0;
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, job.getProject().getId(), job.getBizId()), job
+        ) > 0;
         if (!res) {
             throw new SwProcessException(ErrorType.DATASTORE, "Sync fine-tune evaluation job failed");
         }
@@ -56,13 +57,16 @@ public class FineTuneEvaluationUpdateWatcher implements JobUpdateWatcher {
     @Override
     public void onUpdateStatus(Job job, JobStatus jobStatus) {
         evaluationRepo.updateJobStatus(
-                String.format(TABLE_NAME_FORMAT, job.getProject().getId(), job.getBizId()), job, jobStatus);
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, job.getProject().getId(), job.getBizId()),
+                job,
+                jobStatus
+        );
     }
 
     @Override
     public void onUpdateFinishTime(Job job, Date finishedTime, Long duration) {
         evaluationRepo.updateJobFinishedTime(
-                String.format(TABLE_NAME_FORMAT, job.getProject().getId(), job.getBizId()),
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, job.getProject().getId(), job.getBizId()),
                 job,
                 finishedTime,
                 duration

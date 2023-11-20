@@ -126,6 +126,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         return jobMapper.listUserJobs(projectId, modelId);
     }
 
+    public List<JobEntity> listBizJobs(Long projectId, BizType bizType, String bizId, JobType jobType, Long modelId) {
+        return jobMapper.listBizJobs(projectId, bizType.name(), bizId, jobType.name(), modelId);
+    }
+
     public List<Job> findJobByStatusIn(List<JobStatus> jobStatuses) {
         return jobMapper.findJobByStatusIn(jobStatuses)
                 .stream()

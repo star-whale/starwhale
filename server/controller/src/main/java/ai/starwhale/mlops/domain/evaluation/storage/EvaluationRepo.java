@@ -51,6 +51,7 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeVers
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.STRING;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.StepSpecColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.tableSchemaDesc;
+import static ai.starwhale.mlops.domain.job.converter.UserJobConverter.FORMATTER_URI_ARTIFACT;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.DataStore;
@@ -62,7 +63,10 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -294,5 +298,46 @@ public class EvaluationRepo {
         store.flush();
         return 1;
     }
+
+    public int updateModelInfo(String table, List<String> uuids, ModelEntity newModel, ModelVersionEntity newVersion) {
+        if (Objects.isNull(table) || CollectionUtils.isEmpty(uuids) || newModel == null || newVersion == null) {
+            return 0;
+        }
+
+        List<ColumnSchemaDesc> columns = new ArrayList<>(List.of(
+                ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModelUriColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModelUriViewColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModelVersionColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build()
+
+        ));
+
+        List<Map<String, Object>> records = new ArrayList<>();
+        Project project = projectService.findProject(newModel.getProjectId());
+        for (String uuid : uuids) {
+            records.add(new HashMap<>(Map.of(
+                    KeyColumn, uuid,
+                    ModelNameColumn, newModel.getName(),
+                    ModelVersionColumn, newVersion.getVersionName(),
+                    ModelUriViewColumn, String.format(
+                            FORMATTER_URI_ARTIFACT,
+                            project.getName(),
+                            "model",
+                            newModel.getName(),
+                            newVersion.getVersionName()
+                    ),
+                    ModelUriColumn, String.format(
+                            FORMATTER_URI_ARTIFACT, project.getId(), "model", newModel.getId(), newVersion.getId()
+                    ),
+                    ModelVersionIdColumn, BaseValue.encode(new Int64Value(newVersion.getId()), false, false)
+            )));
+        }
+        store.update(table, new TableSchemaDesc(KeyColumn, columns), records);
+        store.flush();
+        return uuids.size();
+    }
+
 
 }
