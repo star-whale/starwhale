@@ -41,7 +41,7 @@ const useHeaderStyles = createUseStyles({
         color: props.theme.colors.contentPrimary,
         backgroundColor: props.theme.brandBgNav,
         position: 'relative',
-        zIndex: 10,
+        zIndex: 100,
     }),
 })
 
