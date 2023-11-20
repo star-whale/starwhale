@@ -57,8 +57,7 @@ public class JobParserTest {
                 + "  resources: []\n"
                 + "  name: mnist.evaluator:MNISTInference.ppl\n"
                 + "  replicas: 1\n"
-                + "  extra_kwargs:\n"
-                + "    auto_build_model: true\n"
+                + "  fine_tune:\n"
                 + "    require_train_datasets: true\n"
                 + "    require_validation_datasets: false\n"
                 + "  env:\n"
@@ -81,7 +80,7 @@ public class JobParserTest {
                 new Env("EVAL_DATASET", "imagenet"),
                 new Env("EVAL_MODEL", "resnet50")
             ));
-        Assertions.assertTrue(stepMetaDatas.get(2).getExtraParams().getRequireTrainDatasets());
-        Assertions.assertFalse(stepMetaDatas.get(2).getExtraParams().getRequireValidationDatasets());
+        Assertions.assertTrue(stepMetaDatas.get(2).getFinetune().getRequireTrainDatasets());
+        Assertions.assertFalse(stepMetaDatas.get(2).getFinetune().getRequireValidationDatasets());
     }
 }
