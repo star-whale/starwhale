@@ -1,6 +1,14 @@
-from starwhale.api.service import api, ServiceType
+from typing import List
+
+from starwhale.api.service import api, QuestionAnswering
 
 
-@api(ServiceType.QUESTION_ANSWERING)
-def fake_chat_bot(content: str) -> str:
-    return f"hello from chat bot with {content}"
+@api(inference_type=QuestionAnswering(args={"user_input", "history", "temperature"}))
+def fake_chat_bot(
+    user_input: str, history: List[dict], temperature: float
+) -> List[dict]:
+    result = f"hello from chat bot with {user_input}, and temperature {temperature}"
+    history.extend(
+        [{"content": user_input, "role": "user"}, {"content": result, "role": "bot"}]
+    )
+    return history
