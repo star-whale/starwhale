@@ -75,7 +75,6 @@ class CIFAR10Inference(PipelineHandler):
     @api(
         gradio.Image(type="pil"),
         gradio.Label(label="prediction"),
-        examples=[ROOTDIR / "kitty.jpeg"],
     )
     def online_eval(self, img: PILImage.Image):
         buf = io.BytesIO()

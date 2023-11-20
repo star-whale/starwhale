@@ -31,7 +31,7 @@ class StableDiffusion(PipelineHandler):
             gradio.Text(label="negative prompt"),
             gradio.Slider(minimum=0, maximum=50, label="Guidance Scale", value=9),
         ],
-        output=gradio.Image(),
+        gradio.Image(),
     )
     def txt2img(self, prompt: str, negative_prompt: str, guidance_scale: float):
         return self.pipe(

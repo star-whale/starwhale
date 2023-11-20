@@ -65,10 +65,6 @@ class TextClassificationHandler(PipelineHandler):
     @api(
         gradio.Text(label="input"),
         gradio.Label(),
-        examples=[
-            "Fears for T N pension after talks Unions representing workers at Turner Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul.",
-            'E-mail scam targets police chief Wiltshire Police warns about "phishing" after its fraud squad chief was targeted.',
-        ],
     )
     def online_eval(self, content: str):
         _, prob = self.ppl({"text": content})

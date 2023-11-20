@@ -3,10 +3,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import Image, PipelineHandler, multi_classification
+from starwhale.api.service import api
 
 try:
     from .model import Net
@@ -72,3 +74,14 @@ class MNISTInference(PipelineHandler):
         model.eval()
         print("load mnist model, start to inference...")
         return model
+
+    @api(
+        inputs=gradio.Sketchpad(shape=(28, 28), image_mode="L"), outputs=gradio.Label()
+    )
+    def draw(self, data: np.ndarray) -> t.Any:
+        _image_array = PILImage.fromarray(data.astype("int8"), mode="L")
+        _image = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        )(_image_array)
+        output = self.model(torch.stack([_image]).to(self.device))
+        return {i: p for i, p in enumerate(np.exp(output.tolist()).tolist()[0])}

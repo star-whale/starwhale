@@ -3,7 +3,6 @@ import os.path
 from urllib.parse import urlparse
 
 import httpx
-import pkg_resources
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import ORJSONResponse
 from typing_extensions import Protocol
@@ -15,8 +14,7 @@ from starlette.staticfiles import StaticFiles
 
 from starwhale.web import user, panel, system, project, data_store
 from starwhale.base.uri.instance import Instance
-
-STATIC_DIR_DEV = pkg_resources.resource_filename("starwhale", "web/ui")
+from starwhale.api._impl.service.service import STATIC_DIR_DEV
 
 
 class Component(Protocol):

@@ -12,6 +12,6 @@ class MyDefaultClass(PipelineHandler):
     def handler_foo(self, data: t.Any) -> t.Any:
         return
 
-    @service.api(ServiceType.QUESTION_ANSWERING)
+    @service.api(inference_type=ServiceType.QUESTION_ANSWERING)
     def cmp(self, ppl_result: t.Iterator) -> t.Any:
         pass
