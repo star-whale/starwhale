@@ -16,7 +16,7 @@ function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
     return (
         <div ref={ref} className='ft-list content-full'>
             <div className={`${isExpand ? 'w-full' : 'w-360px'} mb-20px`}>
-                <FineTuneSearchBar data={data} getFilters={getFilters} queries={queries} setQueries={setQueries} />
+                <FineTuneSearchBar getFilters={getFilters} queries={queries} setQueries={setQueries} />
             </div>
             {isExpand ? (
                 <FineTuneRunsTableCard list={list} onView={onView} viewId={viewId} />

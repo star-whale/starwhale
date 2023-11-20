@@ -1,6 +1,6 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { FilterString, FilterDatetime, FilterNumberical, ValueT, Operators } from '@starwhale/ui'
+import { FilterString, FilterDatetime, FilterNumberical, ValueT, Operators, VersionText, Text } from '@starwhale/ui'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import { IDatasetVo, IFineTuneVo, IPageInfoFineTuneVo, IUserVo } from '@/api'
 import User from '@/domain/user/components/User'
@@ -11,6 +11,7 @@ import type { SharedColumnOptionsT, ColumnT } from '@starwhale/ui/base/data-tabl
 import { JobStatusType } from '@/domain/job/schemas/job'
 import _ from 'lodash'
 import StatusTag from '@/components/Tag/StatusTag'
+import { useEventCallback } from '@starwhale/core'
 
 type DataT = IFineTuneVo
 
@@ -34,11 +35,20 @@ const datasetsToCell = (datasets: IDatasetVo[]) => {
     return <div className='f-l-c gap-3px h-24px w-auto'>{tmp}</div>
 }
 
+function RawColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
+    return StringColumn({
+        // @ts-ignore
+        buildFilters: FilterString,
+        ...shared,
+        ...options,
+    })
+}
+
 function IDColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
     return StringColumn({
         // @ts-ignore
         buildFilters: FilterString,
-        mapDataToValue: (data: DataT) => String(data.id),
+        mapDataToValue: (data: DataT) => String(data?.id),
         ...shared,
         ...options,
     })
@@ -116,110 +126,203 @@ function DatasetColumn(options: SharedColumnOptionsT<string>): ColumnT<string, a
     })
 }
 
-// function VersionColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
-//     return CustomColumn({
-//         mapDataToValue: (data: DataT) => data.job?.model?.version.name,
-//         renderCell: ({ value: version }) => <VersionText version={version} />,
-//         ...options,
-//     })
-// }
-// VersionColumn({
-//     title: t('ft.job.output_draft_model_version'),
-//     key: t('ft.job.output_draft_model_version'),
-//     mapDataToValue: (data: DataT) => data.targetModel?.version.name,
-// }),
+function VersionColumn(options: SharedColumnOptionsT<string>): ColumnT<string, any> {
+    return CustomColumn({
+        mapDataToValue: (data: DataT) => data.job?.model?.version.name,
+        renderCell: ({ value: version }) => <VersionText version={version} />,
+        ...options,
+    })
+}
 
-function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo } = {}) {
+const LIST_COLUMNS_KEYS = [
+    'id',
+    'baseModelName',
+    'baseModelVersionAlias',
+    'trainDatasets',
+    'validationDatasets',
+    'targetModelName',
+    'targetModelVersionAlias',
+    'status',
+    'resourcePool',
+    'owner',
+    'createdTime',
+    'stopTime',
+    'duration',
+]
+
+const OVERVIEW_COLUMNS_KEYS = [
+    'id',
+    'status',
+    'createdTime',
+    'stopTime',
+    'duration',
+    'owner',
+    'resourcePool',
+    'targetModelName',
+    'targetModelVersionAlias',
+    'targetModelVersion',
+    'baseModelName',
+    'baseModelVersionAlias',
+    'trainDatasets',
+    'validationDatasets',
+    'runtimeName',
+    'runtimeVersion',
+    'runtimeVersionAlias',
+    'handler',
+    'stepSpec',
+]
+
+function useFineTuneColumns({
+    data: _data = {},
+    keys = LIST_COLUMNS_KEYS,
+}: { data?: IPageInfoFineTuneVo; keys?: any[] } = {}) {
     const [t] = useTranslation()
     const [queries, setQueries] = React.useState<ValueT[]>([])
 
     const { list = [] } = _data
 
-    const columns = [
-        IDColumn({ title: t('ft.id'), key: 'id' }),
-        ModelColumn({
-            title: t('ft.base.model.name'),
-            key: 'baseModelName',
-            mapDataToValue: (data: DataT) => data.job?.model?.name,
-        }),
-        AliasColumn({
-            title: t('ft.base.model.version_alias'),
-            key: 'baseModelVersionAlias',
-            mapDataToValue: (data: DataT) => data.job?.model?.version.alias,
-        }),
-        DatasetColumn({
-            title: t('ft.training_dataset.name'),
-            key: 'trainDatasets',
-            mapDataToValue: (data: DataT) => datasetsToStr(data?.trainDatasets ?? []),
-            renderCell: ({ data }) => datasetsToCell(data?.trainDatasets ?? []),
-        }),
-        DatasetColumn({
-            title: t('ft.validation_dataset.name'),
-            key: 'validationDatasets',
-            mapDataToValue: (data: DataT) => datasetsToStr(data?.validationDatasets ?? []),
-            renderCell: ({ data }) => datasetsToCell(data?.validationDatasets ?? []),
-        }),
-        ModelColumn({
-            title: t('ft.job.output_model_name'),
-            key: 'targetModelName',
-            mapDataToValue: (data: DataT) => data.targetModel?.name,
-        }),
-        AliasColumn({
-            title: t('ft.job.output_model_version_alias'),
-            key: 'targetModelVersionAlias',
-            mapDataToValue: (data: DataT) => data.targetModel?.version.alias,
-            renderCell: ({ value: alias, data }) => (
-                <div className='flex gap-2px lh-none'>
-                    {data?.targetModel?.version.draft === true && (
-                        <StatusTag>{t('ft.job.model.release.mode.draft')}</StatusTag>
-                    )}
-                    {data?.targetModel?.version.draft === false && (
-                        <StatusTag kind='positive'>{t('ft.job.model.release.mode.released')}</StatusTag>
-                    )}
-                    <Alias alias={alias} />
-                </div>
-            ),
-        }),
-        JobStatusColumn({ title: t('Status'), key: 'status' }),
-        ResourcePoolColumn({ title: t('Resource Pool'), key: 'resourcePool' }),
-        OwnerColumn({ title: t('Owner'), key: 'owner' }),
-        DateTimeColumn({
-            title: t('Created'),
-            key: 'createdTime',
-            mapDataToValue: (data: DataT) => data.job?.createdTime,
-        }),
-        DateTimeColumn({
-            title: t('End Time'),
-            key: 'stopTime',
-            mapDataToValue: (data: DataT) => data.job?.stopTime,
-        }),
-        DurationColumn({
-            title: t('Elapsed Time'),
-            key: 'duration',
-            mapDataToValue: (data: DataT) => data.job?.duration,
-        }),
-    ]
-    const columnMap = _.keyBy(columns, 'key')
+    const $columns = React.useMemo(
+        () => [
+            IDColumn({ title: t('ft.id'), key: 'id' }),
+            ModelColumn({
+                title: t('ft.base.model.name'),
+                key: 'baseModelName',
+                mapDataToValue: (data: DataT) => data.job?.model?.name,
+            }),
+            AliasColumn({
+                title: t('ft.base.model.version_alias'),
+                key: 'baseModelVersionAlias',
+                mapDataToValue: (data: DataT) => data.job?.model?.version.alias,
+            }),
+            DatasetColumn({
+                title: t('ft.training_dataset.name'),
+                key: 'trainDatasets',
+                mapDataToValue: (data: DataT) => datasetsToStr(data?.trainDatasets ?? []),
+                renderCell: ({ data }) => datasetsToCell(data?.trainDatasets ?? []),
+            }),
+            DatasetColumn({
+                title: t('ft.validation_dataset.name'),
+                key: 'validationDatasets',
+                mapDataToValue: (data: DataT) => datasetsToStr(data?.validationDatasets ?? []),
+                renderCell: ({ data }) => datasetsToCell(data?.validationDatasets ?? []),
+            }),
+            ModelColumn({
+                title: t('ft.job.output_model_name'),
+                key: 'targetModelName',
+                mapDataToValue: (data: DataT) => data.targetModel?.name,
+                renderCell: ({ value: name }) => <Text content={name}>{name}</Text>,
+            }),
+            AliasColumn({
+                title: t('ft.job.output_model_version_alias'),
+                key: 'targetModelVersionAlias',
+                mapDataToValue: (data: DataT) => data.targetModel?.version.alias,
+                renderCell: ({ value: alias, data }) => (
+                    <div className='flex gap-2px lh-none'>
+                        {data?.targetModel?.version.draft === true && (
+                            <StatusTag>{t('ft.job.model.release.mode.draft')}</StatusTag>
+                        )}
+                        {data?.targetModel?.version.draft === false && (
+                            <StatusTag kind='positive'>{t('ft.job.model.release.mode.released')}</StatusTag>
+                        )}
+                        <Alias alias={alias} />
+                    </div>
+                ),
+            }),
+            VersionColumn({
+                title: t('ft.job.output_model_version'),
+                key: 'targetModelVersion',
+                mapDataToValue: (data: DataT) => data.targetModel?.version.name,
+            }),
+            JobStatusColumn({ title: t('Status'), key: 'status' }),
+            ResourcePoolColumn({ title: t('Resource Pool'), key: 'resourcePool' }),
+            OwnerColumn({ title: t('Owner'), key: 'owner' }),
+            DateTimeColumn({
+                title: t('Created'),
+                key: 'createdTime',
+                mapDataToValue: (data: DataT) => data.job?.createdTime,
+            }),
+            DateTimeColumn({
+                title: t('End Time'),
+                key: 'stopTime',
+                mapDataToValue: (data: DataT) => data.job?.stopTime,
+            }),
+            DurationColumn({
+                title: t('Elapsed Time'),
+                key: 'duration',
+                mapDataToValue: (data: DataT) => data.job?.duration,
+            }),
+            // overview columns
 
-    const fields = columns.filter((v) => v.buildFilters)
+            RawColumn({
+                title: t('ft.runtime.name'),
+                key: 'runtimeName',
+                mapDataToValue: (data: DataT) => data.job?.runtime?.name,
+            }),
+            RawColumn({
+                title: t('ft.runtime.version'),
+                key: 'runtimeVersion',
+                mapDataToValue: (data: DataT) => data.job?.runtime?.version?.name,
+            }),
+            AliasColumn({
+                title: t('ft.runtime.version_alias'),
+                key: 'runtimeVersionAlias',
+                mapDataToValue: (data: DataT) => data.job?.runtime?.version?.alias,
+            }),
+            RawColumn({
+                title: t('ft.handler'),
+                key: 'handler',
+                mapDataToValue: (data: DataT) => data.job?.jobName ?? '',
+            }),
+            RawColumn({
+                title: t('ft.step_spec'),
+                key: 'stepSpec',
+                mapDataToValue: (data: DataT) => data.job?.stepSpec ?? '',
+                renderCell: ({ value }) => (
+                    <div className='markdown-body'>
+                        <pre>{value}</pre>
+                    </div>
+                ),
+            }),
+            // RawColumn({
+            //     title: t('job.debug.mode'),
+            //     key: 'stepSpec',
+            //     mapDataToValue: (data: DataT) => data.job?. ?? '',
+            //     renderCell: ({ value }) => ,
+            // }),
+        ],
+        [t]
+    )
 
-    const fieldOptions = fields.map(({ key, title }) => {
-        return {
-            id: key,
-            type: key,
-            label: title,
-        }
-    })
+    const columnMap = React.useMemo(() => _.keyBy($columns, 'key'), [$columns])
 
-    const renderCell = (row) => (key) => {
+    const columns = React.useMemo(() => {
+        return keys.map((key) => columnMap[key])
+    }, [columnMap, keys])
+
+    const fields = React.useMemo(() => columns.filter((v) => v.buildFilters), [columns])
+
+    const fieldOptions = React.useMemo(
+        () =>
+            fields.map(({ key, title }) => {
+                return {
+                    id: key,
+                    type: key,
+                    label: title,
+                }
+            }),
+        [fields]
+    )
+
+    const renderCell = useEventCallback((row) => (key) => {
         const { renderCell: RenderCell, mapDataToValue } = columnMap[key] ?? {}
-        if (!RenderCell || !mapDataToValue) return null
+        if (!RenderCell || !mapDataToValue || !row) return null
         // @ts-ignore
         return <RenderCell value={mapDataToValue(row)} data={row} />
-    }
+    })
 
-    const getFilters = (key = 'id') => {
-        const { mapDataToValue, buildFilters } = columnMap[key] ?? {}
+    const getFilters = useEventCallback((key = 'id') => {
+        if (!columnMap[key]) return undefined
+        const { mapDataToValue, buildFilters } = columnMap[key]
         if (!mapDataToValue || !buildFilters) return undefined
         const values = list.map(mapDataToValue as any).filter((v) => (_.isNumber(v) ? true : Boolean(v)))
         const valueHints = new Set(values)
@@ -232,7 +335,7 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
             fieldOptions,
             valueOptions,
         })
-    }
+    })
 
     const $listFiltered = React.useMemo(() => {
         const set = new Set(list.map((__, idx) => idx))
@@ -240,10 +343,10 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
             const filterFn = Operators[op]?.buildFilter?.({ value } as any)
             const { mapDataToValue } = columnMap[property] ?? {}
 
-            if (!mapDataToValue) return
+            if (!mapDataToValue || !filterFn) return
 
             Array.from(set).forEach((idx) => {
-                if (filterFn && !filterFn(mapDataToValue(list[idx]))) {
+                if (!filterFn(mapDataToValue(list[idx]))) {
                     set.delete(idx)
                 }
             })
@@ -255,5 +358,21 @@ function useFineTuneColumns({ data: _data = {} }: { data?: IPageInfoFineTuneVo }
     return { columns, columnMap, renderCell, getFilters, list: $listFiltered, queries, setQueries }
 }
 
-export { useFineTuneColumns }
+export {
+    useFineTuneColumns,
+    LIST_COLUMNS_KEYS,
+    OVERVIEW_COLUMNS_KEYS,
+    datasetsToStr,
+    datasetsToCell,
+    IDColumn,
+    OwnerColumn,
+    JobStatusColumn,
+    DateTimeColumn,
+    DurationColumn,
+    ResourcePoolColumn,
+    ModelColumn,
+    AliasColumn,
+    DatasetColumn,
+    VersionColumn,
+}
 export default useFineTuneColumns

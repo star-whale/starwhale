@@ -6,6 +6,7 @@ import Alias from '@/components/Alias'
 import { TextLink } from '@/components/Link'
 import { api } from '@/api'
 import { useParams } from 'react-router-dom'
+import useFineTuneColumns, { OVERVIEW_COLUMNS_KEYS } from '@/domain/space/hooks/useFineTuneColumns'
 
 export default function FineTuneOverview() {
     const [t] = useTranslation()
@@ -40,120 +41,16 @@ export default function FineTuneOverview() {
         </TextLink>
     )
 
-    const items = [
-        {
-            key: 'id',
-            value: job?.uuid ?? '-',
-        },
-        {
-            label: t('Job ID'),
-            key: 'sys/id',
-            value: job?.id ?? '-',
-        },
-        {
-            label: t('Resource Pool'),
-            key: 'sys/resource_pool',
-            value: job?.resourcePool,
-        },
-        {
-            label: t('sth name', [t('Model')]),
-            key: 'sys/model_name',
-            value: job?.modelName,
-        },
-        {
-            key: 'sys/model_uri',
-            value: modelLink,
-        },
-        {
-            label: t('Model Version'),
-            key: 'sys/model_version',
-            value: job?.modelVersion,
-        },
-        {
-            key: 'sys/model_version_id',
-            value: job?.model?.version?.id,
-        },
-        {
-            label: t('Elapsed Time'),
-            key: 'sys/duration_ms',
-            value: typeof job?.duration === 'string' ? '-' : durationToStr(job?.duration as any),
-        },
-        {
-            label: t('Created'),
-            key: 'sys/created_time',
-            value: job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
-        },
-        {
-            label: t('End Time'),
-            key: 'sys/finished_time',
-            value: job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
-        },
-        {
-            label: t('Status'),
-            key: 'sys/job_status',
-            value: job?.jobStatus && <JobStatus key='jobStatus' status={job.jobStatus as any} />,
-        },
-        {
-            key: 'sys/runtime_name',
-            value: job?.runtime?.name,
-        },
-        {
-            key: 'sys/runtime_uri',
-            value: runtimeLink,
-        },
-        {
-            key: 'sys/runtime_version',
-            value: job?.runtime?.version?.name,
-        },
-        {
-            key: 'sys/runtime_version_id',
-            value: job?.runtime?.version?.id,
-        },
-        {
-            key: 'sys/runtime_version_alias',
-            value: <Alias alias={job?.runtime?.version?.alias} />,
-        },
-        {
-            key: 'sys/model_version_alias',
-            value: <Alias alias={job?.model?.version?.alias} />,
-        },
-        {
-            key: 'sys/step_spec',
-            value: (
-                <div className='markdown-body'>
-                    <pre>{job?.stepSpec}</pre>
-                </div>
-            ),
-        },
-        {
-            key: 'sys/name',
-            value: job?.jobName,
-        },
-        {
-            key: 'sys/owner_id',
-            value: job?.owner?.id,
-        },
-        {
-            key: 'sys/owner_name',
-            value: job?.owner?.name,
-        },
-        {
-            key: 'sys/project_id',
-            value: projectId,
-        },
-        {
-            key: 'sys/dataset_uris',
-            value: datasetUris,
-        },
-    ].sort((a, b) => {
-        return a?.key?.localeCompare(b?.key)
+    const { renderCell, columns } = useFineTuneColumns({
+        keys: OVERVIEW_COLUMNS_KEYS,
     })
+    const renderer = renderCell(info.data)
 
     return (
         <div className='flex-column overflow-auto'>
-            {items.map((v) => (
+            {columns.map((v) => (
                 <div
-                    key={v?.label}
+                    key={v?.key}
                     style={{
                         display: 'flex',
                         gap: '20px',
@@ -165,9 +62,9 @@ export default function FineTuneOverview() {
                     }}
                 >
                     <div className='basis-170px overflow-hidden text-ellipsis flex-shrink-0 color-[rgba(2,16,43,0.60)]'>
-                        {v?.key}
+                        {v?.title}
                     </div>
-                    <div className='py-13px lh-18px'>{v?.value}</div>
+                    <div className='py-13px lh-18px'>{renderer(v.key)}</div>
                 </div>
             ))}
         </div>

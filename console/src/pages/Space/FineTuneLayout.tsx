@@ -22,7 +22,7 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('fine-tuning'),
+                title: t('ft.space.title'),
                 path: `/projects/${projectId}/spaces`,
             },
             {

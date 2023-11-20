@@ -811,16 +811,16 @@ const ft = {
         zh: 'Fine-tuning',
     },
     'ft.space.title': {
-        en: 'Fine-tuning',
-        zh: 'Fint-tuning',
+        en: 'Fine-tuning Spaces',
+        zh: 'Fine-tuning 空间',
     },
     'ft.space.id': {
-        en: 'Fine-tuning ID',
-        zh: 'Fine-tuning ID',
+        en: 'Fine-tuning Space ID',
+        zh: 'Fine-tuning 空间 ID',
     },
     'ft.space.name': {
-        en: 'Fine-tuning Name',
-        zh: 'Fine-tuning 名称',
+        en: 'Space Name',
+        zh: '空间名称',
     },
     'ft.space.action.edit': {
         en: 'Edit',
@@ -835,8 +835,8 @@ const ft = {
         zh: '在线评测',
     },
     'ft.id': {
-        en: 'Runs ID',
-        zh: 'Runs ID',
+        en: 'Fine-tuning ID',
+        zh: 'Fine-tuning ID',
     },
     'ft.job.new': {
         en: 'Create Fine-tuning Job',
@@ -856,15 +856,15 @@ const ft = {
     },
     'ft.job.output_model_name': {
         en: 'Output Model Name',
-        zh: '精调产出模型',
+        zh: '模型',
     },
     'ft.job.output_model_version_alias': {
         en: 'Output Model Version Alias',
-        zh: '精调产出模型版本别名',
+        zh: '模型版本别名',
     },
     'ft.job.output_model_version': {
         en: 'Output Model Version',
-        zh: '精调产出模型版本',
+        zh: '模型版本',
     },
     'ft.job.building_mode': {
         en: 'Building Mode',
@@ -956,9 +956,9 @@ const ft = {
     },
     'ft.handler': {
         en: 'Handler',
-        zh: '处理器',
+        zh: 'Handler',
     },
-    'ft.step_specification': {
+    'ft.step_spec': {
         en: 'Step Specification',
         zh: '参数',
     },

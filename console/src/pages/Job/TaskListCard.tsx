@@ -41,7 +41,11 @@ export default function TaskListCard({ header, params }: ITaskListCardProps) {
     }
 
     return (
-        <Card>
+        <Card
+            style={{
+                height: '100%',
+            }}
+        >
             {header}
             <Table
                 overrides={{

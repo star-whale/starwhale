@@ -10,7 +10,6 @@ import { Pagination } from '@starwhale/ui/Pagination'
 import { useEventCallback } from '@starwhale/core'
 import { useClickAway, useCreation } from 'ahooks'
 import TableActions, { TableActionsT } from '@starwhale/ui/GridTable/components/TableActions'
-import { headerHeight } from '../../consts/index'
 
 export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     paginationProps?: IPaginationProps

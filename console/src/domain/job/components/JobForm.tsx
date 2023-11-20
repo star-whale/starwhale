@@ -112,7 +112,7 @@ export default function JobForm({
                 resourcePool: resource?.resourceId ?? resource?.name,
                 stepSpecOverWrites: values_.stepSpecOverWrites,
                 runtimeVersionId: (values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl) as any,
-                modelVersionId: Number(values_.modelVersionUrl),
+                modelVersionId: values_.modelVersionUrl,
                 devMode: values_.devMode,
                 devPassword: values_.devPassword,
                 timeToLiveInSec: values_.timeToLiveInSec,
@@ -171,11 +171,11 @@ export default function JobForm({
     //       require_validation_datasets
     const isModifiedDataset = React.useMemo(() => {
         return stepSource?.some(
-            (v) => v.require_dataset === null || v.require_dataset || v.extra_kwargs?.require_train_datasets
+            (v) => v.require_dataset === null || v.require_dataset || v.fine_tune?.require_train_datasets
         )
     }, [stepSource])
     const isModifiedValidationDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.extra_kwargs?.require_validation_datasets)
+        return stepSource?.some((v) => v.fine_tune?.require_validation_datasets)
     }, [stepSource])
 
     useEffect(() => {

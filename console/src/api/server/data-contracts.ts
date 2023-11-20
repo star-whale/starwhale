@@ -1242,7 +1242,7 @@ export interface IStepSpec {
     job_name?: string
     show_name: string
     require_dataset?: boolean
-    extra_kwargs?: IExtraParams
+    fine_tune?: IExtraParams
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]

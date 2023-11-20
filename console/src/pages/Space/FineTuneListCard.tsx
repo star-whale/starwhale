@@ -9,8 +9,9 @@ import { api } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
-import { useEventCallback } from '@starwhale/core'
+import { useEventCallback, useIfChanged } from '@starwhale/core'
 import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
+import { useQueryArgs } from '@/hooks/useQueryArgs'
 
 const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tunes'
 
@@ -137,38 +138,41 @@ const RouteOverview = ({ url, onClose, title, params }) => {
 }
 
 export default function FineTuneListCard() {
-    const [page] = usePage()
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
-    const [expandFineTuneId, setExpandFineTuneId] = React.useState<number | undefined>(undefined)
-    //
+    const { query, updateQuery } = useQueryArgs()
+    const { fineTuneId } = query
+
     const { renderCell } = useFineTuneColumns()
-    const info = api.useListFineTune(projectId, spaceId, {
-        ...page,
-    })
-    //
-    const isExpand = !!expandFineTuneId
-    const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${expandFineTuneId}/overview`
-    const fineTune = info.data?.list?.find((v) => v.id === expandFineTuneId)
+    const info = api.useListFineTune(projectId, spaceId)
+
+    const isExpand = !!fineTuneId
+    const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${fineTuneId}/overview`
+    const fineTune = React.useMemo(
+        () => info.data?.list?.find((v) => v.id === fineTuneId),
+        [fineTuneId, info.data?.list]
+    )
 
     const title = useCreation(() => {
-        const renderer = renderCell(fineTune)
         if (!fineTune) return null
+        const renderer = renderCell(fineTune)
         return (
             <>
                 <div className='flex items-center font-600'>{renderer('baseModelName')}</div>
                 <div className='flex-1 items-center mt-6px mb-auto'>{renderer('baseModelVersionAlias')}</div>
             </>
         )
-    }, [expandFineTuneId])
+    }, [fineTuneId, fineTune])
+
+    console.log(fineTune)
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
             <FineTuneRunsListCard
                 data={info.data}
                 isExpand={isExpand}
-                onView={setExpandFineTuneId}
+                onView={(id) => updateQuery({ fineTuneId: id })}
                 onRefresh={() => info.refetch()}
-                viewId={expandFineTuneId}
+                viewId={fineTuneId}
             />
             {isExpand && (
                 <RouteOverview
@@ -181,7 +185,7 @@ export default function FineTuneListCard() {
                     }}
                     title={title}
                     url={url}
-                    onClose={() => setExpandFineTuneId(undefined)}
+                    onClose={() => updateQuery({ fineTuneId: undefined })}
                 />
             )}
         </div>

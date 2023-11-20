@@ -124,7 +124,7 @@ export default function JobTasks({ params }: { params: { projectId: string; jobI
 
     return (
         <div data-type='job-tasks' className='flex-1 w-full flex-col min-h-0 overflow-auto'>
-            <div className='min-h-320px'>
+            <div className='min-h-320px overflow-hidden'>
                 <TaskListCard params={params} />
             </div>
             <div className='content-full [role="tab"]:text-ellipsis flex-none h-580px '>
