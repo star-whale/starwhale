@@ -84,17 +84,15 @@ public class StepSpec {
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class ExtraParams {
-        @JsonProperty("auto_build_model")
-        private Boolean autoBuildModel;
+    public static class FineTune {
         @JsonProperty("require_train_datasets")
         private Boolean requireTrainDatasets;
         @JsonProperty("require_validation_datasets")
         private Boolean requireValidationDatasets;
     }
 
-    @JsonProperty("extra_kwargs")
-    private ExtraParams extraParams;
+    @JsonProperty("fine_tune")
+    private FineTune finetune;
 
     @JsonProperty("container_spec")
     ContainerSpec containerSpec;
