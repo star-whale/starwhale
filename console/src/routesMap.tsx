@@ -1,4 +1,3 @@
-import React from 'react'
 import AdminLayout from '@/pages/Admin/AdminLayout'
 import UserManagement from '@/pages/Admin/UserManagement'
 import { Redirect } from 'react-router-dom'

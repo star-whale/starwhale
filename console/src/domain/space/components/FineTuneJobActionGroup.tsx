@@ -235,7 +235,7 @@ export default function FineTuneJobActionGroup({
         <ButtonGroup key='action'>
             {actions[job?.jobStatus] ?? ''}
             {rerun}
-            {/* {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />} */}
+            {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />}
             {job?.exposedLinks?.map((exposed) => (
                 <ExposedLink key={exposed.link} data={exposed} />
             ))}

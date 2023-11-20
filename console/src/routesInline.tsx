@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { MemoryRouter, Route, Switch } from 'react-router-dom'
 import Pending from '@/pages/Home/Pending'
 import { RouteInlineContext } from './contexts/RouteInlineContext'

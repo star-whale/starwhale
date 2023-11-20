@@ -30,7 +30,6 @@ const useStyles = createUseStyles({
 })
 
 export interface IFormProps {
-    data?: IFormValueProps
     onSubmit: (data: IFormValueProps) => Promise<void>
 }
 
