@@ -18,7 +18,11 @@ from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
 from starwhale.base.models.model import StepSpecClient
 from starwhale.api._impl.evaluation import PipelineHandler
-from starwhale.base.client.models.models import RuntimeResource, ParameterSignature
+from starwhale.base.client.models.models import (
+    FineTune,
+    RuntimeResource,
+    ParameterSignature,
+)
 
 
 class Handler(StepSpecClient):
@@ -100,6 +104,7 @@ class Handler(StepSpecClient):
         expose: int = 0,
         require_dataset: bool = False,
         built_in: bool = False,
+        fine_tune: FineTune | None = None,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control replicas of handler run.
@@ -119,6 +124,7 @@ class Handler(StepSpecClient):
               If True, You must select datasets when executing on the server or cloud instance.
             built_in: [bool, optional] A special flag to distinguish user defined args in handler function from the StarWhale ones.
               This should always be False unless you know what it does.
+            fine_tune: [FineTune, optional The fine tune config for the handler. Default is None.
 
         Example:
         ```python
@@ -195,6 +201,7 @@ class Handler(StepSpecClient):
                 require_dataset=require_dataset,
                 parameters_sig=parameters_sig,
                 ext_cmd_args=ext_cmd_args,
+                fine_tune=fine_tune,
             )
 
             cls._register(_handler, func)

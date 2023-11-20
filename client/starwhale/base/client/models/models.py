@@ -725,6 +725,11 @@ class Env(SwBaseModel):
     value: Optional[str] = None
 
 
+class FineTune(SwBaseModel):
+    require_train_datasets: Optional[bool] = None
+    require_validation_datasets: Optional[bool] = None
+
+
 class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
@@ -750,8 +755,7 @@ class StepSpec(SwBaseModel):
     job_name: Optional[str] = None
     show_name: str
     require_dataset: Optional[bool] = None
-    require_train_datasets: Optional[bool] = None
-    require_validation_datasets: Optional[bool] = None
+    fine_tune: Optional[FineTune] = None
     container_spec: Optional[ContainerSpec] = None
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None

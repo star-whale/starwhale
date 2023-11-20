@@ -8,6 +8,7 @@ from starwhale.utils import console
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.base.context import Context
 from starwhale.api._impl.model import build as build_starwhale_model
+from starwhale.base.client.models.models import FineTune
 
 
 # TODO: support arguments
@@ -117,10 +118,12 @@ def _register_ft(
         needs=needs,
         require_dataset=require_train_datasets or require_validation_datasets,
         extra_kwargs=dict(
-            require_train_datasets=require_train_datasets,
-            require_validation_datasets=require_validation_datasets,
             auto_build_model=auto_build_model,
         ),
         built_in=True,
+        fine_tune=FineTune(
+            require_train_datasets=require_train_datasets,
+            require_validation_datasets=require_validation_datasets,
+        ),
     )(func)
     setattr(func, DecoratorInjectAttr.FineTune, True)
