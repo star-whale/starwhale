@@ -1,11 +1,6 @@
 from enum import Enum
 from typing import Any
 
-try:
-    import gradio
-except ImportError:
-    gradio = None
-
 
 class ServiceType(Enum):
     """Enumeration of service types."""
@@ -32,6 +27,11 @@ def all_components_are_gradio(
         inputs = inputs is not None and [inputs] or []
     if not isinstance(outputs, list):
         outputs = outputs is not None and [outputs] or []
+
+    try:
+        import gradio
+    except ImportError:
+        gradio = None
 
     return all(
         [
