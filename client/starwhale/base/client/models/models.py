@@ -725,12 +725,6 @@ class Env(SwBaseModel):
     value: Optional[str] = None
 
 
-class ExtraParams(SwBaseModel):
-    auto_build_model: Optional[bool] = None
-    require_train_datasets: Optional[bool] = None
-    require_validation_datasets: Optional[bool] = None
-
-
 class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
@@ -756,7 +750,8 @@ class StepSpec(SwBaseModel):
     job_name: Optional[str] = None
     show_name: str
     require_dataset: Optional[bool] = None
-    extra_kwargs: Optional[ExtraParams] = None
+    require_train_datasets: Optional[bool] = None
+    require_validation_datasets: Optional[bool] = None
     container_spec: Optional[ContainerSpec] = None
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
