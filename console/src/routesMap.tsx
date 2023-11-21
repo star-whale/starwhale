@@ -448,7 +448,6 @@ const authed = {
                     component: ProjectListCard,
                 },
                 {
-                    from: '/',
                     to: '/projects',
                 },
             ],
