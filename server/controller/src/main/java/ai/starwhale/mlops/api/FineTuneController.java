@@ -175,9 +175,9 @@ public class FineTuneController {
     public ResponseEntity<ResponseMessage<String>> importEval(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestParam("srcIds") List<String> srcIds
+            @RequestParam("ids") List<String> ids
     ) {
-
+        fineTuneAppService.importEvalFromCommon(projectId, spaceId, ids);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
@@ -191,7 +191,7 @@ public class FineTuneController {
             @PathVariable("spaceId") Long spaceId,
             @RequestParam("ids") List<String> ids
     ) {
-
+        fineTuneAppService.exportEvalToCommon(projectId, spaceId, ids);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 

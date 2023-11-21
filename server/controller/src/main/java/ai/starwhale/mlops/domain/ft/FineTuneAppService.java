@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.ft;
 
+import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
+
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
@@ -59,7 +61,6 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
@@ -282,8 +283,20 @@ public class FineTuneAppService {
                 .build();
     }
 
-    public void evalFt(List<Long> evalDatasetIds, Long runtimeId, String handerSpec, Map<String, String> envs) {
+    public int importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
+        return evaluationRepo.migration(
+                String.format(TABLE_NAME_FORMAT, projectId),
+                uuids,
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
+        );
+    }
 
+    public int exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
+        return evaluationRepo.migration(
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
+                uuids,
+                String.format(TABLE_NAME_FORMAT, projectId)
+        );
     }
 
     /**

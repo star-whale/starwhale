@@ -27,6 +27,7 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.STRING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +38,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
+import ai.starwhale.mlops.datastore.DataStoreMigrationRequest;
+import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -50,6 +55,7 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Date;
@@ -167,22 +173,62 @@ public class EvaluationRepoTest {
     }
 
     @Test
+    public void testMigration() {
+        var srcTable = "p/1/space/1/eval/summary";
+        var targetTable = "p/1/eval/summary";
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.migration(null, List.of("uuid1"), targetTable));
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.migration(srcTable, null, targetTable));
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.migration(srcTable, List.of("uuid1"), null));
+
+        evaluationRepo.migration(srcTable, List.of("uuid1", "uuid2"), targetTable);
+
+        verify(dataStore, times(1)).migration(
+                DataStoreMigrationRequest.builder()
+                        .srcTableName(srcTable)
+                        .targetTableName(targetTable)
+                        .filter(
+                                TableQueryFilter.builder()
+                                        .operator(Operator.OR)
+                                        .operands(List.of(
+                                                TableQueryFilter.builder()
+                                                        .operator(Operator.EQUAL)
+                                                        .operands(List.of(
+                                                                new TableQueryFilter.Column(KeyColumn),
+                                                                new TableQueryFilter.Constant(
+                                                                        ColumnType.STRING, "uuid1")))
+                                                        .build(),
+                                                TableQueryFilter.builder()
+                                                        .operator(Operator.EQUAL)
+                                                        .operands(List.of(
+                                                                new TableQueryFilter.Column(KeyColumn),
+                                                                new TableQueryFilter.Constant(
+                                                                        ColumnType.STRING, "uuid2")))
+                                                        .build()))
+                                        .build())
+                        .build()
+        );
+    }
+
+    @Test
     public void testUpdateModelInfo() {
         var table = "p/1/space/1/eval/summary";
         var model = ModelEntity.builder().id(1L).projectId(1L).modelName("m-name").build();
         var version = ModelVersionEntity.builder().id(11L).versionName("v-name").build();
 
-        var res = evaluationRepo.updateModelInfo(null, List.of("uuid1", "uuid2"), model, version);
-        assertEquals(0, res);
-        res = evaluationRepo.updateModelInfo(table, List.of(), model, version);
-        assertEquals(0, res);
-        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), null, version);
-        assertEquals(0, res);
-        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, null);
-        assertEquals(0, res);
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.updateModelInfo(null, List.of("uuid1", "uuid2"), model, version));
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.updateModelInfo(table, List.of(), model, version));
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), null, version));
+        assertThrows(SwValidationException.class, () ->
+                evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, null));
 
         given(projectService.findProject(1L)).willReturn(Project.builder().id(1L).name("p-name").build());
-        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, version);
+        var res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, version);
         assertEquals(2, res);
         verify(dataStore, times(1)).update(
                 table,

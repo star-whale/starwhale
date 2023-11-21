@@ -54,7 +54,11 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.tableSchema
 import static ai.starwhale.mlops.domain.job.converter.UserJobConverter.FORMATTER_URI_ARTIFACT;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
+import ai.starwhale.mlops.datastore.DataStoreMigrationRequest;
+import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
@@ -68,6 +72,8 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Date;
@@ -301,7 +307,8 @@ public class EvaluationRepo {
 
     public int updateModelInfo(String table, List<String> uuids, ModelEntity newModel, ModelVersionEntity newVersion) {
         if (Objects.isNull(table) || CollectionUtils.isEmpty(uuids) || newModel == null || newVersion == null) {
-            return 0;
+            throw new SwValidationException(
+                    ValidSubject.EVALUATION, "Invalid request when update model info for eval");
         }
 
         List<ColumnSchemaDesc> columns = List.of(
@@ -339,8 +346,31 @@ public class EvaluationRepo {
         return uuids.size();
     }
 
-    public void sync(String srcTable, List<String> ids, String dstTable) {
-
+    public int migration(String srcTable, List<String> uuids, String targetTable) {
+        if (Objects.isNull(srcTable) || Objects.isNull(targetTable) || CollectionUtils.isEmpty(uuids)) {
+            throw new SwValidationException(
+                    ValidSubject.EVALUATION, "srcTable, targetTable and uuids must not be null");
+        }
+        var filter = TableQueryFilter.builder()
+                .operator(Operator.OR)
+                .operands(uuids.stream()
+                                  .map(uuid -> TableQueryFilter.builder()
+                                          .operator(Operator.EQUAL)
+                                          .operands(List.of(
+                                                  new TableQueryFilter.Column(KeyColumn),
+                                                  new TableQueryFilter.Constant(
+                                                          ColumnType.STRING, uuid)
+                                          ))
+                                          .build())
+                                  .collect(Collectors.toList())
+                )
+                .build();
+        return store.migration(DataStoreMigrationRequest.builder()
+                                       .srcTableName(srcTable)
+                                       .targetTableName(targetTable)
+                                       .filter(filter)
+                                       .build()
+        );
     }
 
 }

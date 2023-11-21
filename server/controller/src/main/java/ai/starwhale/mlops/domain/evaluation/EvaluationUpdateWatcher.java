@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.evaluation;
 
+import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
+
 import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -30,7 +32,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class EvaluationUpdateWatcher implements JobUpdateWatcher {
-    private static final String TABLE_NAME_FORMAT = "project/%s/eval/summary";
 
     private final EvaluationRepo evaluationRepo;
 
