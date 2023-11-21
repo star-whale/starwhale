@@ -89,6 +89,16 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
+    @Operation(summary = "Get the list of fine-tune spaces")
+    @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<FineTuneSpaceVo>> spaceInfo(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(fineTuneSpaceService.spaceInfo(spaceId)));
+    }
+
 
     @Operation(summary = "Create fine-tune space")
     @PostMapping(value = "/project/{projectId}/ftspace", produces = MediaType.APPLICATION_JSON_VALUE)
