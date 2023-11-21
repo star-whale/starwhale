@@ -750,15 +750,18 @@ def handle(context): ...
             ]
         }
 
+    @patch("starwhale.api._impl.dataset.model.Dataset._check_uri_exists")
     @patch("starwhale.api._impl.experiment.build_starwhale_model")
-    def test_finetune_deco(self, mock_build: MagicMock) -> None:
+    def test_finetune_deco(self, mock_build: MagicMock, mock_exists: MagicMock) -> None:
         content = """
-from starwhale import finetune
+from starwhale import finetune, Dataset
 
 @finetune(require_validation_datasets=True)
 def ft1(train_datasets, val_datasets):
-    assert train_datasets == ["train-ds"]
-    assert val_datasets == ["val-ds"]
+    assert isinstance(train_datasets[0], Dataset)
+    assert isinstance(val_datasets[0], Dataset)
+    assert train_datasets[0].uri.name == "train-ds"
+    assert val_datasets[0].uri.name == "val-ds"
 
 @finetune(needs=[ft1], resources={'nvidia.com/gpu': 1}, require_validation_datasets=False, require_train_datasets=False, auto_build_model=False)
 def ft2(): ...
@@ -768,6 +771,7 @@ def ft2(): ...
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
         jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        mock_exists.return_value = True
 
         assert jobs_info == {
             "mock_user_module:ft1": [

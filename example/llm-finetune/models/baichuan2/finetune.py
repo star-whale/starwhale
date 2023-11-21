@@ -21,7 +21,7 @@ from transformers import (
 )
 from transformers.training_args import TrainingArguments
 
-from starwhale import dataset, finetune
+from starwhale import Dataset, finetune
 
 try:
     from .utils import BASE_MODEL_DIR, ADAPTER_MODEL_DIR
@@ -85,11 +85,9 @@ class DataCollatorForCausalLM:
     require_train_datasets=True,
     model_modules=[copilot_predict],
 )
-def lora_finetune(train_datasets: t.List[str]) -> None:
+def lora_finetune(train_datasets: t.List[Dataset]) -> None:
     # TODO: support multi train datasets
     train_dataset = train_datasets[0]
-    if isinstance(train_dataset, str):
-        train_dataset = dataset(train_dataset, readonly=True)
 
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_DIR,
