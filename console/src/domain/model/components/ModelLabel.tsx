@@ -15,6 +15,7 @@ export const ModelLabelContainer = themedStyled('div', () => ({
     height: '100%',
     width: '100%',
     minWidth: 0,
+    overflow: 'hidden',
 }))
 
 export const ModelLabelText = themedStyled('div', () => ({

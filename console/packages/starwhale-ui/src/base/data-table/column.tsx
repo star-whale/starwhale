@@ -55,7 +55,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
                 className={cn(
                     'column-cell',
                     css({
-                        ...theme.typography.font200,
+                        // ...theme.typography.font200,
                         boxSizing: 'border-box',
                         color: theme.colors.contentPrimary,
                         padding: '0',
@@ -89,6 +89,25 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
 
     RenderCell.displayName = 'Cell'
 
+    const RenderRawCell = React.forwardRef<
+        HTMLDivElement,
+        {
+            isQueryInline?: boolean
+            onSelect?: () => void
+            isSelected?: boolean
+        }
+    >((props, ref) => {
+        const ProvidedCell = options.renderCell
+        return (
+            <div ref={ref} className={'column-cell flex-shrink-0'}>
+                {/* @ts-ignore */}
+                <ProvidedCell {...props} />
+            </div>
+        )
+    })
+
+    RenderCell.displayName = 'Cell'
+
     return {
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
         pin: options.pin,
@@ -101,7 +120,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         maxWidth: options.maxWidth ?? MAX_WIDTH,
         minWidth: options.minWidth ?? MIN_WIDTH,
         // @ts-ignore
-        renderCell: RenderCell,
+        renderCell: options.isRenderRawCell ? RenderRawCell : RenderCell,
         renderFilter: options.renderFilter || (() => null),
         sortable: Boolean(options.sortable) && Boolean(options.sortFn),
         sortFn: options.sortFn || sortFn,
@@ -113,6 +132,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         renderAction: options.renderAction,
         title: options.title,
         columnable: options.columnable === undefined ? true : options.columnable,
+        isRenderRawCell: options.isRenderRawCell,
     }
 }
 

@@ -75,7 +75,7 @@ export default function DatasetVersionOverview() {
     })
 
     return (
-        <div className='flex-column'>
+        <div className='flex-column overflow-auto'>
             {items.map((v) => (
                 <div
                     key={v?.label}

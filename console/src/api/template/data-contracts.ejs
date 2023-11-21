@@ -23,7 +23,7 @@ const dataContractTemplates = {
     return `interface ${contract.name}${buildGenerics(contract)} {\r\n${contract.content}}`;
   },
   type: (contract) => {
-    return `type ${contract.name}${buildGenerics(contract)} = ${contract.content.startsWith('ResponseMessage') ? `${contract.content}['data']` : contract.content }`;
+    return `type ${contract.name}${buildGenerics(contract)} = ${contract.content.startsWith('IResponseMessage') ? `${contract.content}['data']` : contract.content }`;
   },
 }
 %>

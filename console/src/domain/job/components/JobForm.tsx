@@ -26,14 +26,22 @@ export interface IJobFormProps {
     job?: IJobVo
     onSubmit: (data: IJobRequest) => Promise<void>
     autoFill?: boolean
+    enableTemplate?: boolean
+    validationDatasets?: any[]
 }
 
 async function getJobByTemplate(projectId: string, templateId: string) {
     const template = await fetchJobTemplate(projectId, templateId)
-    return fetchJob(projectId, template.jobId)
+    return fetchJob(projectId, String(template.jobId))
 }
 
-export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProps) {
+export default function JobForm({
+    job,
+    onSubmit,
+    autoFill = true,
+    enableTemplate = true,
+    validationDatasets,
+}: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelViewVo[]>([])
@@ -100,14 +108,15 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             send('USEREDITING')
             setLoading(true)
             const tmp = {
-                datasetVersionUrls: values_.datasetVersionUrls?.join(','),
+                datasetVersionIds: values_.datasetVersionUrls as any,
                 resourcePool: resource?.resourceId ?? resource?.name,
                 stepSpecOverWrites: values_.stepSpecOverWrites,
-                runtimeVersionUrl: values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
-                modelVersionUrl: values_.modelVersionUrl,
+                runtimeVersionId: (values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl) as any,
+                modelVersionId: values_.modelVersionUrl,
                 devMode: values_.devMode,
                 devPassword: values_.devPassword,
                 timeToLiveInSec: values_.timeToLiveInSec,
+                validationDatasetVersionIds: values_.validationDatasetVersionUrls as any,
             }
             if (values_.rawType && !checkStepSource(values_.stepSpecOverWrites)) {
                 setLoading(false)
@@ -157,8 +166,16 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     const getResourcePoolProps = () => ({ resource, setResource })
     const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
 
+    // v1 require_dataset
+    // v2 -> require_train_datasets or require_dataset
+    //       require_validation_datasets
     const isModifiedDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset)
+        return stepSource?.some(
+            (v) => v.require_dataset === null || v.require_dataset || v.fine_tune?.require_train_datasets
+        )
+    }, [stepSource])
+    const isModifiedValidationDataset = React.useMemo(() => {
+        return stepSource?.some((v) => v.fine_tune?.require_validation_datasets)
     }, [stepSource])
 
     useEffect(() => {
@@ -198,10 +215,12 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
                 modelVersionUrl: modelVersion ? tmp.model?.version?.id : undefined,
                 modelVersionHandler: tmp.jobName,
                 stepSpecOverWrites: tmp.stepSpec,
+                validationDatasetVersionUrls: validationDatasets?.map((v) => v.version?.id) as string[],
             })
             forceUpdate()
             return true
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [form]
     )
 
@@ -305,7 +324,7 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             {/* template */}
-            <FormFieldTemplate {...sharedFormProps} />
+            {enableTemplate && <FormFieldTemplate {...sharedFormProps} />}
             {/* env config */}
             <Divider orientation='top'>{t('Environment')}</Divider>
             <FormFieldResourceExtend {...sharedFormProps} {...getResourcePoolProps()} />
@@ -315,6 +334,14 @@ export default function JobForm({ job, onSubmit, autoFill = true }: IJobFormProp
             {/* dataset config */}
             {isModifiedDataset && <Divider orientation='top'>{t('Datasets')}</Divider>}
             {isModifiedDataset && <FormFieldDataset {...sharedFormProps} />}
+            {isModifiedValidationDataset && (
+                <FormFieldDataset
+                    {...sharedFormProps}
+                    label={t('ft.validation_dataset.name')}
+                    name='validationDatasetVersionUrls'
+                    required={false}
+                />
+            )}
             {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <FormFieldRuntime {...sharedFormProps} {...getRuntimeProps()} />

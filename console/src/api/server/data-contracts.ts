@@ -72,6 +72,11 @@ export interface IJobModifyRequest {
     comment: string
 }
 
+export interface IFineTuneSpaceCreateRequest {
+    name: string
+    description: string
+}
+
 export interface IApplySignedUrlRequest {
     flag?: string
     pathPrefix: string
@@ -146,7 +151,14 @@ export interface ICreateProjectRequest {
 export interface ICreateModelVersionRequest {
     metaBlobId: string
     builtInRuntime?: string
+    modelSource?: IModelSource
     force?: boolean
+}
+
+export interface IModelSource {
+    type?: 'DEFAULT' | 'FINE_TUNE'
+    /** @format int64 */
+    id?: number
 }
 
 export interface ICreateJobTemplateRequest {
@@ -247,8 +259,9 @@ export interface IRevertModelVersionRequest {
 
 export interface IJobRequest {
     modelVersionId?: string
-    datasetVersionIds?: string[]
     runtimeVersionId?: string
+    datasetVersionIds?: string[]
+    validationDatasetVersionIds?: string[]
     /** @format int64 */
     timeToLiveInSec?: number
     /** @deprecated */
@@ -261,6 +274,8 @@ export interface IJobRequest {
     resourcePool: string
     handler?: string
     stepSpecOverWrites?: string
+    bizType?: 'FINE_TUNE'
+    bizId?: string
     type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     devMode?: boolean
     devPassword?: string
@@ -378,7 +393,7 @@ export interface IUploadResult {
 }
 
 export interface IDatasetBuildRequest {
-    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'JSON' | 'CSV' | 'HUGGING_FACE'
     shared?: boolean
     storagePath: string
 }
@@ -1153,6 +1168,12 @@ export interface IEnv {
     value?: string
 }
 
+export interface IExtraParams {
+    auto_build_model?: boolean
+    require_train_datasets?: boolean
+    require_validation_datasets?: boolean
+}
+
 /**
  * Model
  * Model Version View Object
@@ -1221,6 +1242,7 @@ export interface IStepSpec {
     job_name?: string
     show_name: string
     require_dataset?: boolean
+    fine_tune?: IExtraParams
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
@@ -1279,6 +1301,7 @@ export interface IModelVersionVo {
     owner?: IUserVo
     shared: boolean
     builtInRuntime?: string
+    draft: boolean
 }
 
 /**
@@ -1459,6 +1482,7 @@ export interface IJobVo {
     /** Model object */
     model: IModelVo
     jobName?: string
+    jobType?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     datasets?: string[]
     datasetList?: IDatasetVo[]
     /** Runtime object */
@@ -1820,7 +1844,7 @@ export interface IBuildRecordVo {
         | 'CANCELED'
         | 'FAIL'
         | 'UNKNOWN'
-    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'JSON' | 'CSV' | 'HUGGING_FACE'
     /** @format int64 */
     createTime: number
 }
@@ -1879,6 +1903,112 @@ export interface IResponseMessageModelServingStatusVo {
     message: string
     /** Model Serving Status object */
     data: IModelServingStatusVo
+}
+
+export interface IFineTuneSpaceVo {
+    /** @format int64 */
+    id: number
+    name: string
+    description?: string
+    /** @format int64 */
+    createdTime: number
+    /** User object */
+    owner: IUserVo
+}
+
+export interface IPageInfoFineTuneSpaceVo {
+    /** @format int64 */
+    total?: number
+    list?: IFineTuneSpaceVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
+}
+
+export interface IResponseMessagePageInfoFineTuneSpaceVo {
+    code: string
+    message: string
+    data: IPageInfoFineTuneSpaceVo
+}
+
+export interface IFineTuneVo {
+    /** @format int64 */
+    id: number
+    /** Job object */
+    job: IJobVo
+    trainDatasets: IDatasetVo[]
+    validationDatasets?: IDatasetVo[]
+    /** Model object */
+    targetModel: IModelVo
+}
+
+export interface IPageInfoFineTuneVo {
+    /** @format int64 */
+    total?: number
+    list?: IFineTuneVo[]
+    /** @format int32 */
+    pageNum?: number
+    /** @format int32 */
+    pageSize?: number
+    /** @format int32 */
+    size?: number
+    /** @format int64 */
+    startRow?: number
+    /** @format int64 */
+    endRow?: number
+    /** @format int32 */
+    pages?: number
+    /** @format int32 */
+    prePage?: number
+    /** @format int32 */
+    nextPage?: number
+    isFirstPage?: boolean
+    isLastPage?: boolean
+    hasPreviousPage?: boolean
+    hasNextPage?: boolean
+    /** @format int32 */
+    navigatePages?: number
+    navigatepageNums?: number[]
+    /** @format int32 */
+    navigateFirstPage?: number
+    /** @format int32 */
+    navigateLastPage?: number
+}
+
+export interface IResponseMessagePageInfoFineTuneVo {
+    code: string
+    message: string
+    data: IPageInfoFineTuneVo
+}
+
+export interface IResponseMessageFineTuneVo {
+    code: string
+    message: string
+    data: IFineTuneVo
 }
 
 export interface IPageInfoPanelPluginVo {
@@ -1951,321 +2081,333 @@ export interface IFileDeleteRequest {
     files: string[]
 }
 
-export type IUpdateUserStateData = IResponseMessageString
+export type IUpdateUserStateData = IResponseMessageString['data']
 
-export type IUpdateUserPwdData = IResponseMessageString
+export type IUpdateUserPwdData = IResponseMessageString['data']
 
-export type IUpdateCurrentUserPasswordData = IResponseMessageString
+export type IUpdateCurrentUserPasswordData = IResponseMessageString['data']
 
-export type ICheckCurrentUserPasswordData = IResponseMessageString
+export type ICheckCurrentUserPasswordData = IResponseMessageString['data']
 
-export type IUpdateUserSystemRoleData = IResponseMessageString
+export type IUpdateUserSystemRoleData = IResponseMessageString['data']
 
-export type IDeleteUserSystemRoleData = IResponseMessageString
+export type IDeleteUserSystemRoleData = IResponseMessageString['data']
 
-export type IGetProjectByUrlData = IResponseMessageProjectVo
+export type IGetProjectByUrlData = IResponseMessageProjectVo['data']
 
-export type IUpdateProjectData = IResponseMessageString
+export type IUpdateProjectData = IResponseMessageString['data']
 
-export type IDeleteProjectByUrlData = IResponseMessageString
+export type IDeleteProjectByUrlData = IResponseMessageString['data']
 
-export type IRecoverTrashData = IResponseMessageString
+export type IRecoverTrashData = IResponseMessageString['data']
 
-export type IDeleteTrashData = IResponseMessageString
+export type IDeleteTrashData = IResponseMessageString['data']
 
-export type IUpdateRuntimeData = IResponseMessageObject
+export type IUpdateRuntimeData = IResponseMessageObject['data']
 
-export type IModifyRuntimeData = IResponseMessageString
+export type IModifyRuntimeData = IResponseMessageString['data']
 
-export type IShareRuntimeVersionData = IResponseMessageString
+export type IShareRuntimeVersionData = IResponseMessageString['data']
 
-export type IRecoverRuntimeData = IResponseMessageString
+export type IRecoverRuntimeData = IResponseMessageString['data']
 
-export type IModifyProjectRoleData = IResponseMessageString
+export type IModifyProjectRoleData = IResponseMessageString['data']
 
-export type IDeleteProjectRoleData = IResponseMessageString
+export type IDeleteProjectRoleData = IResponseMessageString['data']
 
-export type IGetReportData = IResponseMessageReportVo
+export type IGetReportData = IResponseMessageReportVo['data']
 
-export type IModifyReportData = IResponseMessageString
+export type IModifyReportData = IResponseMessageString['data']
 
-export type IDeleteReportData = IResponseMessageString
+export type IDeleteReportData = IResponseMessageString['data']
 
-export type ISharedReportData = IResponseMessageString
+export type ISharedReportData = IResponseMessageString['data']
 
-export type IModifyModelData = IResponseMessageString
+export type IModifyModelData = IResponseMessageString['data']
 
 export type IHeadModelData = object
 
-export type IShareModelVersionData = IResponseMessageString
+export type IShareModelVersionData = IResponseMessageString['data']
 
-export type IRecoverModelData = IResponseMessageString
+export type IRecoverModelData = IResponseMessageString['data']
 
-export type IGetJobData = IResponseMessageJobVo
+export type IGetJobData = IResponseMessageJobVo['data']
 
-export type IModifyJobCommentData = IResponseMessageString
+export type IModifyJobCommentData = IResponseMessageString['data']
 
-export type IRemoveJobData = IResponseMessageString
+export type IRemoveJobData = IResponseMessageString['data']
 
-export type IShareDatasetVersionData = IResponseMessageString
+export type IShareDatasetVersionData = IResponseMessageString['data']
 
-export type IRecoverDatasetData = IResponseMessageString
+export type IRecoverDatasetData = IResponseMessageString['data']
 
-export type IRecoverProjectData = IResponseMessageString
+export type IRecoverProjectData = IResponseMessageString['data']
 
-export type IApplySignedGetUrlsData = IResponseMessageSignedUrlResponse
+export type IUpdateSpaceData = IResponseMessageString['data']
 
-export type IApplySignedPutUrlsData = IResponseMessageSignedUrlResponse
+export type IReleaseFtData = IResponseMessageString['data']
 
-export type IListUserData = IResponseMessagePageInfoUserVo
+export type IApplySignedGetUrlsData = IResponseMessageSignedUrlResponse['data']
 
-export type ICreateUserData = IResponseMessageString
+export type IApplySignedPutUrlsData = IResponseMessageSignedUrlResponse['data']
 
-export type IInstanceStatusData = IResponseMessageString
+export type IListUserData = IResponseMessagePageInfoUserVo['data']
 
-export type IQuerySettingData = IResponseMessageString
+export type ICreateUserData = IResponseMessageString['data']
 
-export type IUpdateSettingData = IResponseMessageString
+export type IInstanceStatusData = IResponseMessageString['data']
 
-export type IListResourcePoolsData = IResponseMessageListResourcePool
+export type IQuerySettingData = IResponseMessageString['data']
 
-export type IUpdateResourcePoolsData = IResponseMessageString
+export type IUpdateSettingData = IResponseMessageString['data']
 
-export type IListSystemRolesData = IResponseMessageListProjectMemberVo
+export type IListResourcePoolsData = IResponseMessageListResourcePool['data']
 
-export type IAddUserSystemRoleData = IResponseMessageString
+export type IUpdateResourcePoolsData = IResponseMessageString['data']
 
-export type IListProjectData = IResponseMessagePageInfoProjectVo
+export type IListSystemRolesData = IResponseMessageListProjectMemberVo['data']
 
-export type ICreateProjectData = IResponseMessageString
+export type IAddUserSystemRoleData = IResponseMessageString['data']
+
+export type IListProjectData = IResponseMessagePageInfoProjectVo['data']
+
+export type ICreateProjectData = IResponseMessageString['data']
 
 export type ICreateModelVersionData = any
 
-export type ISelectAllInProjectData = IResponseMessageListJobTemplateVo
+export type ISelectAllInProjectData = IResponseMessageListJobTemplateVo['data']
 
-export type IAddTemplateData = IResponseMessageString
+export type IAddTemplateData = IResponseMessageString['data']
 
-export type ICreateModelServingData = IResponseMessageModelServingVo
+export type ICreateModelServingData = IResponseMessageModelServingVo['data']
 
-export type IListRuntimeVersionTagsData = IResponseMessageListString
+export type IListRuntimeVersionTagsData = IResponseMessageListString['data']
 
-export type IAddRuntimeVersionTagData = IResponseMessageString
+export type IAddRuntimeVersionTagData = IResponseMessageString['data']
 
-export type IBuildRuntimeImageData = IResponseMessageBuildImageResult
+export type IBuildRuntimeImageData = IResponseMessageBuildImageResult['data']
 
-export type IRevertRuntimeVersionData = IResponseMessageString
+export type IRevertRuntimeVersionData = IResponseMessageString['data']
 
-export type IUploadData = IResponseMessageString
+export type IUploadData = IResponseMessageString['data']
 
-export type IListProjectRoleData = IResponseMessageListProjectMemberVo
+export type IListProjectRoleData = IResponseMessageListProjectMemberVo['data']
 
-export type IAddProjectRoleData = IResponseMessageString
+export type IAddProjectRoleData = IResponseMessageString['data']
 
-export type IListReportsData = IResponseMessagePageInfoReportVo
+export type IListReportsData = IResponseMessagePageInfoReportVo['data']
 
-export type ICreateReportData = IResponseMessageString
+export type ICreateReportData = IResponseMessageString['data']
 
-export type ITransferData = IResponseMessageString
+export type ITransferData = IResponseMessageString['data']
 
-export type IListModelVersionTagsData = IResponseMessageListString
+export type IListModelVersionTagsData = IResponseMessageListString['data']
 
-export type IAddModelVersionTagData = IResponseMessageString
+export type IAddModelVersionTagData = IResponseMessageString['data']
 
-export type IRevertModelVersionData = IResponseMessageString
+export type IRevertModelVersionData = IResponseMessageString['data']
 
-export type IListJobsData = IResponseMessagePageInfoJobVo
+export type IListJobsData = IResponseMessagePageInfoJobVo['data']
 
-export type ICreateJobData = IResponseMessageString
+export type ICreateJobData = IResponseMessageString['data']
 
-export type IActionData = IResponseMessageString
+export type IActionData = IResponseMessageString['data']
 
-export type IExecData = IResponseMessageExecResponse
+export type IExecData = IResponseMessageExecResponse['data']
 
-export type IRecoverJobData = IResponseMessageString
+export type IRecoverJobData = IResponseMessageString['data']
 
-export type IModifyJobPinStatusData = IResponseMessageString
+export type IModifyJobPinStatusData = IResponseMessageString['data']
 
-export type IGetEventsData = IResponseMessageListEventVo
+export type IGetEventsData = IResponseMessageListEventVo['data']
 
-export type IAddEventData = IResponseMessageString
+export type IAddEventData = IResponseMessageString['data']
 
-export type ISignLinksData = IResponseMessageMapStringString
+export type ISignLinksData = IResponseMessageMapStringString['data']
 
 export type IGetHashedBlobData = any
 
-export type IUploadHashedBlobData = IResponseMessageString
+export type IUploadHashedBlobData = IResponseMessageString['data']
 
 export type IHeadHashedBlobData = object
 
-export type IGetViewConfigData = IResponseMessageConfigVo
+export type IGetViewConfigData = IResponseMessageConfigVo['data']
 
-export type ICreateViewConfigData = IResponseMessageString
+export type ICreateViewConfigData = IResponseMessageString['data']
 
-export type IListDatasetVersionTagsData = IResponseMessageListString
+export type IListDatasetVersionTagsData = IResponseMessageListString['data']
 
-export type IAddDatasetVersionTagData = IResponseMessageString
+export type IAddDatasetVersionTagData = IResponseMessageString['data']
 
 export type IConsumeNextDataData = INullableResponseMessageDataIndexDesc
 
-export type IRevertDatasetVersionData = IResponseMessageString
+export type IRevertDatasetVersionData = IResponseMessageString['data']
 
-export type IUploadDsData = IResponseMessageUploadResult
+export type IUploadDsData = IResponseMessageUploadResult['data']
 
-export type IBuildDatasetData = IResponseMessageString
+export type IBuildDatasetData = IResponseMessageString['data']
 
-export type ISignLinks1Data = IResponseMessageMapObjectObject
+export type ISignLinks1Data = IResponseMessageMapObjectObject['data']
 
 export type IGetHashedBlob1Data = any
 
-export type IUploadHashedBlob1Data = IResponseMessageString
+export type IUploadHashedBlob1Data = IResponseMessageString['data']
 
 export type IHeadHashedBlob1Data = object
 
-export type IGetPanelSettingData = IResponseMessageString
+export type IListSpaceData = IResponseMessagePageInfoFineTuneSpaceVo['data']
 
-export type ISetPanelSettingData = IResponseMessageString
+export type ICreateSpaceData = IResponseMessageString['data']
 
-export type IPluginListData = IResponseMessagePageInfoPanelPluginVo
+export type IGetPanelSettingData = IResponseMessageString['data']
 
-export type IInstallPluginData = IResponseMessageString
+export type ISetPanelSettingData = IResponseMessageString['data']
 
-export type ISignLinks2Data = IResponseMessageMapStringString
+export type IPluginListData = IResponseMessagePageInfoPanelPluginVo['data']
 
-export type IUpdateTableData = IResponseMessageString
+export type IInstallPluginData = IResponseMessageString['data']
 
-export type IScanTableData = IResponseMessageRecordListVo
+export type ISignLinks2Data = IResponseMessageMapStringString['data']
+
+export type IUpdateTableData = IResponseMessageString['data']
+
+export type IScanTableData = IResponseMessageRecordListVo['data']
 
 export type IScanAndExportData = any
 
-export type IQueryTableData = IResponseMessageRecordListVo
+export type IQueryTableData = IResponseMessageRecordListVo['data']
 
 export type IQueryAndExportData = any
 
-export type IListTablesData = IResponseMessageTableNameListVo
+export type IListTablesData = IResponseMessageTableNameListVo['data']
 
-export type IFlushData = IResponseMessageString
+export type IFlushData = IResponseMessageString['data']
 
-export type IInitUploadBlobData = IResponseMessageInitUploadBlobResult
+export type IInitUploadBlobData = IResponseMessageInitUploadBlobResult['data']
 
-export type ICompleteUploadBlobData = IResponseMessageCompleteUploadBlobResult
+export type ICompleteUploadBlobData = IResponseMessageCompleteUploadBlobResult['data']
 
 export type IHeadRuntimeData = object
 
 export type IHeadDatasetData = object
 
-export type IGetUserByIdData = IResponseMessageUserVo
+export type IGetUserByIdData = IResponseMessageUserVo['data']
 
-export type IUserTokenData = IResponseMessageString
+export type IUserTokenData = IResponseMessageString['data']
 
-export type IGetCurrentUserData = IResponseMessageUserVo
+export type IGetCurrentUserData = IResponseMessageUserVo['data']
 
-export type IGetCurrentUserRolesData = IResponseMessageListProjectMemberVo
+export type IGetCurrentUserRolesData = IResponseMessageListProjectMemberVo['data']
 
-export type IGetCurrentVersionData = IResponseMessageSystemVersionVo
+export type IGetCurrentVersionData = IResponseMessageSystemVersionVo['data']
 
-export type IQueryFeaturesData = IResponseMessageFeaturesVo
+export type IQueryFeaturesData = IResponseMessageFeaturesVo['data']
 
-export type IListDeviceData = IResponseMessageListDeviceVo
+export type IListDeviceData = IResponseMessageListDeviceVo['data']
 
-export type IListRolesData = IResponseMessageListRoleVo
+export type IListRolesData = IResponseMessageListRoleVo['data']
 
-export type IPreviewData = IResponseMessageReportVo
+export type IPreviewData = IResponseMessageReportVo['data']
 
-export type IGetModelMetaBlobData = IResponseMessageString
+export type IGetModelMetaBlobData = IResponseMessageString['data']
 
-export type IListFilesData = IResponseMessageListFilesResult
+export type IListFilesData = IResponseMessageListFilesResult['data']
 
 /** @format binary */
 export type IGetFileDataData = File
 
-export type IListTrashData = IResponseMessagePageInfoTrashVo
+export type IListTrashData = IResponseMessagePageInfoTrashVo['data']
 
-export type IGetTemplateData = IResponseMessageJobTemplateVo
+export type IGetTemplateData = IResponseMessageJobTemplateVo['data']
 
-export type IDeleteTemplateData = IResponseMessageString
+export type IDeleteTemplateData = IResponseMessageString['data']
 
-export type IListRuntimeData = IResponseMessagePageInfoRuntimeVo
+export type IListRuntimeData = IResponseMessagePageInfoRuntimeVo['data']
 
-export type IGetRuntimeInfoData = IResponseMessageRuntimeInfoVo
+export type IGetRuntimeInfoData = IResponseMessageRuntimeInfoVo['data']
 
-export type IDeleteRuntimeData = IResponseMessageString
+export type IDeleteRuntimeData = IResponseMessageString['data']
 
-export type IListRuntimeVersionData = IResponseMessagePageInfoRuntimeVersionVo
+export type IListRuntimeVersionData = IResponseMessagePageInfoRuntimeVersionVo['data']
 
 export type IPullData = any
 
-export type IGetRuntimeVersionTagData = IResponseMessageLong
+export type IGetRuntimeVersionTagData = IResponseMessageLong['data']
 
-export type IListRuntimeTreeData = IResponseMessageListRuntimeViewVo
+export type IListRuntimeTreeData = IResponseMessageListRuntimeViewVo['data']
 
-export type ISelectRecentlyInProjectData = IResponseMessageListJobTemplateVo
+export type ISelectRecentlyInProjectData = IResponseMessageListJobTemplateVo['data']
 
-export type IRecentRuntimeTreeData = IResponseMessageListRuntimeViewVo
+export type IRecentRuntimeTreeData = IResponseMessageListRuntimeViewVo['data']
 
-export type IRecentModelTreeData = IResponseMessageListModelViewVo
+export type IRecentModelTreeData = IResponseMessageListModelViewVo['data']
 
-export type IRecentDatasetTreeData = IResponseMessageListDatasetViewVo
+export type IRecentDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 
-export type IGetProjectReadmeByUrlData = IResponseMessageString
+export type IGetProjectReadmeByUrlData = IResponseMessageString['data']
 
-export type IListModelData = IResponseMessagePageInfoModelVo
+export type IListModelData = IResponseMessagePageInfoModelVo['data']
 
-export type IGetModelInfoData = IResponseMessageModelInfoVo
+export type IGetModelInfoData = IResponseMessageModelInfoVo['data']
 
-export type IDeleteModelData = IResponseMessageString
+export type IDeleteModelData = IResponseMessageString['data']
 
-export type IListModelVersionData = IResponseMessagePageInfoModelVersionVo
+export type IListModelVersionData = IResponseMessagePageInfoModelVersionVo['data']
 
-export type IGetModelVersionTagData = IResponseMessageLong
+export type IGetModelVersionTagData = IResponseMessageLong['data']
 
-export type IGetModelDiffData = IResponseMessageMapStringListFileNode
+export type IGetModelDiffData = IResponseMessageMapStringListFileNode['data']
 
-export type IListModelTreeData = IResponseMessageListModelViewVo
+export type IListModelTreeData = IResponseMessageListModelViewVo['data']
 
-export type IListTasksData = IResponseMessagePageInfoTaskVo
+export type IListTasksData = IResponseMessagePageInfoTaskVo['data']
 
-export type IGetTaskData = IResponseMessageTaskVo
+export type IGetTaskData = IResponseMessageTaskVo['data']
 
-export type IGetRunsData = IResponseMessageListRunVo
+export type IGetRunsData = IResponseMessageListRunVo['data']
 
-export type IGetJobDagData = IResponseMessageGraph
+export type IGetJobDagData = IResponseMessageGraph['data']
 
-export type IListDatasetData = IResponseMessagePageInfoDatasetVo
+export type IListDatasetData = IResponseMessagePageInfoDatasetVo['data']
 
-export type IGetDatasetInfoData = IResponseMessageDatasetInfoVo
+export type IGetDatasetInfoData = IResponseMessageDatasetInfoVo['data']
 
-export type IDeleteDatasetData = IResponseMessageString
+export type IDeleteDatasetData = IResponseMessageString['data']
 
-export type IListDatasetVersionData = IResponseMessagePageInfoDatasetVersionVo
+export type IListDatasetVersionData = IResponseMessagePageInfoDatasetVersionVo['data']
 
 export type IPullDsData = any
 
-export type IGetDatasetVersionTagData = IResponseMessageLong
+export type IGetDatasetVersionTagData = IResponseMessageLong['data']
 
-export type IListBuildRecordsData = IResponseMessagePageInfoBuildRecordVo
+export type IListBuildRecordsData = IResponseMessagePageInfoBuildRecordVo['data']
 
-export type IListDatasetTreeData = IResponseMessageListDatasetViewVo
+export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 
 export type IPullUriContentData = any
 
-export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo
+export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
 
-export type IOfflineLogsData = IResponseMessageListString
+export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
+
+export type IFineTuneInfoData = IResponseMessageFineTuneVo['data']
+
+export type IOfflineLogsData = IResponseMessageListString['data']
 
 export type ILogContentData = string
 
-export type IGetRuntimeSuggestionData = IResponseMessageRuntimeSuggestionVo
+export type IGetRuntimeSuggestionData = IResponseMessageRuntimeSuggestionVo['data']
 
-export type IApplyPathPrefixData = IResponseMessageString
+export type IApplyPathPrefixData = IResponseMessageString['data']
 
 export type IPullUriContent1Data = any
 
-export type IDeletePathData = IResponseMessageString
+export type IDeletePathData = IResponseMessageString['data']
 
-export type IDeleteRuntimeVersionTagData = IResponseMessageString
+export type IDeleteRuntimeVersionTagData = IResponseMessageString['data']
 
-export type IDeleteModelVersionTagData = IResponseMessageString
+export type IDeleteModelVersionTagData = IResponseMessageString['data']
 
-export type IDeleteDatasetVersionTagData = IResponseMessageString
+export type IDeleteDatasetVersionTagData = IResponseMessageString['data']
 
-export type IUninstallPluginData = IResponseMessageString
+export type IUninstallPluginData = IResponseMessageString['data']

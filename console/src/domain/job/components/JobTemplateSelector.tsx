@@ -39,7 +39,7 @@ export default function JobTemplateSelector({ projectId, value, onChange, disabl
                     id: item.id,
                     label: item.name,
                 })) ?? []
-            setOptions(ops)
+            setOptions(ops as any)
         } else {
             setOptions([])
         }

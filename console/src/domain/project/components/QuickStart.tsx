@@ -1,7 +1,6 @@
-import { ButtonLink } from '@/components/Link'
 import useLocaleConst from '@/hooks/useLocaleConst'
 import useTranslation from '@/hooks/useTranslation'
-import Button from '@starwhale/ui/Button'
+import { Button, ButtonLink } from '@starwhale/ui'
 import React from 'react'
 import { useLocalStorage } from 'react-use'
 

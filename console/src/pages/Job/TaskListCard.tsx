@@ -20,11 +20,15 @@ import { useQueryArgs } from '@starwhale/core'
 
 export interface ITaskListCardProps {
     header?: React.ReactNode
+    params?: {
+        jobId: any
+        projectId: any
+    }
 }
 
-export default function TaskListCard({ header }: ITaskListCardProps) {
+export default function TaskListCard({ header, params }: ITaskListCardProps) {
     const [page] = usePage()
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const { jobId = params?.jobId, projectId = params?.projectId } = useParams<{ jobId: string; projectId: string }>()
     const tasksInfo = useFetchTasks(projectId, jobId, { pageSize: page.pageSize, pageNum: page.pageNum })
     const [t] = useTranslation()
     const [currentTaskExecutor, setCurrentTaskExecutor] = React.useState<string>('')
@@ -37,7 +41,11 @@ export default function TaskListCard({ header }: ITaskListCardProps) {
     }
 
     return (
-        <Card>
+        <Card
+            style={{
+                height: '100%',
+            }}
+        >
             {header}
             <Table
                 overrides={{

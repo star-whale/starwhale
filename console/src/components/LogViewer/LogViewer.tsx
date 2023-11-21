@@ -193,7 +193,7 @@ const ComplexToolbarLogViewer = ({
     const ControlButton = React.useMemo(
         () => (
             <ExtendButton
-                transparent
+                styleas={['transparent']}
                 onClick={() => {
                     if (isPaused) {
                         scrollToBottom()
@@ -287,12 +287,16 @@ const ComplexToolbarLogViewer = ({
                     }}
                 >
                     <ToolbarItem>
-                        <ExtendButton iconnormal nopadding icon='top2' tooltip={t('gototop')} onClick={onScrollTop} />
+                        <ExtendButton
+                            styleas={['iconnormal', 'nopadding']}
+                            icon='top2'
+                            tooltip={t('gototop')}
+                            onClick={onScrollTop}
+                        />
                     </ToolbarItem>
                     <ToolbarItem>
                         <ExtendButton
-                            iconnormal
-                            nopadding
+                            styleas={['iconnormal', 'nopadding']}
                             icon='download'
                             tooltip={t('download')}
                             onClick={onDownloadClick}
@@ -300,8 +304,7 @@ const ComplexToolbarLogViewer = ({
                     </ToolbarItem>
                     <ToolbarItem>
                         <ExtendButton
-                            iconnormal
-                            nopadding
+                            styleas={['iconnormal', 'nopadding']}
                             icon='fullscreen'
                             tooltip={t('fullscreen')}
                             onClick={onExpand}

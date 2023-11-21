@@ -2,12 +2,14 @@ import React from 'react'
 import { Tooltip } from '../Tooltip'
 import { IconCopy } from '../Copy'
 import { themedUseStyletron } from '../theme/styletron'
+import TextLink from '../Link/TextLink'
 
 export interface ITextProps {
     children?: React.ReactNode
     size?: 'small' | 'medium' | 'large' | 'xlarge'
     style?: React.CSSProperties
     tooltip?: React.ReactNode
+    to?: string
     content?: string
     maxWidth?: string
 }
@@ -19,7 +21,7 @@ const fontSizeMap: { [k in Exclude<ITextProps['size'], undefined>]: string } = {
     xlarge: '20px',
 }
 
-function Text({ children, style, size = 'medium', tooltip = '', content = '', maxWidth = '200px' }: ITextProps) {
+function Text({ children, style, size = 'medium', tooltip = '', content = '', maxWidth = '200px', to }: ITextProps) {
     const [css] = themedUseStyletron()
 
     let Component = (
@@ -46,6 +48,14 @@ function Text({ children, style, size = 'medium', tooltip = '', content = '', ma
             <Tooltip content={tooltip} showArrow placement='top'>
                 {Component}
             </Tooltip>
+        )
+    }
+
+    if (to) {
+        Component = (
+            <TextLink to={to} baseStyle={{ maxWidth: 'none' }}>
+                {Component}
+            </TextLink>
         )
     }
 

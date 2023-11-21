@@ -206,7 +206,7 @@ export function DataTable({
             const { sortFn } = columns[index]
             // @ts-ignore
             const getValue = (row) =>
-                columns[index].mapDataToValue(row.data).value || columns[index].mapDataToValue(row.data)
+                columns[index].mapDataToValue?.(row.data).value || columns[index].mapDataToValue?.(row.data)
 
             if (sortDirection === SORT_DIRECTIONS.ASC) {
                 toSort.sort((a, b) => {
@@ -236,7 +236,7 @@ export function DataTable({
 
                 const filterFn = filter?.op.buildFilter(filter) // ?? column.buildFilter(filter)
                 Array.from(set).forEach((idx) => {
-                    if (!filterFn(column.mapDataToValue(allRows[idx].data), allRows[idx].data, column)) {
+                    if (!filterFn(column.mapDataToValue?.(allRows[idx].data), allRows[idx].data, column)) {
                         set.delete(idx)
                     }
                 })
@@ -255,7 +255,7 @@ export function DataTable({
                     const column = columns[cdx]
                     const { textQueryFilter } = column
                     if (textQueryFilter) {
-                        return textQueryFilter(textQuery, column.mapDataToValue(allRows[idx].data))
+                        return textQueryFilter(textQuery, column.mapDataToValue?.(allRows[idx].data))
                     }
                     return false
                 })
