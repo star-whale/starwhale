@@ -1,0 +1,14 @@
+transformers==4.31.0  # baichuan2 works with this version, the latest version(4.35.1) will raise AttributeError in AutoTokenizer.from_pretrained
+transformers-stream-generator==0.0.4
+torch==2.0.1
+accelerate==0.24.0
+gradio==3.50.2
+deepspeed==0.12.2
+PEFT==0.6.1
+xformers==0.0.22
+cpm_kernels
+bitsandbytes
+colorama
+tokenizers
+sentencepiece
+git+https://github.com/star-whale/starwhale.git@bebd503#subdirectory=client&egg=starwhale
