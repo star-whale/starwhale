@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+import time
 import typing as t
 from pathlib import Path
 from functools import wraps
 
 from starwhale.utils import console
-from starwhale.consts import DecoratorInjectAttr
+from starwhale.consts import SHORT_VERSION_CNT, DecoratorInjectAttr
 from starwhale.base.context import Context
 from starwhale.api._impl.model import build as build_starwhale_model
 from starwhale.base.client.models.models import FineTune
@@ -91,10 +92,13 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
 
                 if auto_build_model:
                     console.info(f"building starwhale model package from {workdir}")
+                    # The finetune tag is exclusively used for display purposes.
+                    tag = f"finetune-{ctx.version[:SHORT_VERSION_CNT]}-{time.time_ns()}"
                     build_starwhale_model(
                         name=os.environ.get("SW_FINETUNE_TARGET_MODEL", ctx.model_name),
                         modules=model_modules,
                         workdir=workdir,
+                        tags=[tag],
                     )
 
                 return ret
