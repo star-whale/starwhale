@@ -83,7 +83,7 @@ class DataCollatorForCausalLM:
 @finetune(
     resources={"nvidia.com/gpu": 1},
     require_train_datasets=True,
-    model_modules=[copilot_predict],
+    model_modules=[copilot_predict, "finetune:lora_finetune"],
 )
 def lora_finetune(train_datasets: t.List[str]) -> None:
     # TODO: support multi train datasets
