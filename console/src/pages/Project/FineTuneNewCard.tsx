@@ -6,6 +6,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest, api } from '@/api'
 import { ExtendButton } from '@starwhale/ui'
+import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
@@ -32,15 +33,19 @@ export default function FineTuneNewCard() {
     const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
     const job = info?.data?.job
 
+    const { isInline } = useRouteInlineContext()
+
     return (
         <Card
             title={
                 <div className='flex gap-10px font-18px font-800'>
-                    <ExtendButton
-                        icon='arrow_left'
-                        styleas={['iconnormal', 'nopadding']}
-                        onClick={() => history.go(-1)}
-                    />
+                    {!isInline && (
+                        <ExtendButton
+                            icon='arrow_left'
+                            styleas={['iconnormal', 'nopadding']}
+                            onClick={() => history.go(-1)}
+                        />
+                    )}
                     {t('ft.job.new')}
                 </div>
             }

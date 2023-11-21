@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect } from 'react'
-import { useHistory, useParams } from 'react-router-dom'
+import { useHistory, useParams, useRouteMatch } from 'react-router-dom'
 import { useRouteContext } from '@/contexts/RouteContext'
 import FineTuneRunsListCard from './FineTuneRunsListCard'
 import { ExtendButton } from '@starwhale/ui'
@@ -7,29 +7,24 @@ import { api } from '@/api'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useBoolean, useCreation } from 'ahooks'
 import { headerHeight } from '@/consts'
-import { useEventCallback } from '@starwhale/core'
 import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 
-const FINT_TUNE_ROUTE = '/projects/(.*)?/spaces/(.*)?/fine-tune'
-
-const RouteBar = ({ onClose, onFullScreen, fullscreen, onLocationChange, extraActions }) => {
+const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, extraActions }) => {
     const [isRoot, setIsRoot] = React.useState(true)
     const history = useHistory()
+    const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?/:path2?')
+    const { path, path2, fineTuneId, url } = match?.params ?? ({} as any)
 
     useEffect(() => {
-        const unsubscribe = history?.listen((location) => {
-            const isFineTune = Boolean(location.pathname.match(FINT_TUNE_ROUTE))
-            onLocationChange?.({
-                history,
-                location,
-            })
-            setIsRoot(isFineTune)
-        })
-        return () => {
-            unsubscribe()
+        // in case of redirect to current page
+        if (!fineTuneId && !path2 && path === 'fine-tune-runs') {
+            history.replace(rootUrl)
         }
-    }, [history, onLocationChange])
+        onRootChange(fineTuneId)
+        setIsRoot(fineTuneId)
+        // eslint-disable-next-line
+    }, [history, path, path2, fineTuneId, url])
 
     return (
         <div className='ft-route-bar absolute left-20px right-20px top-20px z-1 gap-16px flex justify-between'>
@@ -70,12 +65,8 @@ const RouteOverview = ({ url, onClose, title, params }) => {
     const ref = React.useRef<HTMLDivElement>(null)
     const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
 
-    const handelInlineLocationChange = useEventCallback(({ location }) => {
-        setIsRouteAtFineTune(Boolean(location.pathname.match(FINT_TUNE_ROUTE)))
-    })
-
     useEffect(() => {
-        setIsRouteAtFineTune(Boolean(url?.match(FINT_TUNE_ROUTE)))
+        setIsRouteAtFineTune(true)
     }, [url])
 
     useLayoutEffect(() => {
@@ -121,10 +112,11 @@ const RouteOverview = ({ url, onClose, title, params }) => {
                 <div className='content-full p-20px '>
                     <RoutesInline initialEntries={url && [url]} key={url}>
                         <RouteBar
+                            rootUrl={url}
+                            onRootChange={setIsRouteAtFineTune}
                             onClose={onClose}
                             fullscreen={fullscreen}
                             onFullScreen={toggle}
-                            onLocationChange={handelInlineLocationChange}
                             extraActions={<FineTuneJobActionGroup {...params} />}
                         />
                     </RoutesInline>

@@ -25,7 +25,8 @@ export default function FineTuneRunsTable({
     const isAccessRelease = useAccess('ft.run.release')
     const [releaseFT, setReleaseFT] = React.useState<IFineTuneVo | undefined>()
     const [isOpen, setIsOpen] = React.useState(false)
-    const { getActions: _getActions } = useFineTuneJobActions()
+    const { getActions: _getActions } = useFineTuneJobActions({ onRefresh })
+    const { projectId, spaceId } = params ?? {}
 
     const getActions = ({ id, ...rest }: IFineTuneVo) => [
         {
@@ -63,7 +64,7 @@ export default function FineTuneRunsTable({
                 </ExtendButton>
             ),
         },
-        ..._getActions({ ...params, fineTuneId: String(id), job: rest.job }),
+        ..._getActions({ projectId, spaceId, fineTuneId: String(id), job: rest.job, jobId: rest.job?.id }),
     ]
 
     const { columns, renderCell } = useFineTuneColumns()

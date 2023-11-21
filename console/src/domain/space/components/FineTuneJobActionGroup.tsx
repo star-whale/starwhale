@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
@@ -14,6 +14,7 @@ import { WithCurrentAuth, useAccess } from '@/api/WithAuth'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
 import _ from 'lodash'
 import { IJobVo } from '@/api'
+import { useEventCallback } from '@starwhale/core'
 
 function JobSaveAsTemplateButton({ hasText = false }) {
     const [t] = useTranslation()
@@ -114,20 +115,19 @@ export interface IFineTuneJobActionComponentProps {
 
 export interface IFineTuneJobActionsProps {
     hasSaveAs?: boolean
+    onRefresh?: () => void
 }
 
-export function useFineTuneJobActions({ hasSaveAs = false }: IFineTuneJobActionsProps = {}) {
+export function useFineTuneJobActions({ hasSaveAs = false, onRefresh }: IFineTuneJobActionsProps = {}) {
     const [t] = useTranslation()
     const history = useHistory()
-    const handleAction = useCallback(
-        async (projectId, jid, type: JobActionType) => {
-            if (!projectId) return
+    const handleAction = useEventCallback(async (projectId, jid, type: JobActionType) => {
+        if (!projectId) return
 
-            await doJobAction(projectId, jid, type)
-            toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-        },
-        [t]
-    )
+        await doJobAction(projectId, jid, type)
+        toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+        onRefresh?.()
+    })
     const isAccessCancel = useAccess('job.cancel')
     const isAccessPause = useAccess('job.pause')
     const isAccessPauseGlobal = useAccess('job-pause')
