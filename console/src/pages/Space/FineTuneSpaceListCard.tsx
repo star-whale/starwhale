@@ -51,7 +51,8 @@ export default function FineTuneSpaceListCard() {
             component: ({ hasText }) => (
                 <ExtendButton
                     isFull
-                    icon='a-Versionhistory'
+                    icon='edit'
+                    tooltip={!hasText ? t('Edit') : undefined}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => {
                         setEditRow(data)

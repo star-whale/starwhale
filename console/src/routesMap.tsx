@@ -90,9 +90,7 @@ const authed = {
                     component: SettingAgentListCard,
                 },
                 {
-                    from: '/settings/:path?',
                     to: '/settings/agents',
-                    component: Redirect,
                 },
             ],
         },
@@ -133,9 +131,7 @@ const authed = {
                     component: JobTaskListCard,
                 },
                 {
-                    from: '/projects/:projectId/evaluations/:jobId',
                     to: '/projects/:projectId/evaluations/:jobId/results',
-                    component: Redirect,
                 },
             ],
         },
@@ -160,9 +156,7 @@ const authed = {
                     component: JobServings,
                 },
                 {
-                    from: '/projects/:projectId/jobs/:jobId',
                     to: '/projects/:projectId/jobs/:jobId/tasks',
-                    component: Redirect,
                 },
             ],
         },
@@ -201,9 +195,7 @@ const authed = {
                     component: DatasetVersionOverviewFiles,
                 },
                 {
-                    from: '/projects/:projectId/datasets/:datasetId/:path*',
                     to: '/projects/:projectId/datasets/:datasetId',
-                    component: Redirect,
                 },
             ],
         },
@@ -228,9 +220,7 @@ const authed = {
                     component: RuntimeVersionOverviewFiles,
                 },
                 {
-                    from: '/projects/:projectId/runtimes/:runtimeId/:path*',
                     to: '/projects/:projectId/runtimes/:runtimeId',
-                    component: Redirect,
                 },
             ],
         },
@@ -259,9 +249,7 @@ const authed = {
                     component: ModelVersionServings,
                 },
                 {
-                    from: '/projects/:projectId/models/:modelId/:path*',
                     to: '/projects/:projectId/models/:modelId',
-                    component: Redirect,
                 },
             ],
         },
@@ -274,9 +262,7 @@ const authed = {
                     component: ReportEdit,
                 },
                 {
-                    from: '/projects/:projectId/reports/:reportId',
                     to: '/projects/:projectId/reports',
-                    component: Redirect,
                 },
             ],
         },
@@ -294,7 +280,6 @@ const authed = {
                 },
                 {
                     to: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId/overview',
-                    component: Redirect,
                 },
             ],
         },
@@ -314,7 +299,6 @@ const authed = {
                 },
                 {
                     to: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',
-                    component: Redirect,
                 },
             ],
         },
@@ -328,7 +312,6 @@ const authed = {
                 },
                 {
                     to: '/projects/:projectId/trashes',
-                    component: Redirect,
                 },
             ],
         },
@@ -345,9 +328,7 @@ const authed = {
                     component: SystemSettings,
                 },
                 {
-                    from: '/admin/:path*',
                     to: '/admin/users',
-                    component: Redirect,
                 },
             ],
         },
@@ -420,9 +401,7 @@ const authed = {
                     component: FineTuneSpaceListCard,
                 },
                 {
-                    from: '/projects/:projectId/:path*',
                     to: '/projects/:projectId/overview',
-                    component: Redirect,
                 },
             ],
         },
@@ -435,7 +414,6 @@ const authed = {
                     component: ProjectOverview,
                 },
                 {
-                    from: '/projects/:projectId',
                     to: '/projects/:projectId/overview',
                 },
             ],
