@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.storage.s3;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.google.common.collect.Streams;
@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -48,7 +49,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
-import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -61,53 +61,36 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Slf4j
-public class StorageAccessServiceS3 implements StorageAccessService {
-
-    final S3Config s3Config;
+public class StorageAccessServiceS3 extends S3LikeStorageAccessService {
 
     final S3Client s3client;
 
     final S3Presigner s3Presigner;
 
     public StorageAccessServiceS3(S3Config s3Config) {
-        this.s3Config = s3Config;
+        super(s3Config);
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(s3Config.getAccessKey(), s3Config.getSecretKey());
         S3ClientBuilder s3ClientBuilder = S3Client.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-                .region(Region.of(s3Config.getRegion()));
-        if (s3Config.overWriteEndPoint()) {
-            s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds));
+        Builder s3PresignerBuilder = DefaultS3Presigner.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds));
+        if (s3Config.getRegion() != null) {
+            var region = Region.of(s3Config.getRegion());
+            s3ClientBuilder.region(region);
+            s3PresignerBuilder.region(region);
+        }
+        if (s3Config.getEndpoint() != null) {
+            URI uri;
+            try {
+                uri = s3Config.getEndpointUrl().toURI();
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+            s3ClientBuilder.endpointOverride(uri);
+            s3PresignerBuilder.endpointOverride(uri);
         }
         this.s3client = s3ClientBuilder.build();
-        Builder s3ResignedBuilder = DefaultS3Presigner.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-                .region(Region.of(s3Config.getRegion()));
-        if (s3Config.overWriteEndPoint()) {
-            s3ResignedBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
-        }
-        this.s3Presigner = s3ResignedBuilder.build();
-
-        // abort all previous pending multipart uploads
-        var resp = this.s3client.listMultipartUploads(ListMultipartUploadsRequest.builder()
-                .bucket(s3Config.getBucket())
-                .build());
-        for (; ; ) {
-            for (var upload : resp.uploads()) {
-                this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
-                        .bucket(s3Config.getBucket())
-                        .key(upload.key())
-                        .uploadId(upload.uploadId())
-                        .build());
-            }
-            if (!resp.isTruncated()) {
-                break;
-            }
-            resp = this.s3client.listMultipartUploads(ListMultipartUploadsRequest.builder()
-                    .bucket(s3Config.getBucket())
-                    .keyMarker(resp.nextKeyMarker())
-                    .uploadIdMarker(resp.nextUploadIdMarker())
-                    .build());
-        }
+        this.s3Presigner = s3PresignerBuilder.build();
     }
 
     @Override
@@ -117,7 +100,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
-        HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path)
+        HeadObjectRequest build = HeadObjectRequest.builder().bucket(this.bucket).key(path)
                 .build();
         try {
             HeadObjectResponse headObjectResponse = s3client.headObject(build);
@@ -132,25 +115,23 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
-        if (this.s3Config.getHugeFileThreshold() <= 0
-                || size < this.s3Config.getHugeFileThreshold()
-                || this.s3Config.getHugeFilePartSize() <= 0) {
+        if (this.hugeFileThreshold <= 0 || size < this.hugeFileThreshold || this.partSize <= 0) {
             s3client.putObject(
-                    PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+                    PutObjectRequest.builder().bucket(this.bucket).key(path).build(),
                     RequestBody.fromInputStream(inputStream, size));
             return;
         }
         var uploadId = this.s3client.createMultipartUpload(CreateMultipartUploadRequest.builder()
-                        .bucket(this.s3Config.getBucket())
+                        .bucket(this.bucket)
                         .key(path)
                         .build())
                 .uploadId();
         try {
             var etagList = new ArrayList<String>();
             for (int i = 1; size > 0; ++i) {
-                var partSize = Math.min(size, this.s3Config.getHugeFilePartSize());
+                var partSize = Math.min(size, this.partSize);
                 var resp = this.s3client.uploadPart(UploadPartRequest.builder()
-                                .bucket(this.s3Config.getBucket())
+                                .bucket(this.bucket)
                                 .key(path)
                                 .uploadId(uploadId)
                                 .partNumber(i)
@@ -161,7 +142,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                 etagList.add(resp.eTag());
             }
             this.s3client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
-                    .bucket(this.s3Config.getBucket())
+                    .bucket(this.bucket)
                     .key(path)
                     .uploadId(uploadId)
                     .multipartUpload(CompletedMultipartUpload.builder()
@@ -176,7 +157,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         } catch (Throwable t) {
             log.error("multipart file upload aborted", t);
             this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
-                    .bucket(this.s3Config.getBucket())
+                    .bucket(this.bucket)
                     .key(path)
                     .uploadId(uploadId)
                     .build());
@@ -187,19 +168,19 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     @Override
     public void put(String path, InputStream inputStream) throws IOException {
         var uploadId = this.s3client.createMultipartUpload(CreateMultipartUploadRequest.builder()
-                        .bucket(this.s3Config.getBucket())
+                        .bucket(this.bucket)
                         .key(path)
                         .build())
                 .uploadId();
         try {
             var etagList = new ArrayList<String>();
             for (int i = 1; ; ++i) {
-                var data = inputStream.readNBytes((int) this.s3Config.getHugeFilePartSize());
+                var data = inputStream.readNBytes((int) this.partSize);
                 if (data.length == 0) {
                     break;
                 }
                 var resp = this.s3client.uploadPart(UploadPartRequest.builder()
-                                .bucket(this.s3Config.getBucket())
+                                .bucket(this.bucket)
                                 .key(path)
                                 .uploadId(uploadId)
                                 .partNumber(i)
@@ -207,12 +188,12 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                                 .build(),
                         RequestBody.fromBytes(data));
                 etagList.add(resp.eTag());
-                if (data.length < this.s3Config.getHugeFilePartSize()) {
+                if (data.length < this.partSize) {
                     break;
                 }
             }
             this.s3client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
-                    .bucket(this.s3Config.getBucket())
+                    .bucket(this.bucket)
                     .key(path)
                     .uploadId(uploadId)
                     .multipartUpload(CompletedMultipartUpload.builder()
@@ -227,7 +208,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         } catch (Throwable t) {
             log.error("multipart file upload aborted", t);
             this.s3client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
-                    .bucket(this.s3Config.getBucket())
+                    .bucket(this.bucket)
                     .key(path)
                     .uploadId(uploadId)
                     .build());
@@ -238,14 +219,14 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     @Override
     public void put(String path, byte[] body) {
         s3client.putObject(
-                PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+                PutObjectRequest.builder().bucket(this.bucket).key(path).build(),
                 RequestBody.fromBytes(body));
     }
 
     @Override
     public LengthAbleInputStream get(String path) throws IOException {
         try {
-            var req = GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
+            var req = GetObjectRequest.builder().bucket(this.bucket).key(path).build();
             var resp = s3client.getObject(req);
             return new LengthAbleInputStream(resp, resp.response().contentLength());
         } catch (NoSuchKeyException e) {
@@ -268,7 +249,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         try {
             var req = GetObjectRequest.builder()
                     .range(String.format(RANGE_FORMAT, offset, offset + size - 1))
-                    .bucket(s3Config.getBucket())
+                    .bucket(this.bucket)
                     .key(path)
                     .build();
             var resp = s3client.getObject(req);
@@ -286,7 +267,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         Stream<String> files = Stream.empty();
         try {
             ListObjectsResponse resp;
-            var reqBuilder = ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path);
+            var reqBuilder = ListObjectsRequest.builder().bucket(this.bucket).prefix(path);
             do {
                 resp = s3client.listObjects(reqBuilder.build());
                 files = Streams.concat(files, resp.contents().stream().map(S3Object::key));
@@ -301,7 +282,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     @Override
     public void delete(String path) throws IOException {
         s3client.deleteObject(DeleteObjectRequest.builder()
-                .bucket(s3Config.getBucket())
+                .bucket(this.bucket)
                 .key(path)
                 .build());
     }
@@ -309,7 +290,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
         return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
-                .getObjectRequest(GetObjectRequest.builder().bucket(this.s3Config.getBucket()).key(path).build())
+                .getObjectRequest(GetObjectRequest.builder().bucket(this.bucket).key(path).build())
                 .signatureDuration(Duration.ofMillis(expTimeMillis))
                 .build()).url().toString();
     }
@@ -318,7 +299,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) {
         return s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
                 .putObjectRequest(PutObjectRequest.builder()
-                        .bucket(this.s3Config.getBucket())
+                        .bucket(this.bucket)
                         .key(path)
                         .contentType(contentType)
                         .build())

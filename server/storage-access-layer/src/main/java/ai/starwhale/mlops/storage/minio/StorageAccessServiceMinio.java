@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.storage.minio;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
@@ -46,22 +46,20 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StorageAccessServiceMinio implements StorageAccessService {
-
-    private final String bucket;
-
-    private final long partSize;
+public class StorageAccessServiceMinio extends S3LikeStorageAccessService {
 
     private final MinioClient minioClient;
 
     public StorageAccessServiceMinio(S3Config s3Config) {
-        this.bucket = s3Config.getBucket();
-        this.partSize = s3Config.getHugeFilePartSize();
-        minioClient =
-                MinioClient.builder()
-                        .endpoint(s3Config.getEndpoint())
-                        .credentials(s3Config.getAccessKey(), s3Config.getSecretKey())
-                        .build();
+        super(s3Config);
+        var builder = MinioClient.builder().credentials(s3Config.getAccessKey(), s3Config.getSecretKey());
+        if (s3Config.getRegion() != null) {
+            builder.region(s3Config.getRegion());
+        }
+        if (s3Config.getEndpoint() != null) {
+            builder.endpoint(s3Config.getEndpointUrl());
+        }
+        minioClient = builder.build();
     }
 
     @Override

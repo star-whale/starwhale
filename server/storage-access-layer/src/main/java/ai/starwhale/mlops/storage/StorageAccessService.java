@@ -16,14 +16,108 @@
 
 package ai.starwhale.mlops.storage;
 
+import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.baidu.StorageAccessServiceBos;
+import ai.starwhale.mlops.storage.fs.FsConfig;
+import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
+import ai.starwhale.mlops.storage.ksyun.StorageAccessServiceKsyun;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
+import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
+import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
+import ai.starwhale.mlops.storage.s3.S3Config;
+import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * provides file upload/ download /list services
  */
 public interface StorageAccessService {
+
+    class Registry {
+
+        private static final Map<String, Class<? extends StorageAccessService>> storageAccessServiceClassMap =
+                registerAll();
+
+        private static Map<String, Class<? extends StorageAccessService>> registerAll() {
+            Map<String, Class<? extends StorageAccessService>> ret = new HashMap<>();
+            ret.put("memory", StorageAccessServiceMemory.class);
+
+            ret.put("file", StorageAccessServiceFile.class);
+            ret.put("fs", StorageAccessServiceFile.class);
+
+            ret.put("s3", StorageAccessServiceS3.class);
+
+            ret.put("minio", StorageAccessServiceMinio.class);
+
+            ret.put("aliyun", StorageAccessServiceAliyun.class);
+            ret.put("oss", StorageAccessServiceAliyun.class);
+
+            ret.put("tencent", StorageAccessServiceQcloud.class);
+            ret.put("qcloud", StorageAccessServiceQcloud.class);
+
+            ret.put("baidu", StorageAccessServiceBos.class);
+            ret.put("bos", StorageAccessServiceBos.class);
+
+            ret.put("ksyun", StorageAccessServiceKsyun.class);
+            ret.put("ks3", StorageAccessServiceKsyun.class);
+
+            return ret;
+        }
+
+        public static Class<? extends StorageAccessService> getClassByType(String type) {
+            return storageAccessServiceClassMap.get(type.toLowerCase());
+        }
+
+        public static List<String> getUriSchemasByClass(Class<? extends StorageAccessService> clazz) {
+            return storageAccessServiceClassMap.entrySet().stream()
+                    .filter(entry -> entry.getValue() == clazz)
+                    .map(Entry::getKey)
+                    .collect(Collectors.toList());
+        }
+    }
+
+
+    Map<Pair<String, Object>, StorageAccessService> storageAccessServiceMap = new ConcurrentHashMap<>();
+
+
+    static StorageAccessService getMemoryStorageAccessService() {
+        return storageAccessServiceMap.computeIfAbsent(Pair.of("memory", null),
+                key -> new StorageAccessServiceMemory());
+    }
+
+    static StorageAccessService getFileStorageAccessService(FsConfig config) {
+        return storageAccessServiceMap.computeIfAbsent(Pair.of("file", config),
+                key -> new StorageAccessServiceFile(config));
+    }
+
+    static StorageAccessService getS3LikeStorageAccessService(String type, S3Config config) {
+        return storageAccessServiceMap.computeIfAbsent(Pair.of(type, config), key -> {
+            var clazz = Registry.getClassByType(type.toLowerCase());
+            if (clazz == null) {
+                throw new IllegalArgumentException("invalid type " + type);
+            }
+            try {
+                return clazz.getConstructor(S3Config.class).newInstance(config);
+            } catch (NoSuchMethodException
+                     | InstantiationException
+                     | IllegalAccessException
+                     | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    boolean compatibleWith(StorageUri uri);
 
     StorageObjectInfo head(String path) throws IOException;
 

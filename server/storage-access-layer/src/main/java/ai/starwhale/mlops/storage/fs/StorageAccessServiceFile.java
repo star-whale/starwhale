@@ -16,9 +16,10 @@
 
 package ai.starwhale.mlops.storage.fs;
 
+import ai.starwhale.mlops.storage.AbstractStorageAccessService;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
+import ai.starwhale.mlops.storage.StorageUri;
 import com.google.common.io.ByteStreams;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -39,7 +40,7 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.utils.BoundedInputStream;
 
-public class StorageAccessServiceFile implements StorageAccessService {
+public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     private final File rootDir;
 
@@ -57,6 +58,14 @@ public class StorageAccessServiceFile implements StorageAccessService {
         if (!this.rootDir.isDirectory()) {
             throw new IllegalArgumentException(rootDir + " is not a directory");
         }
+    }
+
+    @Override
+    public boolean compatibleWith(StorageUri uri) {
+        if (!super.compatibleWith(uri)) {
+            return false;
+        }
+        return Path.of(uri.getPath()).startsWith(this.rootDir.toPath());
     }
 
     @Override

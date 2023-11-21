@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.fs;
+package ai.starwhale.mlops.storage;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@EqualsAndHashCode
-public class FsConfig {
+public class StorageConnectionTokenTest {
 
-    /**
-     * the root for the storage file
-     */
-    private String rootDir;
+    @Test
+    public void testEqual() {
+        StorageConnectionToken storageConnectionToken = new StorageConnectionToken("ftp",
+                Map.of("a", "a1", "b", "b1", "c", "c1"));
+        StorageConnectionToken storageConnectionToken2 = new StorageConnectionToken("ftp",
+                Map.of("b", "b1", "a", "a1", "c", "c1"));
+        Assertions.assertEquals(storageConnectionToken, storageConnectionToken2);
+    }
 
-    /**
-     * the service who is serving the pre-signed url
-     */
-    private String serviceProvider;
 }

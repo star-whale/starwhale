@@ -19,11 +19,10 @@ package ai.starwhale.mlops.domain.dataset.objectstore;
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageConnectionToken;
 import ai.starwhale.mlops.storage.StorageUri;
-import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
-import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
-import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
-import java.util.List;
+import ai.starwhale.mlops.storage.fs.FsConfig;
+import ai.starwhale.mlops.storage.s3.S3Config;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -39,40 +38,32 @@ public class StorageAccessParser implements SystemSettingListener {
 
     final StorageAccessService defaultStorageAccessService;
 
-    final List<CompatibleStorageAccessServiceBuilder> compatibleStorageAccessServiceBuilders;
-
     /**
      * key: prefixWithoutPath
      * val: StorageAccessService
      */
     ConcurrentHashMap<String, StorageAccessService> storageAccessServiceCache = new ConcurrentHashMap<>();
 
-    Map<StorageConnectionToken, CompatibleStorageAccessService> storageAccessServicesPool
-            = new ConcurrentHashMap<>();
+    Map<StorageConnectionToken, StorageAccessService> storageAccessServicesPool = new ConcurrentHashMap<>();
     private Set<StorageConnectionToken> oldConnectionTokens = Set.of();
 
-    public StorageAccessParser(StorageAccessService defaultStorageAccessService,
-            List<CompatibleStorageAccessServiceBuilder> compatibleStorageAccessServiceBuilders) {
+    public StorageAccessParser(StorageAccessService defaultStorageAccessService) {
         this.defaultStorageAccessService = defaultStorageAccessService;
-        this.compatibleStorageAccessServiceBuilders = compatibleStorageAccessServiceBuilders;
     }
 
     public StorageAccessService getStorageAccessServiceFromUri(StorageUri storageUri) {
-
         if (storageUri.getSchema() == null) {
-            return defaultStorageAccessService;
+            return this.defaultStorageAccessService;
         }
-        StorageAccessService storageAccessService = storageAccessServiceCache.computeIfAbsent(
+        return storageAccessServiceCache.computeIfAbsent(
                 storageUri.getPrefixWithBucket(), key -> {
-                    for (CompatibleStorageAccessService css : storageAccessServicesPool.values()) {
-                        if (css.compatibleWith(storageUri)) {
-                            return css;
+                    for (StorageAccessService service : storageAccessServicesPool.values()) {
+                        if (service.compatibleWith(storageUri)) {
+                            return service;
                         }
                     }
-                    return null;
+                    return defaultStorageAccessService;
                 });
-        return storageAccessService == null ? defaultStorageAccessService : storageAccessService;
-
     }
 
     @Override
@@ -85,28 +76,36 @@ public class StorageAccessParser implements SystemSettingListener {
         }
         connectionTokens.stream().filter(t -> !oldConnectionTokens.contains(t))
                 .forEach(t -> storageAccessServicesPool.computeIfAbsent(t,
-                        this::buildCompatibleStorageAccessService));
+                        this::buildStorageAccessService));
         oldConnectionTokens.stream().filter(t -> !connectionTokens.contains(t))
                 .forEach(t -> {
-                    CompatibleStorageAccessService removed = storageAccessServicesPool.remove(t);
+                    StorageAccessService removed = storageAccessServicesPool.remove(t);
                     Set<String> cachedPrefix = storageAccessServiceCache.entrySet().stream()
                             .filter(entry -> entry.getValue().equals(removed)).map(
                                     Entry::getKey).collect(Collectors.toSet());
-                    cachedPrefix.forEach(p -> {
-                        storageAccessServiceCache.remove(p);
-                    });
+                    cachedPrefix.forEach(p -> storageAccessServiceCache.remove(p));
                 });
         oldConnectionTokens = connectionTokens;
     }
 
     @Nullable
-    private CompatibleStorageAccessService buildCompatibleStorageAccessService(StorageConnectionToken token) {
-        for (CompatibleStorageAccessServiceBuilder builder : compatibleStorageAccessServiceBuilders) {
-            if (builder.couldBuild(token.getType())) {
-                return builder.build(token.getTokens());
+    private StorageAccessService buildStorageAccessService(StorageConnectionToken token) {
+        try {
+            switch (token.getType().toLowerCase()) {
+                case "memory":
+                    return StorageAccessService.getMemoryStorageAccessService();
+                case "fs":
+                case "file":
+                    return StorageAccessService.getFileStorageAccessService(
+                            new FsConfig(token.getTokens().get("rootDir"), token.getTokens().get("serviceProvider")));
+                default:
+                    return StorageAccessService.getS3LikeStorageAccessService(
+                            token.getType(),
+                            new S3Config(token.getTokens()));
             }
+        } catch (Exception e) {
+            log.error("can not build storage access service", e);
+            return null;
         }
-        log.error("no builder  found for storage type {}", token.getType());
-        return null;
     }
 }

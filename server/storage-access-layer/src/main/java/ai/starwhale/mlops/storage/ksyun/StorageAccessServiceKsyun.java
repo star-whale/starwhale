@@ -18,7 +18,7 @@ package ai.starwhale.mlops.storage.ksyun;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.NopCloserInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
@@ -31,8 +31,10 @@ import com.ksyun.ks3.exception.Ks3ServiceException;
 import com.ksyun.ks3.exception.serviceside.NoSuchKeyException;
 import com.ksyun.ks3.exception.serviceside.NotFoundException;
 import com.ksyun.ks3.http.HttpMethod;
+import com.ksyun.ks3.http.Region;
 import com.ksyun.ks3.service.Ks3Client;
 import com.ksyun.ks3.service.Ks3ClientConfig;
+import com.ksyun.ks3.service.Ks3ClientConfig.PROTOCOL;
 import com.ksyun.ks3.service.request.AbortMultipartUploadRequest;
 import com.ksyun.ks3.service.request.CompleteMultipartUploadRequest;
 import com.ksyun.ks3.service.request.GeneratePresignedUrlRequest;
@@ -51,19 +53,25 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StorageAccessServiceKsyun implements StorageAccessService {
-
-    private final String bucket;
-
-    private final long partSize;
+public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
 
     private final Ks3Client ks3Client;
 
     public StorageAccessServiceKsyun(S3Config s3Config) {
-        this.bucket = s3Config.getBucket();
-        this.partSize = s3Config.getHugeFilePartSize();
+        super(s3Config);
         Ks3ClientConfig config = new Ks3ClientConfig();
-        config.setEndpoint(s3Config.getEndpoint());
+        if (s3Config.getRegion() != null) {
+            config.setRegion(Region.valueOf(s3Config.getRegion().toUpperCase()));
+        }
+        if (s3Config.getEndpoint() != null) {
+            var url = s3Config.getEndpointUrl();
+            if (url.getProtocol().equalsIgnoreCase("https")) {
+                config.setProtocol(PROTOCOL.https);
+            } else {
+                config.setProtocol(PROTOCOL.http);
+            }
+            config.setEndpoint(url.getAuthority());
+        }
         config.setPathStyleAccess(false);
         this.ks3Client = new Ks3Client(s3Config.getAccessKey(), s3Config.getSecretKey(), config);
     }

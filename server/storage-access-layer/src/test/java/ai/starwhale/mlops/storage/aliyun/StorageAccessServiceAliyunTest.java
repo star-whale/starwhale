@@ -46,7 +46,6 @@ public class StorageAccessServiceAliyunTest {
                 .bucket("test")
                 .accessKey("ak")
                 .secretKey("sk")
-                .region("us-west-1")
                 .endpoint(s3Mock.getHttpEndpoint())
                 .build());
     }

@@ -19,11 +19,12 @@ package ai.starwhale.mlops.storage.baidu;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.baidubce.BceServiceException;
+import com.baidubce.Protocol;
 import com.baidubce.auth.DefaultBceCredentials;
 import com.baidubce.http.HttpMethodName;
 import com.baidubce.services.bos.BosClient;
@@ -50,26 +51,24 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StorageAccessServiceBos implements StorageAccessService {
-
-    private final String bucket;
-
-    private final long partSize;
+public class StorageAccessServiceBos extends S3LikeStorageAccessService {
 
     private final BosClient bosClient;
 
     private final Set<String> notFoundErrorCodes = Set.of("NoSuchKey", "NoSuchUpload", "NoSuchBucket", "NoSuchVersion");
 
     public StorageAccessServiceBos(S3Config s3Config) {
-        this.bucket = s3Config.getBucket();
-        this.partSize = s3Config.getHugeFilePartSize();
+        super(s3Config);
 
         var config = new BosClientConfiguration();
         config.setCredentials(new DefaultBceCredentials(s3Config.getAccessKey(), s3Config.getSecretKey()));
-        if (s3Config.getEndpoint() != null) {
-            config.setEndpoint(s3Config.getEndpoint());
-            config.setCnameEnabled(true);
+        var url = s3Config.getEndpointUrl();
+        if (url.getProtocol().equalsIgnoreCase("https")) {
+            config.setProtocol(Protocol.HTTPS);
+        } else {
+            config.setProtocol(Protocol.HTTP);
         }
+        config.setEndpoint(url.getAuthority());
         this.bosClient = new BosClient(config);
     }
 

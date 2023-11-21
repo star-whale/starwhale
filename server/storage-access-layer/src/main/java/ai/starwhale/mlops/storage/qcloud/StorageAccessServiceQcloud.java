@@ -19,7 +19,7 @@ package ai.starwhale.mlops.storage.qcloud;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
@@ -27,7 +27,7 @@ import com.google.common.collect.Streams;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
-import com.qcloud.cos.endpoint.RegionEndpointBuilder;
+import com.qcloud.cos.endpoint.SuffixEndpointBuilder;
 import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.http.HttpMethodName;
 import com.qcloud.cos.http.HttpProtocol;
@@ -51,49 +51,31 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 
 @Slf4j
-public class StorageAccessServiceQcloud implements StorageAccessService {
+public class StorageAccessServiceQcloud extends S3LikeStorageAccessService {
 
-    private final String bucket;
-
-    private final long partSize;
 
     private final COSClient cosClient;
 
     public StorageAccessServiceQcloud(S3Config s3Config) {
-        this.bucket = s3Config.getBucket();
-        this.partSize = s3Config.getHugeFilePartSize();
+        super(s3Config);
 
         // https://cloud.tencent.com/document/product/436/10199
         var cred = new BasicCOSCredentials(s3Config.getAccessKey(), s3Config.getSecretKey());
-        var region = new Region(s3Config.getRegion());
-        var cfg = new ClientConfig(region);
-        if (s3Config.getEndpoint() == null || s3Config.getEndpoint().startsWith("https://")) {
-            cfg.setHttpProtocol(HttpProtocol.https);
-        } else {
-            cfg.setHttpProtocol(HttpProtocol.http);
+        var cfg = new ClientConfig();
+        if (s3Config.getRegion() != null) {
+            cfg.setRegion(new Region(s3Config.getRegion()));
         }
-        cfg.setEndpointBuilder(new RegionEndpointBuilder(region) {
-            @Override
-            public String buildGeneralApiEndpoint(String bucketName) {
-                if (StringUtils.hasText(s3Config.getEndpoint())) {
-                    // trim schema and trailing slash
-                    var endpoint = s3Config.getEndpoint();
-                    for (var prefix : new String[]{"https://", "http://"}) {
-                        if (endpoint.startsWith(prefix)) {
-                            endpoint = endpoint.substring(prefix.length());
-                        }
-                    }
-                    if (endpoint.endsWith("/")) {
-                        endpoint = endpoint.substring(0, endpoint.length() - 1);
-                    }
-                    return String.format("%s.%s", bucketName, endpoint);
-                }
-                return super.buildGeneralApiEndpoint(bucketName);
+        if (s3Config.getEndpoint() != null) {
+            var url = s3Config.getEndpointUrl();
+            if (url.getProtocol().equalsIgnoreCase("https")) {
+                cfg.setHttpProtocol(HttpProtocol.https);
+            } else {
+                cfg.setHttpProtocol(HttpProtocol.http);
             }
-        });
+            cfg.setEndpointBuilder(new SuffixEndpointBuilder(url.getAuthority()));
+        }
         this.cosClient = new COSClient(cred, cfg);
     }
 

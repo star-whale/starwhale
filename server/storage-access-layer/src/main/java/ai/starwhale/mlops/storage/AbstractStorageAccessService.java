@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.storage.autofit;
+package ai.starwhale.mlops.storage;
 
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
-public class StorageConnectionTokenTest {
+@Slf4j
+public abstract class AbstractStorageAccessService implements StorageAccessService {
 
-    @Test
-    public void testEqual() {
-        StorageConnectionToken storageConnectionToken = new StorageConnectionToken("ftp",
-                Map.of("a", "a1", "b", "b1", "c", "c1"));
-        StorageConnectionToken storageConnectionToken2 = new StorageConnectionToken("ftp",
-                Map.of("b", "b1", "a", "a1", "c", "c1"));
-        Assertions.assertEquals(storageConnectionToken, storageConnectionToken2);
+    private final Set<String> schemas = new HashSet<>(
+            StorageAccessService.Registry.getUriSchemasByClass(this.getClass()));
+
+    public boolean compatibleWith(StorageUri uri) {
+        return StringUtils.hasText(uri.getSchema()) && this.schemas.contains(uri.getSchema().toLowerCase());
     }
-
 }

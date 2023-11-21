@@ -54,7 +54,6 @@ public class StorageAccessServiceMinioTest {
                 .bucket("test")
                 .accessKey("ak")
                 .secretKey("sk")
-                .region("us-west-1")
                 .endpoint(s3Mock.getHttpEndpoint())
                 .build());
     }
