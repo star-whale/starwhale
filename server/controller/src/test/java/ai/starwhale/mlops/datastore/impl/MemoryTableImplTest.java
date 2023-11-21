@@ -950,7 +950,7 @@ public class MemoryTableImplTest {
         public void testQueryInitialEmptyTable() {
             this.memoryTable = createInstance("test");
             var results = ImmutableList.copyOf(
-                    this.memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false, false));
+                    this.memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false));
             assertThat(results, empty());
         }
 
@@ -961,7 +961,7 @@ public class MemoryTableImplTest {
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of());
             var results = ImmutableList.copyOf(
-                    this.memoryTable.query(Long.MAX_VALUE, Map.of("k", "k"), null, null, false, false));
+                    this.memoryTable.query(Long.MAX_VALUE, Map.of("k", "k"), null, null, false));
             assertThat(results, empty());
         }
 
@@ -972,14 +972,14 @@ public class MemoryTableImplTest {
                     new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                     List.of(Map.of("k", "0", "-", "1")));
             var results = ImmutableList.copyOf(
-                    this.memoryTable.query(Long.MAX_VALUE, Map.of("k", "k"), null, null, false, false));
+                    this.memoryTable.query(Long.MAX_VALUE, Map.of("k", "k"), null, null, false));
             assertThat(results, is(List.of(new RecordResult(BaseValue.valueOf("0"), true, null))));
         }
 
         @Test
         public void testQueryColumnAliases() {
             var results = ImmutableList.copyOf(
-                    this.memoryTable.query(Long.MAX_VALUE, Map.of("a", "x", "d", "y"), null, null, false, false));
+                    this.memoryTable.query(Long.MAX_VALUE, Map.of("a", "x", "d", "y"), null, null, false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
                                     false,
@@ -1033,7 +1033,6 @@ public class MemoryTableImplTest {
                                     .operator(Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("key"), this.createConstant(1)))
                                     .build(),
-                            false,
                             false));
             assertThat(results, is(List.of(new RecordResult(BaseValue.valueOf(1), false,
                     Map.of("key", BaseValue.valueOf(1), "x", BaseValue.valueOf(List.of(10)))))));
@@ -1047,7 +1046,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "b", "b"),
                             List.of(new OrderByDesc("a")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1090,7 +1088,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "b", "b"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("b", true)),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1133,7 +1130,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "b", "b"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("b")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1176,7 +1172,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "c", "c"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("c")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1220,7 +1215,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "d", "d"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("d")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1263,7 +1257,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "e", "e"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("e")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1306,7 +1299,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "f", "f"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("f")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1349,7 +1341,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "g", "g"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("g")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1392,7 +1383,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "h", "h"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("h")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1435,7 +1425,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a", "i", "i"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("i")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -1493,7 +1482,6 @@ public class MemoryTableImplTest {
                             Map.of("d", "x"),
                             List.of(new OrderByDesc("a"), new OrderByDesc("d")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("x", BaseValue.valueOf(2))),
@@ -1516,7 +1504,6 @@ public class MemoryTableImplTest {
                             Map.of("a", "a"),
                             List.of(new OrderByDesc("x")),
                             null,
-                            false,
                             false),
                     "invalid order by column");
         }
@@ -1538,7 +1525,6 @@ public class MemoryTableImplTest {
                                         }
                                     })
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("d", BaseValue.valueOf(2))))));
@@ -1557,7 +1543,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(
@@ -1583,7 +1568,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results, is(List.of(
                     new RecordResult(BaseValue.valueOf(5), false, Map.of("b", BaseValue.valueOf((byte) 5))))));
@@ -1601,7 +1585,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results, is(List.of(
                     new RecordResult(BaseValue.valueOf(4), false, Map.of("c", BaseValue.valueOf((short) 5))))));
@@ -1619,7 +1602,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(3), false, Map.of("d", BaseValue.valueOf(5))))));
@@ -1637,7 +1619,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2), false, Map.of("e", BaseValue.valueOf(5L))))));
@@ -1655,7 +1636,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(1), false, Map.of("f", BaseValue.valueOf(5.f))))));
@@ -1673,7 +1653,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("g", BaseValue.valueOf(5.))))));
@@ -1691,7 +1670,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9), false, Map.of("h", BaseValue.valueOf("5"))))));
@@ -1711,7 +1689,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("i"),
                                             createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(8),
@@ -1731,7 +1708,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(
@@ -1767,7 +1743,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9), false, Map.of()),
@@ -1790,7 +1765,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(8), false, Map.of()),
@@ -1813,7 +1787,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(7), false, Map.of()),
@@ -1836,7 +1809,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(6), false, Map.of()),
@@ -1859,7 +1831,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(5), false, Map.of()),
@@ -1882,7 +1853,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(4), false, Map.of()),
@@ -1905,7 +1875,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS)
                                     .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(3), false, Map.of()),
@@ -1930,7 +1899,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("i"),
                                             createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2),
@@ -1970,7 +1938,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("a"), createConstant(true)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(
@@ -2006,7 +1973,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9), false, Map.of()),
@@ -2030,7 +1996,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(8), false, Map.of()),
@@ -2054,7 +2019,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(7), false, Map.of()),
@@ -2078,7 +2042,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(6), false, Map.of()),
@@ -2102,7 +2065,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(5), false, Map.of()),
@@ -2126,7 +2088,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(4), false, Map.of()),
@@ -2150,7 +2111,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.LESS_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(3), false, Map.of()),
@@ -2176,7 +2136,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("i"),
                                             createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2),
@@ -2220,7 +2179,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("a"), createConstant(false)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(
@@ -2246,7 +2204,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(6), false, Map.of("b", BaseValue.valueOf((byte) 6))),
@@ -2266,7 +2223,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(5), false, Map.of("c", BaseValue.valueOf((short) 6))),
@@ -2286,7 +2242,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(4), false, Map.of("d", BaseValue.valueOf(6))),
@@ -2306,7 +2261,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(3), false, Map.of("e", BaseValue.valueOf(6L))),
@@ -2326,7 +2280,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2), false, Map.of("f", BaseValue.valueOf(6.f))),
@@ -2346,7 +2299,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("g"), createConstant(5.)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(1), false, Map.of("g", BaseValue.valueOf(6.))),
@@ -2366,7 +2318,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER)
                                     .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("h", BaseValue.valueOf("6"))),
@@ -2388,7 +2339,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("i"),
                                             createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9),
@@ -2417,7 +2367,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("a"), createConstant(false)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(
@@ -2452,7 +2401,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(5), false, Map.of("b", BaseValue.valueOf((byte) 5))),
@@ -2473,7 +2421,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("c"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(4), false, Map.of("c", BaseValue.valueOf((short) 5))),
@@ -2494,7 +2441,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("d"), createConstant(5)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(3), false, Map.of("d", BaseValue.valueOf(5))),
@@ -2515,7 +2461,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("e"), createConstant(5L)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2), false, Map.of("e", BaseValue.valueOf(5L))),
@@ -2536,7 +2481,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("f"), createConstant(5.f)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(1), false, Map.of("f", BaseValue.valueOf(5.f))),
@@ -2557,7 +2501,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("g"), this.createConstant(5.)))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("g", BaseValue.valueOf(5.))),
@@ -2578,7 +2521,6 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.GREATER_EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("h"), createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9), false, Map.of("h", BaseValue.valueOf("5"))),
@@ -2601,7 +2543,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("i"),
                                             createConstant(ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8)))))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(8),
@@ -2641,7 +2582,6 @@ public class MemoryTableImplTest {
                                             new TableQueryFilter.Column("h"),
                                             createConstant("5")))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(9), false, Map.of("h", BaseValue.valueOf("5"))),
@@ -2666,7 +2606,6 @@ public class MemoryTableImplTest {
                                                             createConstant(5)))
                                                     .build()))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(7), false, Map.of()),
@@ -2704,7 +2643,6 @@ public class MemoryTableImplTest {
                                                             createConstant(true)))
                                                     .build()))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(8), false,
@@ -2743,7 +2681,6 @@ public class MemoryTableImplTest {
                                                             createConstant(true)))
                                                     .build()))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(2),
@@ -2777,7 +2714,6 @@ public class MemoryTableImplTest {
                                                             createConstant(true)))
                                                     .build()))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("d", BaseValue.valueOf(2))),
@@ -2826,7 +2762,6 @@ public class MemoryTableImplTest {
                                                             createConstant(true)))
                                                     .build()))
                                     .build(),
-                            false,
                             false));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(0),
@@ -2874,7 +2809,6 @@ public class MemoryTableImplTest {
                             columns,
                             List.of(new OrderByDesc("z")),
                             null,
-                            false,
                             false));
             assertThat(results,
                     is(IntStream.range(0, 10).mapToObj(i -> new RecordResult(BaseValue.valueOf(i), false, Map.of()))
@@ -2893,8 +2827,7 @@ public class MemoryTableImplTest {
                                     .operator(TableQueryFilter.Operator.EQUAL)
                                     .operands(List.of(new TableQueryFilter.Column("b"), createConstant(7)))
                                     .build(),
-                            true,
-                            false));
+                            true));
             assertThat(results,
                     is(List.of(new RecordResult(BaseValue.valueOf(7), false, new HashMap<>() {
                         {
@@ -3165,7 +3098,7 @@ public class MemoryTableImplTest {
                             Map.of("d", BaseValue.valueOf(1),
                                     "e", BaseValue.valueOf(2L),
                                     "h", BaseValue.valueOf("5"))));
-            assertThat(ImmutableList.copyOf(this.memoryTable.query(t1, columns, null, null, false, false)),
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(t1, columns, null, null, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(
                             this.memoryTable.scan(t1, columns, null, null, false, null, null, false, false)),
@@ -3175,7 +3108,7 @@ public class MemoryTableImplTest {
             }
             expected.get(0).getValues().putAll(Map.of("d", BaseValue.valueOf(7), "e", BaseValue.valueOf(8L)));
             expected.get(9).getValues().put("d", BaseValue.valueOf(6));
-            assertThat(ImmutableList.copyOf(this.memoryTable.query(t2, columns, null, null, false, false)),
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(t2, columns, null, null, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(
                             this.memoryTable.scan(t2, columns, null, null, false, null, null, false, false)),
@@ -3183,7 +3116,7 @@ public class MemoryTableImplTest {
             expected.get(0).getValues().putAll(Map.of("d", BaseValue.valueOf(8), "h", BaseValue.valueOf("t")));
             expected.get(9).setDeleted(true);
             expected.get(9).setValues(null);
-            assertThat(ImmutableList.copyOf(this.memoryTable.query(t3, columns, null, null, false, false)),
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(t3, columns, null, null, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(
                             this.memoryTable.scan(t3, columns, null, null, false, null, null, false, false)),
@@ -3191,7 +3124,7 @@ public class MemoryTableImplTest {
             expected.get(0).getValues().put("d", BaseValue.valueOf(9));
             expected.get(9).setDeleted(false);
             expected.get(9).setValues(Map.of("d", BaseValue.valueOf(8)));
-            assertThat(ImmutableList.copyOf(this.memoryTable.query(t4, columns, null, null, false, false)),
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(t4, columns, null, null, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(
                             this.memoryTable.scan(t4, columns,
@@ -3201,7 +3134,7 @@ public class MemoryTableImplTest {
             expected.add(new RecordResult(BaseValue.valueOf(10),
                     false,
                     Map.of("d", BaseValue.valueOf(7))));
-            assertThat(ImmutableList.copyOf(this.memoryTable.query(Long.MAX_VALUE, columns, null, null, false, false)),
+            assertThat(ImmutableList.copyOf(this.memoryTable.query(Long.MAX_VALUE, columns, null, null, false)),
                     is(expected));
             assertThat(ImmutableList.copyOf(
                             this.memoryTable.scan(Long.MAX_VALUE, columns,

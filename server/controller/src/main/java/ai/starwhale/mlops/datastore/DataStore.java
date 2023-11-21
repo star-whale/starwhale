@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.upgrade.rollup.aspectcut.WriteOperation;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -223,6 +224,63 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         this.walManager.flush();
     }
 
+    public boolean migration(DataStoreMigrationRequest req) {
+        if (req.getSrcTableName().equals(req.getTargetTableName())) {
+            throw new SwValidationException(
+                    ValidSubject.DATASTORE, "Source and target table names cannot be the same");
+        }
+        var srcTable = this.getTable(req.getSrcTableName(), false, false);
+        var targetTable = this.getTable(req.getTargetTableName(), true, req.isCreateNonExistingTargetTable());
+        if (srcTable == null || targetTable == null) {
+            throw new SwValidationException(ValidSubject.DATASTORE, "Source or target table doesn't exist");
+        }
+        this.updateHandle.offer(new Object());
+        srcTable.lock(true);
+        targetTable.lock(false);
+        try {
+            int skipCount = req.getStart();
+            if (skipCount < 0) {
+                skipCount = 0;
+            }
+
+            var schema = srcTable.getSchema();
+            var columns = this.getColumnAliases(schema, req.getColumns());
+            var records = new ArrayList<Map<String, BaseValue>>();
+            var revision = req.getSrcRevision();
+            if (revision == 0) {
+                revision = srcTable.getLastRevision();
+            }
+            var iterator = srcTable.query(
+                    revision,
+                    columns,
+                    null,
+                    req.getFilter(),
+                    true);
+            while (iterator.hasNext() && skipCount > 0) {
+                iterator.next();
+                --skipCount;
+            }
+            while (iterator.hasNext()) {
+                var r = iterator.next();
+                if (r.isDeleted()) {
+                    continue;
+                }
+                records.add(r.getValues());
+            }
+            if (!records.isEmpty()) {
+                targetTable.updateWithObject(srcTable.getSchema().toTableSchemaDesc(), records);
+            }
+            return true;
+        } finally {
+            this.updateHandle.poll();
+            synchronized (updateHandle) {
+                updateHandle.notifyAll();
+            }
+            targetTable.unlock(false);
+            srcTable.unlock(true);
+        }
+    }
+
     public RecordList query(DataStoreQueryRequest req) {
         var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {
@@ -254,8 +312,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     columns,
                     req.getOrderBy(),
                     req.getFilter(),
-                    req.isKeepNone(),
-                    req.isRawResult());
+                    req.isKeepNone());
             while (iterator.hasNext() && skipCount > 0) {
                 iterator.next();
                 --skipCount;

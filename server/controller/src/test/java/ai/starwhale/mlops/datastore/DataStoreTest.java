@@ -235,6 +235,83 @@ public class DataStoreTest {
     }
 
     @Test
+    public void testMigration() {
+        var srcTable = "t1";
+        var srcDesc = new TableSchemaDesc("k",
+                                       List.of(ColumnSchemaDesc.string().name("k").build(),
+                                               ColumnSchemaDesc.int32().name("a").build()));
+        this.dataStore.update(srcTable,
+                              srcDesc,
+                              List.of(Map.of("k", "0", "a", "5"),
+                                      Map.of("k", "1", "a", "4"),
+                                      Map.of("k", "2", "a", "3"),
+                                      Map.of("k", "3", "a", "2"),
+                                      Map.of("k", "4", "a", "1"))
+        );
+        var targetTable = "t2";
+
+        // case: target table doesn't exist and don't allow to create
+        assertThrows(
+                SwValidationException.class,
+                () -> this.dataStore.migration(DataStoreMigrationRequest.builder()
+                                                  .srcTableName(srcTable)
+                                                  .targetTableName(targetTable)
+                                                  .createNonExistingTargetTable(false)
+                                                  .build())
+        );
+
+        // case: target table doesn't exist but allow to create, migration with filter
+        this.dataStore.migration(DataStoreMigrationRequest.builder()
+                                    .srcTableName(srcTable)
+                                    .targetTableName(targetTable)
+                                    .filter(TableQueryFilter.builder()
+                                                    .operator(Operator.OR)
+                                                    .operands(List.of(
+                                                            TableQueryFilter.builder()
+                                                                    .operator(Operator.EQUAL)
+                                                                    .operands(List.of(
+                                                                            new TableQueryFilter.Column("k"),
+                                                                            new TableQueryFilter.Constant(
+                                                                                    ColumnType.STRING, "0")
+                                                                    ))
+                                                                    .build(),
+                                                            TableQueryFilter.builder()
+                                                                    .operator(Operator.EQUAL)
+                                                                    .operands(List.of(
+                                                                            new TableQueryFilter.Column("k"),
+                                                                            new TableQueryFilter.Constant(
+                                                                                    ColumnType.STRING, "2")
+                                                                    ))
+                                                                    .build()
+                                                    ))
+                                                    .build()
+                                    )
+                                    .createNonExistingTargetTable(true)
+                                    .build());
+        var recordList = this.dataStore.query(
+                DataStoreQueryRequest.builder()
+                        .tableName(targetTable)
+                        .columns(Map.of("a", "a"))
+                        .build()
+        );
+        assertEquals(2, recordList.getRecords().size());
+
+        // case: migration all records without filter
+        this.dataStore.migration(DataStoreMigrationRequest.builder()
+                                    .srcTableName(srcTable)
+                                    .targetTableName(targetTable)
+                                    .createNonExistingTargetTable(true)
+                                    .build());
+        recordList = this.dataStore.query(
+                DataStoreQueryRequest.builder()
+                        .tableName(targetTable)
+                        .columns(Map.of("a", "a"))
+                        .build()
+        );
+        assertEquals(5, recordList.getRecords().size());
+    }
+
+    @Test
     public void testQuery() {
         var desc = new TableSchemaDesc("k",
                 List.of(ColumnSchemaDesc.string().name("k").build(),
