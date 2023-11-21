@@ -59,6 +59,7 @@ import FineTuneRunOverviewLayout from './pages/Space/FineTuneRunOverviewLayout'
 import JobTaskListCard from './pages/Job/JobTaskListCard'
 import FineTuneRunsTaskListCard from './pages/Space/FineTuneRunsTaskListCard'
 import FineTuneLayout from './pages/Space/FineTuneLayout'
+import FineTuneEvaluationListCard from './pages/Space/Evaluation/EvaluationListCard'
 
 const unauthed = {
     component: LoginLayout,
@@ -295,7 +296,7 @@ const authed = {
 
                 {
                     path: '/projects/:projectId/spaces/:spaceId/fine-tune-evals',
-                    component: FineTuneListCard,
+                    component: FineTuneEvaluationListCard,
                 },
                 {
                     to: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',

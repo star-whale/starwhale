@@ -8,11 +8,15 @@ import { IJobRequest, api } from '@/api'
 import { ExtendButton } from '@starwhale/ui'
 import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 
+const TYPE = ['FINE_TUNE', 'EVALUATION']
+
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
     const history = useHistory()
+    const { fineTuneId, type = TYPE[0] } = query
+
     const handleSubmit = useCallback(
         async (data: IJobRequest) => {
             if (!projectId) {
@@ -20,16 +24,14 @@ export default function FineTuneNewCard() {
             }
             await api.createJob(projectId, {
                 ...data,
-                type: 'FINE_TUNE',
+                type: TYPE.includes(type) ? type : 'FINE_TUNE',
                 bizType: 'FINE_TUNE',
                 bizId: spaceId,
             })
             history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
         },
-        [projectId, spaceId, history]
+        [projectId, spaceId, type, history]
     )
-    // rerun job id
-    const { fineTuneId } = query
     const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
     const job = info?.data?.job
 

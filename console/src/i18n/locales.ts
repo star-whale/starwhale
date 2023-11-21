@@ -830,6 +830,10 @@ const ft = {
         en: 'Runs',
         zh: 'Runs',
     },
+    'ft.eval': {
+        en: 'Evaluation',
+        zh: '评测',
+    },
     'ft.online_eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
