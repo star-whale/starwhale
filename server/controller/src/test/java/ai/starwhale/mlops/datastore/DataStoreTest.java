@@ -261,7 +261,7 @@ public class DataStoreTest {
         );
 
         // case: target table doesn't exist but allow to create, migration with filter
-        this.dataStore.migration(DataStoreMigrationRequest.builder()
+        var length = this.dataStore.migration(DataStoreMigrationRequest.builder()
                                     .srcTableName(srcTable)
                                     .targetTableName(targetTable)
                                     .filter(TableQueryFilter.builder()
@@ -288,6 +288,8 @@ public class DataStoreTest {
                                     )
                                     .createNonExistingTargetTable(true)
                                     .build());
+        assertEquals(2, length);
+
         var recordList = this.dataStore.query(
                 DataStoreQueryRequest.builder()
                         .tableName(targetTable)
@@ -297,11 +299,13 @@ public class DataStoreTest {
         assertEquals(2, recordList.getRecords().size());
 
         // case: migration all records without filter
-        this.dataStore.migration(DataStoreMigrationRequest.builder()
+        length = this.dataStore.migration(DataStoreMigrationRequest.builder()
                                     .srcTableName(srcTable)
                                     .targetTableName(targetTable)
                                     .createNonExistingTargetTable(true)
                                     .build());
+        assertEquals(5, length);
+
         recordList = this.dataStore.query(
                 DataStoreQueryRequest.builder()
                         .tableName(targetTable)

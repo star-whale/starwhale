@@ -224,7 +224,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         this.walManager.flush();
     }
 
-    public boolean migration(DataStoreMigrationRequest req) {
+    public int migration(DataStoreMigrationRequest req) {
         if (req.getSrcTableName().equals(req.getTargetTableName())) {
             throw new SwValidationException(
                     ValidSubject.DATASTORE, "Source and target table names cannot be the same");
@@ -270,7 +270,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             if (!records.isEmpty()) {
                 targetTable.updateWithObject(srcTable.getSchema().toTableSchemaDesc(), records);
             }
-            return true;
+            return records.size();
         } finally {
             this.updateHandle.poll();
             synchronized (updateHandle) {
