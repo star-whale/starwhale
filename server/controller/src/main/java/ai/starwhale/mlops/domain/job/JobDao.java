@@ -108,6 +108,8 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .comment(flattenEntity.getComment())
                 .resultOutputPath(flattenEntity.getResultOutputPath())
                 .jobStatus(flattenEntity.getJobStatus())
+                .bizId(flattenEntity.getBizId())
+                .bizType(flattenEntity.getBizType())
                 .type(flattenEntity.getType())
                 .resourcePool(flattenEntity.getResourcePool())
                 .stepSpec(flattenEntity.getStepSpec())
