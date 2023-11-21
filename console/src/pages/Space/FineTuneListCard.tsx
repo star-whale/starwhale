@@ -58,7 +58,7 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, ex
     )
 }
 
-const RouteOverview = ({ url, onClose, title, params }) => {
+const RouteOverview = ({ url, onClose, title, params, onRefresh }) => {
     const { RoutesInline } = useRouteContext()
     const [fullscreen, { toggle }] = useBoolean(false)
     const [isRouteAtFineTune, setIsRouteAtFineTune] = React.useState(true)
@@ -117,7 +117,7 @@ const RouteOverview = ({ url, onClose, title, params }) => {
                             onClose={onClose}
                             fullscreen={fullscreen}
                             onFullScreen={toggle}
-                            extraActions={<FineTuneJobActionGroup {...params} />}
+                            extraActions={<FineTuneJobActionGroup onRefresh={onRefresh} {...params} />}
                         />
                     </RoutesInline>
                 </div>
@@ -176,6 +176,7 @@ export default function FineTuneListCard() {
                     title={title}
                     url={url}
                     onClose={() => updateQuery({ fineTuneId: undefined })}
+                    onRefresh={() => info.refetch()}
                 />
             )}
         </div>

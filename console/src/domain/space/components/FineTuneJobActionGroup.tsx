@@ -243,9 +243,10 @@ export function useFineTuneJobActions({ hasSaveAs = false, onRefresh }: IFineTun
 export default function FineTuneJobActionGroup({
     children,
     hasSaveAs,
+    onRefresh,
     ...props
 }: IFineTuneJobActionsProps & { children: any }) {
-    const { renderActionsComponent } = useFineTuneJobActions({ hasSaveAs })
+    const { renderActionsComponent } = useFineTuneJobActions({ hasSaveAs, onRefresh })
 
     return (
         <ButtonGroup key='action'>
