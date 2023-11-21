@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.type.BaseValue;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -32,12 +33,13 @@ public interface MemoryTable {
     // update records, returns the timestamp in milliseconds
     long update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
+    long updateWithObject(TableSchemaDesc schema, List<Map<String, BaseValue>> records);
+
     Iterator<RecordResult> query(long timestamp,
             Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone,
-            boolean rawResult);
+            boolean keepNone);
 
     Iterator<RecordResult> scan(
             long timestamp,

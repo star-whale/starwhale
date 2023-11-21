@@ -378,6 +378,11 @@ public class MemoryTableImpl implements MemoryTable {
             }
             decodedRecords.add(decodedRecord);
         }
+        return this.updateWithObject(schema, decodedRecords);
+    }
+
+    @Override
+    public long updateWithObject(TableSchemaDesc schema, @NonNull List<Map<String, BaseValue>> records) {
         var revision = this.useTimestampAsRevision ? System.currentTimeMillis() : this.lastRevision + 1;
         var logEntryBuilder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
@@ -394,7 +399,7 @@ public class MemoryTableImpl implements MemoryTable {
             recordSchema = new TableSchema(this.schema);
             recordSchema.update(logSchemaBuilder.build());
         }
-        for (var record : decodedRecords) {
+        for (var record : records) {
             logEntryBuilder.addRecords(WalRecordEncoder.encodeRecord(recordSchema, record));
         }
         this.lastWalLogId = this.walManager.append(logEntryBuilder);
@@ -403,8 +408,8 @@ public class MemoryTableImpl implements MemoryTable {
         }
         this.lastUpdateTime = System.currentTimeMillis();
         this.schema = recordSchema;
-        if (!decodedRecords.isEmpty()) {
-            this.insertRecords(revision, decodedRecords);
+        if (!records.isEmpty()) {
+            this.insertRecords(revision, records);
         }
         return revision;
     }
@@ -493,8 +498,7 @@ public class MemoryTableImpl implements MemoryTable {
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone,
-            boolean rawResult) {
+            boolean keepNone) {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
