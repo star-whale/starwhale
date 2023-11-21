@@ -1,0 +1,6 @@
+scikit-learn
+skl2onnx
+onnxruntime
+tqdm
+requests
+pillow

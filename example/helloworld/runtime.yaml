@@ -1,0 +1,4 @@
+name: helloworld
+mode: venv
+dependencies:
+  - requirements.txt
