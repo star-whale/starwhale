@@ -1,9 +1,10 @@
 import React from 'react'
 import { api } from '@/api'
 import useGlobalState from '@/hooks/global'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useEventCallback } from '@starwhale/core'
 import { useProject } from '@/domain/project/hooks/useProject'
+import { val } from '@starwhale/ui/GridTable/utils'
 
 export const useFineTune = () => {
     const [fineTune, setFineTune] = useGlobalState('fineTune')
@@ -22,8 +23,6 @@ export const useFineTuneLoading = () => {
     }
 }
 
-export const LOCAL_VIEW_ID_KEY = 'fine-tune-view-id'
-
 export const useFineTuneConfig = () => {
     const {
         projectId: projectFromUri,
@@ -31,16 +30,29 @@ export const useFineTuneConfig = () => {
         fineTuneId,
     } = useParams<{ projectId: any; spaceId: any; fineTuneId; any }>()
     const { project } = useProject()
-    const projectId = project?.id || projectFromUri
+    const history = useHistory()
 
+    const projectId = project?.id || projectFromUri
     const summaryTableName = `project/${projectId}/ftspace/${spaceId}/eval/summary`
     const viewConfigName = `fine-tune-${spaceId}`
+    const viewCurrentKey = 'fine-tune-view-id'
+    const defaultColumnKey = 'sys/id'
+
+    const gotoTasks = useEventCallback((row) => {
+        history.push(`/projects/${projectId}/spaces/${spaceId}/${val(row?.data?.[defaultColumnKey])}/results`)
+    })
+    const gotoResults = useEventCallback((row) => {
+        history.push(`/projects/${projectId}/spaces/${spaceId}/${val(row?.data?.[defaultColumnKey])}/results`)
+    })
 
     return {
         summaryTableName,
         viewConfigName,
-        defaultColumnKey: 'sys/id',
+        viewCurrentKey,
+        defaultColumnKey,
         projectId,
+        gotoTasks,
+        gotoResults,
     }
 }
 

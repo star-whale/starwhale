@@ -4,18 +4,15 @@ import { createJob } from '@job/services/job'
 import JobForm from '@job/components/JobForm'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { useHistory, useParams, Prompt } from 'react-router-dom'
+import { Prompt } from 'react-router-dom'
 import _ from 'lodash'
 import { ITableState, useEvaluationStore } from '@starwhale/ui/GridTable/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
-import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
-import { WithCurrentAuth } from '@/api/WithAuth'
 import { toaster } from 'baseui/toast'
-import { BusyPlaceholder, Button, ExtendButton } from '@starwhale/ui'
+import { BusyPlaceholder, ExtendButton } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
-import { useProject } from '@project/hooks/useProject'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
@@ -24,7 +21,6 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
-import { IJobRequest } from '@/api'
 import { useFineTuneConfig } from '@/domain/space/hooks/useFineTune'
 
 const selector = (s: ITableState) => ({
@@ -43,13 +39,19 @@ export default function FineTuneEvaluationListCard() {
     return <EvaluationListCard {...config} />
 }
 
-export function EvaluationListCard({ projectId, summaryTableName, defaultColumnKey, viewConfigName }) {
+export function EvaluationListCard({
+    projectId,
+    summaryTableName,
+    defaultColumnKey,
+    viewConfigName,
+    viewCurrentKey,
+    gotoTasks,
+    gotoResults,
+}) {
     const [t] = useTranslation()
-    const history = useHistory()
 
     const { rowSelectedIds, currentView, initStore, onCurrentViewIdChange, getRawIfChangedConfigs } =
         useEvaluationStore(selector, shallow)
-
     const { page, setPage, params } = useDatastorePage({
         pageNum: 1,
         pageSize: 100,
@@ -58,21 +60,10 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
         queries: currentView?.queries,
         tableName: summaryTableName,
     })
-
-    const { recordInfo: evaluationsInfo, columnTypes, records, columnHints } = useFetchDatastoreByTable(params, true)
-    const evaluationViewConfig = useFetchViewConfig(projectId, viewConfigName)
-    const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
-    const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>('currentViewId', {})
     const [changed, setChanged] = useState(false)
-    const handleCreateJob = useCallback(
-        async (data: IJobRequest) => {
-            await createJob(projectId, data)
-            await evaluationsInfo.refetch()
-            setIsCreateJobOpen(false)
-        },
-        [evaluationsInfo, projectId]
-    )
-
+    const evaluationViewConfig = useFetchViewConfig(projectId, viewConfigName)
+    const { columnTypes, records, columnHints } = useFetchDatastoreByTable(params, true)
+    const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>(viewCurrentKey, {})
     const $columns = useDatastoreSummaryColumns({ projectId, columnTypes, columnHints, hasAction: true })
 
     const $ready = evaluationViewConfig.isSuccess
@@ -153,27 +144,8 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
         return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
     }, [rowSelectedIds, records])
 
-    if (!$ready)
-        return (
-            <Card
-                title={t('Evaluations')}
-                style={{
-                    flexShrink: 1,
-                    marginBottom: 0,
-                    width: '100%',
-                    flex: 1,
-                }}
-                extra={
-                    <WithCurrentAuth id='evaluation.create'>
-                        <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
-                    </WithCurrentAuth>
-                }
-            >
-                <BusyPlaceholder />
-            </Card>
-        )
+    if (!$ready) return <BusyPlaceholder />
 
-    // const isAccessOnlineEval = useAccess('online-eval')
     const getActions = (row: any) => [
         {
             access: true,
@@ -184,9 +156,7 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
                     icon='Detail'
                     tooltip={t('View Details')}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => {
-                        history.push(`/projects/${projectId}/evaluations/${row?.data?.['sys/id']?.value}/results`)
-                    }}
+                    onClick={() => gotoTasks(row)}
                 >
                     {hasText ? t('View Details') : undefined}
                 </ExtendButton>
@@ -199,7 +169,7 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
                     isFull
                     icon='tasks'
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => history.push(`/projects/${projectId}/jobs/${row?.data?.['sys/id']?.value}/tasks`)}
+                    onClick={() => gotoResults(row)}
                 >
                     {hasText ? t('View Tasks') : undefined}
                 </ExtendButton>
@@ -208,17 +178,7 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
     ]
 
     return (
-        <Card
-            style={{
-                flexShrink: 1,
-                marginBottom: 0,
-                width: '100%',
-                flex: 1,
-            }}
-            bodyStyle={{
-                flexDirection: 'column',
-            }}
-        >
+        <>
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
             <GridResizerVertical
                 top={() => (
@@ -253,12 +213,6 @@ export function EvaluationListCard({ projectId, summaryTableName, defaultColumnK
                 bottom={() => <EvaluationListResult rows={$compareRows} />}
                 resizeTitle={t('evalution.result.title')}
             />
-            <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
-                <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
-                <ModalBody>
-                    <JobForm onSubmit={handleCreateJob} />
-                </ModalBody>
-            </Modal>
-        </Card>
+        </>
     )
 }
