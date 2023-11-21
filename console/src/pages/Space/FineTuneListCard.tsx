@@ -160,6 +160,14 @@ export default function FineTuneListCard() {
         )
     }, [fineTuneId, fineTune])
 
+    const params = {
+        projectId,
+        spaceId,
+        fineTuneId: fineTune?.id,
+        jobId: fineTune?.job?.id,
+        job: fineTune?.job,
+    }
+
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
             <FineTuneRunsListCard
@@ -168,16 +176,11 @@ export default function FineTuneListCard() {
                 onView={(id) => updateQuery({ fineTuneId: id })}
                 onRefresh={() => info.refetch()}
                 viewId={fineTuneId}
+                params={params}
             />
             {isExpand && (
                 <RouteOverview
-                    params={{
-                        projectId,
-                        spaceId,
-                        fineTuneId: fineTune?.id,
-                        jobId: fineTune?.job?.id,
-                        job: fineTune?.job,
-                    }}
+                    params={params}
                     title={title}
                     url={url}
                     onClose={() => updateQuery({ fineTuneId: undefined })}

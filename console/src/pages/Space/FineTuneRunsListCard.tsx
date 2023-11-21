@@ -8,7 +8,7 @@ function FineTuneSearchBar({ getFilters, queries, setQueries }) {
     return <Search value={queries} getFilters={getFilters} onChange={setQueries} />
 }
 
-function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
+function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh, params }) {
     const ref = React.useRef<HTMLDivElement>(null)
 
     const { list, getFilters, queries, setQueries } = useFineTuneColumns({ data })
@@ -21,7 +21,7 @@ function FineTuneRunsListCard({ isExpand, onView, viewId, data, onRefresh }) {
             {isExpand ? (
                 <FineTuneRunsTableCard list={list} onView={onView} viewId={viewId} />
             ) : (
-                <FineTuneRunsTable list={list} onView={onView} onRefresh={onRefresh} />
+                <FineTuneRunsTable list={list} onView={onView} onRefresh={onRefresh} params={params} />
             )}
         </div>
     )

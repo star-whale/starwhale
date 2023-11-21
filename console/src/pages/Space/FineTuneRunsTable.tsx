@@ -6,22 +6,26 @@ import Table from '@/components/Table'
 import useFineTuneColumns from '@/domain/space/hooks/useFineTuneColumns'
 import { useAccess } from '@/api/WithAuth'
 import { FineTuneModelReleaseModal } from '@/domain/space/components/FineTuneModelReleaseForm'
+import { useFineTuneJobActions, IFineTuneJobActionParams } from '@/domain/space/components/FineTuneJobActionGroup'
 
 export default function FineTuneRunsTable({
     list,
     isLoading,
     onView,
     onRefresh,
+    params,
 }: {
     list: IFineTuneVo[]
     isLoading?: boolean
     onView?: (id: number) => void
     onRefresh?: any
+    params?: IFineTuneJobActionParams
 }) {
     const [t] = useTranslation()
     const isAccessRelease = useAccess('ft.run.release')
     const [releaseFT, setReleaseFT] = React.useState<IFineTuneVo | undefined>()
     const [isOpen, setIsOpen] = React.useState(false)
+    const { getActions: _getActions } = useFineTuneJobActions()
 
     const getActions = ({ id, ...rest }: IFineTuneVo) => [
         {
@@ -59,6 +63,7 @@ export default function FineTuneRunsTable({
                 </ExtendButton>
             ),
         },
+        ..._getActions({ ...params, fineTuneId: String(id), job: rest.job }),
     ]
 
     const { columns, renderCell } = useFineTuneColumns()

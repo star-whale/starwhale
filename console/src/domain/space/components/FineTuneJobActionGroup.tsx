@@ -10,15 +10,12 @@ import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
 import { ConfirmButton, Input } from '@starwhale/ui'
 import qs from 'qs'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { WithCurrentAuth, useAccess } from '@/api/WithAuth'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
 import _ from 'lodash'
 import { IJobVo } from '@/api'
 
 function JobSaveAsTemplateButton({ hasText = false }) {
-    const as = hasText ? undefined : 'link'
-    const kind = hasText ? 'secondary' : undefined
-    const sharedProps = { as, kind } as any
     const [t] = useTranslation()
     const [isShow, setIsShow] = useState(false)
     const [name, setName] = useState('')
@@ -39,7 +36,7 @@ function JobSaveAsTemplateButton({ hasText = false }) {
                         </div>
                     }
                     icon='a-saveas'
-                    {...sharedProps}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => setIsShow(true)}
                 >
                     {hasText ? t('job.saveas') : ''}
@@ -103,142 +100,156 @@ function JobSaveAsTemplateButton({ hasText = false }) {
     )
 }
 
-export default function FineTuneJobActionGroup({
-    projectId,
-    jobId,
-    spaceId,
-    fineTuneId,
-    job,
-    children,
-    hasText = false,
-    hasSaveAs = false,
-}: {
-    children?: React.ReactNode
-    hasText?: boolean
-    hasSaveAs?: boolean
+export interface IFineTuneJobActionParams {
     projectId?: string
     jobId?: string
     spaceId?: string
     fineTuneId?: string
     job?: IJobVo
-}) {
+}
+
+export interface IFineTuneJobActionComponentProps {
+    hasText?: boolean
+}
+
+export interface IFineTuneJobActionsProps {
+    hasSaveAs?: boolean
+}
+
+export function useFineTuneJobActions({ hasSaveAs = false }: IFineTuneJobActionsProps = {}) {
     const [t] = useTranslation()
     const history = useHistory()
-
     const handleAction = useCallback(
-        async (jid, type: JobActionType) => {
+        async (projectId, jid, type: JobActionType) => {
             if (!projectId) return
 
             await doJobAction(projectId, jid, type)
             toaster.positive(t('job action done'), { autoHideDuration: 2000 })
         },
-        [projectId, t]
+        [t]
     )
+    const isAccessCancel = useAccess('job.cancel')
+    const isAccessPause = useAccess('job.pause')
+    const isAccessPauseGlobal = useAccess('job-pause')
+    const isAccessResume = useAccess('job.resume')
+    const isAccessResumeGlobal = useAccess('job-resume')
 
-    if (!job) {
-        return null
-    }
+    const getActions = ({ job, projectId, jobId, fineTuneId, spaceId }: IFineTuneJobActionParams = {}) => {
+        if (!job) return []
 
-    const as = hasText ? undefined : 'link'
-    const kind = hasText ? 'secondary' : undefined
-    const sharedProps = { as, kind } as any
+        const CancelButton = {
+            access: isAccessCancel,
+            component: ({ hasText }: IFineTuneJobActionComponentProps) => (
+                <ConfirmButton
+                    tooltip={t('Cancel')}
+                    icon='cancel'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.CANCEL)}
+                    title={t('Cancel.Confirm')}
+                >
+                    {hasText ? t('Cancel') : undefined}
+                </ConfirmButton>
+            ),
+        }
 
-    const CancelButton = () => (
-        <WithCurrentAuth id='job.cancel'>
-            <ConfirmButton
-                tooltip={t('Cancel')}
-                icon='cancel'
-                {...sharedProps}
-                onClick={() => handleAction(jobId, JobActionType.CANCEL)}
-                title={t('Cancel.Confirm')}
-            >
-                {hasText ? t('Cancel') : ''}
-            </ConfirmButton>
-        </WithCurrentAuth>
-    )
-
-    const PauseButton = () => (
-        <WithCurrentAuth id='job-pause'>
-            <WithCurrentAuth id='job.pause'>
+        const PauseButton = {
+            access: isAccessPause && isAccessPauseGlobal,
+            component: ({ hasText }: IFineTuneJobActionComponentProps) => (
                 <ConfirmButton
                     tooltip={t('Pause')}
                     icon='pause'
-                    {...sharedProps}
-                    onClick={() => handleAction(jobId, JobActionType.PAUSE)}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.PAUSE)}
                     title={t('Pause.Confirm')}
                 >
-                    {hasText ? t('Pause') : ''}
+                    {hasText ? t('Pause') : undefined}
                 </ConfirmButton>
-            </WithCurrentAuth>
-        </WithCurrentAuth>
-    )
+            ),
+        }
 
-    const ResumeButton = () => (
-        <WithCurrentAuth id='job-resume'>
-            <WithCurrentAuth id='job.resume'>
+        const ResumeButton = {
+            access: isAccessResume && isAccessResumeGlobal,
+            component: ({ hasText }: IFineTuneJobActionComponentProps) => (
                 <ExtendButton
-                    tooltip={t('Resume')}
+                    tooltip={!hasText ? t('Resume') : undefined}
                     icon='Resume'
-                    {...sharedProps}
-                    onClick={() => handleAction(jobId, JobActionType.RESUME)}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.RESUME)}
                 >
-                    {hasText ? t('Resume') : ''}
+                    {hasText ? t('Resume') : undefined}
                 </ExtendButton>
-            </WithCurrentAuth>
-        </WithCurrentAuth>
-    )
+            ),
+        }
 
-    const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-        [JobStatusType.CREATED]: (
-            <>
-                <CancelButton />
-                <PauseButton />
-            </>
-        ),
-        [JobStatusType.RUNNING]: (
-            <>
-                <CancelButton />
-                <PauseButton />
-            </>
-        ),
-        [JobStatusType.PAUSED]: (
-            <>
-                <CancelButton />
-                <ResumeButton />
-            </>
-        ),
-        [JobStatusType.FAIL]: (
-            <>
-                <ResumeButton />
-            </>
-        ),
+        const Rerun = {
+            access: true,
+            component: ({ hasText }: IFineTuneJobActionComponentProps) => (
+                <ExtendButton
+                    tooltip={!hasText ? t('job.rerun') : undefined}
+                    icon='Rerun'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() =>
+                        history.push(
+                            `/projects/${projectId}/new_fine_tune/${spaceId}?${qs.stringify({
+                                fineTuneId,
+                            })}`
+                        )
+                    }
+                >
+                    {hasText ? t('job.rerun') : undefined}
+                </ExtendButton>
+            ),
+        }
+
+        const Saveas = {
+            access: hasSaveAs,
+            component: ({ hasText }) => <JobSaveAsTemplateButton hasText={hasText} />,
+        }
+
+        const getJobActions = () => {
+            const _actions = {
+                [JobStatusType.CREATED]: [CancelButton, PauseButton],
+                [JobStatusType.RUNNING]: [CancelButton, PauseButton],
+                [JobStatusType.PAUSED]: [CancelButton, ResumeButton],
+                [JobStatusType.FAIL]: [ResumeButton],
+            }
+
+            return _actions[job?.jobStatus] ?? []
+        }
+
+        const getExposedLinks = () =>
+            job?.exposedLinks?.map((exposed) => {
+                return {
+                    access: true,
+                    component: () => <ExposedLink key={exposed.link} data={exposed} />,
+                }
+            }) ?? []
+
+        return [...getJobActions(), Rerun, Saveas, ...getExposedLinks()].filter((v) => v.access)
     }
 
-    const rerun = (
-        <ExtendButton
-            tooltip={t('job.rerun')}
-            icon='Rerun'
-            {...sharedProps}
-            onClick={() =>
-                history.push(
-                    `/projects/${projectId}/new_fine_tune/${spaceId}?${qs.stringify({
-                        fineTuneId,
-                    })}`
-                )
-            }
-        >
-            {hasText ? t('job.rerun') : ''}
-        </ExtendButton>
-    )
+    return {
+        getActions,
+        renderActionsComponent: (props: IFineTuneJobActionParams) => {
+            const actions = getActions(props)
+            return actions.map((action, index) => {
+                const Component = action.component
+                return <Component key={index} />
+            })
+        },
+    }
+}
+
+export default function FineTuneJobActionGroup({
+    children,
+    hasSaveAs,
+    ...props
+}: IFineTuneJobActionsProps & { children: any }) {
+    const { renderActionsComponent } = useFineTuneJobActions({ hasSaveAs })
 
     return (
         <ButtonGroup key='action'>
-            {actions[job?.jobStatus] ?? ''}
-            {rerun}
-            {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />}
-            {job?.exposedLinks?.map((exposed) => (
-                <ExposedLink key={exposed.link} data={exposed} />
-            ))}
+            {renderActionsComponent(props)}
             {children}
         </ButtonGroup>
     )
