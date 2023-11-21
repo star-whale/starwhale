@@ -203,9 +203,9 @@ start_starwhale() {
 check_controller_service() {
     while true
     do
-      started=`kubectl get pod -l starwhale.ai/role=controller -n $SWNS -o json| jq -r '.items[0].status.containerStatuses[0].started'`
-            if [[ "$started" == "true" ]]; then
-                    echo "controller started"
+      ready=`kubectl get pod -l starwhale.ai/role=controller -n $SWNS -o json| jq -r '.items[0].status.containerStatuses[0].ready'`
+            if [[ "$ready" == "true" ]]; then
+                    echo "controller ready"
                     break
             else
               echo "controller is starting"
