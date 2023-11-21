@@ -314,19 +314,15 @@ public class FineTuneAppService {
                     "model has been released to modelId: " + modelVersion.getModelId()
             );
         }
-        Long modelId;
-        ModelEntity model = null;
+        ModelEntity model;
         if (null != existingModelId) {
-            if (!existingModelId.equals(modelVersion.getModelId())) {
-                model = modelDao.getModel(existingModelId);
-                if (null == model) {
-                    throw new SwNotFoundException(
-                            ResourceType.BUNDLE,
-                            "modelId not found: "
-                    );
-                }
+            model = modelDao.getModel(existingModelId);
+            if (null == model) {
+                throw new SwNotFoundException(
+                        ResourceType.BUNDLE,
+                        "modelId not found: "
+                );
             }
-            modelId = existingModelId;
         } else if (StringUtils.hasText(nonExistingModelName)) {
             BundleEntity modelEntity = this.modelDao.findByNameForUpdate(nonExistingModelName, projectId);
             if (null != modelEntity) {
@@ -338,12 +334,11 @@ public class FineTuneAppService {
                     .modelName(nonExistingModelName)
                     .build();
             modelDao.add(model);
-            modelId = model.getId();
         } else {
             throw new SwValidationException(ValidSubject.MODEL, "nonExistingModelName xor existingModelId is required");
         }
         // update model version model id to new model and set draft to false
-        modelDao.releaseModelVersion(targetModelVersionId, modelId);
+        modelDao.releaseModelVersion(targetModelVersionId, model.getId());
 
         // update model info for eval summary
         // find all evaluations which use the targetModelVersion in current space
