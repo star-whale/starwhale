@@ -14,25 +14,38 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.storage;
+package ai.starwhale.mlops.domain.evaluation.storage;
 
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.INT64;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.KeyColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriViewColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionIdColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.STRING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.DataStore;
-import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
+import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -48,7 +61,7 @@ import org.mockito.Mockito;
 
 public class EvaluationRepoTest {
 
-    private EvaluationRepo jobRepo;
+    private EvaluationRepo evaluationRepo;
 
     private DataStore dataStore;
 
@@ -64,7 +77,7 @@ public class EvaluationRepoTest {
         this.modelService = mock(ModelService.class);
         this.userService = mock(UserService.class);
         this.dataStore = mock(DataStore.class);
-        jobRepo = new EvaluationRepo(dataStore, projectService, modelService, userService, new ObjectMapper());
+        evaluationRepo = new EvaluationRepo(dataStore, projectService, modelService, userService, new ObjectMapper());
     }
 
     @Test
@@ -98,14 +111,14 @@ public class EvaluationRepoTest {
                 .createdTime(new Date())
                 .modifiedTime(new Date())
                 .build();
-        jobRepo.addJob("project/1/eval/summary", jobEntity);
+        evaluationRepo.addJob("project/1/eval/summary", jobEntity);
 
         verify(dataStore, times(1))
                 .update(eq("project/1/eval/summary"), any(), anyList());
 
         assertThat("convert",
-                jobRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
-                is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
+                   evaluationRepo.convertToDatastoreValue(jobEntity.getDatasetIdVersionMap()),
+                   is(Map.of("0000000000000001", "qwerty", "0000000000000002", "asdfgh"))
         );
 
     }
@@ -124,32 +137,83 @@ public class EvaluationRepoTest {
                 .project(Project.builder().id(1L).name("test-project").build())
                 .build();
 
-        jobRepo.updateJobStatus(table, job, JobStatus.SUCCESS);
+        evaluationRepo.updateJobStatus(table, job, JobStatus.SUCCESS);
         verify(dataStore, times(1)).update(eq(table), any(), anyList());
 
-        jobRepo.updateJobFinishedTime(table, job, Date.from(Instant.now()), 100L);
+        evaluationRepo.updateJobFinishedTime(table, job, Date.from(Instant.now()), 100L);
         verify(dataStore, times(2))
                 .update(eq(table), any(), anyList());
 
-        jobRepo.removeJob(table, job);
+        evaluationRepo.removeJob(table, job);
         verify(dataStore, times(3))
                 .update(eq(table), any(), anyList());
 
-        jobRepo.recoverJob(table, job);
+        evaluationRepo.recoverJob(table, job);
         verify(dataStore, times(4))
                 .update(eq(table), any(), anyList());
 
-        jobRepo.updateJobComment(table, job, "test1");
+        evaluationRepo.updateJobComment(table, job, "test1");
         verify(dataStore, times(5))
                 .update(eq(table), any(), anyList());
 
         reset(dataStore);
         job.setType(JobType.BUILT_IN);
-        jobRepo.updateJobComment(table, job, "any");
-        jobRepo.recoverJob(table, job);
-        jobRepo.updateJobFinishedTime(table, job, new Date(), 100L);
-        jobRepo.updateJobStatus(table, job, JobStatus.RUNNING);
+        evaluationRepo.updateJobComment(table, job, "any");
+        evaluationRepo.recoverJob(table, job);
+        evaluationRepo.updateJobFinishedTime(table, job, new Date(), 100L);
+        evaluationRepo.updateJobStatus(table, job, JobStatus.RUNNING);
         verify(dataStore, times(0))
                 .update(eq(table), any(), anyList());
     }
+
+    @Test
+    public void testUpdateModelInfo() {
+        var table = "p/1/space/1/eval/summary";
+        var model = ModelEntity.builder().id(1L).projectId(1L).modelName("m-name").build();
+        var version = ModelVersionEntity.builder().id(11L).versionName("v-name").build();
+
+        var res = evaluationRepo.updateModelInfo(null, List.of("uuid1", "uuid2"), model, version);
+        assertEquals(0, res);
+        res = evaluationRepo.updateModelInfo(table, List.of(), model, version);
+        assertEquals(0, res);
+        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), null, version);
+        assertEquals(0, res);
+        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, null);
+        assertEquals(0, res);
+
+        given(projectService.findProject(1L)).willReturn(Project.builder().id(1L).name("p-name").build());
+        res = evaluationRepo.updateModelInfo(table, List.of("uuid1", "uuid2"), model, version);
+        assertEquals(2, res);
+        verify(dataStore, times(1)).update(
+                table,
+                new TableSchemaDesc(KeyColumn, List.of(
+                        ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
+                        ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
+                        ColumnSchemaDesc.builder().name(ModelUriColumn).type(STRING).build(),
+                        ColumnSchemaDesc.builder().name(ModelUriViewColumn).type(STRING).build(),
+                        ColumnSchemaDesc.builder().name(ModelVersionColumn).type(STRING).build(),
+                        ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build()
+
+                )),
+                List.of(
+                        Map.of(
+                                KeyColumn, "uuid1",
+                                ModelNameColumn, "m-name",
+                                ModelVersionColumn, "v-name",
+                                ModelUriViewColumn, "project/p-name/model/m-name/version/v-name",
+                                ModelUriColumn, "project/1/model/1/version/11",
+                                ModelVersionIdColumn, "000000000000000b"
+                        ),
+                        Map.of(
+                                KeyColumn, "uuid2",
+                                ModelNameColumn, "m-name",
+                                ModelVersionColumn, "v-name",
+                                ModelUriViewColumn, "project/p-name/model/m-name/version/v-name",
+                                ModelUriColumn, "project/1/model/1/version/11",
+                                ModelVersionIdColumn, "000000000000000b"
+                        )
+                )
+        );
+    }
+
 }

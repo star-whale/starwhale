@@ -304,7 +304,7 @@ public class EvaluationRepo {
             return 0;
         }
 
-        List<ColumnSchemaDesc> columns = new ArrayList<>(List.of(
+        List<ColumnSchemaDesc> columns = List.of(
                 ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
                 ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
                 ColumnSchemaDesc.builder().name(ModelUriColumn).type(STRING).build(),
@@ -312,7 +312,7 @@ public class EvaluationRepo {
                 ColumnSchemaDesc.builder().name(ModelVersionColumn).type(STRING).build(),
                 ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build()
 
-        ));
+        );
 
         List<Map<String, Object>> records = new ArrayList<>();
         Project project = projectService.findProject(newModel.getProjectId());
