@@ -230,6 +230,7 @@ class FineTuneAppServiceTest {
                                                                .modelName("aac")
                                                                .draft(true)
                                                                .build());
+        when(modelDao.getModel(anyLong())).thenReturn(ModelEntity.builder().id(10L).build());
         when(jobMapper.listBizJobs(anyLong(), anyString(), anyString(), anyString(), anyLong())).thenReturn(List.of());
         fineTuneAppService.releaseFt(1L, 1L, 5L, 10L, null, creator);
         verify(modelDao).releaseModelVersion(6L, 10L);
