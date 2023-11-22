@@ -237,8 +237,22 @@ public class FineTuneAppService {
                 if (null == env) {
                     env = new ArrayList<>();
                 }
-                env.addAll(envSupplier.get());
-                s.setEnv(env);
+                Map<String, String> envMap = env.stream().collect(Collectors.toMap(Env::getName, Env::getValue));
+                //if ENV vars in user's step spec conflicts with controller's, use controller's ENV
+                List<Env> controllerEnvs = envSupplier.get();
+                if (null != controllerEnvs) {
+                    envMap.putAll(
+                            controllerEnvs.stream()
+                                    .filter(e -> null != e.getValue())
+                                    .collect(Collectors.toMap(Env::getName, Env::getValue))
+                    );
+                }
+                s.setEnv(
+                        envMap.entrySet()
+                                .stream()
+                                .map(entry -> new Env(entry.getKey(), entry.getValue()))
+                                .collect(Collectors.toList())
+                );
                 s.verifyStepSpecArgs();
             }
             stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(steps);
