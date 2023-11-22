@@ -16,13 +16,11 @@
 
 package ai.starwhale.mlops.domain.model.mapper;
 
-import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Objects;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.SELECT;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -68,19 +66,27 @@ public interface ModelVersionMapper {
     int updateModelRef(@Param("id") Long id, @Param("modelId") Long modelId);
 
     @SelectProvider(type = ModelVersionProvider.class, method = "listInProject")
-    List<ModelVersionViewEntity> listModelVersionViewByProject(
-            @Param("projectId") Long projectId,
-            @Param("bizType") BizType bizType,
-            @Param("bizId") Long bizId
-    );
+    List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
 
     @SelectProvider(type = ModelVersionProvider.class, method = "listUserRecentlyUsed")
     List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsed(
             @Param("projectId") Long projectId,
             @Param("userId") Long userId,
-            @Param("limit") Integer limit,
-            @Param("bizType") BizType bizType,
-            @Param("bizId") Long bizId
+            @Param("limit") Integer limit
+    );
+
+    @SelectProvider(type = ModelVersionProvider.class, method = "listInFtSpace")
+    List<ModelVersionViewEntity> listModelVersionViewByFtSpace(
+            @Param("projectId") Long projectId,
+            @Param("spaceId") Long spaceId
+    );
+
+    @SelectProvider(type = ModelVersionProvider.class, method = "listUserRecentlyUsedWithFtSpace")
+    List<ModelVersionViewEntity> listModelVersionsByUserRecentlyUsedInFtSpace(
+            @Param("projectId") Long projectId,
+            @Param("userId") Long userId,
+            @Param("spaceId") Long spaceId,
+            @Param("limit") Integer limit
     );
 
     @Select("select " + VERSION_VIEW_COLUMNS
@@ -140,11 +146,7 @@ public interface ModelVersionMapper {
 
     class ModelVersionProvider {
 
-        public String listInProject(
-                @Param("projectId") Long projectId,
-                @Param("bizType") BizType bizType,
-                @Param("bizId") Long bizId
-        ) {
+        public String listInProject(@Param("projectId") Long projectId) {
             return new SQL() {
                 {
                     SELECT(VERSION_VIEW_COLUMNS);
@@ -152,16 +154,30 @@ public interface ModelVersionMapper {
                     INNER_JOIN("model_info as m on m.id = v.model_id");
                     INNER_JOIN("project_info as p on p.id = m.project_id");
                     INNER_JOIN("user_info as u on u.id = m.owner_id");
-                    if (bizType == BizType.FINE_TUNE && bizId != null) {
-                        // non-draft models in current project or draft models in current space
-                        WHERE("(v.draft=0 or v.id in "
-                                      + "(select target_model_version_id from fine_tune where space_id = #{bizId})"
-                                      + ")"
-                        );
-                    } else {
-                        // (non-draft) models in current project
-                        WHERE("v.draft=0");
-                    }
+                    // (non-draft) models in current project
+                    WHERE("v.draft=0");
+                    WHERE("m.deleted_time = 0");
+                    WHERE("p.id = #{projectId}");
+                    ORDER_BY("m.id desc");
+                    ORDER_BY("v.version_order desc");
+                }
+
+            }.toString();
+        }
+
+        public String listInFtSpace(
+                @Param("projectId") Long projectId,
+                @Param("spaceId") Long spaceId) {
+            return new SQL() {
+                {
+                    SELECT(VERSION_VIEW_COLUMNS);
+                    FROM("model_version as v");
+                    INNER_JOIN("model_info as m on m.id = v.model_id");
+                    INNER_JOIN("project_info as p on p.id = m.project_id");
+                    INNER_JOIN("user_info as u on u.id = m.owner_id");
+                    INNER_JOIN("fine_tune as ft on ft.target_model_version_id = v.id");
+                    // all models in current space
+                    WHERE("ft.space_id = #{spaceId}");
                     WHERE("m.deleted_time = 0");
                     WHERE("p.id = #{projectId}");
                     ORDER_BY("m.id desc");
@@ -174,10 +190,7 @@ public interface ModelVersionMapper {
         public String listUserRecentlyUsed(
                 @Param("projectId") Long projectId,
                 @Param("userId") Long userId,
-                @Param("limit") Integer limit,
-                @Param("bizType") BizType bizType,
-                @Param("bizId") Long bizId
-        ) {
+                @Param("limit") Integer limit) {
             return new SQL() {
                 {
                     SELECT(VERSION_VIEW_COLUMNS + ", MAX(j.id) as job_id");
@@ -186,31 +199,50 @@ public interface ModelVersionMapper {
                     INNER_JOIN("job_info as j on j.model_version_id = v.id");
                     INNER_JOIN("project_info as p on p.id = m.project_id");
                     INNER_JOIN("user_info as u on u.id = m.owner_id");
-                    if (bizType == BizType.FINE_TUNE && bizId != null) {
-                        // models in current project(non-draft or draft in current space)
-                        // or (non-draft) other project but is shared
-                        WHERE("("
-                                      + "(m.project_id = #{projectId} and "
-                                      + "  (v.draft=0 or v.id in "
-                                      + "    (select target_model_version_id from fine_tune where space_id = #{bizId})"
-                                      + "  )"
-                                      + ") "
-                                      + "or "
-                                      + "(m.project_id != #{projectId} and v.shared = 1 and v.draft = 0)"
-                                      + ")");
-                    } else {
-                        // (non-draft) models in current project or other project but is shared
-                        WHERE("("
-                                      + "(m.project_id = #{projectId} and v.draft=0) or "
-                                      + "(m.project_id != #{projectId} and v.shared = 1 and v.draft = 0)"
-                                      + ")");
-                    }
+                    // (non-draft) models in current project or other project but is shared
+                    WHERE("("
+                                  + "(m.project_id = #{projectId} and v.draft=0) "
+                                  + "or (m.project_id != #{projectId} and v.shared = 1 and v.draft = 0)"
+                                  + ")");
+
                     WHERE("m.deleted_time = 0");
                     WHERE("j.owner_id = #{userId}"); // jobs in current user
                     WHERE("j.project_id = #{projectId}"); // jobs in current project
                     GROUP_BY("v.id");
-                    ORDER_BY("job_id desc");
-                    LIMIT("#{limit}"); // recently
+                    ORDER_BY("job_id desc"); // recently
+                    LIMIT("#{limit}");
+                }
+            }.toString();
+        }
+
+        public String listUserRecentlyUsedWithFtSpace(
+                @Param("projectId") Long projectId,
+                @Param("userId") Long userId,
+                @Param("spaceId") Long spaceId,
+                @Param("limit") Integer limit) {
+            return new SQL() {
+                {
+                    SELECT(VERSION_VIEW_COLUMNS + ", MAX(j.id) as job_id");
+                    FROM("model_version as v");
+                    INNER_JOIN("model_info as m on m.id = v.model_id");
+                    INNER_JOIN("job_info as j on j.model_version_id = v.id");
+                    INNER_JOIN("project_info as p on p.id = m.project_id");
+                    INNER_JOIN("user_info as u on u.id = m.owner_id");
+                    // non-draft models in current project
+                    // or all in current space
+                    // or (non-draft) other project but is shared
+                    WHERE("("
+                                  + "(m.project_id = #{projectId} and v.draft=0)"
+                                  + "or v.id in "
+                                  + "    (select target_model_version_id from fine_tune where space_id = #{spaceId})"
+                                  + "or (m.project_id != #{projectId} and v.shared = 1 and v.draft = 0)"
+                                  + ")");
+                    WHERE("m.deleted_time = 0");
+                    WHERE("j.owner_id = #{userId}"); // jobs in current user
+                    WHERE("j.project_id = #{projectId}"); // jobs in current project
+                    GROUP_BY("v.id");
+                    ORDER_BY("job_id desc"); // recently
+                    LIMIT("#{limit}");
                 }
             }.toString();
         }

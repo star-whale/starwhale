@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
+import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
@@ -30,8 +31,14 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -193,6 +200,40 @@ public class FineTuneController {
     ) {
         fineTuneAppService.exportEvalToCommon(projectId, spaceId, ids);
         return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
+    @GetMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/model-tree",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                fineTuneAppService.listModelVersionView(projectId, spaceId)
+        ));
+    }
+
+    @GetMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/recent-model-tree",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<ModelViewVo>>> recentModelTree(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @Parameter(in = ParameterIn.QUERY, description = "Data limit", schema = @Schema())
+            @RequestParam(required = false, defaultValue = "5")
+            @Valid
+            @Min(value = 1, message = "limit must be greater than or equal to 1")
+            @Max(value = 50, message = "limit must be less than or equal to 50")
+            Integer limit
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                fineTuneAppService.listRecentlyModelVersionView(projectId, spaceId, limit)
+        ));
     }
 
 }

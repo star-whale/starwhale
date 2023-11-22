@@ -190,17 +190,17 @@ public class ModelControllerTest {
     @ParameterizedTest
     @CsvSource({"all, 2", "project, 1", "shared, 1"})
     public void testListModelTree(DataScope scope, int listCount) {
-        given(modelService.listModelVersionView(anyString(), eq(true), eq(true), any(), any()))
+        given(modelService.listModelVersionView(anyString(), eq(true), eq(true)))
                 .willReturn(List.of(
                         ModelViewVo.builder().projectName("p").build(),
                         ModelViewVo.builder().projectName("p").build()
                 ));
-        given(modelService.listModelVersionView(anyString(), eq(false), eq(true), any(), any()))
+        given(modelService.listModelVersionView(anyString(), eq(false), eq(true)))
                 .willReturn(List.of(ModelViewVo.builder().projectName("p").build()));
-        given(modelService.listModelVersionView(anyString(), eq(true), eq(false), any(), any()))
+        given(modelService.listModelVersionView(anyString(), eq(true), eq(false)))
                 .willReturn(List.of(ModelViewVo.builder().projectName("p").build()));
 
-        var resp = controller.listModelTree("1", scope, null, null);
+        var resp = controller.listModelTree("1", scope);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(
@@ -211,13 +211,13 @@ public class ModelControllerTest {
 
     @Test
     public void testRecentListModelTree() {
-        given(modelService.listRecentlyModelVersionView(anyString(), eq(5), any(), any()))
+        given(modelService.listRecentlyModelVersionView(anyString(), eq(5)))
                 .willReturn(List.of(
                         ModelViewVo.builder().projectName("p").build(),
                         ModelViewVo.builder().projectName("p").build()
                 ));
 
-        var resp = controller.recentModelTree("1", 5, null, null);
+        var resp = controller.recentModelTree("1", 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody(), notNullValue());
         assertThat(resp.getBody().getData(), allOf(

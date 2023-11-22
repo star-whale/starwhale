@@ -44,7 +44,6 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.ft.FineTuneDomainService;
-import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -382,12 +381,12 @@ public class ModelService {
     }
 
     public List<ModelViewVo> listModelVersionView(
-            String projectUrl, boolean includeShared, boolean includeCurrentProject, BizType bizType, Long bizId
+            String projectUrl, boolean includeShared, boolean includeCurrentProject
     ) {
         var project = projectService.findProject(projectUrl);
         var list = new ArrayList<ModelViewVo>();
         if (includeCurrentProject) {
-            var versions = modelVersionMapper.listModelVersionViewByProject(project.getId(), bizType, bizId);
+            var versions = modelVersionMapper.listModelVersionViewByProject(project.getId());
             list.addAll(viewEntityToVo(versions, project));
         }
         if (includeShared) {
@@ -397,12 +396,24 @@ public class ModelService {
         return list;
     }
 
-    public List<ModelViewVo> listRecentlyModelVersionView(
-            String projectUrl, Integer limit, BizType bizType, Long bizId) {
+    public List<ModelViewVo> listRecentlyModelVersionView(String projectUrl, Integer limit) {
         var project = projectService.findProject(projectUrl);
         var userId = userService.currentUserDetail().getId();
-        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(
-                project.getId(), userId, limit, bizType, bizId);
+        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    public List<ModelViewVo> listRecentlyModelVersionView(String projectUrl, Long spaceId, Integer limit) {
+        var project = projectService.findProject(projectUrl);
+        var userId = userService.currentUserDetail().getId();
+        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsedInFtSpace(
+                project.getId(), userId, spaceId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    public List<ModelViewVo> listFtSpaceModelVersionView(String projectUrl, Long spaceId) {
+        var project = projectService.findProject(projectUrl);
+        var list = modelVersionMapper.listModelVersionViewByFtSpace(project.getId(), spaceId);
         return viewEntityToVo(list, project);
     }
 
