@@ -1279,6 +1279,12 @@ class ResponseMessagePageInfoFineTuneSpaceVo(SwBaseModel):
     data: PageInfoFineTuneSpaceVo
 
 
+class ResponseMessageFineTuneSpaceVo(SwBaseModel):
+    code: str
+    message: str
+    data: FineTuneSpaceVo
+
+
 class FineTuneVo(SwBaseModel):
     id: int
     job: JobVo
