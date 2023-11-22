@@ -1,19 +1,15 @@
 import React from 'react'
 import EvaluationListCard from './Evaluation/EvaluationListCard'
+import EvaluationCardListCard from './Evaluation/EvaluationCardListCard'
 import { api } from '@/api'
 import RouteOverview from './RouteOverview'
 import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
 import Search from '@starwhale/ui/Search'
-import FineTuneRunsTableCard from './FineTuneRunsTableCard'
 import { useFetchDatastoreByTable } from '@starwhale/core/datastore'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
-
-function FineTuneSearchBar({ getFilters, queries, setQueries }) {
-    return <Search value={queries} getFilters={getFilters} onChange={setQueries} />
-}
 
 export default function FineTuneEvaluationListCard() {
     const config = useFineTuneEvaluation()
@@ -43,9 +39,6 @@ export default function FineTuneEvaluationListCard() {
     }
 
     const ref = React.useRef<HTMLDivElement>(null)
-
-    // const { list, getFilters, queries, setQueries } = useFineTuneColumns({ data: info.data })
-
     const [queries, setQueries] = React.useState([])
     const { getQueryParams } = useDatastorePage({
         pageNum: 1,
@@ -57,14 +50,13 @@ export default function FineTuneEvaluationListCard() {
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
-            <div ref={ref} className='ft-list content-full'>
+            <div ref={ref} className='ft-list content-full pr-5px'>
                 {isExpand ? (
                     <>
                         <div className='w-full mb-20px'>
-                            {/* <FineTuneSearchBar getFilters={getFilters} queries={queries} setQueries={setQueries} /> */}
                             <DatastoreMixedTypeSearch columns={$columns} value={queries} onChange={setQueries as any} />
                         </div>
-                        <FineTuneRunsTableCard list={datatore.records} onView={gotoDetails} viewId={jobId} />
+                        <EvaluationCardListCard list={datatore.records} onView={gotoDetails} viewId={jobId} />
                     </>
                 ) : (
                     <EvaluationListCard {...config} />
