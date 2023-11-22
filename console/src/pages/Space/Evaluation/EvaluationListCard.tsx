@@ -1,17 +1,13 @@
-import React, { useCallback, useState } from 'react'
-import Card from '@/components/Card'
-import { createJob } from '@job/services/job'
-import JobForm from '@job/components/JobForm'
+import React, { useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { Prompt } from 'react-router-dom'
 import _ from 'lodash'
-import { ITableState, useEvaluationStore } from '@starwhale/ui/GridTable/store'
+import { ITableState } from '@starwhale/ui/GridTable/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { toaster } from 'baseui/toast'
-import { BusyPlaceholder, ExtendButton } from '@starwhale/ui'
+import { BusyPlaceholder } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
@@ -21,7 +17,6 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
-import { useFineTuneConfig } from '@/domain/space/hooks/useFineTune'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -32,26 +27,21 @@ const selector = (s: ITableState) => ({
     getRawIfChangedConfigs: s.getRawIfChangedConfigs,
 })
 
-export default function FineTuneEvaluationListCard() {
-    const config = useFineTuneConfig()
-
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    return <EvaluationListCard {...config} />
-}
-
-export function EvaluationListCard({
+export default function EvaluationListCard({
     projectId,
     summaryTableName,
     defaultColumnKey,
-    viewConfigName,
+    viewConfigKey,
     viewCurrentKey,
-    gotoTasks,
-    gotoResults,
+    getActions,
+    useStore,
 }) {
     const [t] = useTranslation()
 
-    const { rowSelectedIds, currentView, initStore, onCurrentViewIdChange, getRawIfChangedConfigs } =
-        useEvaluationStore(selector, shallow)
+    const { rowSelectedIds, currentView, initStore, onCurrentViewIdChange, getRawIfChangedConfigs } = useStore(
+        selector,
+        shallow
+    )
     const { page, setPage, params } = useDatastorePage({
         pageNum: 1,
         pageSize: 100,
@@ -61,7 +51,7 @@ export function EvaluationListCard({
         tableName: summaryTableName,
     })
     const [changed, setChanged] = useState(false)
-    const evaluationViewConfig = useFetchViewConfig(projectId, viewConfigName)
+    const evaluationViewConfig = useFetchViewConfig(projectId, viewConfigKey)
     const { columnTypes, records, columnHints } = useFetchDatastoreByTable(params, true)
     const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>(viewCurrentKey, {})
     const $columns = useDatastoreSummaryColumns({ projectId, columnTypes, columnHints, hasAction: true })
@@ -85,7 +75,7 @@ export function EvaluationListCard({
 
     const doSave = useEventCallback(() => {
         setEvaluationViewConfig(projectId, {
-            name: viewConfigName,
+            name: viewConfigKey,
             content: JSON.stringify(getRawIfChangedConfigs(), null),
         }).then(() => {
             toaster.positive(t('evaluation.save.success'), {})
@@ -99,7 +89,7 @@ export function EvaluationListCard({
         })
         if (!_.isEqual(state.views, prevState.views)) {
             setEvaluationViewConfig(projectId, {
-                name: viewConfigName,
+                name: viewConfigKey,
                 content: JSON.stringify(
                     {
                         ...getRawIfChangedConfigs(),
@@ -146,47 +136,16 @@ export function EvaluationListCard({
 
     if (!$ready) return <BusyPlaceholder />
 
-    const getActions = (row: any) => [
-        {
-            access: true,
-            quickAccess: true,
-            component: ({ hasText }) => (
-                <ExtendButton
-                    isFull
-                    icon='Detail'
-                    tooltip={t('View Details')}
-                    styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => gotoTasks(row)}
-                >
-                    {hasText ? t('View Details') : undefined}
-                </ExtendButton>
-            ),
-        },
-        {
-            access: true,
-            component: ({ hasText }) => (
-                <ExtendButton
-                    isFull
-                    icon='tasks'
-                    styleas={['menuoption', hasText ? undefined : 'highlight']}
-                    onClick={() => gotoResults(row)}
-                >
-                    {hasText ? t('View Tasks') : undefined}
-                </ExtendButton>
-            ),
-        },
-    ]
-
     return (
         <>
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
             <GridResizerVertical
                 top={() => (
                     <GridCombineTable
-                        rowActions={getActions as any}
+                        rowActions={getActions}
                         title={t('evaluation.title')}
                         titleOfCompare={t('compare.title')}
-                        store={useEvaluationStore}
+                        store={useStore}
                         compareable
                         columnable
                         viewable

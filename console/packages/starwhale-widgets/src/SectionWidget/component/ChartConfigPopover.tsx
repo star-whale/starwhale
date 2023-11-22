@@ -8,6 +8,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { ExtendButton } from '@starwhale/ui/Button'
 import { createUseStyles } from 'react-jss'
+import { Tooltip } from '@starwhale/ui/Tooltip'
 
 const useStyles = createUseStyles({
     icon: {
@@ -37,7 +38,8 @@ export default function ChartConfigPopover({ onOptionSelect }) {
     return (
         <StatefulPopover
             // dismissOnClickOutside
-            dismissOnEsc
+            // dismissOnEsc
+            ignoreBoundary
             placement={PLACEMENT.bottom}
             content={({ close }) => (
                 <StatefulMenu
@@ -102,30 +104,32 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 />
             )}
         >
-            <ExtendButton
-                kind='tertiary'
-                className={styles.icon}
-                tooltip={t('panel.chart.settings')}
-                overrides={{
-                    BaseButton: {
-                        style: {
-                            'backgroundColor': '#F4F5F7',
-                            'color': 'rgba(2,16,43,0.60)',
-                            ':hover': {
-                                color: '#2B65D9;',
-                            },
-                            ':focus': {
-                                color: '#2B65D9;',
-                            },
-                            ':active': {
-                                color: '#2B65D9;',
+            <div>
+                <ExtendButton
+                    kind='tertiary'
+                    className={styles.icon}
+                    tooltip={t('panel.chart.settings')}
+                    overrides={{
+                        BaseButton: {
+                            style: {
+                                'backgroundColor': '#F4F5F7',
+                                'color': 'rgba(2,16,43,0.60)',
+                                ':hover': {
+                                    color: '#2B65D9;',
+                                },
+                                ':focus': {
+                                    color: '#2B65D9;',
+                                },
+                                ':active': {
+                                    color: '#2B65D9;',
+                                },
                             },
                         },
-                    },
-                }}
-            >
-                <IconFont type='setting' size={12} />
-            </ExtendButton>
+                    }}
+                >
+                    <IconFont type='setting' size={12} />
+                </ExtendButton>
+            </div>
         </StatefulPopover>
     )
 }

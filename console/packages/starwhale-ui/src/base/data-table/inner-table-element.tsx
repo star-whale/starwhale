@@ -176,10 +176,6 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return [cells, pinnedCells]
     }, [props.children, gridRef, rowHighlightIndex])
 
-    const $children = React.useMemo(() => {
-        return props.children
-    }, [props.children])
-
     // useIfChanged({
     //     $childrenPinned,
     //     $children,
@@ -254,7 +250,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
             >
                 {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage as any}</LoadingOrEmptyMessage>}
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage as any}</LoadingOrEmptyMessage>}
-                {viewState === RENDERING && $children}
+                {viewState === RENDERING && props.children}
                 {$background}
                 {ctx.rowActions &&
                     Boolean(ctx.rowActions.length) &&

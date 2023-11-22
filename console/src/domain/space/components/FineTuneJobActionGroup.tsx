@@ -245,7 +245,7 @@ export default function FineTuneJobActionGroup({
     hasSaveAs,
     onRefresh,
     ...props
-}: IFineTuneJobActionsProps & { children: any }) {
+}: IFineTuneJobActionsProps & { children?: any }) {
     const { renderActionsComponent } = useFineTuneJobActions({ hasSaveAs, onRefresh })
 
     return (

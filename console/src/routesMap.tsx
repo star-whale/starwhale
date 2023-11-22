@@ -59,7 +59,10 @@ import FineTuneRunOverviewLayout from './pages/Space/FineTuneRunOverviewLayout'
 import JobTaskListCard from './pages/Job/JobTaskListCard'
 import FineTuneRunsTaskListCard from './pages/Space/FineTuneRunsTaskListCard'
 import FineTuneLayout from './pages/Space/FineTuneLayout'
-import FineTuneEvaluationListCard from './pages/Space/Evaluation/EvaluationListCard'
+import FineTuneEvaluationListCard from './pages/Space/FineTuneEvaluationListCard'
+import FineTuneEvaluationOverview from './pages/Space/FineTuneEvaluationOverview'
+import FineTuneEvaluationOverviewLayout from './pages/Space/FineTuneEvaluationOverviewLayout'
+import FineTuneEvaluationWidgetResults from './pages/Space/Evaluation/EvaluationWidgetResults'
 
 const unauthed = {
     component: LoginLayout,
@@ -268,7 +271,7 @@ const authed = {
             ],
         },
         {
-            path: '/projects/:projectId/spaces/:spaceId/:path/:fineTuneId/:path',
+            path: '/projects/:projectId/spaces/:spaceId/fine-tunes/:fineTuneId/:path',
             component: FineTuneRunOverviewLayout,
             routes: [
                 {
@@ -284,19 +287,48 @@ const authed = {
                 },
             ],
         },
-
         {
-            path: '/projects/:projectId/spaces/:spaceId/:path?',
+            path: '/projects/:projectId/spaces/:spaceId/evaluations/:jobId/:path',
+            component: FineTuneEvaluationOverviewLayout,
+            routes: [
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/evaluations/:jobId?/overview',
+                    component: FineTuneEvaluationOverview,
+                },
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/evaluations/:jobId?/tasks',
+                    component: JobTaskListCard,
+                },
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/evaluations/:jobId?/results',
+                    component: FineTuneEvaluationWidgetResults,
+                },
+                {
+                    to: '/projects/:projectId/spaces/:spaceId/evaluations/:jobId/overview',
+                },
+            ],
+        },
+        {
+            path: '/projects/:projectId/spaces/:spaceId/fine-tune-evals/:jobId?',
             component: FineTuneLayout,
             routes: [
                 {
-                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',
-                    component: FineTuneListCard,
-                },
-
-                {
-                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-evals',
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-evals/:jobId?',
                     component: FineTuneEvaluationListCard,
+                },
+                {
+                    to: '/projects/:projectId/spaces/:spaceId/fine-tune-evals',
+                },
+            ],
+        },
+
+        {
+            path: '/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?',
+            component: FineTuneLayout,
+            routes: [
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-runs/:fineTuneId?',
+                    component: FineTuneListCard,
                 },
                 {
                     to: '/projects/:projectId/spaces/:spaceId/fine-tune-runs',
