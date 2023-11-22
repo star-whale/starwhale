@@ -53,6 +53,7 @@ import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.blob.BlobService;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.ft.FineTuneDomainService;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -804,7 +805,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
     @Test
     public void testListModelVersionView() {
-        var res = modelService.listModelVersionView("1", true, true);
+        var res = modelService.listModelVersionView("1", true, true, null, null);
         assertEquals(2, res.size());
         assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
                 hasProperty("modelName", is("m"))));
@@ -829,6 +830,18 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 allOf(hasProperty("versionName", is("v4")),
                         hasProperty("alias", is("v4")),
                         hasProperty("latest", is(true)))));
+
+        res = modelService.listModelVersionView("1", false, true, null, null);
+        assertEquals(2, res.size());
+
+        res = modelService.listModelVersionView("1", false, true, BizType.FINE_TUNE, 1L);
+        assertEquals(2, res.size());
+
+        res = modelService.listRecentlyModelVersionView("1", 5, null, null);
+        assertEquals(0, res.size());
+
+        res = modelService.listRecentlyModelVersionView("1", 5, BizType.FINE_TUNE, 1L);
+        assertEquals(0, res.size());
     }
 
     @Test

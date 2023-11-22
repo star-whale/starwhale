@@ -44,6 +44,7 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.ft.FineTuneDomainService;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -381,11 +382,12 @@ public class ModelService {
     }
 
     public List<ModelViewVo> listModelVersionView(
-            String projectUrl, boolean includeShared, boolean includeCurrentProject) {
+            String projectUrl, boolean includeShared, boolean includeCurrentProject, BizType bizType, Long bizId
+    ) {
         var project = projectService.findProject(projectUrl);
         var list = new ArrayList<ModelViewVo>();
         if (includeCurrentProject) {
-            var versions = modelVersionMapper.listModelVersionViewByProject(project.getId());
+            var versions = modelVersionMapper.listModelVersionViewByProject(project.getId(), bizType, bizId);
             list.addAll(viewEntityToVo(versions, project));
         }
         if (includeShared) {
@@ -395,10 +397,12 @@ public class ModelService {
         return list;
     }
 
-    public List<ModelViewVo> listRecentlyModelVersionView(String projectUrl, Integer limit) {
+    public List<ModelViewVo> listRecentlyModelVersionView(
+            String projectUrl, Integer limit, BizType bizType, Long bizId) {
         var project = projectService.findProject(projectUrl);
         var userId = userService.currentUserDetail().getId();
-        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(
+                project.getId(), userId, limit, bizType, bizId);
         return viewEntityToVo(list, project);
     }
 
@@ -446,6 +450,7 @@ public class ModelService {
                                      .latest(entity.getId() != null && entity.getId().equals(latest))
                                      .createdTime(entity.getCreatedTime().getTime())
                                      .shared(toInt(entity.getShared()))
+                                     .draft(entity.getDraft())
                                      .builtInRuntime(entity.getBuiltInRuntime())
                                      .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                                      .build());

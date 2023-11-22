@@ -36,6 +36,7 @@ import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -246,18 +247,20 @@ public class ModelController {
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable String projectUrl,
             @Parameter(in = ParameterIn.QUERY, description = "Data range", schema = @Schema())
-            @RequestParam(required = false, defaultValue = "all") DataScope scope
+            @RequestParam(required = false, defaultValue = "all") DataScope scope,
+            @RequestParam(required = false) BizType bizType,
+            @RequestParam(required = false) Long bizId
     ) {
         List<ModelViewVo> list;
         switch (scope) {
             case all:
-                list = modelService.listModelVersionView(projectUrl, true, true);
+                list = modelService.listModelVersionView(projectUrl, true, true, bizType, bizId);
                 break;
             case shared:
-                list = modelService.listModelVersionView(projectUrl, true, false);
+                list = modelService.listModelVersionView(projectUrl, true, false, bizType, bizId);
                 break;
             case project:
-                list = modelService.listModelVersionView(projectUrl, false, true);
+                list = modelService.listModelVersionView(projectUrl, false, true, bizType, bizId);
                 break;
             default:
                 list = List.of();
@@ -274,10 +277,12 @@ public class ModelController {
             @Valid
             @Min(value = 1, message = "limit must be greater than or equal to 1")
             @Max(value = 50, message = "limit must be less than or equal to 50")
-            Integer limit
+            Integer limit,
+            @RequestParam(required = false) BizType bizType,
+            @RequestParam(required = false) Long bizId
     ) {
         return ResponseEntity.ok(Code.success.asResponse(
-                modelService.listRecentlyModelVersionView(projectUrl, limit)
+                modelService.listRecentlyModelVersionView(projectUrl, limit, bizType, bizId)
         ));
     }
 
