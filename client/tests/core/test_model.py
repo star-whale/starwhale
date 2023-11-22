@@ -57,8 +57,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
 from starwhale.core.runtime.process import Process
-from starwhale.api._impl.service.types import ServiceType
-from starwhale.api._impl.service.service import Api, ServiceSpec
+from starwhale.api._impl.service.service import ApiSpec, ServiceSpec
 from starwhale.base.client.models.models import (
     UserVo,
     ModelVo,
@@ -137,10 +136,9 @@ class StandaloneModelTestCase(TestCase):
         svc.get_spec.return_value = ServiceSpec(
             version="0.0.1",
             apis=[
-                Api(
-                    func=lambda x: x,
+                ApiSpec(
                     uri="",
-                    inference_type=ServiceType.QUESTION_ANSWERING,
+                    inference_type="question_answering",
                 )
             ],
         )
@@ -1378,9 +1376,7 @@ def test_build_with_custom_config_file(
     svc = MagicMock(spec=Service)
     svc.get_spec.return_value = ServiceSpec(
         version="1",
-        apis=[
-            Api(func=lambda x: x, uri="", inference_type=ServiceType.QUESTION_ANSWERING)
-        ],
+        apis=[ApiSpec(uri="", inference_type="question_answering")],
     )
     svc.example_resources = [example]
     m_get_service.return_value = svc

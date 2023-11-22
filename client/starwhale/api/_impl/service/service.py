@@ -5,13 +5,15 @@ import sys
 import typing as t
 import functools
 
+from .types.types import ComponentSpec
+
 if sys.version_info >= (3, 9):
     from importlib.resources import files
 else:
     from importlib_resources import files
 
 from fastapi import FastAPI
-from pydantic import Field, BaseModel
+from pydantic import Field
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
@@ -25,8 +27,17 @@ STATIC_DIR_DEV = os.getenv("SW_SERVE_STATIC_DIR") or str(
 )
 
 
-class Query(BaseModel):
-    content: str
+class ApiSpec(SwBaseModel):
+    uri: str
+    inference_type: str
+    components_hint: t.List[ComponentSpec] = Field(default_factory=list)
+
+
+class ServiceSpec(SwBaseModel):
+    title: t.Optional[str]
+    description: t.Optional[str]
+    version: str
+    apis: t.List[ApiSpec]
 
 
 class Api(SwBaseModel):
@@ -37,32 +48,28 @@ class Api(SwBaseModel):
     inputs: Inputs = Field(exclude=True)
     outputs: Outputs = Field(exclude=True)
 
-    @staticmethod
-    def question_answering(func: t.Callable) -> t.Callable:
-        def inter(query: Query) -> str:
-            return func(query.content)  # type: ignore
-
-        return inter
-
     def view_func(self, ins: t.Any = None) -> t.Callable:
         func = self.func
         if ins is not None:
             func = functools.partial(func, ins)
         if self.inference_type is None:
             return func
-        return getattr(self, self.inference_type.value)(func)  # type: ignore
+        return self.inference_type.router_fn(func)
 
     def all_gradio_components(self) -> bool:
         if self.inference_type is not None:
             return False
         return all_components_are_gradio(inputs=self.inputs, outputs=self.outputs)
 
+    def to_spec(self) -> ApiSpec | None:
+        if self.inference_type is None:
+            return None
 
-class ServiceSpec(SwBaseModel):
-    title: t.Optional[str]
-    description: t.Optional[str]
-    version: str
-    apis: t.List[Api]
+        return ApiSpec(
+            uri=self.uri,
+            inference_type=self.inference_type.name,
+            components_hint=self.inference_type.components_spec(),
+        )
 
 
 class Service:
@@ -89,7 +96,10 @@ class Service:
         return decorator
 
     def get_spec(self) -> ServiceSpec:
-        return ServiceSpec(version="0.0.1", apis=list(self.apis.values()))
+        return ServiceSpec(
+            version="0.0.2",
+            apis=list(filter(None, [_api.to_spec() for _api in self.apis.values()])),
+        )
 
     def add_api(
         self,
