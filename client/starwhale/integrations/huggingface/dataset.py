@@ -58,8 +58,9 @@ def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:
         # TODO: graceful handle classLabel, store it into Starwhale.ClassLabel type
         return data
     elif isinstance(feature, list):
-        # list supports mixed type, but Starwhale only supports same type
-        return [_transform_to_starwhale(d, feature[i]) for i, d in enumerate(data)]
+        # Huggingface list feature should be provided with a single sub-feature as an example of the feature type hosted in this list.
+        # ref: https://huggingface.co/docs/datasets/package_reference/main_classes#datasets.Features
+        return [_transform_to_starwhale(d, feature[0]) for d in data]
     elif isinstance(feature, hf_datasets.Sequence):
         inner_feature = feature.feature
         if isinstance(inner_feature, dict):
