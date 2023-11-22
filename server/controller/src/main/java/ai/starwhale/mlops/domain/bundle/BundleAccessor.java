@@ -27,6 +27,6 @@ public interface BundleAccessor {
     Type getType();
 
     enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE
+        MODEL, DATASET, RUNTIME, JOB, REPORT, TEMPLATE, FINE_TUNE_SPACE
     }
 }

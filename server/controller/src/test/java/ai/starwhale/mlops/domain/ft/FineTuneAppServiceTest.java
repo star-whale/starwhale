@@ -155,11 +155,11 @@ class FineTuneAppServiceTest {
 
     @Test
     void ftInfo() {
-        when(fineTuneMapper.findById(anyLong())).thenReturn(FineTuneEntity.builder().jobId(1L).build());
+        when(fineTuneMapper.findById(anyLong(), anyLong())).thenReturn(FineTuneEntity.builder().jobId(1L).build());
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
         JobVo jobVo = JobVo.builder().build();
         when(jobConverter.convert(any())).thenReturn(jobVo);
-        FineTuneVo fineTuneVo = fineTuneAppService.ftInfo(1L);
+        FineTuneVo fineTuneVo = fineTuneAppService.ftInfo(1L, 1L);
         Assertions.assertEquals(jobVo, fineTuneVo.getJob());
     }
 
@@ -169,7 +169,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void releaseFt() {
-        when(fineTuneMapper.findById(5L)).thenReturn(
+        when(fineTuneMapper.findById(1L, 5L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(6L)
                         .spaceId(1L)
@@ -190,7 +190,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void releaseAndCreateNew() {
-        when(fineTuneMapper.findById(5L)).thenReturn(
+        when(fineTuneMapper.findById(1L, 5L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(6L)
                         .spaceId(1L)
@@ -218,7 +218,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void releaseSuccessWithBaseModel() {
-        when(fineTuneMapper.findById(5L)).thenReturn(
+        when(fineTuneMapper.findById(1L, 5L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(6L)
                         .spaceId(1L)
@@ -239,7 +239,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void testTargetVersionReleased() {
-        when(fineTuneMapper.findById(3L)).thenReturn(
+        when(fineTuneMapper.findById(1L, 3L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(4L)
                         .build()
@@ -255,7 +255,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void testTargetVersionNull() {
-        when(fineTuneMapper.findById(2L)).thenReturn(
+        when(fineTuneMapper.findById(1L, 2L)).thenReturn(
                 FineTuneEntity.builder()
                         .targetModelVersionId(null)
                         .build()
@@ -267,7 +267,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void testReleaseFtNotFound() {
-        when(fineTuneMapper.findById(1L)).thenReturn(null);
+        when(fineTuneMapper.findById(1L, 1L)).thenReturn(null);
         Assertions.assertThrows(SwNotFoundException.class, () -> {
             fineTuneAppService.releaseFt(1L, 1L, 1L, 1L, "", null);
         });

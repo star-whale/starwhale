@@ -326,7 +326,7 @@ public class FineTuneAppService {
     public void releaseFt(
             Long projectId, Long spaceId, Long ftId, Long existingModelId, String nonExistingModelName, User user
     ) {
-        FineTuneEntity ft = fineTuneMapper.findById(ftId);
+        FineTuneEntity ft = fineTuneMapper.findById(spaceId, ftId);
         if (null == ft) {
             throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
         }
@@ -395,8 +395,8 @@ public class FineTuneAppService {
         }
     }
 
-    public FineTuneVo ftInfo(Long ftId) {
-        FineTuneEntity fineTuneEntity = fineTuneMapper.findById(ftId);
+    public FineTuneVo ftInfo(Long spaceId, Long ftId) {
+        FineTuneEntity fineTuneEntity = fineTuneMapper.findById(spaceId, ftId);
         if (null == fineTuneEntity) {
             throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
         }

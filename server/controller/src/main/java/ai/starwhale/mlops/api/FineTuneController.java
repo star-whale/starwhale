@@ -146,7 +146,7 @@ public class FineTuneController {
             @PathVariable("ftId") Long ftId
     ) {
 
-        FineTuneVo ftInfo = fineTuneAppService.ftInfo(ftId);
+        FineTuneVo ftInfo = fineTuneAppService.ftInfo(spaceId, ftId);
         return ResponseEntity.ok(Code.success.asResponse(ftInfo));
     }
 
