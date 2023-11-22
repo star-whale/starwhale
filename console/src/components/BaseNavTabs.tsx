@@ -13,13 +13,20 @@ export interface IComposedNavTabsProps {
     fill?: TabsProps['fill']
     tabsOverrides?: TabsProps['overrides']
     tabOverrides?: TabProps['overrides']
+    align?: 'left' | 'center'
 }
 
 export interface IBaseNavTabsProps extends IComposedNavTabsProps {
     navItems: INavItem[]
 }
 
-export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOverrides }: IBaseNavTabsProps) {
+export function BaseNavTabs({
+    navItems,
+    fill = 'intrinsic',
+    tabsOverrides,
+    tabOverrides,
+    align = 'left',
+}: IBaseNavTabsProps) {
     const history = useHistory()
     const [, theme] = themedUseStyletron()
     const { activeItemPath } = useRouterActivePath(navItems)
@@ -49,6 +56,15 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                             height: '1px',
                         },
                     },
+                    ...(align === 'center'
+                        ? {
+                              TabList: {
+                                  style: {
+                                      justifyContent: 'center',
+                                  },
+                              },
+                          }
+                        : {}),
                 },
                 tabsOverrides
             )}

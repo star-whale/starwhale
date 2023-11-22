@@ -7,7 +7,7 @@ import { useStyletron } from 'baseui'
 import Column from './column'
 import { COLUMNS } from './constants'
 import { HighlightCellText } from './text-search'
-import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
+import { ColumnT, FilterTypes, RenderCellT, SharedColumnOptionsT } from './types'
 
 type OptionsT = {
     lineClamp?: number
@@ -34,6 +34,7 @@ export function StringCell(props: any) {
 
 function StringColumn(options: OptionsT): StringColumnT {
     return Column({
+        ...options,
         kind: COLUMNS.STRING,
         cellBlockAlign: options.cellBlockAlign,
         buildFilter: function (params) {
@@ -47,9 +48,11 @@ function StringColumn(options: OptionsT): StringColumnT {
         maxWidth: options.maxWidth,
         minWidth: options.minWidth,
         // @ts-ignore
-        renderCell: function RenderStringCell(props: any) {
-            return <StringCell {...props} lineClamp={options.lineClamp} />
-        },
+        renderCell:
+            options.renderCell ??
+            function RenderStringCell(props: any) {
+                return <StringCell {...props} lineClamp={options.lineClamp} />
+            },
         // @ts-ignore
         renderFilter: StringFilter,
         sortable: options.sortable === undefined ? true : options.sortable,

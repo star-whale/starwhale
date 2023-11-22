@@ -8,6 +8,10 @@ const dataContracts = _.map(modelTypes, "name");
 
 <% if (config.httpClientType === config.constants.HTTP_CLIENT.AXIOS) { %> import type { AxiosRequestConfig, AxiosResponse } from "axios"; <% } %>
 
+// extends
+import { useQuery } from 'react-query'
+import qs from 'qs'
+
 import { HttpClient, RequestParams, ContentType, HttpResponse } from "./<%~ config.fileNames.httpClient %>";
 <% if (dataContracts.length) { %>
 import { <%~ dataContracts.join(", ") %> } from "./<%~ config.fileNames.dataContracts %>"
@@ -25,4 +29,5 @@ export class <%= apiClassName %><SecurityDataType = unknown><% if (!config.singl
     <% for (const route of routes) { %>
         <%~ includeFile('./procedure-call.ejs', { ...it, route }) %>
     <% } %>
+
 }

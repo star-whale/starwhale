@@ -100,6 +100,7 @@ export function GridResizer({
                 width: '100%',
                 height: '100%',
                 flex: 1,
+                transition: '2s',
             }}
         >
             <div

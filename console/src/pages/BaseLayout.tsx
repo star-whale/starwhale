@@ -6,6 +6,7 @@ import { createUseStyles } from 'react-jss'
 import clsx from 'clsx'
 import { headerHeight } from '@/consts'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 
 const useMainStyles = createUseStyles({
     mainWrapper: {
@@ -44,6 +45,8 @@ export interface IBaseLayoutProps {
     contentStyle?: React.CSSProperties
     style?: React.CSSProperties
     className?: string
+    // eslint-disable-next-line
+    middle?: any
 }
 
 export default function BaseLayout({
@@ -58,6 +61,10 @@ export default function BaseLayout({
     const history = useHistory()
     const styles = useMainStyles()
     const [css] = themedUseStyletron()
+
+    const { isInline } = useRouteInlineContext()
+
+    if (isInline) return <>{children}</>
 
     return (
         <main

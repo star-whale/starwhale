@@ -289,6 +289,7 @@ export type FilterT = {
     valueOptions?: any[]
 
     renderField?: React.FC<FilterRenderPropsT>
+    renderFieldLabel?: React.FC<FilterRenderPropsT>
     renderFieldValue?: React.FC<FilterRenderPropsT>
     renderOperator?: React.FC<FilterRenderPropsT>
     renderValue?: React.ForwardedRef<FilterRenderPropsT>

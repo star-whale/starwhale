@@ -35,6 +35,7 @@ public class StorageUri {
 
     static final Pattern PATH_PATTERN = Pattern.compile(
             "^(\\/?([^\\/]+)((\\/(([^\\/]+?)\\/?))*))$");
+    String uriString;
     URI uri;
     /**
      * file/s3/ftp/nfs/oss/http/
@@ -50,6 +51,7 @@ public class StorageUri {
     String prefixWithBucket;
 
     public StorageUri(String u) throws URISyntaxException {
+        this.uriString = u;
         this.uri = new URI(u);
         schema = uri.getScheme();
         path = uri.getPath();
@@ -100,5 +102,10 @@ public class StorageUri {
     @Override
     public int hashCode() {
         return uri.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.uriString;
     }
 }

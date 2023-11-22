@@ -40,6 +40,7 @@ a:-webkit-any-link {
     width: 8px;
     border-radius: 4px;
     background: transparent;
+    margin-left: 2px;
 }
 
 ::-webkit-scrollbar-track {
@@ -49,14 +50,14 @@ a:-webkit-any-link {
 ::-webkit-scrollbar-thumb {
     background: rgba(2, 16, 43, 0.2);
     border-radius: 4px;
-    width: 8px;
+    width: 4px;
     cursor: pointer !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(2, 16, 43, 0.4);
     border-radius: 4px;
-    width: 8px;
+    width: 4px;
     cursor: pointer !important;
 }
 
@@ -138,7 +139,6 @@ code {
     border-radius: 8px;
     margin-bottom: 2px;
     position: relative;
-    z-index: 2;
     overflow: visible;
     border-image-width: 0;
 
@@ -217,18 +217,6 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-.content-full {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-width: 0;
-}
-.content-full-scroll {
-    display: flex;
-    flex-direction: column;
-    overflow: auto;
-    min-width: 0;
 }
 @keyframes logo-width {
     0% {

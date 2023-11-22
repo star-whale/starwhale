@@ -266,7 +266,7 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
         <div ref={ref} className='task-event-list overflow-hidden h-full'>
             <div className='grid gap-20px grid-cols-[280px_1fr_16px_16px] mb-20px'>
                 <FormSelect options={options} onChange={setCurrent as any} value={$current} clearable={false} />
-                <div className='flex-1'>
+                <div className='overflow-hidden'>
                     <Search
                         value={queries}
                         getFilters={(key) => (attrs.find((v) => v.key === key) || attrs[0])?.getFilters()}
@@ -274,11 +274,10 @@ export default function TaskEventListCard({ sources }: ITaskEventListCardProps) 
                     />
                 </div>
                 <CSVLink data={csv} filename={t('job.event.download.filename')} className='f-c-c'>
-                    <ExtendButton iconnormal nopadding icon='download' tooltip={t('download')} />
+                    <ExtendButton styleas={['iconnormal', 'nopadding']} icon='download' tooltip={t('download')} />
                 </CSVLink>
                 <ExtendButton
-                    iconnormal
-                    nopadding
+                    styleas={['iconnormal', 'nopadding']}
                     icon='fullscreen'
                     tooltip={t('fullscreen')}
                     onClick={() => toggle(true)}

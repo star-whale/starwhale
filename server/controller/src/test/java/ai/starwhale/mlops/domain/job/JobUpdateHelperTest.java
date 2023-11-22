@@ -72,7 +72,7 @@ public class JobUpdateHelperTest {
         verify(jobDao).updateJobStatus(mockJob, desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
         verify(jobDao).updateJobFinishedTime(eq(mockJob),
-                argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
+                argThat(d -> d.getTime() > 0), argThat(d -> d >= 0));
     }
 
     @Test

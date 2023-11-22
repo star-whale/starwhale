@@ -9,6 +9,10 @@
  * ---------------------------------------------------------------
  */
 
+// extends
+import qs from 'qs'
+import { useQuery } from 'react-query'
+
 import {
     IActionData,
     IAddDatasetVersionTagData,
@@ -38,6 +42,7 @@ import {
     ICreateProjectRequest,
     ICreateReportData,
     ICreateReportRequest,
+    ICreateSpaceData,
     ICreateUserData,
     ICreateViewConfigData,
     IDataConsumptionRequest,
@@ -61,6 +66,8 @@ import {
     IExecData,
     IExecRequest,
     IFileDeleteRequest,
+    IFineTuneInfoData,
+    IFineTuneSpaceCreateRequest,
     IFlushData,
     IFlushRequest,
     IGetCurrentUserData,
@@ -110,6 +117,7 @@ import {
     IListDatasetVersionTagsData,
     IListDeviceData,
     IListFilesData,
+    IListFineTuneData,
     IListJobsData,
     IListModelData,
     IListModelTreeData,
@@ -124,6 +132,7 @@ import {
     IListRuntimeTreeData,
     IListRuntimeVersionData,
     IListRuntimeVersionTagsData,
+    IListSpaceData,
     IListSystemRolesData,
     IListTablesData,
     IListTablesRequest,
@@ -161,6 +170,7 @@ import {
     IRecoverProjectData,
     IRecoverRuntimeData,
     IRecoverTrashData,
+    IReleaseFtData,
     IRemoveJobData,
     IResourcePool,
     IRevertDatasetRequest,
@@ -194,6 +204,7 @@ import {
     IUpdateResourcePoolsData,
     IUpdateRuntimeData,
     IUpdateSettingData,
+    IUpdateSpaceData,
     IUpdateTableData,
     IUpdateTableRequest,
     IUpdateUserPwdData,
@@ -240,6 +251,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -259,6 +271,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -278,6 +291,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -297,6 +311,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -316,6 +331,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -335,6 +351,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Returns a single project object.
      *
@@ -352,6 +369,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetProjectByUrl = (projectUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getProjectByUrl', projectUrl, params]),
+            () => this.getProjectByUrl(projectUrl, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -371,6 +397,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -388,6 +415,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description Restore a trash to its original type and move it out of the recycle bin.
      *
@@ -405,6 +433,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description Move a trash out of the recycle bin. This operation cannot be resumed.
      *
@@ -422,6 +451,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description update image for runtime
      *
@@ -447,6 +477,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -472,6 +503,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -499,6 +531,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -516,6 +549,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -541,6 +575,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -558,6 +593,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -574,6 +610,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetReport = (projectUrl: string, reportId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getReport', projectUrl, reportId, params]),
+            () => this.getReport(projectUrl, reportId, params),
+            {
+                enabled: [projectUrl, reportId].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -592,6 +637,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -608,6 +654,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -632,6 +679,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -656,6 +704,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -672,6 +721,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -697,6 +747,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -713,6 +764,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -729,6 +781,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useGetJob = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['getJob', projectUrl, jobUrl, params]), () => this.getJob(projectUrl, jobUrl, params), {
+            enabled: [projectUrl, jobUrl].every(Boolean),
         })
     /**
      * No description
@@ -749,6 +806,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -766,6 +824,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -793,6 +852,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -810,6 +870,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -827,6 +888,57 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name UpdateSpace
+     * @summary Update fine-tune space
+     * @request PUT:/api/v1/project/{projectId}/ftspace/{spaceId}
+     * @secure
+     * @response `200` `IUpdateSpaceData` OK
+     */
+    updateSpace = (projectId: number, spaceId: number, data: IFineTuneSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<IUpdateSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}`,
+            method: 'PUT',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ReleaseFt
+     * @summary release fine-tune
+     * @request PUT:/api/v1/project/{projectId}/ftspace/{spaceId}/ft/release
+     * @secure
+     * @response `200` `IReleaseFtData` OK
+     */
+    releaseFt = (
+        projectId: string,
+        spaceId: string,
+        query: {
+            /** @format int64 */
+            ftId: number
+            nonExistingModelName?: string
+            /** @format int64 */
+            existingModelId?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IReleaseFtData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft/release`,
+            method: 'PUT',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
     /**
      * @description Apply signedUrls for get
      *
@@ -850,6 +962,16 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useApplySignedGetUrls = (
+        query: {
+            pathPrefix: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['applySignedGetUrls', query, params]), () => this.applySignedGetUrls(query, params), {
+            enabled: [query].every(Boolean),
+        })
     /**
      * @description Apply signedUrls for put
      *
@@ -869,6 +991,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -903,6 +1026,27 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListUser = (
+        query?: {
+            /** User name prefix to search for */
+            userName?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['listUser', query, params]), () => this.listUser(query, params), {
+            enabled: [].every(Boolean),
+        })
     /**
      * No description
      *
@@ -922,6 +1066,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -946,6 +1091,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description Get system settings in yaml string
      *
@@ -962,6 +1108,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useQuerySetting = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['querySetting', params]), () => this.querySetting(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * @description Update system settings
@@ -982,6 +1133,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -998,6 +1150,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useListResourcePools = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['listResourcePools', params]), () => this.listResourcePools(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * No description
@@ -1018,6 +1175,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1034,6 +1192,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useListSystemRoles = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['listSystemRoles', params]), () => this.listSystemRoles(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * No description
@@ -1054,6 +1217,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1088,6 +1252,27 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListProject = (
+        sort: 'visited' | 'latest' | 'oldest',
+        query?: {
+            projectName?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['listProject', sort, query, params]), () => this.listProject(sort, query, params), {
+            enabled: [sort].every(Boolean),
+        })
     /**
      * No description
      *
@@ -1107,6 +1292,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1131,6 +1317,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1148,6 +1335,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useSelectAllInProject = (projectUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['selectAllInProject', projectUrl, params]),
+            () => this.selectAllInProject(projectUrl, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1167,6 +1363,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1186,6 +1383,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1202,6 +1400,20 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListRuntimeVersionTags = (
+        projectUrl: string,
+        runtimeUrl: string,
+        versionUrl: string,
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listRuntimeVersionTags', projectUrl, runtimeUrl, versionUrl, params]),
+            () => this.listRuntimeVersionTags(projectUrl, runtimeUrl, versionUrl, params),
+            {
+                enabled: [projectUrl, runtimeUrl, versionUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1226,6 +1438,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description build image for runtime
      *
@@ -1251,6 +1464,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Select a historical version of the runtime and revert the latest version of the current runtime to this version
      *
@@ -1275,6 +1489,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.
      *
@@ -1307,6 +1522,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.FormData,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1324,6 +1540,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListProjectRole = (projectUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['listProjectRole', projectUrl, params]),
+            () => this.listProjectRole(projectUrl, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1349,6 +1574,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1383,6 +1609,31 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListReports = (
+        projectUrl: string,
+        query?: {
+            title?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listReports', projectUrl, query, params]),
+            () => this.listReports(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1401,6 +1652,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1419,6 +1671,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1435,6 +1688,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListModelVersionTags = (projectUrl: string, modelUrl: string, versionUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['listModelVersionTags', projectUrl, modelUrl, versionUrl, params]),
+            () => this.listModelVersionTags(projectUrl, modelUrl, versionUrl, params),
+            {
+                enabled: [projectUrl, modelUrl, versionUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1459,6 +1721,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1482,6 +1745,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1516,6 +1780,31 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListJobs = (
+        projectUrl: string,
+        query?: {
+            swmpId?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listJobs', projectUrl, query, params]),
+            () => this.listJobs(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1535,6 +1824,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1552,6 +1842,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1571,6 +1862,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1588,6 +1880,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1607,6 +1900,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1635,6 +1929,25 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetEvents = (
+        projectUrl: string,
+        jobUrl: string,
+        query?: {
+            /** @format int64 */
+            taskId?: number
+            /** @format int64 */
+            runId?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getEvents', projectUrl, jobUrl, query, params]),
+            () => this.getEvents(projectUrl, jobUrl, query, params),
+            {
+                enabled: [projectUrl, jobUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1654,6 +1967,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Sign uris to get a batch of temporarily accessible links
      *
@@ -1687,6 +2001,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description 404 if not exists; 200 if exists
      *
@@ -1704,6 +2019,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetHashedBlob = (projectUrl: string, version: string, hash: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getHashedBlob', projectUrl, version, hash, params]),
+            () => this.getHashedBlob(projectUrl, version, hash, params),
+            {
+                enabled: [projectUrl, version, hash].every(Boolean),
+            }
+        )
     /**
      * @description Upload a hashed BLOB to evaluation object store, returns a uri of the main storage
      *
@@ -1735,6 +2059,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.FormData,
             ...params,
         })
+
     /**
      * @description 404 if not exists; 200 if exists
      *
@@ -1752,6 +2077,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1776,6 +2102,21 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetViewConfig = (
+        projectUrl: string,
+        query: {
+            name: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getViewConfig', projectUrl, query, params]),
+            () => this.getViewConfig(projectUrl, query, params),
+            {
+                enabled: [projectUrl, query].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1795,6 +2136,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1811,6 +2153,20 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListDatasetVersionTags = (
+        projectUrl: string,
+        datasetUrl: string,
+        versionUrl: string,
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listDatasetVersionTags', projectUrl, datasetUrl, versionUrl, params]),
+            () => this.listDatasetVersionTags(projectUrl, datasetUrl, versionUrl, params),
+            {
+                enabled: [projectUrl, datasetUrl, versionUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -1835,6 +2191,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -1859,6 +2216,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Select a historical version of the dataset and revert the latest version of the current dataset to this version
      *
@@ -1883,6 +2241,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Create a new version of the dataset. The data resources can be selected by uploading the file package or entering the server path.
      *
@@ -1916,6 +2275,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.FormData,
             ...params,
         })
+
     /**
      * @description Build Dataset
      *
@@ -1935,6 +2295,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description Sign SWDS uris to get a batch of temporarily accessible links
      *
@@ -1968,6 +2329,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description 404 if not exists; 200 if exists
      *
@@ -1985,6 +2347,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetHashedBlob1 = (projectName: string, datasetName: string, hash: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getHashedBlob1', projectName, datasetName, hash, params]),
+            () => this.getHashedBlob1(projectName, datasetName, hash, params),
+            {
+                enabled: [projectName, datasetName, hash].every(Boolean),
+            }
+        )
     /**
      * @description Upload a hashed BLOB to dataset object store, returns a uri of the main storage
      *
@@ -2013,6 +2384,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.FormData,
             ...params,
         })
+
     /**
      * @description 404 if not exists; 200 if exists
      *
@@ -2030,6 +2402,84 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ListSpace
+     * @summary Get the list of fine-tune spaces
+     * @request GET:/api/v1/project/{projectId}/ftspace
+     * @secure
+     * @response `200` `IListSpaceData` OK
+     */
+    listSpace = (
+        projectId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    useListSpace = (
+        projectId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listSpace', projectId, query, params]),
+            () => this.listSpace(projectId, query, params),
+            {
+                enabled: [projectId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name CreateSpace
+     * @summary Create fine-tune space
+     * @request POST:/api/v1/project/{projectId}/ftspace
+     * @secure
+     * @response `200` `ICreateSpaceData` OK
+     */
+    createSpace = (projectId: number, data: IFineTuneSpaceCreateRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateSpaceData, any>({
+            path: `/api/v1/project/${projectId}/ftspace`,
+            method: 'POST',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+
     /**
      * @description Get panel setting by project and key
      *
@@ -2047,6 +2497,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetPanelSetting = (projectUrl: string, key: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getPanelSetting', projectUrl, key, params]),
+            () => this.getPanelSetting(projectUrl, key, params),
+            {
+                enabled: [projectUrl, key].every(Boolean),
+            }
+        )
     /**
      * @description Save panel setting by project and key
      *
@@ -2066,6 +2525,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * @description List all plugins
      *
@@ -2082,6 +2542,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    usePluginList = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['pluginList', params]), () => this.pluginList(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * @description Upload a tarball and install as panel plugin
@@ -2111,6 +2576,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.FormData,
             ...params,
         })
+
     /**
      * @description Sign uris to get a batch of temporarily accessible links
      *
@@ -2141,6 +2607,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2159,6 +2626,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2177,6 +2645,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2195,6 +2664,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2213,6 +2683,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2231,6 +2702,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2249,6 +2721,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2271,6 +2744,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2289,6 +2763,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2305,6 +2780,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description head for runtime info
      *
@@ -2322,6 +2798,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description head for dataset info
      *
@@ -2339,6 +2816,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2355,6 +2833,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useGetUserById = (userId: string, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['getUserById', userId, params]), () => this.getUserById(userId, params), {
+            enabled: [userId].every(Boolean),
         })
     /**
      * @description Get token of any user for third party system integration, only super admin is allowed to do this
@@ -2373,6 +2856,11 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useUserToken = (userId: number, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['userToken', userId, params]), () => this.userToken(userId, params), {
+            enabled: [userId].every(Boolean),
+        })
     /**
      * No description
      *
@@ -2389,6 +2877,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useGetCurrentUser = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['getCurrentUser', params]), () => this.getCurrentUser(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * No description
@@ -2413,6 +2906,16 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetCurrentUserRoles = (
+        query: {
+            projectUrl: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['getCurrentUserRoles', query, params]), () => this.getCurrentUserRoles(query, params), {
+            enabled: [query].every(Boolean),
+        })
     /**
      * No description
      *
@@ -2429,6 +2932,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useGetCurrentVersion = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['getCurrentVersion', params]), () => this.getCurrentVersion(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * @description Get system features list
@@ -2447,6 +2955,11 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useQueryFeatures = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['queryFeatures', params]), () => this.queryFeatures(params), {
+            enabled: [].every(Boolean),
+        })
     /**
      * No description
      *
@@ -2463,6 +2976,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useListDevice = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['listDevice', params]), () => this.listDevice(params), {
+            enabled: [].every(Boolean),
         })
     /**
      * No description
@@ -2481,6 +2999,11 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListRoles = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['listRoles', params]), () => this.listRoles(params), {
+            enabled: [].every(Boolean),
+        })
     /**
      * No description
      *
@@ -2496,6 +3019,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    usePreview = (uuid: string, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['preview', uuid, params]), () => this.preview(uuid, params), {
+            enabled: [uuid].every(Boolean),
         })
     /**
      * No description
@@ -2523,6 +3051,24 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetModelMetaBlob = (
+        project: string,
+        model: string,
+        version: string,
+        query?: {
+            /** @default "" */
+            blobId?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getModelMetaBlob', project, model, version, query, params]),
+            () => this.getModelMetaBlob(project, model, version, query, params),
+            {
+                enabled: [project, model, version].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2550,6 +3096,25 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListFiles = (
+        project: string,
+        model: string,
+        query?: {
+            /** @default "latest" */
+            version?: string
+            /** @default "" */
+            path?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listFiles', project, model, query, params]),
+            () => this.listFiles(project, model, query, params),
+            {
+                enabled: [project, model].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2576,6 +3141,24 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetFileData = (
+        project: string,
+        model: string,
+        query: {
+            /** @default "latest" */
+            version?: string
+            path: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getFileData', project, model, query, params]),
+            () => this.getFileData(project, model, query, params),
+            {
+                enabled: [project, model, query].every(Boolean),
+            }
+        )
     /**
      * @description List all types of trashes, such as models datasets runtimes and evaluations
      *
@@ -2612,6 +3195,33 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListTrash = (
+        projectUrl: string,
+        query?: {
+            name?: string
+            operator?: string
+            type?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listTrash', projectUrl, query, params]),
+            () => this.listTrash(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2629,6 +3239,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetTemplate = (projectUrl: string, id: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getTemplate', projectUrl, id, params]),
+            () => this.getTemplate(projectUrl, id, params),
+            {
+                enabled: [projectUrl, id].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2646,6 +3265,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2682,6 +3302,33 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListRuntime = (
+        projectUrl: string,
+        query?: {
+            /** Runtime name prefix to search for */
+            name?: string
+            owner?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listRuntime', projectUrl, query, params]),
+            () => this.listRuntime(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * @description Return the information of the latest version of the current runtime
      *
@@ -2707,6 +3354,22 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetRuntimeInfo = (
+        projectUrl: string,
+        runtimeUrl: string,
+        query?: {
+            versionUrl?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getRuntimeInfo', projectUrl, runtimeUrl, query, params]),
+            () => this.getRuntimeInfo(projectUrl, runtimeUrl, query, params),
+            {
+                enabled: [projectUrl, runtimeUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2724,6 +3387,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -2760,6 +3424,33 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListRuntimeVersion = (
+        projectUrl: string,
+        runtimeUrl: string,
+        query?: {
+            /** Runtime version name prefix */
+            name?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listRuntimeVersion', projectUrl, runtimeUrl, query, params]),
+            () => this.listRuntimeVersion(projectUrl, runtimeUrl, query, params),
+            {
+                enabled: [projectUrl, runtimeUrl].every(Boolean),
+            }
+        )
     /**
      * @description Pull file of a runtime version.
      *
@@ -2777,6 +3468,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    usePull = (projectUrl: string, runtimeUrl: string, versionUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['pull', projectUrl, runtimeUrl, versionUrl, params]),
+            () => this.pull(projectUrl, runtimeUrl, versionUrl, params),
+            {
+                enabled: [projectUrl, runtimeUrl, versionUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2793,6 +3493,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetRuntimeVersionTag = (projectUrl: string, runtimeUrl: string, tag: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getRuntimeVersionTag', projectUrl, runtimeUrl, tag, params]),
+            () => this.getRuntimeVersionTag(projectUrl, runtimeUrl, tag, params),
+            {
+                enabled: [projectUrl, runtimeUrl, tag].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2821,6 +3530,25 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListRuntimeTree = (
+        projectUrl: string,
+        query?: {
+            /**
+             * Data range
+             * @default "all"
+             */
+            scope?: 'all' | 'project' | 'shared'
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listRuntimeTree', projectUrl, query, params]),
+            () => this.listRuntimeTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2851,6 +3579,27 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useSelectRecentlyInProject = (
+        projectUrl: string,
+        query?: {
+            /**
+             * @format int32
+             * @min 1
+             * @max 50
+             * @default 5
+             */
+            limit?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['selectRecentlyInProject', projectUrl, query, params]),
+            () => this.selectRecentlyInProject(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2881,6 +3630,28 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useRecentRuntimeTree = (
+        projectUrl: string,
+        query?: {
+            /**
+             * Data limit
+             * @format int32
+             * @min 1
+             * @max 50
+             * @default 5
+             */
+            limit?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['recentRuntimeTree', projectUrl, query, params]),
+            () => this.recentRuntimeTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2911,6 +3682,28 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useRecentModelTree = (
+        projectUrl: string,
+        query?: {
+            /**
+             * Data limit
+             * @format int32
+             * @min 1
+             * @max 50
+             * @default 5
+             */
+            limit?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['recentModelTree', projectUrl, query, params]),
+            () => this.recentModelTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2941,6 +3734,28 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useRecentDatasetTree = (
+        projectUrl: string,
+        query?: {
+            /**
+             * Data limit
+             * @format int32
+             * @min 1
+             * @max 50
+             * @default 5
+             */
+            limit?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['recentDatasetTree', projectUrl, query, params]),
+            () => this.recentDatasetTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * @description Returns readme content.
      *
@@ -2958,6 +3773,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetProjectReadmeByUrl = (projectUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getProjectReadmeByUrl', projectUrl, params]),
+            () => this.getProjectReadmeByUrl(projectUrl, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -2993,6 +3817,33 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListModel = (
+        projectUrl: string,
+        query?: {
+            versionId?: string
+            name?: string
+            owner?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listModel', projectUrl, query, params]),
+            () => this.listModel(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3017,6 +3868,22 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetModelInfo = (
+        projectUrl: string,
+        modelUrl: string,
+        query?: {
+            versionUrl?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getModelInfo', projectUrl, modelUrl, query, params]),
+            () => this.getModelInfo(projectUrl, modelUrl, query, params),
+            {
+                enabled: [projectUrl, modelUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3033,6 +3900,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -3067,6 +3935,32 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListModelVersion = (
+        projectUrl: string,
+        modelUrl: string,
+        query?: {
+            name?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listModelVersion', projectUrl, modelUrl, query, params]),
+            () => this.listModelVersion(projectUrl, modelUrl, query, params),
+            {
+                enabled: [projectUrl, modelUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3083,6 +3977,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetModelVersionTag = (projectUrl: string, modelUrl: string, tag: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getModelVersionTag', projectUrl, modelUrl, tag, params]),
+            () => this.getModelVersionTag(projectUrl, modelUrl, tag, params),
+            {
+                enabled: [projectUrl, modelUrl, tag].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3108,6 +4011,23 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetModelDiff = (
+        projectUrl: string,
+        modelUrl: string,
+        query: {
+            baseVersion: string
+            compareVersion: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getModelDiff', projectUrl, modelUrl, query, params]),
+            () => this.getModelDiff(projectUrl, modelUrl, query, params),
+            {
+                enabled: [projectUrl, modelUrl, query].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3135,6 +4055,25 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListModelTree = (
+        projectUrl: string,
+        query?: {
+            /**
+             * Data range
+             * @default "all"
+             */
+            scope?: 'all' | 'project' | 'shared'
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listModelTree', projectUrl, query, params]),
+            () => this.listModelTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3169,6 +4108,31 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListTasks = (
+        projectUrl: string,
+        jobUrl: string,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listTasks', projectUrl, jobUrl, query, params]),
+            () => this.listTasks(projectUrl, jobUrl, query, params),
+            {
+                enabled: [projectUrl, jobUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3186,6 +4150,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetTask = (projectUrl: string, jobUrl: string, taskUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getTask', projectUrl, jobUrl, taskUrl, params]),
+            () => this.getTask(projectUrl, jobUrl, taskUrl, params),
+            {
+                enabled: [projectUrl, jobUrl, taskUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3203,6 +4176,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetRuns = (projectUrl: string, jobUrl: string, taskId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getRuns', projectUrl, jobUrl, taskId, params]),
+            () => this.getRuns(projectUrl, jobUrl, taskId, params),
+            {
+                enabled: [projectUrl, jobUrl, taskId].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3220,6 +4202,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetJobDag = (projectUrl: string, jobUrl: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getJobDag', projectUrl, jobUrl, params]),
+            () => this.getJobDag(projectUrl, jobUrl, params),
+            {
+                enabled: [projectUrl, jobUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3256,6 +4247,33 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListDataset = (
+        projectUrl: string,
+        query?: {
+            versionId?: string
+            name?: string
+            owner?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listDataset', projectUrl, query, params]),
+            () => this.listDataset(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * @description Return the information of the latest version of the current dataset
      *
@@ -3282,6 +4300,23 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetDatasetInfo = (
+        projectUrl: string,
+        datasetUrl: string,
+        query?: {
+            /** Dataset versionUrl. (Return the current version as default when the versionUrl is not set.) */
+            versionUrl?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getDatasetInfo', projectUrl, datasetUrl, query, params]),
+            () => this.getDatasetInfo(projectUrl, datasetUrl, query, params),
+            {
+                enabled: [projectUrl, datasetUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3299,6 +4334,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -3334,6 +4370,32 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListDatasetVersion = (
+        projectUrl: string,
+        datasetUrl: string,
+        query?: {
+            name?: string
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listDatasetVersion', projectUrl, datasetUrl, query, params]),
+            () => this.listDatasetVersion(projectUrl, datasetUrl, query, params),
+            {
+                enabled: [projectUrl, datasetUrl].every(Boolean),
+            }
+        )
     /**
      * @description Pull Dataset files part by part.
      *
@@ -3362,6 +4424,24 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    usePullDs = (
+        projectUrl: string,
+        datasetUrl: string,
+        versionUrl: string,
+        query?: {
+            /** optional, _manifest.yaml is used if not specified */
+            partName?: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['pullDs', projectUrl, datasetUrl, versionUrl, query, params]),
+            () => this.pullDs(projectUrl, datasetUrl, versionUrl, query, params),
+            {
+                enabled: [projectUrl, datasetUrl, versionUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3378,6 +4458,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetDatasetVersionTag = (projectUrl: string, datasetUrl: string, tag: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getDatasetVersionTag', projectUrl, datasetUrl, tag, params]),
+            () => this.getDatasetVersionTag(projectUrl, datasetUrl, tag, params),
+            {
+                enabled: [projectUrl, datasetUrl, tag].every(Boolean),
+            }
+        )
     /**
      * @description List Build Records
      *
@@ -3411,6 +4500,30 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListBuildRecords = (
+        projectUrl: string,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listBuildRecords', projectUrl, query, params]),
+            () => this.listBuildRecords(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3436,6 +4549,22 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useListDatasetTree = (
+        projectUrl: string,
+        query?: {
+            /** @default "all" */
+            scope?: 'all' | 'project' | 'shared'
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listDatasetTree', projectUrl, query, params]),
+            () => this.listDatasetTree(projectUrl, query, params),
+            {
+                enabled: [projectUrl].every(Boolean),
+            }
+        )
     /**
      * @description Pull Dataset uri file contents
      *
@@ -3465,6 +4594,26 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    usePullUriContent = (
+        projectName: string,
+        datasetName: string,
+        query: {
+            uri: string
+            /** @format int64 */
+            offset?: number
+            /** @format int64 */
+            size?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['pullUriContent', projectName, datasetName, query, params]),
+            () => this.pullUriContent(projectName, datasetName, query, params),
+            {
+                enabled: [projectName, datasetName, query].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3482,6 +4631,100 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetModelServingStatus = (projectId: number, servingId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['getModelServingStatus', projectId, servingId, params]),
+            () => this.getModelServingStatus(projectId, servingId, params),
+            {
+                enabled: [projectId, servingId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ListFineTune
+     * @summary List fine-tune
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft
+     * @secure
+     * @response `200` `IListFineTuneData` OK
+     */
+    listFineTune = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IListFineTuneData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    useListFineTune = (
+        projectId: number,
+        spaceId: number,
+        query?: {
+            /**
+             * @format int32
+             * @default 1
+             */
+            pageNum?: number
+            /**
+             * @format int32
+             * @default 10
+             */
+            pageSize?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['listFineTune', projectId, spaceId, query, params]),
+            () => this.listFineTune(projectId, spaceId, query, params),
+            {
+                enabled: [projectId, spaceId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name FineTuneInfo
+     * @summary Get fine-tune info
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/ft/{ftId}
+     * @secure
+     * @response `200` `IFineTuneInfoData` OK
+     */
+    fineTuneInfo = (projectId: number, spaceId: number, ftId: number, params: RequestParams = {}) =>
+        this.http.request<IFineTuneInfoData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/ft/${ftId}`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+
+    useFineTuneInfo = (projectId: number, spaceId: number, ftId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['fineTuneInfo', projectId, spaceId, ftId, params]),
+            () => this.fineTuneInfo(projectId, spaceId, ftId, params),
+            {
+                enabled: [projectId, spaceId, ftId].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3498,6 +4741,11 @@ export class Api<SecurityDataType = unknown> {
             method: 'GET',
             secure: true,
             ...params,
+        })
+
+    useOfflineLogs = (taskId: number, params: RequestParams = {}) =>
+        useQuery(qs.stringify(['offlineLogs', taskId, params]), () => this.offlineLogs(taskId, params), {
+            enabled: [taskId].every(Boolean),
         })
     /**
      * No description
@@ -3516,6 +4764,15 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useLogContent = (taskId: number, fileName: string, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['logContent', taskId, fileName, params]),
+            () => this.logContent(taskId, fileName, params),
+            {
+                enabled: [taskId, fileName].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -3542,6 +4799,23 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    useGetRuntimeSuggestion = (
+        query: {
+            /** @format int64 */
+            projectId: number
+            /** @format int64 */
+            modelVersionId?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(
+            qs.stringify(['getRuntimeSuggestion', query, params]),
+            () => this.getRuntimeSuggestion(query, params),
+            {
+                enabled: [query].every(Boolean),
+            }
+        )
     /**
      * @description Apply pathPrefix
      *
@@ -3564,6 +4838,16 @@ export class Api<SecurityDataType = unknown> {
             query: query,
             secure: true,
             ...params,
+        })
+
+    useApplyPathPrefix = (
+        query: {
+            flag: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['applyPathPrefix', query, params]), () => this.applyPathPrefix(query, params), {
+            enabled: [query].every(Boolean),
         })
     /**
      * @description Pull file Content
@@ -3598,6 +4882,26 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
+    usePullUriContent1 = (
+        query: {
+            uri: string
+            /**
+             * offset in the content
+             * @format int64
+             */
+            offset?: number
+            /**
+             * data size
+             * @format int64
+             */
+            size?: number
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['pullUriContent1', query, params]), () => this.pullUriContent1(query, params), {
+            enabled: [query].every(Boolean),
+        })
     /**
      * @description Delete path
      *
@@ -3617,6 +4921,7 @@ export class Api<SecurityDataType = unknown> {
             type: ContentType.Json,
             ...params,
         })
+
     /**
      * No description
      *
@@ -3639,6 +4944,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -3661,6 +4967,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * No description
      *
@@ -3683,6 +4990,7 @@ export class Api<SecurityDataType = unknown> {
             secure: true,
             ...params,
         })
+
     /**
      * @description Uninstall plugin by id
      *

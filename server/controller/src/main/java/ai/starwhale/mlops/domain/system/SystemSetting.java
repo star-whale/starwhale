@@ -20,7 +20,7 @@ import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
+import ai.starwhale.mlops.storage.StorageConnectionToken;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

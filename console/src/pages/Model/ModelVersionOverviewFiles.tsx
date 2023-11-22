@@ -34,10 +34,12 @@ const useStyles = createUseStyles({
             backgroundColor: '#2B65D9',
             color: '#fff !important',
         },
+        'overflow': 'hidden',
     },
     treeWrapper: {
         padding: '20px 20px 20px 0',
         flex: 1,
+        overflow: 'auto',
     },
     flex: {
         display: 'flex',
@@ -312,7 +314,7 @@ function CodeViewer({
     )
 
     return (
-        <div style={{ height: '100%', flex: 1 }}>
+        <div className='flex-1 overflow-auto'>
             <div
                 style={{
                     display: 'flex',

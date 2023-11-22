@@ -21,8 +21,8 @@ export function registerRoutes(authed: IRoute, unauthed: IRoute) {
 const renderRoutes = (routes: IRoute[], parent?: IRoute): any => {
     return routes.map((route: any, i: number): any => {
         const key = parent ? `${parent?.path}-${i}` : i
-        if (route.redirect) {
-            return <Redirect key={key} exact from={route.path} to={route.redirect} />
+        if (route.from || route.to) {
+            return <Redirect key={key} exact from={route.from} to={route.to} />
         }
         if (route.element) {
             return React.cloneElement(route.element, { key })

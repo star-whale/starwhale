@@ -18,8 +18,6 @@ package ai.starwhale.mlops.storage.s3;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -44,8 +42,6 @@ import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Testcontainers
@@ -85,32 +81,6 @@ public class StorageAccessServiceS3Test {
                         .hugeFileThreshold(10 * 1024 * 1024)
                         .hugeFilePartSize(5 * 1024 * 1024)
                         .build());
-    }
-
-    @Test
-    public void testClearPendingMultipartUploads() {
-        for (int i = 0; i < 2999; ++i) {
-            this.client.createMultipartUpload(CreateMultipartUploadRequest.builder()
-                    .bucket("test")
-                    .key("m" + i)
-                    .build());
-        }
-        assertThat(this.client.listMultipartUploads(ListMultipartUploadsRequest.builder()
-                        .bucket("test")
-                        .build()).uploads(),
-                hasSize(2999));
-        new StorageAccessServiceS3(
-                S3Config.builder()
-                        .bucket("test")
-                        .accessKey("ak")
-                        .secretKey("sk")
-                        .region("us-west-1")
-                        .endpoint(s3Mock.getHttpEndpoint())
-                        .build());
-        assertThat(this.client.listMultipartUploads(ListMultipartUploadsRequest.builder()
-                        .bucket("test")
-                        .build()).uploads(),
-                empty());
     }
 
     @Test

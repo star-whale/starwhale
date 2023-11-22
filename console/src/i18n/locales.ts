@@ -805,6 +805,165 @@ const report = {
     },
 }
 
+const ft = {
+    'fine-tuning': {
+        en: 'Fine-tuning',
+        zh: 'Fine-tuning',
+    },
+    'ft.space.title': {
+        en: 'Fine-tuning Spaces',
+        zh: 'Fine-tuning 空间',
+    },
+    'ft.space.id': {
+        en: 'Fine-tuning Space ID',
+        zh: 'Fine-tuning 空间 ID',
+    },
+    'ft.space.name': {
+        en: 'Space Name',
+        zh: '空间名称',
+    },
+    'ft.space.action.edit': {
+        en: 'Edit',
+        zh: '编辑',
+    },
+    'ft.runs': {
+        en: 'Runs',
+        zh: 'Runs',
+    },
+    'ft.online_eval': {
+        en: 'Online Evaluation',
+        zh: '在线评测',
+    },
+    'ft.id': {
+        en: 'Fine-tuning ID',
+        zh: 'Fine-tuning ID',
+    },
+    'ft.job.new': {
+        en: 'Create Fine-tuning Job',
+        zh: '新建 Fine-tuning 任务',
+    },
+    'ft.job.output_draft_model_name': {
+        en: 'Output Draft Model Name',
+        zh: '模型草案名称',
+    },
+    'ft.job.output_draft_model_version_alias': {
+        en: 'Output Draft Model Version Alias',
+        zh: '模型草案版本别名',
+    },
+    'ft.job.output_draft_model_version': {
+        en: 'Output Draft Model Version',
+        zh: '模型版本',
+    },
+    'ft.job.output_model_name': {
+        en: 'Output Model Name',
+        zh: '模型',
+    },
+    'ft.job.output_model_version_alias': {
+        en: 'Output Model Version Alias',
+        zh: '模型版本别名',
+    },
+    'ft.job.output_model_version': {
+        en: 'Output Model Version',
+        zh: '模型版本',
+    },
+    'ft.job.building_mode': {
+        en: 'Building Mode',
+        zh: '模型构建方式',
+    },
+    'ft.job.model.release': {
+        en: 'Release',
+        zh: '发布',
+    },
+    'ft.job.model.release.mode': {
+        en: 'Release Mode',
+        zh: '发布模式',
+    },
+    'ft.job.model.release.mode.draft': {
+        en: 'Draft',
+        zh: '未发布',
+    },
+    'ft.job.model.release.mode.released': {
+        en: 'Released',
+        zh: '已发布',
+    },
+    'ft.job.model.release.mode.create': {
+        en: 'Build a new model',
+        zh: '构建新模型',
+    },
+    'ft.job.model.release.mode.append': {
+        en: 'Build a new version of an existing model',
+        zh: '构建已有模型的新版本',
+    },
+    'ft.job.model.release.mode.exsit': {
+        en: 'Existing model name',
+        zh: '已有模型名称',
+    },
+    'ft.job.model.release.succes': {
+        en: 'Release Success',
+        zh: '发布成功',
+    },
+    'ft.base.model.name': {
+        en: 'Base Model Name',
+        zh: '基准模型名称',
+    },
+    'ft.base.model.version_alias': {
+        en: 'Base Model Version Alias',
+        zh: '基准模型版本别名',
+    },
+    'ft.base.model.version': {
+        en: 'Base Model Version',
+        zh: '基准模型版本',
+    },
+    'ft.training_dataset.name': {
+        en: 'Training Dataset Name',
+        zh: '训练数据集名称',
+    },
+    'ft.training_dataset.version_alias': {
+        en: 'Training Dataset Version Alias',
+        zh: '训练数据集版本别名',
+    },
+    'ft.validation_dataset.name': {
+        en: 'Validation Dataset Name',
+        zh: '验证数据集名称',
+    },
+    'ft.validation_dataset.version_alias': {
+        en: 'Validation Dataset Version Alias',
+        zh: '验证数据集版本别名',
+    },
+    'ft.dataset.name': {
+        en: 'Dataset Name',
+        zh: '数据集名称',
+    },
+    'ft.dataset.version_alias': {
+        en: 'Dataset Version Alias',
+        zh: '数据集版本别名',
+    },
+    'ft.dataset.version': {
+        en: 'Dataset Version',
+        zh: '数据集版本',
+    },
+    'ft.runtime.name': {
+        en: 'Runtime Name',
+        zh: '运行时名称',
+    },
+    'ft.runtime.version_alias': {
+        en: 'Runtime Version Alias',
+        zh: '运行时版本别名',
+    },
+    'ft.runtime.version': {
+        en: 'Runtime Version',
+        zh: '运行时版本',
+    },
+    'ft.handler': {
+        en: 'Handler',
+        zh: 'Handler',
+    },
+    'ft.step_spec': {
+        en: 'Step Specification',
+        zh: '参数',
+    },
+}
+
 const table = {
     'table.column.manage': {
         en: 'Manage Columns',
@@ -1935,6 +2094,10 @@ const locales0 = {
         en: 'Created At',
         zh: '创建于',
     },
+    'Created by': {
+        en: 'Created by',
+        zh: '创建者',
+    },
     'Aliases': {
         en: 'Aliases',
         zh: '别名',
@@ -2068,6 +2231,7 @@ const locales0 = {
     ...widget,
     ...ui,
     ...quickstart,
+    ...ft,
 }
 
 // eslint-disable-next-line import/no-mutable-exports

@@ -49,6 +49,7 @@ class TestVenv(TestCase):
         self.assertRaises(ValueError, parse_python_version, "python")
         self.assertRaises(FormatError, parse_python_version, "")
 
+    @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_call")
     def test_conda_install(self, m_call: MagicMock) -> None:
         conda_install_req(

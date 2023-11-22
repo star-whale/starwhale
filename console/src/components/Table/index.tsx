@@ -25,6 +25,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
     const [rect, setRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
     const [isFocus, setIsFocus] = React.useState(false)
     const ref = React.useRef<HTMLElement>(null)
+    const rootRef = React.useRef<HTMLElement>(null)
 
     useClickAway(() => {
         if (!isFocus) setSelectedRowIndex(undefined)
@@ -36,9 +37,12 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
 
         startTransition(() => {
             const tr = event.currentTarget.getBoundingClientRect()
+            const table = rootRef.current?.getBoundingClientRect()
+            if (!table) return
+
             setSelectedRowIndex(rowIndex)
             setRowRect({
-                left: tr.left + tr.width,
+                left: table?.left + table?.width,
                 top: tr.top,
             })
         })
@@ -80,6 +84,14 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                 onRowSelect={handleRowSelect}
                 onRowHighlight={handleRowHighlight}
                 overrides={{
+                    Root: {
+                        props: {
+                            ref: rootRef,
+                        },
+                        style: {
+                            flex: 1,
+                        },
+                    },
                     TableBody: {
                         props: {
                             ref,

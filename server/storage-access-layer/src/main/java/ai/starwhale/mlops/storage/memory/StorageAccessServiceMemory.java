@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.storage.memory;
 
+import ai.starwhale.mlops.storage.AbstractStorageAccessService;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -32,7 +32,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 /**
  * For unit test only.
  */
-public class StorageAccessServiceMemory implements StorageAccessService {
+public class StorageAccessServiceMemory extends AbstractStorageAccessService {
 
     private final Map<String, byte[]> store = new ConcurrentSkipListMap<>();
 

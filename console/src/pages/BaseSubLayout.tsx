@@ -4,10 +4,12 @@ import { BaseNavTabs } from '../components/BaseNavTabs'
 import BaseLayout from './BaseLayout'
 import ProjectSidebar from './Project/ProjectSidebar'
 import { useAuth } from '@/api/Auth'
+import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 
 export interface IBaseSubLayoutProps {
     header?: React.ReactNode
     extra?: React.ReactNode
+    middle?: React.ReactNode
     breadcrumbItems?: INavItem[]
     navItems?: INavItem[]
     children: React.ReactNode
@@ -18,6 +20,7 @@ export interface IBaseSubLayoutProps {
 export default function BaseSubLayout({
     header,
     extra,
+    middle,
     breadcrumbItems,
     navItems,
     children,
@@ -25,8 +28,15 @@ export default function BaseSubLayout({
     contentStyle,
 }: IBaseSubLayoutProps) {
     const { standaloneMode } = useAuth()
+
+    const { isInline } = useRouteInlineContext()
+
+    if (isInline) return <>{children}</>
+
     return (
         <BaseLayout
+            // eslint-disable-next-line
+            middle={middle}
             extra={extra}
             breadcrumbItems={breadcrumbItems}
             sidebar={standaloneMode ? undefined : sidebar ?? ProjectSidebar}

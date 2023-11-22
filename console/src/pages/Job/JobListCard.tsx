@@ -160,7 +160,7 @@ export default function JobListCard() {
             },
             ...(statusActions[job.jobStatus as any] ?? []),
             {
-                access: true,
+                access: job.jobType !== 'FINE_TUNE',
                 component: ({ hasText }) => (
                     <ExtendButton
                         isFull

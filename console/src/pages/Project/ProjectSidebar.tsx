@@ -50,6 +50,12 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 icon: <IconFont type='job' size={16} />,
             },
             {
+                title: t('fine-tuning'),
+                path: `/projects/${projectId}/spaces`,
+                icon: <IconFont type='finetuning' size={16} />,
+                activePathPattern: /\/(spaces)\/?/,
+            },
+            {
                 title: t('Evaluations'),
                 path: `/projects/${projectId}/evaluations`,
                 activePathPattern: /\/(evaluations|new_job)\/?/,

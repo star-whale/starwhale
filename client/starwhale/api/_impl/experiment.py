@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import os
+import time
 import typing as t
 from pathlib import Path
-from functools import wraps
+from functools import wraps, partial
 
 from starwhale.utils import console
-from starwhale.consts import DecoratorInjectAttr
+from starwhale.consts import SHORT_VERSION_CNT, DecoratorInjectAttr
 from starwhale.base.context import Context
 from starwhale.api._impl.model import build as build_starwhale_model
+from starwhale.api._impl.dataset import Dataset
 from starwhale.base.client.models.models import FineTune
 
 
@@ -23,9 +25,10 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
             the cloud instance.
         needs: [List[Callable], optional] The list of functions that the fine-tune function depends on.
         require_train_datasets: [bool, optional] Whether the fine-tune function requires train datasets. Default is True.
-            When the argument is True, the fine-tune function will receive the train datasets as the first argument.
+            When the argument is True, the fine-tune function will receive the train datasets(List[Dataset] type) as the first argument.
         require_validation_datasets: [bool, optional] Whether the fine-tune function requires validation datasets. Default is False.
-            When the argument is True, the fine-tune function will receive the validation datasets as the second argument(if require_train_datasets=True) or as the first argument(if require_train_datasets=False).
+            When the argument is True, the fine-tune function will receive the validation datasets(List[Dataset] type)
+            as the second argument(if require_train_datasets=True) or as the first argument(if require_train_datasets=False).
         auto_build_model: [bool, optional] Whether to automatically build the starwhale model. Default is True.
         model_modules: [List[str|object], optional] The search models for model building.   Default is None.
             The search modules supports object(function, class or module) or str(example: "to.path.module", "to.path.module:object").
@@ -71,6 +74,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
             @wraps(func)
             def _run_wrapper(*args: t.Any, **kw: t.Any) -> t.Any:
                 ctx = Context.get_runtime_context()
+                load_dataset = partial(Dataset.dataset, readonly=True, create="forbid")
 
                 inject_args = []
                 if require_train_datasets:
@@ -78,23 +82,28 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
                         raise RuntimeError(
                             "train datasets are required, use `--dataset` to specify the train datasets in `swcli model run` command."
                         )
-                    inject_args.append(ctx.dataset_uris)
+                    inject_args.append([load_dataset(uri) for uri in ctx.dataset_uris])
                 if require_validation_datasets:
                     if not ctx.finetune_val_dataset_uris:
                         raise RuntimeError(
                             "validation datasets are required, use `--val-dataset` to specify the validation datasets in `swcli model run` command."
                         )
-                    inject_args.append(ctx.finetune_val_dataset_uris)
+                    inject_args.append(
+                        [load_dataset(uri) for uri in ctx.finetune_val_dataset_uris]
+                    )
 
                 # TODO: support arguments from command line
                 ret = func(*inject_args)
 
                 if auto_build_model:
                     console.info(f"building starwhale model package from {workdir}")
+                    # The finetune tag is exclusively used for display purposes.
+                    tag = f"finetune-{ctx.version[:SHORT_VERSION_CNT]}-{time.time_ns()}"
                     build_starwhale_model(
                         name=os.environ.get("SW_FINETUNE_TARGET_MODEL", ctx.model_name),
                         modules=model_modules,
                         workdir=workdir,
+                        tags=[tag],
                     )
 
                 return ret

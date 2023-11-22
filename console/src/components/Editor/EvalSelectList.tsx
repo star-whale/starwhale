@@ -61,7 +61,7 @@ const RenderButton = ({ count, editing, toggle }) => {
                 </span>
             </p>
             <ExtendButton
-                nopadding
+                styleas={['nopadding']}
                 kind='tertiary'
                 as='link'
                 onClick={toggle}

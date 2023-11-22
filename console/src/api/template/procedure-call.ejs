@@ -21,6 +21,8 @@ const requestConfigParam = {
 
 const argToTmpl = ({ name, optional, type, defaultValue }) => `${name}${!defaultValue && optional ? '?' : ''}: ${type}${defaultValue ? ` = ${defaultValue}` : ''}`;
 
+const argToValueTmpl = ({ name, optional, type, defaultValue }) => `${name}`;
+
 const rawWrapperArgs = config.extractRequestParams ?
     _.compact([
         requestParams && {
@@ -43,6 +45,24 @@ const wrapperArgs = _
     // Sort by optionality
     .sortBy(rawWrapperArgs, [o => o.optional])
     .map(argToTmpl)
+    .join(', ')
+
+
+const wrapperArgsToValue = _
+    // Sort by optionality
+    .sortBy(rawWrapperArgs, [o => o.optional])
+    .map(argToValueTmpl)
+    .join(', ')
+
+
+const requiredWrapperArgs = _
+    .filter(rawWrapperArgs, o => !o.optional)
+    .map(argToValueTmpl)
+    .join(', ')
+
+const optionalWrapperArgs = _
+    .filter(rawWrapperArgs, o => o.optional)
+    .map(argToValueTmpl)
     .join(', ')
 
 // RequestParams["type"]
@@ -98,3 +118,13 @@ const describeReturnType = () => {
         <%~ responseFormatTmpl ? `format: ${responseFormatTmpl},` : '' %>
         ...<%~ _.get(requestConfigParam, "name") %>,
     })
+
+<% if(_.upperCase(method) === 'GET') { %>
+use<%~ _.upperFirst(route.routeName.usage) %> = (<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> => useQuery(
+        qs.stringify(['<%~ route.routeName.usage %>', <%~ wrapperArgsToValue %>]),
+        () => this.<%~ route.routeName.usage %>(<%~ wrapperArgsToValue %>),
+        {
+            enabled: [<%~ requiredWrapperArgs %>].every(Boolean),
+        }
+    )
+<% } %>

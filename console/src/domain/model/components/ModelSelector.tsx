@@ -16,6 +16,8 @@ export interface IModelSelectorProps {
     placeholder?: React.ReactNode
 }
 
+const getIdFunc = (obj) => obj.id
+
 export default function ModelSelector({
     projectId,
     value,
@@ -24,7 +26,7 @@ export default function ModelSelector({
     disabled,
     clearable = false,
     placeholder,
-    getId = (obj) => obj.id,
+    getId = getIdFunc,
 }: IModelSelectorProps) {
     const [t] = useTranslation()
     const [keyword, setKeyword] = useState<string>()
@@ -56,7 +58,7 @@ export default function ModelSelector({
         } else {
             setOptions([])
         }
-    }, [modelsInfo.data?.list, modelsInfo.isSuccess, getId])
+    }, [modelsInfo.data, modelsInfo.isSuccess, getId])
 
     return (
         <Select

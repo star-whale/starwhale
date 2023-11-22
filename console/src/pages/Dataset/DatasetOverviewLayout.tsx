@@ -135,7 +135,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
 
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems} extra={extra}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className='content-full'>
                 {datasetVersionId && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                         <div style={{ width: '300px' }}>
@@ -177,7 +177,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                         <BaseNavTabs navItems={navItems} />
                     </div>
                 )}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>{children}</div>
+                <div className='content-full-scroll'>{children}</div>
             </div>
         </BaseSubLayout>
     )
