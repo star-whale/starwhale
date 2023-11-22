@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.ft.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class FineTuneSpaceEntity extends BaseEntity {
+public class FineTuneSpaceEntity extends BaseEntity implements BundleEntity {
     private Long id;
     private Long projectId;
     private Long ownerId;

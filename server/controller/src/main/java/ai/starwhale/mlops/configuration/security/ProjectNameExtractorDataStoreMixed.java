@@ -25,6 +25,7 @@ import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.HttpUtil.Resources;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.ft.FineTuneSpaceDao;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.template.TemplateDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
@@ -74,6 +75,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     private final RuntimeDao runtimeDao;
     private final ReportDao reportDao;
     private final TemplateDao templateDao;
+    private final FineTuneSpaceDao fineTuneSpaceDao;
 
     static final String PATH_LIST_TABLES = "/datastore/listTables";
     static final String PATH_UPDATE_TABLE = "/datastore/updateTable";
@@ -81,7 +83,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
     private static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report|template)/([^/]+).*$");
+            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report|template|ftspace)/([^/]+).*$");
     private static final Pattern RESOURCE_VERSION_PATTERN =
             Pattern.compile("^/project/([^/]+)/(runtime|dataset|model)/([^/]+)/version/([^/]+).*$");
 
@@ -95,7 +97,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             DatasetDao datasetDao,
             RuntimeDao runtimeDao,
             ReportDao reportDao,
-            TemplateDao templateDao
+            TemplateDao templateDao,
+            FineTuneSpaceDao fineTuneSpaceDao
     ) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
@@ -107,6 +110,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         this.runtimeDao = runtimeDao;
         this.reportDao = reportDao;
         this.templateDao = templateDao;
+        this.fineTuneSpaceDao = fineTuneSpaceDao;
     }
 
     @Override
@@ -218,7 +222,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
                 "dataset", datasetDao,
                 "model", modelDao,
                 "report", reportDao,
-                "template", templateDao
+                "template", templateDao,
+                "ftspace", fineTuneSpaceDao
         );
         if (!accessor.containsKey(resourceType)) {
             return;

@@ -33,6 +33,8 @@ import ai.starwhale.mlops.configuration.security.ProjectNameExtractorDataStoreMi
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.ft.FineTuneSpaceDao;
+import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.template.TemplateDao;
@@ -69,6 +71,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
     RuntimeDao runtimeDao = mock(RuntimeDao.class);
     ReportDao reportDao = mock(ReportDao.class);
     TemplateDao templateDao = mock(TemplateDao.class);
+    FineTuneSpaceDao fineTuneSpaceDao = mock(FineTuneSpaceDao.class);
 
     @BeforeEach
     public void setup() {
@@ -82,7 +85,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 datasetDao,
                 runtimeDao,
                 reportDao,
-                templateDao
+                templateDao,
+                fineTuneSpaceDao
         );
     }
 
@@ -168,6 +172,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
         when(modelDao.findById(3L)).thenReturn(ModelEntity.builder().id(3L).projectId(1L).build());
         when(jobDao.findById(4L)).thenReturn(JobEntity.builder().projectId(1L).build());
         when(reportDao.findById(5L)).thenReturn(ReportEntity.builder().projectId(1L).build());
+        when(fineTuneSpaceDao.findById(6L)).thenReturn(FineTuneSpaceEntity.builder().projectId(1L).build());
 
         when(jobDao.findByNameForUpdate("job1", 1L)).thenReturn(JobEntity.builder().projectId(1L).build());
 
@@ -184,7 +189,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/job/4",
                 "/api/v1/project/p1/job/job1",
                 "/api/v1/project/p1/report/5",
-                "/api/v1/project/p1/report/5/transfer"
+                "/api/v1/project/p1/report/5/transfer",
+                "/api/v1/project/p1/ftspace/6/ft/1"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
@@ -205,7 +211,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/job/10",
                 "/api/v1/project/p1/job/job2", // simulate job uuid
                 "/api/v1/project/p1/report/11",
-                "/api/v1/project/p1/report/11/transfer"
+                "/api/v1/project/p1/report/11/transfer",
+                "/api/v1/project/p1/ftspace/12/ft/1"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             Assertions.assertThrows(SwNotFoundException.class,
@@ -232,7 +239,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/job/14",
                 "/api/v1/project/p1/job/job3", // simulate job uuid
                 "/api/v1/project/p1/report/15",
-                "/api/v1/project/p1/report/15/transfer"
+                "/api/v1/project/p1/report/15/transfer",
+                "/api/v1/project/p1/ftspace/16/ft/1"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             Assertions.assertThrows(SwNotFoundException.class,
