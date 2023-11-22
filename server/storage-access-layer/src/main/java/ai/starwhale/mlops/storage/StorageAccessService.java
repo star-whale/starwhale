@@ -64,6 +64,7 @@ public interface StorageAccessService {
 
             ret.put("tencent", StorageAccessServiceQcloud.class);
             ret.put("qcloud", StorageAccessServiceQcloud.class);
+            ret.put("cos", StorageAccessServiceQcloud.class);
 
             ret.put("baidu", StorageAccessServiceBos.class);
             ret.put("bos", StorageAccessServiceBos.class);
