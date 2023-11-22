@@ -1168,8 +1168,7 @@ export interface IEnv {
     value?: string
 }
 
-export interface IExtraParams {
-    auto_build_model?: boolean
+export interface IFineTune {
     require_train_datasets?: boolean
     require_validation_datasets?: boolean
 }
@@ -1186,6 +1185,7 @@ export interface IModelVersionViewVo {
     tags?: string[]
     /** @format int32 */
     shared: number
+    draft?: boolean
     stepSpecs: IStepSpec[]
     builtInRuntime?: string
     /** @format int64 */
@@ -1242,7 +1242,7 @@ export interface IStepSpec {
     job_name?: string
     show_name: string
     require_dataset?: boolean
-    fine_tune?: IExtraParams
+    fine_tune?: IFineTune
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
@@ -2259,6 +2259,10 @@ export type IListSpaceData = IResponseMessagePageInfoFineTuneSpaceVo['data']
 
 export type ICreateSpaceData = IResponseMessageString['data']
 
+export type IImportEvalData = IResponseMessageString['data']
+
+export type IExportEvalData = IResponseMessageString['data']
+
 export type IGetPanelSettingData = IResponseMessageString['data']
 
 export type ISetPanelSettingData = IResponseMessageString['data']
@@ -2387,6 +2391,10 @@ export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 export type IPullUriContentData = any
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
+
+export type IRecentModelTree1Data = IResponseMessageListModelViewVo['data']
+
+export type IListModelTree1Data = IResponseMessageListModelViewVo['data']
 
 export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
 

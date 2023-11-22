@@ -7,6 +7,7 @@ import { val } from '@starwhale/ui/GridTable/utils'
 import { ExtendButton } from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useEvaluationStore } from '@starwhale/ui/GridTable/store'
+import { useAsyncEffect } from 'ahooks'
 
 export const useFineTuneEvaluation = () => {
     const {
@@ -20,6 +21,7 @@ export const useFineTuneEvaluation = () => {
 
     const projectId = project?.id || projectFromUri
     const summaryTableName = `project/${projectId}/ftspace/${spaceId}/eval/summary`
+    const projectSummaryTableName = `project/${projectId}/eval/summary`
     const viewConfigKey = `fine-tune-${spaceId}`
     const viewCurrentKey = 'fine-tune-view-id'
     const defaultColumnKey = 'sys/id'
@@ -45,6 +47,29 @@ export const useFineTuneEvaluation = () => {
     })
 
     const summaryTableQuery = React.useMemo(() => {
+        if (!summaryTableName || !jobId) return undefined
+
+        return {
+            tableName: summaryTableName,
+            start: 0,
+            limit: 1,
+            rawResult: true,
+            ignoreNonExistingTable: true,
+            filter: {
+                operator: 'EQUAL',
+                operands: [
+                    {
+                        intValue: jobId,
+                    },
+                    {
+                        columnName: 'sys/id',
+                    },
+                ],
+            },
+        }
+    }, [jobId, summaryTableName])
+
+    const summaryTableExportQuery = React.useMemo(() => {
         if (!summaryTableName || !jobId) return undefined
 
         return {
@@ -100,7 +125,16 @@ export const useFineTuneEvaluation = () => {
         ]
     }
 
+    const importEval = useEventCallback(async (ids) => {
+        await api.importEval(projectId, spaceId, ids)
+    })
+
+    const exportEval = useEventCallback(async (ids) => {
+        await api.exportEval(projectId, spaceId, ids)
+    })
+
     return {
+        projectSummaryTableName,
         summaryTableName,
         summaryTableQuery,
         viewConfigKey,
@@ -114,6 +148,8 @@ export const useFineTuneEvaluation = () => {
         gotoDetails,
         gotoList,
         getActions,
+        exportEval,
+        importEval,
         routes,
         useStore: useEvaluationStore,
     }

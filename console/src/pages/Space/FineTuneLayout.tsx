@@ -7,6 +7,8 @@ import { useAccess } from '@/api/WithAuth'
 import Button from '@starwhale/ui/Button'
 import { BaseSimpleNavTabs } from '@/components/BaseSimpleNavTabs'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
+import { EvalSelectListModal } from '@/domain/space/components/EvalSelectList'
+import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
 
 export interface IFineTuneLayoutProps {
     children: React.ReactNode
@@ -53,6 +55,12 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     const { activeItemId } = useRouterActivePath(navItems)
     const isAccessCreate = useAccess('ft.run.create')
     const isAccessEvalCreate = useAccess('ft.eval.create')
+    const isAccessEvalExport = useAccess('ft.eval.export')
+    const isAccessEvalImport = useAccess('ft.eval.import')
+    const [isExport, setIsExport] = React.useState(false)
+    const [isImport, setIsImport] = React.useState(false)
+
+    const config = useFineTuneEvaluation()
 
     const actions = [
         {
@@ -65,6 +73,22 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                     }}
                 >
                     {t('create')}
+                </Button>
+            ),
+        },
+        {
+            access: isAccessEvalImport && activeItemId === 'fine-tune-evals',
+            component: () => (
+                <Button size='compact' kind='secondary' onClick={() => setIsImport(true)}>
+                    {t('ft.eval.import')}
+                </Button>
+            ),
+        },
+        {
+            access: isAccessEvalExport && activeItemId === 'fine-tune-evals',
+            component: () => (
+                <Button size='compact' kind='secondary' onClick={() => setIsExport(true)}>
+                    {t('ft.eval.export')}
                 </Button>
             ),
         },
@@ -86,15 +110,20 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     return (
         <BaseSubLayout
             breadcrumbItems={breadcrumbItems}
-            extra={actions.map((v, index) => (
-                <v.component key={index} />
-            ))}
+            extra={
+                <div className='flex gap-10px'>
+                    {actions.map((v, index) => (
+                        <v.component key={index} />
+                    ))}
+                </div>
+            }
         >
             <div className='absolute left-1/2 translate-x-[-50%]'>
                 <BaseSimpleNavTabs navItems={navItems} />
             </div>
-
             <div className='content-full h-full'>{children}</div>
+            <EvalSelectListModal isOpen={isExport} setIsOpen={setIsExport} type='export' onSubmit={config.exportEval} />
+            <EvalSelectListModal isOpen={isImport} setIsOpen={setIsImport} type='import' onSubmit={config.importEval} />
         </BaseSubLayout>
     )
 }

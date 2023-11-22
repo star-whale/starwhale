@@ -36,6 +36,8 @@ export const Privileges = {
     'ft.run.create': true,
     'ft.run.release': true,
     'ft.eval.create': true,
+    'ft.eval.export': true,
+    'ft.eval.import': true,
     // menu
     'project.menu.trash': true,
     // global
