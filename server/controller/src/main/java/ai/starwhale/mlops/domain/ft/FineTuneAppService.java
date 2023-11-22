@@ -231,9 +231,14 @@ public class FineTuneAppService {
                 }
                 Map<String, String> envMap = env.stream().collect(Collectors.toMap(Env::getName, Env::getValue));
                 //if ENV vars in user's step spec conflicts with controller's, use controller's ENV
-                envMap.putAll(
-                        envSupplier.get().stream().collect(Collectors.toMap(Env::getName, Env::getValue))
-                );
+                List<Env> controllerEnvs = envSupplier.get();
+                if (null != controllerEnvs) {
+                    envMap.putAll(
+                            controllerEnvs.stream()
+                                    .filter(e -> null != e.getValue())
+                                    .collect(Collectors.toMap(Env::getName, Env::getValue))
+                    );
+                }
                 s.setEnv(
                         envMap.entrySet()
                                 .stream()
