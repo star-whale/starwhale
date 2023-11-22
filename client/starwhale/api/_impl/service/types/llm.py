@@ -22,21 +22,20 @@ class Query(BaseModel):
     top_k: Optional[float]
     top_p: Optional[float]
     temperature: Optional[float]
-    max_length: Optional[int]
+    max_new_tokens: Optional[int]
 
 
-class QuestionAnswering(ServiceType):
-    name = "question_answering"
+class LLMChat(ServiceType):
+    name = "llm_chat"
 
     # TODO use pydantic model annotations generated arg_types
     arg_types = {
         "user_input": str,
         "history": list,  # list of Message
-        "confidence": float,
         "top_k": float,
         "top_p": float,
         "temperature": float,
-        "max_length": int,
+        "max_new_tokens": int,
     }
 
     def __init__(self, args: Set | None = None) -> None:

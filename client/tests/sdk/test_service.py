@@ -37,7 +37,7 @@ class ServiceTestCase(BaseTestCase):
         spec = svc.get_spec()
         assert len(spec.apis) == 1
         assert spec.apis[0].uri == "cmp"
-        assert spec.apis[0].inference_type == "question_answering"
+        assert spec.apis[0].inference_type == "llm_chat"
         components = spec.apis[0].components_hint
         assert set(components) == {
             ComponentSpec(name="user_input", type="str"),

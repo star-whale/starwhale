@@ -1,9 +1,9 @@
 from typing import List
 
-from starwhale.api.service import api, QuestionAnswering
+from starwhale.api.service import api, LLMChat
 
 
-@api(inference_type=QuestionAnswering(args={"user_input", "history", "temperature"}))
+@api(inference_type=LLMChat(args={"user_input", "history", "temperature"}))
 def fake_chat_bot(
     user_input: str, history: List[dict], temperature: float
 ) -> List[dict]:
