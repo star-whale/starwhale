@@ -1540,22 +1540,22 @@ KeyType = Union[int, str, None]
 class DataBlockDesc(SwBaseModel):
     min_key: KeyType
     max_key: KeyType
-    min_revision: Optional[str]
-    max_revision: Optional[str]
+    min_revision: Optional[str] = None
+    max_revision: Optional[str] = None
     row_count: int
-    block_id: Optional[int]
+    block_id: Optional[int] = None
 
 
 class TombstoneDesc(SwBaseModel):
     # None means from the beginning
-    start: KeyType
+    start: Optional[KeyType] = None
     # None means to the end
-    end: KeyType
+    end: Optional[KeyType] = None
     end_inclusive: bool
     revision: str
     # Mark the tombstone for the key with the prefix
     # This works only if the key is a string
-    key_prefix: Optional[str]
+    key_prefix: Optional[str] = None
 
     @validator("end")
     def end_must_be_greater_than_start(
@@ -1593,7 +1593,7 @@ class TombstoneDesc(SwBaseModel):
 class CheckpointDesc(SwBaseModel):
     revision: str
     created_at: int  # timestamp in ms
-    count: Optional[int]
+    count: Optional[int] = None
 
     def to_checkpoint(self) -> Checkpoint:
         return Checkpoint(
@@ -1636,16 +1636,16 @@ class Manifest(SwBaseModel):
     block_config: DataBlockConfig
     blocks: List[DataBlockDesc]
     key_column: str
-    key_column_type: Optional[ColumnSchemaDesc]  # SwType.encode_schema
+    key_column_type: Optional[ColumnSchemaDesc] = None  # SwType.encode_schema
     next_block_id: int = 0
     # last key is the max key in the life cycle of the table
     # last key won't change if the key is deleted and garbage collected
     # users can use the (last key + 1) as the next auto increment key
     # and note that max_key in DataBlockDesc may change if the key is deleted and garbage collected
-    last_key: KeyType
+    last_key: Optional[KeyType] = None
     # TODO record the last revision
-    last_revision = "0"
-    garbage_collection: Optional[GarbageCollectionDesc]
+    last_revision: str = "0"
+    garbage_collection: Optional[GarbageCollectionDesc] = None
     tombstones: List[TombstoneDesc]
     checkpoints: List[CheckpointDesc]
 
@@ -1887,7 +1887,7 @@ class LocalTable:
 
             iters = [
                 IterWithRangeHint(
-                    iter=mem.scan(start, end, end_inclusive),
+                    iter=mem.scan(start, end, end_inclusive), min_key=None
                 )
                 for mem in mem_tables
             ]
@@ -2445,7 +2445,7 @@ class LocalDataStore:
         manifest_file = Path(self.root_path) / datastore_manifest_file_name
         with filelock.FileLock(str(Path(self.root_path) / ".lock")):
             with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
-                tmp.write(manifest.json(indent=2))
+                tmp.write(manifest.model_dump_json(indent=2))
                 tmp.flush()
                 shutil.move(tmp.name, manifest_file)
 

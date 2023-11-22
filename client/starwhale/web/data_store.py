@@ -26,10 +26,10 @@ class Filter(BaseModel):
 
 class QueryTableRequest(BaseModel):
     table_name: str = Field(alias="tableName")
-    filter: t.Optional[Filter]
+    filter: t.Optional[Filter] = None
     limit: int
-    raw_result: t.Optional[bool] = Field(alias="rawResult")
-    encode_with_type: t.Optional[bool] = Field(alias="encodeWithType")
+    raw_result: t.Optional[bool] = Field(None, alias="rawResult")
+    encode_with_type: t.Optional[bool] = Field(None, alias="encodeWithType")
 
 
 @router.post("/listTables")

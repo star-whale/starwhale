@@ -86,15 +86,9 @@ class JobTestCase(unittest.TestCase):
             ),
         ]
 
-        mock_handler = Handler(
-            name="test",
-            show_name="show name",
-            func_name="func name",
-            module_name="module name",
-        )
         for resource, exception_str in exception_cases:
             with self.assertRaisesRegex(RuntimeError, exception_str):
-                mock_handler._transform_resource(resource)
+                Handler._transform_resource(resource)
 
         cases = [
             (
@@ -165,7 +159,10 @@ class JobTestCase(unittest.TestCase):
         ]
 
         for resource, expect in cases:
-            self.assertEqual(mock_handler._transform_resource(resource), expect)
+            self.assertEqual(
+                Handler._transform_resource(resource),
+                [RuntimeResource(**e) for e in expect],
+            )
 
 
 class GenerateJobsTestCase(BaseTestCase):
@@ -214,7 +211,7 @@ def video_evaluate_handler(*args, **kwargs): ...
         generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
 
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
 
         assert {
             "mock_user_module:img_evaluate_handler",
@@ -324,7 +321,7 @@ def evaluate_handler(*args, **kwargs): ...
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert jobs_info == {
             "mock_user_module:evaluate_handler": [
                 StepSpecClient(
@@ -465,7 +462,7 @@ class MockPPLHandler(PipelineHandler):
         generate_jobs_yaml(
             [f"{self.module_name}:MockPPLHandler"], self.workdir, yaml_path
         )
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert "mock_user_module:MockPPLHandler.cmp" in jobs_info
         assert "mock_user_module:MockPPLHandler.ppl" in jobs_info
         assert jobs_info["mock_user_module:MockPPLHandler.cmp"][1].needs == [
@@ -496,7 +493,7 @@ class MockHandler(PipelineHandler):
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert jobs_info["mock_user_module:MockHandler.evaluate"] == [
             StepSpecClient(
                 cls_name="MockHandler",
@@ -592,7 +589,7 @@ class MockHandler:
         assert self.module_name in sys.modules
 
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert len(jobs_info) == 2
         assert jobs_info["mock_user_module:MockHandler.predict_handler"] == [
             StepSpecClient(
@@ -692,7 +689,7 @@ def run(): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert jobs_info == {
             "mock_user_module:run": [
                 StepSpecClient(
@@ -724,7 +721,7 @@ def handle(context): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert jobs_info == {
             "mock_user_module:handle": [
                 StepSpecClient(
@@ -770,7 +767,7 @@ def ft2(): ...
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         mock_exists.return_value = True
 
         assert jobs_info == {
@@ -892,7 +889,7 @@ class MockReport:
         generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
         assert yaml_path.exists()
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
 
         report_handler = jobs_info["mock_user_module:MockReport.report_handler"]
         assert len(report_handler) == 4
@@ -1314,7 +1311,7 @@ def f_no_args():
         generate_jobs_yaml(
             [f"{self.module_name}:X", self.module_name], self.workdir, yaml_path
         )
-        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).__root__
+        jobs_info = JobHandlers.parse_obj(load_yaml(yaml_path)).root
         assert jobs_info["mock_user_module:X.f"] == [
             StepSpecClient(
                 name="mock_user_module:X.f",
