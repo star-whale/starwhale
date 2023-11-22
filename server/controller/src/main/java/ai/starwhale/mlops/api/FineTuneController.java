@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneMigrationRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
@@ -182,9 +183,9 @@ public class FineTuneController {
     public ResponseEntity<ResponseMessage<String>> importEval(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestParam("ids") List<String> ids
+            @RequestBody FineTuneMigrationRequest request
     ) {
-        fineTuneAppService.importEvalFromCommon(projectId, spaceId, ids);
+        fineTuneAppService.importEvalFromCommon(projectId, spaceId, request.getIds());
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
@@ -196,9 +197,9 @@ public class FineTuneController {
     public ResponseEntity<ResponseMessage<String>> exportEval(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestParam("ids") List<String> ids
+            @RequestBody FineTuneMigrationRequest request
     ) {
-        fineTuneAppService.exportEvalToCommon(projectId, spaceId, ids);
+        fineTuneAppService.exportEvalToCommon(projectId, spaceId, request.getIds());
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
