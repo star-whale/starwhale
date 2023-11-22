@@ -5,7 +5,7 @@ from pathlib import Path
 
 import tqdm
 import torch
-from datasets import Dataset
+from datasets import Dataset as HFDataset
 from transformers import (
     Trainer,
     BloomForCausalLM,
@@ -13,7 +13,7 @@ from transformers import (
     BloomTokenizerFast,
 )
 
-from starwhale import dataset, finetune, evaluation
+from starwhale import Dataset, finetune, evaluation
 
 ROOTDIR = Path(__file__).parent
 
@@ -75,7 +75,7 @@ ds_key_selectors = {
 
 
 @finetune
-def ft(train_datasets: List[str]) -> None:
+def ft(train_datasets: List[Dataset]) -> None:
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
         from download_model import download
@@ -86,7 +86,7 @@ def ft(train_datasets: List[str]) -> None:
         checkpoint, torch_dtype="auto", device_map="auto"
     )
 
-    sw_dataset = dataset(train_datasets[0], readonly=True, create="forbid")
+    sw_dataset = train_datasets[0]
     sw_dataset = sw_dataset.with_loader_config(
         field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )
@@ -154,4 +154,4 @@ def swds2hgds(swds) -> Any:
                 "text": f"given the question that {instruction}, please answer as ####{output}"
             }
 
-    return Dataset.from_generator(my_gen)
+    return HFDataset.from_generator(my_gen)

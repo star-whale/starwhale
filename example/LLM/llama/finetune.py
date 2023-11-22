@@ -21,7 +21,7 @@ from transformers import (
 from peft.tuners.lora import LoraLayer
 from torch.nn.utils.rnn import pad_sequence
 
-from starwhale import dataset, finetune
+from starwhale import Dataset, finetune
 
 try:
     from .utils import (
@@ -55,7 +55,7 @@ max_eval_steps = os.environ.get("MAX_EVAL_STEPS", 1)  # 187
     require_validation_datasets=True,
     model_modules=[copilot_predict],
 )
-def llama_fine_tuning(train_datasets: t.List[str], eval_datasets: t.List[str]):
+def llama_fine_tuning(train_datasets: t.List[Dataset], eval_datasets: t.List[Dataset]):
     # TODO: support multiple datasets
     train_llama(train_dataset=train_datasets[0], eval_dataset=eval_datasets[0])
     model_name = get_model_name()
@@ -142,8 +142,8 @@ def get_accelerate_model(
 
 
 def train_llama(
-    train_dataset: dataset.Dataset,
-    eval_dataset: t.Optional[dataset.Dataset] = None,
+    train_dataset: Dataset,
+    eval_dataset: t.Optional[Dataset] = None,
 ) -> None:
     base_model_path, adapter_model_path = get_base_and_adapter_model_path()
     model = get_accelerate_model(
@@ -222,7 +222,7 @@ def train_llama(
         model=model,
         tokenizer=tokenizer,
         train_dataset=train_dataset.to_pytorch(),
-        eval_dataset=eval_dataset.to_pytorch(),
+        eval_dataset=eval_dataset.to_pytorch() if eval_dataset else None,
         data_collator=DataCollatorForCausalLM(
             tokenizer=tokenizer,
             source_max_len=16,

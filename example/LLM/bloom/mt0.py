@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from datasets import Dataset
+from datasets import Dataset as HFDataset
 from transformers import (
     AdamW,
     AutoTokenizer,
@@ -13,7 +13,7 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 
-from starwhale import dataset, handler, finetune, evaluation
+from starwhale import Dataset, handler, finetune, evaluation
 from starwhale.api import model as swmp
 
 ROOTDIR = Path(__file__).parent
@@ -76,7 +76,7 @@ ds_key_selectors = {
 
 
 @finetune
-def ft(train_datasets: List[str]) -> None:
+def ft(train_datasets: List[Dataset]) -> None:
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
         from download_model import download
@@ -90,7 +90,7 @@ def ft(train_datasets: List[str]) -> None:
         checkpoint, torch_dtype="auto", device_map="auto"
     )
     max_length = 100
-    sw_dataset = dataset(train_datasets[0], readonly=True, create="forbid")
+    sw_dataset = train_datasets[0]
     sw_dataset = sw_dataset.with_loader_config(
         field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )
@@ -188,7 +188,7 @@ def swds2hgds(swds) -> Any:
         for item in sw_ds:
             yield item.features
 
-    return Dataset.from_generator(my_gen)
+    return HFDataset.from_generator(my_gen)
 
 
 @handler(expose=7860)
