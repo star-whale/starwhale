@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 import numpy
 import numpy as np
 import torch
+from PIL import Image as PILImage
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
@@ -163,6 +164,23 @@ class TestDataType(TestCase):
         typ = data_store._get_type(img)
         assert isinstance(typ, data_store.SwObjectType)
         assert typ.attrs["_raw_base64_data"] == data_store.STRING
+
+        pixels = numpy.random.randint(
+            low=0, high=256, size=(100, 100, 3), dtype=numpy.uint8
+        )
+        image_bytes = io.BytesIO()
+        PILImage.fromarray(pixels, mode="RGB").save(image_bytes, format="PNG")
+        img = Image(image_bytes.getvalue())
+        pil_img = img.to_pil()
+        assert isinstance(pil_img, PILImage.Image)
+        assert pil_img.mode == "RGB"
+        l_pil_img = img.to_pil("L")
+        assert l_pil_img.mode == "L"
+        array = img.to_numpy()
+        assert isinstance(array, numpy.ndarray)
+        assert array.shape == (100, 100, 3)
+        l_array = img.to_numpy("L")
+        assert l_array.shape == (100, 100)
 
     def test_swobject_subclass_init(self) -> None:
         from starwhale.base import data_type

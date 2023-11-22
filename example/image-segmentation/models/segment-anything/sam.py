@@ -95,9 +95,10 @@ def draw_masks_on_original_image(masks: t.List, original: Image) -> Image:
     for ann in sorted_anns:
         mask_img[ann["segmentation_binary_mask"]] = np.random.random(3)
     alpha = 0.35
-    img = mask_img * alpha + (
-        np.array(original.to_pil().convert("RGB")).astype(float) / 255
-    ) * (1 - alpha)
+    img = mask_img * alpha + (original.to_numpy("RGB").astype(float) / 255) * (
+        1 - alpha
+    )
+
     img = PILImage.fromarray((img * 255).astype(np.uint8))
     img_byte_array = io.BytesIO()
     img.save(img_byte_array, format="PNG")
@@ -106,9 +107,7 @@ def draw_masks_on_original_image(masks: t.List, original: Image) -> Image:
 
 def generate_mask(img: Image) -> t.List[t.Dict]:
     generator = _load_sam_generator()
-    # Starwhale.Image has `to_pil` method to convert to Pillow Image.
-    # later we will support `to_numpy` method to convert to numpy array
-    masks = generator.generate(np.array(img.to_pil().convert("RGB")))
+    masks = generator.generate(img.to_numpy("RGB"))
 
     for idx in range(len(masks)):
         # add "segmentation_coco_rle" and "segmentation_binary_mask" to the output.

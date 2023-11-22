@@ -294,7 +294,17 @@ class Image(BaseArtifact, SwObject):
         ):
             raise NoSupportError(f"Image type: {self.mime_type}")
 
-    def to_pil(self) -> t.Any:
+    def to_pil(self, mode: str | None = None) -> t.Any:
+        """Convert Starwhale Image to Pillow Image.
+
+        Arguments:
+            mode: (str, optional) The mode of Pillow Image, default is None. If the argument is None, the mode is the same as Image original mode.
+                If the argument is not None, we will call Pillow convert method to convert the mode.
+                The mode list is https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes.
+
+        Returns:
+            Pillow Image.
+        """
         try:
             from PIL import Image as PILImage
         except ImportError as e:  # pragma: no cover
@@ -302,10 +312,22 @@ class Image(BaseArtifact, SwObject):
                 "pillow is required to convert Starwhale Image to Pillow Image, please install pillow with 'pip install pillow' or 'pip install starwhale[image]'."
             ) from e
 
-        return PILImage.open(io.BytesIO(self.to_bytes()))
+        img = PILImage.open(io.BytesIO(self.to_bytes()))
+        if mode is not None:
+            img = img.convert(mode)
+        return img
 
-    def to_numpy(self) -> numpy.ndarray:
-        return numpy.array(self.to_pil())
+    def to_numpy(self, mode: str | None = None) -> numpy.ndarray:
+        """Convert Starwhale Image to numpy ndarray.
+
+        Starwhale Image -> Pillow Image -> Numpy ndarray
+
+        Arguments:
+            mode: (str, optional) The mode of Pillow Image, default is None.
+                The argument is the same as `to_pil` method.
+
+        """
+        return numpy.array(self.to_pil(mode))
 
     def to_tensor(self) -> t.Any:
         from starwhale.integrations.pytorch import convert_numpy_to_tensor

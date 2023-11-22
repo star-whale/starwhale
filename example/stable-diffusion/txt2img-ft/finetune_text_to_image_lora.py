@@ -327,13 +327,9 @@ def fine_tune(
 
     class SwCompose(transforms.Compose):
         def __call__(self, data_row):
-            _img = (
-                data_row.get(
-                    get_col(DATASET_COLUMN_MAPPING.get("image"), data_row.keys())
-                )
-                .to_pil()
-                .convert("RGB")
-            )
+            _img = data_row.get(
+                get_col(DATASET_COLUMN_MAPPING.get("image"), data_row.keys())
+            ).to_pil("RGB")
             for t in self.transforms:
                 _img = t(_img)
             return {
