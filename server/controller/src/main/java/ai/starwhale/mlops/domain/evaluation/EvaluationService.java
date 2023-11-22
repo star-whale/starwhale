@@ -34,6 +34,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class EvaluationService {
 
+    public static final String TABLE_NAME_FORMAT = "project/%s/eval/summary";
+
     private final UserService userService;
     private final ProjectService projectService;
     private final ViewConfigMapper viewConfigMapper;

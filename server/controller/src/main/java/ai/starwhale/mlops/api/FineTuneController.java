@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -154,12 +155,43 @@ public class FineTuneController {
             MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     public ResponseEntity<ResponseMessage<String>> releaseFt(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
             @RequestParam Long ftId,
             @RequestParam(required = false) String nonExistingModelName,
             @RequestParam(required = false) Long existingModelId
 
     ) {
-        fineTuneAppService.releaseFt(ftId, existingModelId, nonExistingModelName, userService.currentUserDetail());
+        fineTuneAppService.releaseFt(
+                projectId, spaceId, ftId, existingModelId, nonExistingModelName, userService.currentUserDetail());
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
+    @Operation(summary = "import from common eval summary")
+    @PostMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/eval/import", produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> importEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @RequestParam("ids") List<String> ids
+    ) {
+        fineTuneAppService.importEvalFromCommon(projectId, spaceId, ids);
+        return ResponseEntity.ok(Code.success.asResponse(""));
+    }
+
+    @Operation(summary = "export to common eval summary")
+    @PostMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/eval/export", produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    public ResponseEntity<ResponseMessage<String>> exportEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId,
+            @RequestParam("ids") List<String> ids
+    ) {
+        fineTuneAppService.exportEvalToCommon(projectId, spaceId, ids);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 

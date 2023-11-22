@@ -37,6 +37,14 @@ public interface JobMapper {
      */
     List<JobEntity> listUserJobs(@Param("projectId") Long projectId, @Param("modelId") Long modelId);
 
+    List<JobEntity> listBizJobs(
+            @Param("projectId") Long projectId,
+            @Param("bizType") String bizType,
+            @Param("bizId") String bizId,
+            @Param("jobType") String jobType,
+            @Param("modelVersionId") Long modelVersionId
+    );
+
     JobEntity findJobById(@Param("jobId") Long jobId);
 
     JobEntity findJobByUuid(@Param("uuid") String uuid);

@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.ft;
 
+import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
+
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
@@ -25,12 +27,13 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
-import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobCreator;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -58,7 +61,6 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,6 +72,8 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class FineTuneAppService {
+
+    public static final String FULL_EVALUATION_SUMMARY_TABLE_FORMAT = "project/%s/ftspace/%s/eval/summary";
 
     static final String EVALUATION_SUMMARY_TABLE_FORMAT = "ftspace/%d/eval/summary";
 
@@ -103,6 +107,8 @@ public class FineTuneAppService {
 
     final DatasetService datasetService;
 
+    final EvaluationRepo evaluationRepo;
+
     public FineTuneAppService(
             FeaturesProperties featuresProperties,
             JobCreator jobCreator,
@@ -118,7 +124,8 @@ public class FineTuneAppService {
             EventService eventService,
             JobConverter jobConverter,
             ModelService modelService,
-            DatasetService datasetService
+            DatasetService datasetService,
+            EvaluationRepo evaluationRepo
     ) {
         this.featuresProperties = featuresProperties;
         this.jobCreator = jobCreator;
@@ -135,6 +142,7 @@ public class FineTuneAppService {
         this.jobConverter = jobConverter;
         this.modelService = modelService;
         this.datasetService = datasetService;
+        this.evaluationRepo = evaluationRepo;
     }
 
 
@@ -275,20 +283,35 @@ public class FineTuneAppService {
                 .build();
     }
 
-    public void evalFt(List<Long> evalDatasetIds, Long runtimeId, String handerSpec, Map<String, String> envs) {
+    public int importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
+        return evaluationRepo.migration(
+                String.format(TABLE_NAME_FORMAT, projectId),
+                uuids,
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
+        );
+    }
 
+    public int exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
+        return evaluationRepo.migration(
+                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
+                uuids,
+                String.format(TABLE_NAME_FORMAT, projectId)
+        );
     }
 
     /**
      * release fintuned model to either existingModelId or nonExistingModelName
      *
+     * @param projectId project id
      * @param ftId release fintuned model to
      * @param existingModelId either existingModelId
      * @param nonExistingModelName or nonExistingModelName
      * @param user by user
      */
     @Transactional
-    public void releaseFt(Long ftId, Long existingModelId, String nonExistingModelName, User user) {
+    public void releaseFt(
+            Long projectId, Long spaceId, Long ftId, Long existingModelId, String nonExistingModelName, User user
+    ) {
         FineTuneEntity ft = fineTuneMapper.findById(ftId);
         if (null == ft) {
             throw new SwNotFoundException(ResourceType.FINE_TUNE, "fine tune not found");
@@ -304,37 +327,49 @@ public class FineTuneAppService {
                     "model has been released to modelId: " + modelVersion.getModelId()
             );
         }
-        Long modelId;
+        ModelEntity model;
         if (null != existingModelId) {
-            if (!existingModelId.equals(modelVersion.getModelId())) {
-                ModelEntity model = modelDao.getModel(existingModelId);
-                if (null == model) {
-                    throw new SwNotFoundException(
-                            ResourceType.BUNDLE,
-                            "modelId not found: "
-                    );
-                }
+            model = modelDao.getModel(existingModelId);
+            if (null == model) {
+                throw new SwNotFoundException(
+                        ResourceType.BUNDLE,
+                        "modelId not found: "
+                );
             }
-            modelId = existingModelId;
         } else if (StringUtils.hasText(nonExistingModelName)) {
-            FineTuneSpaceEntity ftSpace = fineTuneSpaceMapper.findById(ft.getSpaceId());
-            Long projectId = ftSpace.getProjectId();
             BundleEntity modelEntity = this.modelDao.findByNameForUpdate(nonExistingModelName, projectId);
             if (null != modelEntity) {
                 throw new SwValidationException(ValidSubject.MODEL, "model name existed");
             }
-            ModelEntity model = ModelEntity.builder()
+            model = ModelEntity.builder()
                     .ownerId(user.getId())
                     .projectId(projectId)
                     .modelName(nonExistingModelName)
                     .build();
             modelDao.add(model);
-            modelId = model.getId();
         } else {
             throw new SwValidationException(ValidSubject.MODEL, "nonExistingModelName xor existingModelId is required");
         }
         // update model version model id to new model and set draft to false
-        modelDao.releaseModelVersion(targetModelVersionId, modelId);
+        modelDao.releaseModelVersion(targetModelVersionId, model.getId());
+
+        // update model info for eval summary
+        // find all evaluations which use the targetModelVersion in current space
+        var evalJobs = jobMapper.listBizJobs(
+                projectId,
+                BizType.FINE_TUNE.name(),
+                String.valueOf(spaceId),
+                JobType.EVALUATION.name(),
+                targetModelVersionId
+        );
+        if (!evalJobs.isEmpty()) {
+            evaluationRepo.updateModelInfo(
+                    String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
+                    evalJobs.stream().map(JobEntity::getJobUuid).collect(Collectors.toList()),
+                    model,
+                    modelVersion
+            );
+        }
     }
 
     private void checkFeatureEnabled() throws StarwhaleApiException {

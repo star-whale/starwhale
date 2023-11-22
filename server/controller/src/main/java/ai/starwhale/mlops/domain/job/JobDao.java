@@ -108,6 +108,8 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .comment(flattenEntity.getComment())
                 .resultOutputPath(flattenEntity.getResultOutputPath())
                 .jobStatus(flattenEntity.getJobStatus())
+                .bizId(flattenEntity.getBizId())
+                .bizType(flattenEntity.getBizType())
                 .type(flattenEntity.getType())
                 .resourcePool(flattenEntity.getResourcePool())
                 .stepSpec(flattenEntity.getStepSpec())
@@ -124,6 +126,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
 
     public List<JobEntity> listJobs(Long projectId, Long modelId) {
         return jobMapper.listUserJobs(projectId, modelId);
+    }
+
+    public List<JobEntity> listBizJobs(Long projectId, BizType bizType, String bizId, JobType jobType, Long modelId) {
+        return jobMapper.listBizJobs(projectId, bizType.name(), bizId, jobType.name(), modelId);
     }
 
     public List<Job> findJobByStatusIn(List<JobStatus> jobStatuses) {
