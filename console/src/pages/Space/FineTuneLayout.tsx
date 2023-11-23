@@ -98,7 +98,7 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                 <Button
                     size='compact'
                     onClick={() => {
-                        history.push(`/projects/${projectId}/new_fine_tune/${spaceId}?type=EVALUATION`)
+                        history.push(`/projects/${projectId}/new_fine_tune_eval/${spaceId}`)
                     }}
                 >
                     {t('create')}

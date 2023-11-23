@@ -1,24 +1,19 @@
 import React from 'react'
 import EvaluationListCard from './Evaluation/EvaluationListCard'
-import EvaluationCardListCard from './Evaluation/EvaluationCardListCard'
 import { api } from '@/api'
 import RouteOverview from './RouteOverview'
-import FineTuneJobActionGroup from '@/domain/space/components/FineTuneJobActionGroup'
-import Search from '@starwhale/ui/Search'
-import { useFetchDatastoreByTable } from '@starwhale/core/datastore'
-import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
-import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
-import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
+import EvalJobActionGroup from '@/domain/space/components/EvalJobActionGroup'
 
 export default function FineTuneEvaluationListCard() {
     const config = useFineTuneEvaluation()
-    const { projectId, spaceId, gotoList, gotoDetails, jobId, routes } = config
-
-    // const { renderCell } = useFineTuneColumns()
-    const info = api.useListFineTune(projectId, spaceId)
-    const onRefresh = () => info.refetch()
-
+    const { projectId, spaceId, gotoList, jobId, routes } = config
+    const info = api.useGetJob(projectId, jobId)
+    const [key, forceUpdate] = React.useReducer((s) => s + 1, 0)
+    const onRefresh = () => {
+        info.refetch()
+        forceUpdate()
+    }
     const isExpand = !!jobId
     const url = isExpand && routes.evaluationOverview
 
@@ -35,34 +30,20 @@ export default function FineTuneEvaluationListCard() {
 
     const params = {
         projectId,
+        jobId,
         spaceId,
+        job: info.data,
     }
-
-    const ref = React.useRef<HTMLDivElement>(null)
-    const [queries, setQueries] = React.useState([])
-    const { getQueryParams } = useDatastorePage({
-        pageNum: 1,
-        pageSize: 1000,
-        queries,
-    })
-    const datatore = useFetchDatastoreByTable(getQueryParams(config.summaryTableName))
-    const $columns = useDatastoreColumns(datatore)
+    const actionBar = <EvalJobActionGroup onRefresh={onRefresh} {...params} />
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
             {!isExpand && (
-                <div ref={ref} className='ft-list content-full pr-5px'>
+                <div className='ft-list content-full'>
                     <EvaluationListCard {...config} />
                 </div>
             )}
-            {isExpand && (
-                <RouteOverview
-                    title={null}
-                    url={url}
-                    onClose={gotoList}
-                    extraActions={<FineTuneJobActionGroup onRefresh={onRefresh} {...params} />}
-                />
-            )}
+            {isExpand && <RouteOverview key={key} title={null} url={url} onClose={gotoList} extraActions={actionBar} />}
         </div>
     )
 }

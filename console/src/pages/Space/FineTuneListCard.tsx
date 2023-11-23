@@ -13,7 +13,11 @@ export default function FineTuneListCard() {
     const { query, updateQuery } = useQueryArgs()
     const { renderCell } = useFineTuneColumns()
     const info = api.useListFineTune(projectId, spaceId)
-
+    const [key, forceUpdate] = React.useReducer((s) => s + 1, 0)
+    const onRefresh = () => {
+        info.refetch()
+        forceUpdate()
+    }
     const { fineTuneId } = query
     const isExpand = !!fineTuneId
     const url = isExpand && `/projects/${projectId}/spaces/${spaceId}/fine-tunes/${fineTuneId}/overview`
@@ -41,6 +45,7 @@ export default function FineTuneListCard() {
         jobId: fineTune?.job?.id,
         job: fineTune?.job,
     }
+    const actionBar = <FineTuneJobActionGroup onRefresh={onRefresh} {...params} />
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
@@ -48,16 +53,17 @@ export default function FineTuneListCard() {
                 data={info.data}
                 isExpand={isExpand}
                 onView={(id) => updateQuery({ fineTuneId: id })}
-                onRefresh={() => info.refetch()}
+                onRefresh={onRefresh}
                 viewId={fineTuneId}
                 params={params}
             />
             {isExpand && (
                 <RouteOverview
+                    key={key}
                     title={title}
                     url={url}
                     onClose={() => updateQuery({ fineTuneId: undefined })}
-                    extraActions={<FineTuneJobActionGroup onRefresh={() => info.refetch()} {...params} />}
+                    extraActions={actionBar}
                 />
             )}
         </div>

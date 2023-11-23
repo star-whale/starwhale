@@ -4,8 +4,10 @@ import { useRouteContext } from '@/contexts/RouteContext'
 import { ExtendButton } from '@starwhale/ui'
 import { useBoolean } from 'ahooks'
 import { headerHeight } from '@/consts'
+import { useTrace } from '@starwhale/core'
 
 const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, extraActions }) => {
+    const trace = useTrace('route-inline')
     const [isRoot, setIsRoot] = React.useState(true)
     const history = useHistory()
     const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?/:path2?')
@@ -21,7 +23,8 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, ex
         // eslint-disable-next-line
     }, [history, path, path2, fineTuneId, url])
 
-    console.log('rootUrl', rootUrl)
+    trace(history.location)
+    console.log('rootUrl', rootUrl, history)
 
     return (
         <div className='ft-route-bar absolute left-20px right-20px top-20px z-1 gap-16px flex justify-between'>
@@ -33,7 +36,6 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, ex
                         onClick={() => history.go(-1)}
                     />
                 )}
-                {history.location.pathname}
             </div>
 
             <div className='flex flex-shrink-0 gap-16px'>
@@ -104,8 +106,8 @@ const RouteOverview = ({ url, onClose, title, extraActions }) => {
                 }`}
                 style={style}
             >
-                <div className={`h-56px w-full p-20px ${!isRoot && 'border-b'}`}>{isRoot && title}</div>
-                <div className='content-full p-20px '>
+                <div className={`h-56px w-full px-20px ${!isRoot && 'border-b'}`}>{isRoot && title}</div>
+                <div className='content-full p-20px'>
                     <RoutesInline initialEntries={url && [url]} key={url}>
                         <RouteBar
                             rootUrl={url}
