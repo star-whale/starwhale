@@ -238,7 +238,9 @@ public class FineTuneAppService {
                 if (null == env) {
                     env = new ArrayList<>();
                 }
-                Map<String, String> envMap = env.stream().collect(Collectors.toMap(Env::getName, Env::getValue));
+                Map<String, String> envMap = env.stream()
+                        .filter(e -> null != e.getValue())
+                        .collect(Collectors.toMap(Env::getName, Env::getValue));
                 //if ENV vars in user's step spec conflicts with controller's, use controller's ENV
                 List<Env> controllerEnvs = envSupplier.get();
                 if (null != controllerEnvs) {
