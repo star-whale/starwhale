@@ -68,6 +68,7 @@ import {
     IExportEvalData,
     IFileDeleteRequest,
     IFineTuneInfoData,
+    IFineTuneMigrationRequest,
     IFineTuneSpaceCreateRequest,
     IFlushData,
     IFlushRequest,
@@ -122,7 +123,6 @@ import {
     IListFineTuneData,
     IListJobsData,
     IListModelData,
-    IListModelTree1Data,
     IListModelTreeData,
     IListModelVersionData,
     IListModelVersionTagsData,
@@ -165,7 +165,6 @@ import {
     IQueryTableData,
     IQueryTableRequest,
     IRecentDatasetTreeData,
-    IRecentModelTree1Data,
     IRecentModelTreeData,
     IRecentRuntimeTreeData,
     IRecoverDatasetData,
@@ -2494,19 +2493,13 @@ export class Api<SecurityDataType = unknown> {
      * @secure
      * @response `200` `IImportEvalData` OK
      */
-    importEval = (
-        projectId: number,
-        spaceId: number,
-        query: {
-            ids: string[]
-        },
-        params: RequestParams = {}
-    ) =>
+    importEval = (projectId: number, spaceId: number, data: IFineTuneMigrationRequest, params: RequestParams = {}) =>
         this.http.request<IImportEvalData, any>({
             path: `/api/v1/project/${projectId}/ftspace/${spaceId}/eval/import`,
             method: 'POST',
-            query: query,
+            body: data,
             secure: true,
+            type: ContentType.Json,
             ...params,
         })
 
@@ -2520,19 +2513,13 @@ export class Api<SecurityDataType = unknown> {
      * @secure
      * @response `200` `IExportEvalData` OK
      */
-    exportEval = (
-        projectId: number,
-        spaceId: number,
-        query: {
-            ids: string[]
-        },
-        params: RequestParams = {}
-    ) =>
+    exportEval = (projectId: number, spaceId: number, data: IFineTuneMigrationRequest, params: RequestParams = {}) =>
         this.http.request<IExportEvalData, any>({
             path: `/api/v1/project/${projectId}/ftspace/${spaceId}/eval/export`,
             method: 'POST',
-            query: query,
+            body: data,
             secure: true,
+            type: ContentType.Json,
             ...params,
         })
 
@@ -4694,85 +4681,6 @@ export class Api<SecurityDataType = unknown> {
             () => this.getModelServingStatus(projectId, servingId, params),
             {
                 enabled: [projectId, servingId].every(Boolean),
-            }
-        )
-    /**
-     * No description
-     *
-     * @tags FineTune
-     * @name RecentModelTree1
-     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/recent-model-tree
-     * @secure
-     * @response `200` `IRecentModelTree1Data` OK
-     */
-    recentModelTree1 = (
-        projectId: number,
-        spaceId: number,
-        query?: {
-            /**
-             * Data limit
-             * @format int32
-             * @min 1
-             * @max 50
-             * @default 5
-             */
-            limit?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        this.http.request<IRecentModelTree1Data, any>({
-            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/recent-model-tree`,
-            method: 'GET',
-            query: query,
-            secure: true,
-            ...params,
-        })
-
-    useRecentModelTree1 = (
-        projectId: number,
-        spaceId: number,
-        query?: {
-            /**
-             * Data limit
-             * @format int32
-             * @min 1
-             * @max 50
-             * @default 5
-             */
-            limit?: number
-        },
-        params: RequestParams = {}
-    ) =>
-        useQuery(
-            qs.stringify(['recentModelTree1', projectId, spaceId, query, params]),
-            () => this.recentModelTree1(projectId, spaceId, query, params),
-            {
-                enabled: [projectId, spaceId].every(Boolean),
-            }
-        )
-    /**
-     * No description
-     *
-     * @tags FineTune
-     * @name ListModelTree1
-     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/model-tree
-     * @secure
-     * @response `200` `IListModelTree1Data` OK
-     */
-    listModelTree1 = (projectId: number, spaceId: number, params: RequestParams = {}) =>
-        this.http.request<IListModelTree1Data, any>({
-            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/model-tree`,
-            method: 'GET',
-            secure: true,
-            ...params,
-        })
-
-    useListModelTree1 = (projectId: number, spaceId: number, params: RequestParams = {}) =>
-        useQuery(
-            qs.stringify(['listModelTree1', projectId, spaceId, params]),
-            () => this.listModelTree1(projectId, spaceId, params),
-            {
-                enabled: [projectId, spaceId].every(Boolean),
             }
         )
     /**

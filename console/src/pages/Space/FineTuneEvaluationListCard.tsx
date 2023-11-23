@@ -50,18 +50,11 @@ export default function FineTuneEvaluationListCard() {
 
     return (
         <div className={`grid gap-15px content-full ${isExpand ? 'grid-cols-[360px_1fr]' : 'grid-cols-1'}`}>
-            <div ref={ref} className='ft-list content-full pr-5px'>
-                {isExpand ? (
-                    <>
-                        <div className='w-full mb-20px'>
-                            <DatastoreMixedTypeSearch columns={$columns} value={queries} onChange={setQueries as any} />
-                        </div>
-                        <EvaluationCardListCard list={datatore.records} onView={gotoDetails} viewId={jobId} />
-                    </>
-                ) : (
+            {!isExpand && (
+                <div ref={ref} className='ft-list content-full pr-5px'>
                     <EvaluationListCard {...config} />
-                )}
-            </div>
+                </div>
+            )}
             {isExpand && (
                 <RouteOverview
                     title={null}

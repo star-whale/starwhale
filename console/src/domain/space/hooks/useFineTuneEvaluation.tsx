@@ -1,13 +1,14 @@
 import React from 'react'
 import { api } from '@/api'
 import { useHistory, useParams } from 'react-router-dom'
-import { useEventCallback, useQueryArgs } from '@starwhale/core'
+import { useEventCallback, useForceUpdate, useQueryArgs } from '@starwhale/core'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { val } from '@starwhale/ui/GridTable/utils'
 import { ExtendButton } from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useEvaluationStore } from '@starwhale/ui/GridTable/store'
 import { useAsyncEffect } from 'ahooks'
+import { toaster } from 'baseui/toast'
 
 export const useFineTuneEvaluation = () => {
     const {
@@ -125,12 +126,19 @@ export const useFineTuneEvaluation = () => {
         ]
     }
 
+    const update = useForceUpdate()
+
     const importEval = useEventCallback(async (ids) => {
-        await api.importEval(projectId, spaceId, ids)
+        const resp = await api.importEval(projectId, spaceId, { ids })
+        update()
+        // toaster.positive(resp.message, {
+        //     autoHideDuration: 1000,
+        // })
     })
 
     const exportEval = useEventCallback(async (ids) => {
-        await api.exportEval(projectId, spaceId, ids)
+        await api.exportEval(projectId, spaceId, { ids })
+        update()
     })
 
     return {

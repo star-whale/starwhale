@@ -404,6 +404,10 @@ export interface IResponseMessageMapObjectObject {
     data: Record<string, object>
 }
 
+export interface IFineTuneMigrationRequest {
+    ids: string[]
+}
+
 export interface IColumnSchemaDesc {
     name?: string
     /** @format int32 */
@@ -1185,7 +1189,6 @@ export interface IModelVersionViewVo {
     tags?: string[]
     /** @format int32 */
     shared: number
-    draft?: boolean
     stepSpecs: IStepSpec[]
     builtInRuntime?: string
     /** @format int64 */
@@ -2391,10 +2394,6 @@ export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 export type IPullUriContentData = any
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
-
-export type IRecentModelTree1Data = IResponseMessageListModelViewVo['data']
-
-export type IListModelTree1Data = IResponseMessageListModelViewVo['data']
 
 export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
 

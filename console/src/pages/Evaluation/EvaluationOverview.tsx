@@ -38,7 +38,7 @@ function EvaluationOverview() {
 
     const record: Record<string, any> | undefined = info?.data?.records?.[0]
 
-    const datasetUri = record?.['sys/dataset_uris'].split(',')
+    const datasetUri = record?.['sys/dataset_uris']?.split(',')
     const datasetLinkMap = record?.['sys/_dataset_uris']?.map((v: string, index: number) => {
         const str = v.replace('project', 'projects').replace('dataset', 'datasets').replace('version', 'versions')
         return (

@@ -28,7 +28,11 @@ export default function FineTuneNewCard() {
                 bizType: 'FINE_TUNE',
                 bizId: spaceId,
             })
-            history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
+            if (type === 'EVALUATION') {
+                history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`)
+            } else {
+                history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
+            }
         },
         [projectId, spaceId, type, history]
     )
