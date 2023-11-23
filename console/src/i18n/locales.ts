@@ -842,6 +842,14 @@ const ft = {
         en: 'Synchronize',
         zh: '同步',
     },
+    'ft.eval.export.check.label': {
+        en: 'Synchronize evaluations',
+    },
+
+    'ft.eval.export.check.desc': {
+        en: 'Synchronize all the evaluations of this released model in this fine-tuning zone to the evaluation module.',
+        zh: '将该 Fine-tuning Zone 中该模型的所有评测同步到评测模块。',
+    },
     'ft.eval.import': {
         en: 'Add',
         zh: '导入',
@@ -916,6 +924,10 @@ const ft = {
     },
     'ft.job.model.release.succes': {
         en: 'Release Success',
+        zh: '发布成功',
+    },
+    'ft.job.model.release.done': {
+        en: 'Release Success, Success {{0}} / Failed {{1}}',
         zh: '发布成功',
     },
     'ft.base.model.name': {

@@ -125,7 +125,6 @@ export function ZoneModelTreeSelector(
                 }
             }) ?? []
     )
-
     const $combinedData = React.useMemo(() => {
         const data = [
             ...updateVersion(modelInfo.data, QuickGroupEnum.all),

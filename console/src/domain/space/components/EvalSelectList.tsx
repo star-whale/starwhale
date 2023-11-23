@@ -51,11 +51,13 @@ function EvalSelectListModal({
         <Modal isOpen={isOpen} onClose={() => setIsOpen?.(false)} closeable animate size='80%' returnFocus={false}>
             <ModalHeader>{title}</ModalHeader>
             <ModalBody>
-                {type === 'import' ? (
-                    <EvalSelectImportList value={value} onChange={setValue} />
-                ) : (
-                    <EvalSelectExportList value={value} onChange={setValue} />
-                )}
+                <div className='h-570px w-full'>
+                    {type === 'import' ? (
+                        <EvalSelectImportList value={value} onChange={setValue} />
+                    ) : (
+                        <EvalSelectExportList value={value} onChange={setValue} />
+                    )}
+                </div>
             </ModalBody>
             <ModalFooter>
                 <div style={{ display: 'flex' }}>

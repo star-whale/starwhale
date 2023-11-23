@@ -43,7 +43,9 @@ export default function FineTuneEvaluationListCard() {
                     <EvaluationListCard {...config} />
                 </div>
             )}
-            {isExpand && <RouteOverview key={key} title={null} url={url} onClose={gotoList} extraActions={actionBar} />}
+            {isExpand && (
+                <RouteOverview key={key} url={url} onClose={gotoList} extraActions={actionBar} hasFullscreen={false} />
+            )}
         </div>
     )
 }

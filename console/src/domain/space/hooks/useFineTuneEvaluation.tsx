@@ -68,28 +68,28 @@ export const useFineTuneEvaluation = () => {
         }
     }, [jobId, summaryTableName])
 
-    const summaryTableExportQuery = React.useMemo(() => {
-        if (!summaryTableName || !jobId) return undefined
+    // const summaryTableExportQuery = React.useMemo(() => {
+    //     if (!summaryTableName || !jobId) return undefined
 
-        return {
-            tableName: summaryTableName,
-            start: 0,
-            limit: 1,
-            rawResult: true,
-            ignoreNonExistingTable: true,
-            filter: {
-                operator: 'EQUAL',
-                operands: [
-                    {
-                        intValue: jobId,
-                    },
-                    {
-                        columnName: 'sys/id',
-                    },
-                ],
-            },
-        }
-    }, [jobId, summaryTableName])
+    //     return {
+    //         tableName: summaryTableName,
+    //         start: 0,
+    //         limit: 1,
+    //         rawResult: true,
+    //         ignoreNonExistingTable: true,
+    //         filter: {
+    //             operator: 'EQUAL',
+    //             operands: [
+    //                 {
+    //                     intValue: jobId,
+    //                 },
+    //                 {
+    //                     columnName: 'sys/id',
+    //                 },
+    //             ],
+    //         },
+    //     }
+    // }, [jobId, summaryTableName])
 
     const getActions = (row) => {
         return [
@@ -110,10 +110,12 @@ export const useFineTuneEvaluation = () => {
             },
             {
                 access: true,
+                quickAccess: true,
                 component: ({ hasText }) => (
                     <ExtendButton
                         isFull
                         icon='tasks'
+                        tooltip={!hasText ? t('View Tasks') : undefined}
                         styleas={['menuoption', hasText ? undefined : 'highlight']}
                         onClick={() => gotoTasks(row)}
                     >

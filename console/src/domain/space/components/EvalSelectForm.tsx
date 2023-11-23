@@ -107,22 +107,20 @@ function EvalSelectForm({
     })
 
     return (
-        <div className='h-570px w-full'>
-            <GridCombineTable
-                paginationable
-                queryable
-                // columnable
-                compareable={false}
-                page={page}
-                onPageChange={setPage}
-                store={useStore}
-                records={records}
-                columnTypes={columnTypes}
-                columnHints={columnHints}
-                columns={$columns}
-                onRowSelectedChange={handelRowSelectedChange}
-            />
-        </div>
+        <GridCombineTable
+            paginationable
+            queryable
+            // columnable
+            compareable={false}
+            page={page}
+            onPageChange={setPage}
+            store={useStore}
+            records={records}
+            columnTypes={columnTypes}
+            columnHints={columnHints}
+            columns={$columns}
+            onRowSelectedChange={handelRowSelectedChange}
+        />
     )
 }
 

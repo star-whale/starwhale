@@ -58,7 +58,7 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, ex
     )
 }
 
-const RouteOverview = ({ url, onClose, title, extraActions }) => {
+const RouteOverview = ({ url, onClose, title, extraActions, hasFullscreen = true }) => {
     const { RoutesInline } = useRouteContext()
     const [fullscreen, { toggle }] = useBoolean(false)
     const [isRoot, setIsRoot] = React.useState(true)

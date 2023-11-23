@@ -9,15 +9,8 @@ import { VariableSizeGrid } from '../react-window'
 import TableActions from '../../GridTable/components/TableActions'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
-    const [css, theme] = themedUseStyletron()
     return (
-        <div
-            className={css({
-                ...theme.typography.ParagraphSmall,
-                color: theme.colors.contentPrimary,
-                marginLeft: theme.sizing.scale500,
-            })}
-        >
+        <div className='m-auto content-full'>
             {typeof props.children === 'function' ? props.children() : props.children}
         </div>
     )
