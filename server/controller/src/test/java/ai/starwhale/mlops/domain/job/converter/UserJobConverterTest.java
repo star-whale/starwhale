@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +34,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -45,6 +48,7 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +69,7 @@ class UserJobConverterTest {
     private JobSpecParser jobSpecParser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws JsonProcessingException {
         projectService = mock(ProjectService.class);
         modelService = mock(ModelService.class);
         userService = mock(UserService.class);
@@ -73,7 +77,26 @@ class UserJobConverterTest {
         runtimeDao = mock(RuntimeDao.class);
         datasetDao = mock(DatasetDao.class);
         systemSettingService = mock(SystemSettingService.class);
-        jobSpecParser = new JobSpecParser();
+        jobSpecParser = mock(JobSpecParser.class);
+        when(jobSpecParser.parseAndFlattenStepFromYaml(anyString()))
+                .thenReturn(List.of(
+                        StepSpec.builder()
+                                .name("a")
+                                .build(),
+                        StepSpec.builder()
+                                .name("b")
+                                .build()
+                ));
+
+        when(jobSpecParser.parseStepFromYaml(any(), anyString()))
+                .thenReturn(List.of(
+                        StepSpec.builder()
+                                .name("a")
+                                .build(),
+                        StepSpec.builder()
+                                .name("b")
+                                .build()
+                ));
 
         userJobConverter = new UserJobConverter(
                 idConverter,

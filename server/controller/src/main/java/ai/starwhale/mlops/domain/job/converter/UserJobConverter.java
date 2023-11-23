@@ -142,7 +142,7 @@ public class UserJobConverter {
             datasets = idConvertor.revertList(request.getDatasetVersionIds());
         }
 
-        List<StepSpec> stepSpecOverWrites = null;
+        List<StepSpec> stepSpecOverWrites;
         try {
             stepSpecOverWrites = jobSpecParser.parseAndFlattenStepFromYaml(request.getStepSpecOverWrites());
         } catch (JsonProcessingException e) {
@@ -272,7 +272,7 @@ public class UserJobConverter {
                 .modelName(model.getName())
                 .modelVersion(modelService.findModelVersion(modelVersion.getId()))
                 .stepSpec(stepSpecYaml)
-                .name(request.getStepSpecOverWrites().get(0).getJobName())
+                .name(steps.get(0).getJobName())
                 .modelVersionId(modelVersion.getId())
                 .modelVersionValue(modelVersion.getVersionName())
                 .modelUri(String.format(FORMATTER_URI_ARTIFACT, model.getProjectId(), "model", model.getId(),
