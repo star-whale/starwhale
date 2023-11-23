@@ -51,6 +51,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -266,5 +267,25 @@ class UserJobConverterTest {
         // test without runtime
         req.setRuntimeVersionId(null);
         assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req).build());
+    }
+
+    @Test
+    public void stepAndHandlerCheck() {
+        var req = UserJobCreateRequest.builder()
+                .devMode(false)
+                .jobType(JobType.EVALUATION)
+                .modelVersionId(1L)
+                .runtimeVersionId(2L)
+                .datasetVersionIds(List.of(3L, 4L))
+                .handler("handler")
+                .stepSpecOverWrites(List.of(StepSpec.builder().build()))
+                .ttlInSec(100L)
+                .user(mock(User.class))
+                .build();
+        Assertions.assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req));
+
+        req.setHandler(null);
+        req.setStepSpecOverWrites(null);
+        Assertions.assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req));
     }
 }
