@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -72,6 +73,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 public class FineTuneAppService {
 
@@ -241,7 +243,10 @@ public class FineTuneAppService {
                 }
                 Map<String, String> envMap = env.stream()
                         .filter(e -> null != e.getValue())
-                        .collect(Collectors.toMap(Env::getName, Env::getValue));
+                        .collect(Collectors.toMap(Env::getName, Env::getValue, (env1, env2) -> {
+                            log.warn("duplicate env detected from user, random value {} is chosen", env1);
+                            return env1;
+                        }));
                 //if ENV vars in user's step spec conflicts with controller's, use controller's ENV
                 List<Env> controllerEnvs = envSupplier.get();
                 if (null != controllerEnvs) {
