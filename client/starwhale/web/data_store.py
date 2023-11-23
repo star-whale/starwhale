@@ -25,6 +25,10 @@ class Filter(BaseModel):
 
 
 class QueryTableRequest(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        populate_by_name = True
+
     table_name: str = Field(alias="tableName")
     filter: t.Optional[Filter] = None
     limit: int
@@ -51,6 +55,7 @@ def list_tables(request: ListTablesRequest) -> SuccessResp:
 
 @router.post("/queryTable")
 def query_table(request: QueryTableRequest) -> SuccessResp:
+    print(request)
     eval_id = _is_eval_summary(request)
     if eval_id:
         return _eval_summary(eval_id)

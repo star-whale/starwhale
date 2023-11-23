@@ -37,6 +37,7 @@ from starwhale.core.model.cli import _list as list_cli
 from starwhale.core.model.cli import _serve as serve_cli
 from starwhale.core.model.cli import _prepare_model_run_args
 from starwhale.core.model.view import ModelTermView, ModelTermViewJson
+from starwhale.base.models.base import obj_to_model
 from starwhale.base.uri.project import Project
 from starwhale.core.model.model import (
     CloudModel,
@@ -177,7 +178,7 @@ class StandaloneModelTestCase(TestCase):
         job_yaml_path = bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         assert job_yaml_path.exists()
-        job_contents = JobHandlers.parse_obj(load_yaml(job_yaml_path)).root
+        job_contents = obj_to_model(load_yaml(job_yaml_path), JobHandlers).data
 
         assert job_contents == {
             "base": [

@@ -5,7 +5,6 @@ import sys
 import typing
 
 import requests
-from pydantic import BaseModel
 from requests import exceptions
 from tenacity import (
     retry,
@@ -14,16 +13,13 @@ from tenacity import (
     retry_if_exception_type,
     wait_random_exponential,
 )
-from pydantic.tools import parse_obj_as
 from fastapi.encoders import jsonable_encoder
-from pydantic.type_adapter import TypeAdapter
 
 from starwhale.utils import console
-from starwhale.base.models.base import ListFilter
+from starwhale.base.models.base import RespType, ListFilter, SwBaseModel, obj_to_model
 from starwhale.base.client.models.base import ResponseCode
 
 T = typing.TypeVar("T")
-RespType = typing.TypeVar("RespType", bound=BaseModel)
 CLIENT_DEFAULT_RETRY_ATTEMPTS = 10
 
 
@@ -54,10 +50,10 @@ class TypeWrapper(typing.Generic[T]):
         self._type = type_
         self._data = data
         self._raise_on_error = False
-        self._base = TypeAdapter(ResponseCode).validate_python(data)
+        self._base = obj_to_model(data, ResponseCode)
         self._response: T | None = None
         if self.is_success():
-            self._response = parse_obj_as(self._type, self._data)  # type: ignore
+            self._response = obj_to_model(self._data, self._type)  # type: ignore
         else:
             console.debug(f"request failed, response msg: {self._base.message}")
 
@@ -105,12 +101,12 @@ class Client:
         self,
         method: str,
         uri: str,
-        json: dict | BaseModel | None = None,
+        json: dict | SwBaseModel | None = None,
         params: dict | None = None,
         data: typing.Any = None,
     ) -> typing.Any:
         _json: typing.Any = json
-        if isinstance(json, BaseModel):
+        if isinstance(json, SwBaseModel):
             # convert to dict with proper alias
             _json = jsonable_encoder(json.dict(by_alias=True, exclude_none=True))
         resp = self.session.request(
@@ -140,12 +136,18 @@ class Client:
         return self.http_request("GET", uri, params=params)
 
     def http_post(
-        self, uri: str, json: dict | BaseModel | None = None, data: typing.Any = None
+        self,
+        uri: str,
+        json: dict | SwBaseModel | None = None,
+        data: typing.Any = None,
     ) -> typing.Any:
         return self.http_request("POST", uri, json=json, data=data)
 
     def http_put(
-        self, uri: str, json: dict | BaseModel | None = None, params: dict | None = None
+        self,
+        uri: str,
+        json: dict | SwBaseModel | None = None,
+        params: dict | None = None,
     ) -> typing.Any:
         return self.http_request("PUT", uri, json=json, params=params)
 

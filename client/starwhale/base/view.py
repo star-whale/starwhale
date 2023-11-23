@@ -9,7 +9,6 @@ from functools import wraps
 from collections import OrderedDict
 
 from rich import box, pretty
-from pydantic import BaseModel
 from rich.panel import Panel
 from rich.table import Table
 from rich.protocol import is_renderable
@@ -32,6 +31,7 @@ from starwhale.utils.json import Encoder
 from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.models.base import SwBaseModel
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 
@@ -268,7 +268,7 @@ class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def print_table(
         title: str,
-        data: t.Sequence[t.Dict[str, t.Any]] | t.Sequence[BaseModel],
+        data: t.Sequence[t.Dict[str, t.Any]] | t.Sequence[SwBaseModel],
         custom_header: t.Optional[t.Dict[int, t.Dict]] = None,
         custom_column: t.Optional[t.Dict[str, t.Callable[[t.Any], str]]] = None,
         custom_row: t.Optional[t.Callable] = None,
@@ -307,7 +307,7 @@ class BaseTermView(SWCliConfigMixed):
 
         header_inited = False
         for row in data:
-            if isinstance(row, BaseModel):
+            if isinstance(row, SwBaseModel):
                 row = row.dict()
             row = filter_row(row) if allowed_keys else row
             if not header_inited:

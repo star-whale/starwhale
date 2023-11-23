@@ -44,7 +44,6 @@ import filelock
 import requests
 import tenacity
 import jsonlines
-from pydantic import validator
 from sortedcontainers import SortedDict, SortedList, SortedValuesView
 from typing_extensions import Protocol
 
@@ -82,6 +81,7 @@ class SwType(metaclass=ABCMeta):
         if isinstance(type, SwScalarType):
             return ColumnSchemaDesc(type=str(type), **kwargs)
         if isinstance(type, SwTupleType):
+            # https://github.com/pydantic/pydantic/issues/6022#issuecomment-1668916345
             ret = ColumnSchemaDesc(
                 type="TUPLE",
                 element_type=SwType.encode_schema(type.main_type),
@@ -1557,19 +1557,6 @@ class TombstoneDesc(SwBaseModel):
     # This works only if the key is a string
     key_prefix: Optional[str] = None
 
-    @validator("end")
-    def end_must_be_greater_than_start(
-        cls, v: KeyType, values: Dict[str, Any]
-    ) -> KeyType:
-        if v is None:
-            return None
-        if values["start"] is not None:
-            if not isinstance(v, type(values["start"])):
-                raise ValueError("end has different type with start")
-            if v <= values["start"]:
-                raise ValueError("end must be greater than start")
-        return v  # type: ignore
-
     def __gt__(self, other: object) -> Any:
         if not isinstance(other, TombstoneDesc):
             raise NotImplementedError
@@ -2445,7 +2432,7 @@ class LocalDataStore:
         manifest_file = Path(self.root_path) / datastore_manifest_file_name
         with filelock.FileLock(str(Path(self.root_path) / ".lock")):
             with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
-                tmp.write(manifest.model_dump_json(indent=2))
+                tmp.write(json.dumps(manifest.to_dict()))
                 tmp.flush()
                 shutil.move(tmp.name, manifest_file)
 

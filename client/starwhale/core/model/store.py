@@ -11,6 +11,7 @@ from starwhale.consts import (
 )
 from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
+from starwhale.base.models.base import obj_to_model
 from starwhale.base.models.model import File, Files
 from starwhale.base.uri.resource import ResourceType
 
@@ -53,7 +54,7 @@ class ModelStorage(BaseStorage):
             return self.manifest.get("resources", [])  # type: ignore[no-any-return]
         else:
             data = load_yaml(self.resource_files_path)
-            return Files.parse_obj(data).root
+            return obj_to_model(data, Files).data  # type: ignore
 
     @property
     def digest_path(self) -> Path:

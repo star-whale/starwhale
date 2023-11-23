@@ -1,4 +1,5 @@
 import json
+import dataclasses
 from typing import Any
 
 from pydantic import BaseModel
@@ -10,4 +11,6 @@ class Encoder(json.JSONEncoder):
             return o.decode("utf-8")
         if isinstance(o, BaseModel):
             return json.loads(o.json(exclude_unset=True))
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
         return super().default(o)

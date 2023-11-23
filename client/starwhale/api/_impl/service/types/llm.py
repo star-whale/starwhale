@@ -4,15 +4,13 @@ import inspect
 from typing import Any, Set, Dict, List, Callable, Optional
 
 from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
 
 from starwhale.base.client.models.models import ComponentSpecValueType
 
 from .types import ServiceType, ComponentSpec
 
 
-@dataclass
-class Message:
+class Message(BaseModel):
     content: str
     role: str
 
