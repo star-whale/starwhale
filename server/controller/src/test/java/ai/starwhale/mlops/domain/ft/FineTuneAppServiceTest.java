@@ -46,6 +46,7 @@ import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
@@ -138,7 +139,20 @@ class FineTuneAppServiceTest {
         request.setModelVersionId("1");
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
-        when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
+        when(jobSpecParser.parseAndFlattenStepFromYaml(any()))
+                .thenReturn(List.of(StepSpec.builder()
+                                            .env(List.of(
+                                                    new Env(
+                                                            "dupK",
+                                                            "v"
+                                                    ),
+                                                    new Env(
+                                                            "dupK",
+                                                            "v2"
+                                                    )
+                                            ))
+                                            .build())
+                );
         when(modelDao.findVersionById(anyLong())).thenReturn(ModelVersionEntity.builder().build());
         fineTuneAppService.createFineTune("1", 1L, request);
 
