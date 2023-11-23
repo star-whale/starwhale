@@ -25,13 +25,13 @@ from starwhale.base.client.models.models import (
 )
 
 
-class Handler(StepSpecClient):
+class Handler:
     _registered_functions: t.Dict[str, t.Callable] = {}
-    _registered_handlers: t.Dict[str, Handler] = {}
+    _registered_handlers: t.Dict[str, StepSpecClient] = {}
     _registering_lock = threading.Lock()
 
     def __str__(self) -> str:
-        return f"Handler[{self.name}]: name-{self.show_name}"
+        return f"Handler {self._registered_handlers.keys()}"
 
     __repr__ = __str__
 
@@ -186,7 +186,7 @@ class Handler(StepSpecClient):
                 ext_cmd_args = " ".join(
                     [f"--{p.name}" for p in parameters_sig if p.required]
                 )
-            _handler = cls(
+            _handler = StepSpecClient(
                 name=key_name,
                 show_name=name or func_name,
                 func_name=func_name,
@@ -275,7 +275,7 @@ class Handler(StepSpecClient):
     @classmethod
     def get_registered_handlers_with_expanded_needs(
         cls, search_modules: t.List[str], package_dir: Path
-    ) -> t.Dict[str, t.List[Handler]]:
+    ) -> t.Dict[str, t.List[StepSpecClient]]:
         cls._preload_registering_handlers(search_modules, package_dir)
 
         with cls._registering_lock:
@@ -384,7 +384,7 @@ class Handler(StepSpecClient):
                         evaluate_register()(evaluate_func)
 
     @classmethod
-    def _register(cls, handler: Handler, func: t.Callable) -> None:
+    def _register(cls, handler: StepSpecClient, func: t.Callable) -> None:
         with cls._registering_lock:
             cls._registered_handlers[handler.name] = handler
             cls._registered_functions[handler.name] = func

@@ -6,7 +6,7 @@ datasets:
 desc: null
 finished_at: 2022-09-01 15:08:15 CST
 model_src_dir: /path/to/.starwhale/self/job/xx/xxyy/snapshot
-scheduler_run_args: []
+scheduler_run_args: {}
 project: self
 error_message: ''
 status: success

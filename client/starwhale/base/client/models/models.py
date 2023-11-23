@@ -31,7 +31,7 @@ class UserRoleUpdateRequest(SwBaseModel):
 
 
 class UpdateProjectRequest(SwBaseModel):
-    project_name: Optional[constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$')] = Field(
+    project_name: Optional[constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$')] = Field(
         None, alias='projectName'
     )
     privacy: Optional[str] = None
@@ -74,7 +74,7 @@ class FineTuneSpaceCreateRequest(SwBaseModel):
 class ApplySignedUrlRequest(SwBaseModel):
     flag: Optional[str] = None
     path_prefix: str = Field(..., alias='pathPrefix')
-    files: List[str] = Field(..., unique_items=True)
+    files: List[str]
 
 
 class SignedUrlResponse(SwBaseModel):
@@ -83,7 +83,7 @@ class SignedUrlResponse(SwBaseModel):
 
 
 class UserRequest(SwBaseModel):
-    user_name: constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{3,32}$') = Field(
+    user_name: constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{3,32}$') = Field(
         ..., alias='userName'
     )
     user_pwd: str = Field(..., alias='userPwd')
@@ -116,7 +116,7 @@ class UserRoleAddRequest(SwBaseModel):
 
 
 class CreateProjectRequest(SwBaseModel):
-    project_name: constr(regex=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$') = Field(
+    project_name: constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$') = Field(
         ..., alias='projectName'
     )
     privacy: str
@@ -404,7 +404,7 @@ class OrderByDesc(SwBaseModel):
 
 class ListTablesRequest(SwBaseModel):
     prefix: Optional[str] = None
-    prefixes: Optional[List[str]] = Field(None, unique_items=True)
+    prefixes: Optional[List[str]] = None
 
 
 class TableNameListVo(SwBaseModel):
@@ -1338,7 +1338,7 @@ class UserRoleDeleteRequest(SwBaseModel):
 
 class FileDeleteRequest(SwBaseModel):
     path_prefix: str = Field(..., alias='pathPrefix')
-    files: List[str] = Field(..., unique_items=True)
+    files: List[str]
 
 
 class ResponseMessageSignedUrlResponse(SwBaseModel):
@@ -1762,7 +1762,7 @@ class TableQueryOperandDesc(SwBaseModel):
     bytes_value: Optional[str] = Field(None, alias='bytesValue')
 
 
-ColumnHintsDesc.update_forward_refs()
-ColumnSchemaDesc.update_forward_refs()
-QueryTableRequest.update_forward_refs()
-TableQueryFilterDesc.update_forward_refs()
+ColumnHintsDesc.model_rebuild()
+ColumnSchemaDesc.model_rebuild()
+QueryTableRequest.model_rebuild()
+TableQueryFilterDesc.model_rebuild()

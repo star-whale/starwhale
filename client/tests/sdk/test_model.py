@@ -170,7 +170,7 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                     "**/*.swmp/src/.starwhale/jobs.yaml"
                 )
             )[0]
-            return JobHandlers.parse_obj(load_yaml(path)).__root__
+            return JobHandlers.parse_obj(load_yaml(path)).root
 
         inner_jobs = _get_jobs_yaml("inner")
         outer_jobs = _get_jobs_yaml("outer")

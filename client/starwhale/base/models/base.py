@@ -9,9 +9,9 @@ from fastapi.encoders import jsonable_encoder
 class SwBaseModel(BaseModel):
     class Config:
         arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        # smart_union=True is used to make sure that pydantic will not convert str to int automatically
-        smart_union = True
+        populate_by_name = True
+        # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.protected_namespaces
+        protected_namespaces = ()
 
     def to_dict(
         self, by_alias: bool = True, exclude_none: bool = True
@@ -28,7 +28,7 @@ class SwBaseModel(BaseModel):
 
 
 class ListFilter(SwBaseModel):
-    name: t.Optional[str]
-    version: t.Optional[str]
-    owner: t.Optional[t.Union[str, int]]
+    name: t.Optional[str] = None
+    version: t.Optional[str] = None
+    owner: t.Optional[t.Union[str, int]] = None
     latest: bool = False

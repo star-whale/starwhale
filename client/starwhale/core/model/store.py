@@ -53,7 +53,7 @@ class ModelStorage(BaseStorage):
             return self.manifest.get("resources", [])  # type: ignore[no-any-return]
         else:
             data = load_yaml(self.resource_files_path)
-            return Files.parse_obj(data).__root__
+            return Files.parse_obj(data).root
 
     @property
     def digest_path(self) -> Path:

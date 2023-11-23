@@ -44,7 +44,8 @@ install_requires = [
     "trio>=0.22.0",
     "httpx>=0.22.0",
     "urllib3<1.27",
-    "pydantic<2.0.0",  # current broker and fastapi lib code only work with pydantic < 2.0.0
+    "pydantic>=2.0.0",
+    "pydantic-settings",
     "sortedcontainers",
     "importlib_resources",
     # workaround: email-validator 2.1.0 has a syntax error in python 3.7, but the email-validator is necessary for fastapi.
