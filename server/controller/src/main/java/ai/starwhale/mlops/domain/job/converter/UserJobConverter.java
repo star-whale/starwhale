@@ -142,11 +142,13 @@ public class UserJobConverter {
             datasets = idConvertor.revertList(request.getDatasetVersionIds());
         }
 
-        List<StepSpec> stepSpecOverWrites;
-        try {
-            stepSpecOverWrites = jobSpecParser.parseAndFlattenStepFromYaml(request.getStepSpecOverWrites());
-        } catch (JsonProcessingException e) {
-            throw new SwValidationException(ValidSubject.MODEL, "invalid step spec", e);
+        List<StepSpec> stepSpecOverWrites = null;
+        if (StringUtils.hasText(request.getStepSpecOverWrites())) {
+            try {
+                stepSpecOverWrites = jobSpecParser.parseAndFlattenStepFromYaml(request.getStepSpecOverWrites());
+            } catch (JsonProcessingException e) {
+                throw new SwValidationException(ValidSubject.MODEL, "invalid step spec", e);
+            }
         }
         return UserJobCreateRequest.builder()
                 .project(project)
