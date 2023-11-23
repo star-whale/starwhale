@@ -371,6 +371,10 @@ class ResponseMessageMapObjectObject(SwBaseModel):
     data: Dict[str, Dict[str, Any]]
 
 
+class FineTuneMigrationRequest(SwBaseModel):
+    ids: List[str]
+
+
 class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
