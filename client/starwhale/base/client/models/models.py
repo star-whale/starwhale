@@ -375,6 +375,17 @@ class FineTuneMigrationRequest(SwBaseModel):
     ids: List[str]
 
 
+class MigrationResult(SwBaseModel):
+    success: Optional[int] = None
+    fail: Optional[int] = None
+
+
+class ResponseMessageMigrationResult(SwBaseModel):
+    code: str
+    message: str
+    data: MigrationResult
+
+
 class RecordValueDesc(SwBaseModel):
     key: str
     value: Optional[Dict[str, Any]] = None
