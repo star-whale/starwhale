@@ -34,8 +34,8 @@ class ApiSpec(SwBaseModel):
 
 
 class ServiceSpec(SwBaseModel):
-    title: t.Optional[str]
-    description: t.Optional[str]
+    title: t.Optional[str] = None
+    description: t.Optional[str] = None
     version: str
     apis: t.List[ApiSpec]
 

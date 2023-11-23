@@ -75,5 +75,6 @@ gen-model:
 		--url $(OPEN_API_URL)/v3/api-docs/Api \
 		--snake-case-field \
 		--base-class starwhale.base.models.base.SwBaseModel \
+		--output-model-type pydantic_v2.BaseModel \
 		--output starwhale/base/client/models/models.py
 

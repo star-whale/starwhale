@@ -9,18 +9,18 @@ from starwhale.base.client.models.models import JobVo, TaskVo
 
 class JobManifest(SwBaseModel):
     created_at: str
-    scheduler_run_args: Optional[dict]
+    scheduler_run_args: Optional[dict] = None
     version: str
     project: str
     model_src_dir: str
-    datasets: Optional[List[str]]
+    datasets: Optional[List[str]] = None
     # for backward compatibility, old version may not have this field
-    model: Optional[str]
+    model: Optional[str] = None
     status: str
-    handler_name: Optional[str]  # added from v0.5.12
-    error_message: Optional[str]
+    handler_name: Optional[str] = None  # added from v0.5.12
+    error_message: Optional[str] = None
     finished_at: str
-    finetune_validation_datasets: Optional[List[str]]
+    finetune_validation_datasets: Optional[List[str]] = None
 
 
 class LocalJobInfo(SwBaseModel):

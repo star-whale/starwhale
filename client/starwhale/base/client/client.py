@@ -16,6 +16,7 @@ from tenacity import (
 )
 from pydantic.tools import parse_obj_as
 from fastapi.encoders import jsonable_encoder
+from pydantic.type_adapter import TypeAdapter
 
 from starwhale.utils import console
 from starwhale.base.models.base import ListFilter
@@ -53,7 +54,7 @@ class TypeWrapper(typing.Generic[T]):
         self._type = type_
         self._data = data
         self._raise_on_error = False
-        self._base = parse_obj_as(ResponseCode, data)
+        self._base = TypeAdapter(ResponseCode).validate_python(data)
         self._response: T | None = None
         if self.is_success():
             self._response = parse_obj_as(self._type, self._data)  # type: ignore

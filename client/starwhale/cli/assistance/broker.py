@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from fastapi import Body, FastAPI, Request, Response, HTTPException
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 from starwhale.utils import console
 
@@ -20,10 +20,10 @@ class Settings(BaseSettings):
     broker_url: str = ""
     chunk_size: int = 65536
     max_chunk_count: int = 64
-    gc_timeout_seconds = 600.0
-    gc_interval_seconds = 60.0
-    keep_alive_seconds = 15.0
-    keep_alive_check_interval_seconds = 5.0
+    gc_timeout_seconds: float = 600.0
+    gc_interval_seconds: float = 60.0
+    keep_alive_seconds: float = 15.0
+    keep_alive_check_interval_seconds: float = 5.0
 
 
 settings = Settings()

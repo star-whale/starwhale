@@ -50,22 +50,3 @@ def test_to_dict():
         "dictField": {"foo": 1, "bar": 2},
         "opt_field": None,
     }
-
-    # test smart union
-    data = {
-        "int_field": "1",
-        "str_field": 1,
-        "bool_field": "True",
-        "floatField": "1.0",
-        "list_field": ["1", "2", "3"],
-        "dictField": {"foo": "1", "bar": "2"},
-    }
-    foo = Foo(**data)
-    assert foo.to_dict() == {
-        "int_field": 1,
-        "str_field": "1",
-        "bool_field": True,
-        "floatField": 1.0,
-        "list_field": [1, 2, 3],
-        "dictField": {"foo": 1, "bar": 2},
-    }

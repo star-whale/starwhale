@@ -114,13 +114,13 @@ class StandaloneModelTestCase(TestCase):
         m_preload: MagicMock,
         m_copy_dir: MagicMock,
     ) -> None:
-        Handler._registered_handlers["base"] = Handler(
+        Handler._registered_handlers["base"] = StepSpecClient(
             name="base",
             show_name="t1",
             func_name="test_func1",
             module_name="mock",
         )
-        Handler._registered_handlers["depend"] = Handler(
+        Handler._registered_handlers["depend"] = StepSpecClient(
             name="depend",
             show_name="t2",
             func_name="test_func2",
@@ -177,7 +177,7 @@ class StandaloneModelTestCase(TestCase):
         job_yaml_path = bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         assert job_yaml_path.exists()
-        job_contents = JobHandlers.parse_obj(load_yaml(job_yaml_path)).__root__
+        job_contents = JobHandlers.parse_obj(load_yaml(job_yaml_path)).root
 
         assert job_contents == {
             "base": [
@@ -1155,7 +1155,7 @@ class CloudModelTest(TestCase):
         error_message = "failed to add tags"
         add_tag_request = rm.post(
             tag_url,
-            json={"data": "failed", "code": 500, "message": error_message},
+            json={"data": "failed", "code": "500", "message": error_message},
             status_code=500,
         )
         ModelTermView(uri).tag(tags=["t1"], ignore_errors=True, force_add=False)

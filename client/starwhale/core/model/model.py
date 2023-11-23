@@ -79,6 +79,7 @@ from starwhale.base.models.model import (
     JobHandlers,
     ModelListType,
     LocalModelInfo,
+    StepSpecClient,
     LocalModelInfoBase,
 )
 from starwhale.base.uri.instance import Instance
@@ -271,7 +272,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         # make virtual handler to make the model serving can be used in model run
         func = self._serve_handler
         cls_name, _, func_name = func.__qualname__.rpartition(".")
-        h = Handler(
+        h = StepSpecClient(
             name="serving",
             show_name="virtual handler for model serving",
             func_name=func.__qualname__,
@@ -515,7 +516,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             project=self.uri.project.id,
             path=str(self.store.bundle_path),
             tags=StandaloneTag(self.uri).list(),
-            handlers=handlers.__root__,
+            handlers=handlers.root,
             model_yaml=(self.store.hidden_sw_dir / DefaultYAMLName.MODEL).read_text(),
             files=self.store.resource_files,
             created_at=self._manifest.get(CREATED_AT_KEY, ""),
