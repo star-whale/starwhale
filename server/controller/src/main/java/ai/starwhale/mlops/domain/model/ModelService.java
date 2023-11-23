@@ -381,7 +381,8 @@ public class ModelService {
     }
 
     public List<ModelViewVo> listModelVersionView(
-            String projectUrl, boolean includeShared, boolean includeCurrentProject) {
+            String projectUrl, boolean includeShared, boolean includeCurrentProject
+    ) {
         var project = projectService.findProject(projectUrl);
         var list = new ArrayList<ModelViewVo>();
         if (includeCurrentProject) {
@@ -399,6 +400,20 @@ public class ModelService {
         var project = projectService.findProject(projectUrl);
         var userId = userService.currentUserDetail().getId();
         var list = modelVersionMapper.listModelVersionsByUserRecentlyUsed(project.getId(), userId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    public List<ModelViewVo> listRecentlyModelVersionView(String projectUrl, Long spaceId, Integer limit) {
+        var project = projectService.findProject(projectUrl);
+        var userId = userService.currentUserDetail().getId();
+        var list = modelVersionMapper.listModelVersionsByUserRecentlyUsedInFtSpace(
+                project.getId(), userId, spaceId, limit);
+        return viewEntityToVo(list, project);
+    }
+
+    public List<ModelViewVo> listFtSpaceModelVersionView(String projectUrl, Long spaceId) {
+        var project = projectService.findProject(projectUrl);
+        var list = modelVersionMapper.listModelVersionViewByFtSpace(project.getId(), spaceId);
         return viewEntityToVo(list, project);
     }
 
@@ -446,6 +461,7 @@ public class ModelService {
                                      .latest(entity.getId() != null && entity.getId().equals(latest))
                                      .createdTime(entity.getCreatedTime().getTime())
                                      .shared(toInt(entity.getShared()))
+                                     .draft(entity.getDraft())
                                      .builtInRuntime(entity.getBuiltInRuntime())
                                      .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                                      .build());

@@ -829,6 +829,24 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 allOf(hasProperty("versionName", is("v4")),
                         hasProperty("alias", is("v4")),
                         hasProperty("latest", is(true)))));
+
+        res = modelService.listModelVersionView("1", false, true);
+        assertEquals(2, res.size());
+
+        res = modelService.listModelVersionView("1", false, true);
+        assertEquals(2, res.size());
+
+        res = modelService.listFtSpaceModelVersionView("1", 1L);
+        assertEquals(0, res.size());
+
+        res = modelService.listFtSpaceModelVersionView("1", 1L);
+        assertEquals(0, res.size());
+
+        res = modelService.listRecentlyModelVersionView("1", 5);
+        assertEquals(0, res.size());
+
+        res = modelService.listRecentlyModelVersionView("1", 1L, 5);
+        assertEquals(0, res.size());
     }
 
     @Test

@@ -1575,6 +1575,7 @@ class ModelVersionViewVo(SwBaseModel):
     latest: bool
     tags: Optional[List[str]] = None
     shared: int
+    draft: Optional[bool] = None
     step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
     created_time: int = Field(..., alias='createdTime')

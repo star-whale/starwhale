@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.ft;
 import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
@@ -387,6 +388,14 @@ public class FineTuneAppService {
                     modelVersion
             );
         }
+    }
+
+    public List<ModelViewVo> listModelVersionView(Long projectId, Long spaceId) {
+        return modelService.listFtSpaceModelVersionView(String.valueOf(projectId), spaceId);
+    }
+
+    public List<ModelViewVo> listRecentlyModelVersionView(Long projectId, Long spaceId, Integer limit) {
+        return modelService.listRecentlyModelVersionView(String.valueOf(projectId), spaceId, limit);
     }
 
     private void checkFeatureEnabled() throws StarwhaleApiException {

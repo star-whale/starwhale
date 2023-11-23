@@ -47,6 +47,8 @@ public class ModelVersionViewVo {
     @NotNull
     private Integer shared;
 
+    private Boolean draft;
+
     @NotNull
     private List<StepSpec> stepSpecs;
 
