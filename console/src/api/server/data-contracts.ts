@@ -408,6 +408,19 @@ export interface IFineTuneMigrationRequest {
     ids: string[]
 }
 
+export interface IMigrationResult {
+    /** @format int32 */
+    success?: number
+    /** @format int32 */
+    fail?: number
+}
+
+export interface IResponseMessageMigrationResult {
+    code: string
+    message: string
+    data: IMigrationResult
+}
+
 export interface IColumnSchemaDesc {
     name?: string
     /** @format int32 */
@@ -1189,6 +1202,7 @@ export interface IModelVersionViewVo {
     tags?: string[]
     /** @format int32 */
     shared: number
+    draft?: boolean
     stepSpecs: IStepSpec[]
     builtInRuntime?: string
     /** @format int64 */
@@ -2262,9 +2276,9 @@ export type IListSpaceData = IResponseMessagePageInfoFineTuneSpaceVo['data']
 
 export type ICreateSpaceData = IResponseMessageString['data']
 
-export type IImportEvalData = IResponseMessageString['data']
+export type IImportEvalData = IResponseMessageMigrationResult['data']
 
-export type IExportEvalData = IResponseMessageString['data']
+export type IExportEvalData = IResponseMessageMigrationResult['data']
 
 export type IGetPanelSettingData = IResponseMessageString['data']
 
@@ -2394,6 +2408,10 @@ export type IListDatasetTreeData = IResponseMessageListDatasetViewVo['data']
 export type IPullUriContentData = any
 
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
+
+export type IRecentModelTree1Data = IResponseMessageListModelViewVo['data']
+
+export type IListModelTree1Data = IResponseMessageListModelViewVo['data']
 
 export type IListFineTuneData = IResponseMessagePageInfoFineTuneVo['data']
 

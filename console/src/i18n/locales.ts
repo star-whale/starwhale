@@ -811,16 +811,20 @@ const ft = {
         zh: 'Fine-tuning',
     },
     'ft.space.title': {
-        en: 'Fine-tuning Spaces',
-        zh: 'Fine-tuning 空间',
+        en: 'Fine-tuning Zones',
+        zh: 'Fine-tuning Zones',
     },
     'ft.space.id': {
-        en: 'Fine-tuning Space ID',
-        zh: 'Fine-tuning 空间 ID',
+        en: 'Zone ID',
+        zh: 'Zone ID',
     },
     'ft.space.name': {
-        en: 'Space Name',
-        zh: '空间名称',
+        en: 'Zone Name',
+        zh: 'Zone 名称',
+    },
+    'ft.space': {
+        en: 'Zone',
+        zh: 'Zone',
     },
     'ft.space.action.edit': {
         en: 'Edit',
@@ -847,8 +851,8 @@ const ft = {
         zh: '在线评测',
     },
     'ft.id': {
-        en: 'Fine-tuning ID',
-        zh: 'Fine-tuning ID',
+        en: 'Run ID',
+        zh: 'Run ID',
     },
     'ft.job.new': {
         en: 'Create Fine-tuning Job',

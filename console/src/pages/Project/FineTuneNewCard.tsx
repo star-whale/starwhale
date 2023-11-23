@@ -7,6 +7,7 @@ import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest, api } from '@/api'
 import { ExtendButton } from '@starwhale/ui'
 import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
+import FormFieldZoneModel from '@/domain/job/components/FormFieldZoneModel'
 
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
@@ -58,6 +59,7 @@ export default function FineTuneNewCard() {
                 job={job}
                 autoFill={!job}
                 enableTemplate={false}
+                plugins={{ FormFieldModel: FormFieldZoneModel }}
                 validationDatasets={info?.data?.validationDatasets}
             />
         </Card>

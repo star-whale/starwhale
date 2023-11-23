@@ -34,6 +34,12 @@ function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender, extr
             .filter((node: TreeNodeData) => {
                 if (node.isLeafNode && node.children?.length !== 0) return true
                 if (!extraFilters) return true
+
+                console.log(
+                    extraFilters,
+                    node,
+                    extraFilters?.every((filter) => filter(node))
+                )
                 return extraFilters?.every((filter) => filter(node))
             })
             .filter((node: TreeNodeData) => {
@@ -45,11 +51,12 @@ function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender, extr
     // console.log(walk($data))
 
     return React.useMemo(() => {
+        console.log($data, extraFilters)
         return {
             data: walk($data),
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [$data, search, searchFilter, nodeRender])
+    }, [$data, search, searchFilter, extraFilters, nodeRender])
 }
 
 export { useTreeDataLoader }
