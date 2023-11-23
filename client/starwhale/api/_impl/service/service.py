@@ -95,7 +95,9 @@ class Service:
 
         return decorator
 
-    def get_spec(self) -> ServiceSpec:
+    def get_spec(self) -> ServiceSpec | None:
+        if not self.apis:
+            return None
         return ServiceSpec(
             version="0.0.2",
             apis=list(filter(None, [_api.to_spec() for _api in self.apis.values()])),
@@ -111,7 +113,11 @@ class Service:
     ) -> None:
         console.debug(f"add api {uri}")
         if uri in self.apis:
-            raise ValueError(f"Duplicate api uri: {uri}")
+            old = self.apis[uri].func
+            # the dest module will be force unloaded and reload when generating job yaml,
+            # so we need to check if the module and function name are the same
+            if old.__module__ != func.__module__ or old.__name__ != func.__name__:
+                raise ValueError(f"Duplicate api uri: {uri}")
 
         _api = Api(
             func=func,
@@ -143,7 +149,7 @@ class Service:
         app = FastAPI(title=title)
 
         @app.get("/api/spec")
-        def spec() -> ServiceSpec:
+        def spec() -> ServiceSpec | None:
             return self.get_spec()
 
         for _api in self.apis.values():

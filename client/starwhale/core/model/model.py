@@ -265,9 +265,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         svc = self._get_service(search_modules, workdir)
         file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
         spec = svc.get_spec()
-        ensure_file(file, json.dumps(spec.to_dict(), indent=4), parents=True)
-        if len(spec.apis) == 0:
+        if spec is None:
             return
+        ensure_file(file, json.dumps(spec.to_dict(), indent=4), parents=True)
 
         # make virtual handler to make the model serving can be used in model run
         func = self._serve_handler
