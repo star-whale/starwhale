@@ -187,7 +187,7 @@ public class UserJobConverter {
         var stepSpecOverWrites = request.getStepSpecOverWrites();
         var handler = request.getHandler();
         if ((CollectionUtils.isEmpty(stepSpecOverWrites) && !StringUtils.hasText(handler))
-                || !(CollectionUtils.isEmpty(stepSpecOverWrites) && StringUtils.hasText(handler))) {
+                || (!CollectionUtils.isEmpty(stepSpecOverWrites) && StringUtils.hasText(handler))) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided only one"),
                     HttpStatus.BAD_REQUEST
