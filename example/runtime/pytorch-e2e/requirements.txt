@@ -18,3 +18,4 @@ torchaudio
 torchdata
 torchtext
 torchvision
+gradio
