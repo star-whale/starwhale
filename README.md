@@ -213,6 +213,7 @@ We use [MNIST](https://paperswithcode.com/dataset/mnist) as the hello world exam
 
 ## Examples
 
+- 🔥 Helloworld: [Cloud](https://cloud.starwhale.cn/projects/15/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/helloworld).
 - 🚀 LLM:
   - 🐊 OpenSource LLMs Leaderboard: [Evaluation](https://cloud.starwhale.cn/projects/349/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/llm-leaderboard)
   - 🐢 Llama2: [Run llama2 chat in five minutes](https://starwhale.cn/docs/en/blog/run-llama2-chat-in-five-minutes/), [Code](https://github.com/star-whale/starwhale/tree/main/example/LLM/llama2)
