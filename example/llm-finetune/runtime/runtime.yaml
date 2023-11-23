@@ -5,6 +5,6 @@ environment:
   os: ubuntu:20.04
   cuda: "11.7"
   python: "3.10"
-  starwhale_version: git+https://github.com/star-whale/starwhale.git@bebd503#subdirectory=client&egg=starwhale
+  starwhale_version: git+https://github.com/star-whale/starwhale.git@c57144a#subdirectory=client&egg=starwhale
 dependencies:
   - requirements.txt

@@ -54,4 +54,3 @@ swcli dataset build --json https://raw.githubusercontent.com/baichuan-inc/Baichu
 
 swcli -vvv model run -w . -m finetune --dataset belle_chat_random_10k --handler finetune:lora_finetune
 ```
-
