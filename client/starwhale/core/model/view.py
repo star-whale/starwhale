@@ -21,6 +21,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import cmp_file_content
 from starwhale.base.view import BaseTermView, TagViewMixin
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.consts.env import SWEnv
 from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
@@ -342,10 +343,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
         _uri = Project(project_uri)
         cls.must_have_project(_uri)
         model = Model.get_cls(_uri.instance)
-        _models, _pager = model.list(
-            _uri, page, size, BaseBundle.get_list_filter(filters)
-        )
-        return _models, {}
+        return model.list(_uri, page, size, BaseBundle.get_list_filter(filters))
 
     @classmethod
     @BaseTermView._only_standalone
@@ -441,18 +439,25 @@ class ModelTermViewRich(ModelTermView):
             project_uri, fullname, show_removed, page, size, filters
         )
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = dict()
+
+        cls.print_header(project_uri)
         if _models and isinstance(_models[0], ModelVo):
-            custom_column.update(
-                {
-                    "tags": lambda x: ",".join(
-                        [x["version"]["alias"]] + (x["version"]["tags"] or [])
-                    ),
-                    "size": lambda x: pretty_bytes(x["version"]["size"]),
-                    "owner": lambda x: x["name"],
-                    "version": lambda x: x["name"],
-                    "shared": lambda x: str(x["version"]["shared"]),
-                }
-            )
+            rows: t.List[t.Dict[str, t.Any]] = []
+            for i in _models:
+                if not isinstance(i, ModelVo):
+                    continue
+                rows.append(
+                    {
+                        "name": i.name,
+                        "version": i.version.name,
+                        "tags": ",".join([i.version.alias] + (i.version.tags or [])),
+                        "size": pretty_bytes(i.version.size or 0),
+                        "owner": i.owner.name,
+                        "shared": i.version.shared != 0,
+                        "created_at": CloudRequestMixed.fmt_timestamp(i.created_time),
+                    }
+                )
+                cls.print_table("Model List", rows)
         else:
             custom_column.update(
                 {
@@ -461,8 +466,19 @@ class ModelTermViewRich(ModelTermView):
                 }
             )
 
-        cls.print_header(project_uri)
-        cls.print_table("Model List", _models, custom_column=custom_column)
+            cls.print_table(
+                "Model List",
+                _models,
+                custom_column=custom_column,
+                allowed_keys=[
+                    "name",
+                    "version",
+                    "tags",
+                    "size",
+                    "created_at",
+                    "is_removed",
+                ],
+            )
         return _models, _pager
 
 
