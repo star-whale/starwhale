@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.event.EventService;
+import ai.starwhale.mlops.domain.ft.bo.MigrationResult;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
@@ -45,6 +46,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -87,6 +89,8 @@ public class FineTuneAppService {
 
     final JobMapper jobMapper;
 
+    final JobStatusMachine jobStatusMachine;
+
     private final JobSpecParser jobSpecParser;
 
     private final IdConverter idConverter;
@@ -116,7 +120,7 @@ public class FineTuneAppService {
             JobCreator jobCreator,
             FineTuneMapper fineTuneMapper,
             JobMapper jobMapper,
-            JobSpecParser jobSpecParser,
+            JobStatusMachine jobStatusMachine, JobSpecParser jobSpecParser,
             IdConverter idConverter,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
@@ -133,6 +137,7 @@ public class FineTuneAppService {
         this.jobCreator = jobCreator;
         this.fineTuneMapper = fineTuneMapper;
         this.jobMapper = jobMapper;
+        this.jobStatusMachine = jobStatusMachine;
         this.jobSpecParser = jobSpecParser;
         this.idConverter = idConverter;
         this.modelDao = modelDao;
@@ -301,20 +306,45 @@ public class FineTuneAppService {
                 .build();
     }
 
-    public int importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
-        return evaluationRepo.migration(
+    public MigrationResult importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
+        // validate the src rows
+        // 1. status should be final
+        var jobs = jobMapper.findJobByUuids(uuids);
+        var validates = jobs.stream()
+                .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus()))
+                .map(JobEntity::getJobUuid)
+                .collect(Collectors.toList());
+        var success = evaluationRepo.migration(
                 String.format(TABLE_NAME_FORMAT, projectId),
-                uuids,
+                validates,
                 String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
         );
+        return MigrationResult.builder()
+                .success(success)
+                .fail(uuids.size() - success)
+                .build();
     }
 
-    public int exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
-        return evaluationRepo.migration(
+    public MigrationResult exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
+        // validate the src rows
+        // 1. status should be final
+        // 2. model should not be draft
+        var jobs = jobMapper.findJobByUuids(uuids);
+        var validates = jobs.stream()
+                .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus())
+                        && !jobEntity.getModelVersion().getDraft()
+                )
+                .map(JobEntity::getJobUuid)
+                .collect(Collectors.toList());
+        var success = evaluationRepo.migration(
                 String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
-                uuids,
+                validates,
                 String.format(TABLE_NAME_FORMAT, projectId)
         );
+        return MigrationResult.builder()
+                .success(success)
+                .fail(uuids.size() - success)
+                .build();
     }
 
     /**

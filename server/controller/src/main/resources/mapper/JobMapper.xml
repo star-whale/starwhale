@@ -137,6 +137,17 @@
     </foreach>
   </select>
 
+  <select id="findJobByUuids" resultMap="jobResultMap">
+    <include refid="select_jobs"/>
+    <where>
+      and job_uuid in
+    </where>
+    <foreach item="item" index="index" collection="uuids"
+      open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
+
   <update id="updateJobStatus">
     update job_info set job_status = #{jobStatus} WHERE id in
     <foreach item="item" index="index" collection="jobIds"

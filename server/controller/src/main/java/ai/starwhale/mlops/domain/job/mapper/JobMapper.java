@@ -49,6 +49,8 @@ public interface JobMapper {
 
     JobEntity findJobByUuid(@Param("uuid") String uuid);
 
+    List<JobEntity> findJobByUuids(@Param("uuids") List<String> uuids);
+
     int addJob(@Param("job") JobEntity jobEntity);
 
     List<JobEntity> findJobByStatusIn(@Param("jobStatuses") List<JobStatus> jobStatuses);
