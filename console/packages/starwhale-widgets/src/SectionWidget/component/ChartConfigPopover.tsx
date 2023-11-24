@@ -8,7 +8,6 @@ import useTranslation from '@/hooks/useTranslation'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { ExtendButton } from '@starwhale/ui/Button'
 import { createUseStyles } from 'react-jss'
-import { Tooltip } from '@starwhale/ui/Tooltip'
 
 const useStyles = createUseStyles({
     icon: {
