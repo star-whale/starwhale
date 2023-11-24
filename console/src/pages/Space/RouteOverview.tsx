@@ -6,28 +6,30 @@ import { useBoolean } from 'ahooks'
 import { headerHeight } from '@/consts'
 import { useTrace } from '@starwhale/core'
 
-const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, extraActions }) => {
+const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, extraActions, hasFullscreen }) => {
     const trace = useTrace('route-inline')
     const [isRoot, setIsRoot] = React.useState(true)
     const history = useHistory()
-    const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?/:path2?')
-    const { path, path2, fineTuneId, url } = match?.params ?? ({} as any)
+    const match = useRouteMatch('/projects/:projectId/spaces/:spaceId/:path?/:id?/:path2?')
+    const { path, path2, id, url } = match?.params ?? ({} as any)
 
     useEffect(() => {
         // in case of redirect to current page
-        if (!fineTuneId && !path2 && path === 'fine-tune-runs') {
+        if (!id && !path2 && path === 'fine-tune-runs') {
             history.replace(rootUrl)
         }
-        onRootChange?.(fineTuneId)
-        setIsRoot(fineTuneId)
+        if (!id && !path2 && path === 'fine-tune-evals') {
+            history.replace(rootUrl)
+        }
+        onRootChange?.(id)
+        setIsRoot(id)
         // eslint-disable-next-line
-    }, [history, path, path2, fineTuneId, url])
+    }, [history, path, path2, id, url])
 
     trace(history.location)
-    console.log('rootUrl', rootUrl, history)
 
     return (
-        <div className='ft-route-bar absolute left-20px right-20px top-20px z-1 gap-16px flex justify-between'>
+        <div className='ft-route-bar absolute left-20px right-20px top-18px z-1 gap-16px flex justify-between'>
             <div className=''>
                 {!isRoot && (
                     <ExtendButton
@@ -40,7 +42,9 @@ const RouteBar = ({ onClose, onFullScreen, fullscreen, rootUrl, onRootChange, ex
 
             <div className='flex flex-shrink-0 gap-16px'>
                 {isRoot && extraActions}
-                <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
+                {hasFullscreen && (
+                    <ExtendButton icon='fullscreen' styleas={['iconnormal', 'nopadding']} onClick={onFullScreen} />
+                )}
                 {!fullscreen && (
                     <ExtendButton
                         icon='close'
@@ -106,8 +110,10 @@ const RouteOverview = ({ url, onClose, title, extraActions, hasFullscreen = true
                 }`}
                 style={style}
             >
-                <div className={`h-56px w-full px-20px ${!isRoot && 'border-b'}`}>{isRoot && title}</div>
-                <div className='content-full p-20px'>
+                <div className={`h-56px w-full px-20px pt-10px flex items-center ${!isRoot && 'border-b'}`}>
+                    {isRoot && title}
+                </div>
+                <div className='content-full p-20px pt-10px'>
                     <RoutesInline initialEntries={url && [url]} key={url}>
                         <RouteBar
                             rootUrl={url}
@@ -116,6 +122,7 @@ const RouteOverview = ({ url, onClose, title, extraActions, hasFullscreen = true
                             fullscreen={fullscreen}
                             onFullScreen={toggle}
                             extraActions={extraActions}
+                            hasFullscreen={hasFullscreen}
                         />
                     </RoutesInline>
                 </div>

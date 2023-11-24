@@ -4,6 +4,7 @@ import { api } from '@/api'
 import RouteOverview from './RouteOverview'
 import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
 import EvalJobActionGroup from '@/domain/space/components/EvalJobActionGroup'
+import { useCreation } from 'ahooks'
 
 export default function FineTuneEvaluationListCard() {
     const config = useFineTuneEvaluation()
@@ -17,16 +18,10 @@ export default function FineTuneEvaluationListCard() {
     const isExpand = !!jobId
     const url = isExpand && routes.evaluationOverview
 
-    // const title = useCreation(() => {
-    //     if (!fineTune) return null
-    //     const renderer = renderCell(fineTune)
-    //     return (
-    //         <>
-    //             <div className='flex items-center font-600'>{renderer('baseModelName')}</div>
-    //             <div className='flex-1 items-center mt-6px mb-auto'>{renderer('baseModelVersionAlias')}</div>
-    //         </>
-    //     )
-    // }, [fineTuneId, fineTune])
+    const title = useCreation(() => {
+        if (!info) return null
+        return <div className='flex items-center font-600'>{info.data?.jobName}</div>
+    }, [info])
 
     const params = {
         projectId,
@@ -44,7 +39,14 @@ export default function FineTuneEvaluationListCard() {
                 </div>
             )}
             {isExpand && (
-                <RouteOverview key={key} url={url} onClose={gotoList} extraActions={actionBar} hasFullscreen={false} />
+                <RouteOverview
+                    key={key}
+                    url={url}
+                    onClose={gotoList}
+                    extraActions={actionBar}
+                    hasFullscreen={false}
+                    title={title}
+                />
             )}
         </div>
     )

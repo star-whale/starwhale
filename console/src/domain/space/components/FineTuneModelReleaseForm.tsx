@@ -112,9 +112,17 @@ export default function FineTuneModelReleaseForm({ onSubmit }: IFormProps) {
                 </div>
             )}
             <FormItem name='isSync'>
-                <FormCheckbox>
-                    <p>{t('ft.eval.export.check.label')}</p>
-                    <p className='text-12px color-[rgba(2,16,43,0.60)]'>{t('ft.eval.export.check.desc')}</p>
+                <FormCheckbox
+                    overrides={{
+                        Root: {
+                            style: {
+                                alignItems: 'flex-start',
+                            },
+                        },
+                    }}
+                >
+                    <p className='mt-2px'>{t('ft.eval.export.check.label')}</p>
+                    <p className='mt-5px text-12px color-[rgba(2,16,43,0.60)]'>{t('ft.eval.export.check.desc')}</p>
                 </FormCheckbox>
             </FormItem>
             <div

@@ -35,7 +35,7 @@ function FineTuneEvaluationOverviewLayout({ children }: IJobLayoutProps) {
         const items = [
             {
                 title: t('Evaluations'),
-                path: `/projects/${projectId}/spaces/${spaceId}/evaluations`,
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
             },
             {
                 title: job?.uuid ?? '-',

@@ -31,10 +31,10 @@ export default function FineTuneListCard() {
         if (!fineTune) return null
         const renderer = renderCell(fineTune)
         return (
-            <>
+            <div>
                 <div className='flex items-center font-600'>{renderer('baseModelName')}</div>
                 <div className='flex-1 items-center mt-6px mb-auto'>{renderer('baseModelVersionAlias')}</div>
-            </>
+            </div>
         )
     }, [fineTuneId, fineTune])
 
