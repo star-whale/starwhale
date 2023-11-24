@@ -149,7 +149,7 @@ class Service:
         app = FastAPI(title=title)
 
         @app.get("/api/spec")
-        def spec() -> ServiceSpec | None:
+        def spec() -> t.Union[ServiceSpec, None]:
             return self.get_spec()
 
         for _api in self.apis.values():
