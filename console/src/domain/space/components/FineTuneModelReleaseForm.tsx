@@ -146,18 +146,24 @@ export function FineTuneModelReleaseModal({ isOpen, setIsOpen, data, onRefresh }
     const [t] = useTranslation()
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const handleSubmit = useEventCallback(async (values) => {
-        // await api.releaseFt(projectId, spaceId, {
-        //     ftId: data.id,
-        //     nonExistingModelName: values.nonExistingModelName,
-        //     existingModelId: values.existingModelId,
-        // })
+        await api.releaseFt(projectId, spaceId, {
+            ftId: data.id,
+            nonExistingModelName: values.nonExistingModelName,
+            existingModelId: values.existingModelId,
+        })
         if (values.ids && values.ids.length > 0) {
             const { success, fail } = await api.exportEval(projectId, spaceId, {
                 ids: values.ids,
             })
+            if (fail && fail > 0) {
+                toaster.negative(t('ft.job.model.release.fail', [success, fail]), { autoHideDuration: 2000 })
+            } else if (success === 0) {
+                toaster.warning(t('ft.job.model.release.warning'), { autoHideDuration: 2000 })
+            } else {
+                toaster.positive(t('ft.job.model.release.done'), { autoHideDuration: 2000 })
+            }
 
             setIsOpen(false)
-            toaster.positive(t('ft.job.model.release.succes'), { autoHideDuration: 2000 })
             onRefresh?.()
             return
         }

@@ -844,6 +844,7 @@ const ft = {
     },
     'ft.eval.export.check.label': {
         en: 'Synchronize evaluations',
+        zh: '同步评测记录',
     },
 
     'ft.eval.export.check.desc': {
@@ -927,8 +928,16 @@ const ft = {
         zh: '发布成功',
     },
     'ft.job.model.release.done': {
-        en: 'Release Success, Success {{0}} / Failed {{1}}',
-        zh: '发布成功',
+        en: 'All the selected evaluations have been successfully synchronized to the Evaluations Module.',
+        zh: '已成功同步所有选中的评测到评测模块。',
+    },
+    'ft.job.model.release.warning': {
+        en: 'None of the selected evaluations have been synchronized to the Evaluations Module.',
+        zh: '未同步任何选中的评测到评测模块。',
+    },
+    'ft.job.model.release.fail': {
+        en: '{{0}} evaluations have been successfully synchronized to the Evaluations Module. {{1}} failed.',
+        zh: '成功同步 {{0}} 个评测到评测模块，失败 {{1}} 个。',
     },
     'ft.base.model.name': {
         en: 'Base Model Name',
