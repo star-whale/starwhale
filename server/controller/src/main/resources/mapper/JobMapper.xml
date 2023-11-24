@@ -139,10 +139,8 @@
 
   <select id="findJobByUuids" resultMap="jobResultMap">
     <include refid="select_jobs"/>
-    <if test="projectId != null">
-      and project_id = #{projectId}
-    </if>
     <where>
+      and project_id = #{projectId}
       and job_uuid in
     </where>
     <foreach item="item" index="index" collection="uuids"
