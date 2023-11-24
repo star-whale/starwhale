@@ -26,7 +26,6 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -718,19 +717,12 @@ public class RuntimeService {
                     String.format("%s/version/%s", runtime.getName(), runtimeVersion.getVersionName())));
             stepSpec.setEnv(env);
         });
-        String stepSpecOverWrites;
-        try {
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
-        } catch (JsonProcessingException e) {
-            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
-                    e);
-        }
         var project = projectService.findProject(projectUrl);
         var jobReq = JobCreateRequest.builder()
                 .project(project)
                 .comment("runtime-dockerizing")
                 .resourcePool(runTimeProperties.getImageBuild().getResourcePool())
-                .stepSpecOverWrites(stepSpecOverWrites)
+                .stepSpecOverWrites(stepSpecs)
                 .jobType(JobType.BUILT_IN)
                 .user(userService.currentUserDetail())
                 .build();

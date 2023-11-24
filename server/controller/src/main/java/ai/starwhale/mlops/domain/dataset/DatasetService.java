@@ -26,7 +26,6 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -475,18 +474,10 @@ public class DatasetService {
             throw new SwValidationException(ValidSubject.SETTING,
                     "dataset build setting is required in system setting");
         }
-        List<StepSpec> stepSpecs = getStepSpecs(request);
-        String stepSpecOverWrites;
-        try {
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(stepSpecs);
-        } catch (JsonProcessingException e) {
-            throw new SwProcessException(ErrorType.SYSTEM, "error occurs while writing ds build step specs to string",
-                    e);
-        }
         var jobReq = JobCreateRequest.builder()
                 .project(project)
                 .resourcePool(systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool())
-                .stepSpecOverWrites(stepSpecOverWrites)
+                .stepSpecOverWrites(getStepSpecs(request))
                 .jobType(JobType.BUILT_IN)
                 .user(userService.currentUserDetail())
                 .build();
