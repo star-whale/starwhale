@@ -314,15 +314,14 @@ public class FineTuneAppService {
                 .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus()))
                 .map(JobEntity::getJobUuid)
                 .collect(Collectors.toList());
-        if (validates.isEmpty()) {
-            throw new SwValidationException(
-                    ValidSubject.EVALUATION, "No valid evaluation found for import to fine-tune space");
+        var success = 0;
+        if (!validates.isEmpty()) {
+            success = evaluationRepo.migration(
+                    String.format(TABLE_NAME_FORMAT, projectId),
+                    validates,
+                    String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
+            );
         }
-        var success = evaluationRepo.migration(
-                String.format(TABLE_NAME_FORMAT, projectId),
-                validates,
-                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
-        );
         return MigrationResult.builder()
                 .success(success)
                 .fail(uuids.size() - success)
@@ -340,15 +339,14 @@ public class FineTuneAppService {
                 )
                 .map(JobEntity::getJobUuid)
                 .collect(Collectors.toList());
-        if (validates.isEmpty()) {
-            throw new SwValidationException(
-                    ValidSubject.EVALUATION, "No valid evaluation found for exporting to common");
+        var success = 0;
+        if (!validates.isEmpty()) {
+            success = evaluationRepo.migration(
+                    String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
+                    validates,
+                    String.format(TABLE_NAME_FORMAT, projectId)
+            );
         }
-        var success = evaluationRepo.migration(
-                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
-                validates,
-                String.format(TABLE_NAME_FORMAT, projectId)
-        );
         return MigrationResult.builder()
                 .success(success)
                 .fail(uuids.size() - success)
