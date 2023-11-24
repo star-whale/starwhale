@@ -18,11 +18,10 @@ class Message:
 class Query(BaseModel):
     user_input: str
     history: List[Message]
-    confidence: Optional[float]
-    top_k: Optional[float]
-    top_p: Optional[float]
-    temperature: Optional[float]
-    max_new_tokens: Optional[int]
+    top_k: Optional[int] = None
+    top_p: Optional[float] = None
+    temperature: Optional[float] = None
+    max_new_tokens: Optional[int] = None
 
 
 class LLMChat(ServiceType):
@@ -32,7 +31,7 @@ class LLMChat(ServiceType):
     arg_types = {
         "user_input": str,
         "history": list,  # list of Message
-        "top_k": float,
+        "top_k": int,
         "top_p": float,
         "temperature": float,
         "max_new_tokens": int,
