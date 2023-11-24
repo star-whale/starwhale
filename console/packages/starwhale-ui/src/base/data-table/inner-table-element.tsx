@@ -7,6 +7,8 @@ import { ColumnT } from './types'
 import Headers from './headers/headers'
 import { VariableSizeGrid } from '../react-window'
 import TableActions from '../../GridTable/components/TableActions'
+import { useEventCallback } from '@starwhale/core/utils'
+import { useClickAway } from 'ahooks'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     return (
@@ -179,18 +181,87 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return null
     }
 
-    const Pinned = (
+    /* action bar */
+    const innerRef = React.useRef<HTMLDivElement | undefined>(undefined)
+    const [isFocus, setIsFocus] = React.useState(false)
+    const [focusRect, setFocusRect] = React.useState<{ left: number; top: number } | undefined>(undefined)
+    const [focusRowIndex, setFocusRowIndex] = React.useState<number | undefined>(undefined)
+    const handleClick = useEventCallback((event) => {
+        const cell = event.target.closest('[data-row-index]')
+        const rowIndex = cell?.getAttribute('data-row-index')
+        if (isFocus) {
+            setIsFocus(false)
+            return
+        }
+        setIsFocus(true)
+        setFocusRowIndex(rowIndex)
+        setFocusRect({
+            left: event.clientX,
+            top: event.clientY,
+        })
+    })
+    useClickAway((e) => {
+        // @ts-ignore
+        if (e.target?.closest('.table-inner-sticky')) return
+        // @ts-ignore
+        if (e.target?.closest('.table-inner')) return
+        setIsFocus(false)
+    }, innerRef)
+    const $actions = React.useMemo(() => {
+        const rowIndex = isFocus ? focusRowIndex : ctx.rowHighlightIndex
+        if (!rowIndex || rowIndex < 0) return undefined
+        const row = ctx.rows?.[rowIndex]
+        if (!row) return undefined
+        const actions = typeof ctx.rowActions === 'function' ? ctx.rowActions(row) : ctx.rowActions
+        if (!actions) return undefined
+
+        if (isFocus) {
+            return (
+                <TableActions
+                    key={0}
+                    actions={actions}
+                    isFocus={isFocus}
+                    focusRect={focusRect}
+                    rowRect={{}}
+                    selectedRowIndex={rowIndex}
+                />
+            )
+        }
+
+        if (!innerRef?.current) return
+
+        return (
+            <TableActions
+                key={1}
+                actions={actions}
+                isFocus={isFocus}
+                focusRect={focusRect}
+                mountNode={innerRef?.current}
+                rowRect={{
+                    left: ctx.width + ctx.scrollLeft,
+                    top: ctx.rowHighlightIndex * ctx.rowHeight,
+                }}
+                selectedRowIndex={rowIndex}
+            />
+        )
+    }, [
+        ctx.width,
+        ctx.rows,
+        ctx.rowHighlightIndex,
+        ctx.rowActions,
+        isFocus,
+        focusRowIndex,
+        focusRect,
+        ctx.width,
+        ctx.scrollLeft,
+        ctx.rowHeight,
+        innerRef?.current,
+    ])
+
+    const $pinned = (
         <div
-            className={cn(
-                'table-inner-sticky bg-white sticky z-2 flex',
-                css({
-                    height: '0',
-                    left: 0,
-                    borderLeftWidth: '0',
-                    overflow: 'visible',
-                    breakInside: 'avoid',
-                })
-            )}
+            className='table-inner-sticky bg-white sticky z-2 flex h-0 left-0 border-l-0 overflow-visible break-inside-avoid'
+            onClick={handleClick}
         >
             {viewState === RENDERING && $columns.length > 0 && (
                 <div
@@ -225,45 +296,22 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         </div>
     )
 
-    const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
-    const innerRef = React.useRef<HTMLDivElement | undefined>(undefined)
-
     return (
         <>
-            {Pinned}
+            {$pinned}
             <div
                 // @ts-ignore
                 ref={innerRef}
                 className='table-inner min-w-full absolute flex-1 flex'
-                // @ts-ignore
-                style={{
-                    ...props.style,
-                }}
+                style={props.style}
                 onMouseLeave={ctx?.onRowMouseLeave}
+                onClick={handleClick}
             >
                 {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage as any}</LoadingOrEmptyMessage>}
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage as any}</LoadingOrEmptyMessage>}
                 {viewState === RENDERING && props.children}
                 {$background}
-                {ctx.rowActions &&
-                    Boolean(ctx.rowActions.length) &&
-                    ctx.rowHighlightIndex >= 0 &&
-                    Boolean(highlightedRow) &&
-                    !ctx.isScrollingX && (
-                        <TableActions
-                            actions={
-                                typeof ctx.rowActions === 'function' ? ctx.rowActions(highlightedRow) : ctx.rowActions
-                            }
-                            isFocus={false}
-                            selectedRowIndex={ctx.rowHighlightIndex}
-                            focusRect={{}}
-                            mountNode={innerRef?.current}
-                            rowRect={{
-                                left: ctx.width + ctx.scrollLeft,
-                                top: ctx.rowHighlightIndex * ctx.rowHeight,
-                            }}
-                        />
-                    )}
+                {$actions}
             </div>
         </>
     )
