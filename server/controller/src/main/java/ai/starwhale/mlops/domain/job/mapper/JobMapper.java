@@ -49,7 +49,7 @@ public interface JobMapper {
 
     JobEntity findJobByUuid(@Param("uuid") String uuid);
 
-    List<JobEntity> findJobByUuids(@Param("uuids") List<String> uuids);
+    List<JobEntity> findJobByUuids(@Param("uuids") List<String> uuids, @Param("projectId") Long projectId);
 
     int addJob(@Param("job") JobEntity jobEntity);
 

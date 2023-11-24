@@ -216,7 +216,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         validateJob(jobPaused, user, project, modelVersionEntity,
                 jobMapper.findJobByUuid(jobPaused.getJobUuid()));
         validateJob(jobPaused, user, project, modelVersionEntity,
-                jobMapper.findJobByUuids(List.of(jobPaused.getJobUuid())).get(0));
+                jobMapper.findJobByUuids(List.of(jobPaused.getJobUuid()), project.getId()).get(0));
     }
 
     @Test

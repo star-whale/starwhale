@@ -172,7 +172,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void ftImport() {
-        when(jobMapper.findJobByUuids(anyList())).thenReturn(List.of(
+        when(jobMapper.findJobByUuids(anyList(), anyLong())).thenReturn(List.of(
                 JobEntity.builder().jobUuid("uuid1").jobStatus(JobStatus.RUNNING).build(),
                 JobEntity.builder().jobUuid("uuid2").jobStatus(JobStatus.SUCCESS).build(),
                 JobEntity.builder().jobUuid("uuid3").jobStatus(JobStatus.FAIL).build()
@@ -191,7 +191,7 @@ class FineTuneAppServiceTest {
 
     @Test
     void ftExport() {
-        when(jobMapper.findJobByUuids(anyList())).thenReturn(List.of(
+        when(jobMapper.findJobByUuids(anyList(), anyLong())).thenReturn(List.of(
                 JobEntity.builder()
                         .jobUuid("uuid1")
                         .jobStatus(JobStatus.RUNNING)

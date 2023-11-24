@@ -309,11 +309,15 @@ public class FineTuneAppService {
     public MigrationResult importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
         // validate the src rows
         // 1. status should be final
-        var jobs = jobMapper.findJobByUuids(uuids);
+        var jobs = jobMapper.findJobByUuids(uuids, projectId);
         var validates = jobs.stream()
                 .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus()))
                 .map(JobEntity::getJobUuid)
                 .collect(Collectors.toList());
+        if (validates.isEmpty()) {
+            throw new SwValidationException(
+                    ValidSubject.EVALUATION, "No valid evaluation found for import to fine-tune space");
+        }
         var success = evaluationRepo.migration(
                 String.format(TABLE_NAME_FORMAT, projectId),
                 validates,
@@ -329,13 +333,17 @@ public class FineTuneAppService {
         // validate the src rows
         // 1. status should be final
         // 2. model should not be draft
-        var jobs = jobMapper.findJobByUuids(uuids);
+        var jobs = jobMapper.findJobByUuids(uuids, projectId);
         var validates = jobs.stream()
                 .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus())
                         && !jobEntity.getModelVersion().getDraft()
                 )
                 .map(JobEntity::getJobUuid)
                 .collect(Collectors.toList());
+        if (validates.isEmpty()) {
+            throw new SwValidationException(
+                    ValidSubject.EVALUATION, "No valid evaluation found for exporting to common");
+        }
         var success = evaluationRepo.migration(
                 String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
                 validates,
