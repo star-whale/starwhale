@@ -51,15 +51,24 @@ public class FineTuneSpaceService {
         try (var ph = PageHelper.startPage(pageNum, pageSize)) {
             return PageInfo.of(fineTuneSpaceMapper.list(projectId)
                                        .stream()
-                                       .map(spaceEntity -> FineTuneSpaceVo.builder()
-                                               .id(spaceEntity.getId())
-                                               .name(spaceEntity.getName())
-                                               .description(spaceEntity.getDescription())
-                                               .owner(userService.findUserById(spaceEntity.getOwnerId()))
-                                               .createdTime(spaceEntity.getCreatedTime().getTime())
-                                               .build())
+                                       .map(spaceEntity -> toSpaceVo(spaceEntity))
                                        .collect(Collectors.toList()));
         }
+    }
+
+    public FineTuneSpaceVo spaceInfo(Long spaceId) {
+        FineTuneSpaceEntity spaceEntity = fineTuneSpaceMapper.findById(spaceId);
+        return toSpaceVo(spaceEntity);
+    }
+
+    private FineTuneSpaceVo toSpaceVo(FineTuneSpaceEntity spaceEntity) {
+        return FineTuneSpaceVo.builder()
+                .id(spaceEntity.getId())
+                .name(spaceEntity.getName())
+                .description(spaceEntity.getDescription())
+                .owner(userService.findUserById(spaceEntity.getOwnerId()))
+                .createdTime(spaceEntity.getCreatedTime().getTime())
+                .build();
     }
 
     public void updateSpace(Long spaceId, String name, String description) {
