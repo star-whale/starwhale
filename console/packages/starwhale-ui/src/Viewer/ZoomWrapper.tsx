@@ -6,7 +6,7 @@ export default function ZoomWrapper({ children, isTools }: any) {
     return (
         <TransformWrapper
             wheel={{ disabled: false }}
-            centerOnInit
+            // centerOnInit
             centerZoomedOut
             limitToBounds
             maxScale={10}

@@ -1,5 +1,5 @@
 import useTranslation from '@/hooks/useTranslation'
-import React, { useMemo } from 'react'
+import React, { useMemo, useReducer } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
@@ -9,6 +9,7 @@ import { BaseSimpleNavTabs } from '@/components/BaseSimpleNavTabs'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { EvalSelectListModal } from '@/domain/space/components/EvalSelectList'
 import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
+import { useEventCallback } from '@starwhale/core'
 
 export interface IFineTuneLayoutProps {
     children: React.ReactNode
@@ -21,6 +22,7 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     }>()
     const history = useHistory()
     const [t] = useTranslation()
+    const [key, forceUpdate] = useReducer((s) => s + 1, 0)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -107,6 +109,15 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
         },
     ].filter((v) => v.access)
 
+    const submitExport = useEventCallback((ids) => {
+        config.exportEval(ids)
+        forceUpdate()
+    })
+    const submitImport = useEventCallback((ids) => {
+        config.importEval(ids)
+        forceUpdate()
+    })
+
     return (
         <BaseSubLayout
             breadcrumbItems={breadcrumbItems}
@@ -121,9 +132,11 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
             <div className='absolute left-1/2 translate-x-[-50%]'>
                 <BaseSimpleNavTabs navItems={navItems} />
             </div>
-            <div className='content-full h-full'>{children}</div>
-            <EvalSelectListModal isOpen={isExport} setIsOpen={setIsExport} type='export' onSubmit={config.exportEval} />
-            <EvalSelectListModal isOpen={isImport} setIsOpen={setIsImport} type='import' onSubmit={config.importEval} />
+            <div className='content-full h-full' key={key}>
+                {children}
+            </div>
+            <EvalSelectListModal isOpen={isExport} setIsOpen={setIsExport} type='export' onSubmit={submitExport} />
+            <EvalSelectListModal isOpen={isImport} setIsOpen={setIsImport} type='import' onSubmit={submitImport} />
         </BaseSubLayout>
     )
 }

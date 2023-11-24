@@ -7,6 +7,7 @@ import { val } from '@starwhale/ui/GridTable/utils'
 import { ExtendButton } from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useEvaluationStore } from '@starwhale/ui/GridTable/store'
+import { toaster } from 'baseui/toast'
 
 export const useFineTuneEvaluation = () => {
     const {
@@ -126,15 +127,35 @@ export const useFineTuneEvaluation = () => {
         ]
     }
 
+    const toastProps = {
+        autoHideDuration: 2000,
+        overrides: { Body: { style: { minWidth: '500px' } } },
+    }
+
     const importEval = useEventCallback(async (ids) => {
-        await api.importEval(projectId, spaceId, { ids })
-        // toaster.positive(resp.message, {
-        //     autoHideDuration: 1000,
-        // })
+        const { success, fail } = await api.importEval(projectId, spaceId, {
+            ids,
+        })
+        if (fail && fail > 0) {
+            toaster.negative(t('ft.job.model.import.fail', [success, fail]), toastProps)
+        } else if (success === 0) {
+            toaster.warning(t('ft.job.model.import.warning'), toastProps)
+        } else {
+            toaster.positive(t('ft.job.model.import.done'), toastProps)
+        }
     })
 
     const exportEval = useEventCallback(async (ids) => {
-        await api.exportEval(projectId, spaceId, { ids })
+        const { success, fail } = await api.exportEval(projectId, spaceId, {
+            ids,
+        })
+        if (fail && fail > 0) {
+            toaster.negative(t('ft.job.model.release.fail', [success, fail]), toastProps)
+        } else if (success === 0) {
+            toaster.warning(t('ft.job.model.release.warning'), toastProps)
+        } else {
+            toaster.positive(t('ft.job.model.release.done'), toastProps)
+        }
     })
 
     return {

@@ -13,7 +13,6 @@ import { api } from '@/api'
 import { toaster } from 'baseui/toast'
 import { EvalSelectExportList } from './EvalSelectList'
 import { FormCheckbox } from '@starwhale/ui/Checkbox'
-import { val } from '@starwhale/ui/GridTable/utils'
 
 const { Form, FormItem } = createForm<IFormValueProps>()
 
@@ -160,17 +159,9 @@ export function FineTuneModelReleaseModal({ isOpen, setIsOpen, data, onRefresh }
             existingModelId: values.existingModelId,
         })
         if (values.ids && values.ids.length > 0) {
-            const { success, fail } = await api.exportEval(projectId, spaceId, {
+            await api.exportEval(projectId, spaceId, {
                 ids: values.ids,
             })
-            if (fail && fail > 0) {
-                toaster.negative(t('ft.job.model.release.fail', [success, fail]), { autoHideDuration: 2000 })
-            } else if (success === 0) {
-                toaster.warning(t('ft.job.model.release.warning'), { autoHideDuration: 2000 })
-            } else {
-                toaster.positive(t('ft.job.model.release.done'), { autoHideDuration: 2000 })
-            }
-
             setIsOpen(false)
             onRefresh?.()
             return

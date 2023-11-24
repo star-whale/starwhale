@@ -179,7 +179,7 @@ export default function Preview({
                     </div>
                 )}
                 <div className={styles.wrapper}>
-                    {Panel && <div className={[styles.panel, 'content-full'].join(' ')}>{Panel}</div>}
+                    {Panel && <div className={[styles.panel, 'content-full flex-grow-0'].join(' ')}>{Panel}</div>}
                     <div className={styles.card}>
                         {!isFullscreen && (
                             <div

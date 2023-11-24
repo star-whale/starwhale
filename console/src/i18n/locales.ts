@@ -939,6 +939,18 @@ const ft = {
         en: '{{0}} evaluations have been successfully synchronized to the Evaluations Module. {{1}} failed.',
         zh: '成功同步 {{0}} 个评测到评测模块，失败 {{1}} 个。',
     },
+    'ft.job.model.import.done': {
+        en: 'All the selected evaluations have been successfully synchronized to the Current Module.',
+        zh: '已成功同步所有选中的评测到当前模块。',
+    },
+    'ft.job.model.import.warning': {
+        en: 'None of the selected evaluations have been synchronized to the Current Module.',
+        zh: '未同步任何选中的评测到当前模块。',
+    },
+    'ft.job.model.import.fail': {
+        en: '{{0}} evaluations have been successfully synchronized to the Current Module. {{1}} failed.',
+        zh: '成功同步 {{0}} 个评测到当前模块，失败 {{1}} 个。',
+    },
     'ft.base.model.name': {
         en: 'Base Model Name',
         zh: '基准模型名称',
