@@ -210,7 +210,6 @@ public class JobConverter {
                 .stepSpec(jobEntity.getStepSpec())
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
-                // TODO add web-handler info
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
                 .pinnedTime(pinnedTime)
                 .build();
