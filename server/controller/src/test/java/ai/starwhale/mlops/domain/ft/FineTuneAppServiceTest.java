@@ -42,7 +42,9 @@ import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
@@ -172,6 +174,14 @@ class FineTuneAppServiceTest {
         when(fineTuneMapper.list(anyLong())).thenReturn(List.of(FineTuneEntity.builder().jobId(1L).build()));
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
         assertEquals(1, fineTuneAppService.list(1L, 1, 1).getSize());
+    }
+
+    @Test
+    void listFtOnlineEval() {
+        when(jobMapper.listBizJobs(1L, BizType.FINE_TUNE.name(), "1", JobType.ONLINE_EVAL.name(), null))
+                .thenReturn(List.of(JobEntity.builder().id(1L).build(), JobEntity.builder().id(2L).build()));
+        when(jobConverter.convert(any())).thenReturn(JobVo.builder().build());
+        assertEquals(2, fineTuneAppService.listOnlineEval(1L, 1L).size());
     }
 
     @Test

@@ -177,6 +177,9 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, JobType.EVALUATION.name(), null);
         Assertions.assertEquals(1, jobs.size());
 
+        jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, JobType.ONLINE_EVAL.name(), null);
+        Assertions.assertEquals(0, jobs.size());
+
         jobs = jobMapper.listBizJobs(
                 project.getId(),
                 BizType.FINE_TUNE.name(),
