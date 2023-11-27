@@ -7,6 +7,7 @@ import pytest
 from tests import ROOT_DIR, BaseTestCase
 from starwhale.core.model.model import StandaloneModel
 from starwhale.api._impl.service.service import Service
+from starwhale.base.client.models.models import ComponentSpecValueType
 from starwhale.api._impl.service.types.types import ComponentSpec
 
 
@@ -39,12 +40,22 @@ class ServiceTestCase(BaseTestCase):
         assert len(spec.apis) == 1
         assert spec.apis[0].uri == "cmp"
         assert spec.apis[0].inference_type == "llm_chat"
-        components = spec.apis[0].components_hint
-        assert set(components) == {
-            ComponentSpec(name="user_input", type="str"),
-            ComponentSpec(name="history", type="list"),
-            ComponentSpec(name="temperature", type="float"),
-        }
+        components = spec.apis[0].components
+        assert len(components) == 3
+        for c in [
+            ComponentSpec(
+                name="user_input",
+                component_spec_value_type=ComponentSpecValueType.string,
+            ),
+            ComponentSpec(
+                name="history", component_spec_value_type=ComponentSpecValueType.list
+            ),
+            ComponentSpec(
+                name="temperature",
+                component_spec_value_type=ComponentSpecValueType.float,
+            ),
+        ]:
+            assert c in components
 
     def test_class_without_api(self):
         svc = StandaloneModel._get_service(["no_api:NoApi"], self.root)

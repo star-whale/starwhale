@@ -216,6 +216,15 @@ class StandaloneModelTestCase(TestCase):
                     expose=8080,
                     virtual=True,
                     extra_kwargs={"search_modules": ["mnist.evaluator:MNISTInference"]},
+                    service_spec=ServiceSpec(
+                        version="0.0.1",
+                        apis=[
+                            ApiSpec(
+                                uri="",
+                                inference_type="question_answering",
+                            )
+                        ],
+                    ),
                 ),
             ],
         }

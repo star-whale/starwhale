@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.spec;
 
+import ai.starwhale.mlops.domain.job.spec.svc.ServiceSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -102,6 +103,9 @@ public class StepSpec {
 
     @JsonProperty("parameters_sig")
     private List<ParameterSignature> parametersSig;
+
+    @JsonProperty("service_spec")
+    private ServiceSpec serviceSpec;
 
     public void verifyStepSpecArgs() {
         if (CollectionUtils.isEmpty(this.getParametersSig())) {

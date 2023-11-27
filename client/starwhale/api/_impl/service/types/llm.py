@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Set, List, Callable, Optional
+from typing import Any, Set, Dict, List, Callable, Optional
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
+
+from starwhale.base.client.models.models import ComponentSpecValueType
 
 from .types import ServiceType, ComponentSpec
 
@@ -28,13 +30,13 @@ class LLMChat(ServiceType):
     name = "llm_chat"
 
     # TODO use pydantic model annotations generated arg_types
-    arg_types = {
-        "user_input": str,
-        "history": list,  # list of Message
-        "top_k": int,
-        "top_p": float,
-        "temperature": float,
-        "max_new_tokens": int,
+    arg_types: Dict[str, ComponentSpecValueType] = {
+        "user_input": ComponentSpecValueType.string,
+        "history": ComponentSpecValueType.list,  # list of Message
+        "top_k": ComponentSpecValueType.int,
+        "top_p": ComponentSpecValueType.float,
+        "temperature": ComponentSpecValueType.float,
+        "max_new_tokens": ComponentSpecValueType.int,
     }
 
     def __init__(self, args: Set | None = None) -> None:
@@ -50,7 +52,7 @@ class LLMChat(ServiceType):
 
     def components_spec(self) -> List[ComponentSpec]:
         return [
-            ComponentSpec(name=arg, type=self.arg_types[arg].__name__)
+            ComponentSpec(name=arg, component_spec_value_type=self.arg_types[arg])
             for arg in self.args
         ]
 
