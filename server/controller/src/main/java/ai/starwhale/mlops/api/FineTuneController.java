@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneMigrationRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
@@ -154,6 +155,19 @@ public class FineTuneController {
 
         PageInfo<FineTuneVo> pageInfo = fineTuneAppService.list(spaceId, pageNum, pageSize);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Operation(summary = "List online eval")
+    @GetMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/online-eval",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<List<JobVo>>> listOnlineEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(fineTuneAppService.listOnlineEval(projectId, spaceId)));
     }
 
     @Operation(summary = "Get fine-tune info")

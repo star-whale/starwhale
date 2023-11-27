@@ -208,6 +208,7 @@ class BizType(Enum):
 
 class Type1(Enum):
     evaluation = 'EVALUATION'
+    online_eval = 'ONLINE_EVAL'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
     serving = 'SERVING'
@@ -834,6 +835,7 @@ class ExposedLinkVo(SwBaseModel):
 
 class JobType(Enum):
     evaluation = 'EVALUATION'
+    online_eval = 'ONLINE_EVAL'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
     serving = 'SERVING'
@@ -1612,6 +1614,12 @@ class ResponseMessageGraph(SwBaseModel):
     code: str
     message: str
     data: Graph
+
+
+class ResponseMessageListJobVo(SwBaseModel):
+    code: str
+    message: str
+    data: List[JobVo]
 
 
 class FineTuneVo(SwBaseModel):

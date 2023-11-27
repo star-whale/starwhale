@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.ft;
 import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
@@ -429,6 +430,18 @@ public class FineTuneAppService {
                     modelVersion
             );
         }
+    }
+
+    public List<JobVo> listOnlineEval(Long projectId, Long spaceId) {
+        var onlineEvaluations = jobMapper.listBizJobs(
+                projectId,
+                BizType.FINE_TUNE.name(),
+                String.valueOf(spaceId),
+                JobType.ONLINE_EVAL.name(),
+                null
+        );
+        return onlineEvaluations.stream()
+                .map(jobConverter::convert).collect(Collectors.toList());
     }
 
     public List<ModelViewVo> listModelVersionView(Long projectId, Long spaceId) {
