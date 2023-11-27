@@ -437,7 +437,7 @@ public class FineTuneAppService {
                 projectId,
                 BizType.FINE_TUNE.name(),
                 String.valueOf(spaceId),
-                JobType.ONLINE_EVALUATION.name(),
+                JobType.ONLINE_EVAL.name(),
                 null
         );
         return onlineEvaluations.stream()
