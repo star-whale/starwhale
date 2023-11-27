@@ -31,9 +31,7 @@ class UserRoleUpdateRequest(SwBaseModel):
 
 
 class UpdateProjectRequest(SwBaseModel):
-    project_name: Optional[constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$')] = Field(
-        None, alias='projectName'
-    )
+    project_name: Optional[str] = Field(None, alias='projectName')
     privacy: Optional[str] = None
     description: Optional[str] = None
     readme: Optional[str] = None
@@ -74,7 +72,7 @@ class FineTuneSpaceCreateRequest(SwBaseModel):
 class ApplySignedUrlRequest(SwBaseModel):
     flag: Optional[str] = None
     path_prefix: str = Field(..., alias='pathPrefix')
-    files: List[str]
+    files: List[str] = Field(...)
 
 
 class SignedUrlResponse(SwBaseModel):
@@ -83,9 +81,7 @@ class SignedUrlResponse(SwBaseModel):
 
 
 class UserRequest(SwBaseModel):
-    user_name: constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{3,32}$') = Field(
-        ..., alias='userName'
-    )
+    user_name: str = Field(..., alias='userName')
     user_pwd: str = Field(..., alias='userPwd')
     salt: Optional[str] = None
 
@@ -116,9 +112,7 @@ class UserRoleAddRequest(SwBaseModel):
 
 
 class CreateProjectRequest(SwBaseModel):
-    project_name: constr(pattern=r'^[a-zA-Z][a-zA-Z\d_-]{2,80}$') = Field(
-        ..., alias='projectName'
-    )
+    project_name: str = Field(..., alias='projectName')
     privacy: str
     description: str
 
@@ -193,13 +187,12 @@ class TransferReportRequest(SwBaseModel):
     target_project_url: str = Field(..., alias='targetProjectUrl')
 
 
-class ModelTagRequest(SwBaseModel):
-    force: Optional[bool] = None
-    tag: str
+class ModelTagRequest(RuntimeTagRequest):
+    pass
 
 
-class RevertModelVersionRequest(SwBaseModel):
-    version_url: str = Field(..., alias='versionUrl')
+class RevertModelVersionRequest(RuntimeRevertRequest):
+    pass
 
 
 class BizType(Enum):
@@ -295,9 +288,8 @@ class ConfigRequest(SwBaseModel):
     content: str
 
 
-class DatasetTagRequest(SwBaseModel):
-    force: Optional[bool] = None
-    tag: str
+class DatasetTagRequest(RuntimeTagRequest):
+    pass
 
 
 class DataIndexDesc(SwBaseModel):
@@ -315,8 +307,8 @@ class NullableResponseMessageDataIndexDesc(SwBaseModel):
     data: Optional[DataIndexDesc] = None
 
 
-class RevertDatasetRequest(SwBaseModel):
-    version_url: str = Field(..., alias='versionUrl')
+class RevertDatasetRequest(RuntimeRevertRequest):
+    pass
 
 
 class Desc(Enum):
@@ -420,7 +412,7 @@ class OrderByDesc(SwBaseModel):
 
 class ListTablesRequest(SwBaseModel):
     prefix: Optional[str] = None
-    prefixes: Optional[List[str]] = None
+    prefixes: Optional[List[str]] = Field(None)
 
 
 class TableNameListVo(SwBaseModel):
@@ -833,15 +825,6 @@ class ExposedLinkVo(SwBaseModel):
     link: str
 
 
-class JobType(Enum):
-    evaluation = 'EVALUATION'
-    online_eval = 'ONLINE_EVAL'
-    train = 'TRAIN'
-    fine_tune = 'FINE_TUNE'
-    serving = 'SERVING'
-    built_in = 'BUILT_IN'
-
-
 class JobStatus(Enum):
     created = 'CREATED'
     ready = 'READY'
@@ -1029,37 +1012,13 @@ class ResponseMessagePageInfoDatasetVersionVo(SwBaseModel):
     data: PageInfoDatasetVersionVo
 
 
-class Status2(Enum):
-    created = 'CREATED'
-    ready = 'READY'
-    assigning = 'ASSIGNING'
-    paused = 'PAUSED'
-    preparing = 'PREPARING'
-    running = 'RUNNING'
-    retrying = 'RETRYING'
-    success = 'SUCCESS'
-    cancelling = 'CANCELLING'
-    canceled = 'CANCELED'
-    fail = 'FAIL'
-    unknown = 'UNKNOWN'
-
-
-class Type5(Enum):
-    image = 'IMAGE'
-    video = 'VIDEO'
-    audio = 'AUDIO'
-    json = 'JSON'
-    csv = 'CSV'
-    hugging_face = 'HUGGING_FACE'
-
-
 class BuildRecordVo(SwBaseModel):
     id: str
     project_id: str = Field(..., alias='projectId')
     task_id: str = Field(..., alias='taskId')
     dataset_name: str = Field(..., alias='datasetName')
-    status: Status2
-    type: Type5
+    status: TaskStatus
+    type: Type2
     create_time: int = Field(..., alias='createTime')
 
 
@@ -1152,13 +1111,13 @@ class RuntimeSuggestionVo(SwBaseModel):
     runtimes: Optional[List[RuntimeVersionVo]] = None
 
 
-class UserRoleDeleteRequest(SwBaseModel):
-    current_user_pwd: str = Field(..., alias='currentUserPwd')
+class UserRoleDeleteRequest(UserCheckPasswordRequest):
+    pass
 
 
 class FileDeleteRequest(SwBaseModel):
     path_prefix: str = Field(..., alias='pathPrefix')
-    files: List[str]
+    files: List[str] = Field(...)
 
 
 class ResponseMessageSignedUrlResponse(SwBaseModel):
@@ -1524,7 +1483,7 @@ class JobVo(SwBaseModel):
     model_version: str = Field(..., alias='modelVersion')
     model: ModelVo
     job_name: Optional[str] = Field(None, alias='jobName')
-    job_type: Optional[JobType] = Field(None, alias='jobType')
+    job_type: Optional[Type1] = Field(None, alias='jobType')
     datasets: Optional[List[str]] = None
     dataset_list: Optional[List[DatasetVo]] = Field(None, alias='datasetList')
     runtime: RuntimeVo
@@ -1818,7 +1777,7 @@ class TableQueryOperandDesc(SwBaseModel):
     bytes_value: Optional[str] = Field(None, alias='bytesValue')
 
 
-ColumnHintsDesc.model_rebuild()
-ColumnSchemaDesc.model_rebuild()
-QueryTableRequest.model_rebuild()
-TableQueryFilterDesc.model_rebuild()
+ColumnHintsDesc.update_forward_refs()
+ColumnSchemaDesc.update_forward_refs()
+QueryTableRequest.update_forward_refs()
+TableQueryFilterDesc.update_forward_refs()
