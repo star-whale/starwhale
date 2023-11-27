@@ -134,7 +134,7 @@ export function useFineTuneJobActions({ hasSaveAs = false, onRefresh }: IFineTun
     const isAccessResume = useAccess('job.resume')
     const isAccessResumeGlobal = useAccess('job-resume')
 
-    const getActions = ({ job, projectId, jobId, fineTuneId, spaceId }: IFineTuneJobActionParams = {}) => {
+    const getActions = ({ job, projectId, jobId, spaceId }: IFineTuneJobActionParams = {}) => {
         if (!job) return []
 
         const CancelButton = {
@@ -190,8 +190,8 @@ export function useFineTuneJobActions({ hasSaveAs = false, onRefresh }: IFineTun
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() =>
                         history.push(
-                            `/projects/${projectId}/new_fine_tune/${spaceId}?${qs.stringify({
-                                fineTuneId,
+                            `/projects/${projectId}/new_fine_tune_eval/${spaceId}?${qs.stringify({
+                                jobId,
                             })}`
                         )
                     }

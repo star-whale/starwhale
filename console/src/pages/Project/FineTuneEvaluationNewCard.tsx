@@ -9,12 +9,12 @@ import { ExtendButton } from '@starwhale/ui'
 import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
 import FormFieldZoneModel from '@/domain/job/components/FormFieldZoneModel'
 
-export default function FineTuneNewCard() {
+export default function FineTuneEvaluationNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
     const history = useHistory()
-    const { fineTuneId } = query
+    const { jobId } = query
     const { isInline } = useRouteInlineContext()
 
     const handleSubmit = useCallback(
@@ -24,7 +24,7 @@ export default function FineTuneNewCard() {
             }
             await api.createJob(projectId, {
                 ...data,
-                type: 'FINE_TUNE',
+                type: 'EVALUATION',
                 bizType: 'FINE_TUNE',
                 bizId: spaceId,
             })
@@ -32,12 +32,12 @@ export default function FineTuneNewCard() {
                 history.go(-1)
                 return
             }
-            history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
+            history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`)
         },
-        [projectId, spaceId, isInline, history]
+        [projectId, spaceId, history, isInline]
     )
-    const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
-    const job = info?.data?.job
+    const info = api.useGetJob(projectId, jobId)
+    const job = info?.data
 
     return (
         <Card
@@ -55,12 +55,11 @@ export default function FineTuneNewCard() {
             }
         >
             <JobForm
+                plugins={{ FormFieldModel: FormFieldZoneModel }}
                 onSubmit={handleSubmit}
                 job={job}
                 autoFill={!job}
                 enableTemplate={false}
-                plugins={{ FormFieldModel: FormFieldZoneModel }}
-                validationDatasets={info?.data?.validationDatasets}
             />
         </Card>
     )

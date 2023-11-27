@@ -1,41 +1,12 @@
 import JobStatus from '@/domain/job/components/JobStatus'
 import React from 'react'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { isSearchColumns, tableNameOfSummary } from '@starwhale/core/datastore/utils'
-import { useQueryDatastore } from '@starwhale/core/datastore/hooks/useFetchDatastore'
-import { QueryTableRequest } from '@starwhale/core/datastore'
-import { useParams } from 'react-router-dom'
+import { isSearchColumns } from '@starwhale/core/datastore/utils'
 import { Text } from '@starwhale/ui/Text'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import { TextLink } from '@/components/Link'
 
-function EvaluationOverview() {
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-
-    const query = React.useMemo(
-        () => ({
-            tableName: tableNameOfSummary(projectId),
-            start: 0,
-            limit: 1,
-            rawResult: true,
-            ignoreNonExistingTable: true,
-            filter: {
-                operator: 'EQUAL',
-                operands: [
-                    {
-                        intValue: jobId,
-                    },
-                    {
-                        columnName: 'sys/id',
-                    },
-                ],
-            },
-        }),
-        [jobId, projectId]
-    )
-
-    const info = useQueryDatastore(query as QueryTableRequest)
-
+function EvaluationOverview({ info }) {
     const record: Record<string, any> | undefined = info?.data?.records?.[0]
 
     const datasetUri = record?.['sys/dataset_uris']?.split(',')

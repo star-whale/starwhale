@@ -46,10 +46,11 @@ export default function FineTuneRunsTable({
         },
         {
             access: isAccessRelease && rest.targetModel?.version?.draft,
+            quickAccess: true,
             component: ({ hasText }) => (
                 <ExtendButton
                     isFull
-                    icon='Detail'
+                    icon='release'
                     tooltip={!hasText ? t('ft.job.model.release') : undefined}
                     styleas={['menuoption', hasText ? undefined : 'highlight']}
                     onClick={() => {

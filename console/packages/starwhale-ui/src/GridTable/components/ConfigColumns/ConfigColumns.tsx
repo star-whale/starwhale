@@ -103,7 +103,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }>((props: PropsT 
                                 boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
                                 margin: 0,
                                 ...expandBorderRadius('0'),
-                                // position: 'absolute',
+                                position: 'absolute',
                             },
                         },
                         DrawerBody: {

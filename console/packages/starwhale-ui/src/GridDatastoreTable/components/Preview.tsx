@@ -179,7 +179,7 @@ export default function Preview({
                     </div>
                 )}
                 <div className={styles.wrapper}>
-                    {Panel && <div className={[styles.panel, 'content-full'].join(' ')}>{Panel}</div>}
+                    {Panel && <div className={[styles.panel, 'content-full flex-grow-0'].join(' ')}>{Panel}</div>}
                     <div className={styles.card}>
                         {!isFullscreen && (
                             <div
@@ -257,8 +257,8 @@ function TabControl({
     const $activeKey = React.useMemo(() => ($isSimpleView ? '1' : value), [$isSimpleView, value])
 
     const Anno = React.useMemo(() => {
-        return Array.from(annotationTypeMap).map(([type, list]) => {
-            if (hiddenTypes.has(type)) return <span key={type} />
+        return Array.from(annotationTypeMap).map(([type, list], _index) => {
+            if (hiddenTypes.has(type)) return <span key={_index} />
 
             const allIds = annotationTypeMap.get(type)
             const hiddenIds = allIds.filter((id: number) => hiddenLabels.has(id))
@@ -266,7 +266,7 @@ function TabControl({
             const isAllHidden = hiddenIds.length === allIds.length
 
             return (
-                <div key={type} className={styles.annotationList}>
+                <div key={_index} className={styles.annotationList}>
                     <div className={styles.annotationItem} style={{ color: ' rgba(2,16,43,0.60)', marginTop: '20px' }}>
                         {toUpper(type)}({list.length})
                         <div className={styles.annotationItemShow}>

@@ -5,16 +5,16 @@ import { RouteInlineContext } from './contexts/RouteInlineContext'
 
 const RoutesInlineRender = ({ children, routes, ...rest }) => {
     return (
-        <RouteInlineContext.Provider value={{ isInline: true }}>
-            <React.Suspense fallback={<Pending />}>
+        <React.Suspense fallback={<Pending />}>
+            <RouteInlineContext.Provider value={{ isInline: true }}>
                 <MemoryRouter {...rest}>
                     <Route>
                         <Switch>{routes}</Switch>
                         {children}
                     </Route>
                 </MemoryRouter>
-            </React.Suspense>
-        </RouteInlineContext.Provider>
+            </RouteInlineContext.Provider>
+        </React.Suspense>
     )
 }
 
