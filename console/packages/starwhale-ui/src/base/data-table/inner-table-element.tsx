@@ -209,7 +209,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     }, innerRef)
     const $actions = React.useMemo(() => {
         const rowIndex = isFocus ? focusRowIndex : ctx.rowHighlightIndex
-        if (!rowIndex || rowIndex < 0) return undefined
+        if (rowIndex === undefined || rowIndex < 0) return undefined
         const row = ctx.rows?.[rowIndex]
         if (!row) return undefined
         const actions = typeof ctx.rowActions === 'function' ? ctx.rowActions(row) : ctx.rowActions
