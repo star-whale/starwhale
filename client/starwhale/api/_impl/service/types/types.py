@@ -3,18 +3,10 @@ import inspect
 from typing import Any, Dict, List, Callable
 
 from starwhale.utils import console
-from starwhale.base.models.base import SwBaseModel
+from starwhale.base.client.models.models import ComponentSpec, ComponentSpecValueType
 
 Inputs = Any
 Outputs = Any
-
-
-class ComponentSpec(SwBaseModel):
-    name: str
-    type: str
-
-    def __hash__(self) -> int:
-        return hash((self.name, self.type))
 
 
 class ServiceType(abc.ABC):
@@ -22,7 +14,7 @@ class ServiceType(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def arg_types(self) -> Dict[str, Any]:
+    def arg_types(self) -> Dict[str, ComponentSpecValueType]:
         ...
 
     @property

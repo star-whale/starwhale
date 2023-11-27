@@ -5,7 +5,7 @@ import sys
 import typing as t
 import functools
 
-from .types.types import ComponentSpec
+from starwhale.base.client.models.models import ApiSpec, ServiceSpec
 
 if sys.version_info >= (3, 9):
     from importlib.resources import files
@@ -25,19 +25,6 @@ from .types import Inputs, Outputs, ServiceType, all_components_are_gradio
 STATIC_DIR_DEV = os.getenv("SW_SERVE_STATIC_DIR") or str(
     files("starwhale").joinpath("web/ui")
 )
-
-
-class ApiSpec(SwBaseModel):
-    uri: str
-    inference_type: str
-    components_hint: t.List[ComponentSpec] = Field(default_factory=list)
-
-
-class ServiceSpec(SwBaseModel):
-    title: t.Optional[str] = None
-    description: t.Optional[str] = None
-    version: str
-    apis: t.List[ApiSpec]
 
 
 class Api(SwBaseModel):
@@ -68,7 +55,7 @@ class Api(SwBaseModel):
         return ApiSpec(
             uri=self.uri,
             inference_type=self.inference_type.name,
-            components_hint=self.inference_type.components_spec(),
+            components=self.inference_type.components_spec(),
         )
 
 
