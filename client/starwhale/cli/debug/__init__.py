@@ -1,7 +1,7 @@
 import click
 
 from starwhale.utils.cli import AliasedGroup
-from starwhale.cli.deubg.datastore import datastore
+from starwhale.cli.debug.datastore import datastore
 
 
 @click.group("debug", cls=AliasedGroup, help="debug cmds")
