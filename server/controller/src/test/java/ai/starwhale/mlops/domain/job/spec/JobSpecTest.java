@@ -129,6 +129,31 @@ public class JobSpecTest {
             + "  job_name: \"default\"\n"
             + "  show_name: \"cmp\"\n";
 
+    static final String YAML4 = "serving:\n"
+            + "- concurrency: 1\n"
+            + "  expose: 8080\n"
+            + "  extra_kwargs:\n"
+            + "    search_modules:\n"
+            + "    - evaluator\n"
+            + "  func_name: StandaloneModel._serve_handler\n"
+            + "  module_name: starwhale.core.model.model\n"
+            + "  name: serving\n"
+            + "  replicas: 1\n"
+            + "  service_spec:\n"
+            + "    apis:\n"
+            + "    - components:\n"
+            + "      - component_spec_value_type: FLOAT\n"
+            + "        name: temperature\n"
+            + "      - component_spec_value_type: STRING\n"
+            + "        name: user_input\n"
+            + "      - component_spec_value_type: LIST\n"
+            + "        name: history\n"
+            + "      inference_type: llm_chat\n"
+            + "      uri: online_eval\n"
+            + "    version: 0.0.2\n"
+            + "  show_name: virtual handler for model serving\n"
+            + "  virtual: true\n";
+
     private JobSpecParser jobSpecParser;
 
     @BeforeEach
@@ -142,6 +167,13 @@ public class JobSpecTest {
         validSteps(jobSpecParser.parseAndFlattenStepFromYaml(YAML1));
         validSteps(jobSpecParser.parseAndFlattenStepFromYaml(YAML2));
         validSteps(jobSpecParser.parseAndFlattenStepFromYaml(YAML3));
+    }
+
+    @Test
+    public void testReadFromYamlForSvc() throws JsonProcessingException {
+        var svc = jobSpecParser.parseAndFlattenStepFromYaml(YAML4);
+        Assertions.assertEquals(1, svc.size());
+        Assertions.assertEquals(3, svc.get(0).getServiceSpec().getApis().get(0).getComponents().size());
     }
 
     private void validSteps(List<StepSpec> steps) {
