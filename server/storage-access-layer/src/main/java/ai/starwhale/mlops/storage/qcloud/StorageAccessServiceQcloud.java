@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.storage.qcloud;
 
+import static ai.starwhale.mlops.storage.s3.S3Config.endpointToUrl;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
@@ -47,36 +48,64 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 public class StorageAccessServiceQcloud extends S3LikeStorageAccessService {
 
 
     private final COSClient cosClient;
+    private final List<COSClient> cosClientEquivalents;
 
     public StorageAccessServiceQcloud(S3Config s3Config) {
         super(s3Config);
-
         // https://cloud.tencent.com/document/product/436/10199
-        var cred = new BasicCOSCredentials(s3Config.getAccessKey(), s3Config.getSecretKey());
-        var cfg = new ClientConfig();
+        this.cosClient = buildCosClient(s3Config, s3Config.getEndpoint(), true);
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            this.cosClientEquivalents = s3Config.getEndpointEquivalents().stream()
+                    .map(edp -> buildCosClient(s3Config, edp, false))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            this.cosClientEquivalents = new ArrayList<>(0);
+        }
+    }
+
+    private static COSClient buildCosClient(S3Config s3Config, String selectedEndpoint, boolean raise) {
+        var clientConfig = new ClientConfig();
         if (s3Config.getRegion() != null) {
-            cfg.setRegion(new Region(s3Config.getRegion()));
+            clientConfig.setRegion(new Region(s3Config.getRegion()));
         }
-        if (s3Config.getEndpoint() != null) {
-            var url = s3Config.getEndpointUrl();
-            if (url.getProtocol().equalsIgnoreCase("https")) {
-                cfg.setHttpProtocol(HttpProtocol.https);
-            } else {
-                cfg.setHttpProtocol(HttpProtocol.http);
+        if (selectedEndpoint != null) {
+            URL url;
+            try {
+                url = endpointToUrl(selectedEndpoint);
+            } catch (MalformedURLException e) {
+                if (raise) {
+                    log.error("malformated endpoint {}", selectedEndpoint, e);
+                    throw new RuntimeException(e);
+                } else {
+                    log.warn("malformated endpoint {}", selectedEndpoint);
+                    return null;
+                }
             }
-            cfg.setEndpointBuilder(new SuffixEndpointBuilder(url.getAuthority()));
+            if (url.getProtocol().equalsIgnoreCase("https")) {
+                clientConfig.setHttpProtocol(HttpProtocol.https);
+            } else {
+                clientConfig.setHttpProtocol(HttpProtocol.http);
+            }
+            clientConfig.setEndpointBuilder(new SuffixEndpointBuilder(url.getAuthority()));
         }
-        this.cosClient = new COSClient(cred, cfg);
+        return new COSClient(new BasicCOSCredentials(s3Config.getAccessKey(), s3Config.getSecretKey()), clientConfig);
     }
 
     @Override
@@ -211,15 +240,46 @@ public class StorageAccessServiceQcloud extends S3LikeStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
-        var expiration = new Date(System.currentTimeMillis() + expTimeMillis);
-        return cosClient.generatePresignedUrl(this.bucket, path, expiration).toString();
+        return signGetUrl(path, expTimeMillis, this.cosClient);
+    }
+
+    @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return Stream.concat(Stream.of(cosClient), cosClientEquivalents.stream())
+                .map(cli -> signGetUrl(
+                        path,
+                        expTimeMillis,
+                        cli
+                )).collect(Collectors.toList());
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        return signPutUrl(path, contentType, expTimeMillis, this.cosClient);
+    }
+
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return Stream.concat(Stream.of(cosClient), cosClientEquivalents.stream())
+                .map(cli -> signPutUrl(
+                        path,
+                        contentType,
+                        expTimeMillis,
+                        cli
+                )).collect(Collectors.toList());
+    }
+
+
+    private String signGetUrl(String path, Long expTimeMillis, COSClient cosClient) {
+        var expiration = new Date(System.currentTimeMillis() + expTimeMillis);
+        return cosClient.generatePresignedUrl(this.bucket, path, expiration).toString();
+    }
+
+    private String signPutUrl(String path, String contentType, Long expTimeMillis, COSClient cosClient) {
         var request = new GeneratePresignedUrlRequest(this.bucket, path, HttpMethodName.PUT);
         request.setExpiration(new Date(System.currentTimeMillis() + expTimeMillis));
         request.setContentType(contentType);
         return cosClient.generatePresignedUrl(request).toString();
     }
+
 }

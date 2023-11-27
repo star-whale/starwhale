@@ -32,6 +32,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +79,7 @@ public class StorageAccessServiceS3Test {
                         .secretKey("sk")
                         .region("us-west-1")
                         .endpoint(s3Mock.getHttpEndpoint())
+                        .endpointEquivalents(List.of("127.0.0.1:" + s3Mock.getHttpServerPort()))
                         .hugeFileThreshold(10 * 1024 * 1024)
                         .hugeFilePartSize(5 * 1024 * 1024)
                         .build());
@@ -181,6 +183,23 @@ public class StorageAccessServiceS3Test {
     }
 
     @Test
+    public void testSignedUrlAllDomain() throws IOException {
+        List<String> signedUrls = s3.signedUrlAllDomains("t1", 1000 * 60L);
+        Assertions.assertEquals(2, signedUrls.size());
+        boolean oneIs127 = false;
+        for (String signedUrl : signedUrls) {
+            URL url = new URL(signedUrl);
+            if (url.getHost().equals("127.0.0.1")) {
+                oneIs127 = true;
+            }
+            try (InputStream content = url.openStream()) {
+                Assertions.assertEquals("a", new String(content.readAllBytes()));
+            }
+        }
+        Assertions.assertTrue(oneIs127);
+    }
+
+    @Test
     public void testSignedPutUrl() throws IOException {
         String path = "x";
         String content = "testSignedPutUrl";
@@ -196,5 +215,25 @@ public class StorageAccessServiceS3Test {
             in.readAllBytes();
         }
         Assertions.assertEquals(content, new String(s3.get(path).readAllBytes()));
+    }
+
+    @Test
+    public void testSignedPutUrlAllDomains() throws IOException {
+        String path = "x2";
+        String content = "testSignedPutUrl";
+        List<String> signedUrls = s3.signedPutUrlAllDomains(path, "text/plain", 1000 * 60L);
+        String signedUrl = signedUrls.stream().filter(url -> url.contains("127.0.0.1")).findFirst().get();
+        var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "text/plain");
+        try (var out = conn.getOutputStream()) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        try (var in = conn.getInputStream()) {
+            in.readAllBytes();
+        }
+        Assertions.assertEquals(content, new String(s3.get(path).readAllBytes()));
+        this.s3.delete(path);
     }
 }

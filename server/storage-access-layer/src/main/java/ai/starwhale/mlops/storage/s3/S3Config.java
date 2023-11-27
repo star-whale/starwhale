@@ -19,6 +19,8 @@ package ai.starwhale.mlops.storage.s3;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,6 +28,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Data
@@ -40,6 +43,8 @@ public class S3Config {
     private String secretKey;
     private String region;
     private String endpoint;
+
+    private List<String> endpointEquivalents;
     private long hugeFileThreshold;
     private long hugeFilePartSize;
 
@@ -49,6 +54,9 @@ public class S3Config {
         this.secretKey = tokens.get("sk");
         this.region = tokens.get("region");
         this.endpoint = tokens.get("endpoint");
+        String endpointEquivalentsRaw = tokens.get("endpointEquivalents");
+        this.endpointEquivalents = StringUtils.hasText(endpointEquivalentsRaw)
+                ? Arrays.asList(endpointEquivalentsRaw.split(",")) : null;
         try {
             this.hugeFileThreshold = Long.parseLong(tokens.get("hugeFileThreshold"));
         } catch (Exception e) {
@@ -63,13 +71,17 @@ public class S3Config {
 
     public URL getEndpointUrl() {
         try {
-            if (this.endpoint.contains("://")) {
-                return new URL(this.endpoint);
-            } else {
-                return new URL("http://" + this.endpoint);
-            }
+            return endpointToUrl(this.endpoint);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static URL endpointToUrl(String endpoint) throws MalformedURLException {
+        if (endpoint.contains("://")) {
+            return new URL(endpoint);
+        } else {
+            return new URL("http://" + endpoint);
         }
     }
 }

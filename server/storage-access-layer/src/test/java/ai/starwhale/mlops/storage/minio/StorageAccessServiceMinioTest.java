@@ -55,6 +55,7 @@ public class StorageAccessServiceMinioTest {
                 .accessKey("ak")
                 .secretKey("sk")
                 .endpoint(s3Mock.getHttpEndpoint())
+                .endpointEquivalents(List.of("127.0.0.1:" + s3Mock.getHttpServerPort()))
                 .build());
     }
 
@@ -117,6 +118,26 @@ public class StorageAccessServiceMinioTest {
     }
 
     @Test
+    public void testSignedUrlAllDomain() throws IOException {
+        String path = "unit_test/x";
+        String content = "hello word";
+        minio.put(path, content.getBytes(StandardCharsets.UTF_8));
+        List<String> signedUrls = minio.signedUrlAllDomains(path, 1000 * 60L);
+        Assertions.assertEquals(2, signedUrls.size());
+        boolean oneIs127 = false;
+        for (String signedUrl : signedUrls) {
+            URL url = new URL(signedUrl);
+            if (url.getHost().equals("127.0.0.1")) {
+                oneIs127 = true;
+            }
+            try (InputStream cc = url.openStream()) {
+                Assertions.assertEquals(content, new String(cc.readAllBytes()));
+            }
+        }
+        Assertions.assertTrue(oneIs127);
+    }
+
+    @Test
     public void testSignedPutUrl() throws IOException {
         String path = "unit_test/x";
         String content = "testSignedPutUrl";
@@ -124,6 +145,25 @@ public class StorageAccessServiceMinioTest {
         var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("PUT");
+        try (var out = conn.getOutputStream()) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        try (var in = conn.getInputStream()) {
+            in.readAllBytes();
+        }
+        Assertions.assertEquals(content, new String(minio.get(path).readAllBytes()));
+    }
+
+    @Test
+    public void testSignedPutUrlAllDomains() throws IOException {
+        String path = "unit_test/x2";
+        String content = "testSignedPutUrl";
+        List<String> signedUrls = minio.signedPutUrlAllDomains(path, "text/plain", 1000 * 60L);
+        String signedUrl = signedUrls.stream().filter(url -> url.contains("127.0.0.1")).findFirst().get();
+        var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "text/plain");
         try (var out = conn.getOutputStream()) {
             out.write(content.getBytes(StandardCharsets.UTF_8));
         }

@@ -37,18 +37,24 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 public class StorageAccessServiceMinio extends S3LikeStorageAccessService {
 
     private final MinioClient minioClient;
+    private final List<MinioClient> minioClientEquivalents;
 
     public StorageAccessServiceMinio(S3Config s3Config) {
         super(s3Config);
@@ -60,6 +66,21 @@ public class StorageAccessServiceMinio extends S3LikeStorageAccessService {
             builder.endpoint(s3Config.getEndpointUrl());
         }
         minioClient = builder.build();
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            minioClientEquivalents = s3Config.getEndpointEquivalents().stream().map(edp -> {
+                URL edpUrl;
+                try {
+                    edpUrl = S3Config.endpointToUrl(edp);
+                } catch (MalformedURLException e) {
+                    log.warn("malformated endpoint equivalent {}", edp);
+                    return null;
+                }
+                builder.endpoint(edpUrl);
+                return builder.build();
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        } else {
+            minioClientEquivalents = new ArrayList<>(0);
+        }
     }
 
     @Override
@@ -197,15 +218,42 @@ public class StorageAccessServiceMinio extends S3LikeStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return this.signUrl(path, expTimeMillis, Method.GET);
+        return this.signUrl(path, expTimeMillis, Method.GET, this.minioClient);
+    }
+
+    @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return signAllDomains(path, Method.GET, expTimeMillis);
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return this.signUrl(path, expTimeMillis, Method.PUT);
+        return this.signUrl(path, expTimeMillis, Method.PUT, this.minioClient);
     }
 
-    private String signUrl(String path, Long expTimeMillis, Method method) throws IOException {
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return signAllDomains(path, Method.PUT, expTimeMillis);
+    }
+
+    public List<String> signAllDomains(String path, Method method, Long expTimeMillis) {
+        return Stream.concat(Stream.of(this.minioClient), this.minioClientEquivalents.stream())
+                .map(client -> {
+                    try {
+                        return signUrl(
+                                path,
+                                expTimeMillis,
+                                method,
+                                client
+                        );
+                    } catch (IOException e) {
+                        log.error("sign url failed", e);
+                        return null;
+                    }
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    private String signUrl(String path, Long expTimeMillis, Method method, MinioClient minioClient) throws IOException {
         GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder()
                 .expiry(expTimeMillis.intValue(), TimeUnit.MILLISECONDS)
                 .bucket(this.bucket)

@@ -26,6 +26,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageConnectionToken;
 import ai.starwhale.mlops.storage.StorageUri;
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
@@ -84,15 +85,21 @@ public class StorageAccessParserTest {
                 new StorageUri("s3://10.34.2.1:8080/b1/p2"));
         StorageAccessService s3AccessService3 = storageAccessParser.getStorageAccessServiceFromUri(
                 new StorageUri("s3://10.34.2.1:8080/b2/p2"));
-        assertThat(s3AccessService1, instanceOf(StorageAccessServiceS3.class));
+        assertThat(
+                ((DomainAwareStorageAccessService) s3AccessService1).getDelegated(),
+                instanceOf(StorageAccessServiceS3.class)
+        );
         assertThat(s3AccessService1, is(s3AccessService2));
         assertThat(s3AccessService1, not(is(s3AccessService3)));
 
         assertThat(storageAccessParser.getStorageAccessServiceFromUri(new StorageUri("file://b1/c/d")),
                 instanceOf(StorageAccessServiceFile.class));
 
-        assertThat(storageAccessParser.getStorageAccessServiceFromUri(new StorageUri("oss://10.34.2.1:8080/b1/c/d")),
-                instanceOf(StorageAccessServiceAliyun.class));
+        assertThat(
+                ((DomainAwareStorageAccessService) storageAccessParser.getStorageAccessServiceFromUri(new StorageUri(
+                        "oss://10.34.2.1:8080/b1/c/d"))).getDelegated(),
+                instanceOf(StorageAccessServiceAliyun.class)
+        );
     }
 
     @Test
@@ -110,11 +117,17 @@ public class StorageAccessParserTest {
                         "ak", "ak",
                         "sk", "sk"))));
         storageAccessParser.onUpdate(systemSetting);
-        assertThat(storageAccessParser.getStorageAccessServiceFromUri(new StorageUri("s3://10.34.2.1:8080/b1/p1")),
-                instanceOf(StorageAccessServiceS3.class));
+        assertThat(
+                ((DomainAwareStorageAccessService) storageAccessParser.getStorageAccessServiceFromUri(new StorageUri(
+                        "s3://10.34.2.1:8080/b1/p1"))).getDelegated(),
+                instanceOf(StorageAccessServiceS3.class)
+        );
         assertThat(storageAccessParser.getStorageAccessServiceFromUri(new StorageUri("oss://10.34.2.1:8080/b1/c/d")),
                 is(this.defaultStorageAccessService));
-        assertThat(storageAccessParser.getStorageAccessServiceFromUri(new StorageUri("oss://10.34.2.1:8080/b2/c/d")),
-                instanceOf(StorageAccessServiceAliyun.class));
+        assertThat(
+                ((DomainAwareStorageAccessService) storageAccessParser.getStorageAccessServiceFromUri(new StorageUri(
+                        "oss://10.34.2.1:8080/b2/c/d"))).getDelegated(),
+                instanceOf(StorageAccessServiceAliyun.class)
+        );
     }
 }
