@@ -208,6 +208,7 @@ class BizType(Enum):
 
 class Type1(Enum):
     evaluation = 'EVALUATION'
+    online_eval = 'ONLINE_EVAL'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
     serving = 'SERVING'
@@ -834,6 +835,7 @@ class ExposedLinkVo(SwBaseModel):
 
 class JobType(Enum):
     evaluation = 'EVALUATION'
+    online_eval = 'ONLINE_EVAL'
     train = 'TRAIN'
     fine_tune = 'FINE_TUNE'
     serving = 'SERVING'
@@ -1138,6 +1140,55 @@ class ResponseMessageFineTuneSpaceVo(SwBaseModel):
     code: str
     message: str
     data: FineTuneSpaceVo
+
+
+class ResponseMessageListJobVo(SwBaseModel):
+    code: str
+    message: str
+    data: List[JobVo]
+
+
+class FineTuneVo(SwBaseModel):
+    id: int
+    job: JobVo
+    train_datasets: List[DatasetVo] = Field(..., alias='trainDatasets')
+    validation_datasets: Optional[List[DatasetVo]] = Field(
+        None, alias='validationDatasets'
+    )
+    target_model: ModelVo = Field(..., alias='targetModel')
+
+
+class PageInfoFineTuneVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[FineTuneVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoFineTuneVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoFineTuneVo
+
+
+class ResponseMessageFineTuneVo(SwBaseModel):
+    code: str
+    message: str
+    data: FineTuneVo
 
 
 class PanelPluginVo(SwBaseModel):
