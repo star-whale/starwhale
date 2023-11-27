@@ -34,6 +34,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -95,6 +96,18 @@ public class ObjectStoreController {
             throw new SwProcessException(ErrorType.STORAGE, "download file from storage failed", e);
         }
 
+    }
+
+    @Operation(summary = "Put the content of an object or a file")
+    @PutMapping(value = "/" + URI_PREFIX + "/**", produces = MediaType.APPLICATION_JSON_VALUE)
+    void modifyObjectContent(HttpServletRequest httpServletRequest) throws IOException {
+        Tuple2<Long, String> info = extractInfoFromUri(httpServletRequest);
+        Long expTimeMillis = info._1();
+        String path = info._2();
+        if (expTimeMillis < System.currentTimeMillis()) {
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
+        }
+        storageAccessService.put(path, httpServletRequest.getInputStream());
     }
 
     private Tuple2<Long, String> extractInfoFromUri(HttpServletRequest request) {

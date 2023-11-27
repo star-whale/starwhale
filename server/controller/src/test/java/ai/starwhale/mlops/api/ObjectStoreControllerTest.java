@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import static ai.starwhale.mlops.api.ObjectStoreController.URI_PREFIX;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
@@ -25,11 +26,13 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.DelegatingServletInputStream;
 import org.springframework.mock.web.DelegatingServletOutputStream;
 
 public class ObjectStoreControllerTest {
@@ -92,6 +95,16 @@ public class ObjectStoreControllerTest {
         objectStoreController.getObjectContent(r, req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
+    }
+
+    @Test
+    public void testPut() throws IOException {
+        var p = "p";
+        String content = "content";
+        ServletInputStream inputStream = new DelegatingServletInputStream(new ByteArrayInputStream(content.getBytes()));
+        when(req.getInputStream()).thenReturn(inputStream);
+        objectStoreController.modifyObjectContent(req);
+        verify(storageAccessService).put(p, inputStream);
     }
 
 }

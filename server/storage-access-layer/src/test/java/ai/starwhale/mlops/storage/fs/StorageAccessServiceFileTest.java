@@ -18,6 +18,8 @@ package ai.starwhale.mlops.storage.fs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import java.io.File;
@@ -25,10 +27,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class StorageAccessServiceFileTest {
 
@@ -72,6 +79,20 @@ public class StorageAccessServiceFileTest {
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
         String signedUrl = service.signedUrl(path, 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+
+        try (MockedStatic<RequestContextHolder> requestContextHolderMockedStatic =
+                     Mockito.mockStatic(RequestContextHolder.class)) {
+            ServletRequestAttributes servletRequestAttributes = mock(ServletRequestAttributes.class);
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            when(servletRequestAttributes.getRequest()).thenReturn(request);
+            when(request.getScheme()).thenReturn("http");
+            when(request.getServerName()).thenReturn("abc.com");
+            when(request.getServerPort()).thenReturn(7890);
+            requestContextHolderMockedStatic.when(RequestContextHolder::getRequestAttributes).thenReturn(
+                    servletRequestAttributes);
+            signedUrl = service.signedUrl(path, 1000 * 60L);
+            Assertions.assertTrue(signedUrl.startsWith("http://abc.com:7890/obj-store/unit_test/x"));
+        }
     }
 
     @Test
@@ -81,6 +102,20 @@ public class StorageAccessServiceFileTest {
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
         String signedUrl = service.signedPutUrl(path, "text/plain", 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+
+        try (MockedStatic<RequestContextHolder> requestContextHolderMockedStatic =
+                     Mockito.mockStatic(RequestContextHolder.class)) {
+            ServletRequestAttributes servletRequestAttributes = mock(ServletRequestAttributes.class);
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            when(servletRequestAttributes.getRequest()).thenReturn(request);
+            when(request.getScheme()).thenReturn("http");
+            when(request.getServerName()).thenReturn("abc.com");
+            when(request.getServerPort()).thenReturn(7890);
+            requestContextHolderMockedStatic.when(RequestContextHolder::getRequestAttributes).thenReturn(
+                    servletRequestAttributes);
+            signedUrl = service.signedPutUrl(path, "text/plain", 1000 * 60L);
+            Assertions.assertTrue(signedUrl.startsWith("http://abc.com:7890/obj-store/unit_test/x"));
+        }
     }
 
     @Test

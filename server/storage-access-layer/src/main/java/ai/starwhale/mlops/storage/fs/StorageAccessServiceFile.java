@@ -37,8 +37,12 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.utils.BoundedInputStream;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
@@ -167,11 +171,28 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+    }
+
+    private String possibleServerUrl() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (null == requestAttributes) {
+            return serviceProvider;
+        }
+        if (!(requestAttributes instanceof ServletRequestAttributes)) {
+            return serviceProvider;
+        }
+        HttpServletRequest request =
+                ((ServletRequestAttributes) requestAttributes).getRequest();
+        String portPart = "";
+        if (request.getServerPort() != 80 && request.getServerPort() != 443) {
+            portPart = ":" + request.getServerPort();
+        }
+        return request.getScheme() + "://" + request.getServerName() + portPart + "/obj-store";
     }
 }
