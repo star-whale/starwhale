@@ -33,6 +33,7 @@ import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.Closeable;
@@ -61,6 +62,8 @@ public class RunExecutorDockerImpl implements RunExecutor {
 
     Network network;
 
+    static final String NETWORK_HOST="host";
+
     public RunExecutorDockerImpl(
             DockerClientFinder dockerClientFinder,
             HostResourceConfigBuilder hostResourceConfigBuilder,
@@ -81,7 +84,8 @@ public class RunExecutorDockerImpl implements RunExecutor {
     public void run(Run run, RunReportReceiver runReportReceiver) {
 
         DockerClient dockerClient = dockerClientFinder.findProperDockerClient(run.getRunSpec().getResourcePool());
-        if (null == network) {
+        boolean hostNetwork = NETWORK_HOST.equals(networkName);
+        if (!hostNetwork && null == network) {
             synchronized (this) {
                 if (null == network) {
                     try {
@@ -103,7 +107,6 @@ public class RunExecutorDockerImpl implements RunExecutor {
                 ReportedRun reportedRun = ReportedRun.builder()
                         .id(run.getId())
                         .status(RunStatus.PENDING)
-                        .ip(nodeIp)
                         .build();
                 runReportReceiver.receive(reportedRun);
             }
@@ -120,7 +123,6 @@ public class RunExecutorDockerImpl implements RunExecutor {
                         .id(run.getId())
                         .status(RunStatus.FAILED)
                         .startTimeMillis(System.currentTimeMillis())
-                        .ip(nodeIp)
                         .stopTimeMillis(System.currentTimeMillis())
                         .failedReason(throwable.getMessage())
                         .build();
@@ -135,13 +137,23 @@ public class RunExecutorDockerImpl implements RunExecutor {
                 labels.putAll(CONTAINER_LABELS);
 
                 String containerName = containerRunMapper.containerName(run);
+                HostConfig hostConfig;
+                if (hostNetwork) {
+                    hostConfig = hostResourceConfigBuilder
+                            .build(run.getRunSpec().getRequestedResources())
+                            .withNetworkMode(NETWORK_HOST);
+                } else {
+                    hostConfig = hostResourceConfigBuilder
+                            .build(run.getRunSpec().getRequestedResources());
+                }
                 CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
                         .withEnv(buildEnvs(runSpec.getEnvs()))
                         .withName(containerName)
-                        .withAliases(containerName)
-                        .withHostConfig(hostResourceConfigBuilder
-                                                .build(run.getRunSpec().getRequestedResources()))
+                        .withHostConfig(hostConfig)
                         .withLabels(labels);
+                if (!hostNetwork) {
+                    createContainerCmd.withAliases(containerName);
+                }
                 ContainerCommand containerCommand = runSpec.getCommand();
                 if (null != containerCommand.getEntrypoint()) {
                     createContainerCmd.withEntrypoint(containerCommand.getEntrypoint());
@@ -150,14 +162,16 @@ public class RunExecutorDockerImpl implements RunExecutor {
                     createContainerCmd.withCmd(containerCommand.getCmd());
                 }
                 CreateContainerResponse createContainerResponse = createContainerCmd.exec();
-                dockerClient.connectToNetworkCmd()
-                        .withNetworkId(networkName)
-                        .withContainerId(createContainerResponse.getId())
-                        .exec();
+                if (!hostNetwork) {
+                    dockerClient.connectToNetworkCmd()
+                            .withNetworkId(networkName)
+                            .withContainerId(createContainerResponse.getId())
+                            .exec();
+                }
                 dockerClient.startContainerCmd(createContainerResponse.getId()).exec();
                 ReportedRun reportedRun = ReportedRun.builder()
                         .id(run.getId())
-                        .ip(containerName)
+                        .ip(hostNetwork ? nodeIp : containerName)
                         .status(RunStatus.RUNNING)
                         .startTimeMillis(System.currentTimeMillis())
                         .build();
