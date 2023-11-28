@@ -1174,6 +1174,17 @@ export interface IResponseMessagePageInfoReportVo {
     data: IPageInfoReportVo
 }
 
+export interface IApiSpec {
+    uri: string
+    inference_type?: string
+    components?: IComponentSpec[]
+}
+
+export interface IComponentSpec {
+    name: string
+    component_spec_value_type: 'FLOAT' | 'INT' | 'STRING' | 'BOOL' | 'LIST'
+}
+
 export interface IContainerSpec {
     image?: string
     cmds?: string[]
@@ -1242,6 +1253,13 @@ export interface IRuntimeResource {
     limit?: number
 }
 
+export interface IServiceSpec {
+    version?: string
+    title?: string
+    description?: string
+    apis?: IApiSpec[]
+}
+
 export interface IStepSpec {
     name: string
     /** @format int32 */
@@ -1263,6 +1281,7 @@ export interface IStepSpec {
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
+    service_spec?: IServiceSpec
 }
 
 /**

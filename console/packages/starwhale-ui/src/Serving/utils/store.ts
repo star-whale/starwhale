@@ -3,7 +3,7 @@ import { combine, persist } from 'zustand/middleware'
 import { Updater } from './typing'
 import { deepClone } from './clone'
 
-type SecondParam<T> = T extends (_f: infer _F, _s: infer S, ...args: infer _U) => any ? S : never
+// type SecondParam<T> = T extends (_f: infer _F, _s: infer S, ...args: infer _U) => any ? S : never
 
 type MakeUpdater<T> = {
     lastUpdateTime: number
@@ -20,7 +20,8 @@ type SetStoreState<T> = (
 export function createPersistStore<T extends object, M>(
     state: T,
     methods: (set: SetStoreState<T & MakeUpdater<T>>, get: () => T & MakeUpdater<T>) => M,
-    persistOptions: SecondParam<typeof persist<T & M & MakeUpdater<T>>>
+    // persistOptions: SecondParam<typeof persist<T & M & MakeUpdater<T>>>
+    persistOptions: any
 ) {
     return create(
         persist(
@@ -37,10 +38,10 @@ export function createPersistStore<T extends object, M>(
                             set({ lastUpdateTime: Date.now() } as Partial<T & M & MakeUpdater<T>>)
                         },
                         update(updater) {
-                            const state = deepClone(get())
-                            updater(state)
+                            const _state = deepClone(get())
+                            updater(_state)
                             set({
-                                ...state,
+                                ..._state,
                                 lastUpdateTime: Date.now(),
                             })
                         },

@@ -2,7 +2,7 @@ import { createPersistStore } from '@starwhale/ui/Serving/utils/store'
 
 const DEFAULT_STATE = {}
 
-export const useOnlneEvalStore = createPersistStore(
+export const useChatStore = createPersistStore(
     DEFAULT_STATE,
     (set, _get) => {
         function get() {
@@ -18,7 +18,7 @@ export const useOnlneEvalStore = createPersistStore(
         return methods
     },
     {
-        name: 'fine-tune-seving',
+        name: 'chat',
         version: 1,
     }
 )

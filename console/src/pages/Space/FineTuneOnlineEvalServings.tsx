@@ -6,7 +6,8 @@ import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
 import EvalJobActionGroup from '@/domain/space/components/EvalJobActionGroup'
 import { useCreation } from 'ahooks'
 import { GridResizer } from '@starwhale/ui'
+import ChatGroup from '@starwhale/ui/Serving/components/ChatGroup'
 
 export default function FineTuneOnlineEvalServings() {
-    return <div>right</div>
+    return <ChatGroup />
 }
