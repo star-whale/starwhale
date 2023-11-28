@@ -51,7 +51,7 @@ services:
       - SW_PYPI_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
       - SW_PYPI_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple
       {% for env in envs %}
-        - {{env}}
+      - {{env}}
       {% endfor %}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

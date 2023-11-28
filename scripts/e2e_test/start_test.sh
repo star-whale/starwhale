@@ -14,15 +14,25 @@ file_exists() {
   [ -f "$1" ]
 }
 
+use_docker_compose() {
+  [ "$SERVER_DRIVER" == "docker-compose" ]
+}
+
 export SWNAME="${SWNAME:=e2e}"
 export SWNS="${SWNS:=e2e}"
 
 if in_github_action; then
     export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.org/simple}"
-    export CONTROLLER_HOST=controller.$SWNS.svc
+    if use_docker_compose; then
+        export CONTROLLER_HOST=127.0.0.1
+        export CONTROLLER_PORT=8082
+    else
+        export CONTROLLER_HOST=controller.$SWNS.svc
+        export CONTROLLER_PORT=80
+    fi
     export MINIO_HOST=minio.$SWNS.svc
     export MINIO_ADMIN_HOST=minio-admin.$SWNS.svc
-    export CONTROLLER_URL=http://${CONTROLLER_HOST}
+    export CONTROLLER_URL=http://${CONTROLLER_HOST}:${CONTROLLER_PORT}
 else
     export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.doubanio.com/simple}"
     export PARENT_CLEAN="${PARENT_CLEAN:=true}"
@@ -57,7 +67,7 @@ start_minikube() {
     minikube -p e2e docker-env
 }
 
-show_minikube_logs() {
+show_k8s_logs() {
     echo "--> show jobs logs:"
     kubectl -n $SWNS get jobs -o wide
     kubectl -n $SWNS describe jobs
@@ -67,6 +77,22 @@ show_minikube_logs() {
     kubectl -n $SWNS get deployments.apps -o wide
     kubectl -n $SWNS describe deployments.apps controller
     kubectl -n $SWNS logs --tail 10000 deployment/controller --all-containers --prefix
+}
+
+show_docker_compose_logs() {
+    echo "--> show all containers log:"
+    docker compose -f ~/.starwhale/.server/docker-compose.yaml logs
+    docker ps --format '{{.Names}}' -a | grep 'starwhale-run' | xargs -L 1 docker logs || true
+    docker ps -a
+    docker images -a
+}
+
+show_logs() {
+    if use_docker_compose; then
+        show_docker_compose_logs
+    else
+        show_k8s_logs
+    fi
 }
 
 start_nexus() {
@@ -178,6 +204,27 @@ push_server_image_to_nexus() {
 }
 
 start_starwhale() {
+  if use_docker_compose; then
+    start_starwhale_by_docker_compose
+  else
+    start_starwhale_by_helm
+  fi
+}
+
+start_starwhale_by_docker_compose() {
+    python3 -m pip install ../../client/dist/starwhale-100.0.0-py3-none-any.whl
+    swcli server start \
+        --host 127.0.0.1 \
+        --port 8082 \
+        --server-image $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION \
+        --db-image ghcr.io/star-whale/bitnami-mysql:8.0.29-debian-10-r2 \
+        --env SW_PYPI_INDEX_URL=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
+        --env SW_PYPI_EXTRA_INDEX_URL=$SW_PYPI_EXTRA_INDEX_URL \
+        --env SW_PYPI_TRUSTED_HOST=$NEXUS_HOSTNAME
+    docker network connect starwhale_local_ns nexus --alias $NEXUS_HOSTNAME
+}
+
+start_starwhale_by_helm() {
   pushd ../../docker/charts
   helm upgrade --install $SWNAME --namespace $SWNS --create-namespace \
   --set resources.controller.requests.cpu=700m \
@@ -200,22 +247,48 @@ start_starwhale() {
   popd
 }
 
-check_controller_service() {
+check_services_alive() {
+    if use_docker_compose; then
+        check_services_alive_by_docker_compose
+    else
+        check_services_alive_by_k8s
+    fi
+
+    bash service_wait.sh ${CONTROLLER_URL}
+    echo "controller started"
+}
+
+check_services_alive_by_docker_compose() {
+    while true
+    do
+      state=`docker ps --filter name=starwhale_local-server-1 --format "{{.State}}"`
+      if [[ "$state" == "running" ]]; then
+        echo "server ready"
+        break
+      else
+        echo "server is starting"
+        show_docker_compose_logs
+      fi
+      sleep 5
+    done
+}
+
+check_services_alive_by_k8s() {
     while true
     do
       ready=`kubectl get pod -l starwhale.ai/role=controller -n $SWNS -o json| jq -r '.items[0].status.containerStatuses[0].ready'`
-            if [[ "$ready" == "true" ]]; then
-                    echo "controller ready"
-                    break
-            else
-              echo "controller is starting"
-              kubectl -n $SWNS get pods
-              kubectl -n $SWNS describe deployments/controller || true
-              kubectl -n $SWNS logs --tail 500 deployments/controller || true
-            fi
-            sleep 5
+      if [[ "$ready" == "true" ]]; then
+        echo "controller ready"
+        break
+      else
+        echo "controller is starting"
+        kubectl -n $SWNS get pods
+        kubectl -n $SWNS describe deployments/controller || true
+        kubectl -n $SWNS logs --tail 500 deployments/controller || true
+      fi
+
+      sleep 5
     done
-    echo "controller started"
 }
 
 setup_minikube_dns_mock() {
@@ -229,7 +302,7 @@ open_api_model_test() {
     # generate openapi model
     pushd ../../client
     python3 -m pip install datamodel-code-generator[http]
-    OPEN_API_URL=$CONTROLLER_URL make gen-model
+    OPEN_API_URL=$CONTROLLER_URL make gen-model || exit 1
 
     if git diff --exit-code; then
       echo "openapi model is up to date"
@@ -263,7 +336,7 @@ client_test() {
 api_test() {
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
-  pytest --host ${CONTROLLER_HOST} --port 80 || exit 1
+  pytest --host ${CONTROLLER_HOST} --port ${CONTROLLER_PORT} || exit 1
   popd
   # if ! in_github_action; then
   #   source upgrade_test.sh
@@ -307,7 +380,7 @@ publish_to_mini_k8s() {
   upload_pypi_to_nexus
   push_images_to_nexus
   start_starwhale
-  check_controller_service
+  check_services_alive
   setup_minikube_dns_mock
 }
 
@@ -324,7 +397,7 @@ main() {
     trap exit_hook EXIT
     publish_to_k8s
     sleep 120
-    check_controller_service
+    check_services_alive
   else
     publish_to_mini_k8s
   fi

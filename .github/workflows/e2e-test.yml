@@ -83,6 +83,18 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+        server-driver:
+          - "docker-compose"
+          - "minikube"
+        exclude:
+          - python-version: "3.10"
+            server-driver: "docker-compose"
+          - python-version: "3.9"
+            server-driver: "docker-compose"
+          - python-version: "3.8"
+            server-driver: "minikube"
+          - python-version: "3.7"
+            server-driver: "minikube"
 
     steps:
       - uses: actions/checkout@v3
@@ -141,6 +153,7 @@ jobs:
           wait: false
           insecure-registry: "192.0.0.0/8,10.0.0.0/8"
           addons: ingress,ingress-dns
+        if: ${{ matrix.server-driver == 'minikube' }}
 
       - name: Overwrite configs
         working-directory: ./scripts/e2e_test
@@ -155,18 +168,22 @@ jobs:
       - name: Build server docker image
         working-directory: ./scripts/e2e_test
         run: |
-          eval $(minikube docker-env)
+          [ "$SERVER_DRIVER" == "minikube" ] && eval $(minikube docker-env) || true
           bash start_test.sh build_server_image
-
-      - name: Startup starwhale k8s service
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh start_starwhale
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
 
       - name: Build client python package
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh build_swcli
         env:
           SKIP_UI_BUILD: 1
+
+      - name: Startup Starwhale Server
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh start_starwhale
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
 
       - name: Check nexus service available
         working-directory: ./scripts/e2e_test
@@ -182,31 +199,41 @@ jobs:
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh upload_pypi_to_nexus
 
-      - name: Wait and check starwhale service
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh check_controller_service
-
       - name: Setup minikube dns mock
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh setup_minikube_dns_mock
+        if: ${{ matrix.server-driver == 'minikube' }}
+
+      - name: Wait and check Starwhale Server
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh check_services_alive
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
 
       - name: Test OpenAPI model generating
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh open_api_model_test
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
 
       - name: Test by client side
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh client_test
         env:
           SKIP_UI_BUILD: 1
+          SERVER_DRIVER: ${{ matrix.server-driver }}
+          SW_IMAGE_REPO: "ghcr.io/star-whale"
 
       - name: Post output client-side test logs
         if: failure()
         working-directory: ./scripts/e2e_test
         run: |
-          minikube image ls --format table
-          bash start_test.sh show_minikube_logs
+          bash start_test.sh show_logs
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
 
       - name: Test by api side
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh api_test
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
