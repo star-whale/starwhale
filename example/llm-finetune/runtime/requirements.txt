@@ -11,4 +11,5 @@ bitsandbytes
 colorama
 tokenizers
 sentencepiece
-git+https://github.com/star-whale/starwhale.git@bebd503#subdirectory=client&egg=starwhale
+astunparse
+git+https://github.com/star-whale/starwhale.git@c57144a#subdirectory=client&egg=starwhale
