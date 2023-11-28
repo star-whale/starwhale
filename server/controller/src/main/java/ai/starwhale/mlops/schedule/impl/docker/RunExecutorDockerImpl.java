@@ -62,7 +62,7 @@ public class RunExecutorDockerImpl implements RunExecutor {
 
     Network network;
 
-    static final String NETWORK_HOST="host";
+    static final String NETWORK_HOST = "host";
 
     public RunExecutorDockerImpl(
             DockerClientFinder dockerClientFinder,
