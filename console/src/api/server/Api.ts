@@ -127,6 +127,7 @@ import {
     IListModelTreeData,
     IListModelVersionData,
     IListModelVersionTagsData,
+    IListOnlineEvalData,
     IListProjectData,
     IListProjectRoleData,
     IListReportsData,
@@ -199,6 +200,7 @@ import {
     ISignLinks1Data,
     ISignLinks2Data,
     ISignLinksData,
+    ISpaceInfoData,
     ITransferData,
     ITransferReportRequest,
     IUninstallPluginData,
@@ -894,6 +896,32 @@ export class Api<SecurityDataType = unknown> {
             ...params,
         })
 
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name SpaceInfo
+     * @summary Get the list of fine-tune spaces
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}
+     * @secure
+     * @response `200` `ISpaceInfoData` OK
+     */
+    spaceInfo = (projectId: number, spaceId: number, params: RequestParams = {}) =>
+        this.http.request<ISpaceInfoData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+
+    useSpaceInfo = (projectId: number, spaceId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['spaceInfo', projectId, spaceId, params]),
+            () => this.spaceInfo(projectId, spaceId, params),
+            {
+                enabled: [projectId, spaceId].every(Boolean),
+            }
+        )
     /**
      * No description
      *
@@ -4735,6 +4763,32 @@ export class Api<SecurityDataType = unknown> {
         useQuery(
             qs.stringify(['recentModelTree1', projectId, spaceId, query, params]),
             () => this.recentModelTree1(projectId, spaceId, query, params),
+            {
+                enabled: [projectId, spaceId].every(Boolean),
+            }
+        )
+    /**
+     * No description
+     *
+     * @tags FineTune
+     * @name ListOnlineEval
+     * @summary List online eval
+     * @request GET:/api/v1/project/{projectId}/ftspace/{spaceId}/online-eval
+     * @secure
+     * @response `200` `IListOnlineEvalData` OK
+     */
+    listOnlineEval = (projectId: number, spaceId: number, params: RequestParams = {}) =>
+        this.http.request<IListOnlineEvalData, any>({
+            path: `/api/v1/project/${projectId}/ftspace/${spaceId}/online-eval`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+
+    useListOnlineEval = (projectId: number, spaceId: number, params: RequestParams = {}) =>
+        useQuery(
+            qs.stringify(['listOnlineEval', projectId, spaceId, params]),
+            () => this.listOnlineEval(projectId, spaceId, params),
             {
                 enabled: [projectId, spaceId].every(Boolean),
             }

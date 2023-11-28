@@ -64,6 +64,7 @@ import FineTuneEvaluationOverview from './pages/Space/FineTuneEvaluationOverview
 import FineTuneEvaluationOverviewLayout from './pages/Space/FineTuneEvaluationOverviewLayout'
 import FineTuneEvaluationWidgetResults from './pages/Space/Evaluation/EvaluationWidgetResults'
 import FineTuneEvaluationNewCard from './pages/Project/FineTuneEvaluationNewCard'
+import FineTuneOnlineEvaluationNewCard from './pages/Project/FineTuneOnlineEvaluationNewCard'
 
 const unauthed = {
     component: LoginLayout,
@@ -417,6 +418,10 @@ const authed = {
                 {
                     path: '/projects/:projectId/new_fine_tune_eval/:spaceId',
                     component: FineTuneEvaluationNewCard,
+                },
+                {
+                    path: '/projects/:projectId/new_fine_tune_online/:spaceId',
+                    component: FineTuneOnlineEvaluationNewCard,
                 },
                 {
                     path: '/projects/:projectId/new_dataset/:datasetId?',

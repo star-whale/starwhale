@@ -50,6 +50,11 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                 path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
                 pattern: '/\\/fine-tune-evals\\/?',
             },
+            {
+                title: t('ft.eval.online'),
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-onlines`,
+                pattern: '/\\/fine-tune-onlines\\/?',
+            },
         ]
         return items
     }, [projectId, spaceId, t])

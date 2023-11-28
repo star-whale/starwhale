@@ -838,6 +838,10 @@ const ft = {
         en: 'Evaluation',
         zh: '评测',
     },
+    'ft.eval.online': {
+        en: 'Online Evaluation',
+        zh: '在线评测',
+    },
     'ft.eval.export': {
         en: 'Synchronize',
         zh: '同步',

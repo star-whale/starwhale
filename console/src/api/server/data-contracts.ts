@@ -276,7 +276,7 @@ export interface IJobRequest {
     stepSpecOverWrites?: string
     bizType?: 'FINE_TUNE'
     bizId?: string
-    type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
+    type?: 'EVALUATION' | 'ONLINE_EVAL' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     devMode?: boolean
     devPassword?: string
     devWay?: 'VS_CODE'
@@ -1499,7 +1499,7 @@ export interface IJobVo {
     /** Model object */
     model: IModelVo
     jobName?: string
-    jobType?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
+    jobType?: 'EVALUATION' | 'ONLINE_EVAL' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     datasets?: string[]
     datasetList?: IDatasetVo[]
     /** Runtime object */
@@ -1972,6 +1972,18 @@ export interface IResponseMessagePageInfoFineTuneSpaceVo {
     data: IPageInfoFineTuneSpaceVo
 }
 
+export interface IResponseMessageFineTuneSpaceVo {
+    code: string
+    message: string
+    data: IFineTuneSpaceVo
+}
+
+export interface IResponseMessageListJobVo {
+    code: string
+    message: string
+    data: IJobVo[]
+}
+
 export interface IFineTuneVo {
     /** @format int64 */
     id: number
@@ -2159,6 +2171,8 @@ export type IShareDatasetVersionData = IResponseMessageString['data']
 export type IRecoverDatasetData = IResponseMessageString['data']
 
 export type IRecoverProjectData = IResponseMessageString['data']
+
+export type ISpaceInfoData = IResponseMessageFineTuneSpaceVo['data']
 
 export type IUpdateSpaceData = IResponseMessageString['data']
 
@@ -2410,6 +2424,8 @@ export type IPullUriContentData = any
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
 
 export type IRecentModelTree1Data = IResponseMessageListModelViewVo['data']
+
+export type IListOnlineEvalData = IResponseMessageListJobVo['data']
 
 export type IListModelTree1Data = IResponseMessageListModelViewVo['data']
 

@@ -38,7 +38,7 @@ export default function ResourcePoolSelector({
             const { data } = pools
             const first = data?.[0] as any
             if (value) handelChange(value)
-            else if (data) handelChange(first.name)
+            else if (data) handelChange(first?.name)
         }
     }, [pools, value, autoSelected, handelChange])
 
