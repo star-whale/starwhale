@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
-from pydantic.root_model import RootModel
-
-from starwhale.base.models.base import SwBaseModel
+from starwhale.utils.pydantic import PYDANTIC_V2
+from starwhale.base.models.base import SwBaseModel, SequenceSwBaseModel
 from starwhale.base.client.models.models import ModelVo, StepSpec
 
 
@@ -18,9 +17,6 @@ class StepSpecClient(StepSpec):
     extra_kwargs: t.Optional[t.Dict[str, t.Any]] = None
 
 
-JobHandlers = RootModel[t.Dict[str, t.List[StepSpecClient]]]
-
-
 class File(SwBaseModel):
     arcname: t.Optional[str] = None
     desc: str
@@ -29,9 +25,6 @@ class File(SwBaseModel):
     signature: str
     size: t.Optional[int] = None
     duplicate_check: bool
-
-
-Files = RootModel[t.List[File]]
 
 
 class LocalModelInfoBase(SwBaseModel):
@@ -52,3 +45,19 @@ class LocalModelInfo(LocalModelInfoBase):
 
 
 ModelListType = t.Union[t.List[LocalModelInfoBase], t.List[ModelVo]]
+
+if PYDANTIC_V2:
+
+    class JobHandlers(SequenceSwBaseModel):
+        root: t.Dict[str, t.List[StepSpecClient]]
+
+    class Files(SequenceSwBaseModel):
+        root: t.List[File]
+
+else:
+
+    class JobHandlers(SequenceSwBaseModel):  # type: ignore
+        __root__: t.Dict[str, t.List[StepSpecClient]]
+
+    class Files(SequenceSwBaseModel):  # type: ignore
+        __root__: t.List[File]

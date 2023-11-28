@@ -70,7 +70,7 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
 from starwhale.base.models.job import JobManifest
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.base.models.base import ListFilter
+from starwhale.base.models.base import ListFilter, obj_to_model
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.base.models.model import (
@@ -507,7 +507,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             return None
 
         data = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
-        handlers = JobHandlers.parse_obj(data)
+        handlers = obj_to_model(data, JobHandlers).data  # type: ignore
 
         return LocalModelInfo(
             name=self.uri.name,
@@ -515,7 +515,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             project=self.uri.project.id,
             path=str(self.store.bundle_path),
             tags=StandaloneTag(self.uri).list(),
-            handlers=handlers.root,
+            handlers=handlers,
             model_yaml=(self.store.hidden_sw_dir / DefaultYAMLName.MODEL).read_text(),
             files=self.store.resource_files,
             created_at=self._manifest.get(CREATED_AT_KEY, ""),

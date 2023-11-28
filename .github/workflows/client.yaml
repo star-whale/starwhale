@@ -70,6 +70,8 @@ jobs:
         working-directory: ./client
         run: |
           make install-dev-req
+          # force using pydantic v2 to do lint checking
+          python -m pip install -U 'pydantic==2.*'
           make install-sw
 
       - name: Black Format Check
@@ -100,6 +102,9 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
+        pydantic-version:
+          - "1"
+          - "2"
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -134,6 +139,7 @@ jobs:
         run: |
           make install-dev-req
           make install-sw
+          python -m pip install -U "pydantic==${{matrix.pydantic-version}}.*"
 
       - name: Git Config
         run: |

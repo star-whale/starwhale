@@ -3,7 +3,14 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from fastapi import Body, FastAPI, Request, Response, HTTPException
-from pydantic_settings import BaseSettings
+
+from starwhale.utils.pydantic import PYDANTIC_V2
+
+if PYDANTIC_V2:
+    # TODO: remove this when pydantic v1 is no longer supported and use pydantic-settings instead
+    from pydantic.v1 import BaseSettings
+else:
+    from pydantic import BaseSettings  # type: ignore
 
 from starwhale.utils import console
 
@@ -16,7 +23,7 @@ from .common import (
 )
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings):  # type: ignore
     broker_url: str = ""
     chunk_size: int = 65536
     max_chunk_count: int = 64
