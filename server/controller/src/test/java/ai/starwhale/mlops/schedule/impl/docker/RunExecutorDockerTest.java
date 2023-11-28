@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,7 @@ public class RunExecutorDockerTest {
         when(containerRunMapper.containerOfRun(any())).thenReturn(container);
         when(containerRunMapper.containerName(any())).thenReturn(containerName);
         cmdExecThreadPool = Executors.newCachedThreadPool();
-        network = "host";
+        network = "sw-ut-temp-network";
         nodeIp = "127.1.0.2";
         runExecutorDocker = new RunExecutorDockerImpl(
                 dockerClientFinder,
@@ -104,6 +105,11 @@ public class RunExecutorDockerTest {
         }
 
 
+    }
+
+    @AfterEach
+    public void destroy() {
+        dockerClient.removeNetworkCmd(network).exec();
     }
 
     @Test
