@@ -100,7 +100,7 @@ build-nodejs:
 	$(call build-image,,Dockerfile.nodejs,nodejs:${FIXED_VERSION_NODEJS_IMAGE} nodejs:latest)
 
 YARN_VOLUME=yarn-cache
-build-console: build-gradio-ui
+build-console:
 	docker volume create --name ${YARN_VOLUME} && \
 	docker run --rm -v ${YARN_VOLUME}:/app ${DH_NODEJS_IMAGE} /bin/sh -c "cp -r /root/.npmrc /app/ && chown $(shell id -u):$(shell id -g) -R /app" && \
 	docker run --rm \
@@ -127,26 +127,4 @@ build-jar:
 		-w /app/server ${MVN_IMG} \
 		mvn -Duser.home=/var/maven clean package -f pom.xml -DskipTests
 
-build-gradio-ui:
-	$(eval GRADIO_DIR="${ROOT_DIR}/gradio")
-	$(eval UI_DEST="/starwhale/console/src/assets/GradioWidget")
-	$(eval SWU=$(shell id -u))
-	$(eval SWG=$(shell id -g))
-	docker volume create --name ${YARN_VOLUME}
-	# use the latest version of starwhale version gradio
-	git config --global --add safe.directory $(realpath ${GRADIO_DIR}) || echo "gradio not exists"
-	(([ -d ${GRADIO_DIR} ] && git -C ${GRADIO_DIR} clean -f -x && git -C ${GRADIO_DIR} checkout . && git -C ${GRADIO_DIR} reset --hard && git -C ${GRADIO_DIR} pull) || (rm -rf ${GRADIO_DIR} &&git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio ${GRADIO_DIR}))
-	# TODO use non root user to run the building, pnpm should be supported in the building image
-	docker run --rm \
-		-v ${YARN_VOLUME}:/var/yarn-cache \
-		-e HOME=/var/yarn-cache \
-		-v ${ROOT_DIR}:/starwhale \
-		-w /starwhale/gradio/ui \
-		${DH_NODEJS_IMAGE} \
-		/bin/sh -x -c "npm i -g pnpm && pnpm add -g pnpm@8.0.0 && pnpm i && NODE_OPTIONS=--max_old_space_size=4048 pnpm build && \
-			rm -rf ${UI_DEST} && mkdir -p ${UI_DEST} && \
-			mv packages/starwhale/build ${UI_DEST}/es && \
-			chown ${SWU}:${SWG} -R ${UI_DEST} && \
-			chown ${SWU}:${SWG} -R /starwhale/gradio"
-	git -C ${GRADIO_DIR} clean -f -x
 

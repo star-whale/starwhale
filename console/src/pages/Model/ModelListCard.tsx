@@ -34,7 +34,7 @@ export default function ModelListCard() {
 
     const isAccessModelRun = useAccess('model.run')
     const isAccessModelDelete = useAccess('model.delete')
-    const isAccessOnlineEval = useAccess('online-eval')
+    const isAccessOnlineEval = false
     const getActions = (model: IModelVo) => [
         {
             access: true,

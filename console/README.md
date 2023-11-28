@@ -10,8 +10,6 @@ Open [http://localhost:5173/](http://localhost:5173/) to view it in the browser.
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-Run `make rebuild-gradio` if error like "@/assets/GradioWidget/es/app.es.js can not found" occurs.
-
 ### `yarn build`
 
 Builds the app for production to the `build` folder.
