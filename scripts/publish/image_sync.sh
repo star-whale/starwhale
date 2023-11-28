@@ -55,4 +55,6 @@ for image in "${starwhale_images[@]}"; do
     while IFS= read -r line; do
         copy_image "$source_repo_name/$image:$line" "$target_repo_name2/$image:$line"
     done < <(comm -23 <(sort <<< "$source_repo_tags") <(sort <<< "$target_repo_tags2"))
+    copy_image "$source_repo_name/$image:latest" "$target_repo_name1/$image:latest"
+    copy_image "$source_repo_name/$image:latest" "$target_repo_name2/$image:latest"
 done
