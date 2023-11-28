@@ -38,4 +38,7 @@ public class FsConfig {
      * the service who is serving the pre-signed url
      */
     private String serviceProvider;
+
+    private String sigKey;
+
 }

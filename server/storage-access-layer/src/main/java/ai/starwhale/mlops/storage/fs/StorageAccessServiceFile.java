@@ -50,12 +50,15 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     private final String serviceProvider;
 
+    private final FsStorageSignature fsStorageSignature;
+
     /**
-     * @param fsConfig fsConfig
+     * @param fsConfig           fsConfig
      */
     public StorageAccessServiceFile(FsConfig fsConfig) {
         this.rootDir = new File(fsConfig.getRootDir());
         this.serviceProvider = fsConfig.getServiceProvider();
+        this.fsStorageSignature = new FsStorageSignature(fsConfig.getSigKey());
         if (!this.rootDir.exists()) {
             throw new IllegalArgumentException(rootDir + " does not exist");
         }
@@ -171,12 +174,14 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        String sign = fsStorageSignature.sign(path, expTimeMillis);
+        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis) + "?sign=" + sign;
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        String sign = fsStorageSignature.sign(path, expTimeMillis);
+        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis) + "?sign=" + sign;
     }
 
     private String possibleServerUrl() {

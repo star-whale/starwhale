@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,7 +49,7 @@ public class StorageAccessServiceFileTest {
     @BeforeEach
     public void setUp() {
         this.service = new StorageAccessServiceFile(
-                new FsConfig(this.rootDir.getAbsolutePath(), "http://localhost:8082"));
+                new FsConfig(this.rootDir.getAbsolutePath(), "http://localhost:8082", "abc"));
     }
 
     @Test
@@ -73,12 +75,14 @@ public class StorageAccessServiceFileTest {
     }
 
     @Test
-    public void testSignedUrl() throws IOException {
+    public void testSignedUrl() throws IOException, URISyntaxException {
         String path = "unit_test/x";
         String content = "hello word";
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
         String signedUrl = service.signedUrl(path, 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+        String signQuery = new URI(signedUrl).getQuery();
+        Assertions.assertTrue(signQuery.contains("sign="));
 
         try (MockedStatic<RequestContextHolder> requestContextHolderMockedStatic =
                      Mockito.mockStatic(RequestContextHolder.class)) {
@@ -96,12 +100,14 @@ public class StorageAccessServiceFileTest {
     }
 
     @Test
-    public void testSignedPutUrl() throws IOException {
+    public void testSignedPutUrl() throws IOException, URISyntaxException {
         String path = "unit_test/x";
         String content = "hello word";
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
         String signedUrl = service.signedPutUrl(path, "text/plain", 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+        String signQuery = new URI(signedUrl).getQuery();
+        Assertions.assertTrue(signQuery.contains("sign="));
 
         try (MockedStatic<RequestContextHolder> requestContextHolderMockedStatic =
                      Mockito.mockStatic(RequestContextHolder.class)) {

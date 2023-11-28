@@ -17,12 +17,17 @@
 package ai.starwhale.mlops.api;
 
 import static ai.starwhale.mlops.api.ObjectStoreController.URI_PREFIX;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.fs.FsStorageSignature;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,10 +50,14 @@ public class ObjectStoreControllerTest {
     private HttpServletRequest req;
     private DelegatingServletOutputStream outputStream;
 
+    private FsStorageSignature fsStorageSignature;
+
     @BeforeEach
     public void setUp() throws IOException {
         storageAccessService = mock(StorageAccessService.class);
-        objectStoreController = new ObjectStoreController(storageAccessService);
+        fsStorageSignature = mock(FsStorageSignature.class);
+        when(fsStorageSignature.valid(anyString(), anyLong(), anyString())).thenReturn(true);
+        objectStoreController = new ObjectStoreController(storageAccessService, fsStorageSignature);
         rsp = mock(HttpServletResponse.class);
         outputStream = new DelegatingServletOutputStream(new ByteArrayOutputStream());
         when(rsp.getOutputStream()).thenReturn(outputStream);
@@ -66,8 +75,15 @@ public class ObjectStoreControllerTest {
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p, 0L, 101L)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(r, req, rsp);
+        when(fsStorageSignature.valid(eq(p), anyLong(), eq("sign1"))).thenReturn(true);
+        objectStoreController.getObjectContent(r, "sign1", req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
+
+        when(fsStorageSignature.valid(eq(p), anyLong(), eq("sign2"))).thenReturn(false);
+        Assertions.assertThrows(
+                SwValidationException.class,
+                () -> objectStoreController.getObjectContent(r, "sign2", req, rsp)
+        );
 
     }
 
@@ -79,7 +95,7 @@ public class ObjectStoreControllerTest {
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(r, req, rsp);
+        objectStoreController.getObjectContent(r, "", req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
     }
@@ -92,7 +108,7 @@ public class ObjectStoreControllerTest {
         LengthAbleInputStream inputStream = new LengthAbleInputStream(new ByteArrayInputStream(content.getBytes()),
                 content.length());
         when(storageAccessService.get(p)).thenReturn(inputStream);
-        objectStoreController.getObjectContent(r, req, rsp);
+        objectStoreController.getObjectContent(r, "", req, rsp);
         Assertions.assertEquals(content, outputStream.getTargetStream().toString());
 
     }
@@ -103,7 +119,7 @@ public class ObjectStoreControllerTest {
         String content = "content";
         ServletInputStream inputStream = new DelegatingServletInputStream(new ByteArrayInputStream(content.getBytes()));
         when(req.getInputStream()).thenReturn(inputStream);
-        objectStoreController.modifyObjectContent(req);
+        objectStoreController.modifyObjectContent(req, "");
         verify(storageAccessService).put(p, inputStream);
     }
 

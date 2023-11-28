@@ -21,6 +21,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.fs.FsStorageSignature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -49,8 +51,12 @@ public class ObjectStoreController {
 
     private final StorageAccessService storageAccessService;
 
-    public ObjectStoreController(StorageAccessService storageAccessService) {
+    private final FsStorageSignature fsStorageSignature;
+
+    public ObjectStoreController(StorageAccessService storageAccessService,
+                                 FsStorageSignature fsStorageSignature) {
         this.storageAccessService = storageAccessService;
+        this.fsStorageSignature = fsStorageSignature;
     }
 
     public static final String URI_PREFIX = "obj-store";
@@ -59,6 +65,7 @@ public class ObjectStoreController {
     @GetMapping(value = "/" + URI_PREFIX + "/**", produces = MediaType.APPLICATION_JSON_VALUE)
     void getObjectContent(
             @RequestHeader(name = "Range", required = false) String range,
+            @RequestParam String sign,
             HttpServletRequest httpServletRequest,
             HttpServletResponse httpResponse
     ) {
@@ -67,6 +74,9 @@ public class ObjectStoreController {
         String path = info._2();
         if (expTimeMillis < System.currentTimeMillis()) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
+        }
+        if (!fsStorageSignature.valid(path, expTimeMillis, sign)) {
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "signature invalid");
         }
         Long start = 0L;
         Long end = 0L;
@@ -100,12 +110,15 @@ public class ObjectStoreController {
 
     @Operation(summary = "Put the content of an object or a file")
     @PutMapping(value = "/" + URI_PREFIX + "/**", produces = MediaType.APPLICATION_JSON_VALUE)
-    void modifyObjectContent(HttpServletRequest httpServletRequest) throws IOException {
+    void modifyObjectContent(HttpServletRequest httpServletRequest, @RequestParam String sign) throws IOException {
         Tuple2<Long, String> info = extractInfoFromUri(httpServletRequest);
         Long expTimeMillis = info._1();
         String path = info._2();
         if (expTimeMillis < System.currentTimeMillis()) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "link expired");
+        }
+        if (!fsStorageSignature.valid(path, expTimeMillis, sign)) {
+            throw new SwValidationException(ValidSubject.OBJECT_STORE, "signature invalid");
         }
         storageAccessService.put(path, httpServletRequest.getInputStream());
     }

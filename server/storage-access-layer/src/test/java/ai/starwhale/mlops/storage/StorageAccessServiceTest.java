@@ -144,7 +144,7 @@ public class StorageAccessServiceTest {
 
     @Test
     public void testFile() throws Exception {
-        this.run(new StorageAccessServiceFile(new FsConfig(this.rootDir.getAbsolutePath(), "")), false);
+        this.run(new StorageAccessServiceFile(new FsConfig(this.rootDir.getAbsolutePath(), "", "")), false);
     }
 
     @Test
