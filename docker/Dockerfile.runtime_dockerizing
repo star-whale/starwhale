@@ -14,7 +14,7 @@ COPY --from=kaniko /kaniko/docker-credential-acr-env /kaniko/docker-credential-a
 COPY --from=kaniko /kaniko/.docker /kaniko/.docker
 COPY --from=kaniko /kaniko/ssl/certs/ /kaniko/ssl/certs/
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
-RUN /opt/starwhale.bin/base-entrypoint set_environment || true
+RUN /opt/starwhale.bin/base-entrypoint set_environment
 
 ENV SW_USER_RUNTIME_RESTORED=1
 ENV PATH $PATH:/usr/local/bin:/kaniko
