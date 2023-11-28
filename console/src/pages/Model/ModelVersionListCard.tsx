@@ -92,35 +92,37 @@ export default function ModelVersionListCard() {
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
-                                <WithCurrentAuth id='online-eval'>
-                                    {(isPrivileged: boolean, isCommunity: boolean) => {
-                                        if (!isPrivileged) return null
-                                        if (!isCommunity)
+                                {false && (
+                                    <WithCurrentAuth id='online-eval'>
+                                        {(isPrivileged: boolean, isCommunity: boolean) => {
+                                            if (!isPrivileged) return null
+                                            if (!isCommunity)
+                                                return (
+                                                    <ExtendButton
+                                                        tooltip={t('online eval')}
+                                                        icon='a-onlineevaluation'
+                                                        as='link'
+                                                        onClick={() =>
+                                                            history.push(
+                                                                `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
+                                                            )
+                                                        }
+                                                    />
+                                                )
+
                                             return (
                                                 <ExtendButton
                                                     tooltip={t('online eval')}
                                                     icon='a-onlineevaluation'
                                                     as='link'
                                                     onClick={() =>
-                                                        history.push(
-                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
-                                                        )
+                                                        history.push(`/projects/${projectId}/online_eval/${model.id}`)
                                                     }
                                                 />
                                             )
-
-                                        return (
-                                            <ExtendButton
-                                                tooltip={t('online eval')}
-                                                icon='a-onlineevaluation'
-                                                as='link'
-                                                onClick={() =>
-                                                    history.push(`/projects/${projectId}/online_eval/${model.id}`)
-                                                }
-                                            />
-                                        )
-                                    }}
-                                </WithCurrentAuth>
+                                        }}
+                                    </WithCurrentAuth>
+                                )}
                                 {i ? (
                                     <WithCurrentAuth id='model.version.revert'>
                                         <ExtendButton
