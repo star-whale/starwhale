@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Set, Dict, List, Callable, Optional
+from typing import Any, Dict, List, Callable, Optional
 
 from pydantic import BaseModel
 
-from starwhale.base.client.models.models import ComponentSpecValueType
+from starwhale.base.client.models.models import (
+    ComponentValueSpecInt,
+    ComponentSpecValueType,
+    ComponentValueSpecFloat,
+)
 
-from .types import ServiceType, ComponentSpec
+from .types import ServiceType
 
 
 class Message(BaseModel):
@@ -37,22 +41,24 @@ class LLMChat(ServiceType):
         "max_new_tokens": ComponentSpecValueType.int,
     }
 
-    def __init__(self, args: Set | None = None) -> None:
-        if args is None:
-            args = set(self.arg_types.keys())
-        else:
-            # check if all args are in arg_types
-            for arg in args:
-                if arg not in self.arg_types:
-                    raise ValueError(f"Argument {arg} is not in arg_types.")
+    args = {}
 
-        self.args = args
-
-    def components_spec(self) -> List[ComponentSpec]:
-        return [
-            ComponentSpec(name=arg, component_spec_value_type=self.arg_types[arg])
-            for arg in self.args
-        ]
+    def __init__(
+        self,
+        top_k: ComponentValueSpecInt | None = None,
+        top_p: ComponentValueSpecFloat | None = None,
+        temperature: ComponentValueSpecFloat | None = None,
+        max_new_tokens: ComponentValueSpecInt | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if top_k is not None:
+            self.args["top_k"] = top_k
+        if top_p is not None:
+            self.args["top_p"] = top_p
+        if temperature is not None:
+            self.args["temperature"] = temperature
+        if max_new_tokens is not None:
+            self.args["max_new_tokens"] = max_new_tokens
 
     def router_fn(self, func: Callable) -> Callable:
         params = inspect.signature(func).parameters

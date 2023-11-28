@@ -7,7 +7,11 @@ import pytest
 from tests import ROOT_DIR, BaseTestCase
 from starwhale.core.model.model import StandaloneModel
 from starwhale.api._impl.service.service import Service
-from starwhale.base.client.models.models import ComponentSpecValueType
+from starwhale.base.client.models.models import (
+    ComponentValueSpecInt,
+    ComponentSpecValueType,
+    ComponentValueSpecFloat,
+)
 from starwhale.api._impl.service.types.types import ComponentSpec
 
 
@@ -44,15 +48,21 @@ class ServiceTestCase(BaseTestCase):
         assert len(components) == 3
         for c in [
             ComponentSpec(
-                name="user_input",
-                component_spec_value_type=ComponentSpecValueType.string,
-            ),
-            ComponentSpec(
-                name="history", component_spec_value_type=ComponentSpecValueType.list
-            ),
-            ComponentSpec(
                 name="temperature",
                 component_spec_value_type=ComponentSpecValueType.float,
+                component_value_spec_float=ComponentValueSpecFloat(default_val=0.5),
+            ),
+            ComponentSpec(
+                name="top_k",
+                component_spec_value_type=ComponentSpecValueType.int,
+                component_value_spec_int=ComponentValueSpecInt(default_val=1),
+            ),
+            ComponentSpec(
+                name="max_new_tokens",
+                component_spec_value_type=ComponentSpecValueType.int,
+                component_value_spec_int=ComponentValueSpecInt(
+                    default_val=64, max=1024
+                ),
             ),
         ]:
             assert c in components
