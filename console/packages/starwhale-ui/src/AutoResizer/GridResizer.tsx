@@ -18,6 +18,8 @@ export type GridResizerPropsT = {
     gridLayout?: string[]
     threshold?: number
     isResizeable?: boolean
+    draggable?: boolean
+    resizebar?: 'col' | 'expand'
 }
 
 export function GridResizer({
@@ -26,11 +28,15 @@ export function GridResizer({
     gridLayout = gridDefaultLayout,
     threshold = 200,
     isResizeable = true,
+    draggable = true,
+    resizebar = 'col',
 }: GridResizerPropsT) {
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<any>(null)
     const gridRef = React.useRef<HTMLDivElement>(null)
     const leftRef = React.useRef<HTMLDivElement | null>(null)
+    // eslint-disable-next-line
+    const CurrentResizeBar = resizebar === 'col' ? ResizeBar : ExpandResizeBar
 
     const grdiModeRef = React.useRef(1)
     const resize = useCallback(
@@ -68,6 +74,7 @@ export function GridResizer({
         document.removeEventListener('mousemove', resize)
     }
     const resizeStart = () => {
+        if (!draggable) return
         if (gridMode !== 1) return
         grdiModeRef.current = 1
         document.body.style.userSelect = 'none'
@@ -100,7 +107,7 @@ export function GridResizer({
                 width: '100%',
                 height: '100%',
                 flex: 1,
-                transition: '2s',
+                transition: '500ms',
             }}
         >
             <div
@@ -117,7 +124,7 @@ export function GridResizer({
             </div>
             {isResizeable && (
                 // eslint-disable-next-line  @typescript-eslint/no-use-before-define
-                <ResizeBar
+                <CurrentResizeBar
                     mode={gridMode}
                     resizeRef={resizeRef}
                     onResizeStart={resizeStart}
@@ -147,6 +154,66 @@ export type ResizeBarPropsT = {
     mode: number
     onResizeStart: () => void
     onModeChange: (mode: number) => void
+}
+
+function ExpandResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef }: ResizeBarPropsT) {
+    const [css] = themedUseStyletron()
+
+    return (
+        <div
+            ref={resizeRef}
+            className={classNames(
+                'resize-bar',
+                css({
+                    width: `${RESIZEBAR_WIDTH}px`,
+                    flexBasis: `${RESIZEBAR_WIDTH}px`,
+                    paddingTop: '60px',
+                    zIndex: 20,
+                    overflow: 'visible',
+                    backgroundColor: '#fff',
+                    position: 'relative',
+                    right: gridMode === 1 ? '0px' : undefined,
+                    left: gridMode === 0 ? '0px' : undefined,
+                })
+            )}
+            role='button'
+            tabIndex={0}
+            onMouseDown={onResizeStart}
+        >
+            {gridMode !== 1 && (
+                <i
+                    role='button'
+                    tabIndex={0}
+                    className='resize-left resize-left--hover top-0'
+                    onClick={() => onModeChange(1)}
+                >
+                    <IconFont
+                        type='fold2'
+                        size={12}
+                        style={{
+                            transform: 'rotate(-90deg)  translateY(-2px)',
+                        }}
+                    />
+                </i>
+            )}
+            {gridMode !== 0 && (
+                <i
+                    role='button'
+                    tabIndex={0}
+                    className='resize-right resize-right--hover  top-0'
+                    onClick={() => onModeChange(gridMode !== 0 ? -1 : 1)}
+                >
+                    <IconFont
+                        type='unfold2'
+                        size={12}
+                        style={{
+                            transform: 'rotate(-90deg)  translateY(2px)',
+                        }}
+                    />
+                </i>
+            )}
+        </div>
+    )
 }
 
 function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef }: ResizeBarPropsT) {

@@ -86,7 +86,7 @@ const RouteOverview = ({ url, onClose, title, extraActions, hasFullscreen = true
 
     const style: React.CSSProperties = fullscreen
         ? {
-              position: 'fixed',
+              position: 'absolute',
               top: headerHeight,
               left: 0,
               right: 0,
@@ -94,9 +94,11 @@ const RouteOverview = ({ url, onClose, title, extraActions, hasFullscreen = true
               zIndex: 11,
           }
         : {
-              position: 'fixed',
-              top: rect?.top,
-              left: rect?.left,
+              position: 'absolute',
+              //   top: rect?.top,
+              //   left: rect?.left,
+              top: 0,
+              left: 0,
               right: '20px',
               bottom: 0,
               zIndex: 11,

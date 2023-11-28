@@ -25699,10 +25699,10 @@ z-schema@~5.0.2:
   optionalDependencies:
     commander "^10.0.0"
 
-zustand@v4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-4.1.1.tgz#5a61cc755a002df5f041840a414ae6e9a99ee22b"
-  integrity sha512-h4F3WMqsZgvvaE0n3lThx4MM81Ls9xebjvrABNzf5+jb3/03YjNTSgZXeyrvXDArMeV9untvWXRw1tY+ntPYbA==
+zustand@v4.3.8:
+  version "4.3.8"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-4.3.8.tgz#37113df8e9e1421b0be1b2dca02b49b76210e7c4"
+  integrity sha512-4h28KCkHg5ii/wcFFJ5Fp+k1J3gJoasaIbppdgZFO4BPJnsNxL0mQXBSFgOgAdCdBj35aDTPvdAJReTMntFPGg==
   dependencies:
     use-sync-external-store "1.2.0"
 
