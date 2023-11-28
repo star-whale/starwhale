@@ -6,7 +6,7 @@ import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
 import { IGridState } from '@starwhale/ui/GridTable/types'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 
 export type CellPlacementPropsT = {

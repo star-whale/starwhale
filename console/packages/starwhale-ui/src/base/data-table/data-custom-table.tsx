@@ -14,7 +14,7 @@ import { useEvent, useEventCallback } from '@starwhale/core'
 import _ from 'lodash'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 
 const STYLE = { overflow: 'auto' }
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)

@@ -1,7 +1,7 @@
 import React from 'react'
 import { useStore } from './useStore'
 import { ConfigQuery, ConfigQueryInline, ExtraPropsT } from '../components/Query'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { IGridState } from '../types'
 import useGirdData from './useGridData'
 import ConfigSimpleQuery from '../components/Query/ConfigSimpleQuery'

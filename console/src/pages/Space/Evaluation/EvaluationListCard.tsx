@@ -13,7 +13,7 @@ import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertic
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useEventCallback } from '@starwhale/core'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'

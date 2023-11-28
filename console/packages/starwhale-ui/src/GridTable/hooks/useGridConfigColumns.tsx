@@ -1,6 +1,6 @@
 import React from 'react'
 import { useStore } from './useStore'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { IGridState } from '../types'
 import useGirdData from './useGridData'
 import { ExtraPropsT, ConfigColumns, StatefulConfigColumns } from '../components/ConfigColumns'

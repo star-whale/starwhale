@@ -16,7 +16,7 @@ import { StoreProvider } from './store'
 import { StoreUpdater } from './store/StoreUpdater'
 import { useStore } from './hooks/useStore'
 import { IContextGridTable, IGridState, ITableProps } from './types'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { headlineHeight } from './const'
 
 const useStyles = createUseStyles({

@@ -1,7 +1,7 @@
 import React from 'react'
 import { ITableState } from '../store'
 import useGridData from './useGridData'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { useStore } from './useStore'
 
 const selector = (state: ITableState) => ({

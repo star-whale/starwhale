@@ -7,6 +7,7 @@ import useFineTuneOnlineEval from '@/domain/space/hooks/useOnlineEval'
 import FineTuneOnlineEvalJobCard from './FineTuneOnlineEvalJobCard'
 import useTranslation from '@/hooks/useTranslation'
 import { useHistory } from 'react-router-dom'
+import FineTuneOnlineEvalServings from './FineTuneOnlineEvalServings'
 
 const GRID_LAYOUT = [
     // RIGHT:
@@ -60,19 +61,21 @@ export default function FineTuneOnlineEvalListCard() {
                     </div>
                 )}
                 gridLayout={GRID_LAYOUT}
-                right={() => (
-                    <RouteOverview
-                        key={key}
-                        url={routes.onlineServings}
-                        onClose={gotoList}
-                        extraActions={null}
-                        hasFullscreen={false}
-                        title={title}
-                    />
-                )}
+                right={() => <FineTuneOnlineEvalServings />}
                 draggable={false}
                 resizebar='expand'
             />
         </div>
     )
+}
+
+{
+    /* <RouteOverview
+    key={key}
+    url={routes.onlineServings}
+    onClose={gotoList}
+    extraActions={null}
+    hasFullscreen={false}
+    title={title}
+/> */
 }
