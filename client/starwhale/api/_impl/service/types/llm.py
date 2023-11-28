@@ -14,14 +14,14 @@ from starwhale.base.client.models.models import (
 from .types import ServiceType
 
 
-class Message(BaseModel):
+class MessageItem(BaseModel):
     content: str
-    role: str
+    bot: bool = False
 
 
 class Query(BaseModel):
     user_input: str
-    history: List[Message]
+    history: List[MessageItem]
     top_k: Optional[int] = None
     top_p: Optional[float] = None
     temperature: Optional[float] = None
@@ -30,6 +30,7 @@ class Query(BaseModel):
 
 class LLMChat(ServiceType):
     name = "llm_chat"
+    args = {}
 
     # TODO use pydantic model annotations generated arg_types
     arg_types: Dict[str, ComponentSpecValueType] = {
@@ -41,7 +42,7 @@ class LLMChat(ServiceType):
         "max_new_tokens": ComponentSpecValueType.int,
     }
 
-    args = {}
+    Message = MessageItem
 
     def __init__(
         self,
@@ -49,16 +50,12 @@ class LLMChat(ServiceType):
         top_p: ComponentValueSpecFloat | None = None,
         temperature: ComponentValueSpecFloat | None = None,
         max_new_tokens: ComponentValueSpecInt | None = None,
-        **kwargs: Any,
     ) -> None:
-        if top_k is not None:
-            self.args["top_k"] = top_k
-        if top_p is not None:
-            self.args["top_p"] = top_p
-        if temperature is not None:
-            self.args["temperature"] = temperature
-        if max_new_tokens is not None:
-            self.args["max_new_tokens"] = max_new_tokens
+        for k, v in locals().items():
+            if k == "self":
+                continue
+            if v is not None:
+                self.args[k] = v
 
     def router_fn(self, func: Callable) -> Callable:
         params = inspect.signature(func).parameters
