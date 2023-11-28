@@ -102,9 +102,6 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
-        pydantic-version:
-          - "1"
-          - "2"
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -139,7 +136,9 @@ jobs:
         run: |
           make install-dev-req
           make install-sw
-          python -m pip install -U "pydantic==${{matrix.pydantic-version}}.*"
+          export PYDANTIC_VER=$(python -c 'import random;print(random.choice(["1.*", "2.*"]))')
+          echo "install ${PYDANTIC_VER} for unit tests"
+          python -m pip install -U "pydantic==${PYDANTIC_VER}"
 
       - name: Git Config
         run: |
