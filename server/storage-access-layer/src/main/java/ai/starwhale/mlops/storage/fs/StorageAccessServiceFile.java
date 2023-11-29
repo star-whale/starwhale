@@ -174,14 +174,16 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        String sign = fsStorageSignature.sign(path, expTimeMillis);
-        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis) + "?sign=" + sign;
+        long expTime = System.currentTimeMillis() + expTimeMillis;
+        String sign = fsStorageSignature.sign(path, expTime);
+        return possibleServerUrl() + "/" + path + "/" + expTime + "?sign=" + sign;
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        String sign = fsStorageSignature.sign(path, expTimeMillis);
-        return possibleServerUrl() + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis) + "?sign=" + sign;
+        long expTime = System.currentTimeMillis() + expTimeMillis;
+        String sign = fsStorageSignature.sign(path, expTime);
+        return possibleServerUrl() + "/" + path + "/" + expTime + "?sign=" + sign;
     }
 
     private String possibleServerUrl() {
