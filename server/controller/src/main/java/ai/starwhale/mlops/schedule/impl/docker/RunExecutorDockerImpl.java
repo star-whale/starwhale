@@ -33,7 +33,6 @@ import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.Closeable;
 import java.io.IOException;
