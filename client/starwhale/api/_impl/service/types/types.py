@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import abc
 import inspect
 from typing import Any, Dict, List, Union, Callable
+
+from typing_extensions import Protocol
 
 from starwhale.utils import console
 from starwhale.base.client.models.models import (
@@ -15,11 +19,14 @@ from starwhale.base.client.models.models import (
 Inputs = Any
 Outputs = Any
 
+
+class ComponentValueSpec(Protocol):
+    default_val: Any
+
+
 ArgSpec = Union[
-    ComponentValueSpecInt,
-    ComponentValueSpecFloat,
-    ComponentValueSpecString,
-    ComponentValueSpecBool,
+    ComponentValueSpec,
+    None,
 ]
 
 
@@ -87,6 +94,50 @@ class ServiceType(abc.ABC):
             ret.append(item)
 
         return ret
+
+    def update_arg(self, name: str, default_value: Any) -> None:
+        """
+        Update the argument with the default value.
+        Only mark the argument as required if the default value is None.
+        :param name: the name of the argument
+        :param default_value: the default value of the argument, if None, only add the argument to the api spec
+            without default value
+        """
+
+        if name not in self.arg_types:
+            raise ValueError(f"Argument {name} does not support.")
+
+        if name in self.args:
+            # if the original default value is None, update it
+            arg_val_spec = self.args[name]
+            if arg_val_spec is not None and arg_val_spec.default_val is None:
+                arg_val_spec.default_val = default_value
+            return
+
+        if default_value is None:
+            self.args[name] = None
+            return
+
+        arg_type = self.arg_types[name]
+        if arg_type == ComponentSpecValueType.int:
+            self.args[name] = ComponentValueSpecInt(default_val=default_value)
+        elif arg_type == ComponentSpecValueType.float:
+            self.args[name] = ComponentValueSpecFloat(default_val=default_value)
+        elif arg_type == ComponentSpecValueType.string:
+            self.args[name] = ComponentValueSpecString(default_val=default_value)
+        elif arg_type == ComponentSpecValueType.bool:
+            self.args[name] = ComponentValueSpecBool(default_val=default_value)
+
+    def update_from_func(self, func: Callable) -> None:
+        """Update the service type components spec from the function."""
+        sig = inspect.signature(func)
+        params = sig.parameters
+
+        for name, param in params.items():
+            if name == "self":
+                continue
+            df = param.default if param.default is not inspect.Parameter.empty else None
+            self.update_arg(name, df)
 
 
 def all_components_are_gradio(

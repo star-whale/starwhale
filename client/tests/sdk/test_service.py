@@ -45,7 +45,7 @@ class ServiceTestCase(BaseTestCase):
         assert spec.apis[0].uri == "cmp"
         assert spec.apis[0].inference_type == "llm_chat"
         components = spec.apis[0].components
-        assert len(components) == 3
+        assert len(components) == 4
         for c in [
             ComponentSpec(
                 name="temperature",
@@ -63,6 +63,11 @@ class ServiceTestCase(BaseTestCase):
                 component_value_spec_int=ComponentValueSpecInt(
                     default_val=64, max=1024
                 ),
+            ),
+            ComponentSpec(
+                name="top_p",
+                component_spec_value_type=ComponentSpecValueType.float,
+                component_value_spec_float=ComponentValueSpecFloat(default_val=0.9),
             ),
         ]:
             assert c in components

@@ -23,5 +23,5 @@ class MyDefaultClass(PipelineHandler):
             max_new_tokens=ComponentValueSpecInt(default_val=64, max=1024),
         )
     )
-    def cmp(self, ppl_result: t.Iterator) -> t.Any:
+    def cmp(self, top_p: float = 0.9) -> t.Any:
         pass

@@ -106,6 +106,9 @@ class Service:
             if old.__module__ != func.__module__ or old.__name__ != func.__name__:
                 raise ValueError(f"Duplicate api uri: {uri}")
 
+        if inference_type is not None:
+            inference_type.update_from_func(func)
+
         _api = Api(
             func=func,
             uri=f"{uri}",
