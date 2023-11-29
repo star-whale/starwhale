@@ -59,8 +59,6 @@ public class RunExecutorDockerImpl implements RunExecutor {
     final String nodeIp;
     final String networkName;
 
-    Network network;
-
     static final String NETWORK_HOST = "host";
 
     public RunExecutorDockerImpl(
