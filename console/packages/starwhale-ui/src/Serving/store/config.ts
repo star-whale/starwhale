@@ -1,7 +1,7 @@
 import { isMacOS } from '../utils'
 import { DEFAULT_INPUT_TEMPLATE, StoreKey } from '../constant'
 import { createPersistStore } from '../utils/store'
-import { IJobVo } from '@/api/server/data-contracts'
+import { IApiSpec, IExposedLinkVo, IJobVo, IStepSpec } from '@/api/server/data-contracts'
 
 export enum SubmitKey {
     Enter = 'Enter',
@@ -84,18 +84,15 @@ export const ModalConfigValidator = {
     },
 }
 
-// service_spec:
-// version: 0.0.2
-// apis:
-//   - uri: online_eval
-//     inference_type: llm_chat
-//     components:
-//       - name: temperature
-//         component_spec_value_type: FLOAT
-//       - name: user_input
-//         component_spec_value_type: STRING
-//       - name: history
-//         component_spec_value_type: LIST
+export enum InferenceType {
+    llm_chat = 'llm_chat',
+}
+export interface IInference {
+    job: IJobVo
+    stepSpec: IStepSpec
+    apiSpec: IApiSpec
+    exposedLink: IExposedLinkVo
+}
 
 export const useServingConfig = createPersistStore(
     { ...DEFAULT_CONFIG },
@@ -104,7 +101,7 @@ export const useServingConfig = createPersistStore(
             set(() => ({ ...DEFAULT_CONFIG }))
         },
 
-        merge(newJobs: IJobVo[]) {
+        setJobs(newJobs: IJobVo[]) {
             if (!newJobs || newJobs.length === 0) {
                 return
             }
@@ -114,7 +111,55 @@ export const useServingConfig = createPersistStore(
             }))
         },
 
-        allModels() {},
+        /**
+        -   name: serving
+            concurrency: 1
+            replicas: 1
+            expose: 8080
+            virtual: true
+            job_name: serving
+            show_name: virtual handler for model serving
+            service_spec:
+                version: 0.0.2
+                apis:
+                - uri: online_eval
+                    inference_type: llm_chat
+                    components:
+                    - name: temperature
+                        component_spec_value_type: FLOAT
+                    - name: user_input
+                        component_spec_value_type: STRING
+                    - name: history
+                        component_spec_value_type: LIST
+            
+            "exposedLinks": [
+                {
+                    "type": "WEB_HANDLER",
+                    "name": "virtual handler for model serving",
+                    "link": "/gateway/task/311/8080/"
+                }
+            ],
+
+         */
+        getServings(): IInference[] {
+            const { jobs } = get()
+            const servings = [] as IInference[]
+            jobs.forEach((job) => {
+                const stepSpec = job.model.version.stepSpecs.find(
+                    (s) => s.name === job.jobName && job.jobName === 'serving'
+                )
+                const apiSpec = stepSpec?.service_spec?.apis?.[0]
+                const exposedLink = job.exposedLinks.find((l) => l.type === 'WEB_HANDLER')
+                if (!stepSpec || !apiSpec?.inference_type || !exposedLink) return
+                servings.push({
+                    job,
+                    stepSpec,
+                    apiSpec,
+                    exposedLink,
+                })
+            })
+            return servings
+        },
     }),
     {
         name: StoreKey.Config,

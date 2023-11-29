@@ -1,13 +1,12 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { api } from '@/api'
-import RouteOverview from './RouteOverview'
-import { useCreation } from 'ahooks'
 import { Button, GridResizer } from '@starwhale/ui'
 import useFineTuneOnlineEval from '@/domain/space/hooks/useOnlineEval'
 import FineTuneOnlineEvalJobCard from './FineTuneOnlineEvalJobCard'
 import useTranslation from '@/hooks/useTranslation'
 import { useHistory } from 'react-router-dom'
 import FineTuneOnlineEvalServings from './FineTuneOnlineEvalServings'
+import { useServingConfig } from '@starwhale/ui/Serving/store/config'
 
 const GRID_LAYOUT = [
     // RIGHT:
@@ -20,26 +19,14 @@ export default function FineTuneOnlineEvalListCard() {
     const [t] = useTranslation()
     const config = useFineTuneOnlineEval()
     const history = useHistory()
-    const { projectId, spaceId, gotoList, routes } = config
-    const [key, forceUpdate] = React.useReducer((s) => s + 1, 0)
+    const { projectId, spaceId } = config
     const info = api.useListOnlineEval(projectId, spaceId)
-    const onRefresh = () => {
-        info.refetch()
-        forceUpdate()
-    }
+    const sc = useServingConfig()
 
-    const title = useCreation(() => {
-        return null
-    }, [info])
-
-    // const params = {
-    //     projectId,
-    //     spaceId,
-    //     job: info.data,
-    // }
-    // const actionBar = <EvalJobActionGroup onRefresh={onRefresh} {...params} />
-
-    console.log(routes)
+    useEffect(() => {
+        sc.setJobs(info.data ?? [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [info.data])
 
     return (
         <div className='content-full pt-12px'>
@@ -69,13 +56,13 @@ export default function FineTuneOnlineEvalListCard() {
     )
 }
 
-{
-    /* <RouteOverview
-    key={key}
-    url={routes.onlineServings}
-    onClose={gotoList}
-    extraActions={null}
-    hasFullscreen={false}
-    title={title}
-/> */
-}
+// {
+//     /* <RouteOverview
+//     key={key}
+//     url={routes.onlineServings}
+//     onClose={gotoList}
+//     extraActions={null}
+//     hasFullscreen={false}
+//     title={title}
+// /> */
+// }

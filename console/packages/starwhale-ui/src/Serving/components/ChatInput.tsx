@@ -48,12 +48,9 @@ function useSubmitHandler() {
     }
 }
 
-function ChatInput() {
-    const { scrollRef, setAutoScroll, scrollDomToBottom } = useScrollToBottom()
+function ChatInput({ inputRef, scrollDomToBottom, userInput, setUserInput }) {
     const { submitKey, shouldSubmit } = useSubmitHandler()
-    const inputRef = useRef<HTMLTextAreaElement>(null)
     const [inputRows, setInputRows] = useState(2)
-    const [userInput, setUserInput] = useState('')
     const config = useServingConfig()
 
     useDebounceEffect(

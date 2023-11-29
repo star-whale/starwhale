@@ -1,6 +1,6 @@
 /* eslint-disable */
 /* @ts-nocheck */
-import create from 'zustand'
+import { create } from 'zustand'
 import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import _ from 'lodash'
