@@ -30,7 +30,6 @@ import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
@@ -82,23 +81,7 @@ public class RunExecutorDockerImpl implements RunExecutor {
 
     @Override
     public void run(Run run, RunReportReceiver runReportReceiver) {
-
         DockerClient dockerClient = dockerClientFinder.findProperDockerClient(run.getRunSpec().getResourcePool());
-        boolean hostNetwork = NETWORK_HOST.equals(networkName);
-        if (!hostNetwork && null == network) {
-            synchronized (this) {
-                if (null == network) {
-                    try {
-                        network = dockerClient.inspectNetworkCmd().withNetworkId(this.networkName).exec();
-                    } catch (NotFoundException e) {
-                        dockerClient.createNetworkCmd().withName(this.networkName).exec();
-                        network = dockerClient.inspectNetworkCmd().withNetworkId(this.networkName).exec();
-                    }
-                }
-            }
-        }
-
-
         var runSpec = run.getRunSpec();
         String image = runSpec.getImage();
         dockerClient.pullImageCmd(image).exec(new ResultCallback<PullResponseItem>() {
@@ -137,6 +120,7 @@ public class RunExecutorDockerImpl implements RunExecutor {
                 labels.putAll(CONTAINER_LABELS);
 
                 String containerName = containerRunMapper.containerName(run);
+                boolean hostNetwork = NETWORK_HOST.equals(networkName);
                 HostConfig hostConfig;
                 if (hostNetwork) {
                     hostConfig = hostResourceConfigBuilder
