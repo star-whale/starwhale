@@ -80,7 +80,10 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
             )
         },
         current_instance=DEFAULT_INSTANCE,
-        storage=dict(root=env_root or str(DEFAULT_SW_LOCAL_STORAGE.resolve())),
+        storage=dict(
+            root=env_root or str(DEFAULT_SW_LOCAL_STORAGE.resolve()),
+            server_compose=f"{env_root or DEFAULT_SW_LOCAL_STORAGE.resolve()}/.server/docker-compose.yaml",
+        ),
         docker=dict(builtin_image_repo=DEFAULT_IMAGE_REPO),
     )
     render_swcli_config(c, fpath)
@@ -113,6 +116,13 @@ class SWCliConfigMixed:
     @property
     def rootdir(self) -> Path:
         return Path(self._config["storage"]["root"])
+
+    @property
+    def server_compose(self) -> Path:
+        if "server_compose" not in self._config["storage"]:
+            return self.rootdir / ".server" / "docker-compose.yaml"
+        else:
+            return Path(self._config["storage"]["server_compose"])
 
     @property
     def datastore_dir(self) -> Path:
