@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.ft;
 import static ai.starwhale.mlops.domain.evaluation.EvaluationService.TABLE_NAME_FORMAT;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.common.Constants;
@@ -30,6 +31,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.evaluation.storage.EvaluationRepo;
 import ai.starwhale.mlops.domain.event.EventService;
+import ai.starwhale.mlops.domain.ft.bo.MigrationResult;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneMapper;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
@@ -45,6 +47,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -65,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -72,6 +76,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 public class FineTuneAppService {
 
@@ -86,6 +91,8 @@ public class FineTuneAppService {
     final FineTuneMapper fineTuneMapper;
 
     final JobMapper jobMapper;
+
+    final JobStatusMachine jobStatusMachine;
 
     private final JobSpecParser jobSpecParser;
 
@@ -116,7 +123,7 @@ public class FineTuneAppService {
             JobCreator jobCreator,
             FineTuneMapper fineTuneMapper,
             JobMapper jobMapper,
-            JobSpecParser jobSpecParser,
+            JobStatusMachine jobStatusMachine, JobSpecParser jobSpecParser,
             IdConverter idConverter,
             ModelDao modelDao,
             @Value("${sw.instance-uri}") String instanceUri,
@@ -133,6 +140,7 @@ public class FineTuneAppService {
         this.jobCreator = jobCreator;
         this.fineTuneMapper = fineTuneMapper;
         this.jobMapper = jobMapper;
+        this.jobStatusMachine = jobStatusMachine;
         this.jobSpecParser = jobSpecParser;
         this.idConverter = idConverter;
         this.modelDao = modelDao;
@@ -241,7 +249,10 @@ public class FineTuneAppService {
                 }
                 Map<String, String> envMap = env.stream()
                         .filter(e -> null != e.getValue())
-                        .collect(Collectors.toMap(Env::getName, Env::getValue));
+                        .collect(Collectors.toMap(Env::getName, Env::getValue, (env1, env2) -> {
+                            log.warn("duplicate env detected from user, random value {} is chosen", env1);
+                            return env1;
+                        }));
                 //if ENV vars in user's step spec conflicts with controller's, use controller's ENV
                 List<Env> controllerEnvs = envSupplier.get();
                 if (null != controllerEnvs) {
@@ -301,20 +312,51 @@ public class FineTuneAppService {
                 .build();
     }
 
-    public int importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
-        return evaluationRepo.migration(
-                String.format(TABLE_NAME_FORMAT, projectId),
-                uuids,
-                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
-        );
+    public MigrationResult importEvalFromCommon(Long projectId, Long spaceId, List<String> uuids) {
+        // validate the src rows
+        // 1. status should be final
+        var jobs = jobMapper.findJobByUuids(uuids, projectId);
+        var validates = jobs.stream()
+                .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus()))
+                .map(JobEntity::getJobUuid)
+                .collect(Collectors.toList());
+        var success = 0;
+        if (!validates.isEmpty()) {
+            success = evaluationRepo.migration(
+                    String.format(TABLE_NAME_FORMAT, projectId),
+                    validates,
+                    String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId)
+            );
+        }
+        return MigrationResult.builder()
+                .success(success)
+                .fail(uuids.size() - success)
+                .build();
     }
 
-    public int exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
-        return evaluationRepo.migration(
-                String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
-                uuids,
-                String.format(TABLE_NAME_FORMAT, projectId)
-        );
+    public MigrationResult exportEvalToCommon(Long projectId, Long spaceId, List<String> uuids) {
+        // validate the src rows
+        // 1. status should be final
+        // 2. model should not be draft
+        var jobs = jobMapper.findJobByUuids(uuids, projectId);
+        var validates = jobs.stream()
+                .filter(jobEntity -> jobStatusMachine.isFinal(jobEntity.getJobStatus())
+                        && !jobEntity.getModelVersion().getDraft()
+                )
+                .map(JobEntity::getJobUuid)
+                .collect(Collectors.toList());
+        var success = 0;
+        if (!validates.isEmpty()) {
+            success = evaluationRepo.migration(
+                    String.format(FULL_EVALUATION_SUMMARY_TABLE_FORMAT, projectId, spaceId),
+                    validates,
+                    String.format(TABLE_NAME_FORMAT, projectId)
+            );
+        }
+        return MigrationResult.builder()
+                .success(success)
+                .fail(uuids.size() - success)
+                .build();
     }
 
     /**
@@ -388,6 +430,18 @@ public class FineTuneAppService {
                     modelVersion
             );
         }
+    }
+
+    public List<JobVo> listOnlineEval(Long projectId, Long spaceId) {
+        var onlineEvaluations = jobMapper.listBizJobs(
+                projectId,
+                BizType.FINE_TUNE.name(),
+                String.valueOf(spaceId),
+                JobType.ONLINE_EVAL.name(),
+                null
+        );
+        return onlineEvaluations.stream()
+                .map(jobConverter::convert).collect(Collectors.toList());
     }
 
     public List<ModelViewVo> listModelVersionView(Long projectId, Long spaceId) {

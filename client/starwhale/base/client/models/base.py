@@ -1,10 +1,10 @@
 import typing
 
-from pydantic import BaseModel
+from starwhale.base.models.base import SwBaseModel
 
 Model = typing.TypeVar("Model")
 
 
-class ResponseCode(BaseModel):
+class ResponseCode(SwBaseModel):
     code: str
     message: str

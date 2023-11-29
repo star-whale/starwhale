@@ -9,6 +9,7 @@ export enum QuickGroupEnum {
     current = 'current',
     guest = 'guest',
     all = 'all',
+    zone = 'zone',
 }
 
 function QuickGroup({
@@ -34,7 +35,7 @@ function QuickGroup({
     const quickGroup = value
 
     useMount(() => {
-        onChange?.(QuickGroupEnum.current, filterFunctions[QuickGroupEnum.current])
+        onChange?.(value, filterFunctions[value])
     })
 
     return (

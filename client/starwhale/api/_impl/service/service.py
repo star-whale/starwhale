@@ -5,7 +5,7 @@ import sys
 import typing as t
 import functools
 
-from .types.types import ComponentSpec
+from starwhale.base.client.models.models import ApiSpec, ServiceSpec
 
 if sys.version_info >= (3, 9):
     from importlib.resources import files
@@ -25,19 +25,6 @@ from .types import Inputs, Outputs, ServiceType, all_components_are_gradio
 STATIC_DIR_DEV = os.getenv("SW_SERVE_STATIC_DIR") or str(
     files("starwhale").joinpath("web/ui")
 )
-
-
-class ApiSpec(SwBaseModel):
-    uri: str
-    inference_type: str
-    components_hint: t.List[ComponentSpec] = Field(default_factory=list)
-
-
-class ServiceSpec(SwBaseModel):
-    title: t.Optional[str] = None
-    description: t.Optional[str] = None
-    version: str
-    apis: t.List[ApiSpec]
 
 
 class Api(SwBaseModel):
@@ -68,7 +55,7 @@ class Api(SwBaseModel):
         return ApiSpec(
             uri=self.uri,
             inference_type=self.inference_type.name,
-            components_hint=self.inference_type.components_spec(),
+            components=self.inference_type.components_spec(),
         )
 
 
@@ -95,7 +82,9 @@ class Service:
 
         return decorator
 
-    def get_spec(self) -> ServiceSpec:
+    def get_spec(self) -> ServiceSpec | None:
+        if not self.apis:
+            return None
         return ServiceSpec(
             version="0.0.2",
             apis=list(filter(None, [_api.to_spec() for _api in self.apis.values()])),
@@ -111,7 +100,11 @@ class Service:
     ) -> None:
         console.debug(f"add api {uri}")
         if uri in self.apis:
-            raise ValueError(f"Duplicate api uri: {uri}")
+            old = self.apis[uri].func
+            # the dest module will be force unloaded and reload when generating job yaml,
+            # so we need to check if the module and function name are the same
+            if old.__module__ != func.__module__ or old.__name__ != func.__name__:
+                raise ValueError(f"Duplicate api uri: {uri}")
 
         _api = Api(
             func=func,
@@ -143,7 +136,7 @@ class Service:
         app = FastAPI(title=title)
 
         @app.get("/api/spec")
-        def spec() -> ServiceSpec:
+        def spec() -> t.Union[ServiceSpec, None]:
             return self.get_spec()
 
         for _api in self.apis.values():

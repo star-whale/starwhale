@@ -72,7 +72,9 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     }, [rows, rowIndex])
 
     const Cell = React.useMemo(() => column.renderCell ?? null, [column])
-    const value = React.useMemo(() => column.mapDataToValue(rowData), [column, rowData])
+    // const value = React.useMemo(() => column.mapDataToValue(rowData), [column, rowData])
+    // TODO mapDataToValue has hooks inside, so it can't be memoized
+    const value = column.mapDataToValue(rowData)
     const isSelected = React.useMemo(() => isRowSelected(row), [row])
     const onSelect = React.useMemo(
         () => (isSelectable && columnIndex === 0 ? () => onSelectOne(row) : undefined),

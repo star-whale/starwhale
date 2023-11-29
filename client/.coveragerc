@@ -21,5 +21,9 @@ omit =
   */site-packages/*
   */dist/*
   */build/*
-  starwhale/cli/*
+  starwhale/cli/board/*
+  starwhale/cli/debug/*
+  starwhale/cli/mngt.py
+  starwhale/cli/config.py
+  starwhale/cli/completion.py
   starwhale/core/*/cli.py

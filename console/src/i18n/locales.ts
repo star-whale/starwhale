@@ -811,16 +811,20 @@ const ft = {
         zh: 'Fine-tuning',
     },
     'ft.space.title': {
-        en: 'Fine-tuning Spaces',
-        zh: 'Fine-tuning 空间',
+        en: 'Fine-tuning Zones',
+        zh: 'Fine-tuning Zones',
     },
     'ft.space.id': {
-        en: 'Fine-tuning Space ID',
-        zh: 'Fine-tuning 空间 ID',
+        en: 'Zone ID',
+        zh: 'Zone ID',
     },
     'ft.space.name': {
-        en: 'Space Name',
-        zh: '空间名称',
+        en: 'Zone Name',
+        zh: 'Zone 名称',
+    },
+    'ft.space': {
+        en: 'Zone',
+        zh: 'Zone',
     },
     'ft.space.action.edit': {
         en: 'Edit',
@@ -830,13 +834,34 @@ const ft = {
         en: 'Runs',
         zh: 'Runs',
     },
+    'ft.eval': {
+        en: 'Evaluation',
+        zh: '评测',
+    },
+    'ft.eval.export': {
+        en: 'Synchronize',
+        zh: '同步',
+    },
+    'ft.eval.export.check.label': {
+        en: 'Synchronize evaluations',
+        zh: '同步评测记录',
+    },
+
+    'ft.eval.export.check.desc': {
+        en: 'Synchronize all the evaluations of this released model in this fine-tuning zone to the evaluation module.',
+        zh: '将该 Fine-tuning Zone 中该模型的所有评测同步到评测模块。',
+    },
+    'ft.eval.import': {
+        en: 'Add',
+        zh: '导入',
+    },
     'ft.online_eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
     },
     'ft.id': {
-        en: 'Fine-tuning ID',
-        zh: 'Fine-tuning ID',
+        en: 'Run ID',
+        zh: 'Run ID',
     },
     'ft.job.new': {
         en: 'Create Fine-tuning Job',
@@ -901,6 +926,30 @@ const ft = {
     'ft.job.model.release.succes': {
         en: 'Release Success',
         zh: '发布成功',
+    },
+    'ft.job.model.release.done': {
+        en: 'All the selected evaluations have been successfully synchronized to the Evaluations Module.',
+        zh: '已成功同步所有选中的评测到评测模块。',
+    },
+    'ft.job.model.release.warning': {
+        en: 'None of the selected evaluations have been synchronized to the Evaluations Module.',
+        zh: '未同步任何选中的评测到评测模块。',
+    },
+    'ft.job.model.release.fail': {
+        en: '{{0}} evaluations have been successfully synchronized to the Evaluations Module. {{1}} failed.',
+        zh: '成功同步 {{0}} 个评测到评测模块，失败 {{1}} 个。',
+    },
+    'ft.job.model.import.done': {
+        en: 'All the selected evaluations have been successfully synchronized to the Current Module.',
+        zh: '已成功同步所有选中的评测到当前模块。',
+    },
+    'ft.job.model.import.warning': {
+        en: 'None of the selected evaluations have been synchronized to the Current Module.',
+        zh: '未同步任何选中的评测到当前模块。',
+    },
+    'ft.job.model.import.fail': {
+        en: '{{0}} evaluations have been successfully synchronized to the Current Module. {{1}} failed.',
+        zh: '成功同步 {{0}} 个评测到当前模块，失败 {{1}} 个。',
     },
     'ft.base.model.name': {
         en: 'Base Model Name',

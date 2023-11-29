@@ -39,7 +39,7 @@ export default defineConfig({
             'text-16 inline-block cursor-pointer select-none opacity-75 transition duration-200 ease-in-out hover:opacity-100 hover:text-primary !outline-none',
         ],
         ['content-full', 'flex flex-col overflow-hidden min-w-0 w-full flex-1'],
-        ['content-full-scroll', 'flex flex-col overflow-scroll min-w-0 flex-1 '],
+        ['content-full-scroll', 'flex flex-col overflow-auto min-w-0 flex-1 '],
         // text
         [
             'button-link',

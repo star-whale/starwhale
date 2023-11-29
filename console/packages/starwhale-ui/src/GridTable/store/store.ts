@@ -493,13 +493,6 @@ export type IStore = ReturnType<typeof createCustomStore>
 export default createCustomStore
 
 export const useEvaluationStore = createCustomStore('evaluations', {}, false)
-export const useEvaluationCompareStore = createCustomStore('compare', {
-    compare: {
-        comparePinnedKey: '',
-        compareShowCellChanges: true,
-        compareShowDiffOnly: false,
-    },
-})
 export const useEvaluationDetailStore = createCustomStore(
     'evaluations-detail',
     {
@@ -525,5 +518,18 @@ export const useDatasetStore = createCustomStore(
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []
 const currentViewSelector = (state: ITableState) => state.currentView ?? {}
+
+export const useFineTuneEvaluationStore = createCustomStore('ft-evaluations', {}, false)
+export const useFineTuneEvaluationDetailStore = createCustomStore(
+    'ft-evaluation-detail',
+    {
+        compare: {
+            comparePinnedKey: '',
+            compareShowCellChanges: true,
+            compareShowDiffOnly: false,
+        },
+    },
+    false
+)
 
 export { stateSelector, currentQueriesSelector, currentViewSelector }

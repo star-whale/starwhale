@@ -3,7 +3,7 @@ import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { Role } from '@/api/const'
 import { ThemeType } from '@starwhale/ui/theme'
 import { ISystemFeaturesSchema } from '@/domain/setting/schemas/system'
-import { IDatasetInfoVo, IJobVo, IModelInfoVo, IProjectVo, IRuntimeInfoVo, IUserVo } from '@/api'
+import { IDatasetInfoVo, IFineTuneVo, IJobVo, IModelInfoVo, IProjectVo, IRuntimeInfoVo, IUserVo } from '@/api'
 
 const initialState = {
     token: undefined as string | undefined,
@@ -27,6 +27,8 @@ const initialState = {
     runtimeVersionLoading: false,
     job: undefined as IJobVo | undefined,
     jobLoading: false,
+    fineTune: undefined as IFineTuneVo | undefined,
+    fineTuneLoading: false,
     task: undefined as ITaskDetailSchema | undefined,
     taskLoading: false,
     drawerExpanded: false,

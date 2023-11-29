@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.job;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
@@ -26,21 +25,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.JobCreateRequest;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
-import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +48,6 @@ public class JobCreatorTest {
     private StoragePathCoordinator storagePathCoordinator;
     private JobDao jobDao;
     private JobUpdateHelper jobUpdateHelper;
-
-    private SystemSettingService systemSettingService;
-    private JobSpecParser jobSpecParser;
 
     private JobCreator jobCreator;
     private UserJobConverter userJobConverter;
@@ -75,24 +68,20 @@ public class JobCreatorTest {
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
                 .willReturn(2L);
-        systemSettingService = mock(SystemSettingService.class);
         jobUpdateHelper = mock(JobUpdateHelper.class);
         userJobConverter = mock(UserJobConverter.class);
-        jobSpecParser = new JobSpecParser();
         jobCreator = new JobCreator(
                 jobSpliterator,
                 jobLoader,
                 storagePathCoordinator,
                 jobDao,
                 jobUpdateHelper,
-                systemSettingService,
-                jobSpecParser,
                 userJobConverter
         );
     }
 
     @Test
-    public void testCreateJob() {
+    public void testCreateJob() throws JsonProcessingException {
         String fullJobSpec = "mnist.evaluator:MNISTInference.cmp:\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
@@ -162,20 +151,6 @@ public class JobCreatorTest {
                     entity.setId(1L);
                     return true;
                 });
-
-        var jobReq = JobCreateRequest.builder()
-                .handler("mnist.evaluator:MNISTInference.cmp")
-                .stepSpecOverWrites(overviewJobSpec)
-                .jobType(JobType.EVALUATION)
-                .build();
-
-        // handler and stepSpec could only have one
-        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
-
-        jobReq.setHandler(null);
-        jobReq.setStepSpecOverWrites(null);
-        assertThrows(StarwhaleApiException.class, () -> jobCreator.createJob(jobReq));
-
 
         var userJobReq = UserJobCreateRequest.builder()
                 .project(Project.builder().id(1L).build())

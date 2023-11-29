@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -92,6 +93,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -623,7 +625,7 @@ public class RuntimeServiceTest {
     }
 
     @Test
-    public void testDockerize() {
+    public void testDockerize() throws JsonProcessingException {
         Project project = Project.builder().id(1L).name("starwhale").build();
         given(projectService.findProject("project-1"))
                 .willReturn(project);
@@ -667,7 +669,10 @@ public class RuntimeServiceTest {
                 + "    entrypoint:\n"
                 + "    - \"sh\"\n"
                 + "    - \"-c\"\n";
-        assertEquals(expectedStepSpec, req.getStepSpecOverWrites());
+        assertIterableEquals(
+                new JobSpecParser().parseAndFlattenStepFromYaml(expectedStepSpec),
+                req.getStepSpecOverWrites()
+        );
     }
 
     @Test

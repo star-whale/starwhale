@@ -160,6 +160,12 @@ def check() -> None:
         )
         return out.decode().strip().split()[-1]
 
+    def _check_docker_compose() -> str:
+        out = subprocess.check_output(
+            ["docker", "compose", "version", "--short"], stderr=subprocess.STDOUT
+        )
+        return out.decode().strip()
+
     dependencies: t.List[_Dependency] = [
         _Dependency(
             title="Docker",
@@ -167,9 +173,23 @@ def check() -> None:
             level=_CheckLevel.WARN,
             help=(
                 "Docker is an open platform for developing, shipping, and running applications."
-                "Starwhale uses Docker to run jobs. You can visit https://docs.docker.com/get-docker/ for more details."
+                "Starwhale uses Docker to run jobs. "
+                "In Ubuntu, you can install Docker by `sudo apt-get install docker-ce`."
+                "You can visit https://docs.docker.com/get-docker/ for more details."
             ),
             checker=_check_docker,
+        ),
+        _Dependency(
+            title="Docker Compose",
+            min_version="2.0.0",
+            level=_CheckLevel.WARN,
+            help=(
+                "When you run Starwhale Server by `swcli server start`, "
+                "Starwhale will use Docker Compose to manage Starwhale Server."
+                "In Ubuntu, you can install Docker Compose by `sudo apt-get install docker-compose-plugin`."
+                "You can visit https://docs.docker.com/compose/install/ for more details."
+            ),
+            checker=_check_docker_compose,
         ),
         _Dependency(
             title="Conda",
@@ -177,7 +197,8 @@ def check() -> None:
             level=_CheckLevel.WARN,
             help=(
                 "Conda is an open-source package management system and environment management system."
-                "Starwhale uses Conda to build runtime. You can download it from https://docs.conda.io/en/latest/miniconda.html."
+                "Starwhale uses Conda to build runtime. "
+                "You can download it from https://docs.conda.io/en/latest/miniconda.html."
             ),
             checker=_check_conda,
         ),

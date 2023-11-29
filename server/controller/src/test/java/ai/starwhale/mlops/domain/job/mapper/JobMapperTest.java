@@ -177,6 +177,9 @@ public class JobMapperTest extends MySqlContainerHolder {
         jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, JobType.EVALUATION.name(), null);
         Assertions.assertEquals(1, jobs.size());
 
+        jobs = jobMapper.listBizJobs(project.getId(), BizType.FINE_TUNE.name(), null, JobType.ONLINE_EVAL.name(), null);
+        Assertions.assertEquals(0, jobs.size());
+
         jobs = jobMapper.listBizJobs(
                 project.getId(),
                 BizType.FINE_TUNE.name(),
@@ -215,6 +218,8 @@ public class JobMapperTest extends MySqlContainerHolder {
     public void testFindByUuId() {
         validateJob(jobPaused, user, project, modelVersionEntity,
                 jobMapper.findJobByUuid(jobPaused.getJobUuid()));
+        validateJob(jobPaused, user, project, modelVersionEntity,
+                jobMapper.findJobByUuids(List.of(jobPaused.getJobUuid()), project.getId()).get(0));
     }
 
     @Test

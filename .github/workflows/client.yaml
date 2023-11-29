@@ -70,6 +70,8 @@ jobs:
         working-directory: ./client
         run: |
           make install-dev-req
+          # force using pydantic v2 to do lint checking
+          python -m pip install -U 'pydantic==2.*'
           make install-sw
 
       - name: Black Format Check
@@ -134,6 +136,9 @@ jobs:
         run: |
           make install-dev-req
           make install-sw
+          export PYDANTIC_VER=$(python -c 'import random;print(random.choice(["1.*", "2.*"]))')
+          echo "install ${PYDANTIC_VER} for unit tests"
+          python -m pip install -U "pydantic==${PYDANTIC_VER}"
 
       - name: Git Config
         run: |

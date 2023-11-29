@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Set, List, Callable, Optional
+from typing import Any, Dict, List, Callable, Optional
 
 from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
 
-from .types import ServiceType, ComponentSpec
+from starwhale.base.client.models.models import (
+    ComponentValueSpecInt,
+    ComponentSpecValueType,
+    ComponentValueSpecFloat,
+)
+
+from .types import ServiceType
 
 
-@dataclass
-class Message:
+class Message(BaseModel):
     content: str
     role: str
 
@@ -18,42 +22,43 @@ class Message:
 class Query(BaseModel):
     user_input: str
     history: List[Message]
-    confidence: Optional[float]
-    top_k: Optional[float]
-    top_p: Optional[float]
-    temperature: Optional[float]
-    max_new_tokens: Optional[int]
+    top_k: Optional[int] = None
+    top_p: Optional[float] = None
+    temperature: Optional[float] = None
+    max_new_tokens: Optional[int] = None
 
 
 class LLMChat(ServiceType):
     name = "llm_chat"
 
     # TODO use pydantic model annotations generated arg_types
-    arg_types = {
-        "user_input": str,
-        "history": list,  # list of Message
-        "top_k": float,
-        "top_p": float,
-        "temperature": float,
-        "max_new_tokens": int,
+    arg_types: Dict[str, ComponentSpecValueType] = {
+        "user_input": ComponentSpecValueType.string,
+        "history": ComponentSpecValueType.list,  # list of Message
+        "top_k": ComponentSpecValueType.int,
+        "top_p": ComponentSpecValueType.float,
+        "temperature": ComponentSpecValueType.float,
+        "max_new_tokens": ComponentSpecValueType.int,
     }
 
-    def __init__(self, args: Set | None = None) -> None:
-        if args is None:
-            args = set(self.arg_types.keys())
-        else:
-            # check if all args are in arg_types
-            for arg in args:
-                if arg not in self.arg_types:
-                    raise ValueError(f"Argument {arg} is not in arg_types.")
+    args = {}
 
-        self.args = args
-
-    def components_spec(self) -> List[ComponentSpec]:
-        return [
-            ComponentSpec(name=arg, type=self.arg_types[arg].__name__)
-            for arg in self.args
-        ]
+    def __init__(
+        self,
+        top_k: ComponentValueSpecInt | None = None,
+        top_p: ComponentValueSpecFloat | None = None,
+        temperature: ComponentValueSpecFloat | None = None,
+        max_new_tokens: ComponentValueSpecInt | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if top_k is not None:
+            self.args["top_k"] = top_k
+        if top_p is not None:
+            self.args["top_p"] = top_p
+        if temperature is not None:
+            self.args["temperature"] = temperature
+        if max_new_tokens is not None:
+            self.args["max_new_tokens"] = max_new_tokens
 
     def router_fn(self, func: Callable) -> Callable:
         params = inspect.signature(func).parameters

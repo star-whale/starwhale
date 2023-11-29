@@ -49,7 +49,7 @@ function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender, extr
             data: walk($data),
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [$data, search, searchFilter, nodeRender])
+    }, [$data, search, searchFilter, extraFilters, nodeRender])
 }
 
 export { useTreeDataLoader }

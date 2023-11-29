@@ -7,12 +7,16 @@ import { useQueryArgs } from '@starwhale/core/utils'
 import { IJobRequest, api } from '@/api'
 import { ExtendButton } from '@starwhale/ui'
 import { useRouteInlineContext } from '@/contexts/RouteInlineContext'
+import FormFieldZoneModel from '@/domain/job/components/FormFieldZoneModel'
 
 export default function FineTuneNewCard() {
     const { projectId, spaceId } = useParams<{ projectId: any; spaceId: any }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
     const history = useHistory()
+    const { fineTuneId } = query
+    const { isInline } = useRouteInlineContext()
+
     const handleSubmit = useCallback(
         async (data: IJobRequest) => {
             if (!projectId) {
@@ -24,16 +28,16 @@ export default function FineTuneNewCard() {
                 bizType: 'FINE_TUNE',
                 bizId: spaceId,
             })
+            if (isInline) {
+                history.go(-1)
+                return
+            }
             history.push(`/projects/${projectId}/spaces/${spaceId}/fine-tunes`)
         },
-        [projectId, spaceId, history]
+        [projectId, spaceId, isInline, history]
     )
-    // rerun job id
-    const { fineTuneId } = query
     const info = api.useFineTuneInfo(projectId, spaceId, fineTuneId)
     const job = info?.data?.job
-
-    const { isInline } = useRouteInlineContext()
 
     return (
         <Card
@@ -55,6 +59,7 @@ export default function FineTuneNewCard() {
                 job={job}
                 autoFill={!job}
                 enableTemplate={false}
+                plugins={{ FormFieldModel: FormFieldZoneModel }}
                 validationDatasets={info?.data?.validationDatasets}
             />
         </Card>

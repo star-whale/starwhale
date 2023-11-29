@@ -21,6 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +34,8 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -40,11 +45,14 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,14 +67,38 @@ class UserJobConverterTest {
     private RuntimeDao runtimeDao;
     private DatasetDao datasetDao;
 
+    private SystemSettingService systemSettingService;
+    private JobSpecParser jobSpecParser;
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws JsonProcessingException {
         projectService = mock(ProjectService.class);
         modelService = mock(ModelService.class);
         userService = mock(UserService.class);
         modelDao = mock(ModelDao.class);
         runtimeDao = mock(RuntimeDao.class);
         datasetDao = mock(DatasetDao.class);
+        systemSettingService = mock(SystemSettingService.class);
+        jobSpecParser = mock(JobSpecParser.class);
+        when(jobSpecParser.parseAndFlattenStepFromYaml(anyString()))
+                .thenReturn(List.of(
+                        StepSpec.builder()
+                                .name("a")
+                                .build(),
+                        StepSpec.builder()
+                                .name("b")
+                                .build()
+                ));
+
+        when(jobSpecParser.parseStepFromYaml(any(), anyString()))
+                .thenReturn(List.of(
+                        StepSpec.builder()
+                                .name("a")
+                                .build(),
+                        StepSpec.builder()
+                                .name("b")
+                                .build()
+                ));
 
         userJobConverter = new UserJobConverter(
                 idConverter,
@@ -75,7 +107,9 @@ class UserJobConverterTest {
                 userService,
                 modelDao,
                 runtimeDao,
-                datasetDao
+                datasetDao,
+                jobSpecParser,
+                systemSettingService
         );
     }
 
@@ -84,6 +118,7 @@ class UserJobConverterTest {
         var projectId = "1";
         var req = new JobRequest();
         req.setResourcePool("test");
+        //.handler("mnist.evaluator:MNISTInference.cmp")
         req.setHandler("handler");
         req.setDevMode(false);
 
@@ -233,5 +268,61 @@ class UserJobConverterTest {
         // test without runtime
         req.setRuntimeVersionId(null);
         assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req).build());
+    }
+
+    @Test
+    public void stepAndHandlerCheck() {
+        when(modelDao.findById(any())).thenReturn(ModelEntity.builder()
+                                                              .id(11L)
+                                                              .modelName("model name")
+                                                              .projectId(42L)
+                                                              .build());
+        when(modelDao.findVersionById(anyLong())).thenReturn(ModelVersionEntity.builder().build());
+        var runtimeVersionEntity = RuntimeVersionEntity.builder()
+                .id(2L)
+                .versionName("runtime version name")
+                .runtimeId(12L)
+                .build();
+        when(runtimeDao.findVersionById(anyLong())).thenReturn(runtimeVersionEntity);
+        var runtimeEntity = RuntimeEntity.builder()
+                .id(12L)
+                .runtimeName("runtime name")
+                .projectId(42L)
+                .build();
+        when(runtimeDao.findById(anyLong())).thenReturn(runtimeEntity);
+        when(projectService.findProject(anyLong())).thenReturn(Project.builder().name("project42").build());
+        var datasetVersion1 = DatasetVersion.builder()
+                .id(3L)
+                .datasetName("dataset name 1")
+                .versionName("dataset version name 1")
+                .datasetId(13L)
+                .projectId(42L)
+                .build();
+        when(datasetDao.getDatasetVersion(anyLong())).thenReturn(datasetVersion1);
+        var req = UserJobCreateRequest.builder()
+                .devMode(false)
+                .jobType(JobType.EVALUATION)
+                .modelVersionId(1L)
+                .runtimeVersionId(2L)
+                .datasetVersionIds(List.of(3L))
+                .handler("handler")
+                .stepSpecOverWrites(List.of(StepSpec.builder().build()))
+                .ttlInSec(100L)
+                .user(mock(User.class))
+                .build();
+        //check not pass
+        Assertions.assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req));
+
+        req.setHandler(null);
+        //check pass
+        userJobConverter.convert(req);
+        req.setHandler("handler");
+        req.setStepSpecOverWrites(null);
+        //check pass
+        userJobConverter.convert(req);
+        req.setHandler(null);
+        req.setStepSpecOverWrites(null);
+        //check not pass
+        Assertions.assertThrows(StarwhaleApiException.class, () -> userJobConverter.convert(req));
     }
 }

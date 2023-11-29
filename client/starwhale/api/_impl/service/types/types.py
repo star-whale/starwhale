@@ -1,20 +1,26 @@
 import abc
 import inspect
-from typing import Any, Dict, List, Callable
+from typing import Any, Dict, List, Union, Callable
 
 from starwhale.utils import console
-from starwhale.base.models.base import SwBaseModel
+from starwhale.base.client.models.models import (
+    ComponentSpec,
+    ComponentValueSpecInt,
+    ComponentSpecValueType,
+    ComponentValueSpecBool,
+    ComponentValueSpecFloat,
+    ComponentValueSpecString,
+)
 
 Inputs = Any
 Outputs = Any
 
-
-class ComponentSpec(SwBaseModel):
-    name: str
-    type: str
-
-    def __hash__(self) -> int:
-        return hash((self.name, self.type))
+ArgSpec = Union[
+    ComponentValueSpecInt,
+    ComponentValueSpecFloat,
+    ComponentValueSpecString,
+    ComponentValueSpecBool,
+]
 
 
 class ServiceType(abc.ABC):
@@ -22,7 +28,12 @@ class ServiceType(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def arg_types(self) -> Dict[str, Any]:
+    def arg_types(self) -> Dict[str, ComponentSpecValueType]:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def args(self) -> Dict[str, ArgSpec]:
         ...
 
     @property
@@ -59,9 +70,23 @@ class ServiceType(abc.ABC):
     def router_fn(self, func: Callable) -> Callable:
         ...
 
-    @abc.abstractmethod
     def components_spec(self) -> List[ComponentSpec]:
-        ...
+        ret = []
+        for name, arg in self.args.items():
+            item = ComponentSpec(
+                name=name, component_spec_value_type=self.arg_types[name]
+            )
+            if isinstance(arg, ComponentValueSpecInt):
+                item.component_value_spec_int = arg
+            elif isinstance(arg, ComponentValueSpecFloat):
+                item.component_value_spec_float = arg
+            elif isinstance(arg, ComponentValueSpecString):
+                item.component_value_spec_string = arg
+            elif isinstance(arg, ComponentValueSpecBool):
+                item.component_value_spec_bool = arg
+            ret.append(item)
+
+        return ret
 
 
 def all_components_are_gradio(

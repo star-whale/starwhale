@@ -98,7 +98,11 @@ public class StorageAccessParser implements SystemSettingListener {
                 case "fs":
                 case "file":
                     return StorageAccessService.getFileStorageAccessService(
-                            new FsConfig(token.getTokens().get("rootDir"), token.getTokens().get("serviceProvider")));
+                            new FsConfig(
+                                    token.getTokens().get("rootDir"),
+                                    token.getTokens().get("serviceProvider"),
+                                    token.getTokens().get("sigKey")
+                            ));
                 default:
                     return new DomainAwareStorageAccessService(
                             StorageAccessService.getS3LikeStorageAccessService(

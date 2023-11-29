@@ -221,6 +221,8 @@ public class JobController {
                 jobId = fineTuneAppService.createFineTune(projectUrl, spaceId, jobRequest);
             } else if (jobRequest.getType() == JobType.EVALUATION) {
                 jobId = fineTuneAppService.createEvaluationJob(projectUrl, spaceId, jobRequest);
+            } else if (jobRequest.getType() == JobType.ONLINE_EVAL) {
+                jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
             }
         } else {
             jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));

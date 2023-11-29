@@ -88,7 +88,7 @@ public class JobConverter {
         this.webServerInTask = webServerInTask;
     }
 
-    private ModelVo findModelByVersionIds(Long versionId) {
+    private ModelVo findModelByVersionId(Long versionId) {
         if (null == versionId) {
             return null;
         }
@@ -99,7 +99,7 @@ public class JobConverter {
         return modelVos.get(0);
     }
 
-    private RuntimeVo findRuntimeByVersionIds(Long versionId) {
+    private RuntimeVo findRuntimeByVersionId(Long versionId) {
         if (null == versionId) {
             return null;
         }
@@ -186,7 +186,7 @@ public class JobConverter {
     }
 
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
-        var runtime = findRuntimeByVersionIds(jobEntity.getRuntimeVersionId());
+        var runtime = findRuntimeByVersionId(jobEntity.getRuntimeVersionId());
         var datasetList = findDatasetVersionsByJobId(jobEntity.getId());
         Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
@@ -197,7 +197,7 @@ public class JobConverter {
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())
-                .model(findModelByVersionIds(jobEntity.getModelVersionId()))
+                .model(findModelByVersionId(jobEntity.getModelVersionId()))
                 .jobName(extractJobName(jobEntity.getStepSpec()))
                 .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtime)

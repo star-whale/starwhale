@@ -41,9 +41,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -53,7 +55,7 @@ public class RunExecutorDockerTest {
     DockerClientFinder dockerClientFinder;
     ContainerRunMapper containerRunMapper;
     ExecutorService cmdExecThreadPool;
-    String network;
+    String bridgeNetworkName;
     String nodeIp;
     RunExecutorDockerImpl runExecutorDocker;
     DockerClient dockerClient;
@@ -87,16 +89,9 @@ public class RunExecutorDockerTest {
         when(containerRunMapper.containerOfRun(any())).thenReturn(container);
         when(containerRunMapper.containerName(any())).thenReturn(containerName);
         cmdExecThreadPool = Executors.newCachedThreadPool();
-        network = "host";
+        bridgeNetworkName = "sw-ut-temp-network";
+        dockerClient.createNetworkCmd().withName(this.bridgeNetworkName).exec();
         nodeIp = "127.1.0.2";
-        runExecutorDocker = new RunExecutorDockerImpl(
-                dockerClientFinder,
-                new HostResourceConfigBuilder(),
-                cmdExecThreadPool,
-                containerRunMapper,
-                nodeIp,
-                network
-        );
         try {
             dockerClient.removeContainerCmd(containerName).withForce(true).exec();
         } catch (Exception e) {
@@ -106,14 +101,39 @@ public class RunExecutorDockerTest {
 
     }
 
-    @Test
-    public void testExec() throws ExecutionException, InterruptedException {
+    @AfterEach
+    public void destroy() {
+        try {
+            dockerClient.removeNetworkCmd(bridgeNetworkName).exec();
+        } catch (Exception e) {
+            System.out.println(bridgeNetworkName + " delete error " + e.getMessage());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"sw-ut-temp-network"})
+    public void testExec(String network) throws ExecutionException, InterruptedException {
+        runExecutorDocker = new RunExecutorDockerImpl(
+                dockerClientFinder,
+                new HostResourceConfigBuilder(),
+                cmdExecThreadPool,
+                containerRunMapper,
+                nodeIp,
+                network
+        );
         testSchedule(run);
         Object lock = new Object();
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 ReportedRun reportedRun = (ReportedRun) invocationOnMock.getArguments()[0];
+                if (null != reportedRun.getIp()) {
+                    if (network.equals("host")) {
+                        Assertions.assertEquals(nodeIp, reportedRun.getIp());
+                    } else {
+                        Assertions.assertNotEquals(nodeIp, reportedRun.getIp());
+                    }
+                }
                 if (reportedRun.getStatus() == RunStatus.RUNNING
                         || reportedRun.getStatus() == RunStatus.FAILED) {
                     synchronized (lock) {

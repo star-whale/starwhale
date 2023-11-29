@@ -37,8 +37,12 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.utils.BoundedInputStream;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
@@ -46,12 +50,15 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     private final String serviceProvider;
 
+    private final FsStorageSignature fsStorageSignature;
+
     /**
-     * @param fsConfig fsConfig
+     * @param fsConfig           fsConfig
      */
     public StorageAccessServiceFile(FsConfig fsConfig) {
         this.rootDir = new File(fsConfig.getRootDir());
         this.serviceProvider = fsConfig.getServiceProvider();
+        this.fsStorageSignature = new FsStorageSignature(fsConfig.getSigKey());
         if (!this.rootDir.exists()) {
             throw new IllegalArgumentException(rootDir + " does not exist");
         }
@@ -167,11 +174,32 @@ public class StorageAccessServiceFile extends AbstractStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        long expTime = System.currentTimeMillis() + expTimeMillis;
+        String sign = fsStorageSignature.sign(path, expTime);
+        return possibleServerUrl() + "/" + path + "/" + expTime + "?sign=" + sign;
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+        long expTime = System.currentTimeMillis() + expTimeMillis;
+        String sign = fsStorageSignature.sign(path, expTime);
+        return possibleServerUrl() + "/" + path + "/" + expTime + "?sign=" + sign;
+    }
+
+    private String possibleServerUrl() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (null == requestAttributes) {
+            return serviceProvider;
+        }
+        if (!(requestAttributes instanceof ServletRequestAttributes)) {
+            return serviceProvider;
+        }
+        HttpServletRequest request =
+                ((ServletRequestAttributes) requestAttributes).getRequest();
+        String portPart = "";
+        if (request.getServerPort() != 80 && request.getServerPort() != 443) {
+            portPart = ":" + request.getServerPort();
+        }
+        return request.getScheme() + "://" + request.getServerName() + portPart + "/obj-store";
     }
 }

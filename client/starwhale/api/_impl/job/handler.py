@@ -408,7 +408,7 @@ def generate_jobs_yaml(
         yaml_path,
         yaml.safe_dump(
             {
-                name: [h.dict() for h in handlers]
+                name: [h.to_dict() for h in handlers]
                 for name, handlers in expanded_handlers.items()
             },
             default_flow_style=False,

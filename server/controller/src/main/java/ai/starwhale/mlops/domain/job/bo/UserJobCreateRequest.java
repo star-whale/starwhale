@@ -31,6 +31,8 @@ public class UserJobCreateRequest extends JobCreateRequest {
     @NotNull
     Long modelVersionId;
 
+    String handler;
+
     @NotNull
     Long runtimeVersionId;
 

@@ -9,6 +9,7 @@ import torch
 import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
+from pkg_resources import parse_version
 
 from starwhale import (
     Image,
@@ -25,6 +26,12 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
+
+draw_input = (
+    parse_version(gradio.__version__) >= parse_version("4.5.0")
+    and gradio.Sketchpad(crop_size=(28, 28), image_mode="L")
+    or gradio.Sketchpad(shape=(28, 28), image_mode="L")
+)
 
 
 class CustomPipelineHandler:
@@ -114,9 +121,7 @@ class CustomPipelineHandler:
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
-    @api(
-        inputs=gradio.Sketchpad(shape=(28, 28), image_mode="L"), outputs=gradio.Label()
-    )
+    @api(inputs=draw_input, outputs=gradio.Label())
     def draw(self, data: np.ndarray) -> t.Any:
         _image_array = PILImage.fromarray(data.astype("int8"), mode="L")
         _image = transforms.Compose(

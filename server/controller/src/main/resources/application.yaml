@@ -91,6 +91,7 @@ sw:
     fs-config:
       root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
       service-provider: ${SW_INSTANCE_URI}/obj-store
+      sig-key: ${SW_STORAGE_FS_SIG_KEY:starwhale}
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
       access-key: ${SW_STORAGE_ACCESSKEY:starwhale}

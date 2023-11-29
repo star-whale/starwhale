@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,6 +45,7 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,7 +123,7 @@ public class ModelServingServiceTest {
     }
 
     @Test
-    public void testCreate() {
+    public void testCreate() throws JsonProcessingException {
         var resourcePool = "default";
 
         var entity = ModelServingEntity.builder()
@@ -176,7 +178,10 @@ public class ModelServingServiceTest {
                         + "  show_name: \"online_eval\"\n"
                         + "  require_dataset: false\n";
 
-        assertEquals(expectStepSpec, req.getStepSpecOverWrites());
+        assertIterableEquals(
+                new JobSpecParser().parseAndFlattenStepFromYaml(expectStepSpec),
+                req.getStepSpecOverWrites()
+        );
         assertEquals(JobType.BUILT_IN, req.getJobType());
     }
 

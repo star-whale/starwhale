@@ -11,6 +11,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.load import import_object
 from starwhale.api._impl.job import Handler
 from starwhale.api._impl.model import build, _called_build_functions
+from starwhale.base.models.base import obj_to_model
 from starwhale.base.models.model import JobHandlers, StepSpecClient
 
 
@@ -170,7 +171,7 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                     "**/*.swmp/src/.starwhale/jobs.yaml"
                 )
             )[0]
-            return JobHandlers.parse_obj(load_yaml(path)).root
+            return obj_to_model(load_yaml(path), JobHandlers).data
 
         inner_jobs = _get_jobs_yaml("inner")
         outer_jobs = _get_jobs_yaml("outer")

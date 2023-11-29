@@ -13,7 +13,6 @@ from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from cmds import DatasetExpl
-from pydantic import BaseModel
 from tenacity import retry
 from cmds.job_cmd import Job
 from tenacity.stop import stop_after_attempt
@@ -25,6 +24,7 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 
 from starwhale.utils import config
 from starwhale.utils.debug import init_logger
+from starwhale.base.models.base import SwBaseModel
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.api._impl.data_store import TableDesc, LocalDataStore, RemoteDataStore
 
@@ -45,7 +45,7 @@ random_pytorch_runtime: t.Callable[[], str] = lambda: random.choice(
 )
 
 
-class ExampleDesc(BaseModel):
+class ExampleDesc(SwBaseModel):
     run_handler: str
     workdir: str
     datasets: t.List[DatasetExpl]

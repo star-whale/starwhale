@@ -4,7 +4,6 @@ import { ErrorBoundary } from '@starwhale/ui/ErrorBoundary'
 import { WidgetRendererProps } from '../types'
 import { useWidget } from './WidgetFactory'
 
-const DEBUG = false
 const empty = {}
 const emptyfn = () => {}
 export function WidgetRenderer<P extends object = any, F extends object = any>(props: WidgetRendererProps<P, F>) {
@@ -49,26 +48,14 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     }
     const WidgetComponent = widget.renderer
 
-    // if (!data) {
-    //     return <div>No datastore data</div>
-    // }
-
-    // console.log('WidgetComponent', optionsWithDefaults)
-
     return (
         <ErrorBoundary>
-            {DEBUG && `${type}-${id}`}
+            {/* {`${type}-${id}`} */}
             <WidgetComponent
                 id={id ?? '0'}
                 path={path}
                 type={type}
                 data={data}
-                // title={title}
-                // transparent={false}
-                // width={width}
-                // height={height}
-                // renderCounter={0}
-                // replaceVariables={(str: string) => str}
                 // @ts-ignore
                 defaults={widget.defaults ?? empty}
                 optionConfig={optionsWithDefaults}

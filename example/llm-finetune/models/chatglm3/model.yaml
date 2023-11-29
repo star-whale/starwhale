@@ -1,0 +1,5 @@
+name: chatglm3-6b
+run:
+  modules:
+    - evaluation
+    - finetune

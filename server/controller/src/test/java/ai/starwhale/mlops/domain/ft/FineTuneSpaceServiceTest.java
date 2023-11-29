@@ -22,10 +22,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.user.UserService;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,15 +64,25 @@ class FineTuneSpaceServiceTest {
     @Test
     void listSpace() {
         when(fineTuneSpaceMapper.list(any())).thenReturn(List.of(
-                FineTuneSpaceEntity.builder().build()
+                FineTuneSpaceEntity.builder().ownerId(1L).build()
         ));
         when(userService.findUserById(1L)).thenReturn(UserVo.builder().build());
-        when(userService.findUserById(2L)).thenReturn(UserVo.builder().build());
+        PageInfo<FineTuneSpaceVo> fineTuneSpaceVoPageInfo = fineTuneSpaceService.listSpace(1L, 1, 1);
+        Assertions.assertEquals(1L, fineTuneSpaceVoPageInfo.getSize());
     }
 
     @Test
     void updateSpace() {
         fineTuneSpaceService.updateSpace(1L, "nm", "ds");
         verify(fineTuneSpaceMapper).update(eq(1L), eq("nm"), eq("ds"));
+    }
+
+    @Test
+    void spaceInfo() {
+        when(fineTuneSpaceMapper.findById(any())).thenReturn(FineTuneSpaceEntity.builder().ownerId(1L).build());
+        UserVo userVo = UserVo.builder().build();
+        when(userService.findUserById(1L)).thenReturn(userVo);
+        FineTuneSpaceVo fineTuneSpaceVo = fineTuneSpaceService.spaceInfo(1L);
+        Assertions.assertEquals(userVo, fineTuneSpaceVo.getOwner());
     }
 }

@@ -44,8 +44,7 @@ install_requires = [
     "trio>=0.22.0",
     "httpx>=0.22.0",
     "urllib3<1.27",
-    "pydantic>=2.0.0",
-    "pydantic-settings",
+    "pydantic",
     "sortedcontainers",
     "importlib_resources",
     # workaround: email-validator 2.1.0 has a syntax error in python 3.7, but the email-validator is necessary for fastapi.
@@ -87,7 +86,13 @@ setup(
     url="https://github.com/star-whale/starwhale",
     license="Apache License 2.0",
     packages=find_packages(exclude=["ez_setup", "tests*"]),
-    package_data={"": ["core/runtime/template/Dockerfile.tmpl", "web/ui/**"]},
+    package_data={
+        "": [
+            "core/runtime/template/Dockerfile.tmpl",
+            "web/ui/**",
+            "cli/server/compose.tmpl",
+        ]
+    },
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,

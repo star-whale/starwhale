@@ -10,7 +10,7 @@ import { ICreateJobFormSchema, RuntimeType } from '../schemas/job'
 import { useQueryArgs } from '@starwhale/core/utils'
 import FormFieldRuntime from './FormFieldRuntime'
 import { useEventEmitter } from 'ahooks'
-import FormFieldModel from './FormFieldModel'
+import BaseFormFieldModel from './FormFieldModel'
 import FormFieldDataset from './FormFieldDataset'
 import FormFieldDevMode from './FormFieldDevMode'
 import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
@@ -28,6 +28,9 @@ export interface IJobFormProps {
     autoFill?: boolean
     enableTemplate?: boolean
     validationDatasets?: any[]
+    plugins?: {
+        FormFieldModel: typeof BaseFormFieldModel
+    }
 }
 
 async function getJobByTemplate(projectId: string, templateId: string) {
@@ -41,6 +44,9 @@ export default function JobForm({
     autoFill = true,
     enableTemplate = true,
     validationDatasets,
+    plugins = {
+        FormFieldModel: BaseFormFieldModel,
+    },
 }: IJobFormProps) {
     const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
@@ -53,6 +59,7 @@ export default function JobForm({
     const history = useHistory()
     const [form] = useForm()
     const { projectId } = useParams<{ projectId: string }>()
+    const { FormFieldModel } = plugins
 
     const [, send, service] = useMachine(jobCreateMachine)
 

@@ -6,6 +6,8 @@ import Shared from '@/components/Shared'
 import { getAliasStr } from '@base/utils/alias'
 import { IModelVersionViewVo, IModelVersionVo, IModelViewVo } from '@/api'
 import { IHasTagSchema } from '@base/schemas/resource'
+import useTranslation from '@/hooks/useTranslation'
+import StatusTag from '@/components/Tag/StatusTag'
 
 export const ModelLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -44,14 +46,25 @@ export function ModelLabel({
     model,
     isProjectShow = false,
     style = {},
+    hasDraft = false,
 }: {
     version: IModelVersionVo | IModelVersionViewVo
     model?: IModelViewVo
     isProjectShow?: boolean
     style?: React.CSSProperties
+    hasDraft?: boolean
 }) {
+    const [t] = useTranslation()
     const share = <Shared shared={!!version.shared} isTextShow={false} />
     const alias = <Alias alias={getAliasStr(version as IHasTagSchema)} />
+    const draft = (
+        <div className='flex gap-2px lh-none flex-shrink-0'>
+            {version.draft === true && <StatusTag>{t('ft.job.model.release.mode.draft')}</StatusTag>}
+            {version.draft === false && (
+                <StatusTag kind='positive'>{t('ft.job.model.release.mode.released')}</StatusTag>
+            )}
+        </div>
+    )
     const p = model ? [model.ownerName, model.projectName, model.modelName].join('/') : ''
     const name = (version as IModelVersionViewVo)?.versionName ?? (version as IModelVersionVo)?.name
     const v = (name ?? '').substring(0, 8)
@@ -61,7 +74,7 @@ export function ModelLabel({
 
     return (
         <ModelLabelContainer style={style} title={title}>
-            {share} <ModelLabelText>{isProjectShow ? [p, v].join('/') : v}</ModelLabelText> {alias}
+            {hasDraft && draft} {share} <ModelLabelText>{isProjectShow ? [p, v].join('/') : v}</ModelLabelText> {alias}
         </ModelLabelContainer>
     )
 }

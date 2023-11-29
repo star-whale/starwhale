@@ -25,6 +25,10 @@ class Filter(BaseModel):
 
 
 class QueryTableRequest(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        populate_by_name = True
+
     table_name: str = Field(alias="tableName")
     filter: t.Optional[Filter] = None
     limit: int

@@ -16,9 +16,12 @@
 
 package ai.starwhale.mlops.domain.ft;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -39,15 +42,20 @@ import ai.starwhale.mlops.domain.ft.mapper.FineTuneSpaceMapper;
 import ai.starwhale.mlops.domain.ft.po.FineTuneEntity;
 import ai.starwhale.mlops.domain.ft.po.FineTuneSpaceEntity;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
+import ai.starwhale.mlops.domain.job.BizType;
 import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -70,6 +78,7 @@ class FineTuneAppServiceTest {
     FineTuneSpaceMapper fineTuneSpaceMapper;
 
     JobMapper jobMapper;
+    JobStatusMachine jobStatusMachine = new JobStatusMachine();
 
     JobSpecParser jobSpecParser;
 
@@ -108,6 +117,7 @@ class FineTuneAppServiceTest {
                 jobCreator,
                 fineTuneMapper,
                 jobMapper,
+                jobStatusMachine,
                 jobSpecParser,
                 new IdConverter(),
                 modelDao,
@@ -138,7 +148,20 @@ class FineTuneAppServiceTest {
         request.setModelVersionId("1");
         when(datasetDao.getDatasetVersion(anyString())).thenReturn(DatasetVersion.builder().projectId(22L).datasetName(
                 "dsn").versionName("dsv").build());
-        when(jobSpecParser.parseAndFlattenStepFromYaml(any())).thenReturn(List.of(StepSpec.builder().build()));
+        when(jobSpecParser.parseAndFlattenStepFromYaml(any()))
+                .thenReturn(List.of(StepSpec.builder()
+                                            .env(List.of(
+                                                    new Env(
+                                                            "dupK",
+                                                            "v"
+                                                    ),
+                                                    new Env(
+                                                            "dupK",
+                                                            "v2"
+                                                    )
+                                            ))
+                                            .build())
+                );
         when(modelDao.findVersionById(anyLong())).thenReturn(ModelVersionEntity.builder().build());
         fineTuneAppService.createFineTune("1", 1L, request);
 
@@ -150,7 +173,15 @@ class FineTuneAppServiceTest {
     void listFt() {
         when(fineTuneMapper.list(anyLong())).thenReturn(List.of(FineTuneEntity.builder().jobId(1L).build()));
         when(jobMapper.findJobById(1L)).thenReturn(JobEntity.builder().build());
-        Assertions.assertEquals(1, fineTuneAppService.list(1L, 1, 1).getSize());
+        assertEquals(1, fineTuneAppService.list(1L, 1, 1).getSize());
+    }
+
+    @Test
+    void listFtOnlineEval() {
+        when(jobMapper.listBizJobs(1L, BizType.FINE_TUNE.name(), "1", JobType.ONLINE_EVAL.name(), null))
+                .thenReturn(List.of(JobEntity.builder().id(1L).build(), JobEntity.builder().id(2L).build()));
+        when(jobConverter.convert(any())).thenReturn(JobVo.builder().build());
+        assertEquals(2, fineTuneAppService.listOnlineEval(1L, 1L).size());
     }
 
     @Test
@@ -160,11 +191,57 @@ class FineTuneAppServiceTest {
         JobVo jobVo = JobVo.builder().build();
         when(jobConverter.convert(any())).thenReturn(jobVo);
         FineTuneVo fineTuneVo = fineTuneAppService.ftInfo(1L, 1L);
-        Assertions.assertEquals(jobVo, fineTuneVo.getJob());
+        assertEquals(jobVo, fineTuneVo.getJob());
     }
 
     @Test
-    void evalFt() {
+    void ftImport() {
+        when(jobMapper.findJobByUuids(anyList(), anyLong())).thenReturn(List.of(
+                JobEntity.builder().jobUuid("uuid1").jobStatus(JobStatus.RUNNING).build(),
+                JobEntity.builder().jobUuid("uuid2").jobStatus(JobStatus.SUCCESS).build(),
+                JobEntity.builder().jobUuid("uuid3").jobStatus(JobStatus.FAIL).build()
+        ));
+        when(evaluationRepo.migration(
+                "project/1/eval/summary",
+                List.of("uuid2", "uuid3"),
+                "project/1/ftspace/1/eval/summary")
+        ).thenReturn(2);
+
+        var result = fineTuneAppService.importEvalFromCommon(1L, 1L, List.of("uuid1", "uuid2", "uuid3"));
+        assertEquals(2, result.getSuccess());
+        assertEquals(1, result.getFail());
+        verify(evaluationRepo, times(1)).migration(anyString(), eq(List.of("uuid2", "uuid3")), anyString());
+    }
+
+    @Test
+    void ftExport() {
+        when(jobMapper.findJobByUuids(anyList(), anyLong())).thenReturn(List.of(
+                JobEntity.builder()
+                        .jobUuid("uuid1")
+                        .jobStatus(JobStatus.RUNNING)
+                        .modelVersion(ModelVersionEntity.builder().draft(true).build())
+                        .build(),
+                JobEntity.builder()
+                        .jobUuid("uuid2")
+                        .jobStatus(JobStatus.SUCCESS)
+                        .modelVersion(ModelVersionEntity.builder().draft(false).build())
+                        .build(),
+                JobEntity.builder()
+                        .jobUuid("uuid3")
+                        .jobStatus(JobStatus.FAIL)
+                        .modelVersion(ModelVersionEntity.builder().draft(true).build())
+                        .build()
+        ));
+        when(evaluationRepo.migration(
+                "project/1/ftspace/1/eval/summary",
+                List.of("uuid2"),
+                "project/1/eval/summary")
+        ).thenReturn(1);
+
+        var result = fineTuneAppService.exportEvalToCommon(1L, 1L, List.of("uuid1", "uuid2", "uuid3"));
+        assertEquals(1, result.getSuccess());
+        assertEquals(2, result.getFail());
+        verify(evaluationRepo, times(1)).migration(anyString(), eq(List.of("uuid2")), anyString());
     }
 
     @Test
@@ -276,7 +353,8 @@ class FineTuneAppServiceTest {
     @Test
     void testFeatureDisabled() {
         when(featuresProperties.isFineTuneEnabled()).thenReturn(false);
-        Assertions.assertThrows(StarwhaleApiException.class,
+        Assertions.assertThrows(
+                StarwhaleApiException.class,
                 () -> fineTuneAppService.createFineTune(
                         "1",
                         1L,

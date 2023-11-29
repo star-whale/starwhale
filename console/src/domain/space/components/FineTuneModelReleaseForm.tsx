@@ -11,6 +11,8 @@ import ModelSelector from '@/domain/model/components/ModelSelector'
 import { useParams } from 'react-router-dom'
 import { api } from '@/api'
 import { toaster } from 'baseui/toast'
+import { EvalSelectExportList } from './EvalSelectList'
+import { FormCheckbox } from '@starwhale/ui/Checkbox'
 
 const { Form, FormItem } = createForm<IFormValueProps>()
 
@@ -18,6 +20,8 @@ interface IFormValueProps {
     mode: 'CREATE' | 'APPEND'
     nonExistingModelName?: string
     existingModelId?: string
+    isSync?: boolean
+    ids?: any[]
 }
 
 const useStyles = createUseStyles({
@@ -36,7 +40,7 @@ export interface IFormProps {
 const Mode = ({ value, onChange }: any) => {
     const [t] = useTranslation()
     return (
-        <RadioGroup value={value} onChange={(e) => onChange?.(e.target.value)} align='vertical'>
+        <RadioGroup value={value} onChange={(e) => onChange?.(e.target.value)} align='horizontal'>
             <Radio value='CREATE'>{t('ft.job.model.release.mode.create')}</Radio>
             <Radio value='APPEND'>{t('ft.job.model.release.mode.append')}</Radio>
         </RadioGroup>
@@ -87,15 +91,52 @@ export default function FineTuneModelReleaseForm({ onSubmit }: IFormProps) {
                 </div>
             </div>
             {mode === 'CREATE' && (
-                <FormItem name='nonExistingModelName' label={t('sth name', [t('Model')])} required>
-                    <Input />
-                </FormItem>
+                <div className='flex gap-12px'>
+                    <div className='font-14px lh-32px color-[#02102B]'>{t('sth name', [t('Model')])}*</div>
+                    <div className='flex-col w-280px'>
+                        <FormItem name='nonExistingModelName' required style={{ display: 'flex' }}>
+                            <Input />
+                        </FormItem>
+                    </div>
+                </div>
             )}
             {mode === 'APPEND' && (
-                <FormItem name='existingModelId' label={t('sth name', [t('Model')])} required>
-                    <ModelSelector projectId={projectId} />
-                </FormItem>
+                <div className='flex gap-12px'>
+                    <div className='font-14px lh-32px color-[#02102B]'>{t('sth name', [t('Model')])}*</div>
+                    <div className='flex-col w-280px'>
+                        <FormItem name='existingModelId' required style={{ display: 'flex' }}>
+                            <ModelSelector projectId={projectId} />
+                        </FormItem>
+                    </div>
+                </div>
             )}
+            <FormItem name='isSync'>
+                <FormCheckbox
+                    overrides={{
+                        Root: {
+                            style: {
+                                alignItems: 'flex-start',
+                            },
+                        },
+                    }}
+                >
+                    <p className='mt-2px'>{t('ft.eval.export.check.label')}</p>
+                    <p className='mt-5px text-12px color-[rgba(2,16,43,0.60)]'>{t('ft.eval.export.check.desc')}</p>
+                </FormCheckbox>
+            </FormItem>
+            <div
+                className={`${
+                    !values?.isSync ? 'w-350px h-0 opacity-0 overflow-hidden' : 'block w-[80vw] border-t-1px'
+                } transition-[width] transition-[height] duration-300 opacity-100  mt-20px pt-20px`}
+            >
+                <div className='text-16px color-[#02102b] font-600 mb-20px'>{t('Evaluations')}</div>
+                <div className='content-full'>
+                    <FormItem name='ids' style={{ height: '400px', overflow: 'hidden', display: 'flex' }}>
+                        <EvalSelectExportList />
+                    </FormItem>
+                </div>
+            </div>
+
             <FormItem key='submit'>
                 <div className='flex'>
                     <div className='flex-grow' />
@@ -117,15 +158,27 @@ export function FineTuneModelReleaseModal({ isOpen, setIsOpen, data, onRefresh }
             nonExistingModelName: values.nonExistingModelName,
             existingModelId: values.existingModelId,
         })
+        if (values.ids && values.ids.length > 0) {
+            await api.exportEval(projectId, spaceId, {
+                ids: values.ids,
+            })
+            setIsOpen(false)
+            onRefresh?.()
+            return
+        }
         setIsOpen(false)
         toaster.positive(t('ft.job.model.release.succes'), { autoHideDuration: 2000 })
         onRefresh?.()
     })
 
     return (
-        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} closeable animate autoFocus>
+        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} closeable animate autoFocus size='auto'>
             <ModalHeader>{`${t('Model')} ${t('ft.job.model.release')}`}</ModalHeader>
-            <ModalBody>
+            <ModalBody
+                $style={{
+                    minWidth: '670px',
+                }}
+            >
                 <div className='bt-1px bb-1px pt-20px'>
                     <FineTuneModelReleaseForm onSubmit={handleSubmit} />
                 </div>

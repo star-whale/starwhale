@@ -18,13 +18,16 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.ft.FineTuneMigrationRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceCreateRequest;
 import ai.starwhale.mlops.api.protocol.ft.FineTuneSpaceVo;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.ft.FineTuneSpaceService;
+import ai.starwhale.mlops.domain.ft.bo.MigrationResult;
 import ai.starwhale.mlops.domain.ft.vo.FineTuneVo;
 import ai.starwhale.mlops.domain.job.converter.UserJobConverter;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -97,6 +100,16 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
+    @Operation(summary = "Get the list of fine-tune spaces")
+    @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<FineTuneSpaceVo>> spaceInfo(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(fineTuneSpaceService.spaceInfo(spaceId)));
+    }
+
 
     @Operation(summary = "Create fine-tune space")
     @PostMapping(value = "/project/{projectId}/ftspace", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -144,6 +157,19 @@ public class FineTuneController {
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
+    @Operation(summary = "List online eval")
+    @GetMapping(
+            value = "/project/{projectId}/ftspace/{spaceId}/online-eval",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    public ResponseEntity<ResponseMessage<List<JobVo>>> listOnlineEval(
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("spaceId") Long spaceId
+    ) {
+        return ResponseEntity.ok(Code.success.asResponse(fineTuneAppService.listOnlineEval(projectId, spaceId)));
+    }
+
     @Operation(summary = "Get fine-tune info")
     @GetMapping(value = "/project/{projectId}/ftspace/{spaceId}/ft/{ftId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
@@ -179,13 +205,14 @@ public class FineTuneController {
             value = "/project/{projectId}/ftspace/{spaceId}/eval/import", produces = MediaType.APPLICATION_JSON_VALUE
     )
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> importEval(
+    public ResponseEntity<ResponseMessage<MigrationResult>> importEval(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestParam("ids") List<String> ids
+            @RequestBody FineTuneMigrationRequest request
     ) {
-        fineTuneAppService.importEvalFromCommon(projectId, spaceId, ids);
-        return ResponseEntity.ok(Code.success.asResponse(""));
+        return ResponseEntity.ok(Code.success.asResponse(
+                fineTuneAppService.importEvalFromCommon(projectId, spaceId, request.getIds())
+        ));
     }
 
     @Operation(summary = "export to common eval summary")
@@ -193,13 +220,14 @@ public class FineTuneController {
             value = "/project/{projectId}/ftspace/{spaceId}/eval/export", produces = MediaType.APPLICATION_JSON_VALUE
     )
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    public ResponseEntity<ResponseMessage<String>> exportEval(
+    public ResponseEntity<ResponseMessage<MigrationResult>> exportEval(
             @PathVariable("projectId") Long projectId,
             @PathVariable("spaceId") Long spaceId,
-            @RequestParam("ids") List<String> ids
+            @RequestBody FineTuneMigrationRequest request
     ) {
-        fineTuneAppService.exportEvalToCommon(projectId, spaceId, ids);
-        return ResponseEntity.ok(Code.success.asResponse(""));
+        return ResponseEntity.ok(Code.success.asResponse(
+                fineTuneAppService.exportEvalToCommon(projectId, spaceId, request.getIds())
+        ));
     }
 
     @GetMapping(
