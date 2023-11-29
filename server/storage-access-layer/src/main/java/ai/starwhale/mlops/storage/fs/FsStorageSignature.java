@@ -22,7 +22,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
+@Component
 @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "fs")
 public class FsStorageSignature {
 
