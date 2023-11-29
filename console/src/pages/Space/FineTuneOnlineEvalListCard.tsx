@@ -7,6 +7,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useHistory } from 'react-router-dom'
 import FineTuneOnlineEvalServings from './FineTuneOnlineEvalServings'
 import { useServingConfig } from '@starwhale/ui/Serving/store/config'
+import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 
 const GRID_LAYOUT = [
     // RIGHT:
@@ -28,6 +29,22 @@ export default function FineTuneOnlineEvalListCard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [info.data])
 
+    const [status, setStatus] = React.useState([])
+
+    const $list = React.useMemo(() => {
+        if (!info.data) {
+            return []
+        }
+        return info.data.filter((i) => {
+            if (!status || status.length === 0) {
+                return true
+            }
+            return status.includes(i.jobStatus)
+        })
+    }, [info.data, status])
+
+    console.log(status, info.data)
+
     return (
         <div className='content-full pt-12px'>
             <GridResizer
@@ -42,8 +59,9 @@ export default function FineTuneOnlineEvalListCard() {
                         >
                             {t('create')}
                         </Button>
+                        <JobStatusSelector value={status} onChange={setStatus as any} clearable />
                         <div className='content-full'>
-                            <FineTuneOnlineEvalJobCard />{' '}
+                            <FineTuneOnlineEvalJobCard list={$list} />
                         </div>
                     </div>
                 )}

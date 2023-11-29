@@ -6,6 +6,7 @@ import _ from 'lodash'
 import { useUpdateEffect } from 'react-use'
 import { useCreation, useSetState } from 'ahooks'
 import SectionAccordionPanel from '@starwhale/ui/Serving/components/SectionAccordionPanel'
+import { BusyPlaceholder } from '@starwhale/ui'
 
 export default function FineTuneOnlineEvalServings() {
     const { jobs, getServings } = useServingConfig()
@@ -25,7 +26,45 @@ export default function FineTuneOnlineEvalServings() {
     }, [servingMap])
 
     return (
-        <div className='serving-section flex flex-col gap-20px'>
+        <div className='serving-section flex flex-col flex-1 gap-20px overflow-auto'>
+            {servingMap ? (
+                Object.entries(servingMap).map(([key], index) => {
+                    if (key === InferenceType.llm_chat) {
+                        return (
+                            <SectionAccordionPanel
+                                key={key ?? index}
+                                title={key}
+                                expanded={expand[key] ?? true}
+                                onExpanded={() => setExpand({ [key]: !expand[key] })}
+                            >
+                                <div className='serving-section px-20px transition-all'>
+                                    <ChatGroup key={key} useChatStore={useChatStore} />
+                                </div>
+                            </SectionAccordionPanel>
+                        )
+                    }
+                    return null
+                })
+            ) : (
+                <BusyPlaceholder type='empty' />
+            )}
+            {Object.entries(servingMap).map(([key], index) => {
+                if (key === InferenceType.llm_chat) {
+                    return (
+                        <SectionAccordionPanel
+                            key={key ?? index}
+                            title={key}
+                            expanded={expand[key] ?? true}
+                            onExpanded={() => setExpand({ [key]: !expand[key] })}
+                        >
+                            <div className='serving-section px-20px transition-all'>
+                                <ChatGroup key={key} useChatStore={useChatStore} />
+                            </div>
+                        </SectionAccordionPanel>
+                    )
+                }
+                return null
+            })}
             {Object.entries(servingMap).map(([key], index) => {
                 if (key === InferenceType.llm_chat) {
                     return (
