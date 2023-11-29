@@ -18,6 +18,8 @@ package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.run.bo.Run;
 import ai.starwhale.mlops.domain.run.bo.RunStatus;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.schedule.executor.RunExecutor;
 import ai.starwhale.mlops.schedule.impl.container.ContainerCommand;
 import ai.starwhale.mlops.schedule.reporting.ReportedRun;
@@ -73,6 +75,12 @@ public class RunExecutorDockerImpl implements RunExecutor {
         this.cmdExecThreadPool = cmdExecThreadPool;
         this.containerRunMapper = containerRunMapper;
         this.nodeIp = nodeIp;
+        if (networkName.equals("bridge")) {
+            throw new SwValidationException(
+                    ValidSubject.SETTING,
+                    "default bridge is not supported, use host or user-defined bridge please"
+            );
+        }
         this.networkName = networkName;
     }
 
@@ -118,15 +126,9 @@ public class RunExecutorDockerImpl implements RunExecutor {
 
                 String containerName = containerRunMapper.containerName(run);
                 boolean hostNetwork = NETWORK_HOST.equals(networkName);
-                HostConfig hostConfig;
-                if (hostNetwork) {
-                    hostConfig = hostResourceConfigBuilder
-                            .build(run.getRunSpec().getRequestedResources())
-                            .withNetworkMode(NETWORK_HOST);
-                } else {
-                    hostConfig = hostResourceConfigBuilder
-                            .build(run.getRunSpec().getRequestedResources());
-                }
+                HostConfig hostConfig = hostResourceConfigBuilder
+                        .build(run.getRunSpec().getRequestedResources())
+                        .withNetworkMode(networkName);
                 CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
                         .withEnv(buildEnvs(runSpec.getEnvs()))
                         .withName(containerName)
@@ -143,12 +145,6 @@ public class RunExecutorDockerImpl implements RunExecutor {
                     createContainerCmd.withCmd(containerCommand.getCmd());
                 }
                 CreateContainerResponse createContainerResponse = createContainerCmd.exec();
-                if (!hostNetwork) {
-                    dockerClient.connectToNetworkCmd()
-                            .withNetworkId(networkName)
-                            .withContainerId(createContainerResponse.getId())
-                            .exec();
-                }
                 dockerClient.startContainerCmd(createContainerResponse.getId()).exec();
                 ReportedRun reportedRun = ReportedRun.builder()
                         .id(run.getId())

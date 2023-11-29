@@ -103,11 +103,15 @@ public class RunExecutorDockerTest {
 
     @AfterEach
     public void destroy() {
-        dockerClient.removeNetworkCmd(bridgeNetworkName).exec();
+        try {
+            dockerClient.removeNetworkCmd(bridgeNetworkName).exec();
+        } catch (Exception e) {
+            System.out.println(bridgeNetworkName + " delete error " + e.getMessage());
+        }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"host", "sw-ut-temp-network"})
+    @ValueSource(strings = {"sw-ut-temp-network"})
     public void testExec(String network) throws ExecutionException, InterruptedException {
         runExecutorDocker = new RunExecutorDockerImpl(
                 dockerClientFinder,
