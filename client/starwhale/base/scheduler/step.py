@@ -12,6 +12,9 @@ from starwhale.base.uri.project import Project
 
 from .dag import DAG
 from .task import TaskResult, TaskExecutor
+from ..models.base import obj_to_model
+from ..models.model import JobHandlers, StepSpecClient
+from ..client.models.models import RuntimeResource
 
 
 class StepResult:
@@ -38,7 +41,7 @@ class Step(ASDictMixin):
         self,
         name: str,
         show_name: str = "",
-        resources: t.Optional[t.List[t.Dict]] = None,
+        resources: t.Optional[t.List[RuntimeResource]] = None,
         needs: t.Optional[t.List[str]] = None,
         task_num: int = 1,
         cls_name: str = "",
@@ -76,10 +79,12 @@ class Step(ASDictMixin):
     ) -> t.Tuple[str, t.List[Step]]:
         # default run index 0 handler
         job_name = str(job_name_or_idx or "0")
-        jobs = load_yaml(yaml_path)
+        jobs: t.Dict[str, t.List[StepSpecClient]] = obj_to_model(  # type: ignore[type-var]
+            load_yaml(yaml_path), JobHandlers
+        ).data
         sorted_jobs = sorted(jobs.items())
 
-        job = None
+        job: t.List[StepSpecClient] = []
         try:
             if job_name in jobs:
                 job = jobs[job_name]
@@ -89,7 +94,7 @@ class Step(ASDictMixin):
         finally:
             console.print(":bank: runnable handlers:")
             for i, j in enumerate(sorted_jobs):
-                flag = "" if job is None or job != j[1] else "*"
+                flag = "" if len(job) == 0 or job != j[1] else "*"
                 console.print(f"\t {flag:2} [{i}]: {j[0]}")
 
         """
@@ -112,19 +117,19 @@ class Step(ASDictMixin):
         steps = []
         for v in job:
             step = Step(
-                name=v["name"],
-                show_name=v["show_name"],
-                resources=v["resources"],
-                needs=v["needs"],
-                task_num=v["replicas"],
-                cls_name=v["cls_name"],
-                module_name=v["module_name"],
-                func_name=v["func_name"],
-                extra_args=v.get("extra_args"),
-                extra_kwargs=v.get("extra_kwargs"),
-                expose=v.get("expose"),
-                virtual=v.get("virtual"),
-                require_dataset=v.get("require_dataset"),
+                name=v.name,
+                show_name=v.show_name,
+                resources=v.resources,
+                needs=v.needs,
+                task_num=v.replicas,
+                cls_name=v.cls_name or "",
+                module_name=v.module_name,
+                func_name=v.func_name,
+                extra_args=v.extra_args,
+                extra_kwargs=v.extra_kwargs,
+                expose=v.expose,
+                virtual=v.virtual,
+                require_dataset=v.require_dataset,
             )
             steps.append(step)
         return job_name, steps
