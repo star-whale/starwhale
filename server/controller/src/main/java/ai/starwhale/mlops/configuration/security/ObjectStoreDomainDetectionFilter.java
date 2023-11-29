@@ -16,9 +16,15 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +37,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class ObjectStoreDomainDetectionFilter extends OncePerRequestFilter {
 
-    public static final String HEADER_NAME = "SW_CLIENT_FAVORED_OSS_DOMAIN_PATTERN";
+    public static final String HEADER_NAME = "SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS";
+
+    final Map<String, Pattern> domainAliasMap;
+
+    public ObjectStoreDomainDetectionFilter(StorageProperties storageProperties) {
+        Map<String, String> endpointEquivalentsMap = storageProperties.getS3Config().getEndpointEquivalentsMap();
+        domainAliasMap = endpointEquivalentsMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, (entry) -> {
+            URI uri = null;
+            try {
+                uri = new URI(entry.getValue());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+            return Pattern.compile(uri.getHost().replace(".", "\\."));
+        }));
+
+    }
 
     @Override
     protected void doFilterInternal(
@@ -39,9 +61,9 @@ public class ObjectStoreDomainDetectionFilter extends OncePerRequestFilter {
             @NotNull HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String pattern = request.getHeader(HEADER_NAME);
-        if (StringUtils.hasText(pattern)) {
-            request.setAttribute(DomainAwareStorageAccessService.OSS_DOMAIN_PATTERN_ATTR, Pattern.compile(pattern));
+        Pattern hostPattern = domainAliasMap.get(request.getHeader(HEADER_NAME));
+        if (null != hostPattern) {
+            request.setAttribute(DomainAwareStorageAccessService.OSS_DOMAIN_PATTERN_ATTR, hostPattern);
         }
         filterChain.doFilter(request, response);
     }
