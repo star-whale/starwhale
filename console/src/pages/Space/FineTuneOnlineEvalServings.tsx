@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import ChatGroup from '@starwhale/ui/Serving/components/ChatGroup'
 import { InferenceType, useServingConfig } from '@starwhale/ui/Serving/store/config'
-import { useIfChanged } from '@starwhale/core'
 import { useChatStore } from '@starwhale/ui/Serving/store/chat'
 import _ from 'lodash'
 import { useUpdateEffect } from 'react-use'
-import { useCreation } from 'ahooks'
+import { useCreation, useSetState } from 'ahooks'
+import SectionAccordionPanel from '@starwhale/ui/Serving/components/SectionAccordionPanel'
 
 export default function FineTuneOnlineEvalServings() {
     const { jobs, getServings } = useServingConfig()
     const chatStore = useChatStore()
+    const [expand, setExpand] = useSetState({})
 
     const servingMap = useCreation(() => {
         return _.groupBy(getServings(), 'apiSpec.inference_type')
@@ -20,14 +21,28 @@ export default function FineTuneOnlineEvalServings() {
         if (!llmchats || !llmchats.length) {
             return
         }
-        // chatStore.clearSessions()
         llmchats.forEach((serving) => chatStore.newSession(serving))
     }, [servingMap])
 
-    return Object.entries(servingMap).map(([key]) => {
-        if (key === InferenceType.llm_chat) {
-            return <ChatGroup key={key} useChatStore={useChatStore} />
-        }
-        return null
-    })
+    return (
+        <div className='serving-section flex flex-col gap-20px'>
+            {Object.entries(servingMap).map(([key], index) => {
+                if (key === InferenceType.llm_chat) {
+                    return (
+                        <SectionAccordionPanel
+                            key={key ?? index}
+                            title={key}
+                            expanded={expand[key] ?? true}
+                            onExpanded={() => setExpand({ [key]: !expand[key] })}
+                        >
+                            <div className='serving-section px-20px transition-all'>
+                                <ChatGroup key={key} useChatStore={useChatStore} />
+                            </div>
+                        </SectionAccordionPanel>
+                    )
+                }
+                return null
+            })}
+        </div>
+    )
 }
