@@ -47,4 +47,9 @@ public class ComponentSpec {
     @NotNull
     @JsonProperty("component_spec_value_type")
     ComponentSpecValueType componentSpecValueType;
+
+    ComponentValueSpecInt componentValueSpecInt;
+    ComponentValueSpecFloat componentValueSpecFloat;
+    ComponentValueSpecString componentValueSpecString;
+    ComponentValueSpecBool componentValueSpecBool;
 }

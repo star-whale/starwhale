@@ -730,9 +730,25 @@ class ComponentSpecValueType(Enum):
     list = 'LIST'
 
 
-class ComponentSpec(SwBaseModel):
-    name: str
-    component_spec_value_type: ComponentSpecValueType
+class ComponentValueSpecBool(SwBaseModel):
+    default_val: Optional[bool] = Field(None, alias='defaultVal')
+
+
+class ComponentValueSpecFloat(SwBaseModel):
+    default_val: Optional[float] = Field(None, alias='defaultVal')
+    min: Optional[float] = None
+    max: Optional[float] = None
+    step: Optional[float] = None
+
+
+class ComponentValueSpecInt(SwBaseModel):
+    default_val: Optional[int] = Field(None, alias='defaultVal')
+    min: Optional[int] = None
+    max: Optional[int] = None
+
+
+class ComponentValueSpecString(SwBaseModel):
+    default_val: Optional[str] = Field(None, alias='defaultVal')
 
 
 class ContainerSpec(SwBaseModel):
@@ -1347,6 +1363,110 @@ class ResponseMessageListRuntimeViewVo(SwBaseModel):
     data: List[RuntimeViewVo]
 
 
+class ComponentSpec(SwBaseModel):
+    component_value_spec_int: Optional[ComponentValueSpecInt] = Field(
+        None, alias='componentValueSpecInt'
+    )
+    component_value_spec_float: Optional[ComponentValueSpecFloat] = Field(
+        None, alias='componentValueSpecFloat'
+    )
+    component_value_spec_string: Optional[ComponentValueSpecString] = Field(
+        None, alias='componentValueSpecString'
+    )
+    component_value_spec_bool: Optional[ComponentValueSpecBool] = Field(
+        None, alias='componentValueSpecBool'
+    )
+    name: str
+    component_spec_value_type: ComponentSpecValueType
+
+
+class PageInfoTaskVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[TaskVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoTaskVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoTaskVo
+
+
+class Graph(SwBaseModel):
+    id: Optional[int] = None
+    grouping_nodes: Optional[Dict[str, List[GraphNode]]] = Field(
+        None, alias='groupingNodes'
+    )
+    edges: Optional[List[GraphEdge]] = None
+
+
+class ResponseMessageGraph(SwBaseModel):
+    code: str
+    message: str
+    data: Graph
+
+
+class PageInfoPanelPluginVo(SwBaseModel):
+    total: Optional[int] = None
+    list: Optional[List[PanelPluginVo]] = None
+    page_num: Optional[int] = Field(None, alias='pageNum')
+    page_size: Optional[int] = Field(None, alias='pageSize')
+    size: Optional[int] = None
+    start_row: Optional[int] = Field(None, alias='startRow')
+    end_row: Optional[int] = Field(None, alias='endRow')
+    pages: Optional[int] = None
+    pre_page: Optional[int] = Field(None, alias='prePage')
+    next_page: Optional[int] = Field(None, alias='nextPage')
+    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
+    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
+    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
+    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
+    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
+    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
+    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
+    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
+
+
+class ResponseMessagePageInfoPanelPluginVo(SwBaseModel):
+    code: str
+    message: str
+    data: PageInfoPanelPluginVo
+
+
+class ResponseMessageRuntimeSuggestionVo(SwBaseModel):
+    code: str
+    message: str
+    data: RuntimeSuggestionVo
+
+
+class ProjectMemberVo(SwBaseModel):
+    id: str
+    user: UserVo
+    project: ProjectVo
+    role: RoleVo
+
+
+class ResponseMessageListProjectMemberVo(SwBaseModel):
+    code: str
+    message: str
+    data: List[ProjectMemberVo]
+
+
 class ApiSpec(SwBaseModel):
     uri: str
     inference_type: Optional[str] = None
@@ -1534,47 +1654,6 @@ class ResponseMessageJobVo(SwBaseModel):
     data: JobVo
 
 
-class PageInfoTaskVo(SwBaseModel):
-    total: Optional[int] = None
-    list: Optional[List[TaskVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoTaskVo(SwBaseModel):
-    code: str
-    message: str
-    data: PageInfoTaskVo
-
-
-class Graph(SwBaseModel):
-    id: Optional[int] = None
-    grouping_nodes: Optional[Dict[str, List[GraphNode]]] = Field(
-        None, alias='groupingNodes'
-    )
-    edges: Optional[List[GraphEdge]] = None
-
-
-class ResponseMessageGraph(SwBaseModel):
-    code: str
-    message: str
-    data: Graph
-
-
 class ResponseMessageListJobVo(SwBaseModel):
     code: str
     message: str
@@ -1622,52 +1701,6 @@ class ResponseMessageFineTuneVo(SwBaseModel):
     code: str
     message: str
     data: FineTuneVo
-
-
-class PageInfoPanelPluginVo(SwBaseModel):
-    total: Optional[int] = None
-    list: Optional[List[PanelPluginVo]] = None
-    page_num: Optional[int] = Field(None, alias='pageNum')
-    page_size: Optional[int] = Field(None, alias='pageSize')
-    size: Optional[int] = None
-    start_row: Optional[int] = Field(None, alias='startRow')
-    end_row: Optional[int] = Field(None, alias='endRow')
-    pages: Optional[int] = None
-    pre_page: Optional[int] = Field(None, alias='prePage')
-    next_page: Optional[int] = Field(None, alias='nextPage')
-    is_first_page: Optional[bool] = Field(None, alias='isFirstPage')
-    is_last_page: Optional[bool] = Field(None, alias='isLastPage')
-    has_previous_page: Optional[bool] = Field(None, alias='hasPreviousPage')
-    has_next_page: Optional[bool] = Field(None, alias='hasNextPage')
-    navigate_pages: Optional[int] = Field(None, alias='navigatePages')
-    navigatepage_nums: Optional[List[int]] = Field(None, alias='navigatepageNums')
-    navigate_first_page: Optional[int] = Field(None, alias='navigateFirstPage')
-    navigate_last_page: Optional[int] = Field(None, alias='navigateLastPage')
-
-
-class ResponseMessagePageInfoPanelPluginVo(SwBaseModel):
-    code: str
-    message: str
-    data: PageInfoPanelPluginVo
-
-
-class ResponseMessageRuntimeSuggestionVo(SwBaseModel):
-    code: str
-    message: str
-    data: RuntimeSuggestionVo
-
-
-class ProjectMemberVo(SwBaseModel):
-    id: str
-    user: UserVo
-    project: ProjectVo
-    role: RoleVo
-
-
-class ResponseMessageListProjectMemberVo(SwBaseModel):
-    code: str
-    message: str
-    data: List[ProjectMemberVo]
 
 
 class ModelVersionViewVo(SwBaseModel):
