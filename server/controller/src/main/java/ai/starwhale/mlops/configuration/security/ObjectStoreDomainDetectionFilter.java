@@ -18,9 +18,11 @@ package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
+import ai.starwhale.mlops.storage.s3.S3Config;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -41,7 +43,12 @@ public class ObjectStoreDomainDetectionFilter extends OncePerRequestFilter {
     final Map<String, Pattern> domainAliasMap;
 
     public ObjectStoreDomainDetectionFilter(StorageProperties storageProperties) {
-        Map<String, String> endpointEquivalentsMap = storageProperties.getS3Config().getEndpointEquivalentsMap();
+        S3Config s3Config = storageProperties.getS3Config();
+        if (null == s3Config) {
+            domainAliasMap = new HashMap<>();
+            return;
+        }
+        Map<String, String> endpointEquivalentsMap = s3Config.getEndpointEquivalentsMap();
         domainAliasMap = endpointEquivalentsMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, (entry) -> {
             URI uri = null;
             try {
