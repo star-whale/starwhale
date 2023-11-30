@@ -116,6 +116,7 @@ export interface IJobActionComponentProps {
     hasText?: boolean
     hasIcon?: boolean
     styleas?: IExtendButtonProps['styleas']
+    onDone?: () => void
 }
 
 export interface IJobAction {
@@ -148,12 +149,15 @@ export function useJobActions({ hasSaveAs = false, onRefresh }: IJobActionsProps
         const CancelButton = {
             key: 'cancel',
             access: isAccessCancel,
-            component: ({ hasText, hasIcon, styleas = [] }: IJobActionComponentProps) => (
+            component: ({ hasText, hasIcon, styleas = [], onDone = () => {} }: IJobActionComponentProps) => (
                 <ConfirmButton
                     tooltip={t('Cancel')}
                     icon={hasIcon ? 'cancel' : undefined}
                     styleas={['menuoption', hasText ? undefined : 'highlight', ...styleas]}
-                    onClick={() => handleAction(projectId, jobId, JobActionType.CANCEL)}
+                    onClick={() => {
+                        handleAction(projectId, jobId, JobActionType.CANCEL)
+                        onDone()
+                    }}
                     title={t('Cancel.Confirm')}
                 >
                     {hasText ? t('Cancel') : undefined}

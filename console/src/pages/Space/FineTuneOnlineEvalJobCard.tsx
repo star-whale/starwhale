@@ -9,6 +9,7 @@ import { useProject } from '@/domain/project/hooks/useProject'
 import { ExtendButton } from '@starwhale/ui/Button'
 import { useHistory } from 'react-router-dom'
 import { useChatStore } from '@starwhale/ui/Serving/store/chat'
+import { useServingConfig } from '@starwhale/ui/Serving/store/config'
 
 function JobCard({ job }: { job: IJobVo }) {
     const [t] = useTranslation()
@@ -21,6 +22,7 @@ function JobCard({ job }: { job: IJobVo }) {
     const chatStore = useChatStore()
     const session = chatStore.getSessionById(job.id)
     const disabled = !session?.serving
+    const config = useServingConfig()
 
     return (
         <div
@@ -37,7 +39,7 @@ function JobCard({ job }: { job: IJobVo }) {
                     disabled={disabled}
                     icon={session?.show ? 'eye' : 'eye_off'}
                     styleas={['menuoption', 'nopadding', 'iconnormal', !session?.serving ? 'icondisable' : undefined]}
-                    onClick={() => chatStore.onSessionShowById(session.id, !session?.show)}
+                    onClick={() => session && chatStore.onSessionShowById(session.id, !session?.show)}
                 />
             </div>
             <div className='flex-1 flex flex-col justify-between'>
@@ -65,7 +67,14 @@ function JobCard({ job }: { job: IJobVo }) {
                         <>
                             <span className='w-1px bg-[#EEF1F6]' />
                             <div className='flex justify-end flex-shrink-0'>
-                                <Cancel hasText hasIcon={false} styleas={['nopadding', 'negative']} />
+                                <Cancel
+                                    hasText
+                                    hasIcon={false}
+                                    styleas={['nopadding', 'negative']}
+                                    onDone={() => {
+                                        config.refetch()
+                                    }}
+                                />
                             </div>
                         </>
                     )}

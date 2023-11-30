@@ -5,30 +5,24 @@ import IconFont from '@starwhale/ui/IconFont'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import useTranslation from '@/hooks/useTranslation'
-import Button from '@starwhale/ui/Button'
+import { ExtendButton } from '@starwhale/ui/Button'
 
-// @ts-ignore
-export default function SectionPopover({
-    onOptionSelect,
-    actions,
-}: {
-    onOptionSelect: (item: any) => void
-    actions: any
-}) {
+export default function SectionPopover({ onOptionSelect }: { onOptionSelect: (item: any) => void }) {
     const [t] = useTranslation()
 
     const $options = React.useMemo(() => {
         return [
-            actions.rename && { label: t('panel.rename'), type: 'rename' },
-            actions.addAbove && { label: t('panel.add.above'), type: 'addAbove' },
-            actions.addBelow && { label: t('panel.add.below'), type: 'addBelow' },
-            actions.delete && { label: t('panel.delete'), type: 'delete' },
+            { label: t('View Tasks'), type: 'viewlog' },
+            { label: t('ft.online_eval.parameter.setting'), type: 'parameter' },
+            { label: t('panel.chart.reload'), type: 'reload' },
+            { label: t('Cancel'), type: 'delete' },
         ].filter(Boolean)
-    }, [actions, t])
+    }, [t])
 
     return (
         <StatefulPopover
             focusLock
+            triggerType='hover'
             placement={PLACEMENT.bottom}
             content={({ close }) => (
                 <StatefulMenu
@@ -46,12 +40,7 @@ export default function SectionPopover({
                         Option: {
                             props: {
                                 getItemLabel: (item: { label: string; type: string }) => {
-                                    const icon = {
-                                        rename: <IconFont type='edit' />,
-                                        addAbove: <IconFont type='a-Addabove' />,
-                                        addBelow: <IconFont type='a-Addbelow' />,
-                                        delete: <IconFont type='delete' style={{ color: '#CC3D3D' }} />,
-                                    }
+                                    const icon = {}
                                     const menu = (
                                         <div
                                             style={{
@@ -71,7 +60,7 @@ export default function SectionPopover({
                                         return (
                                             <ConfirmButton
                                                 as='link'
-                                                title='Are you sure to delete this panel?'
+                                                title={t('Cancel.Confirm')}
                                                 onClick={async (e) => {
                                                     e.preventDefault()
                                                     onOptionSelect(item)
@@ -103,9 +92,9 @@ export default function SectionPopover({
                 />
             )}
         >
-            <Button kind='secondary'>
+            <ExtendButton kind='secondary' styleas={['menuoption']}>
                 <IconFont type='more' size={14} />
-            </Button>
+            </ExtendButton>
         </StatefulPopover>
     )
 }

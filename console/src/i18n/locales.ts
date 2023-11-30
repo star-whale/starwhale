@@ -867,6 +867,14 @@ const ft = {
         en: 'Parameters',
         zh: '参数',
     },
+    'ft.online_eval.parameter.title': {
+        en: 'Parameters',
+        zh: '参数',
+    },
+    'ft.online_eval.parameter.reset': {
+        en: 'Reset',
+        zh: '重置',
+    },
     'ft.online_eval.enter.placeholder': {
         en: 'Please enter your question and use {{0}} to complete the line',
         zh: '请输入您的问题，使用 {{0}} 提交',

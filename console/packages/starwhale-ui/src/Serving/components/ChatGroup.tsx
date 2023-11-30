@@ -14,9 +14,16 @@ import { nanoid } from 'nanoid'
 import { LAST_INPUT_KEY } from '../constant'
 import useTranslation from '@/hooks/useTranslation'
 import { LabelMedium } from 'baseui/typography'
-import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
+import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import { StatefulSlider } from 'baseui/slider'
 import { expandBorderRadius, expandPadding } from '../../utils/index'
+import SectionPopover from './SectionPopover'
+import { useHistory } from 'react-router-dom'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { toaster } from 'baseui/toast'
+import { useEventCallback } from '@starwhale/core/utils'
+import { doJobAction } from '@job/services/job'
+import { JobActionType } from '@/domain/job/schemas/job'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -47,9 +54,12 @@ function Chat({
     setAutoScroll: any
     session: ChatSession
 }) {
+    const config = useServingConfig()
     const chatStore = useChatStore()
+    const { project } = useProject()
     const { job } = session.serving ?? {}
     const [t] = useTranslation()
+    const history = useHistory()
     const isLoading = false
 
     // init
@@ -130,7 +140,13 @@ function Chat({
             clear()
         },
     })
+    const handleAction = useEventCallback(async (projectId, jid, type) => {
+        if (!projectId) return
 
+        await doJobAction(projectId, jid, type)
+        toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+        // onRefresh?.()
+    })
     if (!session || !job) return <BusyPlaceholder type='empty' />
 
     return (
@@ -143,8 +159,24 @@ function Chat({
                     onClick={() => chatStore.onSessionShowById(job.id, !session?.show)}
                 />
                 <div className='flex-1 mx-8px font-600'>{job?.modelName}</div>
-                <div>
+                <div className='flex lh-none items-center'>
                     <JobStatus status={job?.jobStatus as any} />
+                    <SectionPopover
+                        onOptionSelect={({ type }) => {
+                            if (type === 'viewlog') {
+                                history.push(`/projects/${project?.id}/jobs/${job?.id}/tasks`)
+                                return
+                            }
+                            if (type === 'parameter') {
+                                chatStore.onSessionEditParamsShow(session?.id)
+                                return
+                            }
+                            if (type === 'delete') {
+                                handleAction(project?.id, job?.id, JobActionType.CANCEL)
+                                config.refetch()
+                            }
+                        }}
+                    />
                 </div>
             </div>
 
@@ -268,10 +300,8 @@ function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
     const chatStore = useChatStore()
     const [t] = useTranslation()
     const [forceKey, forceUpdate] = useReducer((s) => s + 1, 0)
-
-    if (!chatStore.editingSessionId) return null
-
-    const editingSession = chatStore.getSessionById(chatStore.editingSessionId)
+    const editingSession = chatStore.getSessionById(chatStore?.editingSessionId as any)
+    if (!editingSession) return null
 
     return (
         <Modal
@@ -285,7 +315,7 @@ function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
             <ModalBody $style={{ paddingBottom: '20px' }}>
                 <div className='py-20px border-t-1px border-b-1px'>
                     <div className=' mb-20px flex justify-between'>
-                        Parameters{' '}
+                        {t('ft.online_eval.parameter.title')}
                         <ExtendButton
                             kind='secondary'
                             icon='reset'
@@ -294,7 +324,7 @@ function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
                                 forceUpdate()
                             }}
                         >
-                            reset
+                            {t('ft.online_eval.parameter.reset')}
                         </ExtendButton>
                     </div>
                     <div className='gap-20px'>
