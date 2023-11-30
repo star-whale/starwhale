@@ -15,7 +15,7 @@ function WebGroup({ useStore }: { useStore: StoreT }) {
     return (
         <div className='web-group flex flex-col overflow-hidden'>
             <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px'>
-                <CasecadeResizer defaultConstraints={[800, 600]}>
+                <CasecadeResizer defaultConstraints={[400, 600]}>
                     {store.sessions
                         .filter((session) => session.show && session.serving.type === InferenceType.web_handler)
                         .map((session) => {

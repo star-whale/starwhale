@@ -29,6 +29,7 @@ function CasecadeResizer({
                     minConstraints={minConstraints}
                 >
                     <div
+                        key={child.key}
                         className='box inline-block flex-shrink-0 flex-grow-0'
                         style={{
                             ...rect,

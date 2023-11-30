@@ -113,36 +113,6 @@ export const useServingConfig = createPersistStore(
             }))
         },
 
-        /**
-        -   name: serving
-            concurrency: 1
-            replicas: 1
-            expose: 8080
-            virtual: true
-            job_name: serving
-            show_name: virtual handler for model serving
-            service_spec:
-                version: 0.0.2
-                apis:
-                - uri: online_eval
-                    inference_type: llm_chat
-                    components:
-                    - name: temperature
-                        component_spec_value_type: FLOAT
-                    - name: user_input
-                        component_spec_value_type: STRING
-                    - name: history
-                        component_spec_value_type: LIST
-            
-            "exposedLinks": [
-                {
-                    "type": "WEB_HANDLER",
-                    "name": "virtual handler for model serving",
-                    "link": "/gateway/task/311/8080/"
-                }
-            ],
-
-         */
         getServings(): IInference[] {
             const { jobs } = get()
             const servings = [] as IInference[]
@@ -173,3 +143,35 @@ export const useServingConfig = createPersistStore(
         },
     }
 )
+
+// service_spec:
+// apis:
+// - components:
+//   - componentValueSpecFloat:
+//       defaultVal: 0.9
+//       max: 1.0
+//       min: 0.1
+//       step: 0.1
+//     component_spec_value_type: FLOAT
+//     name: top_p
+//   - componentValueSpecFloat:
+//       defaultVal: 0.5
+//       step: 0.01
+//     component_spec_value_type: FLOAT
+//     name: temperature
+//   - componentValueSpecInt:
+//       defaultVal: 100
+//       max: 1000
+//       min: 10
+//     component_spec_value_type: INT
+//     name: max_new_tokens
+//   inference_type: llm_chat
+//   uri: fake_chat_bot
+// version: 0.0.2
+// "exposedLinks": [
+//     {
+//         "type": "WEB_HANDLER",
+//         "name": "virtual handler for model serving",
+//         "link": "/gateway/task/311/8080/"
+//     }
+// ],

@@ -35,7 +35,7 @@ export default function FineTuneOnlineEvalServings() {
                                 key={key ?? index}
                                 title={key}
                                 expanded={expand[key] ?? true}
-                                onExpanded={() => setExpand({ [key]: !expand[key] })}
+                                onExpanded={() => setExpand({ [key]: key in expand ? !expand[key] : false })}
                             >
                                 <div className='serving-section px-20px transition-all'>
                                     <ChatGroup key={key} useStore={useChatStore} />
@@ -49,7 +49,7 @@ export default function FineTuneOnlineEvalServings() {
                                 key={key ?? index}
                                 title={key}
                                 expanded={expand[key] ?? true}
-                                onExpanded={() => setExpand({ [key]: !expand[key] })}
+                                onExpanded={() => setExpand({ [key]: key in expand ? !expand[key] : false })}
                             >
                                 <div className='serving-section px-20px transition-all'>
                                     <WebGroup key={key} useStore={useChatStore} />
