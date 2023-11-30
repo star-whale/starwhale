@@ -12,6 +12,7 @@ import { ChatMessage, ChatSession } from '../store/chat'
 import { useChatStore as Store } from '@starwhale/ui/Serving/store/chat'
 import { nanoid } from 'nanoid'
 import { LAST_INPUT_KEY } from '../constant'
+import useTranslation from '@/hooks/useTranslation'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -244,7 +245,7 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
     const { submitKey, shouldSubmit } = useSubmitHandler()
     const { scrollDomToBottom, setAutoScroll, scrollRefs } = scroll
     const sharedChatProps = { inputRef, ...scroll, userInput, setUserInput }
-
+    const [t] = useTranslation()
     const [inputRows, setInputRows] = useState(2)
     const config = useServingConfig()
     useDebounceEffect(
@@ -268,7 +269,7 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
         setUserInput('')
         inputRef.current?.focus()
         setAutoScroll(true)
-        chatStore.onUserInput(_userInput)
+        chatStore.onUserInput(InferenceType.llm_chat, _userInput)
         localStorage.setItem(LAST_INPUT_KEY, userInput)
     }
     const onInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -294,7 +295,7 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
             <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px'>
                 <CasecadeResizer>
                     {chatStore.sessions
-                        .filter((session) => session.show && session.serving.type === InferenceType.llm_chat)
+                        .filter((session) => session.show && session.serving?.type === InferenceType.llm_chat)
                         .map((v, index) => (
                             <Chat
                                 key={v.id}
@@ -312,14 +313,13 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
                 <textarea
                     ref={inputRef}
                     className='chat-input w-full h-full resize-none lh-32px'
-                    // placeholder={Locale.Chat.Input(submitKey)}
+                    placeholder={t('ft.online_eval.enter.placeholder', [submitKey])}
                     onInput={(e) => onInput(e.currentTarget.value)}
                     value={userInput}
                     onKeyDown={onInputKeyDown}
                     onFocus={scrollToBottom}
                     onClick={scrollToBottom}
                     rows={inputRows}
-                    // autoFocus={autoFocus}
                     style={{
                         fontSize: config.fontSize,
                     }}

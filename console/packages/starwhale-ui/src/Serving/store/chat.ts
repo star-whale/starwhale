@@ -1,7 +1,7 @@
 import { ModelConfig, ModelType, useServingConfig, IInference } from './config'
+import { DEFAULT_INPUT_TEMPLATE, StoreKey } from '../constant'
 // import { createEmptyMask, Mask } from './mask'
-import { DEFAULT_INPUT_TEMPLATE, DEFAULT_SYSTEM_TEMPLATE, StoreKey } from '../constant'
-import { prettyObject } from '../utils/format'
+// import { prettyObject } from '../utils/format'
 import { nanoid } from 'nanoid'
 import { createPersistStore } from '../utils/store'
 import Locale from '@/i18n'
@@ -76,14 +76,14 @@ export interface ChatSession {
 
     // mask: Mask
     mask: any
-    serving: IInference
+    serving: IInference | null
     show: boolean
 }
 
-export const DEFAULT_TOPIC = Locale.DefaultTopic
+export const DEFAULT_TOPIC = 'Locale.DefaultTopic'
 export const BOT_HELLO: ChatMessage = createMessage({
     role: 'assistant',
-    content: Locale.BotHello,
+    content: 'Locale.BotHello',
 })
 
 function getLang() {
@@ -103,16 +103,15 @@ function createEmptySession(id): ChatSession {
         },
         lastUpdate: Date.now(),
         lastSummarizeIndex: 0,
-
         mask: {}, // createEmptyMask(),
         serving: null,
         show: true,
     }
 }
 
-function countMessages(msgs: ChatMessage[]) {
-    return msgs.reduce((pre, cur) => pre + estimateTokenLength(cur.content), 0)
-}
+// function countMessages(msgs: ChatMessage[]) {
+//     return msgs.reduce((pre, cur) => pre + estimateTokenLength(cur.content), 0)
+// }
 
 function fillTemplateWith(input: string, modelConfig: ModelConfig) {
     const cutoff = ''
@@ -334,7 +333,7 @@ function create(name = StoreKey.Chat) {
                     })
                 },
 
-                async onUserInput(content: string) {
+                async onUserInput(type, content: string) {
                     const { sessions } = get()
                     // const modelConfig = session.mask.modelConfig
                     const modelConfig = {}
@@ -342,33 +341,25 @@ function create(name = StoreKey.Chat) {
                     const userContent = fillTemplateWith(content, modelConfig)
                     console.log('[User Input] after template: ', userContent)
 
-                    const promises = sessions.map((session, index) => {
-                        const { serving, messages } = session
-                        if (!serving) return Promise.resolve()
-                        const { exposedLink, apiSpec } = serving
-                        const data: ILLMChatQuerySchema = {
-                            user_input: content,
-                            history: messages,
-                        }
-                        // if (hasComponent('temperature', api.components_hint)) {
-                        //     data.temperature = temperature
-                        // }
-                        // if (hasComponent('top_k', api.components_hint)) {
-                        //     data.top_k = topK
-                        // }
-                        // if (hasComponent('top_p', api.components_hint)) {
-                        //     data.top_p = topP
-                        // }
-                        // if (hasComponent('max_new_tokens', api.components_hint)) {
-                        //     data.max_new_tokens = maxNewTokens
-                        // }
+                    const promises = sessions
+                        .filter((v) => v.serving?.type === type)
+                        .map((session, index) => {
+                            const { serving, messages } = session
+                            if (!serving) return Promise.resolve()
+                            const { exposedLink, apiSpec } = serving
+                            const data: ILLMChatQuerySchema = {
+                                user_input: content,
+                                history: messages as any,
+                            }
 
-                        return axios
-                            .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec.uri}`, data)
-                            .then((res) => {
-                                get().onResetMessageByIndex(index, res.data)
-                            })
-                    })
+                            if (!apiSpec?.uri) return Promise.reject()
+
+                            return axios
+                                .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec?.uri}`, data)
+                                .then((res) => {
+                                    get().onResetMessageByIndex(index, res.data)
+                                })
+                        })
 
                     Promise.all(promises).then(() => {
                         console.log('all')
@@ -389,13 +380,6 @@ function create(name = StoreKey.Chat) {
                         session.messages = []
                         // eslint-disable-next-line
                         session.memoryPrompt = ''
-                    })
-                },
-
-                updateStat(message: ChatMessage) {
-                    get().updateCurrentSession((session) => {
-                        // session.stat.charCount += message.content.length
-                        // TODO: should update chat count and word count
                     })
                 },
 

@@ -129,6 +129,8 @@ export default function SectionAccordionPanel(props: any) {
                         borderBottomWidth: '1px',
                         ...expandBorder('1px', 'solid', '#E2E7F0'),
                         marginBottom: '-1px',
+                        borderLeftWidth: 0,
+                        borderRightWidth: 0,
                     },
                 },
                 Content: {
