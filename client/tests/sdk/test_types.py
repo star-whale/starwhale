@@ -45,6 +45,7 @@ def test_text_to_image():
         "seed": ComponentSpecValueType.int,
         "batch_size": ComponentSpecValueType.int,
         "batch_count": ComponentSpecValueType.int,
+        "guidance_scale": ComponentSpecValueType.float,
     }
 
     t = TextToImage(

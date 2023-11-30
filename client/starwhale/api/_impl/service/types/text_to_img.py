@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from starwhale.base.client.models.models import (
     ComponentValueSpecInt,
     ComponentSpecValueType,
+    ComponentValueSpecFloat,
 )
 from starwhale.api._impl.service.types.types import ServiceType
 
@@ -21,6 +22,7 @@ class Query(BaseModel):
     seed: Optional[int] = None
     batch_size: Optional[int] = None
     batch_count: Optional[int] = None
+    guidance_scale: Optional[float] = None
 
 
 class TextToImage(ServiceType):
@@ -36,6 +38,7 @@ class TextToImage(ServiceType):
         "seed": ComponentSpecValueType.int,
         "batch_size": ComponentSpecValueType.int,
         "batch_count": ComponentSpecValueType.int,
+        "guidance_scale": ComponentSpecValueType.float,
     }
 
     def __init__(
@@ -46,6 +49,7 @@ class TextToImage(ServiceType):
         seed: ComponentValueSpecInt | None = None,
         batch_size: ComponentValueSpecInt | None = None,
         batch_count: ComponentValueSpecInt | None = None,
+        guidance_scale: ComponentValueSpecFloat | None = None,
     ) -> None:
         for k, v in locals().items():
             if k == "self":
