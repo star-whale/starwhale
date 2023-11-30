@@ -1,5 +1,5 @@
 import CasecadeResizer from '@starwhale/ui/AutoResizer/CascadeResizer'
-import { useServingConfig } from '../store/config'
+import { InferenceType, useServingConfig } from '../store/config'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
@@ -140,7 +140,7 @@ function Chat({
                     setAutoScroll(false)
                 }}
             >
-                {messages.map((message, i) => {
+                {messages.map((message) => {
                     const isUser = message.role === 'user'
                     // const isContext = i < context.length
                     // const showActions = i > 0 && !(message.preview || message.content.length === 0) && !isContext
@@ -236,7 +236,7 @@ function Chat({
     )
 }
 
-function ChatGroup({ useChatStore }: { useChatStore: StoreT }) {
+function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
     const chatStore = useChatStore()
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const scroll = useDomsScrollToBottom()
@@ -294,7 +294,7 @@ function ChatGroup({ useChatStore }: { useChatStore: StoreT }) {
             <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px'>
                 <CasecadeResizer>
                     {chatStore.sessions
-                        .filter((v) => v.show)
+                        .filter((session) => session.show && session.serving.type === InferenceType.llm_chat)
                         .map((v, index) => (
                             <Chat
                                 key={v.id}

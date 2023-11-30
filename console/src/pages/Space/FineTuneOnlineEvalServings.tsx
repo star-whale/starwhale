@@ -7,6 +7,7 @@ import { useUpdateEffect } from 'react-use'
 import { useCreation, useSetState } from 'ahooks'
 import SectionAccordionPanel from '@starwhale/ui/Serving/components/SectionAccordionPanel'
 import { BusyPlaceholder } from '@starwhale/ui'
+import WebGroup from '@starwhale/ui/Serving/components/WebGroup'
 
 export default function FineTuneOnlineEvalServings() {
     const { jobs, getServings } = useServingConfig()
@@ -14,15 +15,14 @@ export default function FineTuneOnlineEvalServings() {
     const [expand, setExpand] = useSetState({})
 
     const servingMap = useCreation(() => {
-        return _.groupBy(getServings(), 'apiSpec.inference_type')
+        return _.groupBy(getServings(), 'type')
     }, [jobs])
 
     useUpdateEffect(() => {
-        const llmchats = servingMap[InferenceType.llm_chat]
-        if (!llmchats || !llmchats.length) {
-            return
-        }
-        llmchats.forEach((serving) => chatStore.newSession(serving))
+        Object.entries(servingMap).forEach(([, list]) => {
+            // chatStore.clearSessions()
+            list.forEach((serving) => chatStore.newSession(serving))
+        })
     }, [servingMap])
 
     return (
@@ -38,7 +38,21 @@ export default function FineTuneOnlineEvalServings() {
                                 onExpanded={() => setExpand({ [key]: !expand[key] })}
                             >
                                 <div className='serving-section px-20px transition-all'>
-                                    <ChatGroup key={key} useChatStore={useChatStore} />
+                                    <ChatGroup key={key} useStore={useChatStore} />
+                                </div>
+                            </SectionAccordionPanel>
+                        )
+                    }
+                    if (key === InferenceType.web_handler) {
+                        return (
+                            <SectionAccordionPanel
+                                key={key ?? index}
+                                title={key}
+                                expanded={expand[key] ?? true}
+                                onExpanded={() => setExpand({ [key]: !expand[key] })}
+                            >
+                                <div className='serving-section px-20px transition-all'>
+                                    <WebGroup key={key} useStore={useChatStore} />
                                 </div>
                             </SectionAccordionPanel>
                         )

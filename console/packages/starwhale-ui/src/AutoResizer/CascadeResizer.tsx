@@ -2,10 +2,13 @@ import React, { useState } from 'react'
 import { Resizable } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 
-const RECT = { width: 400, height: 330 }
-
-function CasecadeResizer({ children, minConstraints = [400, 330], maxConstraints = [1000, 1000] }) {
-    const [rect, setRect] = useState(RECT)
+function CasecadeResizer({
+    children,
+    defaultConstraints = [400, 300],
+    minConstraints = [400, 330],
+    maxConstraints = [1000, 1000],
+}) {
+    const [rect, setRect] = useState(() => ({ width: defaultConstraints[0], height: defaultConstraints[1] }))
     const onResize = (e: any, { size }: any) => {
         setRect({
             width: size.width,

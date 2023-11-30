@@ -86,12 +86,14 @@ export const ModalConfigValidator = {
 
 export enum InferenceType {
     llm_chat = 'llm_chat',
+    web_handler = 'web_handler',
 }
 export interface IInference {
     job: IJobVo
     stepSpec: IStepSpec
-    apiSpec: IApiSpec
+    apiSpec?: IApiSpec
     exposedLink: IExposedLinkVo
+    type: InferenceType
 }
 
 export const useServingConfig = createPersistStore(
@@ -150,12 +152,13 @@ export const useServingConfig = createPersistStore(
                 )
                 const apiSpec = stepSpec?.service_spec?.apis?.[0]
                 const exposedLink = job.exposedLinks.find((l) => l.type === 'WEB_HANDLER')
-                if (!stepSpec || !apiSpec?.inference_type || !exposedLink) return
+                if (!stepSpec || !exposedLink) return
                 servings.push({
                     job,
                     stepSpec,
                     apiSpec,
                     exposedLink,
+                    type: (apiSpec?.inference_type as InferenceType) ?? InferenceType.web_handler,
                 })
             })
             return servings

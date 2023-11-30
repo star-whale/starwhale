@@ -43,8 +43,6 @@ export default function FineTuneOnlineEvalListCard() {
         })
     }, [info.data, status])
 
-    console.log(status, info.data)
-
     return (
         <div className='content-full pt-12px'>
             <GridResizer
