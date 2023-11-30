@@ -48,40 +48,6 @@ export default function FineTuneOnlineEvalServings() {
             ) : (
                 <BusyPlaceholder type='empty' />
             )}
-            {Object.entries(servingMap).map(([key], index) => {
-                if (key === InferenceType.llm_chat) {
-                    return (
-                        <SectionAccordionPanel
-                            key={key ?? index}
-                            title={key}
-                            expanded={expand[key] ?? true}
-                            onExpanded={() => setExpand({ [key]: !expand[key] })}
-                        >
-                            <div className='serving-section px-20px transition-all'>
-                                <ChatGroup key={key} useChatStore={useChatStore} />
-                            </div>
-                        </SectionAccordionPanel>
-                    )
-                }
-                return null
-            })}
-            {Object.entries(servingMap).map(([key], index) => {
-                if (key === InferenceType.llm_chat) {
-                    return (
-                        <SectionAccordionPanel
-                            key={key ?? index}
-                            title={key}
-                            expanded={expand[key] ?? true}
-                            onExpanded={() => setExpand({ [key]: !expand[key] })}
-                        >
-                            <div className='serving-section px-20px transition-all'>
-                                <ChatGroup key={key} useChatStore={useChatStore} />
-                            </div>
-                        </SectionAccordionPanel>
-                    )
-                }
-                return null
-            })}
         </div>
     )
 }

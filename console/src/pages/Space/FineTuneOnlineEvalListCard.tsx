@@ -39,7 +39,7 @@ export default function FineTuneOnlineEvalListCard() {
             if (!status || status.length === 0) {
                 return true
             }
-            return status.includes(i.jobStatus)
+            return (status as any).includes(i.jobStatus)
         })
     }, [info.data, status])
 

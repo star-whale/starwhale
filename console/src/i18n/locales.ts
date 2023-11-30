@@ -863,6 +863,10 @@ const ft = {
         en: 'Online Evaluation',
         zh: '在线评测',
     },
+    'ft.online_eval.parameter.setting': {
+        en: 'Parameters',
+        zh: '参数',
+    },
     'ft.id': {
         en: 'Run ID',
         zh: 'Run ID',

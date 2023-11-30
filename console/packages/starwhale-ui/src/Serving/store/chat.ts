@@ -77,6 +77,7 @@ export interface ChatSession {
     // mask: Mask
     mask: any
     serving: IInference
+    show: boolean
 }
 
 export const DEFAULT_TOPIC = Locale.DefaultTopic
@@ -105,6 +106,7 @@ function createEmptySession(id): ChatSession {
 
         mask: {}, // createEmptyMask(),
         serving: null,
+        show: true,
     }
 }
 
@@ -196,49 +198,6 @@ export const useChatStore = createPersistStore(
                 })
             },
 
-            newSession(serving?: IInference, mask?: any) {
-                const existSession = get().sessions.find((v) => v.id === serving?.job?.id)
-
-                const session = existSession ?? createEmptySession(serving?.job?.id)
-
-                if (serving) {
-                    session.serving = serving
-                }
-
-                if (mask) {
-                    const config = useServingConfig.getState()
-                    const globalModelConfig = config.modelConfig
-
-                    session.mask = {
-                        ...mask,
-                        modelConfig: {
-                            ...globalModelConfig,
-                            ...mask.modelConfig,
-                        },
-                    }
-                    session.topic = mask.name
-                }
-
-                if (existSession) {
-                    set((state) => ({
-                        sessions: [...state.sessions],
-                    }))
-                    return
-                }
-
-                set((state) => ({
-                    currentSessionIndex: 0,
-                    sessions: [session, ...state.sessions],
-                }))
-            },
-
-            nextSession(delta: number) {
-                const n = get().sessions.length
-                const limit = (x: number) => (x + n) % n
-                const i = get().currentSessionIndex
-                get().selectSession(limit(i + delta))
-            },
-
             deleteSession(index: number) {
                 const deletingLastSession = get().sessions.length === 1
                 const deletedSession = get().sessions.at(index)
@@ -290,23 +249,88 @@ export const useChatStore = createPersistStore(
                 return session
             },
 
-            onNewMessage(message: ChatMessage) {
-                get().updateCurrentSession((session) => {
-                    session.messages = session.messages.concat()
-                    session.lastUpdate = Date.now()
-                })
-                get().updateStat(message)
-                get().summarizeSession()
+            nextSession(delta: number) {
+                const n = get().sessions.length
+                const limit = (x: number) => (x + n) % n
+                const i = get().currentSessionIndex
+                get().selectSession(limit(i + delta))
             },
 
+            updateCurrentSession(updater: (session: ChatSession) => void) {
+                const { sessions } = get()
+                const index = get().currentSessionIndex
+                updater(sessions[index])
+                set(() => ({ sessions }))
+            },
+
+            newSession(serving?: IInference, mask?: any) {
+                const existSession = get().sessions.find((v) => v.id === serving?.job?.id)
+
+                const session = existSession ?? createEmptySession(serving?.job?.id)
+
+                if (serving) {
+                    session.serving = serving
+                }
+
+                if (mask) {
+                    const config = useServingConfig.getState()
+                    const globalModelConfig = config.modelConfig
+
+                    session.mask = {
+                        ...mask,
+                        modelConfig: {
+                            ...globalModelConfig,
+                            ...mask.modelConfig,
+                        },
+                    }
+                    session.topic = mask.name
+                }
+
+                if (existSession) {
+                    set((state) => ({
+                        sessions: [...state.sessions],
+                    }))
+                    return
+                }
+
+                set((state) => ({
+                    currentSessionIndex: 0,
+                    sessions: [session, ...state.sessions],
+                }))
+            },
+
+            // onNewMessage(message: ChatMessage) {
+            //     get().updateCurrentSession((session) => {
+            //         // eslint-disable-next-line
+            //         session.messages = session.messages.concat()
+            //         // eslint-disable-next-line
+            //         session.lastUpdate = Date.now()
+            //     })
+            //     // get().updateStat(message)
+            //     // get().summarizeSession()
+            // },
+
             // updateSession
-            onResetMessageByIndex(index, messages: IBackEndMessage[]) {
+            onResetMessageByIndex(index, messages: ChatMessage[]) {
                 get().updateSession(index, (session) => {
+                    // eslint-disable-next-line
                     session.messages = messages
+                    // eslint-disable-next-line
                     session.lastUpdate = Date.now()
                 })
-                // get().updateStat(message)
-                // get().summarizeSession()
+            },
+
+            getSessionById(id: string) {
+                return get().sessions.find((v) => v.id === id)
+            },
+
+            onSessionShowById(id, show = true) {
+                const index = get().sessions.findIndex((v) => v.id === String(id))
+                if (index === -1) return
+                get().updateSession(index, (session) => {
+                    // eslint-disable-next-line
+                    session.show = show
+                })
             },
 
             async onUserInput(content: string) {
@@ -348,92 +372,6 @@ export const useChatStore = createPersistStore(
                 })
             },
 
-            getMemoryPrompt() {
-                const session = get().currentSession()
-
-                return {
-                    role: 'system',
-                    content: session.memoryPrompt.length > 0 ? Locale.Prompt.History(session.memoryPrompt) : '',
-                    date: '',
-                } as ChatMessage
-            },
-
-            getMessagesWithMemory() {
-                const session = get().currentSession()
-                const modelConfig = session.mask.modelConfig
-                const clearContextIndex = session.clearContextIndex ?? 0
-                const messages = session.messages.slice()
-                const totalMessageCount = session.messages.length
-
-                // in-context prompts
-                const contextPrompts = session.mask.context.slice()
-
-                // system prompts, to get close to OpenAI Web ChatGPT
-                const shouldInjectSystemPrompts = modelConfig.enableInjectSystemPrompts
-                const systemPrompts = shouldInjectSystemPrompts
-                    ? [
-                          createMessage({
-                              role: 'system',
-                              content: fillTemplateWith('', {
-                                  ...modelConfig,
-                                  template: DEFAULT_SYSTEM_TEMPLATE,
-                              }),
-                          }),
-                      ]
-                    : []
-                if (shouldInjectSystemPrompts) {
-                    console.log('[Global System Prompt] ', systemPrompts.at(0)?.content ?? 'empty')
-                }
-
-                // long term memory
-                const shouldSendLongTermMemory =
-                    modelConfig.sendMemory &&
-                    session.memoryPrompt &&
-                    session.memoryPrompt.length > 0 &&
-                    session.lastSummarizeIndex > clearContextIndex
-                const longTermMemoryPrompts = shouldSendLongTermMemory ? [get().getMemoryPrompt()] : []
-                const longTermMemoryStartIndex = session.lastSummarizeIndex
-
-                // short term memory
-                const shortTermMemoryStartIndex = Math.max(0, totalMessageCount - modelConfig.historyMessageCount)
-
-                // lets concat send messages, including 4 parts:
-                // 0. system prompt: to get close to OpenAI Web ChatGPT
-                // 1. long term memory: summarized memory messages
-                // 2. pre-defined in-context prompts
-                // 3. short term memory: latest n messages
-                // 4. newest input message
-                const memoryStartIndex = shouldSendLongTermMemory
-                    ? Math.min(longTermMemoryStartIndex, shortTermMemoryStartIndex)
-                    : shortTermMemoryStartIndex
-                // and if user has cleared history messages, we should exclude the memory too.
-                const contextStartIndex = Math.max(clearContextIndex, memoryStartIndex)
-                const maxTokenThreshold = modelConfig.max_tokens
-
-                // get recent messages as much as possible
-                const reversedRecentMessages = []
-                for (
-                    let i = totalMessageCount - 1, tokenCount = 0;
-                    i >= contextStartIndex && tokenCount < maxTokenThreshold;
-                    i -= 1
-                ) {
-                    const msg = messages[i]
-                    if (!msg || msg.isError) continue
-                    tokenCount += estimateTokenLength(msg.content)
-                    reversedRecentMessages.push(msg)
-                }
-
-                // concat all messages
-                const recentMessages = [
-                    ...systemPrompts,
-                    ...longTermMemoryPrompts,
-                    ...contextPrompts,
-                    ...reversedRecentMessages.reverse(),
-                ]
-
-                return recentMessages
-            },
-
             updateMessage(sessionIndex: number, messageIndex: number, updater: (message?: ChatMessage) => void) {
                 const { sessions } = get()
                 const session = sessions.at(sessionIndex)
@@ -444,93 +382,11 @@ export const useChatStore = createPersistStore(
 
             resetSession() {
                 get().updateCurrentSession((session) => {
+                    // eslint-disable-next-line
                     session.messages = []
+                    // eslint-disable-next-line
                     session.memoryPrompt = ''
                 })
-            },
-
-            summarizeSession() {
-                const config = useServingConfig.getState()
-                const session = get().currentSession()
-
-                // remove error messages if any
-                const messages = session.messages
-
-                // should summarize topic after chating more than 50 words
-                const SUMMARIZE_MIN_LEN = 50
-                if (
-                    config.enableAutoGenerateTitle &&
-                    session.topic === DEFAULT_TOPIC &&
-                    countMessages(messages) >= SUMMARIZE_MIN_LEN
-                ) {
-                    // const topicMessages = messages.concat(
-                    //     createMessage({
-                    //         role: 'user',
-                    //         content: Locale.Prompt.Topic,
-                    //     })
-                    // )
-                    // api.llm.chat({
-                    //     messages: topicMessages,
-                    //     config: {
-                    //         model: getSummarizeModel(session.mask.modelConfig.model),
-                    //     },
-                    //     onFinish(message) {
-                    //         get().updateCurrentSession(
-                    //             (session) => (session.topic = message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC)
-                    //         )
-                    //     },
-                    // })
-                }
-
-                const modelConfig = session.mask.modelConfig
-                const summarizeIndex = Math.max(session.lastSummarizeIndex, session.clearContextIndex ?? 0)
-                let toBeSummarizedMsgs = messages.filter((msg) => !msg.isError).slice(summarizeIndex)
-
-                const historyMsgLength = countMessages(toBeSummarizedMsgs)
-
-                if (historyMsgLength > modelConfig?.max_tokens ?? 4000) {
-                    const n = toBeSummarizedMsgs.length
-                    toBeSummarizedMsgs = toBeSummarizedMsgs.slice(Math.max(0, n - modelConfig.historyMessageCount))
-                }
-
-                // add memory prompt
-                toBeSummarizedMsgs.unshift(get().getMemoryPrompt())
-
-                const lastSummarizeIndex = session.messages.length
-
-                console.log(
-                    '[Chat History] ',
-                    toBeSummarizedMsgs,
-                    historyMsgLength,
-                    modelConfig.compressMessageLengthThreshold
-                )
-
-                if (historyMsgLength > modelConfig.compressMessageLengthThreshold && modelConfig.sendMemory) {
-                    // api.llm.chat({
-                    //     messages: toBeSummarizedMsgs.concat(
-                    //         createMessage({
-                    //             role: 'system',
-                    //             content: Locale.Prompt.Summarize,
-                    //             date: '',
-                    //         })
-                    //     ),
-                    //     config: {
-                    //         ...modelConfig,
-                    //         stream: true,
-                    //         model: getSummarizeModel(session.mask.modelConfig.model),
-                    //     },
-                    //     onUpdate(message) {
-                    //         session.memoryPrompt = message
-                    //     },
-                    //     onFinish(message) {
-                    //         console.log('[Memory] ', message)
-                    //         session.lastSummarizeIndex = lastSummarizeIndex
-                    //     },
-                    //     onError(err) {
-                    //         console.error('[Summarize] ', err)
-                    //     },
-                    // })
-                }
             },
 
             updateStat(message: ChatMessage) {
@@ -542,13 +398,6 @@ export const useChatStore = createPersistStore(
 
             updateSession(index, updater: (session: ChatSession) => void) {
                 const { sessions } = get()
-                updater(sessions[index])
-                set(() => ({ sessions }))
-            },
-
-            updateCurrentSession(updater: (session: ChatSession) => void) {
-                const { sessions } = get()
-                const index = get().currentSessionIndex
                 updater(sessions[index])
                 set(() => ({ sessions }))
             },

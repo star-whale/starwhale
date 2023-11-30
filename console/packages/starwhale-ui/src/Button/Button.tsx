@@ -14,12 +14,12 @@ export interface IButtonProps extends ButtonProps {
 }
 
 export interface IExtendButtonProps extends IButtonProps {
-    nopadding?: boolean
-    negative?: boolean
+    // nopadding?: boolean
+    // negative?: boolean
     tooltip?: string | React.ReactNode
-    transparent?: boolean
-    icondisable?: boolean
-    iconnormal?: boolean
+    // transparent?: boolean
+    // icondisable?: boolean
+    // iconnormal?: boolean
     styleas?: (
         | 'nopadding'
         | 'negative'

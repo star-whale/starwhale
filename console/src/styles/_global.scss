@@ -585,3 +585,8 @@ $bg-light-gray: #f5f5f5;
         background-image: url('../assets/bg-3840x2160.jpg');
     }
 }
+
+.react-resizable-handle {
+    background-size: 10px !important;
+    color: #cfd7e6 !important;
+}

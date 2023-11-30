@@ -8,7 +8,7 @@ import { Fragment, startTransition, useMemo, useRef, useState } from 'react'
 import { useDebounceEffect } from 'ahooks'
 import useSubmitHandler from '../hooks/useSubmitHandler'
 import { autoGrowTextArea } from '../utils'
-import { ChatMessage } from '../store/chat'
+import { ChatMessage, ChatSession } from '../store/chat'
 import { useChatStore as Store } from '@starwhale/ui/Serving/store/chat'
 import { nanoid } from 'nanoid'
 import { LAST_INPUT_KEY } from '../constant'
@@ -34,19 +34,17 @@ function Chat({
     inputRef,
     setAutoScroll,
     useChatStore,
-    sessionIndex,
+    session,
 }: {
     useChatStore: StoreT
     scrollRef: any
     inputRef: any
     setAutoScroll: any
-    sessionIndex: number
+    session: ChatSession
 }) {
     // store
     const chatStore = useChatStore()
-    const session = chatStore.sessions[sessionIndex]
     const { job } = session.serving
-    console.log(session)
 
     const isLoading = false
 
@@ -117,11 +115,14 @@ function Chat({
     if (!session) return <BusyPlaceholder type='empty' />
 
     return (
-        <div className='chat rounded-4px border-1 border-[#cfd7e6] h-full overflow-hidden flex flex-col'>
+        <div className='chat rounded-4px border-1 border-[#cfd7e6] h-full overflow-hidden flex flex-col pb-15px bg-white'>
             <div className='chat-title flex lh-none h-40px bg-[#eef1f6] px-10px items-center'>
-                <div>
-                    <ExtendButton styleas={['iconnormal', 'nopadding']} icon='eye' />
-                </div>
+                <ExtendButton
+                    disabled={!session?.serving}
+                    icon={session?.show ? 'eye' : 'eye_off'}
+                    styleas={['menuoption', 'nopadding', 'iconnormal', !session?.serving ? 'icondisable' : undefined]}
+                    onClick={() => chatStore.onSessionShowById(job.id, !session?.show)}
+                />
                 <div className='flex-1 mx-8px font-600'>{job?.modelName}</div>
                 <div>
                     <JobStatus status={job?.jobStatus as any} />
@@ -130,7 +131,7 @@ function Chat({
 
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
-                className='chat-body flex-1 overflow-auto overflow-x-hidden p-10px pb-20px relative overscroll-none flex gap-20px flex-col min-w-0 h-full'
+                className='chat-body flex-1 overflow-auto overflow-x-hidden p-10px pb-0px relative overscroll-none flex gap-20px flex-col min-w-0 h-full bg-white'
                 ref={scrollRef}
                 onScroll={(e) => onChatBodyScroll(e.currentTarget)}
                 onMouseDown={() => inputRef.current?.blur()}
@@ -292,20 +293,22 @@ function ChatGroup({ useChatStore }: { useChatStore: StoreT }) {
         <div className='chat-group flex flex-col overflow-hidden'>
             <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px'>
                 <CasecadeResizer>
-                    {chatStore.sessions.map((v, index) => (
-                        <Chat
-                            key={index}
-                            {...sharedChatProps}
-                            useChatStore={useChatStore}
-                            sessionIndex={index}
-                            scrollRef={(el: HTMLDivElement) => {
-                                scrollRefs.current[index] = el
-                            }}
-                        />
-                    ))}
+                    {chatStore.sessions
+                        .filter((v) => v.show)
+                        .map((v, index) => (
+                            <Chat
+                                key={v.id}
+                                {...sharedChatProps}
+                                useChatStore={useChatStore}
+                                session={v}
+                                scrollRef={(el: HTMLDivElement) => {
+                                    scrollRefs.current[index] = el
+                                }}
+                            />
+                        ))}
                 </CasecadeResizer>
             </div>
-            <div className='chat-input-panel-inner w-full border-1 flex flex-1 py-6px px-12px items-end rounded-4px'>
+            <div className='chat-input-panel-inner w-full border-1 flex flex-1 py-6px px-12px items-end rounded-4px bg-white'>
                 <textarea
                     ref={inputRef}
                     className='chat-input w-full h-full resize-none lh-32px'

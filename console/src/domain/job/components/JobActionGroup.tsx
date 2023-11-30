@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import { useJob } from '@/domain/job/hooks/useJob'
@@ -6,23 +6,23 @@ import ExposedLink from '@/domain/job/components/ExposedLink'
 import { createJobTemplate, doJobAction } from '@job/services/job'
 import { useHistory } from 'react-router-dom'
 import { toaster } from 'baseui/toast'
-import { ButtonGroup, ExtendButton } from '@starwhale/ui/Button'
+import { ButtonGroup, ExtendButton, IExtendButtonProps } from '@starwhale/ui/Button'
 import { ConfirmButton, Input } from '@starwhale/ui'
 import qs from 'qs'
 import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { WithCurrentAuth, useAccess } from '@/api/WithAuth'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal'
 import _ from 'lodash'
+import { useEventCallback } from '@starwhale/core/utils'
+import { IJobVo, IProjectVo, api } from '@/api'
 
-function JobSaveAsTemplateButton({ hasText = false }) {
+function JobSaveAsTemplateButton({ hasText = false, job, project }) {
     const as = hasText ? undefined : 'link'
     const kind = hasText ? 'secondary' : undefined
     const sharedProps = { as, kind } as any
     const [t] = useTranslation()
     const [isShow, setIsShow] = useState(false)
     const [name, setName] = useState('')
-    const { job } = useJob()
-    const { project } = useProject()
     const projectId = project?.id
     const jobId = job?.id
     const len = _.toArray(name).length
@@ -102,136 +102,184 @@ function JobSaveAsTemplateButton({ hasText = false }) {
     )
 }
 
-export default function JobActionGroup({
-    children,
-    hasText = false,
-    hasSaveAs = false,
-}: {
-    children?: React.ReactNode
-    hasText?: boolean
+export interface IJobActionsProps {
     hasSaveAs?: boolean
-}) {
-    const { job } = useJob()
-    const { project } = useProject()
+    onRefresh?: () => void
+}
+
+export interface IJobActionParams {
+    job?: IJobVo
+    project?: IProjectVo
+}
+
+export interface IJobActionComponentProps {
+    hasText?: boolean
+    hasIcon?: boolean
+    styleas?: IExtendButtonProps['styleas']
+}
+
+export interface IJobAction {
+    access: boolean
+    key?: string
+    component: React.FC<IJobActionComponentProps>
+}
+
+export function useJobActions({ hasSaveAs = false, onRefresh }: IJobActionsProps = {}) {
     const [t] = useTranslation()
-    const projectId = project?.id
-    const jobId = job?.id
     const history = useHistory()
+    const handleAction = useEventCallback(async (projectId, jid, type: JobActionType) => {
+        if (!projectId) return
 
-    const handleAction = useCallback(
-        async (jid, type: JobActionType) => {
-            if (!projectId) return
+        await doJobAction(projectId, jid, type)
+        toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+        onRefresh?.()
+    })
+    const isAccessCancel = useAccess('job.cancel')
+    const isAccessPause = useAccess('job.pause')
+    const isAccessPauseGlobal = useAccess('job-pause')
+    const isAccessResume = useAccess('job.resume')
+    const isAccessResumeGlobal = useAccess('job-resume')
 
-            await doJobAction(projectId, jid, type)
-            toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-        },
-        [projectId, t]
-    )
+    const getActions = ({ job, project }: IJobActionParams = {}): IJobAction[] => {
+        if (!job || !project) return []
+        const projectId = project?.id
+        const jobId = job?.id
 
-    if (!job) {
-        return null
-    }
+        const CancelButton = {
+            key: 'cancel',
+            access: isAccessCancel,
+            component: ({ hasText, hasIcon, styleas = [] }: IJobActionComponentProps) => (
+                <ConfirmButton
+                    tooltip={t('Cancel')}
+                    icon={hasIcon ? 'cancel' : undefined}
+                    styleas={['menuoption', hasText ? undefined : 'highlight', ...styleas]}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.CANCEL)}
+                    title={t('Cancel.Confirm')}
+                >
+                    {hasText ? t('Cancel') : undefined}
+                </ConfirmButton>
+            ),
+        }
 
-    const as = hasText ? undefined : 'link'
-    const kind = hasText ? 'secondary' : undefined
-    const sharedProps = { as, kind } as any
-
-    const CancelButton = () => (
-        <WithCurrentAuth id='job.cancel'>
-            <ConfirmButton
-                tooltip={t('Cancel')}
-                icon='cancel'
-                {...sharedProps}
-                onClick={() => handleAction(jobId, JobActionType.CANCEL)}
-                title={t('Cancel.Confirm')}
-            >
-                {hasText ? t('Cancel') : ''}
-            </ConfirmButton>
-        </WithCurrentAuth>
-    )
-
-    const PauseButton = () => (
-        <WithCurrentAuth id='job-pause'>
-            <WithCurrentAuth id='job.pause'>
+        const PauseButton = {
+            key: 'pause',
+            access: isAccessPause && isAccessPauseGlobal,
+            component: ({ hasText }: IJobActionComponentProps) => (
                 <ConfirmButton
                     tooltip={t('Pause')}
                     icon='pause'
-                    {...sharedProps}
-                    onClick={() => handleAction(jobId, JobActionType.PAUSE)}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.PAUSE)}
                     title={t('Pause.Confirm')}
                 >
-                    {hasText ? t('Pause') : ''}
+                    {hasText ? t('Pause') : undefined}
                 </ConfirmButton>
-            </WithCurrentAuth>
-        </WithCurrentAuth>
-    )
+            ),
+        }
 
-    const ResumeButton = () => (
-        <WithCurrentAuth id='job-resume'>
-            <WithCurrentAuth id='job.resume'>
+        const ResumeButton = {
+            key: 'resume',
+            access: isAccessResume && isAccessResumeGlobal,
+            component: ({ hasText }: IJobActionComponentProps) => (
                 <ExtendButton
-                    tooltip={t('Resume')}
+                    tooltip={!hasText ? t('Resume') : undefined}
                     icon='Resume'
-                    {...sharedProps}
-                    onClick={() => handleAction(jobId, JobActionType.RESUME)}
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => handleAction(projectId, jobId, JobActionType.RESUME)}
                 >
-                    {hasText ? t('Resume') : ''}
+                    {hasText ? t('Resume') : undefined}
                 </ExtendButton>
-            </WithCurrentAuth>
-        </WithCurrentAuth>
-    )
+            ),
+        }
 
-    const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-        [JobStatusType.CREATED]: (
-            <>
-                <CancelButton />
-                <PauseButton />
-            </>
-        ),
-        [JobStatusType.RUNNING]: (
-            <>
-                <CancelButton />
-                <PauseButton />
-            </>
-        ),
-        [JobStatusType.PAUSED]: (
-            <>
-                <CancelButton />
-                <ResumeButton />
-            </>
-        ),
-        [JobStatusType.FAIL]: (
-            <>
-                <ResumeButton />
-            </>
-        ),
+        const Rerun = {
+            key: 'rerun',
+            access: true,
+            component: ({ hasText }: IJobActionComponentProps) => (
+                <ExtendButton
+                    tooltip={!hasText ? t('job.rerun') : undefined}
+                    icon='Rerun'
+                    styleas={['menuoption', hasText ? undefined : 'highlight']}
+                    onClick={() => history.push(`/projects/${projectId}/new_job?${qs.stringify({ rid: jobId })}`)}
+                >
+                    {hasText ? t('job.rerun') : undefined}
+                </ExtendButton>
+            ),
+        }
+
+        const Saveas = {
+            key: 'saveas',
+            access: hasSaveAs,
+            component: ({ hasText }) => <JobSaveAsTemplateButton hasText={hasText} job={job} project={project} />,
+        }
+
+        const getJobActions = () => {
+            const _actions = {
+                [JobStatusType.CREATED]: [CancelButton, PauseButton],
+                [JobStatusType.RUNNING]: [CancelButton, PauseButton],
+                [JobStatusType.PAUSED]: [CancelButton, ResumeButton],
+                [JobStatusType.FAIL]: [ResumeButton],
+            }
+
+            return _actions[job?.jobStatus] ?? []
+        }
+
+        const getExposedLinks = () =>
+            job?.exposedLinks?.map((exposed) => {
+                return {
+                    key: exposed.type,
+                    access: true,
+                    component: () => <ExposedLink key={exposed.link} data={exposed} />,
+                }
+            }) ?? []
+
+        return [...getJobActions(), Rerun, Saveas, ...getExposedLinks()].filter((v) => v.access)
     }
 
-    const rerun = (
-        <ExtendButton
-            tooltip={t('job.rerun')}
-            icon='Rerun'
-            {...sharedProps}
-            onClick={() =>
-                history.push(
-                    `/projects/${projectId}/new_job?${qs.stringify({
-                        rid: job?.id,
-                    })}`
-                )
-            }
-        >
-            {hasText ? t('job.rerun') : ''}
-        </ExtendButton>
-    )
+    return {
+        getActions,
+        renderActionsComponent: (props: IJobActionParams) => {
+            const actions = getActions(props)
+            return actions.map((action, index) => {
+                const Component = action.component
+                return <Component key={index} />
+            })
+        },
+    }
+}
+
+export function JobActionGroupByJobId({
+    children,
+    hasSaveAs,
+    onRefresh,
+    jobId,
+    ...props
+}: IJobActionsProps & { children?: any; jobId?: string }) {
+    const { project } = useProject()
+    const job = api.useGetJob(project?.id as string, jobId as string).data
+    const { renderActionsComponent } = useJobActions({ hasSaveAs, onRefresh })
 
     return (
         <ButtonGroup key='action'>
-            {actions[job.jobStatus] ?? ''}
-            {rerun}
-            {hasSaveAs && <JobSaveAsTemplateButton hasText={hasText} />}
-            {job.exposedLinks?.map((exposed) => (
-                <ExposedLink key={exposed.link} data={exposed} />
-            ))}
+            {renderActionsComponent({ ...props, job, project })}
+            {children}
+        </ButtonGroup>
+    )
+}
+
+export default function JobActionGroup({
+    children,
+    hasSaveAs,
+    onRefresh,
+    ...props
+}: IJobActionsProps & { children?: any }) {
+    const { job } = useJob()
+    const { project } = useProject()
+    const { renderActionsComponent } = useJobActions({ hasSaveAs, onRefresh })
+
+    return (
+        <ButtonGroup key='action'>
+            {renderActionsComponent({ ...props, job, project })}
             {children}
         </ButtonGroup>
     )
