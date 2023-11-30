@@ -4,8 +4,8 @@ import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
 import { useDomsScrollToBottom } from '../hooks/useScrollToBottom'
-import { Fragment, startTransition, useMemo, useRef, useState } from 'react'
-import { useDebounceEffect } from 'ahooks'
+import { Fragment, startTransition, useEffect, useMemo, useRef, useState } from 'react'
+import { useAsyncEffect, useCountDown, useDebounceEffect, useInterval } from 'ahooks'
 import useSubmitHandler from '../hooks/useSubmitHandler'
 import { autoGrowTextArea } from '../utils'
 import { ChatMessage, ChatSession } from '../store/chat'
@@ -13,6 +13,7 @@ import { useChatStore as Store } from '@starwhale/ui/Serving/store/chat'
 import { nanoid } from 'nanoid'
 import { LAST_INPUT_KEY } from '../constant'
 import useTranslation from '@/hooks/useTranslation'
+import { LabelMedium } from 'baseui/typography'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -43,20 +44,17 @@ function Chat({
     setAutoScroll: any
     session: ChatSession
 }) {
-    // store
     const chatStore = useChatStore()
-    const { job } = session.serving
-
+    const { job } = session.serving ?? {}
+    const [t] = useTranslation()
     const isLoading = false
 
     // init
     const [hitBottom, setHitBottom] = useState(true)
-
     // session message
     const context: RenderMessage[] = useMemo(() => {
         return session.mask.hideContext ? [] : (session.mask.context ?? [])?.slice()
     }, [session.mask.context, session.mask.hideContext])
-
     // preview messages
     const renderMessages = useMemo(() => {
         return context.concat(session.messages as RenderMessage[]).concat(
@@ -86,8 +84,8 @@ function Chat({
         return renderMessages.slice(msgRenderIndex, endRenderIndex)
     }, [msgRenderIndex, renderMessages])
 
-    const clearContextIndex =
-        (session.clearContextIndex ?? -1) >= 0 ? session.clearContextIndex! + context.length - msgRenderIndex : -1
+    // const clearContextIndex =
+    //     (session.clearContextIndex ?? -1) >= 0 ? session.clearContextIndex! + context.length - msgRenderIndex : -1
 
     //  scroll
     const onChatBodyScroll = (e: HTMLElement) => {
@@ -113,7 +111,24 @@ function Chat({
         })
     }
 
-    if (!session) return <BusyPlaceholder type='empty' />
+    // api status
+    const [isApiReady, setIsApiReady] = useState(false)
+    const [isApiFailed, setIsApiFailed] = useState(false)
+    const clear = useInterval(async () => {
+        const bool = await chatStore.checkSessionApiById(session.id)
+        if (!bool) return
+        clear()
+        setIsApiReady(true)
+    }, 1000)
+    useCountDown({
+        leftTime: 10 * 1000,
+        onEnd: () => {
+            if (!isApiReady) setIsApiFailed(true)
+            clear()
+        },
+    })
+
+    if (!session || !job) return <BusyPlaceholder type='empty' />
 
     return (
         <div className='chat rounded-4px border-1 border-[#cfd7e6] h-full overflow-hidden flex flex-col pb-15px bg-white'>
@@ -141,25 +156,34 @@ function Chat({
                     setAutoScroll(false)
                 }}
             >
-                {messages.map((message) => {
-                    const isUser = message.role === 'user'
-                    // const isContext = i < context.length
-                    // const showActions = i > 0 && !(message.preview || message.content.length === 0) && !isContext
-                    // const showTyping = message.preview || message.streaming
-                    // const shouldShowClearContextDivider = i === clearContextIndex - 1
+                {!isApiReady && !isApiFailed && <BusyPlaceholder>{t('ft.online_eval.api.loading')}</BusyPlaceholder>}
+                {!isApiReady && isApiFailed && (
+                    <BusyPlaceholder type='center'>
+                        <LabelMedium $style={{ color: 'rgba(2,16,43,0.20)' }}>
+                            {t('ft.online_eval.api.failed')}{' '}
+                        </LabelMedium>
+                    </BusyPlaceholder>
+                )}
+                {isApiReady &&
+                    messages.map((message) => {
+                        const isUser = message.role === 'user'
+                        // const isContext = i < context.length
+                        // const showActions = i > 0 && !(message.preview || message.content.length === 0) && !isContext
+                        // const showTyping = message.preview || message.streaming
+                        // const shouldShowClearContextDivider = i === clearContextIndex - 1
 
-                    return (
-                        <Fragment key={message.id}>
-                            <div className={`${isUser ? 'chat-message-user ' : 'chat-message'} `}>
-                                <div
-                                    className={`chat-message-container  rounded-4px border-1 px-10px py-4px break-words text-wrap inline-block ${
-                                        isUser ? 'bg-white' : 'bg-[#EBF1FF]'
-                                    }`}
-                                >
-                                    <div className='chat-message-header'>
-                                        <div className='chat-message-avatar'>
-                                            <div className='chat-message-edit'>
-                                                {/* <IconButton
+                        return (
+                            <Fragment key={message.id}>
+                                <div className={`${isUser ? 'chat-message-user ' : 'chat-message'} `}>
+                                    <div
+                                        className={`chat-message-container  rounded-4px border-1 px-10px py-4px break-words text-wrap inline-block ${
+                                            isUser ? 'bg-white' : 'bg-[#EBF1FF]'
+                                        }`}
+                                    >
+                                        <div className='chat-message-header'>
+                                            <div className='chat-message-avatar'>
+                                                <div className='chat-message-edit'>
+                                                    {/* <IconButton
                                                     icon={<EditIcon />}
                                                     onClick={async () => {
                                                         const newMessage = await showPrompt(
@@ -177,10 +201,10 @@ function Chat({
                                                         })
                                                     }}
                                                 ></IconButton> */}
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* {showActions && (
+                                            {/* {showActions && (
                                             <div className={['chat-message-actions']}>
                                                 <div className={['chat-input-actions']}>
                                                     {message.streaming ? (
@@ -218,20 +242,20 @@ function Chat({
                                                 </div>
                                             </div>
                                         )} */}
-                                    </div>
-                                    <div className='chat-message-item'>
-                                        {isUser ? (
-                                            <div className=''>{message.content}</div>
-                                        ) : (
-                                            <div>{message.content}</div>
-                                        )}
+                                        </div>
+                                        <div className='chat-message-item'>
+                                            {isUser ? (
+                                                <div className=''>{message.content}</div>
+                                            ) : (
+                                                <div>{message.content}</div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            {/* {shouldShowClearContextDivider && <ClearContextDivider />} */}
-                        </Fragment>
-                    )
-                })}
+                                {/* {shouldShowClearContextDivider && <ClearContextDivider />} */}
+                            </Fragment>
+                        )
+                    })}
             </div>
         </div>
     )

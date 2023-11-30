@@ -26,6 +26,7 @@ export default function FineTuneOnlineEvalListCard() {
 
     useEffect(() => {
         sc.setJobs(info.data ?? [])
+        sc.setQuery(info)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [info.data])
 

@@ -263,7 +263,7 @@ function create(name = StoreKey.Chat) {
                     set(() => ({ sessions }))
                 },
 
-                newSession(serving?: IInference, mask?: any) {
+                newOrUpdateSession(serving?: IInference, mask?: any) {
                     const existSession = get().sessions.find((v) => v.id === serving?.job?.id)
 
                     const session = existSession ?? createEmptySession(serving?.job?.id)
@@ -320,8 +320,30 @@ function create(name = StoreKey.Chat) {
                     })
                 },
 
+                removeSessionById(id: string) {
+                    const index = get().sessions.findIndex((v) => v.id === id)
+                    if (index === -1) return
+                    get().deleteSession(index)
+                },
+
                 getSessionById(id: string) {
                     return get().sessions.find((v) => v.id === id)
+                },
+
+                async checkSessionApiById(id: string) {
+                    const session = get().getSessionById(id)
+                    if (!session) return false
+                    const { serving } = session
+                    if (!serving) return false
+                    const { exposedLink, apiSpec } = serving
+                    const resp = await axios.post<IBackEndMessage[]>(
+                        `${exposedLink.link}api/${apiSpec?.uri}?slient=true`,
+                        {
+                            user_input: '',
+                            history: [],
+                        }
+                    )
+                    return resp
                 },
 
                 onSessionShowById(id, show = true) {
@@ -335,12 +357,6 @@ function create(name = StoreKey.Chat) {
 
                 async onUserInput(type, content: string) {
                     const { sessions } = get()
-                    // const modelConfig = session.mask.modelConfig
-                    const modelConfig = {}
-
-                    const userContent = fillTemplateWith(content, modelConfig)
-                    console.log('[User Input] after template: ', userContent)
-
                     const promises = sessions
                         .filter((v) => v.serving?.type === type)
                         .map((session, index) => {
@@ -357,7 +373,7 @@ function create(name = StoreKey.Chat) {
                             return axios
                                 .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec?.uri}`, data)
                                 .then((res) => {
-                                    get().onResetMessageByIndex(index, res.data)
+                                    get().onResetMessageByIndex(index, res.data as any)
                                 })
                         })
 
@@ -381,6 +397,14 @@ function create(name = StoreKey.Chat) {
                         // eslint-disable-next-line
                         session.memoryPrompt = ''
                     })
+                },
+
+                updateSessionById(id, updater: (session: ChatSession) => void) {
+                    const index = get().sessions.findIndex((v) => v.id === id)
+                    if (index === -1) return
+                    const { sessions } = get()
+                    updater(sessions[index])
+                    set(() => ({ sessions }))
                 },
 
                 updateSession(index, updater: (session: ChatSession) => void) {

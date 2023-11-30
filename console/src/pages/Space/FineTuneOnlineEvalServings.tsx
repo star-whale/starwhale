@@ -14,15 +14,19 @@ export default function FineTuneOnlineEvalServings() {
     const chatStore = useChatStore()
     const [expand, setExpand] = useSetState({})
 
-    const servingMap = useCreation(() => {
-        return _.groupBy(getServings(), 'type')
+    const servings = useCreation(() => {
+        return getServings()
     }, [jobs])
 
+    const servingMap = useCreation(() => _.groupBy(servings, 'type'), [servings])
+    const servingIdMap = useCreation(() => _.keyBy(servings, 'id'), [servings])
+
     useUpdateEffect(() => {
-        Object.entries(servingMap).forEach(([, list]) => {
-            // chatStore.clearSessions()
-            list.forEach((serving) => chatStore.newSession(serving))
-        })
+        const disabledSessions = chatStore.sessions.filter((session) => !servingIdMap[session.id])
+        disabledSessions.map((session) => chatStore.removeSessionById(session.id))
+        Object.entries(servingMap).forEach(([, list]) =>
+            list.forEach((serving) => chatStore.newOrUpdateSession(serving))
+        )
     }, [servingMap])
 
     return (

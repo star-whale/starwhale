@@ -20,7 +20,7 @@ function WebGroup({ useStore }: { useStore: StoreT }) {
                         .filter((session) => session.show && session.serving?.type === InferenceType.web_handler)
                         .map((session) => {
                             const { serving } = session
-                            const { job } = serving
+                            const { job } = serving ?? {}
 
                             return (
                                 <div

@@ -2,6 +2,7 @@ import { isMacOS } from '../utils'
 import { DEFAULT_INPUT_TEMPLATE, StoreKey } from '../constant'
 import { createPersistStore } from '../utils/store'
 import { IApiSpec, IExposedLinkVo, IJobVo, IStepSpec } from '@/api/server/data-contracts'
+import { UseQueryResult } from 'react-query'
 
 export enum SubmitKey {
     Enter = 'Enter',
@@ -49,6 +50,8 @@ export const DEFAULT_CONFIG = {
         enableInjectSystemPrompts: true,
         template: DEFAULT_INPUT_TEMPLATE,
     },
+
+    query: null as UseQueryResult<IJobVo[], unknown> | null,
 }
 
 export type ChatConfig = typeof DEFAULT_CONFIG
@@ -94,6 +97,7 @@ export interface IInference {
     apiSpec?: IApiSpec
     exposedLink: IExposedLinkVo
     type: InferenceType
+    id: string
 }
 
 export const useServingConfig = createPersistStore(
@@ -107,9 +111,21 @@ export const useServingConfig = createPersistStore(
             if (!newJobs || newJobs.length === 0) {
                 return
             }
-
             set(() => ({
                 jobs: newJobs,
+            }))
+        },
+
+        setQuery(query) {
+            set(() => ({ query }))
+        },
+
+        async refetch() {
+            const { query } = get()
+            if (!query) return
+            await query?.refetch()
+            set(() => ({
+                jobs: query?.data ?? [],
             }))
         },
 
@@ -129,6 +145,7 @@ export const useServingConfig = createPersistStore(
                     apiSpec,
                     exposedLink,
                     type: (apiSpec?.inference_type as InferenceType) ?? InferenceType.web_handler,
+                    id: job.id,
                 })
             })
             return servings
