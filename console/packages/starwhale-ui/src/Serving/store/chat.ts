@@ -146,6 +146,7 @@ function hasComponent(name: string, components: IComponentSpecSchema[]) {
 const DEFAULT_CHAT_STATE = {
     sessions: [] as ChatSession[],
     currentSessionIndex: 0,
+    editingSessionId: null,
 }
 
 function create(name = StoreKey.Chat) {
@@ -355,12 +356,37 @@ function create(name = StoreKey.Chat) {
                     })
                 },
 
+                onSessionEditParamsShow(id) {
+                    set(() => ({ editingSessionId: id }))
+                },
+
+                onSessionEditParamsHide() {
+                    set(() => ({ editingSessionId: null }))
+                },
+
+                onSessionEditParams(id, params) {
+                    get().updateSessionById(id, (session) => {
+                        // eslint-disable-next-line
+                        session.params = {
+                            ...session.params,
+                            ...params,
+                        }
+                    })
+                },
+
+                onSessionEditParamsReset(id) {
+                    get().updateSessionById(id, (session) => {
+                        // eslint-disable-next-line
+                        session.params = {}
+                    })
+                },
+
                 async onUserInput(type, content: string) {
                     const { sessions } = get()
                     const promises = sessions
                         .filter((v) => v.serving?.type === type)
                         .map((session, index) => {
-                            const { serving, messages } = session
+                            const { serving, messages, params } = session
                             if (!serving) return Promise.resolve()
                             const { exposedLink, apiSpec } = serving
                             const data: ILLMChatQuerySchema = {
@@ -368,10 +394,19 @@ function create(name = StoreKey.Chat) {
                                 history: messages as any,
                             }
 
+                            apiSpec?.components?.forEach((cur) => {
+                                if (!params?.[cur.name] && !cur.componentValueSpecFloat) return
+                                data[cur.name] = params?.[cur.name] ?? cur?.componentValueSpecFloat?.defaultVal
+                            })
+
+                            console.log(data)
+
                             if (!apiSpec?.uri) return Promise.reject()
 
                             return axios
-                                .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec?.uri}`, data)
+                                .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec?.uri}`, {
+                                    ...data,
+                                })
                                 .then((res) => {
                                     get().onResetMessageByIndex(index, res.data as any)
                                 })

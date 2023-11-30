@@ -4,7 +4,7 @@ import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
 import { useDomsScrollToBottom } from '../hooks/useScrollToBottom'
-import { Fragment, startTransition, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, startTransition, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAsyncEffect, useCountDown, useDebounceEffect, useInterval } from 'ahooks'
 import useSubmitHandler from '../hooks/useSubmitHandler'
 import { autoGrowTextArea } from '../utils'
@@ -14,6 +14,9 @@ import { nanoid } from 'nanoid'
 import { LAST_INPUT_KEY } from '../constant'
 import useTranslation from '@/hooks/useTranslation'
 import { LabelMedium } from 'baseui/typography'
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
+import { StatefulSlider } from 'baseui/slider'
+import { expandBorderRadius, expandPadding } from '../../utils/index'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -261,6 +264,101 @@ function Chat({
     )
 }
 
+function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
+    const chatStore = useChatStore()
+    const [t] = useTranslation()
+    const [forceKey, forceUpdate] = useReducer((s) => s + 1, 0)
+
+    if (!chatStore.editingSessionId) return null
+
+    const editingSession = chatStore.getSessionById(chatStore.editingSessionId)
+
+    return (
+        <Modal
+            isOpen={Boolean(chatStore.editingSessionId)}
+            onClose={() => chatStore.onSessionEditParamsHide()}
+            closeable
+            animate
+            autoFocus
+        >
+            <ModalHeader>{editingSession?.serving?.job?.modelName}</ModalHeader>
+            <ModalBody $style={{ paddingBottom: '20px' }}>
+                <div className='py-20px border-t-1px border-b-1px'>
+                    <div className=' mb-20px flex justify-between'>
+                        Parameters{' '}
+                        <ExtendButton
+                            kind='secondary'
+                            icon='reset'
+                            onClick={() => {
+                                chatStore.onSessionEditParamsReset(editingSession.id)
+                                forceUpdate()
+                            }}
+                        >
+                            reset
+                        </ExtendButton>
+                    </div>
+                    <div className='gap-20px'>
+                        {editingSession?.serving?.apiSpec?.components?.map(({ componentValueSpecFloat, ...v }) => {
+                            const defValue = editingSession.params?.[v.name] ?? componentValueSpecFloat?.defaultVal ?? 0
+                            return (
+                                <div key={[v.name, forceKey].join('-')} className='grid grid-cols-[100px_1fr_40px]'>
+                                    <p className='pt-5px break-words'>{v.name}</p>
+                                    <StatefulSlider
+                                        overrides={{
+                                            ThumbValue: {
+                                                style: {
+                                                    backgroundColor: '#2B65D9',
+                                                    width: '50px !important',
+                                                    height: '32px !important',
+                                                    position: 'relative',
+                                                    top: '-30px',
+                                                    textAlign: 'center',
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    ...expandBorderRadius('50px'),
+                                                    ...expandPadding('0px', '12px', '0px', '12px'),
+                                                },
+                                            },
+                                            InnerThumb: {
+                                                style: {
+                                                    backgroundColor: '#2B65D9',
+                                                    width: '1px',
+                                                },
+                                            },
+                                            Thumb: {
+                                                style: {
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    borderColor: '#2B65D9',
+                                                    backgroundColor: '#fff',
+                                                    borderWidth: '2px',
+                                                },
+                                            },
+                                        }}
+                                        initialState={{
+                                            value: [defValue],
+                                        }}
+                                        min={componentValueSpecFloat?.min ?? undefined}
+                                        max={componentValueSpecFloat?.max ?? undefined}
+                                        step={componentValueSpecFloat?.step}
+                                        onFinalChange={({ value }) => {
+                                            chatStore.onSessionEditParams(editingSession.id, {
+                                                [v.name]: value[0],
+                                            })
+                                        }}
+                                    />
+                                    <p className='pt-5px break-words'>{defValue}</p>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </ModalBody>
+        </Modal>
+    )
+}
+
 function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
     const chatStore = useChatStore()
     const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -352,6 +450,7 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
                     <Button onClick={() => doSubmit(userInput)}>Enter</Button>
                 </div>
             </div>
+            <ChatParamerModal useChatStore={useChatStore} />
         </div>
     )
 }

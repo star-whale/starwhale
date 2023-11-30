@@ -1181,8 +1181,40 @@ export interface IApiSpec {
 }
 
 export interface IComponentSpec {
+    componentValueSpecInt?: IComponentValueSpecInt
+    componentValueSpecFloat?: IComponentValueSpecFloat
+    componentValueSpecString?: IComponentValueSpecString
+    componentValueSpecBool?: IComponentValueSpecBool
     name: string
     component_spec_value_type: 'FLOAT' | 'INT' | 'STRING' | 'BOOL' | 'LIST'
+}
+
+export interface IComponentValueSpecBool {
+    defaultVal?: boolean
+}
+
+export interface IComponentValueSpecFloat {
+    /** @format float */
+    defaultVal?: number
+    /** @format float */
+    min?: number
+    /** @format float */
+    max?: number
+    /** @format float */
+    step?: number
+}
+
+export interface IComponentValueSpecInt {
+    /** @format int32 */
+    defaultVal?: number
+    /** @format int32 */
+    min?: number
+    /** @format int32 */
+    max?: number
+}
+
+export interface IComponentValueSpecString {
+    defaultVal?: string
 }
 
 export interface IContainerSpec {

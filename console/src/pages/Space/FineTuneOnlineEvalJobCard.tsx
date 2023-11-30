@@ -20,6 +20,7 @@ function JobCard({ job }: { job: IJobVo }) {
     const Cancel: React.FC<any> = cancel ? cancel.component : () => null
     const chatStore = useChatStore()
     const session = chatStore.getSessionById(job.id)
+    const disabled = !session?.serving
 
     return (
         <div
@@ -33,10 +34,10 @@ function JobCard({ job }: { job: IJobVo }) {
         >
             <div className='py-1px'>
                 <ExtendButton
-                    disabled={!session?.serving}
+                    disabled={disabled}
                     icon={session?.show ? 'eye' : 'eye_off'}
                     styleas={['menuoption', 'nopadding', 'iconnormal', !session?.serving ? 'icondisable' : undefined]}
-                    onClick={() => chatStore.onSessionShowById(job.id, !session?.show)}
+                    onClick={() => chatStore.onSessionShowById(session.id, !session?.show)}
                 />
             </div>
             <div className='flex-1 flex flex-col justify-between'>
@@ -48,12 +49,11 @@ function JobCard({ job }: { job: IJobVo }) {
                     <Alias alias={job.model.version.alias} />
                 </div>
                 <div className='flex justify-end color-[rgba(2,16,43,0.60)] gap-20px'>
-                    <ExtendButton
-                        as='link'
-                        onClick={() => history.push(`/projects/${project?.id}/jobs/${job?.id}/tasks`)}
-                    >
-                        {t('ft.online_eval.parameter.setting')}
-                    </ExtendButton>
+                    {!disabled && (
+                        <ExtendButton as='link' onClick={() => chatStore.onSessionEditParamsShow(session?.id)}>
+                            {t('ft.online_eval.parameter.setting')}
+                        </ExtendButton>
+                    )}
                     <span className='w-1px bg-[#EEF1F6]' />
                     <ExtendButton
                         as='link'
