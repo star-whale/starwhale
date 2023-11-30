@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.split;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -44,8 +45,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * split job by swds index
@@ -63,6 +66,8 @@ public class JobSpliteratorImpl implements JobSpliterator {
     private final JobDao jobDao;
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
+
+    @Value("${sw.scheduler.clientFavorOssName}") String clientFavorOssName;
 
     public JobSpliteratorImpl(
             StoragePathCoordinator storagePathCoordinator,
@@ -110,7 +115,14 @@ public class JobSpliteratorImpl implements JobSpliterator {
         }
         for (StepSpec stepSpec : stepSpecs) {
             boolean firstStep = CollectionUtils.isEmpty(stepSpec.getNeeds());
-
+            if (StringUtils.hasText(clientFavorOssName)) {
+                List<Env> env = stepSpec.getEnv();
+                if (null == env) {
+                    env = new LinkedList<>();
+                    stepSpec.setEnv(env);
+                }
+                env.add(new Env("SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS", clientFavorOssName));
+            }
             StepEntity stepEntity = StepEntity.builder()
                     .uuid(UUID.randomUUID().toString())
                     .jobId(job.getId())

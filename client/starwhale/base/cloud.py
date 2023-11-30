@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from copy import deepcopy
 from http import HTTPStatus
@@ -22,6 +23,7 @@ from starwhale.consts import (
     SW_API_VERSION,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
+    ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS,
 )
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
@@ -165,6 +167,11 @@ class CloudRequestMixed:
 
         if token:
             _headers["Authorization"] = token
+
+        if os.environ.get(ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS):
+            _headers[ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS] = os.environ[
+                ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS
+            ]
 
         if not disable_default_content_type:
             _headers["Content-Type"] = "application/json"
