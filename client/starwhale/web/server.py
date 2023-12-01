@@ -76,7 +76,7 @@ class Server(FastAPI):
             )
             resp = await client.send(req, stream=True)
             return StreamingResponse(
-                resp.aiter_bytes(),
+                resp.aiter_raw(),  # use raw to support gzipped response
                 status_code=resp.status_code,
                 headers=resp.headers,
                 background=BackgroundTask(resp.aclose),

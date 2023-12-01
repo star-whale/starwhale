@@ -1,11 +1,8 @@
-import glob
 import typing as t
-import os.path
 
 from fastapi import APIRouter
 from pydantic import Field, BaseModel
 
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.web.response import success, SuccessResp
 from starwhale.base.uri.project import Project
 from starwhale.api._impl.data_store import SwType, _get_type, TableDesc, LocalDataStore
@@ -38,18 +35,8 @@ class QueryTableRequest(BaseModel):
 
 @router.post("/listTables")
 def list_tables(request: ListTablesRequest) -> SuccessResp:
-    # TODO: use datastore builtin function
-    root = str(SWCliConfigMixed().datastore_dir)
-    path = os.path.join(root, request.prefix)
-    files = glob.glob(f"{path}**", recursive=True)
-    tables = []
-    for f in files:
-        if not os.path.isfile(f):
-            continue
-        p, file = os.path.split(f)
-        p = p[len(root) :].lstrip("/")
-        table_name = file.split(".sw-datastore.zip")[0]
-        tables.append(f"{p}/{table_name}")
+    ds = LocalDataStore.get_instance()
+    tables = ds.list_tables([request.prefix])
     return success({"tables": tables})
 
 

@@ -1,16 +1,20 @@
+import io
 import os
 import sys
+import gzip
+from typing import AsyncIterable
 from asyncio import Future
 from pathlib import Path
 from unittest.mock import patch, MagicMock, PropertyMock
 
 import httpx
+from httpx._content import AsyncIteratorByteStream
 from fastapi.testclient import TestClient
 
 from starwhale import Link
-from starwhale.utils.fs import ensure_file
 from starwhale.web.server import Server
 from starwhale.base.uri.instance import Instance
+from starwhale.api._impl.data_store import TableWriter, LocalDataStore
 
 
 def test_static_faked_response():
@@ -61,12 +65,14 @@ def test_datastore_list_tables(root: MagicMock, tmpdir: Path):
     assert resp.status_code == 200
     assert resp.json()["data"]["tables"] == []
 
-    ensure_file(tmpdir / "a" / "foo.sw-datastore.zip", b"", parents=True)
-    ensure_file(tmpdir / "b" / "c" / "foo.sw-datastore.zip", b"", parents=True)
+    ds = LocalDataStore.get_instance()
+    tw = TableWriter("foo", data_store=ds)
+    tw.insert({"id": 1})
+    tw.close()
 
     resp = client.post("/api/v1/datastore/listTables", content='{"prefix": ""}')
     assert resp.status_code == 200
-    assert set(resp.json()["data"]["tables"]) == {"a/foo", "b/c/foo"}
+    assert set(resp.json()["data"]["tables"]) == {"foo"}
 
 
 @patch("starwhale.api._impl.data_store.LocalDataStore.scan_tables")
@@ -275,7 +281,19 @@ def test_proxy(m_send: MagicMock, m_ac: MagicMock, m_sw_config: MagicMock):
         },
     }
 
-    resp = httpx.Response(200, json={"data": "ok"})
+    compressed = io.BytesIO()
+    with gzip.GzipFile(fileobj=compressed, mode="wb") as f:
+        f.write(b'{ "data": "ok" }')
+
+    async def async_generator(data: bytes) -> AsyncIterable[bytes]:
+        for byte in data:
+            yield byte.to_bytes(1, "little")
+
+    resp = httpx.Response(
+        200,
+        stream=AsyncIteratorByteStream(async_generator(compressed.getvalue())),
+        headers={"Content-Type": "application/json", "Content-Encoding": "gzip"},
+    )
 
     if sys.version_info >= (3, 8):
         m_send.return_value = resp
