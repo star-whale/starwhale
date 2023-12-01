@@ -8,7 +8,8 @@ import { useHistory } from 'react-router-dom'
 import FineTuneOnlineEvalServings from './FineTuneOnlineEvalServings'
 import { useServingConfig } from '@starwhale/ui/Serving/store/config'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
-import { expandBorder } from '../../../packages/starwhale-ui/src/utils/index'
+import { expandBorder } from '@starwhale/ui/utils'
+import { useLocalStorageState } from 'ahooks'
 
 const GRID_LAYOUT = [
     // RIGHT:
@@ -31,7 +32,9 @@ export default function FineTuneOnlineEvalListCard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [info.data])
 
-    const [status, setStatus] = React.useState([])
+    const [status, setStatus] = useLocalStorageState('fine-tune-online-eval-status', {
+        defaultValue: [],
+    })
 
     const $list = React.useMemo(() => {
         if (!info.data) {

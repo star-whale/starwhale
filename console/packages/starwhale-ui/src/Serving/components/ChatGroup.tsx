@@ -453,17 +453,20 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
                 <CasecadeResizer>
                     {chatStore.sessions
                         .filter((session) => session.show && session.serving?.type === InferenceType.llm_chat)
-                        .map((v, index) => (
-                            <Chat
-                                key={v.id}
-                                {...sharedChatProps}
-                                useChatStore={useChatStore}
-                                session={v}
-                                scrollRef={(el: HTMLDivElement) => {
-                                    scrollRefs.current[index] = el
-                                }}
-                            />
-                        ))}
+                        .map((v, index) => {
+                            if (!v.id) return null
+                            return (
+                                <Chat
+                                    key={v.id}
+                                    {...sharedChatProps}
+                                    useChatStore={useChatStore}
+                                    session={v}
+                                    scrollRef={(el: HTMLDivElement) => {
+                                        scrollRefs.current[index] = el
+                                    }}
+                                />
+                            )
+                        })}
                 </CasecadeResizer>
             </div>
             <div className='chat-input-panel-inner w-full border-1 flex flex-1 py-6px px-12px items-end rounded-4px bg-white'>
