@@ -232,7 +232,7 @@ class UCF101PipelineHandler(PipelineHandler):
         return label, result, pr
 
     @api(
-        gradio.Video(type="filepath"),
+        gradio.Video(sources=["upload"]),
         gradio.Label(num_top_classes=5),
     )
     def online_eval(self, file: str):
