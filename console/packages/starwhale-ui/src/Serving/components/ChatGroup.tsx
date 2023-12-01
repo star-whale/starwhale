@@ -4,8 +4,8 @@ import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
 import { useDomsScrollToBottom } from '../hooks/useScrollToBottom'
-import { Fragment, startTransition, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useAsyncEffect, useCountDown, useDebounceEffect, useInterval } from 'ahooks'
+import { Fragment, startTransition, useMemo, useReducer, useRef, useState } from 'react'
+import { useCountDown, useDebounceEffect, useInterval } from 'ahooks'
 import useSubmitHandler from '../hooks/useSubmitHandler'
 import { autoGrowTextArea } from '../utils'
 import { ChatMessage, ChatSession } from '../store/chat'
@@ -24,6 +24,7 @@ import { toaster } from 'baseui/toast'
 import { useEventCallback } from '@starwhale/core/utils'
 import { doJobAction } from '@job/services/job'
 import { JobActionType } from '@/domain/job/schemas/job'
+import useForceUpdate from '@starwhale/core/utils/useForceUpdate'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -61,9 +62,10 @@ function Chat({
     const [t] = useTranslation()
     const history = useHistory()
     const isLoading = false
+    const forceUpdate = useForceUpdate()
 
     // init
-    const [hitBottom, setHitBottom] = useState(true)
+    const [, setHitBottom] = useState(true)
     // session message
     const context: RenderMessage[] = useMemo(() => {
         return session.mask.hideContext ? [] : (session.mask.context ?? [])?.slice()
@@ -134,7 +136,7 @@ function Chat({
         setIsApiReady(true)
     }, 1000)
     useCountDown({
-        leftTime: 10 * 1000,
+        leftTime: 30 * 1000,
         onEnd: () => {
             if (!isApiReady) setIsApiFailed(true)
             clear()
@@ -174,6 +176,9 @@ function Chat({
                             if (type === 'delete') {
                                 handleAction(project?.id, job?.id, JobActionType.CANCEL)
                                 config.refetch()
+                            }
+                            if (type === 'reload') {
+                                forceUpdate()
                             }
                         }}
                     />

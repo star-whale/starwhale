@@ -14,7 +14,7 @@ export default function SectionPopover({ onOptionSelect }: { onOptionSelect: (it
         return [
             { label: t('View Tasks'), type: 'viewlog' },
             { label: t('ft.online_eval.parameter.setting'), type: 'parameter' },
-            { label: t('panel.chart.reload'), type: 'reload' },
+            // { label: t('panel.chart.reload'), type: 'reload' },
             { label: t('Cancel'), type: 'delete' },
         ].filter(Boolean)
     }, [t])

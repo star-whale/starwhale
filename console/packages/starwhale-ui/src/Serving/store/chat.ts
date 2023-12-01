@@ -1,10 +1,9 @@
-import { ModelConfig, ModelType, useServingConfig, IInference } from './config'
-import { DEFAULT_INPUT_TEMPLATE, StoreKey } from '../constant'
+import { useServingConfig, IInference } from './config'
+import { StoreKey } from '../constant'
 // import { createEmptyMask, Mask } from './mask'
 // import { prettyObject } from '../utils/format'
 import { nanoid } from 'nanoid'
 import { createPersistStore } from '../utils/store'
-import Locale from '@/i18n'
 import axios from 'axios'
 
 export const ROLES = ['system', 'user', 'assistant']
@@ -20,7 +19,7 @@ export type ChatMessage = RequestMessage & {
     streaming?: boolean
     isError?: boolean
     id: string
-    model?: ModelType
+    model?: any
 }
 
 export interface IBackEndMessage {
@@ -78,6 +77,7 @@ export interface ChatSession {
     mask: any
     serving: IInference | null
     show: boolean
+    params: any
 }
 
 export const DEFAULT_TOPIC = 'Locale.DefaultTopic'
@@ -85,10 +85,6 @@ export const BOT_HELLO: ChatMessage = createMessage({
     role: 'assistant',
     content: 'Locale.BotHello',
 })
-
-function getLang() {
-    return Locale.language
-}
 
 function createEmptySession(id): ChatSession {
     return {
@@ -106,41 +102,8 @@ function createEmptySession(id): ChatSession {
         mask: {}, // createEmptyMask(),
         serving: null,
         show: true,
+        params: null,
     }
-}
-
-// function countMessages(msgs: ChatMessage[]) {
-//     return msgs.reduce((pre, cur) => pre + estimateTokenLength(cur.content), 0)
-// }
-
-function fillTemplateWith(input: string, modelConfig: ModelConfig) {
-    const cutoff = ''
-
-    const vars = {
-        cutoff,
-        model: modelConfig.model,
-        time: new Date().toLocaleString(),
-        lang: getLang(),
-        input,
-    }
-
-    let output = modelConfig.template ?? DEFAULT_INPUT_TEMPLATE
-
-    // must contains {{input}}
-    const inputVar = '{{input}}'
-    if (!output.includes(inputVar)) {
-        output += '\n' + inputVar
-    }
-
-    Object.entries(vars).forEach(([name, value]) => {
-        output = output.replaceAll(`{{${name}}}`, value)
-    })
-
-    return output
-}
-
-function hasComponent(name: string, components: IComponentSpecSchema[]) {
-    return !!components.find((i) => i.name === name)
 }
 
 const DEFAULT_CHAT_STATE = {
@@ -156,6 +119,7 @@ function create(name = StoreKey.Chat) {
             function get() {
                 return {
                     ..._get(),
+                    // eslint-disable-next-line
                     ...methods,
                 }
             }
@@ -213,30 +177,18 @@ function create(name = StoreKey.Chat) {
 
                     if (deletingLastSession) {
                         nextIndex = 0
-                        sessions.push(createEmptySession())
                     }
 
                     // for undo delete action
-                    const restoreState = {
-                        currentSessionIndex: get().currentSessionIndex,
-                        sessions: get().sessions.slice(),
-                    }
+                    // const restoreState = {
+                    //     currentSessionIndex: get().currentSessionIndex,
+                    //     sessions: get().sessions.slice(),
+                    // }
 
                     set(() => ({
                         currentSessionIndex: nextIndex,
                         sessions,
                     }))
-
-                    // showToast(
-                    //     Locale.Home.DeleteToast,
-                    //     {
-                    //         text: Locale.Home.Revert,
-                    //         onClick() {
-                    //             set(() => restoreState)
-                    //         },
-                    //     },
-                    //     5000
-                    // )
                 },
 
                 currentSession() {
@@ -399,8 +351,6 @@ function create(name = StoreKey.Chat) {
                                 data[cur.name] = params?.[cur.name] ?? cur?.componentValueSpecFloat?.defaultVal
                             })
 
-                            console.log(data)
-
                             if (!apiSpec?.uri) return Promise.reject()
 
                             return axios
@@ -412,9 +362,7 @@ function create(name = StoreKey.Chat) {
                                 })
                         })
 
-                    Promise.all(promises).then(() => {
-                        console.log('all')
-                    })
+                    Promise.all(promises).then(() => {})
                 },
 
                 updateMessage(sessionIndex: number, messageIndex: number, updater: (message?: ChatMessage) => void) {
@@ -459,7 +407,7 @@ function create(name = StoreKey.Chat) {
         {
             name,
             version: 1,
-            migrate(persistedState, version) {
+            migrate(persistedState) {
                 const state = persistedState as any
                 const newState = JSON.parse(JSON.stringify(state)) as typeof DEFAULT_CHAT_STATE
                 return newState as any

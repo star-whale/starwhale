@@ -37,7 +37,7 @@ function WebGroup({ useStore }: { useStore: StoreT }) {
                                                 'iconnormal',
                                                 !session?.serving ? 'icondisable' : undefined,
                                             ]}
-                                            onClick={() => store.onSessionShowById(job.id, !session?.show)}
+                                            onClick={() => store.onSessionShowById(job?.id, !session?.show)}
                                         />
                                         <div className='flex-1 mx-8px font-600'>{job?.modelName}</div>
                                         <div>
@@ -49,7 +49,7 @@ function WebGroup({ useStore }: { useStore: StoreT }) {
                                     <div className='web-body flex-1 overflow-hidden p-10px pb-0px relative overscroll-none flex gap-20px flex-col min-w-0 h-full bg-white'>
                                         <iframe
                                             title='web-handler'
-                                            src={`${serving.exposedLink?.link}?__theme=light`}
+                                            src={`${serving?.exposedLink?.link}?__theme=light`}
                                             style={{
                                                 position: 'absolute',
                                                 height: '100%',
