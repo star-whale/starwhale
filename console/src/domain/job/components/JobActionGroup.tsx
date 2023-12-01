@@ -104,6 +104,7 @@ function JobSaveAsTemplateButton({ hasText = false, job, project }) {
 
 export interface IJobActionsProps {
     hasSaveAs?: boolean
+    hasText?: boolean
     onRefresh?: () => void
 }
 
@@ -242,11 +243,11 @@ export function useJobActions({ hasSaveAs = false, onRefresh }: IJobActionsProps
 
     return {
         getActions,
-        renderActionsComponent: (props: IJobActionParams) => {
+        renderActionsComponent: (props: IJobActionParams & { hasText?: boolean }) => {
             const actions = getActions(props)
             return actions.map((action, index) => {
                 const Component = action.component
-                return <Component key={index} />
+                return <Component key={index} hasText={props.hasText} />
             })
         },
     }

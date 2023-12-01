@@ -67,7 +67,6 @@ const Header = React.forwardRef((props, ref) => {
             <div style={{ flex: 1 }} />
             {editable && (
                 <SectionPopover
-                    actions={actions}
                     // // @ts-ignore
                     onOptionSelect={(item: any) => {
                         // @ts-ignore

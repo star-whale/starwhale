@@ -347,17 +347,12 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
 })
 ExtendButton.displayName = 'ExtendButton'
 ExtendButton.defaultProps = {
-    nopadding: undefined,
-    transparent: undefined,
-    iconnormal: undefined,
-    negative: undefined,
     kind: 'primary',
     as: undefined,
     isFull: undefined,
     icon: undefined,
     className: undefined,
     tooltip: '',
-    icondisable: undefined,
     styleas: [],
 }
 

@@ -7,6 +7,7 @@ export enum StoreKey {
     Update = 'chat-update',
     Sync = 'sync',
 }
+// eslint-disable-next-line
 export const DEFAULT_INPUT_TEMPLATE = `{{input}}` // input / time / model / lang
 export const DEFAULT_SYSTEM_TEMPLATE = `
 You are ChatGPT, a large language model trained by OpenAI.

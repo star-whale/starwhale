@@ -36,12 +36,13 @@ function getOrCreateMeasureDom(id: string, init?: (dom: HTMLElement) => void) {
 
 export function autoGrowTextArea(dom: HTMLTextAreaElement) {
     const measureDom = getOrCreateMeasureDom('__measure')
-    const singleLineDom = getOrCreateMeasureDom('__single_measure', (dom) => {
-        dom.innerText = 'TEXT_FOR_MEASURE'
+    const singleLineDom = getOrCreateMeasureDom('__single_measure', (_dom) => {
+        // eslint-disable-next-line no-param-reassign
+        _dom.innerText = 'TEXT_FOR_MEASURE'
     })
 
     const width = getDomContentWidth(dom)
-    measureDom.style.width = width + 'px'
+    measureDom.style.width = `${width}px`
     measureDom.innerText = dom.value !== '' ? dom.value : '1'
     measureDom.style.fontSize = dom.style.fontSize
     const endWithEmptyLine = dom.value.endsWith('\n')
