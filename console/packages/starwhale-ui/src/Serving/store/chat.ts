@@ -110,6 +110,7 @@ const DEFAULT_CHAT_STATE = {
     sessions: [] as ChatSession[],
     currentSessionIndex: 0,
     editingSessionId: null,
+    chatId: StoreKey.Chat,
 }
 
 function create(name = StoreKey.Chat) {
@@ -125,6 +126,12 @@ function create(name = StoreKey.Chat) {
             }
 
             const methods = {
+                checkOrClear(_chatId) {
+                    if (get().chatId !== _chatId) {
+                        get().clearSessions()
+                    }
+                },
+
                 clearSessions() {
                     set(() => ({
                         sessions: [],

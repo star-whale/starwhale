@@ -8,8 +8,11 @@ import { useCreation, useSetState } from 'ahooks'
 import SectionAccordionPanel from '@starwhale/ui/Serving/components/SectionAccordionPanel'
 import { BusyPlaceholder } from '@starwhale/ui'
 import WebGroup from '@starwhale/ui/Serving/components/WebGroup'
+import useFineTuneOnlineEval from '@/domain/space/hooks/useOnlineEval'
 
 export default function FineTuneOnlineEvalServings() {
+    const config = useFineTuneOnlineEval()
+    const chatId = `fine-tune-online-eval-${config.projectId}-${config.spaceId}`
     const { jobs, getServings } = useServingConfig()
     const chatStore = useChatStore()
     const [expand, setExpand] = useSetState({})
@@ -22,6 +25,7 @@ export default function FineTuneOnlineEvalServings() {
     const servingIdMap = useCreation(() => _.keyBy(servings, 'id'), [servings])
 
     useUpdateEffect(() => {
+        chatStore.checkOrClear(chatId)
         const disabledSessions = chatStore.sessions.filter((session) => !servingIdMap[session.id])
         disabledSessions.map((session) => chatStore.removeSessionById(session.id))
         Object.entries(servingMap).forEach(([, list]) =>

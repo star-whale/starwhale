@@ -108,11 +108,11 @@ export const useServingConfig = createPersistStore(
         },
 
         setJobs(newJobs: IJobVo[]) {
-            if (!newJobs || newJobs.length === 0) {
+            if (!newJobs) {
                 return
             }
             set(() => ({
-                jobs: newJobs,
+                jobs: newJobs ?? [],
             }))
         },
 
