@@ -52,11 +52,13 @@ function JobCard({ job }: { job: IJobVo }) {
                 </div>
                 <div className='flex justify-end color-[rgba(2,16,43,0.60)] gap-20px'>
                     {!disabled && (
-                        <ExtendButton as='link' onClick={() => chatStore.onSessionEditParamsShow(session?.id)}>
-                            {t('ft.online_eval.parameter.setting')}
-                        </ExtendButton>
+                        <>
+                            <ExtendButton as='link' onClick={() => chatStore.onSessionEditParamsShow(session?.id)}>
+                                {t('ft.online_eval.parameter.setting')}
+                            </ExtendButton>
+                            <span className='w-1px bg-[#EEF1F6]' />
+                        </>
                     )}
-                    <span className='w-1px bg-[#EEF1F6]' />
                     <ExtendButton
                         as='link'
                         onClick={() => history.push(`/projects/${project?.id}/jobs/${job?.id}/tasks`)}
