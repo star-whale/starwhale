@@ -33,13 +33,23 @@ public interface MemoryTable {
     // update records, returns the timestamp in milliseconds
     long update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
+    /**
+     * update records, returns the timestamp in milliseconds
+     *
+     * @param schema  table schema, DO NOT RELY ON THE COLUMN SCHEMA FROM THIS PARAMETER
+     *                you can rely on the column name, index and the key column name
+     * @param records records to update
+     * @return timestamp in milliseconds
+     */
     long updateWithObject(TableSchemaDesc schema, List<Map<String, BaseValue>> records);
 
-    Iterator<RecordResult> query(long timestamp,
+    Iterator<RecordResult> query(
+            long timestamp,
             Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     Iterator<RecordResult> scan(
             long timestamp,
@@ -50,7 +60,8 @@ public interface MemoryTable {
             String end,
             String endType,
             boolean endInclusive,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     void lock(boolean forRead);
 

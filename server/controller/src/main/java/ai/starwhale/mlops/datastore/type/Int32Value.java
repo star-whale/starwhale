@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import lombok.AllArgsConstructor;
@@ -34,6 +36,11 @@ public class Int32Value implements IntValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.INT32;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        return ColumnSchemaDesc.int32();
     }
 
     @Override

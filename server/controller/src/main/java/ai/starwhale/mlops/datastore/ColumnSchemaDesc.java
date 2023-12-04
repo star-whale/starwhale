@@ -29,15 +29,17 @@ import javax.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
  * This class describes the schema of a column or an attribute of an object, including its name and type.
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 @JsonInclude(Include.NON_NULL)
 public class ColumnSchemaDesc {
 
@@ -185,9 +187,14 @@ public class ColumnSchemaDesc {
     }
 
     public static ColumnSchemaDescBuilder objectOf(String pythonType, ColumnSchemaDescBuilder... attributes) {
+        var attrs = Stream.of(attributes).map(ColumnSchemaDescBuilder::build).collect(Collectors.toList());
+        return objectOf(pythonType, attrs);
+    }
+
+    public static ColumnSchemaDescBuilder objectOf(String pythonType, List<ColumnSchemaDesc> attributes) {
         return ColumnSchemaDesc.builder()
                 .type(ColumnType.OBJECT.name())
                 .pythonType(pythonType)
-                .attributes(Stream.of(attributes).map(ColumnSchemaDescBuilder::build).collect(Collectors.toList()));
+                .attributes(attributes);
     }
 }

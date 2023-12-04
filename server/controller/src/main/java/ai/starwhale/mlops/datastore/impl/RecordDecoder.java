@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
+import ai.starwhale.mlops.api.protocol.datastore.RecordCellDesc;
+import ai.starwhale.mlops.api.protocol.datastore.RecordRowDesc;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -48,8 +50,10 @@ import lombok.NonNull;
 
 public class RecordDecoder {
 
-    public static Map<String, BaseValue> decodeRecord(TableSchemaDesc recordSchema,
-            @NonNull Map<String, Object> record) {
+    public static Map<String, BaseValue> decodeRecord(
+            TableSchemaDesc recordSchema,
+            @NonNull Map<String, Object> record
+    ) {
         var ret = new HashMap<String, BaseValue>();
         var colMap = recordSchema.getColumnSchemaList().stream()
                 .collect(Collectors.toMap(ColumnSchemaDesc::getName, Function.identity()));
@@ -74,6 +78,14 @@ public class RecordDecoder {
         return ret;
     }
 
+    public static Map<String, BaseValue> decodeRecord(RecordRowDesc row) {
+        var ret = new HashMap<String, BaseValue>();
+        for (var entry : row.getCells().entrySet()) {
+            ret.put(entry.getKey(), RecordDecoder.decodeValue(entry.getValue()));
+        }
+        return ret;
+    }
+
     public static BaseValue decodeValue(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         if (value == null) {
             return null;
@@ -90,6 +102,25 @@ public class RecordDecoder {
                 return RecordDecoder.decodeObject(columnSchema, value);
             default:
                 return RecordDecoder.decodeScalar(type, value);
+        }
+    }
+
+    private static BaseValue decodeValue(RecordCellDesc cell) {
+        if (cell == null) {
+            return null;
+        }
+        ColumnType type = cell.getDataStoreValueType();
+        switch (type) {
+            case LIST:
+                return RecordDecoder.decodeList(cell);
+            case TUPLE:
+                return RecordDecoder.decodeTuple(cell);
+            case MAP:
+                return RecordDecoder.decodeMap(cell);
+            case OBJECT:
+                return RecordDecoder.decodeObject(cell);
+            default:
+                return RecordDecoder.decodeScalar(type, cell.getScalarValue());
         }
     }
 
@@ -145,9 +176,23 @@ public class RecordDecoder {
         return ret;
     }
 
+    private static ListValue decodeList(RecordCellDesc cell) {
+        var ret = new ListValue();
+        for (var element : cell.getListValue()) {
+            ret.add(RecordDecoder.decodeValue(element));
+        }
+        return ret;
+    }
+
     private static TupleValue decodeTuple(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var ret = new TupleValue();
         ret.addAll(RecordDecoder.decodeList(columnSchema, value));
+        return ret;
+    }
+
+    private static TupleValue decodeTuple(RecordCellDesc cell) {
+        var ret = new TupleValue();
+        ret.addAll(RecordDecoder.decodeList(cell));
         return ret;
     }
 
@@ -177,6 +222,14 @@ public class RecordDecoder {
         return ret;
     }
 
+    private static MapValue decodeMap(RecordCellDesc cell) {
+        var ret = new MapValue();
+        for (var item : cell.getMapValue()) {
+            ret.put(RecordDecoder.decodeValue(item.getKey()), RecordDecoder.decodeValue(item.getValue()));
+        }
+        return ret;
+    }
+
     private static ObjectValue decodeObject(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var pythonType = columnSchema.getPythonType();
         var ret = new ObjectValue(pythonType);
@@ -191,6 +244,14 @@ public class RecordDecoder {
             }
             ret.put(attrName,
                     RecordDecoder.decodeValue(attrMap.get(attrName), entry.getValue()));
+        }
+        return ret;
+    }
+
+    private static ObjectValue decodeObject(RecordCellDesc cell) {
+        var ret = new ObjectValue(cell.getObjectValue().getPythonType());
+        for (var entry : cell.getObjectValue().getAttrs().entrySet()) {
+            ret.put(entry.getKey(), RecordDecoder.decodeValue(entry.getValue()));
         }
         return ret;
     }

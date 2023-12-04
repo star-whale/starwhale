@@ -34,15 +34,19 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
+import ai.starwhale.mlops.api.protocol.datastore.RecordCellDesc;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
+import ai.starwhale.mlops.api.protocol.datastore.RecordRowDesc;
 import ai.starwhale.mlops.api.protocol.datastore.RecordValueDesc;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.TableDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
+import ai.starwhale.mlops.api.protocol.datastore.UpdateTableEmbeddedRequest;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnHintsDesc;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.RecordList;
@@ -451,6 +455,65 @@ public class DataStoreControllerTest {
                         "a", ColumnHintsDesc.builder()
                                 .typeHints(List.of("INT32", "STRING"))
                                 .columnValueHints(List.of("1", "2"))
+                                .build())));
+    }
+
+    @Test
+    public void testUpdateTableEmbedded() {
+        var req = UpdateTableEmbeddedRequest.builder()
+                .tableName("t1")
+                .keyColumn("k")
+                .rows(List.of(RecordRowDesc.builder()
+                        .cells(Map.of(
+                                "k", RecordCellDesc.builder()
+                                        .dataStoreValueType(ColumnType.INT32)
+                                        .scalarValue("00000000")
+                                        .build(),
+                                "a", RecordCellDesc.builder()
+                                        .dataStoreValueType(ColumnType.INT32)
+                                        .scalarValue("00000001")
+                                        .build()
+                        ))
+                        .build()))
+                .build();
+        var resp = this.controller.updateTableEmbedded(req);
+        assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat("test", Objects.requireNonNull(resp.getBody()).getData(), is("1")); // revision
+
+        var scanResp = this.controller.scanTable(new ScanTableRequest() {
+            {
+                setTables(List.of(new TableDesc() {
+                    {
+                        setTableName("t1");
+                        setColumns(List.of(new ColumnDesc() {
+                            {
+                                setColumnName("k");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("a");
+                                setAlias("b");
+                            }
+                        }));
+                        setEncodeWithType(false);
+                    }
+                }));
+            }
+        });
+        assertThat("t1", scanResp.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat("t1", Objects.requireNonNull(scanResp.getBody()).getData().getColumnTypes(), notNullValue());
+        assertThat("t1",
+                Objects.requireNonNull(scanResp.getBody()).getData().getRecords(),
+                is(List.of(Map.of("k", "00000000", "b", "00000001"))));
+        assertThat("test",
+                Objects.requireNonNull(scanResp.getBody()).getData().getColumnHints(),
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("0"))
+                                .build(),
+                        "b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1"))
                                 .build())));
     }
 

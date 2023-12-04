@@ -27,6 +27,7 @@ import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
+import ai.starwhale.mlops.api.protocol.datastore.UpdateTableEmbeddedRequest;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -134,6 +135,15 @@ public class DataStoreController {
         } catch (SwValidationException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         }
+    }
+
+    @PostMapping(value = "/datastore/updateTable/embedded")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> updateTableEmbedded(
+            @Valid @RequestBody UpdateTableEmbeddedRequest request
+    ) {
+        var revision = this.dataStore.updateWithTypeEmbed(request);
+        return ResponseEntity.ok(Code.success.asResponse(revision));
     }
 
     @PostMapping(value = "/datastore/flush")

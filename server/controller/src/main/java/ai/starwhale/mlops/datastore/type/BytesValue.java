@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import com.google.protobuf.ByteString;
@@ -37,6 +39,11 @@ public class BytesValue implements ScalarValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.BYTES;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        return ColumnSchemaDesc.bytes();
     }
 
     @Override

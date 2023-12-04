@@ -16,13 +16,20 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
@@ -31,6 +38,64 @@ public class ListValue extends ArrayList<BaseValue> implements BaseValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.LIST;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        if (this.isEmpty()) {
+            return ColumnSchemaDesc.builder().type(ColumnType.LIST.name());
+        }
+
+        // get the major type in the list item
+        // type -> (count, index)
+        Map<ColumnSchemaDesc, Pair<Integer, Integer>> types = new HashMap<>();
+        for (var i = 0; i < this.size(); i++) {
+            var element = this.get(i);
+            var type = element.generateColumnSchemaDesc().build();
+            if (types.containsKey(type)) {
+                var pair = types.get(type);
+                types.put(type, Pair.of(pair.getKey() + 1, pair.getValue()));
+            } else {
+                types.put(type, Pair.of(1, i));
+            }
+        }
+
+        if (types.size() == 1) {
+            var type = types.keySet().iterator().next();
+            return ColumnSchemaDesc.listOf(type.toBuilder());
+        }
+
+        var maxOpt = types.entrySet().stream().max((e1, e2) -> {
+            var pair1 = e1.getValue();
+            var pair2 = e2.getValue();
+            if (!Objects.equals(pair1.getKey(), pair2.getKey())) {
+                return Integer.compare(pair1.getKey(), pair2.getKey());
+            }
+            return Integer.compare(pair1.getValue(), pair2.getValue());
+        });
+        if (maxOpt.isEmpty()) {
+            // this can not happen
+            throw new RuntimeException("major type not found");
+        }
+
+        var majorType = maxOpt.get().getKey();
+
+        List<ColumnSchemaDesc> attrs = new ArrayList<>();
+        for (var entry : types.entrySet()) {
+            var type = entry.getKey();
+            if (type.equals(majorType)) {
+                continue;
+            }
+
+            var pair = entry.getValue();
+            // update index
+            attrs.add(type.toBuilder().name("element").index(pair.getValue()).build());
+        }
+
+        var ret = ColumnSchemaDesc.listOf(majorType.toBuilder());
+        attrs.sort(Comparator.comparingInt(ColumnSchemaDesc::getIndex));
+        ret.attributes(attrs);
+        return ret;
     }
 
     @Override

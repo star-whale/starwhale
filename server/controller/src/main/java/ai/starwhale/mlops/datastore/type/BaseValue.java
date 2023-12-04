@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.nio.ByteBuffer;
@@ -28,12 +29,15 @@ public interface BaseValue extends Comparable<BaseValue> {
 
     ColumnType getColumnType();
 
+
     static ColumnType getColumnType(BaseValue value) {
         if (value == null) {
             return ColumnType.UNKNOWN;
         }
         return value.getColumnType();
     }
+
+    ColumnSchemaDescBuilder generateColumnSchemaDesc();
 
     Object encode(boolean rawResult, boolean encodeWithType);
 

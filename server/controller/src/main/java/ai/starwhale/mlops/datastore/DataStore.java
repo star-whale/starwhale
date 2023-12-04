@@ -16,8 +16,10 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.api.protocol.datastore.UpdateTableEmbeddedRequest;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
+import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.datastore.impl.RecordEncoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
@@ -86,7 +88,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
 
     private final int ossMaxAttempts;
 
-    public DataStore(StorageAccessService storageAccessService,
+    public DataStore(
+            StorageAccessService storageAccessService,
             @Value("${sw.datastore.wal-max-file-size}") int walMaxFileSize,
             @Value("#{T(java.nio.file.Paths).get('${sw.datastore.wal-local-cache-dir:wal_cache}')}")
             Path walLocalCacheDir,
@@ -98,7 +101,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
-            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit) {
+            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit
+    ) {
         this.storageAccessService = storageAccessService;
         if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
             dataRootPath += "/";
@@ -185,9 +189,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
     }
 
     @WriteOperation
-    public String update(String tableName,
+    public String update(
+            String tableName,
             TableSchemaDesc schema,
-            List<Map<String, Object>> records) {
+            List<Map<String, Object>> records
+    ) {
         if (schema != null && schema.getColumnSchemaList() != null) {
             for (var col : schema.getColumnSchemaList()) {
                 if (col.getName() != null && !COLUMN_NAME_PATTERN.matcher(col.getName()).matches()) {
@@ -219,6 +225,42 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         }
 
     }
+
+    @WriteOperation
+    public String updateWithTypeEmbed(UpdateTableEmbeddedRequest request) {
+        this.updateHandle.offer(new Object());
+        var table = this.getTable(request.getTableName(), true, true);
+        //noinspection ConstantConditions
+        table.lock(false);
+        try {
+            var records = request.getRows().stream().map(RecordDecoder::decodeRecord).collect(Collectors.toList());
+            var schema = this.generateTableSchemaDesc(request.getKeyColumn(), records);
+            var ts = table.updateWithObject(schema, records);
+            return Long.toString(ts);
+        } finally {
+            this.updateHandle.poll();
+            synchronized (updateHandle) {
+                updateHandle.notifyAll();
+            }
+            table.unlock(false);
+        }
+    }
+
+    private TableSchemaDesc generateTableSchemaDesc(String keyColumn, List<Map<String, BaseValue>> records) {
+        var schema = new TableSchemaDesc();
+        schema.setKeyColumn(keyColumn);
+        Map<String, ColumnSchemaDesc> columnSchemaMap = new HashMap<>();
+        for (var row : records) {
+            for (var entry : row.entrySet()) {
+                var columnName = entry.getKey();
+                columnSchemaMap.computeIfAbsent(columnName,
+                        x -> entry.getValue().generateColumnSchemaDesc().name(columnName).build());
+            }
+        }
+        schema.setColumnSchemaList(new ArrayList<>(columnSchemaMap.values()));
+        return schema;
+    }
+
 
     public void flush() {
         this.walManager.flush();
@@ -559,9 +601,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         /**
          * Applies this function to the given arguments.
          *
-         * @param tables table meta data
+         * @param tables          table meta data
          * @param columnSchemaMap column schema map
-         * @param recordIter records iterator
+         * @param recordIter      records iterator
          * @return r the result
          */
         R apply(

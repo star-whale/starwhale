@@ -19,12 +19,16 @@ package ai.starwhale.mlops.datastore.impl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.api.protocol.datastore.RecordCellDesc;
+import ai.starwhale.mlops.api.protocol.datastore.RecordRowDesc;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
+import ai.starwhale.mlops.datastore.type.TupleValue;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -226,5 +230,92 @@ public class RecordDecoderTest {
         assertThrows(Exception.class, () -> RecordDecoder.decodeValue(schema, "9"));
         assertThrows(Exception.class, () -> RecordDecoder.decodeValue(schema, Map.of("c", "8")));
         assertThrows(Exception.class, () -> RecordDecoder.decodeValue(schema, Map.of("a", "z")));
+    }
+
+    @Test
+    public void testDecodeCellDesc() {
+        var cells = Map.of(
+                "key", RecordCellDesc.builder().dataStoreValueType(ColumnType.STRING).scalarValue("foo").build(),
+                "a", RecordCellDesc.builder().dataStoreValueType(ColumnType.INT32).scalarValue("00000001").build(),
+                "b", RecordCellDesc.builder()
+                        .dataStoreValueType(ColumnType.FLOAT32)
+                        .scalarValue(Integer.toHexString(Float.floatToIntBits(1.1f)))
+                        .build(),
+                "c", RecordCellDesc.builder().dataStoreValueType(ColumnType.BOOL).scalarValue("1").build(),
+                "d",
+                RecordCellDesc.builder()
+                        .dataStoreValueType(ColumnType.BYTES)
+                        .scalarValue(Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)))
+                        .build()
+        );
+        var row = RecordRowDesc.builder().cells(cells).build();
+        var result = RecordDecoder.decodeRecord(row);
+        var expected = Map.of(
+                "key", BaseValue.valueOf("foo"),
+                "a", BaseValue.valueOf(1),
+                "b", BaseValue.valueOf(1.1f),
+                "c", BaseValue.valueOf(true),
+                "d", BaseValue.valueOf(ByteBuffer.wrap("test".getBytes()))
+        );
+        assertEquals(expected, result);
+
+        cells = Map.of("null", RecordCellDesc.builder().dataStoreValueType(ColumnType.UNKNOWN).build());
+        row = RecordRowDesc.builder().cells(cells).build();
+        result = RecordDecoder.decodeRecord(row);
+        expected = new HashMap<>() {
+            {
+                put("null", null);
+            }
+        };
+        assertEquals(expected, result);
+
+        // test list, tuple, map, object
+        cells = Map.of(
+                "list", RecordCellDesc.builder().dataStoreValueType(ColumnType.LIST).listValue(List.of(
+                        RecordCellDesc.builder().dataStoreValueType(ColumnType.INT32).scalarValue("00000001").build(),
+                        RecordCellDesc.builder().dataStoreValueType(ColumnType.FLOAT32)
+                                .scalarValue(Integer.toHexString(Float.floatToIntBits(1.1f))).build()
+                )).build(),
+
+                "tuple", RecordCellDesc.builder().dataStoreValueType(ColumnType.TUPLE).listValue(List.of(
+                        RecordCellDesc.builder().dataStoreValueType(ColumnType.INT32).scalarValue("00000001").build(),
+                        RecordCellDesc.builder().dataStoreValueType(ColumnType.FLOAT32)
+                                .scalarValue(Integer.toHexString(Float.floatToIntBits(1.2f))).build()
+                )).build(),
+
+                "map", RecordCellDesc.builder().dataStoreValueType(ColumnType.MAP).mapValue(List.of(
+                        new RecordCellDesc.RecordCellMapItem(
+                                RecordCellDesc.builder()
+                                        .dataStoreValueType(ColumnType.INT32)
+                                        .scalarValue("00000001")
+                                        .build(),
+                                RecordCellDesc.builder().dataStoreValueType(ColumnType.FLOAT32)
+                                        .scalarValue(Integer.toHexString(Float.floatToIntBits(1.3f))).build()
+                        )
+                )).build(),
+
+                "object", RecordCellDesc.builder().dataStoreValueType(ColumnType.OBJECT).objectValue(
+                        new RecordCellDesc.RecordCellObject(
+                                Map.of(
+                                        "a", RecordCellDesc.builder().dataStoreValueType(ColumnType.INT32)
+                                                .scalarValue("00000001").build(),
+                                        "b", RecordCellDesc.builder().dataStoreValueType(ColumnType.FLOAT32)
+                                                .scalarValue(Integer.toHexString(Float.floatToIntBits(1.4f)))
+                                                .build()
+                                ),
+                                "t"
+                        )
+                ).build()
+        );
+
+        row = RecordRowDesc.builder().cells(cells).build();
+        result = RecordDecoder.decodeRecord(row);
+        expected = Map.of(
+                "list", BaseValue.valueOf(List.of(BaseValue.valueOf(1), BaseValue.valueOf(1.1f))),
+                "tuple", TupleValue.valueOf(List.of(BaseValue.valueOf(1), BaseValue.valueOf(1.2f))),
+                "map", BaseValue.valueOf(Map.of(BaseValue.valueOf(1), BaseValue.valueOf(1.3f))),
+                "object", ObjectValue.valueOf("t", Map.of("a", BaseValue.valueOf(1), "b", BaseValue.valueOf(1.4f)))
+        );
+        assertEquals(expected, result);
     }
 }

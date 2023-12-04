@@ -459,6 +459,48 @@ export interface IUpdateTableRequest {
     records?: IRecordDesc[]
 }
 
+export interface IRecordCellDesc {
+    dataStoreValueType:
+        | 'UNKNOWN'
+        | 'BOOL'
+        | 'INT8'
+        | 'INT16'
+        | 'INT32'
+        | 'INT64'
+        | 'FLOAT32'
+        | 'FLOAT64'
+        | 'STRING'
+        | 'BYTES'
+        | 'LIST'
+        | 'TUPLE'
+        | 'MAP'
+        | 'OBJECT'
+    scalarValue?: string
+    listValue?: IRecordCellDesc[]
+    mapValue?: IRecordCellMapItem[]
+    objectValue?: IRecordCellObject
+}
+
+export interface IRecordCellMapItem {
+    key?: IRecordCellDesc
+    value?: IRecordCellDesc
+}
+
+export interface IRecordCellObject {
+    attrs?: Record<string, IRecordCellDesc>
+    pythonType?: string
+}
+
+export interface IRecordRowDesc {
+    cells: Record<string, IRecordCellDesc>
+}
+
+export interface IUpdateTableEmbeddedRequest {
+    tableName: string
+    keyColumn: string
+    rows: IRecordRowDesc[]
+}
+
 export interface IColumnDesc {
     columnName?: string
     alias?: string
@@ -2350,6 +2392,8 @@ export type IInstallPluginData = IResponseMessageString['data']
 export type ISignLinks2Data = IResponseMessageMapStringString['data']
 
 export type IUpdateTableData = IResponseMessageString['data']
+
+export type IUpdateTableEmbeddedData = IResponseMessageString['data']
 
 export type IScanTableData = IResponseMessageRecordListVo['data']
 

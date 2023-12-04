@@ -16,6 +16,9 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.util.ArrayList;
@@ -26,6 +29,7 @@ import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
@@ -34,6 +38,64 @@ public class MapValue extends HashMap<BaseValue, BaseValue> implements BaseValue
     @Override
     public ColumnType getColumnType() {
         return ColumnType.MAP;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        if (this.isEmpty()) {
+            return ColumnSchemaDesc.builder().type(ColumnType.MAP.name());
+        }
+
+        // (key type, value type) -> (count, index of entry set)
+        Map<Pair<ColumnSchemaDesc, ColumnSchemaDesc>, Pair<Integer, Integer>> types = new HashMap<>();
+        var idx = 0;
+        for (var entry : this.entrySet()) {
+            var keyType = entry.getKey().generateColumnSchemaDesc().build();
+            var valueType = entry.getValue().generateColumnSchemaDesc().build();
+            var pair = Pair.of(keyType, valueType);
+            if (types.containsKey(pair)) {
+                types.put(pair, Pair.of(types.get(pair).getKey() + 1, idx));
+            } else {
+                types.put(pair, Pair.of(1, idx));
+            }
+            idx++;
+        }
+
+        if (types.size() == 1) {
+            var type = types.entrySet().stream().findFirst().get().getKey();
+            return ColumnSchemaDesc.mapOf(type.getKey().toBuilder(), type.getValue().toBuilder());
+        }
+
+        // get the major type in the map entries
+        var majorType = types.entrySet().stream()
+                .max((e1, e2) -> {
+                    var pair1 = e1.getValue();
+                    var pair2 = e2.getValue();
+                    if (!pair1.getKey().equals(pair2.getKey())) {
+                        return Integer.compare(pair1.getKey(), pair2.getKey());
+                    }
+                    return Integer.compare(pair1.getValue(), pair2.getValue());
+                })
+                .get()
+                .getKey();
+
+        Map<Integer, KeyValuePairSchema> sparseKeyValuePairSchema = new HashMap<>();
+        for (var entry : types.entrySet()) {
+            var pair = entry.getKey();
+            var offset = entry.getValue().getValue();
+            var keyType = pair.getKey();
+            var valueType = pair.getValue();
+            if (keyType.equals(majorType.getKey()) && valueType.equals(majorType.getValue())) {
+                continue;
+            }
+            sparseKeyValuePairSchema.put(offset, new KeyValuePairSchema(keyType, valueType));
+        }
+
+        return ColumnSchemaDesc.mapOf(
+                majorType.getKey().toBuilder(),
+                majorType.getValue().toBuilder(),
+                sparseKeyValuePairSchema
+        );
     }
 
     @Override
