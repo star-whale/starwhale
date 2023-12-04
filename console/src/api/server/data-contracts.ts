@@ -276,7 +276,7 @@ export interface IJobRequest {
     stepSpecOverWrites?: string
     bizType?: 'FINE_TUNE'
     bizId?: string
-    type?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
+    type?: 'EVALUATION' | 'ONLINE_EVAL' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     devMode?: boolean
     devPassword?: string
     devWay?: 'VS_CODE'
@@ -1174,6 +1174,49 @@ export interface IResponseMessagePageInfoReportVo {
     data: IPageInfoReportVo
 }
 
+export interface IApiSpec {
+    uri: string
+    inference_type?: string
+    components?: IComponentSpec[]
+}
+
+export interface IComponentSpec {
+    componentValueSpecInt?: IComponentValueSpecInt
+    componentValueSpecFloat?: IComponentValueSpecFloat
+    componentValueSpecString?: IComponentValueSpecString
+    componentValueSpecBool?: IComponentValueSpecBool
+    name: string
+    component_spec_value_type: 'FLOAT' | 'INT' | 'STRING' | 'BOOL' | 'LIST'
+}
+
+export interface IComponentValueSpecBool {
+    defaultVal?: boolean
+}
+
+export interface IComponentValueSpecFloat {
+    /** @format float */
+    defaultVal?: number
+    /** @format float */
+    min?: number
+    /** @format float */
+    max?: number
+    /** @format float */
+    step?: number
+}
+
+export interface IComponentValueSpecInt {
+    /** @format int32 */
+    defaultVal?: number
+    /** @format int32 */
+    min?: number
+    /** @format int32 */
+    max?: number
+}
+
+export interface IComponentValueSpecString {
+    defaultVal?: string
+}
+
 export interface IContainerSpec {
     image?: string
     cmds?: string[]
@@ -1242,6 +1285,13 @@ export interface IRuntimeResource {
     limit?: number
 }
 
+export interface IServiceSpec {
+    version?: string
+    title?: string
+    description?: string
+    apis?: IApiSpec[]
+}
+
 export interface IStepSpec {
     name: string
     /** @format int32 */
@@ -1263,6 +1313,7 @@ export interface IStepSpec {
     container_spec?: IContainerSpec
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
+    service_spec?: IServiceSpec
 }
 
 /**
@@ -1499,7 +1550,7 @@ export interface IJobVo {
     /** Model object */
     model: IModelVo
     jobName?: string
-    jobType?: 'EVALUATION' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
+    jobType?: 'EVALUATION' | 'ONLINE_EVAL' | 'TRAIN' | 'FINE_TUNE' | 'SERVING' | 'BUILT_IN'
     datasets?: string[]
     datasetList?: IDatasetVo[]
     /** Runtime object */
@@ -1972,6 +2023,18 @@ export interface IResponseMessagePageInfoFineTuneSpaceVo {
     data: IPageInfoFineTuneSpaceVo
 }
 
+export interface IResponseMessageFineTuneSpaceVo {
+    code: string
+    message: string
+    data: IFineTuneSpaceVo
+}
+
+export interface IResponseMessageListJobVo {
+    code: string
+    message: string
+    data: IJobVo[]
+}
+
 export interface IFineTuneVo {
     /** @format int64 */
     id: number
@@ -2159,6 +2222,8 @@ export type IShareDatasetVersionData = IResponseMessageString['data']
 export type IRecoverDatasetData = IResponseMessageString['data']
 
 export type IRecoverProjectData = IResponseMessageString['data']
+
+export type ISpaceInfoData = IResponseMessageFineTuneSpaceVo['data']
 
 export type IUpdateSpaceData = IResponseMessageString['data']
 
@@ -2410,6 +2475,8 @@ export type IPullUriContentData = any
 export type IGetModelServingStatusData = IResponseMessageModelServingStatusVo['data']
 
 export type IRecentModelTree1Data = IResponseMessageListModelViewVo['data']
+
+export type IListOnlineEvalData = IResponseMessageListJobVo['data']
 
 export type IListModelTree1Data = IResponseMessageListModelViewVo['data']
 

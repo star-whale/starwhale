@@ -20,7 +20,7 @@ import useTranslation from '@/hooks/useTranslation'
 import EvalSelectList from '@/components/Editor/EvalSelectList'
 import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 import { WidgetFormModal, WidgetFormModel } from '@starwhale/core/form'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import _ from 'lodash'
 
 const useStyles = createUseStyles({

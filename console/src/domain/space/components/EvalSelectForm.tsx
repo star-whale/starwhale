@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { ColumnSchemaDesc, useFetchDatastoreByTable } from '@starwhale/core/datastore'
 import { ITableState, createCustomStore } from '@starwhale/ui/GridTable/store'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'

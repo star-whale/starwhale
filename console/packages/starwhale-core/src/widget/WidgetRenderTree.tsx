@@ -6,7 +6,7 @@ import { WidgetRenderer } from './WidgetRenderer'
 import { WidgetProps, WidgetTreeNode } from '../types'
 import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent, SectionAppendEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { useStoreApi } from '../store'
 import useOnInitHandler from './hooks/useOnInitHandler'
 

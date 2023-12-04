@@ -9,7 +9,7 @@ import { useEventCallback, useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelChartDownloadEvent, PanelChartReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
 import { usePanelDatastore } from '../context'
 

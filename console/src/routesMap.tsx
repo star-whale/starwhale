@@ -64,6 +64,10 @@ import FineTuneEvaluationOverview from './pages/Space/FineTuneEvaluationOverview
 import FineTuneEvaluationOverviewLayout from './pages/Space/FineTuneEvaluationOverviewLayout'
 import FineTuneEvaluationWidgetResults from './pages/Space/Evaluation/EvaluationWidgetResults'
 import FineTuneEvaluationNewCard from './pages/Project/FineTuneEvaluationNewCard'
+import FineTuneOnlineEvaluationNewCard from './pages/Project/FineTuneOnlineEvaluationNewCard'
+import FineTuneOnlineEvalListCard from './pages/Space/FineTuneOnlineEvalListCard'
+import FineTuneOnlineEvalServings from './pages/Space/FineTuneOnlineEvalServings'
+import FineTuneOnlineEvalServingLayout from './pages/Space/FineTuneOnlineEvalServingLayout'
 
 const unauthed = {
     component: LoginLayout,
@@ -324,6 +328,28 @@ const authed = {
         },
 
         {
+            path: '/projects/:projectId/spaces/:spaceId/fine-tune-online-servings',
+            component: FineTuneOnlineEvalServingLayout,
+            routes: [
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-online-servings',
+                    component: FineTuneOnlineEvalServings,
+                },
+                { to: '/projects/:projectId/spaces/:spaceId/fine-tune-online-servings' },
+            ],
+        },
+        {
+            path: '/projects/:projectId/spaces/:spaceId/fine-tune-onlines',
+            component: FineTuneLayout,
+            routes: [
+                {
+                    path: '/projects/:projectId/spaces/:spaceId/fine-tune-onlines',
+                    component: FineTuneOnlineEvalListCard,
+                },
+                { to: '/projects/:projectId/spaces/:spaceId/fine-tune-onlines' },
+            ],
+        },
+        {
             path: '/projects/:projectId/spaces/:spaceId/:path?/:fineTuneId?',
             component: FineTuneLayout,
             routes: [
@@ -417,6 +443,10 @@ const authed = {
                 {
                     path: '/projects/:projectId/new_fine_tune_eval/:spaceId',
                     component: FineTuneEvaluationNewCard,
+                },
+                {
+                    path: '/projects/:projectId/new_fine_tune_online/:spaceId',
+                    component: FineTuneOnlineEvaluationNewCard,
                 },
                 {
                     path: '/projects/:projectId/new_dataset/:datasetId?',

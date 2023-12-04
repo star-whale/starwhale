@@ -10,6 +10,7 @@ import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { EvalSelectListModal } from '@/domain/space/components/EvalSelectList'
 import useFineTuneEvaluation from '@/domain/space/hooks/useFineTuneEvaluation'
 import { useEventCallback } from '@starwhale/core'
+import { api } from '@/api'
 
 export interface IFineTuneLayoutProps {
     children: React.ReactNode
@@ -17,12 +18,13 @@ export interface IFineTuneLayoutProps {
 
 export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
     const { projectId, spaceId } = useParams<{
-        projectId: string
+        projectId: any
         spaceId: any
     }>()
     const history = useHistory()
     const [t] = useTranslation()
     const [key, forceUpdate] = useReducer((s) => s + 1, 0)
+    const info = api.useSpaceInfo(projectId, spaceId)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -31,12 +33,12 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                 path: `/projects/${projectId}/spaces`,
             },
             {
-                title: spaceId,
+                title: info.data?.name,
                 path: `/projects/${projectId}/spaces/${spaceId}/fine-tunes`,
             },
         ]
         return items
-    }, [projectId, spaceId, t])
+    }, [projectId, spaceId, t, info.data])
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
@@ -49,6 +51,11 @@ export default function FineTuneLayout({ children }: IFineTuneLayoutProps) {
                 title: t('ft.eval'),
                 path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-evals`,
                 pattern: '/\\/fine-tune-evals\\/?',
+            },
+            {
+                title: t('ft.eval.online'),
+                path: `/projects/${projectId}/spaces/${spaceId}/fine-tune-onlines`,
+                pattern: '/\\/fine-tune-onlines\\/?',
             },
         ]
         return items

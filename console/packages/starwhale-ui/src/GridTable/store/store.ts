@@ -1,4 +1,4 @@
-import create, { StateCreator, StoreApi, UseBoundStore } from 'zustand'
+import { create, StateCreator, StoreApi, UseBoundStore } from 'zustand'
 import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'

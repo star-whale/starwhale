@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { StoreApi } from 'zustand'
 import { useStore, useStoreApi } from '../../hooks/useStore'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
 import { ITableState } from '../store'

@@ -16,7 +16,7 @@ import { themedUseStyletron } from '../../../theme/styletron'
 import { DataTableLocaleT } from '../locale'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import useGridSort from '@starwhale/ui/GridTable/hooks/useGridSort'
 
 type HeaderCellPropsT = {

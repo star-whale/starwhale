@@ -9,7 +9,7 @@ import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { ITableState, useDatasetStore } from '@starwhale/ui/GridTable/store'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import useTranslation from '@/hooks/useTranslation'
 

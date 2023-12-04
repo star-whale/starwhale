@@ -5,7 +5,7 @@ import { tranformState } from '../utils'
 import React from 'react'
 import produce from 'immer'
 import { SYNCKESY, useStore, useStoreApi } from '@starwhale/core/store'
-import shallow from 'zustand/shallow'
+import { shallow } from 'zustand/shallow'
 
 const selector = (s: any) => ({
     initialState: s.initialState,

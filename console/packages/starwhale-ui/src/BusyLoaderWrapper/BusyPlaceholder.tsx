@@ -16,7 +16,16 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
     switch (type) {
         default:
         case 'spinner':
-            children = <Spinner $size={SIZE.large} $style={{ alignSelf: 'center' }} />
+            children = (
+                <>
+                    <Spinner $size={SIZE.large} $style={{ alignSelf: 'center' }} />
+                    {rawChildren && (
+                        <LabelMedium $style={{ color: 'rgba(2,16,43,0.20)', textAlign: 'center', marginTop: '10px' }}>
+                            {rawChildren}
+                        </LabelMedium>
+                    )}
+                </>
+            )
             break
         case 'notfound':
             children = (
