@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
-
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest.ModelSourceType;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
@@ -328,7 +326,7 @@ public class ModelService {
                 .versionName(version.getVersionName())
                 .versionTag(version.getVersionTag())
                 .createdTime(version.getCreatedTime().getTime())
-                .shared(toInt(version.getShared()))
+                .shared(version.getShared())
                 .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
                 .build();
     }
@@ -460,7 +458,7 @@ public class ModelService {
                                      .tags(versionTags)
                                      .latest(entity.getId() != null && entity.getId().equals(latest))
                                      .createdTime(entity.getCreatedTime().getTime())
-                                     .shared(toInt(entity.getShared()))
+                                     .shared(entity.getShared())
                                      .draft(entity.getDraft())
                                      .builtInRuntime(entity.getBuiltInRuntime())
                                      .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))

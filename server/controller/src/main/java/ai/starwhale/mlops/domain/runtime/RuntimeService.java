@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
-
 import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -260,7 +258,7 @@ public class RuntimeService {
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                             .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                             .createdTime(entity.getCreatedTime().getTime())
-                            .shared(toInt(entity.getShared()))
+                            .shared(entity.getShared())
                             .build());
         }
         return new ArrayList<>(map.values());
@@ -339,7 +337,7 @@ public class RuntimeService {
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .shared(toInt(versionEntity.getShared()))
+                    .shared(versionEntity.getShared())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .versionInfo(versionConvertor.convert(
                             versionEntity,

@@ -633,7 +633,7 @@ class RuntimeInfoVo(SwBaseModel):
     version_tag: Optional[str] = Field(None, alias='versionTag')
     version_meta: Optional[str] = Field(None, alias='versionMeta')
     manifest: str
-    shared: int
+    shared: bool
     created_time: int = Field(..., alias='createdTime')
     files: Optional[List[FlattenFileVo]] = None
 
@@ -682,7 +682,7 @@ class RuntimeVersionViewVo(SwBaseModel):
     version_name: str = Field(..., alias='versionName')
     alias: str
     latest: bool
-    shared: int
+    shared: bool
     created_time: int = Field(..., alias='createdTime')
 
 
@@ -784,7 +784,7 @@ class DatasetVersionViewVo(SwBaseModel):
     version_name: str = Field(..., alias='versionName')
     alias: Optional[str] = None
     latest: bool
-    shared: int
+    shared: bool
     created_time: int = Field(..., alias='createdTime')
 
 
@@ -989,7 +989,7 @@ class DatasetInfoVo(SwBaseModel):
     version_name: str = Field(..., alias='versionName')
     version_alias: Optional[str] = Field(None, alias='versionAlias')
     version_tag: Optional[str] = Field(None, alias='versionTag')
-    shared: int
+    shared: bool
     created_time: int = Field(..., alias='createdTime')
     files: Optional[List[FlattenFileVo]] = None
     version_meta: str = Field(..., alias='versionMeta')
@@ -1559,7 +1559,7 @@ class ModelInfoVo(SwBaseModel):
     version_name: str = Field(..., alias='versionName')
     version_tag: Optional[str] = Field(None, alias='versionTag')
     created_time: int = Field(..., alias='createdTime')
-    shared: int
+    shared: bool
 
 
 class ResponseMessageModelInfoVo(SwBaseModel):
@@ -1709,7 +1709,7 @@ class ModelVersionViewVo(SwBaseModel):
     alias: str
     latest: bool
     tags: Optional[List[str]] = None
-    shared: int
+    shared: bool
     draft: Optional[bool] = None
     step_specs: List[StepSpec] = Field(..., alias='stepSpecs')
     built_in_runtime: Optional[str] = Field(None, alias='builtInRuntime')
