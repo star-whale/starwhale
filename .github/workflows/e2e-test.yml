@@ -121,6 +121,11 @@ jobs:
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
       # Github default free runner provides 14GB of disk space, we should release some useless files for workarounds.
       - name: Release disk space
         run: |

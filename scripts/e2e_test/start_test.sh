@@ -299,10 +299,23 @@ setup_minikube_dns_mock() {
 }
 
 open_api_model_test() {
-    # generate openapi model
+    # generate openapi model for client
     pushd ../../client
     python3 -m pip install datamodel-code-generator[http]
     OPEN_API_URL=$CONTROLLER_URL make gen-model || exit 1
+    popd
+
+    # docker-compose mode use fs as oss by default, and will serve /obj-store/** uri for client
+    # this will cause model generation conflict
+    if ! use_docker_compose; then
+      # generate openapi model for console
+      pushd ../../console
+      # install swagger-typescript-api for generating openapi model
+      # use -W to avoid "error Running this command will add the dependency to the workspace root rather than the workspace itself" error
+      yarn add swagger-typescript-api -W
+      make OPEN_API_URL=$CONTROLLER_URL gen-api || exit 1
+      popd
+    fi
 
     if git diff --exit-code; then
       echo "openapi model is up to date"
@@ -311,7 +324,6 @@ open_api_model_test() {
       git diff
       exit 1
     fi
-    popd
 }
 
 client_test() {
