@@ -22,8 +22,9 @@ export function useFetchDatastoreAllTables(
     const allTables = useListDatastoreTables(params, !!params)
 
     const tables = React.useMemo(() => {
-        return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)) ?? []
-    }, [allTables])
+        const _tables = allTables.data?.tables ?? []
+        return [..._tables].sort((a, b) => (a > b ? 1 : -1))
+    }, [allTables.data])
 
     return {
         isSuccess: allTables.isSuccess,
