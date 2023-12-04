@@ -62,7 +62,7 @@ public class DatasetInfoVo implements Serializable {
 
     @NotNull
     @JsonProperty("shared")
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     @JsonProperty("createdTime")

@@ -59,7 +59,7 @@ public class ModelInfoVo implements Serializable {
 
     @NotNull
     @JsonProperty("shared")
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private ModelVersionVo versionInfo;

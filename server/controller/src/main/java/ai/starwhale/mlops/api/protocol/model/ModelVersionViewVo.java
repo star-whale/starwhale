@@ -45,7 +45,7 @@ public class ModelVersionViewVo {
     private List<String> tags;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     private Boolean draft;
 

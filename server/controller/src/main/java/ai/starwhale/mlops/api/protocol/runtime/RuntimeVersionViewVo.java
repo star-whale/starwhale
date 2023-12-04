@@ -42,7 +42,7 @@ public class RuntimeVersionViewVo {
     private Boolean latest;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private Long createdTime;

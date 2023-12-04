@@ -40,7 +40,7 @@ public class DatasetVersionViewVo {
     private Boolean latest;
 
     @NotNull
-    private Integer shared;
+    private Boolean shared;
 
     @NotNull
     private Long createdTime;

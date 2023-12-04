@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
-
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -253,7 +251,7 @@ public class DatasetService {
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                             .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                             .createdTime(entity.getCreatedTime().getTime())
-                            .shared(toInt(entity.getShared()))
+                            .shared(entity.getShared())
                             .build());
         }
         return new ArrayList<>(map.values());
@@ -323,7 +321,7 @@ public class DatasetService {
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
-                    .shared(toInt(versionEntity.getShared()))
+                    .shared(versionEntity.getShared())
                     .versionInfo(versionConvertor.convert(
                             versionEntity,
                             versionEntity,
