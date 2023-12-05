@@ -59,7 +59,7 @@ Select CompVis/stable-diffusion-v1-4 as the base model.
       limit: 1.0
     ```
 
-## ❇ Begin to Fine-tune
+## ❇ Prepare for Fine-tune
 
 #### 1. Choose a specific style of dataset to train on and build the starwhale dataset
 - Build dataset for fine-tune：`swcli dataset build -hf lambdalabs/pokemon-blip-captions  --subset lambdalabs--pokemon-blip-captions -n pokemon-blip-captions-train`
