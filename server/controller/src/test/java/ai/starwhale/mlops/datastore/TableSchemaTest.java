@@ -62,9 +62,6 @@ public class TableSchemaTest {
     @Test
     public void testConstructor() {
         assertThat(this.schema.getKeyColumn(), is("k"));
-        assertThat(this.schema.getColumnSchemaByName("list").toColumnSchemaDesc(), is(this.listSchemaDesc));
-        assertThat(this.schema.getColumnSchemaByName("map").toColumnSchemaDesc(), is(this.mapSchemaDesc));
-        assertThat(this.schema.getColumnSchemaByName("obj").toColumnSchemaDesc(), is(this.objectSchemaDesc));
         new TableSchema(new TableSchemaDesc(
                 "k",
                 List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -99,11 +96,11 @@ public class TableSchemaTest {
         var newK = Wal.ColumnSchema.newBuilder()
                 .setColumnName("k")
                 .setColumnType("INT32")
-                .setColumnIndex(this.schema.getColumnSchemaByName("k").getIndex());
+                .setColumnIndex(this.schema.getColumnIndexByName("k"));
         var newList = Wal.ColumnSchema.newBuilder()
                 .setColumnName("list")
                 .setColumnType("STRING")
-                .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex());
+                .setColumnIndex(this.schema.getColumnIndexByName("list"));
         assertThat(diff, is(Wal.TableSchema.newBuilder()
                 .addColumns(newK)
                 .addColumns(newList)
@@ -113,14 +110,10 @@ public class TableSchemaTest {
         walMap.put("k", newK);
         walMap.put("list", newList);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
-
-        var listCol = this.schema.getColumnSchemaByName("list");
-        assertThat(listCol.getType(), is(ColumnType.STRING));
-        assertThat(listCol.getElementSchema(), nullValue());
-        assertThat(listCol.getKeySchema(), nullValue());
-        assertThat(listCol.getValueSchema(), nullValue());
-        assertThat(listCol.getPythonType(), nullValue());
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -175,10 +168,13 @@ public class TableSchemaTest {
         var walMap = this.schema.getColumnSchemaList().stream()
                 .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
         this.schema.update(diff);
-        assertThat(this.schema.getColumnSchemaByName("b").toWal().build(), is(newB.build()));
+        walMap.put("b", newB);
         newC.setElementType(newC.getElementTypeBuilder().setColumnName("element"));
-        assertThat(this.schema.getColumnSchemaByName("c").toWal().build(), is(newC.build()));
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        walMap.put("c", newC);
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -193,7 +189,7 @@ public class TableSchemaTest {
         var newList = Wal.ColumnSchema.newBuilder()
                 .setColumnName("list")
                 .setColumnType("LIST")
-                .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex())
+                .setColumnIndex(this.schema.getColumnIndexByName("list"))
                 .setElementType(Wal.ColumnSchema.newBuilder()
                         .setColumnType("INT32")
                         .setColumnName("element")
@@ -204,7 +200,10 @@ public class TableSchemaTest {
         newList.setElementType(newList.getElementTypeBuilder().setColumnName("element"));
         walMap.put("list", newList);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -220,7 +219,7 @@ public class TableSchemaTest {
         var newMap = Wal.ColumnSchema.newBuilder()
                 .setColumnName("map")
                 .setColumnType("MAP")
-                .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
+                .setColumnIndex(this.schema.getColumnIndexByName("map"))
                 .setKeyType(Wal.ColumnSchema.newBuilder()
                         .setColumnName("key")
                         .setColumnType("INT8")
@@ -232,7 +231,10 @@ public class TableSchemaTest {
         newMap.setValueType(walMap.get("map").getValueType());
         walMap.put("map", newMap);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -248,7 +250,7 @@ public class TableSchemaTest {
         var newMap = Wal.ColumnSchema.newBuilder()
                 .setColumnName("map")
                 .setColumnType("MAP")
-                .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
+                .setColumnIndex(this.schema.getColumnIndexByName("map"))
                 .setValueType(Wal.ColumnSchema.newBuilder()
                         .setColumnName("value")
                         .setColumnType("INT8")
@@ -260,7 +262,10 @@ public class TableSchemaTest {
         newMap.setValueType(newMap.getValueTypeBuilder().setColumnName("value"));
         walMap.put("map", newMap);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -276,14 +281,17 @@ public class TableSchemaTest {
                 .setColumnName("obj")
                 .setColumnType("OBJECT")
                 .setPythonType("tt")
-                .setColumnIndex(this.schema.getColumnSchemaByName("obj").getIndex());
+                .setColumnIndex(this.schema.getColumnIndexByName("obj"));
         assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newObj).build()));
         var walMap = this.schema.getColumnSchemaList().stream()
                 .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
         newObj.addAllAttributes(walMap.get("obj").getAttributesList());
         walMap.put("obj", newObj);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 
     @Test
@@ -301,7 +309,7 @@ public class TableSchemaTest {
         var newObj = Wal.ColumnSchema.newBuilder()
                 .setColumnName("obj")
                 .setColumnType("OBJECT")
-                .setColumnIndex(this.schema.getColumnSchemaByName("obj").getIndex())
+                .setColumnIndex(this.schema.getColumnIndexByName("obj"))
                 .addAttributes(Wal.ColumnSchema.newBuilder()
                         .setColumnName("a")
                         .setColumnType("INT64")
@@ -317,7 +325,10 @@ public class TableSchemaTest {
         newObj.addAttributes(1, walMap.get("obj").getAttributes(1));
         walMap.put("obj", newObj);
         this.schema.update(diff);
-        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+        this.schema.toWal()
+                .build()
+                .getColumnsList()
+                .forEach(c -> assertThat(c, is(walMap.get(c.getColumnName()).build())));
     }
 }
 

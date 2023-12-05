@@ -180,8 +180,11 @@ public class ColumnSchema {
     public ColumnSchemaDesc toColumnSchemaDesc() {
         var builder = ColumnSchemaDesc.builder()
                 .name(this.name)
-                .index(this.offset)
-                .type(this.type.name());
+                .index(this.offset);
+        if (this.type == null) {
+            return builder.build();
+        }
+        builder.type(this.type.name());
         switch (this.type) {
             case LIST:
             case TUPLE:

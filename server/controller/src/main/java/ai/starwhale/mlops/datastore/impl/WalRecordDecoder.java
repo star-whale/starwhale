@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
-import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.Wal;
@@ -51,9 +50,9 @@ public class WalRecordDecoder {
                 ret.put(MemoryTableImpl.DELETED_FLAG_COLUMN_NAME, BoolValue.TRUE);
                 continue;
             }
-            var colSchema = recordSchema.getColumnSchemaByIndex(index);
+            var colName = recordSchema.getColumnNameByIndex(index);
             try {
-                ret.put(colSchema.getName(), WalRecordDecoder.decodeValue(colSchema, col));
+                ret.put(colName, WalRecordDecoder.decodeValue(col));
             } catch (Exception e) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         MessageFormat.format("failed to decode wal {0}", col.toString()),
@@ -63,16 +62,11 @@ public class WalRecordDecoder {
         return ret;
     }
 
-    public static BaseValue decodeValue(ColumnSchema columnSchema, Wal.Column col) {
+    public static BaseValue decodeValue(Wal.Column col) {
         if (col.getNullValue()) {
             return null;
         }
-        ColumnType type;
-        if (columnSchema != null) {
-            type = columnSchema.getType();
-        } else {
-            type = ColumnType.getTypeByIndex(col.getType());
-        }
+        var type = ColumnType.getTypeByIndex(col.getType());
         switch (type) {
             case UNKNOWN:
                 return null;
@@ -95,66 +89,47 @@ public class WalRecordDecoder {
             case BYTES:
                 return new BytesValue(ByteBuffer.wrap(col.getBytesValue().toByteArray()));
             case LIST:
-                return WalRecordDecoder.decodeList(columnSchema, col);
+                return WalRecordDecoder.decodeList(col);
             case TUPLE:
-                return WalRecordDecoder.decodeTuple(columnSchema, col);
+                return WalRecordDecoder.decodeTuple(col);
             case MAP:
-                return WalRecordDecoder.decodeMap(columnSchema, col);
+                return WalRecordDecoder.decodeMap(col);
             case OBJECT:
-                return WalRecordDecoder.decodeObject(columnSchema, col);
+                return WalRecordDecoder.decodeObject(col);
             default:
                 throw new IllegalArgumentException("invalid type " + type);
         }
     }
 
-    private static BaseValue decodeList(ColumnSchema columnSchema, @NonNull Wal.Column col) {
+    private static BaseValue decodeList(@NonNull Wal.Column col) {
         var ret = new ListValue();
         var values = col.getListValueList();
-        for (var i = 0; i < values.size(); i++) {
-            ColumnSchema schema = null;
-            if (columnSchema != null) {
-                var sparse = columnSchema.getSparseElementSchema();
-                if (sparse != null) {
-                    schema = sparse.get(i);
-                }
-                if (schema == null) {
-                    schema = columnSchema.getElementSchema();
-                }
-            }
-            ret.add(WalRecordDecoder.decodeValue(schema, values.get(i)));
+        for (Wal.Column value : values) {
+            ret.add(WalRecordDecoder.decodeValue(value));
         }
         return ret;
     }
 
-    private static BaseValue decodeTuple(ColumnSchema columnSchema, @NonNull Wal.Column col) {
+    private static BaseValue decodeTuple(@NonNull Wal.Column col) {
         var ret = new TupleValue();
-        ret.addAll((ListValue) WalRecordDecoder.decodeList(columnSchema, col));
+        ret.addAll((ListValue) WalRecordDecoder.decodeList(col));
         return ret;
     }
 
-    private static BaseValue decodeMap(ColumnSchema columnSchema, @NonNull Wal.Column col) {
+    private static BaseValue decodeMap(@NonNull Wal.Column col) {
         var ret = new MapValue();
-        // the type info in columnSchema is not reliable, do not use it
         for (var entry : col.getMapValueList()) {
-            ret.put(WalRecordDecoder.decodeValue(null, entry.getKey()),
-                    WalRecordDecoder.decodeValue(null, entry.getValue()));
+            ret.put(WalRecordDecoder.decodeValue(entry.getKey()),
+                    WalRecordDecoder.decodeValue(entry.getValue()));
         }
         return ret;
     }
 
-    private static BaseValue decodeObject(ColumnSchema columnSchema, @NonNull Wal.Column col) {
-        String pythonType;
-        Map<String, ColumnSchema> attrMap;
-        if (columnSchema != null) {
-            pythonType = columnSchema.getPythonType();
-            attrMap = columnSchema.getAttributesSchema();
-        } else {
-            pythonType = col.getStringValue();
-            attrMap = Map.of();
-        }
+    private static BaseValue decodeObject(@NonNull Wal.Column col) {
+        var pythonType = col.getStringValue();
         var ret = new ObjectValue(pythonType);
         col.getObjectValueMap().forEach(
-                (k, v) -> ret.put(k, WalRecordDecoder.decodeValue(columnSchema == null ? null : attrMap.get(k), v)));
+                (k, v) -> ret.put(k, WalRecordDecoder.decodeValue(v)));
         return ret;
     }
 }

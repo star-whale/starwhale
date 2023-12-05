@@ -41,6 +41,9 @@ public class TableSchema {
 
     private final Map<String, Integer> columnSchemaIndex = new HashMap<>();
 
+    /**
+     * Only used for parquet data encoding and decoding
+     */
     @Getter
     private final List<ColumnSchema> columnSchemaList = new ArrayList<>();
 
@@ -161,15 +164,15 @@ public class TableSchema {
         }
     }
 
-    public ColumnSchema getColumnSchemaByName(@NonNull String name) {
-        var index = this.columnSchemaIndex.get(name);
-        if (index == null) {
-            return null;
-        }
-        return this.getColumnSchemaByIndex(index);
+    public String getColumnNameByIndex(int index) {
+        return this.columnSchemaList.get(index).getName();
     }
 
-    public ColumnSchema getColumnSchemaByIndex(int index) {
-        return this.columnSchemaList.get(index);
+    public Integer getColumnIndexByName(@NonNull String name) {
+        return this.columnSchemaIndex.get(name);
+    }
+
+    public List<String> getColumnNames() {
+        return this.columnSchemaList.stream().map(ColumnSchema::getName).collect(Collectors.toList());
     }
 }

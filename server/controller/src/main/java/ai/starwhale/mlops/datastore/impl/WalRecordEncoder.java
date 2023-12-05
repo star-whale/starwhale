@@ -41,7 +41,7 @@ public class WalRecordEncoder {
                 } else {
                     col = BaseValue.encodeWal(entry.getValue());
                 }
-                col.setIndex(schema.getColumnSchemaByName(name).getIndex());
+                col.setIndex(schema.getColumnIndexByName(name));
                 ret.addColumns(col);
             } catch (Exception e) {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
