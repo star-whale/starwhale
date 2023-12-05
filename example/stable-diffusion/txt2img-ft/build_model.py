@@ -21,8 +21,8 @@ except ImportError:
         DEFAULT_MODEL_NAME,
         prepare_model_package,
     )
-    from evaluation import StableDiffusion
     from finetune import fine_tune
+    from evaluation import StableDiffusion
 
 
 debug.init_logger(3)

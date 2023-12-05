@@ -354,8 +354,12 @@ def fine_tune(
         input_ids = torch.stack([example["input_ids"] for example in examples])
         return {"pixel_values": pixel_values, "input_ids": input_ids}
 
-    train_dataset = dataset_uris[0] if dataset_uris else Dataset.dataset(
-        Resource(dataset_name, typ=ResourceType.dataset), readonly=True
+    train_dataset = (
+        dataset_uris[0]
+        if dataset_uris
+        else Dataset.dataset(
+            Resource(dataset_name, typ=ResourceType.dataset), readonly=True
+        )
     )
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
