@@ -60,6 +60,8 @@ Starwhale是一个 MLOps/LLMOps平台，能够让您的模型创建、评估和�
 - 🌊 在不同的环境中运行您的模型，无论是在 Nvidia GPU服务器上还是在嵌入式设备（如 Cherry Pi）上。
 - 🔥 为您的模型快速创建配备交互式 Web UI的在线服务。
 
+![products](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/products.png)
+
 ## 核心概念
 
 ### 🦍 Starwhale 实例
@@ -173,6 +175,33 @@ def predict_view(file: t.Any) -> t.Any:
     return {i: p for i, p in enumerate(prob)}
 ```
 
+### 🦍 Starwhale 模型微调
+
+Starwhale 模型微调提供针对大语言模型(LLM)的全流程微调工具链，包括模型批量评测、在线评测和模型发布等功能。Starwhale 模型评测的 Python SDK 非常简单，例子如下：
+
+```python
+import typing as t
+from starwhale import finetune, Dataset
+from transformers import Trainer
+
+@finetune(
+    resources={"nvidia.com/gpu":4, "memory": "32G"},
+    require_train_datasets=True,
+    require_validation_datasets=True,
+    model_modules=["evaluation", "finetune"],
+)
+def lora_finetune(train_datasets: t.List[Dataset], val_datasets: t.List[Dataset]) -> None:
+    # init model and tokenizer
+    trainer = Trainer(
+        model=model, tokenizer=tokenizer,
+        train_dataset=train_datasets[0].to_pytorch(), # convert Starwhale Dataset into Pytorch Dataset
+        eval_dataset=val_datasets[0].to_pytorch())
+    trainer.train()
+    trainer.save_state()
+    trainer.save_model()
+    # save weights, then Starwhale SDK will package them into Starwhale Model
+```
+
 ## 安装
 
 ### 🍉 Starwhale Standalone
@@ -185,15 +214,10 @@ python3 -m pip install starwhale
 
 ### 🥭 Starwhale Server
 
-Starwhale Server 以 Docker 镜像的形式发布。您可以直接使用 Docker 运行，也可以部署到 Kubernetes 集群上。对于本地笔记本电脑环境，推荐使用 [Minikube](https://minikube.sigs.k8s.io/docs/start/) 进行安装。
+Starwhale Server 以 Docker 镜像的形式发布。您可以直接使用 Docker 运行，也可以部署到 Kubernetes 集群上。对于本地笔记本电脑环境，推荐使用 `swcli` 命令启动 Starwhale Server，该方式需要本地安装 Docker 和 Docker Compose。
 
 ```bash
-minikube start --addons ingress
-helm repo add starwhale https://star-whale.github.io/charts
-helm repo update
-helm pull starwhale/starwhale --untar --untardir ./charts
-
-helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namespace -f ./charts/starwhale/values.minikube.global.yaml
+swcli server start
 ```
 
 ## 快速指南
@@ -212,22 +236,33 @@ helm upgrade --install starwhale ./charts/starwhale -n starwhale --create-namesp
 
 ## 例子
 
+- 🔥 Helloworld: [Cloud](https://cloud.starwhale.cn/projects/15/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/helloworld).
 - 🚀 LLM:
   - 🐊 OpenSource LLMs Leaderboard: [Evaluation](https://cloud.starwhale.cn/projects/349/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/llm-leaderboard)
   - 🐢 Llama2: [Run llama2 chat in five minutes](https://starwhale.cn/docs/en/blog/run-llama2-chat-in-five-minutes/), [Code](https://github.com/star-whale/starwhale/tree/main/example/LLM/llama2)
   - 🦎 Stable Diffusion: [Cloud Demo](https://cloud.starwhale.cn/projects/374/models), [Code](https://github.com/star-whale/stable-diffusion-webui)
   - 🦙 LLAMA [evaluation and fine-tune](https://github.com/star-whale/starwhale/tree/main/example/LLM/llama)
-  - 🎹 [MusicGen](https://github.com/star-whale/starwhale/tree/main/example/LLM/musicgen)
+  - 🎹 Text-to-Music: [Cloud Demo](https://cloud.starwhale.cn/projects/400/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/LLM/musicgen)
+  - 🍏 Code Generation: [Cloud Demo](https://cloud.starwhale.cn/projects/404/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/code-generation/code-llama)
+
+- 🌋 Fine-tuning:
+  - 🐏 Baichuan2: [Cloud Demo](https://cloud.starwhale.cn/projects/401/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/llm-finetune/models/baichuan2)
+  - 🐫 ChatGLM3: [Cloud Demo](https://cloud.starwhale.cn/projects/401/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/llm-finetune/models/chatglm3)
+  - 🦏 Stable Diffusion: [Cloud Demo](https://cloud.starwhale.cn/projects/374/spaces/3/fine-tune-runs), [Code](https://github.com/star-whale/starwhale/tree/main/example/stable-diffusion/txt2img-ft)
 
 - 🦦 Image Classification:
-  - 🐻‍❄️ MNIST: [Cloud Demo](https://cloud.starwhale.cn/projects/392/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/mnist)
+  - 🐻‍❄️ MNIST: [Cloud Demo](https://cloud.starwhale.cn/projects/392/evaluations), [Code](https://github.com/star-whale/starwhale/tree/main/example/mnist).
   - 🦫 [CIFAR10](https://github.com/star-whale/starwhale/tree/main/example/cifar10)
-
-- 🎙️ Speech Recognition: [Speech Command](https://github.com/star-whale/starwhale/tree/main/example/speech_command)
-- 🐦 Object Detection: [Pedestrian Detection](https://github.com/star-whale/starwhale/tree/main/example/PennFudanPed)
+  - 🦓 Vision Transformer(ViT): [Cloud Demo](https://cloud.starwhale.cn/projects/399/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/image-classification)
+- 🐃 Image Segmentation:
+  - Segment Anything(SAM): [Cloud Demo](https://cloud.starwhale.cn/projects/398/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/image-segmentation)
+- 🐦 Object Detection:
+  - 🦊 YOLO: [Cloud Demo](https://cloud.starwhale.cn/projects/397/overview), [Code](https://github.com/star-whale/starwhale/tree/main/example/object-detection)
+  - 🐯 [Pedestrian Detection](https://github.com/star-whale/starwhale/tree/main/example/PennFudanPed)
 - 📽️ Video Recognition: [UCF101](https://github.com/star-whale/starwhale/tree/main/example/ucf101)
 - 🦋 Machine Translation: [Neural machine translation](https://github.com/star-whale/starwhale/tree/main/example/nmt)
 - 🐜 Text Classification: [AG News](https://github.com/star-whale/starwhale/tree/main/example/text_cls_AG_NEWS)
+- 🎙️ Speech Recognition: [Speech Command](https://github.com/star-whale/starwhale/tree/main/example/speech_command)
 
 ## 文档、社区和帮助
 
