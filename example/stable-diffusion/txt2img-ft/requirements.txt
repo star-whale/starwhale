@@ -6,4 +6,4 @@ diffusers==0.17.1
 ftfy
 tensorboard
 Jinja2
-starwhale[online-server] >= 0.6.0 # for online serving
+gradio~=3.15.0

@@ -15,13 +15,12 @@ import io
 import typing as t
 
 import torch
-import gradio
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from diffusers.loaders import LORA_WEIGHT_NAME
 
 from starwhale import Image, MIMEType, PipelineHandler
 from starwhale.base.type import PredictLogMode
-from starwhale.api.service import api
+from starwhale.api.service import api, TextToImage
 
 try:
     from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
@@ -68,14 +67,7 @@ class StableDiffusion(PipelineHandler):
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
         return ppl_result
 
-    @api(
-        [
-            gradio.Text(label="prompt"),
-            gradio.Text(label="negative prompt"),
-            gradio.Slider(minimum=0, maximum=50, label="Guidance Scale", value=9),
-        ],
-        output=gradio.Image(),
-    )
+    @api(inference_type=TextToImage())
     def txt2img(self, prompt: str, negative_prompt: str, guidance_scale: float):
         return self.pipe(
             prompt, negative_prompt=negative_prompt, guidance_scale=guidance_scale
