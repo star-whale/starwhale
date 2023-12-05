@@ -1,0 +1,5 @@
+tqdm
+requests
+torch==2.0.1
+gradio
+ultralytics==8.0.220
