@@ -127,10 +127,21 @@ The model building process is consistent with the first round of build.
 - Finally, after the job is completed, we can view the predict results.
   ![](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/view-ft-eval-job-result.jpeg)
 
-### 💯 Compare the results for the based model and fine-tuned model
+### 📝 Compare the results for the based model and fine-tuned model
 
 - Import the eval info which belong to the based model.
   ![import](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/import-an-existed-eval.jpeg)
 
 - Compare the results for the based model and fine-tuned model.
   ![compare](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/compare.jpeg)
+
+### 💯 Release
+
+> If we are satisfied with the fine-tune results, then we can release the model.
+
+- Enter the release button, and export the eval info.
+![release](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/release.jpeg)
+
+- Then we can see the model info and exported eval info.
+  ![model-list](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/model-list-with-release.jpeg)
+  ![eval-info](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/eval-exported-to-common.jpeg)
