@@ -1042,8 +1042,7 @@ export interface IRuntimeInfoVo {
     versionTag?: string
     versionMeta?: string
     manifest: string
-    /** @format int32 */
-    shared: number
+    shared: boolean
     /** @format int64 */
     createdTime: number
     files?: IFlattenFileVo[]
@@ -1116,8 +1115,7 @@ export interface IRuntimeVersionViewVo {
     versionName: string
     alias: string
     latest: boolean
-    /** @format int32 */
-    shared: number
+    shared: boolean
     /** @format int64 */
     createdTime: number
 }
@@ -1243,8 +1241,7 @@ export interface IModelVersionViewVo {
     alias: string
     latest: boolean
     tags?: string[]
-    /** @format int32 */
-    shared: number
+    shared: boolean
     draft?: boolean
     stepSpecs: IStepSpec[]
     builtInRuntime?: string
@@ -1325,8 +1322,7 @@ export interface IDatasetVersionViewVo {
     versionName: string
     alias?: string
     latest: boolean
-    /** @format int32 */
-    shared: number
+    shared: boolean
     /** @format int64 */
     createdTime: number
 }
@@ -1441,8 +1437,7 @@ export interface IModelInfoVo {
     versionTag?: string
     /** @format int64 */
     createdTime: number
-    /** @format int32 */
-    shared: number
+    shared: boolean
 }
 
 export interface IResponseMessageModelInfoVo {
@@ -1840,8 +1835,7 @@ export interface IDatasetInfoVo {
     versionName: string
     versionAlias?: string
     versionTag?: string
-    /** @format int32 */
-    shared: number
+    shared: boolean
     /** @format int64 */
     createdTime: number
     files?: IFlattenFileVo[]
