@@ -46,10 +46,8 @@ from starwhale.base.uri.resource import Resource, ResourceType
 
 try:
     from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
-    from .evaluate_text_to_image import StableDiffusion
 except ImportError:
     from utils import get_base_model_path, PRETRAINED_MODELS_DIR
-    from evaluation import StableDiffusion
 
 
 ROOT_DIR = Path(__file__).parent
