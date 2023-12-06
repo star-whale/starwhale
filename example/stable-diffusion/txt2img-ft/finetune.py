@@ -1,5 +1,4 @@
-# coding=utf-8
-#  Copyright 2022 Starwhale, Inc. All Rights Reserved.
+# Copyright 2022 Starwhale, Inc. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,23 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
 """Fine-tuning script for Stable Diffusion for text2image with support for LoRA."""
 
 import os
 import math
 import shutil
+import typing
 import logging
 from pathlib import Path
 
@@ -51,16 +40,14 @@ from diffusers.optimization import get_scheduler
 from diffusers.utils.import_utils import is_xformers_available
 from diffusers.models.attention_processor import LoRAAttnProcessor
 
-from starwhale import Context, Dataset, pass_context
-from starwhale.api import model, experiment
+from starwhale import Dataset
+from starwhale.api import experiment
 from starwhale.base.uri.resource import Resource, ResourceType
 
 try:
     from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
-    from .evaluate_text_to_image import StableDiffusion
 except ImportError:
     from utils import get_base_model_path, PRETRAINED_MODELS_DIR
-    from evaluate_text_to_image import StableDiffusion
 
 
 ROOT_DIR = Path(__file__).parent
@@ -73,10 +60,11 @@ DATASET_COLUMN_MAPPING = {
 }
 
 
-@pass_context
-@experiment.fine_tune(resources={"nvidia.com/gpu": 1})
+@experiment.finetune(
+    resources={"nvidia.com/gpu": 1}, require_train_datasets=True, auto_build_model=True
+)
 def fine_tune(
-    context: Context,
+    dataset_uris: typing.List[Dataset],
     pretrained_model_name_or_path=get_base_model_path()
     if get_base_model_path().exists()
     else "CompVis/stable-diffusion-v1-4",
@@ -364,9 +352,12 @@ def fine_tune(
         input_ids = torch.stack([example["input_ids"] for example in examples])
         return {"pixel_values": pixel_values, "input_ids": input_ids}
 
-    dataset_name = context.dataset_uris[0] if context.dataset_uris else dataset_name
-    train_dataset = Dataset.dataset(
-        Resource(dataset_name, typ=ResourceType.dataset), readonly=True
+    train_dataset = (
+        dataset_uris[0]
+        if dataset_uris
+        else Dataset.dataset(
+            Resource(dataset_name, typ=ResourceType.dataset), readonly=True
+        )
     )
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
@@ -625,12 +616,6 @@ def fine_tune(
     # convert the model to Safetensors format and save it to a file
     unet.save_attn_procs(save_directory=PRETRAINED_MODELS_DIR)
 
-    model.build(
-        workdir=ROOT_DIR,
-        name="Stable-diffusion-v1-4-finetune",
-        modules=[StableDiffusion],
-    )
-
 
 if __name__ == "__main__":
-    fine_tune(Context(dataset_uris=["pokemon-blip-captions/version/latest"]))
+    fine_tune(dataset_uris=["pokemon-blip-captions/version/latest"])

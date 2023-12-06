@@ -16,7 +16,7 @@ Select CompVis/stable-diffusion-v1-4 as the base model.
 - Check if the client is successfully installed：`swcli --version`
 
 #### 2. Install starwhale server
-- Reference [server installation]](https://doc.starwhale.ai/server/installation)
+- Reference [server installation](https://doc.starwhale.ai/server/installation)
 - Login to server：`swcli instance login --username {user} --password {password} --alias server http://{server ip}`
 
 #### 3. Build runtime package
@@ -59,7 +59,7 @@ Select CompVis/stable-diffusion-v1-4 as the base model.
       limit: 1.0
     ```
 
-## ❇ Begin to Fine-tune
+## ❇ Prepare for Fine-tune
 
 #### 1. Choose a specific style of dataset to train on and build the starwhale dataset
 - Build dataset for fine-tune：`swcli dataset build -hf lambdalabs/pokemon-blip-captions  --subset lambdalabs--pokemon-blip-captions -n pokemon-blip-captions-train`
@@ -72,9 +72,10 @@ Select CompVis/stable-diffusion-v1-4 as the base model.
 
 The general process is as follows:
 ```python
-@pass_context
-@experiment.fine_tune()
-def fine_tune(context: Context, ...):
+@experiment.finetune(
+    resources={"nvidia.com/gpu": 1}, require_train_datasets=True, auto_build_model=True
+)
+def fine_tune(dataset_uris: List[Dataset],, ...):
     # Train processing
     ...
     # Save the lora layers
@@ -83,20 +84,21 @@ def fine_tune(context: Context, ...):
     # Convert the model to Safetensors format and save it to a file
     unet.save_attn_procs(save_directory=PRETRAINED_MODELS_DIR)
 
-    # Build a new model package which named as 'xx-finetune'
-    model.build(
-        workdir=ROOT_DIR,
-        name="Stable-diffusion-v1-4-finetune",
-        modules=[StableDiffusion],
-    )
+    # Auto build a new model package
 ```
 
 #### 3. Build the new model package
 The model building process is consistent with the first round of build.
 
-#### 4. Start to Fine-tune
+## ♨️Start to Fine-tune
 
-- After the model package for fine-tune is successfully uploaded, enter the project and create a job.
+> After the model package for fine-tune is successfully uploaded, we can start to fine-tuning.
+
+### 🚧Create a fine-tune space
+![create fine-tune space](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/create-ft.jpeg)
+
+### 🚀Start a fine-tune job
+
 - Select the Artifacts uploaded in the previous step, select the handler: finetune_text_to_image_lora:fine_tune, and configure the gpu for the resource.
     ```yaml
     resources:
@@ -104,21 +106,42 @@ The model building process is consistent with the first round of build.
       request: 1.0
       limit: 1.0
     ```
+  ![create a fine-tune job](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/create-ft-eval-job.jpeg)
 
-- Finally, after the job is completed, a new model package will be generated: Stable-diffusion-v1-4-**finetune**。
+- Finally, after the job is completed, a new model package will be generated: Stable-diffusion-v1-4(**Draft**)。
     > What is the difference between the fine-tune model package and the original model package? The result of fine-tune is to use the lora method to generate a smaller model package, which is equivalent to an additional file generated without changing the original model. The usage method is: after loading the original model, additionally load the model file.
 
-## ♻ Evaluation based on the model after Fine-tune
-- Enter the web UI, select project: starwhale, and create an evaluation job.
-- Select the Artifacts, ***use the Stable-diffusion-v1-4-finetune model package***，and select the handler：evaluate_text_to_image:StableDiffusion.predict, and configure the gpu for the resource.
+  ![list](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/view-ft-job-list.jpeg)
+
+### ♻ Start an eval job based on the fine-tune model package
+
+- Select the Artifacts, ***use the Stable-diffusion-v1-4(**Draft**) model package***，and select the handler：evaluate_text_to_image:StableDiffusion.predict, and configure the gpu for the resource.
     ```yaml
     resources:
     - type: "nvidia.com/gpu"
       request: 1.0
       limit: 1.0
     ```
+  ![](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/create-ft-eval-job.jpeg)
 
-## 💯 Generate the report
+- Finally, after the job is completed, we can view the predict results.
+  ![](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/view-ft-eval-job-result.jpeg)
 
-The following is a comparison of the results.
-![Report](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/report.png)
+### 📝 Compare the results for the based model and fine-tuned model
+
+- Import the eval info which belong to the based model.
+  ![import](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/import-an-existed-eval.jpeg)
+
+- Compare the results for the based model and fine-tuned model.
+  ![compare](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/compare.jpeg)
+
+### 💯 Release
+
+> If we are satisfied with the fine-tune results, then we can release the model.
+
+- Enter the release button, and export the eval info.
+![release](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/release.jpeg)
+
+- Then we can see the model info and exported eval info.
+  ![model-list](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/model-list-with-release.jpeg)
+  ![eval-info](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/example/finetune/eval-exported-to-common.jpeg)

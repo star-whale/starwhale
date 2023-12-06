@@ -21,8 +21,8 @@ except ImportError:
         DEFAULT_MODEL_NAME,
         prepare_model_package,
     )
-    from evaluate_text_to_image import StableDiffusion
-    from finetune_text_to_image_lora import fine_tune
+    from finetune import fine_tune
+    from evaluation import StableDiffusion
 
 
 debug.init_logger(3)
