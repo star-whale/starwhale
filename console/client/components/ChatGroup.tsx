@@ -267,6 +267,7 @@ function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
                                             }}
                                             min={valueSpec?.min ?? undefined}
                                             max={valueSpec?.max ?? undefined}
+                                            // @ts-ignore
                                             step={valueSpec?.step ?? undefined}
                                             onFinalChange={({ value }) => {
                                                 chatStore.onSessionEditParams(editingSession.id, {
