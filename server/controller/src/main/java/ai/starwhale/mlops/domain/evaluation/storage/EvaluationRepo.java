@@ -368,6 +368,7 @@ public class EvaluationRepo {
         return store.migration(DataStoreMigrationRequest.builder()
                                        .srcTableName(srcTable)
                                        .targetTableName(targetTable)
+                                       .createNonExistingTargetTable(true)
                                        .filter(filter)
                                        .build()
         );

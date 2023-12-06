@@ -189,6 +189,7 @@ public class EvaluationRepoTest {
                 DataStoreMigrationRequest.builder()
                         .srcTableName(srcTable)
                         .targetTableName(targetTable)
+                        .createNonExistingTargetTable(true)
                         .filter(
                                 TableQueryFilter.builder()
                                         .operator(Operator.OR)
