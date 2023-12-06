@@ -638,7 +638,7 @@ class TestDataLoader(TestCase):
         assert dr < dr_another
         assert dr != dr_another
 
-        dr_third = DataRow(index=1, features={"data": Image(fp=b""), "label": 10})
+        dr_third = DataRow(index=1, features={"data": Image(b""), "label": 10})
         assert dr >= dr_third
 
     def test_data_row_exceptions(self) -> None:

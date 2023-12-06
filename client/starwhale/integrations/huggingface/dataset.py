@@ -36,17 +36,13 @@ def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:
         from PIL import Image as PILImage
 
         if isinstance(data, PILImage.Image):
-            img_io = io.BytesIO()
-            data.save(img_io, format=data.format or "PNG")
-            img_fp = img_io.getvalue()
-
             try:
                 data_mimetype = data.get_format_mimetype()
                 mime_type = MIMEType(data_mimetype)
             except (ValueError, AttributeError):
                 mime_type = MIMEType.PNG
             return Image(
-                fp=img_fp,
+                data,
                 shape=(data.height, data.width, len(data.getbands())),
                 mime_type=mime_type,
             )

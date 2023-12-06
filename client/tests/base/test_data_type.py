@@ -128,6 +128,8 @@ class TestDataType(TestCase):
         assert torch.equal(torch.from_numpy(np_array), b.to_tensor())
 
     def test_image(self) -> None:
+        self.fs.create_file("path/to/file", contents="")
+
         fp = io.StringIO("test")
         img = Image(fp, display_name="t", shape=[28, 28, 3], mime_type=MIMEType.PNG)
         assert img.to_bytes() == b"test"
@@ -159,7 +161,6 @@ class TestDataType(TestCase):
         assert _asdict["shape"] == [28, 28, 1]
         assert _asdict["_raw_base64_data"] == base64.b64encode(b"test").decode()
 
-        self.fs.create_file("path/to/file", contents="")
         img = GrayscaleImage(Path("path/to/file"), shape=[28, 28, 1]).carry_raw_data()
         typ = data_store._get_type(img)
         assert isinstance(typ, data_store.SwObjectType)
@@ -168,9 +169,9 @@ class TestDataType(TestCase):
         pixels = numpy.random.randint(
             low=0, high=256, size=(100, 100, 3), dtype=numpy.uint8
         )
-        image_bytes = io.BytesIO()
-        PILImage.fromarray(pixels, mode="RGB").save(image_bytes, format="PNG")
-        img = Image(image_bytes.getvalue())
+        pil_obj = PILImage.fromarray(pixels, mode="RGB")
+
+        img = Image(pil_obj)
         pil_img = img.to_pil()
         assert isinstance(pil_img, PILImage.Image)
         assert pil_img.mode == "RGB"
@@ -181,6 +182,14 @@ class TestDataType(TestCase):
         assert array.shape == (100, 100, 3)
         l_array = img.to_numpy("L")
         assert l_array.shape == (100, 100)
+
+        img = Image(pixels)
+        pil_img = img.to_pil()
+        assert isinstance(pil_img, PILImage.Image)
+        assert pil_img.mode == "RGB"
+        array = img.to_numpy()
+        assert isinstance(array, numpy.ndarray)
+        assert (array == pixels).all()
 
     def test_swobject_subclass_init(self) -> None:
         from starwhale.base import data_type

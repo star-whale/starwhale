@@ -5,7 +5,7 @@ import string
 from starwhale import Image
 
 
-def random_image() -> bytes:
+def random_image() -> Image:
     try:
         return _random_image_from_pillow()
     except ImportError:

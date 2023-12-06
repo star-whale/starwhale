@@ -477,7 +477,7 @@ class StandaloneDatasetTestCase(BaseTestCase):
             (
                 "label-0",
                 {
-                    "img": GrayscaleImage(fp=b"123"),
+                    "img": GrayscaleImage(b"123"),
                     "label": 0,
                 },
             )
@@ -486,7 +486,7 @@ class StandaloneDatasetTestCase(BaseTestCase):
             (
                 "label-1",
                 {
-                    "img": GrayscaleImage(fp=b"456"),
+                    "img": GrayscaleImage(b"456"),
                     "label": 1,
                 },
             )
