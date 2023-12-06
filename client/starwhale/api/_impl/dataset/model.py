@@ -1774,7 +1774,7 @@ class Dataset:
                     record["caption"] = caption_path.read_text().strip()
 
                 record["file"] = file_cls(
-                    fp=p,
+                    p,
                     display_name=p.name,
                     mime_type=MIMEType.create_by_file_suffix(p),
                 )

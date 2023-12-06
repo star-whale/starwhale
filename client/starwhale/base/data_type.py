@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 import numpy
 
+from starwhale.utils import console
 from starwhale.consts import SHORT_VERSION_CNT
 from starwhale.utils.fs import DIGEST_SIZE, FilePosition
 from starwhale.base.mixin import ASDictMixin
@@ -260,7 +261,7 @@ class NumpyBinary(BaseArtifact, SwObject):
 class Image(BaseArtifact, SwObject):
     def __init__(
         self,
-        fp: _TArtifactFP = "",
+        fp: t.Any = "",
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         mime_type: MIMEType = MIMEType.UNDEFINED,
@@ -271,8 +272,9 @@ class Image(BaseArtifact, SwObject):
     ) -> None:
         self.as_mask = as_mask
         self.mask_uri = mask_uri
+
         super().__init__(
-            fp,
+            self._convert_pil_and_numpy(fp),
             ArtifactType.Image,
             display_name=display_name,
             shape=shape or (None, None, 3),
@@ -280,6 +282,25 @@ class Image(BaseArtifact, SwObject):
             dtype=dtype,
             link=link,
         )
+
+    def _convert_pil_and_numpy(self, source: t.Any) -> t.Any:
+        try:
+            # pillow is optional for starwhale, so we need to check if it is installed
+            from PIL import Image as PILImage
+        except ImportError:  # pragma: no cover
+            console.trace(
+                "pillow is not installed, skip try to convert PILImage and numpy.ndarray to bytes"
+            )
+            return source
+
+        if isinstance(source, (PILImage.Image, numpy.ndarray)):
+            image_bytes = io.BytesIO()
+            if isinstance(source, numpy.ndarray):
+                source = PILImage.fromarray(source)
+            source.save(image_bytes, format="PNG")
+            return image_bytes.getvalue()
+        else:
+            return source
 
     def _do_validate(self) -> None:
         if self.mime_type not in (
@@ -338,7 +359,7 @@ class Image(BaseArtifact, SwObject):
 class GrayscaleImage(Image):
     def __init__(
         self,
-        fp: _TArtifactFP = "",
+        fp: t.Any = "",
         display_name: str = "",
         shape: t.Optional[_TShape] = None,
         as_mask: bool = False,
