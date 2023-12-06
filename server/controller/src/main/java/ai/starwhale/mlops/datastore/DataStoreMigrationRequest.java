@@ -36,5 +36,6 @@ public class DataStoreMigrationRequest {
     private int start = -1;
 
     private String targetTableName;
-    private boolean createNonExistingTargetTable;
+    @Builder.Default
+    private boolean createNonExistingTargetTable = true;
 }
