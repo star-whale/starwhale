@@ -45,31 +45,58 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 public class StorageAccessServiceBos extends S3LikeStorageAccessService {
 
     private final BosClient bosClient;
+    private final List<BosClient> bosClientEquivalents;
 
     private final Set<String> notFoundErrorCodes = Set.of("NoSuchKey", "NoSuchUpload", "NoSuchBucket", "NoSuchVersion");
 
     public StorageAccessServiceBos(S3Config s3Config) {
         super(s3Config);
+        this.bosClient = clientFromConfig(s3Config, s3Config.getEndpoint(), true);
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            this.bosClientEquivalents = s3Config.getEndpointEquivalents().stream()
+                    .map(edp -> clientFromConfig(s3Config, edp, false))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            this.bosClientEquivalents = List.of();
+        }
+    }
 
+    private BosClient clientFromConfig(S3Config s3Config, String endpointSelected, boolean raise) {
         var config = new BosClientConfiguration();
         config.setCredentials(new DefaultBceCredentials(s3Config.getAccessKey(), s3Config.getSecretKey()));
-        var url = s3Config.getEndpointUrl();
+        URL url;
+        try {
+            url = S3Config.endpointToUrl(endpointSelected);
+        } catch (MalformedURLException e) {
+            if (raise) {
+                throw new RuntimeException(e);
+            } else {
+                return null;
+            }
+        }
         if (url.getProtocol().equalsIgnoreCase("https")) {
             config.setProtocol(Protocol.HTTPS);
         } else {
             config.setProtocol(Protocol.HTTP);
         }
         config.setEndpoint(url.getAuthority());
-        this.bosClient = new BosClient(config);
+        return new BosClient(config);
     }
 
     private boolean isNotFound(BceServiceException e) {
@@ -204,6 +231,20 @@ public class StorageAccessServiceBos extends S3LikeStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
+        return signUrl(path, expTimeMillis, this.bosClient);
+    }
+
+    @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return Stream.concat(Stream.of(bosClient), bosClientEquivalents.stream())
+                .map(client -> signUrl(
+                        path,
+                        expTimeMillis,
+                        client
+                )).collect(Collectors.toList());
+    }
+
+    private String signUrl(String path, Long expTimeMillis, BosClient bosClient) {
         // -1 means never expired
         int expirationInSeconds = -1;
         if (expTimeMillis != null) {
@@ -214,6 +255,21 @@ public class StorageAccessServiceBos extends S3LikeStorageAccessService {
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        return signPutUrl(path, contentType, expTimeMillis, this.bosClient);
+    }
+
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return Stream.concat(Stream.of(bosClient), bosClientEquivalents.stream())
+                .map(client -> signPutUrl(
+                        path,
+                        contentType,
+                        expTimeMillis,
+                        client
+                )).collect(Collectors.toList());
+    }
+
+    private String signPutUrl(String path, String contentType, Long expTimeMillis, BosClient bosClient) {
         var request = new GeneratePresignedUrlRequest(this.bucket, path, HttpMethodName.PUT);
         int expirationInSeconds = -1;
         if (expTimeMillis != null) {

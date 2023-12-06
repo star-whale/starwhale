@@ -148,5 +148,14 @@ public interface StorageAccessService {
      */
     String signedUrl(String path, Long expTimeMillis) throws IOException;
 
+    default List<String> signedUrlAllDomains(String path, Long expTimeMillis) throws IOException {
+        return List.of(signedUrl(path, expTimeMillis));
+    }
+
     String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException;
+
+    default List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis)
+            throws IOException {
+        return List.of(signedPutUrl(path, contentType, expTimeMillis));
+    }
 }

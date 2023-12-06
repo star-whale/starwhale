@@ -47,13 +47,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
 
     private final OSS ossClient;
+    private final List<OSS> ossClientEquivalents;
 
     public StorageAccessServiceAliyun(S3Config s3Config) {
         super(s3Config);
@@ -62,6 +66,15 @@ public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
         config.setRequestTimeoutEnabled(true);
         this.ossClient = new OSSClientBuilder()
                 .build(s3Config.getEndpoint(), s3Config.getAccessKey(), s3Config.getSecretKey(), config);
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            this.ossClientEquivalents = s3Config.getEndpointEquivalents()
+                    .stream()
+                    .map(edp -> new OSSClientBuilder()
+                            .build(edp, s3Config.getAccessKey(), s3Config.getSecretKey(), config))
+                    .collect(Collectors.toList());
+        } else {
+            this.ossClientEquivalents = List.of();
+        }
     }
 
     @Override
@@ -73,10 +86,12 @@ public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
     public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
             var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
-            return new StorageObjectInfo(true,
+            return new StorageObjectInfo(
+                    true,
                     resp.getContentLength(),
                     md5sum ? resp.getETag().replace("\"", "").toLowerCase() : null,
-                    MetaHelper.mapToString(resp.getUserMetadata()));
+                    MetaHelper.mapToString(resp.getUserMetadata())
+            );
         } catch (OSSException e) {
             if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
                 return new StorageObjectInfo(false, 0L, null, null);
@@ -117,7 +132,8 @@ public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
                         uploadId,
                         i,
                         new ByteArrayInputStream(data),
-                        data.length));
+                        data.length
+                ));
                 etagList.add(resp.getPartETag());
                 if (data.length < this.partSize) {
                     break;
@@ -187,12 +203,41 @@ public class StorageAccessServiceAliyun extends S3LikeStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
+        return signedUrl(path, expTimeMillis, this.ossClient);
+    }
+
+    private String signedUrl(String path, Long expTimeMillis, OSS ossClient) {
         return ossClient.generatePresignedUrl(this.bucket, path, new Date(System.currentTimeMillis() + expTimeMillis))
                 .toString();
     }
 
     @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return Stream.concat(Stream.of(ossClient), ossClientEquivalents.stream())
+                .map(client -> signedUrl(
+                        path,
+                        expTimeMillis,
+                        client
+                )).collect(Collectors.toList());
+    }
+
+    @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        return signPutUrl(path, contentType, expTimeMillis, this.ossClient);
+    }
+
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return Stream.concat(Stream.of(ossClient), ossClientEquivalents.stream())
+                .map(client -> signPutUrl(
+                        path,
+                        contentType,
+                        expTimeMillis,
+                        client
+                )).collect(Collectors.toList());
+    }
+
+    private String signPutUrl(String path, String contentType, Long expTimeMillis, OSS ossClient) {
         var request = new GeneratePresignedUrlRequest(this.bucket, path, HttpMethod.PUT);
         request.setExpiration(new Date(System.currentTimeMillis() + expTimeMillis));
         request.setContentType(contentType);

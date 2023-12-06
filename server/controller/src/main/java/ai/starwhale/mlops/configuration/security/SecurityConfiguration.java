@@ -84,6 +84,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Resource
     private ContentCachingFilter contentCachingFilter;
 
+    @Resource
+    private ObjectStoreDomainDetectionFilter objectStoreDomainDetectionFilter;
+
 
     public SecurityConfiguration() {
         super();
@@ -139,6 +142,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         JwtLoginFilter.class)
                 .addFilterBefore(projectDetectionFilter, JwtTokenFilter.class)
                 .addFilterBefore(contentCachingFilter, ProjectDetectionFilter.class)
+                .addFilterAfter(objectStoreDomainDetectionFilter, JwtTokenFilter.class)
         ;
     }
 

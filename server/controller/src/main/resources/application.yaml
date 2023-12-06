@@ -99,6 +99,7 @@ sw:
       secret-key: ${SW_STORAGE_SECRETKEY:starwhale}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
+      endpoint-equivalents-raw: ${SW_STORAGE_ENDPOINT_EQS:{"test":"http://127.0.0.1:9000"}}
       huge-file-threshold: 10485760 # 10MB
       huge-file-part-size: 5242880 # 5MB
   controller:

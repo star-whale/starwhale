@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.storage.configuration;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -38,9 +39,12 @@ public class StorageAccessConfig {
             case "file":
                 return new StorageAccessServiceFile(storageProperties.getFsConfig());
             default:
-                return StorageAccessService.getS3LikeStorageAccessService(
-                        storageProperties.getType(),
-                        storageProperties.getS3Config());
+                return new DomainAwareStorageAccessService(
+                        StorageAccessService.getS3LikeStorageAccessService(
+                                storageProperties.getType(),
+                                storageProperties.getS3Config()
+                        )
+                );
         }
     }
 }

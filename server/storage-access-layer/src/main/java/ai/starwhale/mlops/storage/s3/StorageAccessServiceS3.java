@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.storage.s3;
 
+import static ai.starwhale.mlops.storage.s3.S3Config.endpointToUrl;
+
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.S3LikeStorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
@@ -24,15 +26,19 @@ import com.google.common.collect.Streams;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.BoundedInputStream;
+import org.springframework.util.CollectionUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -66,6 +72,7 @@ public class StorageAccessServiceS3 extends S3LikeStorageAccessService {
     final S3Client s3client;
 
     final S3Presigner s3Presigner;
+    final List<S3Presigner> s3PresignerEquivalents;
 
     public StorageAccessServiceS3(S3Config s3Config) {
         super(s3Config);
@@ -91,6 +98,24 @@ public class StorageAccessServiceS3 extends S3LikeStorageAccessService {
         }
         this.s3client = s3ClientBuilder.build();
         this.s3Presigner = s3PresignerBuilder.build();
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            this.s3PresignerEquivalents = s3Config.getEndpointEquivalents().stream().map(edp -> {
+                URI uri;
+                try {
+                    uri = endpointToUrl(edp).toURI();
+                } catch (URISyntaxException e) {
+                    log.warn("uri syntax error endpoint equivalent {}", edp);
+                    return null;
+                } catch (MalformedURLException e) {
+                    log.warn("malformated endpoint equivalent {}", edp);
+                    return null;
+                }
+                s3PresignerBuilder.endpointOverride(uri);
+                return s3PresignerBuilder.build();
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        } else {
+            this.s3PresignerEquivalents = List.of();
+        }
     }
 
     @Override
@@ -289,21 +314,56 @@ public class StorageAccessServiceS3 extends S3LikeStorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
-        return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
-                .getObjectRequest(GetObjectRequest.builder().bucket(this.bucket).key(path).build())
-                .signatureDuration(Duration.ofMillis(expTimeMillis))
-                .build()).url().toString();
+        return signGetUrl(path, expTimeMillis, this.s3Presigner);
+    }
+
+
+    @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return Stream.concat(Stream.of(s3Presigner), s3PresignerEquivalents.stream())
+                .map(singer -> signGetUrl(
+                        path,
+                        expTimeMillis,
+                        singer
+                )).collect(Collectors.toList());
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) {
-        return s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
-                .putObjectRequest(PutObjectRequest.builder()
-                        .bucket(this.bucket)
-                        .key(path)
-                        .contentType(contentType)
-                        .build())
-                .signatureDuration(Duration.ofMillis(expTimeMillis))
-                .build()).url().toString();
+        return signPutUrl(path, contentType, expTimeMillis, this.s3Presigner);
     }
+
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return Stream.concat(Stream.of(s3Presigner), s3PresignerEquivalents.stream())
+                .map(singer -> signPutUrl(
+                        path,
+                        contentType,
+                        expTimeMillis,
+                        singer
+                )).collect(Collectors.toList());
+    }
+
+
+    private String signGetUrl(String path, Long expTimeMillis, S3Presigner signer) {
+        return signer.presignGetObject(GetObjectPresignRequest.builder()
+                                               .getObjectRequest(GetObjectRequest.builder()
+                                                                         .bucket(this.bucket)
+                                                                         .key(path)
+                                                                         .build())
+                                               .signatureDuration(Duration.ofMillis(expTimeMillis))
+                                               .build()).url().toString();
+    }
+
+    private String signPutUrl(String path, String contentType, Long expTimeMillis, S3Presigner signer) {
+        return signer.presignPutObject(PutObjectPresignRequest.builder()
+                                               .putObjectRequest(PutObjectRequest.builder()
+                                                                         .bucket(this.bucket)
+                                                                         .key(path)
+                                                                         .contentType(contentType)
+                                                                         .build())
+                                               .signatureDuration(Duration.ofMillis(expTimeMillis))
+                                               .build()).url().toString();
+    }
+
 }

@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageConnectionToken;
 import ai.starwhale.mlops.storage.StorageUri;
+import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
 import ai.starwhale.mlops.storage.fs.FsConfig;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import java.util.Map;
@@ -103,9 +104,12 @@ public class StorageAccessParser implements SystemSettingListener {
                                     token.getTokens().get("sigKey")
                             ));
                 default:
-                    return StorageAccessService.getS3LikeStorageAccessService(
-                            token.getType(),
-                            new S3Config(token.getTokens()));
+                    return new DomainAwareStorageAccessService(
+                            StorageAccessService.getS3LikeStorageAccessService(
+                                    token.getType(),
+                                    new S3Config(token.getTokens())
+                            )
+                    );
             }
         } catch (Exception e) {
             log.error("can not build storage access service", e);

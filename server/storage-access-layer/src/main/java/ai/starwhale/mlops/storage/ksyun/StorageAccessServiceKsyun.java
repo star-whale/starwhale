@@ -47,15 +47,22 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
 
     private final Ks3Client ks3Client;
+    private final List<Ks3Client> ks3ClientEquivalents;
 
     public StorageAccessServiceKsyun(S3Config s3Config) {
         super(s3Config);
@@ -73,7 +80,45 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
             config.setEndpoint(url.getAuthority());
         }
         config.setPathStyleAccess(false);
-        this.ks3Client = new Ks3Client(s3Config.getAccessKey(), s3Config.getSecretKey(), config);
+        this.ks3Client = buildKs3Client(s3Config, s3Config.getEndpoint(), true);
+        if (!CollectionUtils.isEmpty(s3Config.getEndpointEquivalents())) {
+            this.ks3ClientEquivalents = s3Config
+                    .getEndpointEquivalents()
+                    .stream()
+                    .map(edp -> buildKs3Client(s3Config, edp, false))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            this.ks3ClientEquivalents = List.of();
+        }
+    }
+
+    private Ks3Client buildKs3Client(S3Config s3Config, String selectedEndpoint, boolean raise) {
+        Ks3ClientConfig config = new Ks3ClientConfig();
+        if (s3Config.getRegion() != null) {
+            config.setRegion(Region.valueOf(s3Config.getRegion().toUpperCase()));
+        }
+        if (s3Config.getEndpoint() != null) {
+            URL url;
+            try {
+                url = S3Config.endpointToUrl(selectedEndpoint);
+            } catch (MalformedURLException e) {
+                if (raise) {
+                    throw new RuntimeException(e);
+                } else {
+                    return null;
+                }
+
+            }
+            if (url.getProtocol().equalsIgnoreCase("https")) {
+                config.setProtocol(PROTOCOL.https);
+            } else {
+                config.setProtocol(PROTOCOL.http);
+            }
+            config.setEndpoint(url.getAuthority());
+        }
+        config.setPathStyleAccess(false);
+        return new Ks3Client(s3Config.getAccessKey(), s3Config.getSecretKey(), config);
     }
 
     @Override
@@ -85,10 +130,12 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
     public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
             var resp = this.ks3Client.headObject(new HeadObjectRequest(this.bucket, path));
-            return new StorageObjectInfo(true,
+            return new StorageObjectInfo(
+                    true,
                     resp.getObjectMetadata().getContentLength(),
                     md5sum ? resp.getObjectMetadata().getETag().replace("\"", "") : null,
-                    MetaHelper.mapToString(resp.getObjectMetadata().getAllUserMeta()));
+                    MetaHelper.mapToString(resp.getObjectMetadata().getAllUserMeta())
+            );
         } catch (NotFoundException e) {
             return new StorageObjectInfo(false, 0L, null, null);
         }
@@ -126,7 +173,8 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
                         uploadId,
                         i,
                         new ByteArrayInputStream(data),
-                        data.length));
+                        data.length
+                ));
                 etagList.add(resp);
                 if (data.length < this.partSize) {
                     break;
@@ -144,8 +192,10 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
     public LengthAbleInputStream get(String path) throws IOException {
         try {
             var resp = this.ks3Client.getObject(this.bucket, path);
-            return new LengthAbleInputStream(resp.getObject().getObjectContent(),
-                    resp.getObject().getObjectMetadata().getContentLength());
+            return new LengthAbleInputStream(
+                    resp.getObject().getObjectContent(),
+                    resp.getObject().getObjectMetadata().getContentLength()
+            );
         } catch (Ks3ServiceException e) {
             if (e instanceof NoSuchKeyException) {
                 throw new FileNotFoundException(path);
@@ -161,8 +211,10 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
             var req = new GetObjectRequest(bucket, path);
             req.setRange(offset, offset + size - 1);
             var resp = this.ks3Client.getObject(req);
-            return new LengthAbleInputStream(resp.getObject().getObjectContent(),
-                    resp.getObject().getObjectMetadata().getContentLength());
+            return new LengthAbleInputStream(
+                    resp.getObject().getObjectContent(),
+                    resp.getObject().getObjectMetadata().getContentLength()
+            );
         } catch (Ks3ServiceException e) {
             if (e instanceof NoSuchKeyException) {
                 throw new FileNotFoundException(path);
@@ -198,11 +250,37 @@ public class StorageAccessServiceKsyun extends S3LikeStorageAccessService {
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
         return ks3Client.generatePresignedUrl(this.bucket, path,
-                (int) ((System.currentTimeMillis() + expTimeMillis) / 1000));
+                                              (int) ((System.currentTimeMillis() + expTimeMillis) / 1000)
+        );
+    }
+
+    @Override
+    public List<String> signedUrlAllDomains(String path, Long expTimeMillis) {
+        return Stream.concat(Stream.of(ks3Client), ks3ClientEquivalents.stream())
+                .map(client -> client.generatePresignedUrl(
+                        this.bucket, path,
+                        (int) ((System.currentTimeMillis() + expTimeMillis) / 1000)
+                ))
+                .collect(Collectors.toList());
     }
 
     @Override
     public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        return signPutUrl(path, contentType, expTimeMillis, this.ks3Client);
+    }
+
+    @Override
+    public List<String> signedPutUrlAllDomains(String path, String contentType, Long expTimeMillis) {
+        return Stream.concat(Stream.of(ks3Client), ks3ClientEquivalents.stream())
+                .map(client -> signPutUrl(
+                        path,
+                        contentType,
+                        expTimeMillis,
+                        client
+                )).collect(Collectors.toList());
+    }
+
+    private String signPutUrl(String path, String contentType, Long expTimeMillis, Ks3Client ks3Client) {
         var request = new GeneratePresignedUrlRequest();
         request.setBucket(this.bucket);
         request.setKey(path);

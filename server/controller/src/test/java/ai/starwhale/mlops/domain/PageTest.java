@@ -70,6 +70,7 @@ import ai.starwhale.mlops.schedule.impl.docker.log.RunLogCollectorFactoryDocker;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.reporting.ResourceEventHolder;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration;
@@ -535,6 +536,11 @@ public class PageTest extends MySqlContainerHolder {
         @Bean
         RunExecutor runExecutor() {
             return mock(RunExecutor.class);
+        }
+
+        @Bean
+        StorageProperties storageProperties() {
+            return mock(StorageProperties.class);
         }
     }
 }

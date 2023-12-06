@@ -89,6 +89,7 @@ import ai.starwhale.mlops.schedule.impl.k8s.reporting.ResourceEventHolder;
 import ai.starwhale.mlops.schedule.log.RunLogSaver;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Ints;
@@ -215,6 +216,11 @@ public class ModelServiceTest extends MySqlContainerHolder {
         @Bean
         RunExecutor runExecutor() {
             return mock(RunExecutor.class);
+        }
+
+        @Bean
+        StorageProperties storageProperties() {
+            return mock(StorageProperties.class);
         }
     }
 

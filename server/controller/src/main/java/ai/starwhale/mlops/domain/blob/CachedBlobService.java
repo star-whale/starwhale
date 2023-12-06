@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.blob;
 
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.domain.DomainAwareStorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.io.IOException;
 import java.util.HashMap;
@@ -40,9 +41,12 @@ public class CachedBlobService implements BlobService {
                 // for test only
                 storageAccessService = new StorageAccessServiceMemory();
             } else {
-                storageAccessService = StorageAccessService.getS3LikeStorageAccessService(
-                        cacheConfig.getStorageType(),
-                        cacheConfig);
+                storageAccessService = new DomainAwareStorageAccessService(
+                        StorageAccessService.getS3LikeStorageAccessService(
+                                cacheConfig.getStorageType(),
+                                cacheConfig
+                        )
+                );
             }
             this.caches.put(cacheConfig.getBlobIdPrefix(),
                     new BlobServiceImpl(storageAccessService,
