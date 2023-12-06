@@ -39,6 +39,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
+import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.job.BizType;
@@ -96,6 +97,8 @@ public class JobController {
     private final RunService runService;
     private final UserJobConverter userJobConverter;
 
+    private final EvaluationService evaluationService;
+
     public JobController(
             JobServiceForWeb jobServiceForWeb,
             FineTuneAppService fineTuneAppService, TaskService taskService,
@@ -106,7 +109,8 @@ public class JobController {
             FeaturesProperties featuresProperties,
             EventService eventService,
             RunService runService,
-            UserJobConverter userJobConverter
+            UserJobConverter userJobConverter,
+            EvaluationService evaluationService
     ) {
         this.jobServiceForWeb = jobServiceForWeb;
         this.fineTuneAppService = fineTuneAppService;
@@ -119,6 +123,7 @@ public class JobController {
         this.eventService = eventService;
         this.runService = runService;
         this.userJobConverter = userJobConverter;
+        this.evaluationService = evaluationService;
 
         var actions = InvokerManager.<String, String>create()
                 .addInvoker("cancel", jobServiceForWeb::cancelJob);
@@ -224,6 +229,8 @@ public class JobController {
             } else if (jobRequest.getType() == JobType.ONLINE_EVAL) {
                 jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
             }
+        } else if (jobRequest.getType() == JobType.EVALUATION) {
+            jobId = evaluationService.createEvaluationJob(userJobConverter.convert(projectUrl, jobRequest));
         } else {
             jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
         }
