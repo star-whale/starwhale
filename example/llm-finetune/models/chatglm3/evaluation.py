@@ -78,11 +78,7 @@ def copilot_predict(data: dict) -> str:
     return response
 
 
-@api(
-    inference_type=LLMChat(
-        args={"user_input", "history", "temperature", "top_p", "max_new_tokens"}
-    )
-)
+@api(inference_type=LLMChat())
 def chatbot(user_input, history, temperature, top_p, max_new_tokens):
     model, tokenizer = _load_model_and_tokenizer()
     response, history = model.chat(
