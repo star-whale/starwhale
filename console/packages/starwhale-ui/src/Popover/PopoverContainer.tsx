@@ -102,7 +102,7 @@ function MultiSelectMenu(props: any) {
 
     const submit = () => {
         props.onClose?.()
-        props.onItemIdsChange?.(selected)
+        props.onItemIdsConfirm?.(selected)
     }
 
     const focus = () => {
@@ -110,6 +110,11 @@ function MultiSelectMenu(props: any) {
             props.inputRef.current.focus()
         }
     }
+
+    useEffect(() => {
+        props.onItemIdsChange?.(selected)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected])
 
     // const trace = useTrace('multi-select-menu')
     // trace({ selected, defaultSelected, inputRef: props.inputRef })
@@ -157,6 +162,7 @@ function PopoverContainer(props: {
     multi?: boolean
     onItemSelect?: (props: { item: { label: string; type: string } }) => void
     onItemIdsChange?: (ids: string[]) => void
+    onItemIdsConfirm?: (ids: string[]) => void
     options: any[]
     isOpen: boolean
     children: React.ReactNode

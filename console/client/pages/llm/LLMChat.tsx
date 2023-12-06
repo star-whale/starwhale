@@ -24,7 +24,7 @@ interface ILLMChatQuerySchema {
 }
 
 function hasComponent(name: string, components: IComponentSpecSchema[]) {
-    return !!components.find((i) => i.name === name)
+    return !!components?.find((i) => i.name === name)
 }
 
 export default function LLMChat({ api }: ILLMChatProps) {

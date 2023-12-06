@@ -349,8 +349,8 @@ function create(name = StoreKey.Chat) {
                             if (!serving) return Promise.resolve()
                             const { exposedLink, apiSpec } = serving
                             const data: ILLMChatQuerySchema = {
-                                user_input: content,
-                                history: messages as any,
+                                user_input: '',
+                                history: [],
                             }
 
                             apiSpec?.components?.forEach((cur) => {
@@ -363,6 +363,8 @@ function create(name = StoreKey.Chat) {
                             return axios
                                 .post<IBackEndMessage[]>(`${exposedLink.link}api/${apiSpec?.uri}`, {
                                     ...data,
+                                    user_input: content,
+                                    history: messages as any,
                                 })
                                 .then((res) => {
                                     get().onResetMessageByIndex(index, res.data as any)

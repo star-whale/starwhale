@@ -1,30 +1,20 @@
 import CasecadeResizer from '@starwhale/ui/AutoResizer/CascadeResizer'
-import { InferenceType, useServingConfig } from '../store/config'
+import { InferenceType, useServingConfig } from '@starwhale/ui/Serving/store/config'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
-import JobStatus from '@/domain/job/components/JobStatus'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
-import { useDomsScrollToBottom } from '../hooks/useScrollToBottom'
+import { useDomsScrollToBottom } from '@starwhale/ui/Serving/hooks/useScrollToBottom'
 import { Fragment, startTransition, useMemo, useReducer, useRef, useState } from 'react'
 import { useCountDown, useDebounceEffect, useInterval } from 'ahooks'
-import useSubmitHandler from '../hooks/useSubmitHandler'
-import { autoGrowTextArea } from '../utils'
-import { ChatMessage, ChatSession } from '../store/chat'
-import { useChatStore as Store } from '@starwhale/ui/Serving/store/chat'
+import useSubmitHandler from '@starwhale/ui/Serving/hooks/useSubmitHandler'
+import { autoGrowTextArea } from '@starwhale/ui/Serving/utils'
+import { ChatMessage, ChatSession, useChatStore as Store } from '@starwhale/ui/Serving/store/chat'
 import { nanoid } from 'nanoid'
-import { LAST_INPUT_KEY } from '../constant'
+import { LAST_INPUT_KEY } from '@starwhale/ui/Serving/constant'
 import useTranslation from '@/hooks/useTranslation'
 import { LabelMedium } from 'baseui/typography'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import { StatefulSlider } from 'baseui/slider'
-import { expandBorderRadius, expandPadding } from '../../utils/index'
-import SectionPopover from './SectionPopover'
-import { useHistory } from 'react-router-dom'
-import { useProject } from '@/domain/project/hooks/useProject'
-import { toaster } from 'baseui/toast'
-import { useEventCallback } from '@starwhale/core/utils'
-import { doJobAction } from '@job/services/job'
-import { JobActionType } from '@/domain/job/schemas/job'
-import useForceUpdate from '@starwhale/core/utils/useForceUpdate'
+import { expandBorderRadius, expandPadding } from '@starwhale/ui/utils'
 
 export const CHAT_PAGE_SIZE = 15
 export const MAX_RENDER_MSG_COUNT = 45
@@ -55,14 +45,10 @@ function Chat({
     setAutoScroll: any
     session: ChatSession
 }) {
-    const config = useServingConfig()
     const chatStore = useChatStore()
-    const { project } = useProject()
     const { job } = session.serving ?? {}
     const [t] = useTranslation()
-    const history = useHistory()
     const isLoading = false
-    const forceUpdate = useForceUpdate()
 
     // init
     const [, setHitBottom] = useState(true)
@@ -99,9 +85,6 @@ function Chat({
         return renderMessages.slice(msgRenderIndex, endRenderIndex)
     }, [msgRenderIndex, renderMessages])
 
-    // const clearContextIndex =
-    //     (session.clearContextIndex ?? -1) >= 0 ? session.clearContextIndex! + context.length - msgRenderIndex : -1
-
     //  scroll
     const onChatBodyScroll = (e: HTMLElement) => {
         startTransition(() => {
@@ -122,7 +105,6 @@ function Chat({
             }
 
             setHitBottom(isHitBottom)
-            // setAutoScroll(isHitBottom)
         })
     }
 
@@ -142,13 +124,7 @@ function Chat({
             clear()
         },
     })
-    const handleAction = useEventCallback(async (projectId, jid, type) => {
-        if (!projectId) return
 
-        await doJobAction(projectId, jid, type)
-        toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-        // onRefresh?.()
-    })
     if (!session || !job) return <BusyPlaceholder type='empty' />
 
     return (
@@ -156,33 +132,10 @@ function Chat({
             <div className='chat-title flex lh-none h-40px bg-[#eef1f6] px-10px items-center'>
                 <ExtendButton
                     disabled={!session?.serving}
-                    icon={session?.show ? 'eye' : 'eye_off'}
+                    icon='setting'
                     styleas={['menuoption', 'nopadding', 'iconnormal', !session?.serving ? 'icondisable' : undefined]}
-                    onClick={() => chatStore.onSessionShowById(job.id, !session?.show)}
+                    onClick={() => chatStore.onSessionEditParamsShow(job.id)}
                 />
-                <div className='flex-1 mx-8px font-600'>{job?.modelName}</div>
-                <div className='flex lh-none items-center'>
-                    <JobStatus status={job?.jobStatus as any} />
-                    <SectionPopover
-                        onOptionSelect={({ type }) => {
-                            if (type === 'viewlog') {
-                                history.push(`/projects/${project?.id}/jobs/${job?.id}/tasks`)
-                                return
-                            }
-                            if (type === 'parameter') {
-                                chatStore.onSessionEditParamsShow(session?.id)
-                                return
-                            }
-                            if (type === 'delete') {
-                                handleAction(project?.id, job?.id, JobActionType.CANCEL)
-                                config.refetch()
-                            }
-                            if (type === 'reload') {
-                                forceUpdate()
-                            }
-                        }}
-                    />
-                </div>
             </div>
 
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
@@ -266,60 +219,67 @@ function ChatParamerModal({ useChatStore }: { useChatStore: StoreT }) {
                         </ExtendButton>
                     </div>
                     <div className='gap-20px'>
-                        {editingSession?.serving?.apiSpec?.components?.map(({ componentValueSpecFloat, ...v }) => {
-                            const defValue = editingSession.params?.[v.name] ?? componentValueSpecFloat?.defaultVal ?? 0
-                            return (
-                                <div key={[v.name, forceKey].join('-')} className='grid grid-cols-[100px_1fr_40px]'>
-                                    <p className='pt-5px break-words'>{v.name}</p>
-                                    <StatefulSlider
-                                        overrides={{
-                                            ThumbValue: {
-                                                style: {
-                                                    backgroundColor: '#2B65D9',
-                                                    width: '50px !important',
-                                                    height: '32px !important',
-                                                    position: 'relative',
-                                                    top: '-30px',
-                                                    textAlign: 'center',
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    ...expandBorderRadius('50px'),
-                                                    ...expandPadding('0px', '12px', '0px', '12px'),
+                        {editingSession?.serving?.apiSpec?.components?.map(
+                            ({ componentValueSpecFloat, componentValueSpecInt, ...v }) => {
+                                const valueSpec = componentValueSpecFloat ?? componentValueSpecInt
+                                const defValue = editingSession.params?.[v.name] ?? valueSpec?.defaultVal ?? 0
+
+                                if (!valueSpec) return null
+
+                                return (
+                                    <div key={[v.name, forceKey].join('-')} className='grid grid-cols-[100px_1fr_40px]'>
+                                        <p className='pt-5px break-words'>{v.name}</p>
+                                        <StatefulSlider
+                                            overrides={{
+                                                ThumbValue: {
+                                                    style: {
+                                                        backgroundColor: '#2B65D9',
+                                                        width: '50px !important',
+                                                        height: '32px !important',
+                                                        position: 'relative',
+                                                        top: '-30px',
+                                                        textAlign: 'center',
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+                                                        ...expandBorderRadius('50px'),
+                                                        ...expandPadding('0px', '12px', '0px', '12px'),
+                                                    },
                                                 },
-                                            },
-                                            InnerThumb: {
-                                                style: {
-                                                    backgroundColor: '#2B65D9',
-                                                    width: '1px',
+                                                InnerThumb: {
+                                                    style: {
+                                                        backgroundColor: '#2B65D9',
+                                                        width: '1px',
+                                                    },
                                                 },
-                                            },
-                                            Thumb: {
-                                                style: {
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    borderColor: '#2B65D9',
-                                                    backgroundColor: '#fff',
-                                                    borderWidth: '2px',
+                                                Thumb: {
+                                                    style: {
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        borderColor: '#2B65D9',
+                                                        backgroundColor: '#fff',
+                                                        borderWidth: '2px',
+                                                    },
                                                 },
-                                            },
-                                        }}
-                                        initialState={{
-                                            value: [defValue],
-                                        }}
-                                        min={componentValueSpecFloat?.min ?? undefined}
-                                        max={componentValueSpecFloat?.max ?? undefined}
-                                        step={componentValueSpecFloat?.step}
-                                        onFinalChange={({ value }) => {
-                                            chatStore.onSessionEditParams(editingSession.id, {
-                                                [v.name]: value[0],
-                                            })
-                                        }}
-                                    />
-                                    <p className='pt-5px break-words'>{defValue}</p>
-                                </div>
-                            )
-                        })}
+                                            }}
+                                            initialState={{
+                                                value: [defValue],
+                                            }}
+                                            min={valueSpec?.min ?? undefined}
+                                            max={valueSpec?.max ?? undefined}
+                                            // @ts-ignore
+                                            step={valueSpec?.step ?? undefined}
+                                            onFinalChange={({ value }) => {
+                                                chatStore.onSessionEditParams(editingSession.id, {
+                                                    [v.name]: value[0],
+                                                })
+                                            }}
+                                        />
+                                        <p className='pt-5px break-words'>{defValue}</p>
+                                    </div>
+                                )
+                            }
+                        )}
                     </div>
                 </div>
             </ModalBody>
@@ -376,14 +336,13 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
     }
 
     function scrollToBottom() {
-        // setMsgRenderIndex(renderMessages.length - CHAT_PAGE_SIZE);
         scrollDomToBottom()
     }
 
     return (
         <div className='chat-group flex flex-col overflow-hidden'>
-            <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px'>
-                <CasecadeResizer>
+            <div className='flex overflow-x-auto gap-20px mb-10px text-nowrap flex-nowrap pb-10px mx-auto'>
+                <CasecadeResizer defaultConstraints={[1000, 500]}>
                     {chatStore.sessions
                         .filter((session) => session.show && session.serving?.type === InferenceType.llm_chat)
                         .map((v, index) => {
@@ -405,7 +364,7 @@ function ChatGroup({ useStore: useChatStore }: { useStore: StoreT }) {
             <div className='chat-input-panel-inner w-full border-1 flex flex-1 py-6px px-12px items-end rounded-4px bg-white'>
                 <textarea
                     ref={inputRef}
-                    className='chat-input w-full h-full resize-none lh-32px'
+                    className='chat-input w-full h-full resize-none lh-32px outline-none'
                     placeholder={t('ft.online_eval.enter.placeholder', [submitKey])}
                     onInput={(e) => onInput(e.currentTarget.value)}
                     value={userInput}

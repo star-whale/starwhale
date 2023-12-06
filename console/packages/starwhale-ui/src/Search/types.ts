@@ -257,6 +257,7 @@ export interface FilterPropsT extends FilterSharedPropsT {
     value?: ValueT
     onChange?: (newValue?: ValueT) => void
     options?: any[]
+    onItemEditing?: (args: boolean) => void
 }
 
 export type ValueT = {
