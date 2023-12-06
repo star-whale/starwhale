@@ -18,7 +18,11 @@ from google.protobuf import json_format
 
 from starwhale.base import cloud_blob_cache
 from starwhale.utils import console, convert_to_bytes
-from starwhale.consts import SW_API_VERSION, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    SW_API_VERSION,
+    DEFAULT_MANIFEST_NAME,
+    ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS,
+)
 from starwhale.proto_gen import model_package_storage_pb2 as pb2
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.base.uri.project import Instance
@@ -131,6 +135,10 @@ async def _http_request(
         assert path is not None
         url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         headers["Authorization"] = instance.token
+        if os.environ.get(ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS):
+            headers[ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS] = os.environ[
+                ENV_SW_CLIENT_FAVORED_OSS_DOMAIN_ALIAS
+            ]
 
     url_iter = cloud_blob_cache.replace_url(url, replace)
     try:
