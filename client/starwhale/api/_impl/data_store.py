@@ -39,7 +39,7 @@ from collections import UserDict
 
 import dill
 import numpy as np
-import pyarrow as pa  # type: ignore
+import semver
 import filelock
 import requests
 import tenacity
@@ -59,22 +59,37 @@ from starwhale.utils.retry import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.base import SwBaseModel
-from starwhale.base.client.models.models import ColumnSchemaDesc, KeyValuePairSchema
+from starwhale.base.client.api.system import SystemApi
+from starwhale.base.client.api.datastore import DataStoreApi
+from starwhale.base.client.models.models import (
+    RecordRowDesc,
+    RecordCellDesc,
+    ColumnSchemaDesc,
+    RecordCellObject,
+    RecordCellMapItem,
+    DataStoreValueType,
+    KeyValuePairSchema,
+    UpdateTableEmbeddedRequest,
+)
 
 datastore_manifest_file_name = "manifest.json"
 datastore_max_dirty_records = int(os.getenv("DATASTORE_MAX_DIRTY_RECORDS", "10000"))
 
 
 class SwType(metaclass=ABCMeta):
-    def __init__(self, name: str, pa_type: pa.DataType) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
-        self.pa_type = pa_type
 
     def serialize(self, value: Any) -> Any:
         return value
 
     def deserialize(self, value: Any) -> Any:
         return value
+
+    @property
+    @abstractmethod
+    def type_enum(self) -> DataStoreValueType:
+        ...
 
     @staticmethod
     def encode_schema(type: "SwType", **kwargs: Any) -> ColumnSchemaDesc:
@@ -334,11 +349,16 @@ class SwType(metaclass=ABCMeta):
 
 class SwScalarType(SwType):
     def __init__(
-        self, name: str, pa_type: pa.DataType, nbits: int, default_value: Any
+        self, name: str, nbits: int, default_value: Any, type_enum: DataStoreValueType
     ) -> None:
-        super().__init__(name, pa_type)
+        super().__init__(name)
         self.nbits = nbits
         self.default_value = default_value
+        self._type_enum = type_enum
+
+    @property
+    def type_enum(self) -> DataStoreValueType:
+        return self._type_enum
 
     def encode(self, value: Any) -> Optional[Any]:
         if value is None:
@@ -435,17 +455,19 @@ class SwScalarType(SwType):
         return hash((self.name, self.nbits))
 
 
-UNKNOWN = SwScalarType("unknown", None, 1, None)
-INT8 = SwScalarType("int", pa.int8(), 8, 0)
-INT16 = SwScalarType("int", pa.int16(), 16, 0)
-INT32 = SwScalarType("int", pa.int32(), 32, 0)
-INT64 = SwScalarType("int", pa.int64(), 64, 0)
-FLOAT16 = SwScalarType("float", pa.float16(), 16, 0.0)
-FLOAT32 = SwScalarType("float", pa.float32(), 32, 0.0)
-FLOAT64 = SwScalarType("float", pa.float64(), 64, 0.0)
-BOOL = SwScalarType("bool", pa.bool_(), 1, 0)
-STRING = SwScalarType("string", pa.string(), 32, "")
-BYTES = SwScalarType("bytes", pa.binary(), 32, b"")
+UNKNOWN = SwScalarType("unknown", 1, None, DataStoreValueType.unknown)
+INT8 = SwScalarType("int", 8, 0, DataStoreValueType.int8)
+INT16 = SwScalarType("int", 16, 0, DataStoreValueType.int16)
+INT32 = SwScalarType("int", 32, 0, DataStoreValueType.int32)
+INT64 = SwScalarType("int", 64, 0, DataStoreValueType.int64)
+FLOAT16 = SwScalarType(
+    "float", 16, 0.0, DataStoreValueType.float32
+)  # TODO support float16 TBD
+FLOAT32 = SwScalarType("float", 32, 0.0, DataStoreValueType.float32)
+FLOAT64 = SwScalarType("float", 64, 0.0, DataStoreValueType.float64)
+BOOL = SwScalarType("bool", 1, 0, DataStoreValueType.bool)
+STRING = SwScalarType("string", 32, "", DataStoreValueType.string)
+BYTES = SwScalarType("bytes", 32, b"", DataStoreValueType.bytes)
 
 _TYPE_DICT: Dict[Any, SwScalarType] = {
     type(None): UNKNOWN,
@@ -469,8 +491,13 @@ _TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
 
 
 class SwCompositeType(SwType):
-    def __init__(self, name: str) -> None:
-        super().__init__(name, pa.binary())
+    def __init__(self, name: str, type_enum: DataStoreValueType) -> None:
+        super().__init__(name)
+        self._type_enum = type_enum
+
+    @property
+    def type_enum(self) -> DataStoreValueType:
+        return self._type_enum
 
     def serialize(self, value: Any) -> Any:
         return dill.dumps(value)
@@ -530,7 +557,10 @@ class SwListType(SwCompositeType):
                     self.sparse_types[i] = typ
 
         self._is_tuple = _tuple
-        super().__init__(self._is_tuple and "tuple" or "list")
+        super().__init__(
+            self._is_tuple and "tuple" or "list",
+            self._is_tuple and DataStoreValueType.tuple or DataStoreValueType.list,
+        )
 
     def _get_element_type(self, index: int) -> SwType:
         if len(self.sparse_types) == 0 or index not in self.sparse_types:
@@ -648,7 +678,7 @@ class SwMapType(SwCompositeType):
         sparse_pair_types: Dict[int, Tuple[SwType, SwType]] | None = None,
         key_value_types: List[Tuple[SwType, SwType]] | None = None,
     ) -> None:
-        super().__init__("map")
+        super().__init__("map", DataStoreValueType.map)
 
         if key_value_types is not None and (
             key_type is not UNKNOWN or value_type is not UNKNOWN
@@ -807,7 +837,7 @@ class SwMapType(SwCompositeType):
 
 class SwObjectType(SwCompositeType):
     def __init__(self, raw_type: Type, attrs: Dict[str, SwType]) -> None:
-        super().__init__("object")
+        super().__init__("object", DataStoreValueType.object)
         self.raw_type = raw_type
         self.attrs = attrs
 
@@ -1107,6 +1137,41 @@ def _update_schema(key_column: str, record: Dict[str, Any]) -> TableSchema:
         value_type = _get_type(value)
         new_schema.columns[col] = ColumnSchema(col, value_type)
     return new_schema
+
+
+def _value_to_record_cell_desc(value: Any) -> RecordCellDesc:
+    tp = _get_type(value)
+    if isinstance(tp, SwScalarType):
+        return RecordCellDesc(
+            data_store_value_type=tp.type_enum, scalar_value=tp.encode(value)
+        )
+    if isinstance(tp, SwListType) or isinstance(tp, SwTupleType):
+        return RecordCellDesc(
+            data_store_value_type=tp.type_enum,
+            list_value=[_value_to_record_cell_desc(i) for i in value],
+        )
+    if isinstance(tp, SwMapType):
+        return RecordCellDesc(
+            data_store_value_type=tp.type_enum,
+            map_value=[
+                RecordCellMapItem(
+                    key=_value_to_record_cell_desc(k),
+                    value=_value_to_record_cell_desc(v),
+                )
+                for k, v in value.items()
+            ],
+        )
+    if isinstance(tp, SwObjectType):
+        return RecordCellDesc(
+            data_store_value_type=tp.type_enum,
+            object_value=RecordCellObject(
+                attrs={
+                    k: _value_to_record_cell_desc(v) for k, v in value.__dict__.items()
+                },
+                python_type=tp.raw_type.__module__ + "." + tp.raw_type.__name__,
+            ),
+        )
+    raise RuntimeError(f"unsupported type {tp}")
 
 
 class InnerRecord:
@@ -2380,8 +2445,8 @@ class LocalDataStore:
     def update_table(
         self,
         table_name: str,
-        # TODO remove or combine table schema
-        schema: TableSchema,
+        key_column: str | None,
+        schema: TableSchema | None,  # useless
         records: List[Dict[str, Any]],
     ) -> str:
         if len(records) == 0:
@@ -2396,23 +2461,25 @@ class LocalDataStore:
                     raise RuntimeError(
                         f"invalid column name {k}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
                     )
-        table = self._get_table(table_name, schema.columns[schema.key_column])
+        if key_column is None:
+            raise RuntimeError("key column can not be None")
+        table = self._get_table(table_name, key_column)
         # this will never happen, makes mypy happy
         if table is None:
             raise RuntimeError(
                 f"table {table_name} does not exist and can not be created"
             )
-        if schema.key_column != table.key_column:
+        if key_column != table.key_column:
             raise RuntimeError(
-                f"invalid key column, expected {table.key_column}, actual {schema.key_column}"
+                f"invalid key column, expected {table.key_column}, actual {key_column}"
             )
 
         revision = None
         for r in records:
-            key = r.get(schema.key_column, None)
+            key = r.get(key_column, None)
             if key is None:
                 raise RuntimeError(
-                    f"key {schema.key_column} should not be none, record: {r.keys()}"
+                    f"key {key_column} should not be none, record: {r.keys()}"
                 )
             if "-" in r:
                 revision = table.delete([key])
@@ -2437,7 +2504,7 @@ class LocalDataStore:
                 shutil.move(tmp.name, manifest_file)
 
     def _get_table(
-        self, table_name: str, key_column: ColumnSchema | None, create: bool = True
+        self, table_name: str, key_column: str | None, create: bool = True
     ) -> LocalTable | None:
         with self.lock:
             table = self.tables.get(table_name, None)
@@ -2462,7 +2529,7 @@ class LocalDataStore:
             table = LocalTable(
                 table_name=table_name,
                 root_path=table_root,
-                key_column=key_column and key_column.name or None,
+                key_column=key_column,
                 create_if_missing=create,
             )
             if not existing:
@@ -2591,13 +2658,50 @@ class RemoteDataStore:
 
         self.instance_uri = instance_uri
         self.token = token
+        self._api = DataStoreApi(instance_uri, token)
 
     def __str__(self) -> str:
         return f"RemoteDataStore for {self.instance_uri}"
 
     __repr__ = __str__
 
+    def without_schema(self) -> bool:
+        api = SystemApi(self.instance_uri, self.token)
+        # https://github.com/star-whale/starwhale/pull/3064
+        return semver.VersionInfo.parse(api.version().version).compare("0.6.8") > 0  # type: ignore[no-any-return]
+
     def update_table(
+        self,
+        table_name: str,
+        key_column: str | None,
+        schema: TableSchema | None,
+        records: List[Dict[str, Any]],
+    ) -> str:
+        if key_column is not None:
+            return self._update_table_with_raw_records(table_name, key_column, records)
+        else:
+            if schema is None:
+                raise RuntimeError("schema can not be None")
+            return self._update_table_legacy(table_name, schema, records)
+
+    def _update_table_with_raw_records(
+        self, table_name: str, key_column: str, records: List[Dict[str, Any]]
+    ) -> str:
+        req = UpdateTableEmbeddedRequest(
+            table_name=table_name,
+            key_column=key_column,
+            rows=[],
+        )
+
+        for record in records:
+            cells: Dict[str, RecordCellDesc] = {
+                k: _value_to_record_cell_desc(v) for k, v in record.items()
+            }
+            req.rows.append(RecordRowDesc(cells=cells))
+
+        return self._api.update(req)
+
+    def _update_table_legacy(
         self,
         table_name: str,
         schema: TableSchema,
@@ -2731,11 +2835,13 @@ class DataStore(Protocol):
     def update_table(
         self,
         table_name: str,
-        schema: TableSchema,
+        key_column: str | None,
+        schema: TableSchema | None,  # for backward compatibility
         records: List[Dict[str, Any]],
     ) -> str:
         """
         Update a table with records, and return the revision of the table.
+        If the key column is None, datastore will use the stored key column or raise an error if the table does not exist.
         """
         ...
 
@@ -2807,6 +2913,9 @@ def get_data_store(instance_uri: str = "", token: str = "") -> DataStore:
         )
 
 
+RecordT = Dict[str, Any]
+
+
 class TableWriterException(Exception):
     pass
 
@@ -2827,10 +2936,15 @@ class TableWriter(threading.Thread):
 
         self._cond = threading.Condition()
         self._stopped = False
-        self._records: List[Tuple[TableSchema, List[Dict[str, Any]]]] = []
-        self._updating_records: List[Tuple[TableSchema, List[Dict[str, Any]]]] = []
+        self._records: List[RecordT] = []
+        self._updating_records: List[RecordT] = []
         self._queue_run_exceptions: List[Exception] = []
         self._run_exceptions_limits = max(run_exceptions_limits, 0)
+
+        self.without_schema = isinstance(self.data_store, LocalDataStore) or (
+            isinstance(self.data_store, RemoteDataStore)
+            and self.data_store.without_schema()
+        )
 
         self.daemon = True
         self.start()
@@ -2892,9 +3006,7 @@ class TableWriter(threading.Thread):
             time.sleep(0.1)
 
         with self._cond:
-            schema = _update_schema(self.key_column, record)
-            # TODO: group the records with the same schema
-            self._records.append((schema, [record]))
+            self._records.append(record)
             self._cond.notify()
 
     def flush(self) -> str:
@@ -2909,7 +3021,10 @@ class TableWriter(threading.Thread):
         return self.latest_revision
 
     def _batch_update_table(
-        self, schema: TableSchema, records: List[Dict[str, Any]]
+        self,
+        schema: TableSchema | None,
+        records: List[RecordT],
+        key_column: str | None = None,
     ) -> None:
         max_batch_size = int(os.environ.get("SW_DATASTORE_UPDATE_MAX_BATCH_SIZE", 1000))
         for i in range(0, len(records), max_batch_size):
@@ -2918,7 +3033,10 @@ class TableWriter(threading.Thread):
                 f"update table {self.table_name}, {len(chunk_records)} records"
             )
             self.latest_revision = self.data_store.update_table(
-                self.table_name, schema, chunk_records
+                self.table_name,
+                schema=schema,
+                records=chunk_records,
+                key_column=key_column,
             )
 
     def run(self) -> None:
@@ -2932,26 +3050,14 @@ class TableWriter(threading.Thread):
                 self._records = []
 
             try:
-                to_submit: List[Dict[str, Any]] = []
-                last_schema: TableSchema | None = None
-                for schema, records in self._updating_records:
-                    # group the records with the same schema
-                    if last_schema is None:
-                        last_schema = schema
-                    else:
-                        can_merge = True
-                        try:
-                            last_schema.merge(schema)
-                        except RuntimeError:
-                            can_merge = False
-                        if not can_merge:
-                            console.trace(f"schema changed, {last_schema} -> {schema}")
-                            self._batch_update_table(last_schema, to_submit)
-                            to_submit = []
-                            last_schema = schema
-                    to_submit.extend(records)
-                if len(to_submit) > 0 and last_schema is not None:
-                    self._batch_update_table(last_schema, to_submit)
+                if self.without_schema:
+                    self._batch_update_table(
+                        schema=None,
+                        records=self._updating_records,
+                        key_column=self.key_column,
+                    )
+                else:
+                    self._batch_with_schema(self._updating_records)
             except Exception as e:
                 console.print_exception()
                 self._queue_run_exceptions.append(e)
@@ -2959,3 +3065,26 @@ class TableWriter(threading.Thread):
                     break
             finally:
                 self._updating_records = []
+
+    def _batch_with_schema(self, records: List[RecordT]) -> None:
+        to_submit: List[RecordT] = []
+        last_schema: TableSchema | None = None
+        for record in records:
+            schema = _update_schema(self.key_column, record)
+            # group the records with the same schema
+            if last_schema is None:
+                last_schema = schema
+            else:
+                can_merge = True
+                try:
+                    last_schema.merge(schema)
+                except RuntimeError:
+                    can_merge = False
+                if not can_merge:
+                    console.trace(f"schema changed, {last_schema} -> {schema}")
+                    self._batch_update_table(last_schema, to_submit)
+                    to_submit = []
+                    last_schema = schema
+            to_submit.extend(records)
+        if len(to_submit) > 0 and last_schema is not None:
+            self._batch_update_table(last_schema, to_submit)
