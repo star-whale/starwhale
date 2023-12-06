@@ -12,4 +12,3 @@ colorama
 tokenizers
 sentencepiece
 astunparse
-git+https://github.com/star-whale/starwhale.git@c57144a#subdirectory=client&egg=starwhale
