@@ -55,6 +55,7 @@ export default function FilterRenderer({
     isFocus = false,
     style = {},
     getFilters,
+    onItemEditing = () => {},
     ...rest
 }: FilterPropsT & {
     style?: React.CSSProperties
@@ -81,7 +82,7 @@ export default function FilterRenderer({
         [rawValues]
     )
 
-    const [machine, send] = useMachine(filterMachine, {
+    const [machine, send, service] = useMachine(filterMachine, {
         context: {
             origins,
             values: origins,
@@ -263,6 +264,18 @@ export default function FilterRenderer({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [origins])
 
+    useEffect(() => {
+        const subscription = service.subscribe((curr) => {
+            onItemEditing(!!curr.context.values.find((item) => isValueExist(item.value)))
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [service])
+
     const Remove = (
         <div className={styles.label}>
             <div
@@ -349,7 +362,12 @@ export default function FilterRenderer({
             value: item.value,
             renderInput: () => Input,
             renderAfter: () => (index === $attrs.length - 1 ? Remove : undefined),
-            onChange: (v: any) => confirm(v, index),
+            onChange: (v: any) => {
+                return confirm(v, index)
+            },
+            onInputChange: (v: any) => {
+                setInput(v)
+            },
             onClick: () => focusOnTarget(index),
             sharedInputProps: {
                 value: input,
@@ -358,8 +376,6 @@ export default function FilterRenderer({
             },
         }
     })
-
-    // trace('filter', { isFocus, focusTarget, property, inputRef, filter, attrs })
 
     // if target active trigger onActive
     useEffect(() => {

@@ -1,5 +1,5 @@
 import { createUseStyles } from 'react-jss'
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import FilterRenderer from './FilterRenderer'
 import { FilterT, ValueT } from './types'
@@ -71,6 +71,7 @@ export default function Search({ value = [], onChange, getFilters }: ISearchProp
     const styles = useStyles()
     const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
+    const [isItemEditing, setIsItemEditing] = useState(false)
 
     const state = useSearchState({ onChange })
     const {
@@ -128,6 +129,7 @@ export default function Search({ value = [], onChange, getFilters }: ISearchProp
                 containerRef={ref}
                 onRemove={focusToPrevItem}
                 onChange={onItemCreate}
+                onItemEditing={setIsItemEditing}
             />
         )
         return tmps
@@ -154,7 +156,7 @@ export default function Search({ value = [], onChange, getFilters }: ISearchProp
                 <IconFont type='filter' size={12} kind='gray' />
             </div>
             <div className={styles.placeholder}>
-                {!isEditing && items.length === 0 && (
+                {!isEditing && items.length === 0 && !isItemEditing && (
                     <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute' }}>
                         {t('table.search.placeholder')}
                     </LabelSmall>

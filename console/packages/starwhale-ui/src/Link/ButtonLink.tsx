@@ -12,7 +12,12 @@ export type IButtonLinkProps = {
 
 export default function ButtonLink({ children, className, onClick, ...rest }: IButtonLinkProps) {
     return (
-        <StyledLink animateUnderline={false} className={cn('button-link', className)} onClick={onClick} {...rest}>
+        <StyledLink
+            animateUnderline={false}
+            className={cn('!button-link !rounded-4px', className)}
+            onClick={onClick}
+            {...rest}
+        >
             {children}
         </StyledLink>
     )

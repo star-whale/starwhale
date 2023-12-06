@@ -10,7 +10,8 @@ function FieldDefault({ options: renderOptions = [], optionFilter = () => true, 
             isOpen={isEditing}
             Content={!rest.multi ? SingleSelectMenu : MultiSelectMenu}
             onItemSelect={({ item }) => rest.onChange?.(item.type)}
-            onItemIdsChange={(ids = []) => rest.onChange?.(ids.join(','))}
+            onItemIdsConfirm={(ids = []) => rest.onChange?.(ids.join(','))}
+            onItemIdsChange={(ids = []) => rest.onInputChange?.(ids.join(','))}
         >
             {isEditing && rest.renderInput?.()}
             {!isEditing && (
