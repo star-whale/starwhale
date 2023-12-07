@@ -20,6 +20,8 @@ package ai.starwhale.mlops.domain.job.converter;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor.Type;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
@@ -63,6 +65,7 @@ public class UserJobConverter {
     private final ModelDao modelDao;
     private final RuntimeDao runtimeDao;
     private final DatasetDao datasetDao;
+    private final BundleVersionTagDao bundleVersionTagDao;
 
     private final JobSpecParser jobSpecParser;
 
@@ -76,6 +79,7 @@ public class UserJobConverter {
             ModelDao modelDao,
             RuntimeDao runtimeDao,
             DatasetDao datasetDao,
+            BundleVersionTagDao bundleVersionTagDao,
             JobSpecParser jobSpecParser,
             SystemSettingService systemSettingService
     ) {
@@ -86,6 +90,7 @@ public class UserJobConverter {
         this.modelDao = modelDao;
         this.runtimeDao = runtimeDao;
         this.datasetDao = datasetDao;
+        this.bundleVersionTagDao = bundleVersionTagDao;
         this.jobSpecParser = jobSpecParser;
         this.systemSettingService = systemSettingService;
     }
@@ -225,27 +230,6 @@ public class UserJobConverter {
             }
         }
 
-        var datasetIds = request.getDatasetVersionIds();
-        List<DatasetVersion> datasets = datasetIds != null ? datasetIds.stream()
-                .map(datasetDao::getDatasetVersion)
-                .collect(Collectors.toList())
-                : List.of();
-        var datasetUrls = datasets.stream().map(version -> String.format(FORMATTER_URI_ARTIFACT,
-                version.getProjectId(),
-                "dataset",
-                version.getDatasetId(),
-                version.getId())).collect(Collectors.toList());
-        var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
-                : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
-
-        var datasetsForView = datasets.isEmpty() ? null
-                : datasets.stream()
-                .map(version -> String.format(FORMATTER_URI_ARTIFACT,
-                        projectService.findProject(version.getProjectId()).getName(),
-                        "dataset",
-                        version.getDatasetName(),
-                        version.getVersionName()))
-                .collect(Collectors.joining(","));
         var releaseTime = request.getTtlInSec() == null ? null :
                 new Date(System.currentTimeMillis() + request.getTtlInSec() * 1000);
 
@@ -257,6 +241,34 @@ public class UserJobConverter {
         } catch (JsonProcessingException e) {
             throw new SwProcessException(ErrorType.SYSTEM, "serialize stepSpec failed", e);
         }
+
+        // dataset info
+        var datasetIds = request.getDatasetVersionIds();
+        List<DatasetVersion> datasets = datasetIds != null ? datasetIds.stream()
+                .map(datasetDao::getDatasetVersion)
+                .collect(Collectors.toList())
+                : List.of();
+        var datasetUrls = datasets.stream().map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                                                         version.getProjectId(),
+                                                                         "dataset",
+                                                                         version.getDatasetId(),
+                                                                         version.getId())).collect(Collectors.toList());
+        var datasetTags = datasets.stream()
+                .map(version -> artifactTag(
+                        version.getDatasetName(), Type.DATASET, version.getDatasetId(), version.getId()))
+                .collect(Collectors.toList());
+        var datasetVersionIdMaps = datasets.isEmpty() ? new HashMap<Long, String>()
+                : datasets.stream().collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+
+        var datasetsForView = datasets.isEmpty() ? null
+                : datasets.stream()
+                .map(version -> String.format(FORMATTER_URI_ARTIFACT,
+                                              projectService.findProject(version.getProjectId()).getName(),
+                                              "dataset",
+                                              version.getDatasetName(),
+                                              version.getVersionName()))
+                .collect(Collectors.joining(","));
+
         return JobFlattenEntity.builder()
                 .bizType(request.getBizType())
                 .bizId(request.getBizId())
@@ -271,6 +283,7 @@ public class UserJobConverter {
                 .runtimeName(runtime.getName())
                 .runtimeVersionId(runtimeVersion.getId())
                 .runtimeVersionValue(runtimeVersion.getVersionName())
+                .runtimeTag(artifactTag(runtime.getName(), Type.RUNTIME, runtime.getId(), runtimeVersion.getId()))
                 .modelName(model.getName())
                 .modelVersion(modelService.findModelVersion(modelVersion.getId()))
                 .stepSpec(stepSpecYaml)
@@ -284,13 +297,20 @@ public class UserJobConverter {
                         "model",
                         model.getName(),
                         modelVersion.getVersionName()))
+                .modelTag(artifactTag(model.getName(), Type.MODEL, model.getId(), modelVersion.getId()))
                 .datasets(datasetUrls)
+                .datasetTags(datasetTags)
                 .datasetIdVersionMap(datasetVersionIdMaps)
                 .datasetsForView(datasetsForView)
                 .devMode(request.isDevMode())
                 .devWay(devMode ? request.getDevWay() : null)
                 .devPassword(devMode ? request.getDevPassword() : null)
                 .autoReleaseTime(releaseTime);
+    }
+
+    private String artifactTag(String name, Type type, Long id, Long versionId) {
+        var tags = bundleVersionTagDao.getTagsByBundleVersion(type, id, versionId);
+        return String.format("%s:%s", name, String.join(",", tags));
     }
 
     @Nullable

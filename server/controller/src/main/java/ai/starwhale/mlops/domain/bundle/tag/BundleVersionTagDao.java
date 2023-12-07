@@ -89,4 +89,15 @@ public class BundleVersionTagDao {
         var ids = versionIds.stream().map(HasId::getId).collect(Collectors.toList());
         return getTagsByVersionIds(type, bundleId, ids);
     }
+
+    public List<String> getTagsByBundleVersion(
+            BundleAccessor.Type type,
+            Long bundleId,
+            Long versionId
+    ) {
+        return bundleVersionTagMapper.findByBundleIdVersion(type.name(), bundleId, String.valueOf(versionId))
+                .stream()
+                .map(BundleVersionTagEntity::getTag)
+                .collect(Collectors.toList());
+    }
 }

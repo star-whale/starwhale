@@ -191,10 +191,9 @@ public class ModelService {
                 ModelVo vo = modelVoConverter.convert(entity);
                 var modelVersion = modelVersionMapper.findByLatest(entity.getId());
                 if (modelVersion != null) {
-                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                            BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
-                    var versionVo = versionConvertor.convert(
-                            modelVersion, modelVersion, tags.get(modelVersion.getId()));
+                    var tags = bundleVersionTagDao.getTagsByBundleVersion(
+                            BundleAccessor.Type.MODEL, entity.getId(), modelVersion.getId());
+                    var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags);
                     versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
                     vo.setVersion(versionVo);
                 }
@@ -313,10 +312,10 @@ public class ModelService {
     }
 
     private ModelInfoVo toModelInfoVo(ModelEntity model, ModelVersionEntity version) {
-        var tags = bundleVersionTagDao.getTagsByBundleVersions(
+        var tags = bundleVersionTagDao.getTagsByBundleVersion(
                 BundleAccessor.Type.MODEL,
                 model.getId(),
-                List.of(version)
+                version.getId()
         );
         return ModelInfoVo.builder()
                 .id(idConvertor.convert(model.getId()))
@@ -327,7 +326,7 @@ public class ModelService {
                 .versionTag(version.getVersionTag())
                 .createdTime(version.getCreatedTime().getTime())
                 .shared(version.getShared())
-                .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
+                .versionInfo(versionConvertor.convert(version, version, tags))
                 .build();
     }
 

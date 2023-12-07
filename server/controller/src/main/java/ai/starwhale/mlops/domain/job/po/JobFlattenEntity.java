@@ -56,6 +56,7 @@ public class JobFlattenEntity {
     private String modelVersionValue;
     private String modelUriForView;
     private String modelUri;
+    private String modelTag;
 
     private ModelVersion modelVersion;
 
@@ -80,11 +81,13 @@ public class JobFlattenEntity {
     private String runtimeVersionValue;
     private String runtimeUriForView;
     private String runtimeUri;
+    private String runtimeTag;
 
     private Map<Long, String> datasetIdVersionMap;
 
     private String datasetsForView;
     private List<String> datasets;
+    private List<String> datasetTags;
 
     private String resultOutputPath;
 

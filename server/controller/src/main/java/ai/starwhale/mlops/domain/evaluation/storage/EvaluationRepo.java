@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.evaluation.storage;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DatasetTagsColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DatasetUrisColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DatasetUrisViewColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.DevModeColumn;
@@ -32,6 +33,7 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.JobTypeColu
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelTagColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelUriViewColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ModelVersionColumn;
@@ -44,6 +46,7 @@ import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ProjectIdCo
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ResourcePoolColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.ResultOutputPathColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeNameColumn;
+import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeTagColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeUriColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeUriViewColumn;
 import static ai.starwhale.mlops.domain.evaluation.storage.JobSchema.RuntimeVersionColumn;
@@ -167,6 +170,9 @@ public class EvaluationRepo {
         if (Objects.nonNull(entity.getModelVersionValue())) {
             record.put(ModelVersionColumn, entity.getModelVersionValue());
         }
+        if (Objects.nonNull(entity.getModelTag())) {
+            record.put(ModelTagColumn, entity.getModelTag());
+        }
 
         if (Objects.nonNull(entity.getRuntimeVersionId())) {
             record.put(RuntimeVersionIdColumn,
@@ -184,12 +190,18 @@ public class EvaluationRepo {
         if (Objects.nonNull(entity.getRuntimeVersionValue())) {
             record.put(RuntimeVersionColumn, entity.getRuntimeVersionValue());
         }
+        if (Objects.nonNull(entity.getRuntimeTag())) {
+            record.put(RuntimeTagColumn, entity.getRuntimeTag());
+        }
 
         if (Objects.nonNull(entity.getDatasetIdVersionMap())) {
             record.put(DataSetIdVersionMapColumn, convertToDatastoreValue(entity.getDatasetIdVersionMap()));
         }
         if (Objects.nonNull(entity.getDatasets()) && !entity.getDatasets().isEmpty()) {
             record.put(DatasetUrisColumn, entity.getDatasets());
+        }
+        if (Objects.nonNull(entity.getDatasetTags()) && !entity.getDatasetTags().isEmpty()) {
+            record.put(DatasetTagsColumn, entity.getDatasetTags());
         }
         if (Objects.nonNull(entity.getDatasetsForView())) {
             record.put(DatasetUrisViewColumn, entity.getDatasetsForView());

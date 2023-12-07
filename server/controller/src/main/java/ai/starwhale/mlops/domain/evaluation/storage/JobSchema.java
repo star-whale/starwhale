@@ -36,11 +36,14 @@ public interface JobSchema {
     String ModelVersionIdColumn = "sys/model_version_id";
     String ModelNameColumn = "sys/model_name";
     String ModelVersionColumn = "sys/model_version";
+    String ModelTagColumn = "sys/model_tag";
     String RuntimeVersionIdColumn = "sys/runtime_version_id";
     String RuntimeNameColumn = "sys/runtime_name";
     String RuntimeVersionColumn = "sys/runtime_version";
+    String RuntimeTagColumn = "sys/runtime_tag";
     String DataSetIdVersionMapColumn = "sys/_dataset_id_version_map";
     String DatasetUrisViewColumn = "sys/dataset_uris";
+    String DatasetTagsColumn = "sys/dataset_tags";
     String DatasetUrisColumn = "sys/_dataset_uris";
     String RuntimeUriViewColumn = "sys/runtime_uri";
     String RuntimeUriColumn = "sys/_runtime_uri";
@@ -69,9 +72,11 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(ModelVersionColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(ModelTagColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(RuntimeVersionIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(RuntimeNameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(RuntimeVersionColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(RuntimeTagColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(DataSetIdVersionMapColumn).type(MAP)
                 .keyType(ColumnSchemaDesc.builder().type(INT64).build())
                 .valueType(ColumnSchemaDesc.builder().type(STRING).build())
@@ -82,6 +87,9 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(RuntimeUriColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(DatasetUrisViewColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(DatasetUrisColumn).type(LIST).elementType(
+                    ColumnSchemaDesc.builder().type(STRING).build()
+            ).build(),
+            ColumnSchemaDesc.builder().name(DatasetTagsColumn).type(LIST).elementType(
                     ColumnSchemaDesc.builder().type(STRING).build()
             ).build(),
             ColumnSchemaDesc.builder().name(OwnerIdColumn).type(INT64).build(),

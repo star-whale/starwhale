@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -66,6 +67,7 @@ class UserJobConverterTest {
     private ModelDao modelDao;
     private RuntimeDao runtimeDao;
     private DatasetDao datasetDao;
+    private BundleVersionTagDao bundleVersionTagDao;
 
     private SystemSettingService systemSettingService;
     private JobSpecParser jobSpecParser;
@@ -99,6 +101,7 @@ class UserJobConverterTest {
                                 .name("b")
                                 .build()
                 ));
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         userJobConverter = new UserJobConverter(
                 idConverter,
@@ -108,6 +111,7 @@ class UserJobConverterTest {
                 modelDao,
                 runtimeDao,
                 datasetDao,
+                bundleVersionTagDao,
                 jobSpecParser,
                 systemSettingService
         );

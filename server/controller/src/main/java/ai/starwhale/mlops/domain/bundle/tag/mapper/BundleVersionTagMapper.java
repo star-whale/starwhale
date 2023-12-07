@@ -62,6 +62,10 @@ public interface BundleVersionTagMapper {
     List<BundleVersionTagEntity> listByBundleId(String type, long bundleId);
 
     @Select("select * from " + TABLE
+            + " where type=#{type} and bundle_id=#{bundleId} and version_id = ${versionId}")
+    List<BundleVersionTagEntity> findByBundleIdVersion(String type, long bundleId, String versionId);
+
+    @Select("select * from " + TABLE
             + " where type=#{type} and bundle_id=#{bundleId} and version_id in (${versionIds})")
     List<BundleVersionTagEntity> listByBundleIdVersions(String type, long bundleId, String versionIds);
 

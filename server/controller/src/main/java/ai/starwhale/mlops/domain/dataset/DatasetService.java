@@ -194,9 +194,9 @@ public class DatasetService {
                 DatasetVo vo = datasetVoConverter.convert(ds);
                 DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
                 if (version != null) {
-                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                            BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
-                    vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
+                    var tags = bundleVersionTagDao.getTagsByBundleVersion(
+                            BundleAccessor.Type.DATASET, ds.getId(), version.getId());
+                    vo.setVersion(versionConvertor.convert(version, version, tags));
                 }
                 vo.setOwner(userService.findUserById(ds.getOwnerId()));
                 return vo;
@@ -309,8 +309,8 @@ public class DatasetService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
-            var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                    BundleAccessor.Type.DATASET, ds.getId(), List.of(versionEntity));
+            var tags = bundleVersionTagDao.getTagsByBundleVersion(
+                    BundleAccessor.Type.DATASET, ds.getId(), versionEntity.getId());
             return DatasetInfoVo.builder()
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
@@ -322,11 +322,7 @@ public class DatasetService {
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
                     .shared(versionEntity.getShared())
-                    .versionInfo(versionConvertor.convert(
-                            versionEntity,
-                            versionEntity,
-                            tags.get(versionEntity.getId())
-                    ))
+                    .versionInfo(versionConvertor.convert(versionEntity, versionEntity, tags))
                     .files(collect)
                     .build();
 

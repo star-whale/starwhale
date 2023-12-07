@@ -200,9 +200,9 @@ public class RuntimeService {
                 RuntimeVo vo = runtimeConvertor.convert(rt);
                 RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
                 if (version != null) {
-                    var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                            BundleAccessor.Type.RUNTIME, rt.getId(), List.of(version));
-                    RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags.get(version.getId()));
+                    var tags = bundleVersionTagDao.getTagsByBundleVersion(
+                            BundleAccessor.Type.RUNTIME, rt.getId(), version.getId());
+                    RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags);
                     versionVo.setOwner(userService.findUserById(version.getOwnerId()));
                     vo.setVersion(versionVo);
                 }
@@ -326,8 +326,8 @@ public class RuntimeService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
-            var tags = bundleVersionTagDao.getTagsByBundleVersions(
-                    BundleAccessor.Type.RUNTIME, rt.getId(), List.of(versionEntity));
+            var tags = bundleVersionTagDao.getTagsByBundleVersion(
+                    BundleAccessor.Type.RUNTIME, rt.getId(), versionEntity.getId());
 
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))
@@ -342,7 +342,7 @@ public class RuntimeService {
                     .versionInfo(versionConvertor.convert(
                             versionEntity,
                             versionEntity,
-                            tags.get(versionEntity.getId())))
+                            tags))
                     .files(collect)
                     .build();
 
