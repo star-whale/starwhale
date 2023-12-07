@@ -312,7 +312,7 @@ open_api_model_test() {
       pushd ../../console
       # install swagger-typescript-api for generating openapi model
       # use -W to avoid "error Running this command will add the dependency to the workspace root rather than the workspace itself" error
-      yarn add swagger-typescript-api -W
+      yarn add swagger-typescript-api -W --no-lockfile
       make OPEN_API_URL=$CONTROLLER_URL gen-api || exit 1
       popd
     fi
