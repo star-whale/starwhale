@@ -192,15 +192,3 @@ jobs:
           make cleanup
           make package
           make upload
-
-  pre-deploy:
-    runs-on: self-hosted
-    needs:
-      - helm-charts-release
-
-    steps:
-      - name: Helm Charts Upgrade
-        run: |
-          helm repo add starwhale https://star-whale.github.io/charts/
-          helm repo update
-          helm upgrade --devel --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --version ${{ needs.helm-charts-release.outputs.tag }} --set image.registry=${{ secrets.PRIVATE_PRE_DOCKER_REGISTRY }}
