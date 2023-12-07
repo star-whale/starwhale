@@ -28,7 +28,6 @@ install_requires = [
     # Python 3.11 needs dill >= 0.3.6
     "dill>=0.3.6",
     "packaging>=21.3",
-    "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1",
     # for system monitor
