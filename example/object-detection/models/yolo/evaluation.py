@@ -79,10 +79,9 @@ def predict_image(data: t.Dict, external: t.Dict) -> t.Dict:
             }
 
     if label_bboxes_cnt:
-        label_xywh_bboxes = torch.as_tensor(
-            [ann["bbox"].to_list() for ann in data["annotations"]], device=device
+        label_xyxy_bboxes = torch.as_tensor(
+            [ann["bbox"].to_xyxy() for ann in data["annotations"]], device=device
         )
-        label_xyxy_bboxes = _bbox2xyxy(label_xywh_bboxes)
 
         correct_bboxes = detection_validator._process_batch(
             detections=result.boxes.data,
@@ -135,14 +134,3 @@ def summary_detection(predict_result_iter: t.Iterator) -> None:
 def web_detect_image(file: str) -> Path | str:
     result = _load_model().predict(file, save=True)[0]
     return Path(result.save_dir) / Path(result.path).name
-
-
-def _bbox2xyxy(x: torch.Tensor) -> torch.Tensor:
-    y = torch.empty_like(x)
-    w = x[..., 2]
-    h = x[..., 3]
-    y[..., 0] = x[..., 0]
-    y[..., 1] = x[..., 1]
-    y[..., 2] = x[..., 0] + w
-    y[..., 3] = x[..., 1] + h
-    return y

@@ -55,13 +55,9 @@ def build() -> None:
             for image in tqdm(content["images"]):
                 name = image["file_name"].split(".jpg")[0]
                 for ann in annotations[image["id"]]:
-                    bbox = ann["bbox"]
-                    ann["darknet_bbox"] = [
-                        (bbox.x + bbox.width / 2) / image["width"],
-                        (bbox.y + bbox.height / 2) / image["height"],
-                        bbox.width / image["width"],
-                        bbox.height / image["height"],
-                    ]
+                    ann["darknet_bbox"] = ann["bbox"].to_darknet(
+                        image["width"], image["height"]
+                    )
                 ds[name] = {
                     "image": Image(DATA_DIR / "val2017" / image["file_name"]),
                     "annotations": annotations[image["id"]],
