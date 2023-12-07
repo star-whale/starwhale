@@ -112,10 +112,6 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor<Dataset
         return jobDatasetVersionMapper.listDatasetVersionIdsByJobId(jobId);
     }
 
-    public DatasetVersionEntity getDatasetVersionEntity(Long id) {
-        return datasetVersionMapper.find(id);
-    }
-
     @Override
     public BundleEntity findById(Long id) {
         return datasetMapper.find(id);
