@@ -21,19 +21,25 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Date;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +48,8 @@ public class EvaluationServiceTest {
     private EvaluationService service;
     private ViewConfigMapper viewConfigMapper;
 
+    private JobCreator jobCreator;
+
     @BeforeEach
     public void setUp() {
         UserService userService = mock(UserService.class);
@@ -49,11 +57,13 @@ public class EvaluationServiceTest {
         ProjectService projectService = mock(ProjectService.class);
         given(projectService.getProjectId(same("1"))).willReturn(1L);
 
+        jobCreator = mock(JobCreator.class);
         service = new EvaluationService(
                 userService,
                 projectService,
                 viewConfigMapper = mock(ViewConfigMapper.class),
-                new ViewConfigConverter()
+                new ViewConfigConverter(),
+                jobCreator
         );
     }
 
@@ -99,4 +109,12 @@ public class EvaluationServiceTest {
         res = service.createViewConfig("1", request);
         assertThat(res, is(false));
     }
+
+    @Test
+    public void testJobCreate() {
+        when(jobCreator.createJob(any())).thenReturn(Job.builder().id(1234L).build());
+        Long jobId = service.createEvaluationJob(mock(UserJobCreateRequest.class));
+        Assertions.assertEquals(1234L, jobId);
+    }
+
 }

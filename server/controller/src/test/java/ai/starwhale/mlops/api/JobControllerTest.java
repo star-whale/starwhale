@@ -48,6 +48,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
+import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.event.EventService;
 import ai.starwhale.mlops.domain.ft.FineTuneAppService;
 import ai.starwhale.mlops.domain.job.DevWay;
@@ -84,6 +85,8 @@ public class JobControllerTest {
 
     private FeaturesProperties featuresProperties;
 
+    private EvaluationService evaluationService;
+
     @BeforeEach
     public void setUp() {
         jobServiceForWeb = mock(JobServiceForWeb.class);
@@ -92,6 +95,8 @@ public class JobControllerTest {
         modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
         runtimeSuggestionService = mock(RuntimeSuggestionService.class);
+        evaluationService = mock(EvaluationService.class);
+        when(evaluationService.createEvaluationJob(any())).thenReturn(1L);
         featuresProperties = new FeaturesProperties();
         controller = new JobController(
                 jobServiceForWeb,
@@ -104,8 +109,8 @@ public class JobControllerTest {
                 featuresProperties,
                 mock(EventService.class),
                 mock(RunService.class),
-                mock(UserJobConverter.class)
-        );
+                mock(UserJobConverter.class),
+                evaluationService);
     }
 
     @Test
@@ -306,8 +311,8 @@ public class JobControllerTest {
                 featuresProperties,
                 mock(EventService.class),
                 mock(RunService.class),
-                mock(UserJobConverter.class)
-        );
+                mock(UserJobConverter.class),
+                evaluationService);
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "pause"));
 
@@ -329,8 +334,8 @@ public class JobControllerTest {
                 featuresProperties,
                 mock(EventService.class),
                 mock(RunService.class),
-                mock(UserJobConverter.class)
-        );
+                mock(UserJobConverter.class),
+                evaluationService);
         assertThrows(StarwhaleApiException.class,
                 () -> controller.action("", "job1", "resume"));
 

@@ -22,6 +22,8 @@ import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import ai.starwhale.mlops.domain.job.JobCreator;
+import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.core.io.FileUtil;
@@ -41,16 +43,20 @@ public class EvaluationService {
     private final ViewConfigMapper viewConfigMapper;
     private final ViewConfigConverter viewConfigConvertor;
 
+    private final JobCreator jobCreator;
+
     public EvaluationService(
             UserService userService,
             ProjectService projectService,
             ViewConfigMapper viewConfigMapper,
-            ViewConfigConverter viewConfigConvertor
+            ViewConfigConverter viewConfigConvertor,
+            JobCreator jobCreator
     ) {
         this.userService = userService;
         this.projectService = projectService;
         this.viewConfigMapper = viewConfigMapper;
         this.viewConfigConvertor = viewConfigConvertor;
+        this.jobCreator = jobCreator;
     }
 
 
@@ -86,5 +92,10 @@ public class EvaluationService {
                 .build();
         int res = viewConfigMapper.createViewConfig(entity);
         return res > 0;
+    }
+
+    public Long createEvaluationJob(UserJobCreateRequest request) {
+        var job = jobCreator.createJob(request);
+        return job.getId();
     }
 }
