@@ -233,6 +233,15 @@ class TestDataType(TestCase):
         _array = numpy.frombuffer(_bout, dtype=numpy.float64)
         assert numpy.array_equal(_array, numpy.array([1, 2, 3, 4], dtype=numpy.float64))
 
+        assert bbox.to_xyxy() == [1, 2, 4, 6]
+        assert BoundingBox.from_xyxy(*bbox.to_xyxy()) == bbox
+        assert bbox.to_ccwh() == [2.5, 4.0, 3, 4]
+        assert BoundingBox.from_ccwh(*bbox.to_ccwh()) == bbox
+        assert BoundingBox.from_xywh(*bbox.to_list()) == bbox
+        darknet = bbox.to_darknet(100, 100)
+        assert darknet == [0.025, 0.04, 0.03, 0.04]
+        assert BoundingBox.from_darknet(*(darknet + [100, 100])) == bbox
+
     def test_bbox3d(self) -> None:
         bbox_a = BoundingBox(1, 2, 3, 4)
         bbox_b = BoundingBox(3, 4, 3, 4)

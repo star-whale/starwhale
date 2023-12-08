@@ -564,8 +564,63 @@ class BoundingBox(ASDictMixin, SwObject):
 
         return convert_list_to_tensor(self.to_list())
 
+    @classmethod
+    def from_xywh(cls, x: float, y: float, width: float, height: float) -> BoundingBox:
+        """Build BoundingBox from (x, y, width, height) format. (x, y) is the top-left corner, width is the width, and height is the height."""
+        return cls(x, y, width, height)
+
+    @classmethod
+    def from_xyxy(cls, x1: float, y1: float, x2: float, y2: float) -> BoundingBox:
+        """Build BoundingBox from (x1, y1, x2, y2) format. (x1, y1) is the top-left corner, (x2, y2) is the bottom-right corner."""
+        return cls(x1, y1, x2 - x1, y2 - y1)
+
+    @classmethod
+    def from_ccwh(
+        cls, cx: float, cy: float, width: float, height: float
+    ) -> BoundingBox:
+        """Build BoundingBox from (cx, cy, width, height) format. (cx, cy) is the center of the box, width is the width, and height is the height."""
+        return cls(cx - width / 2, cy - height / 2, width, height)
+
+    @classmethod
+    def from_darknet(
+        cls,
+        ncx: float,
+        ncy: float,
+        nw: float,
+        nh: float,
+        image_width: float,
+        image_height: float,
+    ) -> BoundingBox:
+        """Build BoundingBox from darknet format: (ncx, ncy, nw, nh).
+        (ncx, ncy) is the normalized center of the box, nw is the normalized width, and nh is the normalized height.
+        image_width and image_height are the width and height of the image.
+        """
+        return cls.from_ccwh(
+            ncx * image_width, ncy * image_height, nw * image_width, nh * image_height
+        )
+
+    def to_xyxy(self) -> t.List[float]:
+        """Return (x1, y1, x2, y2) format. (x1, y1) is the top-left corner, (x2, y2) is the bottom-right corner."""
+        return [self.x, self.y, self.x + self.width, self.y + self.height]
+
+    def to_ccwh(self) -> t.List[float]:
+        """Return (cx, cy, w, h) format. (cx, cy) is the center of the box, w is the width, and h is the height."""
+        return [
+            self.x + self.width / 2,
+            self.y + self.height / 2,
+            self.width,
+            self.height,
+        ]
+
+    def to_darknet(self, image_width: float, image_height: float) -> t.List[float]:
+        """Return darknet format: (ncx, ncy, nw, nh), for YOLO.
+        (ncx, ncy) is the normalized center of the box, nw is the normalized width, and nh is the normalized height.
+        """
+        cx, cy, w, h = self.to_ccwh()
+        return [cx / image_width, cy / image_height, w / image_width, h / image_height]
+
     def __str__(self) -> str:
-        return f"BoundingBox: point:({self.x}, {self.y}), width: {self.width}, height: {self.height})"
+        return f"BoundingBox[XYWH]- x:{self.x}, y:{self.y}, width:{self.width}, height:{self.height}"
 
     __repr__ = __str__
 

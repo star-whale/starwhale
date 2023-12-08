@@ -55,12 +55,7 @@ def build() -> None:
                         "class_id": class_id,
                         "class_name": get_name_by_coco_category_id(class_id),
                         "darknet_bbox": [x, y, w, h],
-                        "bbox": BoundingBox(
-                            x=(x - w / 2) * i_width,
-                            y=(y - h / 2) * i_height,
-                            width=w * i_width,
-                            height=h * i_height,
-                        ),
+                        "bbox": BoundingBox.from_darknet(x, y, w, h, i_width, i_height),
                     }
                 )
 
