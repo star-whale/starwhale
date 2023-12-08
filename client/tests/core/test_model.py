@@ -150,6 +150,8 @@ class StandaloneModelTestCase(TestCase):
             Path(self.workdir) / DefaultYAMLName.MODEL
         )
 
+        (Path(self.workdir) / ".swignore").write_text("\n\n#exclude1/*\n exclude2/*")
+
         model_uri = Resource(
             self.name,
             typ=ResourceType.model,
@@ -159,6 +161,7 @@ class StandaloneModelTestCase(TestCase):
             workdir=Path(self.workdir),
             model_config=model_config,
             tags=["test01", "test02"],
+            excludes=["checkpoints/*"],
         )
 
         build_version = sm.uri.version
@@ -247,6 +250,13 @@ class StandaloneModelTestCase(TestCase):
             == "/home/starwhale/myproject"
         )
         assert str(m_copy_dir.call_args_list[0][1]["dst_dir"]).endswith("/src")
+        assert m_copy_dir.call_args_list[0][1]["excludes"] == [
+            "checkpoints/*",
+            "exclude2/*",
+            "__pycache__/",
+            "*.py[cod]",
+            "*$py.class",
+        ]
 
         assert bundle_path.exists()
         tags = sm.tag.list()

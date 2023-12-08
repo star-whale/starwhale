@@ -33,6 +33,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
         model_modules: [List[str|object], optional] The search models for model building.   Default is None.
             The search modules supports object(function, class or module) or str(example: "to.path.module", "to.path.module:object").
             If the argument is not specified, the search modules are the imported modules.
+        excludes: [List[str], optional] The excludes files or dirs in the workdir. The excludes files or dirs will be ignored when building the Starwhale Model Package.
 
     Examples:
     ```python
@@ -59,6 +60,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
         require_validation_datasets = kw.get("require_validation_datasets", False)
         auto_build_model = kw.get("auto_build_model", True)
         model_modules = kw.get("model_modules")
+        model_build_excludes = kw.get("excludes")
         workdir = Path.cwd()
 
         def _register_wrapper(func: t.Callable) -> t.Any:
@@ -104,6 +106,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
                         modules=model_modules,
                         workdir=workdir,
                         tags=[tag],
+                        excludes=model_build_excludes,
                     )
 
                 return ret

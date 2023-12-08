@@ -78,8 +78,17 @@ def model_cmd(ctx: click.Context) -> None:
     "--add-all",
     is_flag=True,
     default=False,
-    help="Add all files in the working directory to the model package"
-    "(excludes python cache files and virtual environment files when disabled)."
+    help="Add all files in the working directory to the model package."
+    "By default, python cache files and virtual environment files are ignored automatically."
+    "When the option is enabled, the auto ignored files will be added to the model package."
+    "The '.swignore' file and '--ignore' option still take effect.",
+)
+@click.option(
+    "excludes",
+    "-e",
+    "--exclude",
+    multiple=True,
+    help="Ignore files or directories. The option can be used multiple times."
     "The '.swignore' file still takes effect.",
 )
 def _build(
@@ -93,6 +102,7 @@ def _build(
     name: str,
     desc: str,
     add_all: bool,
+    excludes: t.List[str],
 ) -> None:
     """Build starwhale model package.
     Only standalone instance supports model build.
@@ -112,6 +122,8 @@ def _build(
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1 --no-package-runtime
         # build model package with tags.
         swcli model build . --tag tag1 --tag tag2
+        # build model package with ignores.
+        swcli model build . --exclude .git --exclude checkpoint/*
     """
     if model_yaml is None:
         yaml_path = Path(workdir) / DefaultYAMLName.MODEL
@@ -136,6 +148,7 @@ def _build(
         package_runtime=package_runtime,
         add_all=add_all,
         tags=tags,
+        excludes=excludes,
     )
 
 
