@@ -13,4 +13,4 @@ class DataStoreApi(Client):
 
     def update(self, req: UpdateTableEmbeddedRequest) -> str:
         data = self.http_post("/api/v1/datastore/updateTable/embedded", json=req)
-        return TypeWrapper(ResponseMessageString, data).response()
+        return TypeWrapper(ResponseMessageString, data).response().data  # type: ignore

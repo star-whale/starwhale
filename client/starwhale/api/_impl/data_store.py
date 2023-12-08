@@ -60,7 +60,6 @@ from starwhale.utils.retry import (
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.base import SwBaseModel
 from starwhale.base.client.api.system import SystemApi
-from starwhale.base.client.api.datastore import DataStoreApi
 from starwhale.base.client.models.models import (
     RecordRowDesc,
     RecordCellDesc,
@@ -71,6 +70,7 @@ from starwhale.base.client.models.models import (
     KeyValuePairSchema,
     UpdateTableEmbeddedRequest,
 )
+from starwhale.base.client.api.data_store import DataStoreApi
 
 datastore_manifest_file_name = "manifest.json"
 datastore_max_dirty_records = int(os.getenv("DATASTORE_MAX_DIRTY_RECORDS", "10000"))
@@ -2668,7 +2668,8 @@ class RemoteDataStore:
     def without_schema(self) -> bool:
         api = SystemApi(self.instance_uri, self.token)
         # https://github.com/star-whale/starwhale/pull/3064
-        return semver.VersionInfo.parse(api.version().version).compare("0.6.8") > 0  # type: ignore[no-any-return]
+        ver = api.version().version
+        return semver.VersionInfo.parse(ver).compare("0.6.8") > 0  # type: ignore[no-any-return]
 
     def update_table(
         self,
@@ -3085,6 +3086,6 @@ class TableWriter(threading.Thread):
                     self._batch_update_table(last_schema, to_submit)
                     to_submit = []
                     last_schema = schema
-            to_submit.extend(records)
+            to_submit.append(record)
         if len(to_submit) > 0 and last_schema is not None:
             self._batch_update_table(last_schema, to_submit)

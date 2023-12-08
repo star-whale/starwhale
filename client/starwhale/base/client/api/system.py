@@ -13,4 +13,4 @@ class SystemApi(Client):
 
     def version(self) -> SystemVersionVo:
         data = self.http_get("/api/v1/system/version")
-        return TypeWrapper(ResponseMessageSystemVersionVo, data).response()
+        return TypeWrapper(ResponseMessageSystemVersionVo, data).response().data  # type: ignore
