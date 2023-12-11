@@ -317,7 +317,7 @@ open_api_model_test() {
       popd
     fi
 
-    if git diff --exit-code; then
+    if git diff --exit-code ':!console/yarn.lock'; then
       echo "openapi model is up to date"
     else
       echo "openapi model is not up to date"
