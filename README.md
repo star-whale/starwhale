@@ -53,26 +53,27 @@
 
 ## What is Starwhale
 
-Starwhale is an MLOps/LLMOps platform that make your model creation, evaluation and publication much easier. It aims to create a handy tool for data scientists and machine learning engineers. Starwhale helps you:
-
-- 🏗️ Keep track of your training/testing dataset history including data items and their labels, so that you can easily access them.
-- 🧳 Manage your model packages that you can share across your team.
-- 🌊 Run your models in different environments, either on a Nvidia GPU server or on an embedded device like Cherry Pi.
-- 🔥 Create a online service with interactive Web UI for your models.
+Starwhale is an MLOps/LLMOps platform that streamlines machine learning operations, enabling standardized processes for model development, testing, deployment and monitoring. It bridges business, AI, and operations teams to optimize collaboration. By accelerating iterative cycles, automating repetitive tasks, and centralizing critical information, Starwhale alleviates common pain points across the machine learning lifecycle including long development times, fragmented tooling, tribal knowledge silos, and excessive overhead.
 
 ![products](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/products.png)
 
+Starwhale is an versatile MLOps/LLMOps platform empowering organizations to optimize their machine learning lifecycle.  It meets diverse deployment needs with three flexible configurations:
+
+- 🐥 **Standalone** - Deployed in a local development environment, managed by the `swcli` command-line tool, meeting development and debugging needs.
+- 🦅 **Server** - Deployed in a private data center, relying on a Kubernetes cluster, providing centralized, web-based, and secure services.
+- 🦉 **Cloud** - Hosted on a public cloud, with the access address <https://cloud.starwhale.ai>. The Starwhale team is responsible for maintenance, and no installation is required. You can start using it after registering an account.
+
+As its core, Starwhale abstracts **Model**, **Runtime** and **Dataset** as first-class citizens - providing the fundamentals for streamlined operations. Starwhale further delivers tailored capabilities for common workflow scenarios including:
+
+- 🔥 **Models Evaluation** - Implement robust, production-scale evaluations with minimal coding through the Python SDK.
+- 🌟 **Live Demo** - Interactively assess model performance through user-friendly web interfaces.
+- 🌊 **LLM Fine-tuning** - End-to-end toolchain from efficient fine-tuning to comparative benchmarking and publishing.
+
+Starwhale is also an open source platform, using the [Apache-2.0 license](https://github.com/star-whale/starwhale/blob/main/LICENSE). The Starwhale framework is designed for clarity and ease of use, empowering developers to build customized MLOps features tailored to their needs.
+
+![framework](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/framework.png)
+
 ## Key Concepts
-
-### 🦍 Starwhale Instance
-
-Each deployment of Starwhale is called an instance. All instances can be managed by the Starwhale Client (swcli). You can start using Starwhale with one of the following instance types:
-
-- 👻 **Starwhale Standalone**:  Rather than a running service, Starwhale Standalone is actually a repository that resides in your local file system. It is created and managed by the Starwhale Client (SWCLI). You only need to install SWCLI to use it. Currently, each user on a single machine can have only ONE Starwhale Standalone instance. We recommend you use the Starwhale Standalone to build and test your datasets, runtime, and models before pushing them to Starwhale Server/Cloud instances.
-- 🎍 **Starwhale Server**:  Starwhale Server is a service deployed on your local server. Besides text-only results from the Starwhale Client (SWCLI), Starwhale Server provides Web UI for you to manage your datasets and models, evaluate your models in your local Kubernetes cluster, and review the evaluation results.
-- ☁️ **Starwhale Cloud**: Starwhale Cloud is a managed service hosted on public clouds. By registering an account on https://cloud.starwhale.cn , you are ready to use Starwhale without needing to install, operate, and maintain your own instances. Starwhale Cloud also provides public resources for you to download, like datasets, runtimes, and models. Check the "starwhale/public" project on Starwhale Cloud for more details.
-
-**Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between them.**
 
 ### 🐘 Starwhale Dataset
 
