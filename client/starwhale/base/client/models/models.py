@@ -836,13 +836,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type5(Enum):
+class Type4(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type5
+    type: Type4
     name: str
     link: str
 
@@ -1488,7 +1488,6 @@ class ServiceSpec(SwBaseModel):
 
 class StepSpec(SwBaseModel):
     name: str
-    type: Optional[StepType] = None
     concurrency: Optional[int] = None
     replicas: int
     backoff_limit: Optional[int] = Field(None, alias='backoffLimit')
@@ -1499,6 +1498,7 @@ class StepSpec(SwBaseModel):
     virtual: Optional[bool] = None
     job_name: Optional[str] = None
     show_name: str
+    step_type: Optional[StepType] = None
     require_dataset: Optional[bool] = None
     fine_tune: Optional[FineTune] = None
     container_spec: Optional[ContainerSpec] = None
