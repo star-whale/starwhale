@@ -25,8 +25,8 @@ import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.spec.step.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.spec.step.Env;
 import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorImpl;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
