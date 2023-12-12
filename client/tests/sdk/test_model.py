@@ -246,6 +246,7 @@ def handle(): ...
             modules=[mock_handler],
             workdir=workdir,
             name="mnist",
+            excludes=[".git"],
         )
 
         kwargs = m_model_view.build.call_args[1]
@@ -253,6 +254,7 @@ def handle(): ...
         assert kwargs["workdir"] == workdir
         assert kwargs["model_config"].run.modules == ["evaluator"]
         assert kwargs["model_config"].name == "mnist"
+        assert kwargs["excludes"] == [".git"]
 
         sub_dir = workdir / "sub"
         ensure_dir(sub_dir)

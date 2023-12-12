@@ -630,6 +630,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     workdir=workdir,
                     model_config=model_config,
                     add_all=kw.get("add_all", False),
+                    excludes=kw.get("excludes"),
                 ),
             ),
         ]
@@ -807,7 +808,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
 
     def _copy_src(
-        self, workdir: Path, model_config: ModelConfig, add_all: bool
+        self,
+        workdir: Path,
+        model_config: ModelConfig,
+        add_all: bool,
+        excludes: t.List[str] | None = None,
     ) -> None:
         """
         Copy source code files to snapshot workdir
@@ -815,21 +820,26 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             workdir: source code dir
             model_config: model config
             add_all: copy all files, include python cache files(defined in BuiltinPyExcludes) and venv or conda files
+            excludes: exclude files or dirs
         Returns: None
         """
         console.print(
             f":peacock: copy source code files: {workdir} -> {self.store.src_dir}"
         )
 
-        excludes = []
-        ignore = workdir / SW_IGNORE_FILE_NAME
-        if ignore.exists():
-            with open(ignore, "r") as f:
-                excludes = [line.strip() for line in f.readlines()]
+        excludes = excludes or []
+        swignore_path = workdir / SW_IGNORE_FILE_NAME
+        if swignore_path.exists():
+            for line in swignore_path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                excludes.append(line)
+
         if not add_all:
             excludes += BuiltinPyExcludes
 
-        console.debug(
+        console.info(
             f"copy dir: {workdir} -> {self.store.src_dir}, excludes: {excludes}"
         )
         total_size = self._object_store.copy_dir(

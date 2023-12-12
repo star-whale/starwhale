@@ -754,7 +754,7 @@ def handle(context): ...
         content = """
 from starwhale import finetune, Dataset
 
-@finetune(require_validation_datasets=True)
+@finetune(require_validation_datasets=True, excludes=['.git'])
 def ft1(train_datasets, val_datasets):
     assert isinstance(train_datasets[0], Dataset)
     assert isinstance(val_datasets[0], Dataset)
@@ -861,6 +861,7 @@ def ft2(): ...
         assert mock_build.call_count == 1
         assert mock_build.call_args[1]["name"] == "mock_model_name"
         assert mock_build.call_args[1]["modules"] is None
+        assert mock_build.call_args[1]["excludes"] == [".git"]
 
         assert {
             "mock_user_module:ft1",

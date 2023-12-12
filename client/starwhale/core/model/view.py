@@ -356,6 +356,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
         runtime_uri: str = "",
         package_runtime: bool = False,
         tags: t.List[str] | None = None,
+        excludes: t.List[str] | None = None,
     ) -> None:
         if runtime_uri:
             RuntimeProcess(uri=Resource(runtime_uri, typ=ResourceType.runtime)).run()
@@ -380,6 +381,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
                 packaging_runtime_uri=packaging_runtime_uri,
                 add_all=add_all,
                 tags=tags,
+                excludes=excludes,
             )
 
     @classmethod
