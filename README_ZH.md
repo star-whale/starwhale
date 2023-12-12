@@ -53,25 +53,27 @@
 
 ## Starwhale 是什么
 
-Starwhale是一个 MLOps/LLMOps平台，能够让您的模型创建、评估和发布流程变得更加轻松。它旨在为数据科学家和机器学习工程师创建一个方便的工具。Starwhale能够帮助您：
-
-- 🏗️ 跟踪您的训练/测试数据集历史记录，包括所有数据项及其相关标签，以便您轻松访问它们。
-- 🧳 管理您可以在团队中共享的模型包。
-- 🌊 在不同的环境中运行您的模型，无论是在 Nvidia GPU服务器上还是在嵌入式设备（如 Cherry Pi）上。
-- 🔥 为您的模型快速创建配备交互式 Web UI的在线服务。
+Starwhale是一个 MLOps/LLMOps平台，面向机器学习项目提供研发运营管理能力，建立标准化的模型开发、测试、部署和运营流程，连接业务团队、AI团队和运营团队。解决机器学习过程中模型迭代周期长、团队协作、人力资源浪费等问题。
 
 ![products](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/products.png)
 
+Starwhale提供Standalone, Server 和 Cloud 三种实例方式，满足单机环境开发，私有化集群部署和Starwhale团队托管的云服务多种部署场景。
+
+- 🐥 **Standalone** - 部署在本地开发环境中，通过 swcli 命令行工具进行管理，满足开发调试需求。
+- 🦅 **Server** - 部署在私有数据中心里，依赖 Kubernetes 集群，提供集中化的、Web交互式的、安全的服务。
+- 🦉 **Cloud** - 托管在公共云上的服务，访问地址为<https://cloud.starwhale.cn>，由 Starwhale 团队负责运维，无需安装，注册账户后即可使用。
+
+Starwhale 抽象了**模型**、**数据集**和**运行时**作为平台的根基，并在此基础上提供满足特定领域的功能需求：
+
+- 🔥 **Models Evaluation** - Starwhale 模型评测能让用户通过SDK写少量的Python 代码就能实现复杂的、生产级别的、分布式的模型评测任务。
+- 🌟 **Live Demo** - 能够通过Web UI方式对模型进行在线评测。
+- 🌊 **LLM Fine-tuning** - 提供面向LLM的全流程模型微调工具链，包括模型微调，批量评测对比，在线评测对比和模型发布功能。
+
+Starwhale 同时也是一个开源的平台，使用 [Apache-2.0 协议](https://github.com/star-whale/starwhale/blob/main/LICENSE)。 Starwhale 框架是易于理解的，能非常容易的进行二次开发。
+
+![framework](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/framework.png)
+
 ## 核心概念
-
-### 🦍 Starwhale 实例
-
-Starwhale的每个部署称为一个实例。所有实例都可以通过Starwhale Client（swcli）进行管理。您可以任选以下实例类型之一开始使用：
-
-- 👻 **Starwhale Standalone**: Starwhale Standalone 本质上是一套存储在本地文件系统中的数据库。它由 Starwhale Client（swcli）创建和管理。您只需安装 swcli 即可使用。目前，一台机器上的每个用户只能拥有一个Starwhale Standalone 实例。我们建议您使用 Starwhale Standalone 来构建和测试您的数据集和模型，然后再将它们推送到 Starwhale Server/Cloud 实例。
-- 🎍 **Starwhale Server**: Starwhale Server 是部署在您本地服务器上的服务。除了 Starwhale Client（swcli）的文本交互界面，Starwhale Server还提供 Web UI供您管理数据集和模型，以及在Kubernetes集群中运行模型并查看运行结果。
-- ☁️ **Starwhale Cloud**: Starwhale Cloud 是托管在公共云上的服务。 通过在https://cloud.starwhale.cn注册一个账号，您就可以使用Starwhale，而无需安装、运行和维护您自己的实例。 Starwhale Cloud 还提供公共资源供您下载，例如一些流行的开源集数据集、模型和运行时。查看 Starwhale Cloud 实例上的 “starwhale/public”项目以获取更多详细信息。
-**Starwhale 会在不同实例上保持概念上的一致性，用户可以轻松的在不同实例上复制模型、数据集和运行时**。
 
 ### 🐘 Starwhale 数据集
 
