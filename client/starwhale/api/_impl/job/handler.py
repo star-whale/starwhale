@@ -206,7 +206,7 @@ class Handler:
                 parameters_sig=parameters_sig,
                 ext_cmd_args=ext_cmd_args,
                 fine_tune=fine_tune,
-                type=typ,
+                step_type=typ,
             )
 
             cls._register(_handler, func)
