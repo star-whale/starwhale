@@ -136,4 +136,8 @@ public class StepSpec {
     public String getFriendlyName() {
         return StringUtils.hasText(showName) ? showName : name;
     }
+
+    public enum StepType {
+        EVALUATION, FINE_TUNE, SERVING
+    }
 }
