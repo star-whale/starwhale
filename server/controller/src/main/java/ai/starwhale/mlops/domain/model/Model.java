@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import java.util.List;
 import lombok.AllArgsConstructor;

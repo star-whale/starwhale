@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.bo;
+package ai.starwhale.mlops.domain.job.spec.step;
 
-import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
-import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.user.bo.User;
-import java.util.List;
-import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.SuperBuilder;
+import lombok.NoArgsConstructor;
 
 @Data
-@SuperBuilder
-public class JobCreateRequest {
-    @NotNull
-    Project project;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Env {
+    private String name;
+    private String value;
 
-    @NotNull
-    User user;
+    // TODO add valueFrom source
 
-    String comment;
-    String resourcePool;
-    List<StepSpec> stepSpecOverWrites;
-    JobType jobType;
+    @Override
+    public String toString() {
+        return "Env{"
+            + "name='" + name + '\''
+            + ", value='" + value + '\''
+            + '}';
+    }
 }

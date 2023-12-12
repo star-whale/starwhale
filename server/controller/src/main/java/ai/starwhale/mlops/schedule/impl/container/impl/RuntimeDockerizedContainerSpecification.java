@@ -22,7 +22,7 @@ import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.ContainerSpec;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;

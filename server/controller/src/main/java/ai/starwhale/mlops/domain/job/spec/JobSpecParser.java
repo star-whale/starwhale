@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.spec;
 
 import ai.starwhale.mlops.common.Constants;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;

@@ -25,7 +25,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -210,6 +210,8 @@ public class UserJobConverter {
         if (CollectionUtils.isEmpty(steps)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "no stepSpec is configured"), HttpStatus.BAD_REQUEST);
+        } else {
+            // TODO valid step type whether constant with job or not(at least one)
         }
 
         var pool = systemSettingService.queryResourcePool(request.getResourcePool());

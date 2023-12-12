@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import java.util.List;

@@ -14,28 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.spec;
+package ai.starwhale.mlops.domain.job.spec.step;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Env {
-    private String name;
-    private String value;
-
-    // TODO add valueFrom source
-
-    @Override
-    public String toString() {
-        return "Env{"
-            + "name='" + name + '\''
-            + ", value='" + value + '\''
-            + '}';
-    }
+public enum StepType {
+    EVALUATION, TRAIN, FINE_TUNE, SERVING
 }

@@ -234,7 +234,7 @@ public class JobController {
         } else {
             jobId = jobServiceForWeb.createJob(userJobConverter.convert(projectUrl, jobRequest));
         }
-        if (jobId == null)  {
+        if (jobId == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "job request is invalid"),
                     HttpStatus.BAD_REQUEST

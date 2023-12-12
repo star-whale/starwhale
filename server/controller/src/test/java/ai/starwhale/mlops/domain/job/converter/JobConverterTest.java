@@ -44,7 +44,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.bo.Step;

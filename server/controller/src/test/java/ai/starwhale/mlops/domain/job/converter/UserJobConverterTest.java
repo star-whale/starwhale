@@ -35,7 +35,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.UserJobCreateRequest;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
