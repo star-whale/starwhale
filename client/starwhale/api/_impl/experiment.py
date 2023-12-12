@@ -11,7 +11,7 @@ from starwhale.consts import SHORT_VERSION_CNT, DecoratorInjectAttr
 from starwhale.base.context import Context
 from starwhale.api._impl.model import build as build_starwhale_model
 from starwhale.api._impl.dataset import Dataset
-from starwhale.base.client.models.models import FineTune
+from starwhale.base.client.models.models import FineTune, StepType
 
 
 # TODO: support arguments
@@ -140,5 +140,6 @@ def _register_ft(
             require_train_datasets=require_train_datasets,
             require_validation_datasets=require_validation_datasets,
         ),
+        typ=StepType.fine_tune,
     )(func)
     setattr(func, DecoratorInjectAttr.FineTune, True)

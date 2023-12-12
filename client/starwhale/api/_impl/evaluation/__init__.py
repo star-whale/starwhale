@@ -4,6 +4,7 @@ import typing as t
 
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.base.type import PredictLogMode
+from starwhale.base.client.models.models import StepType
 
 from .log import Evaluation
 from .pipeline import PipelineHandler
@@ -109,6 +110,7 @@ def _register_predict(
             dataset_uris=datasets,
         ),
         built_in=True,
+        typ=StepType.evaluation,
     )(func)
 
 
@@ -173,6 +175,7 @@ def _register_evaluate(
             predict_auto_log=use_predict_auto_log,
         ),
         built_in=True,
+        typ=StepType.evaluation,
     )(func)
 
 

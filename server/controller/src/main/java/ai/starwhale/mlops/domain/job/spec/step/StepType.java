@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.domain.job.spec.step;
 
 public enum StepType {
-    EVALUATION, TRAIN, FINE_TUNE, SERVING
+    EVALUATION, FINE_TUNE, SERVING
 }

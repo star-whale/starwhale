@@ -779,6 +779,12 @@ class RuntimeResource(SwBaseModel):
     limit: Optional[float] = None
 
 
+class StepType(Enum):
+    evaluation = 'EVALUATION'
+    fine_tune = 'FINE_TUNE'
+    serving = 'SERVING'
+
+
 class DatasetVersionViewVo(SwBaseModel):
     id: str
     version_name: str = Field(..., alias='versionName')
@@ -830,13 +836,13 @@ class DatasetVo(SwBaseModel):
     version: DatasetVersionVo
 
 
-class Type4(Enum):
+class Type5(Enum):
     dev_mode = 'DEV_MODE'
     web_handler = 'WEB_HANDLER'
 
 
 class ExposedLinkVo(SwBaseModel):
-    type: Type4
+    type: Type5
     name: str
     link: str
 
@@ -1482,6 +1488,7 @@ class ServiceSpec(SwBaseModel):
 
 class StepSpec(SwBaseModel):
     name: str
+    type: Optional[StepType] = None
     concurrency: Optional[int] = None
     replicas: int
     backoff_limit: Optional[int] = Field(None, alias='backoffLimit')

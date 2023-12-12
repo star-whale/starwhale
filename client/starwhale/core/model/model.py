@@ -86,7 +86,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.base.client.api.job import JobApi
 from starwhale.base.client.api.model import ModelApi
-from starwhale.base.client.models.models import JobRequest, ModelInfoVo
+from starwhale.base.client.models.models import StepType, JobRequest, ModelInfoVo
 
 
 @unique
@@ -271,6 +271,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         cls_name, _, func_name = func.__qualname__.rpartition(".")
         h = StepSpecClient(
             name="serving",
+            type=StepType.serving,
             show_name="virtual handler for model serving",
             func_name=func.__qualname__,
             module_name=func.__module__,
