@@ -15,6 +15,7 @@ from transformers import (
     DataCollatorForSeq2Seq,
     Seq2SeqTrainingArguments,
 )
+from torch.utils.data import ChainDataset
 from transformers.modeling_utils import unwrap_model, PreTrainedModel
 
 from starwhale import Dataset, finetune
@@ -33,9 +34,6 @@ except ImportError:
     model_modules=["evaluation", "finetune"],
 )
 def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
-    # TODO: support multi train datasets
-    train_dataset = train_datasets[0]
-
     config = AutoConfig.from_pretrained(
         BASE_MODEL_DIR,
         trust_remote_code=True,
@@ -65,6 +63,18 @@ def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
 
+    train_dataset = ChainDataset(
+        [
+            ds.to_pytorch(
+                transform=MultiTurnDataTransform(
+                    tokenizer=tokenizer,
+                    max_seq_len=int(os.environ.get("MAX_SEQ_LEN", 2048)),
+                )
+            )
+            for ds in train_datasets
+        ]
+    )
+
     trainer = PrefixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -81,12 +91,7 @@ def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
             gradient_checkpointing=False,
             remove_unused_columns=False,
         ),
-        train_dataset=train_dataset.to_pytorch(
-            transform=MultiTurnDataTransform(
-                tokenizer=tokenizer,
-                max_seq_len=int(os.environ.get("MAX_SEQ_LEN", 2048)),
-            )
-        ),
+        train_dataset=train_dataset,
         data_collator=DataCollatorForSeq2Seq(
             tokenizer=tokenizer,
             model=model,

@@ -19,6 +19,7 @@ from transformers import (
     PreTrainedTokenizer,
     AutoModelForCausalLM,
 )
+from torch.utils.data import ChainDataset
 from transformers.training_args import TrainingArguments
 
 from starwhale import Dataset, finetune
@@ -86,9 +87,6 @@ class DataCollatorForCausalLM:
     model_modules=[copilot_predict, "finetune:lora_finetune"],
 )
 def lora_finetune(train_datasets: t.List[Dataset]) -> None:
-    # TODO: support multi train datasets
-    train_dataset = train_datasets[0]
-
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_DIR,
         trust_remote_code=True,
@@ -167,16 +165,22 @@ def lora_finetune(train_datasets: t.List[Dataset]) -> None:
     )
 
     # TODO: support deepspeed
+    train_dataset = ChainDataset(
+        [
+            ds.to_pytorch(
+                transform=DataCollatorForCausalLM(
+                    tokenizer=tokenizer, source_max_len=16, target_max_len=512
+                )
+            )
+            for ds in train_datasets
+        ]
+    )
 
     trainer = Trainer(
         model=model,
         tokenizer=tokenizer,
         args=train_args,
-        train_dataset=train_dataset.to_pytorch(
-            transform=DataCollatorForCausalLM(
-                tokenizer=tokenizer, source_max_len=16, target_max_len=512
-            )
-        ),
+        train_dataset=train_dataset,
     )
 
     print("Starting model training...")
