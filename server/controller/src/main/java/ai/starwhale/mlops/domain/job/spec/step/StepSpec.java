@@ -65,7 +65,8 @@ public class StepSpec {
     @JsonProperty("show_name")
     private String showName;
 
-    private StepType type;
+    @JsonProperty("step_type")
+    private StepType stepType;
 
     private Integer concurrency = 1;
 
