@@ -270,20 +270,36 @@ class Image(BaseArtifact, SwObject):
         dtype: t.Type = numpy.uint8,
         link: t.Optional[Link] = None,
     ) -> None:
+        """Starwhale Image type.
+
+        Arguments:
+            fp: (str, bytes, Path, io.IOBase, pillow.Image, numpy.ndarray) The image data source.
+                If the argument is str, bytes, Path, io.IOBase, we will try to read the data from the source.
+                If the argument is pillow.Image or numpy.ndarray, we will try to convert it to bytes.
+            display_name: (str, optional) The display name of the image, default is "".
+            shape: (tuple, optional) The shape of the image numpy.ndarray, default is None.
+                shape = (height, width, channel)
+            mime_type: (MIMEType, optional) The mime type of the image, default is MIMEType.UNDEFINED.
+            dtype: (numpy.dtype, optional) The numpy dtype of the image, default is numpy.uint8.
+        """
         self.as_mask = as_mask
         self.mask_uri = mask_uri
 
+        fp, shape = self._convert_pil_and_numpy(fp, shape)
         super().__init__(
-            self._convert_pil_and_numpy(fp),
+            fp,
             ArtifactType.Image,
             display_name=display_name,
-            shape=shape or (None, None, 3),
+            shape=shape,
             mime_type=mime_type,
             dtype=dtype,
             link=link,
         )
 
-    def _convert_pil_and_numpy(self, source: t.Any) -> t.Any:
+    def _convert_pil_and_numpy(
+        self, source: t.Any, shape: t.Optional[_TShape] = None
+    ) -> t.Any:
+        shape = shape or (None, None, 3)
         try:
             # pillow is optional for starwhale, so we need to check if it is installed
             from PIL import Image as PILImage
@@ -291,16 +307,21 @@ class Image(BaseArtifact, SwObject):
             console.trace(
                 "pillow is not installed, skip try to convert PILImage and numpy.ndarray to bytes"
             )
-            return source
+            return source, shape
 
         if isinstance(source, (PILImage.Image, numpy.ndarray)):
             image_bytes = io.BytesIO()
             if isinstance(source, numpy.ndarray):
                 source = PILImage.fromarray(source)
             source.save(image_bytes, format="PNG")
-            return image_bytes.getvalue()
+            # shape = (height, width, channel) for numpy
+            return image_bytes.getvalue(), (
+                source.height,
+                source.width,
+                len(source.getbands()),
+            )
         else:
-            return source
+            return source, shape
 
     def _do_validate(self) -> None:
         if self.mime_type not in (

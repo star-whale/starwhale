@@ -167,7 +167,7 @@ class TestDataType(TestCase):
         assert typ.attrs["_raw_base64_data"] == data_store.STRING
 
         pixels = numpy.random.randint(
-            low=0, high=256, size=(100, 100, 3), dtype=numpy.uint8
+            low=0, high=256, size=(200, 100, 3), dtype=numpy.uint8
         )
         pil_obj = PILImage.fromarray(pixels, mode="RGB")
 
@@ -179,9 +179,9 @@ class TestDataType(TestCase):
         assert l_pil_img.mode == "L"
         array = img.to_numpy()
         assert isinstance(array, numpy.ndarray)
-        assert array.shape == (100, 100, 3)
+        assert array.shape == (200, 100, 3) == tuple(img.shape)
         l_array = img.to_numpy("L")
-        assert l_array.shape == (100, 100)
+        assert l_array.shape == (200, 100)
 
         img = Image(pixels)
         pil_img = img.to_pil()
