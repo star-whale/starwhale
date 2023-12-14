@@ -22,3 +22,6 @@ class TestCheckCall(unittest.TestCase):
             log_check_call(["err"])
 
         assert len(save_logs) >= 1
+
+        rc = log_check_call(["date"], capture_stdout=False)
+        assert rc == 0

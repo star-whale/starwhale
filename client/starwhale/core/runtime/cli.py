@@ -14,6 +14,7 @@ from starwhale.consts import (
 from starwhale.utils.cli import AliasedGroup
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .view import get_term_view, RuntimeTermView
 from .model import RuntimeInfoFilter
@@ -809,4 +810,49 @@ def _dockerize(
         dry_run,
         use_starwhale_builder,
         reset_qemu_static,
+    )
+
+
+@runtime_cmd.command(
+    "run",
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
+@click.argument("uri", required=True)
+@click.option("--cwd", default=None, help="Working directory")
+@click.option(
+    "--live-stream",
+    is_flag=True,
+    help="Do not capture stdout/stderr, when the is an interactive cmd, like ipython, the option should be enabled",
+)
+@click.pass_context
+def _run(ctx: click.Context, uri: str, cwd: str, live_stream: bool) -> None:
+    """Run a command in the Starwhale Runtime environment.
+
+    For an existed Starwhale runtime, the command will restore and activate the runtime automatically.
+
+    Positional arguments:
+
+        \b
+        URI: Starwhale Runtime URI in the standalone instance
+        CMD: Executable command name, with additional arguments if needed.
+
+    Examples:
+
+        \b
+        # run some python code in the starwhale runtime
+        swcli runtime run pytorch python -c "import torch;print(torch.__version__)"
+
+        \b
+        # run python script in the starwhale runtime with verbose mode
+        swcli -vvv runtime run --cwd example/helloworld helloworld python3 dataset.py
+
+        \b
+        # use the interactive Python shell
+        swcli runtime run pytorch --live-stream ipython3
+    """
+    RuntimeProcess(uri).run_arbitrary_cmd(
+        cmd=ctx.args, cwd=cwd, live_stream=live_stream
     )
