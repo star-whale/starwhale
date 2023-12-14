@@ -140,7 +140,6 @@ class DatasetCopy(BundleCopy):
                 dest.put(row)
                 progress.update(task_id, advance=1, refresh=True)
         except Exception as e:
-            console.print_exception()
             exceptions.append(e)
             raise
 

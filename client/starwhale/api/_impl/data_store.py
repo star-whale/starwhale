@@ -2857,7 +2857,6 @@ class TableWriter(threading.Thread):
     def _raise_run_exceptions(self, limits: int) -> None:
         if len(self._queue_run_exceptions) > limits:
             _es = self._queue_run_exceptions
-            self._queue_run_exceptions = []
             raise TableWriterException(f"{self} run raise {len(_es)} exceptions: {_es}")
 
     def insert(self, record: Dict[str, Any]) -> None:
@@ -2903,7 +2902,9 @@ class TableWriter(threading.Thread):
         """
         while True:
             with self._cond:
-                if len(self._records) == 0 and len(self._updating_records) == 0:
+                if len(self._queue_run_exceptions) > self._run_exceptions_limits or (
+                    len(self._records) == 0 and len(self._updating_records) == 0
+                ):
                     break
             time.sleep(0.1)
         return self.latest_revision
@@ -2953,7 +2954,7 @@ class TableWriter(threading.Thread):
                 if len(to_submit) > 0 and last_schema is not None:
                     self._batch_update_table(last_schema, to_submit)
             except Exception as e:
-                console.print_exception()
+                # TODO: we should refine run exceptions limits, it's not equal to the wrong insertions
                 self._queue_run_exceptions.append(e)
                 if len(self._queue_run_exceptions) > self._run_exceptions_limits:
                     break

@@ -2345,8 +2345,11 @@ class TestTableWriter(BaseTestCase):
         while True:
             if not remote_writer.is_alive():
                 break
+
             if time.time() - start > 30:
                 is_timeout = True
+                break
+            time.sleep(0.1)
 
         assert not is_timeout
         assert not remote_writer.is_alive()
@@ -2359,8 +2362,8 @@ class TestTableWriter(BaseTestCase):
         with self.assertRaises(data_store.TableWriterException):
             remote_writer.insert({"k": 2, "a": "2"})
 
-        assert len(remote_writer._queue_run_exceptions) == 0
-        remote_writer.close()
+        with self.assertRaises(data_store.TableWriterException):
+            remote_writer.close()
 
     @Mocker()
     def test_run_thread_exception(self, request_mock: Mocker) -> None:

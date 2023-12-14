@@ -163,7 +163,6 @@ class TestEvaluation(BaseTestCase):
             assert _writer is not None
             assert not _writer.is_alive()
             assert _writer._stopped
-            assert len(_writer._queue_run_exceptions) == 0
 
     def test_get_tables_from_standalone(self) -> None:
         e = wrapper.Evaluation("tt", Project("test"))
