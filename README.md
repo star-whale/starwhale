@@ -61,7 +61,7 @@ Starwhale is an versatile MLOps/LLMOps platform empowering organizations to opti
 
 - 🐥 **Standalone** - Deployed in a local development environment, managed by the `swcli` command-line tool, meeting development and debugging needs.
 - 🦅 **Server** - Deployed in a private data center, relying on a Kubernetes cluster, providing centralized, web-based, and secure services.
-- 🦉 **Cloud** - Hosted on a public cloud, with the access address <https://cloud.starwhale.ai>. The Starwhale team is responsible for maintenance, and no installation is required. You can start using it after registering an account.
+- 🦉 **Cloud** - Hosted on a public cloud, with the access address <https://cloud.starwhale.cn>. The Starwhale team is responsible for maintenance, and no installation is required. You can start using it after registering an account.
 
 As its core, Starwhale abstracts **Model**, **Runtime** and **Dataset** as first-class citizens - providing the fundamentals for streamlined operations. Starwhale further delivers tailored capabilities for common workflow scenarios including:
 
