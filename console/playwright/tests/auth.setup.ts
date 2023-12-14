@@ -20,7 +20,9 @@ function setupUser(user: typeof admin) {
         await expect(page).toHaveTitle(/Starwhale Console/)
         await page.locator(SELECTOR.loginName).fill(user.username)
         await page.locator(SELECTOR.loginPassword).fill(user.password)
+        const responsePromise = page.waitForResponse((response) => response.status() === 200)
         await page.getByRole('button', { name: 'Log in' }).click()
+        await responsePromise
         await page.context().storageState({ path: fileName })
         // create user for admin
         if (user.role === 'admin') {
