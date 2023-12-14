@@ -53,11 +53,11 @@
 
 ## What is Starwhale
 
-Starwhale is an MLOps/LLMOps platform that streamlines machine learning operations, enabling standardized processes for model development, testing, deployment and monitoring. It bridges business, AI, and operations teams to optimize collaboration. By accelerating iterative cycles, automating repetitive tasks, and centralizing critical information, Starwhale alleviates common pain points across the machine learning lifecycle including long development times, fragmented tooling, tribal knowledge silos, and excessive overhead.
+Starwhale is an MLOps/LLMOps platform that brings efficiency and standardization to machine learning operations. It streamlines the model development liftcycle, enabling teams to optimize their workflows around key areas like model building, evaluation, release and fine-tuning.
 
 ![products](https://starwhale-examples.oss-cn-beijing.aliyuncs.com/docs/products.png)
 
-Starwhale is an versatile MLOps/LLMOps platform empowering organizations to optimize their machine learning lifecycle.  It meets diverse deployment needs with three flexible configurations:
+Starwhale meets diverse deployment needs with three flexible configurations:
 
 - 🐥 **Standalone** - Deployed in a local development environment, managed by the `swcli` command-line tool, meeting development and debugging needs.
 - 🦅 **Server** - Deployed in a private data center, relying on a Kubernetes cluster, providing centralized, web-based, and secure services.
