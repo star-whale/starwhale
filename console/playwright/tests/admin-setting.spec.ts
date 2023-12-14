@@ -88,7 +88,7 @@ test.describe('Admin Users', () => {
 
         await page.waitForSelector(SELECTOR.userDisableConfirm)
         await page.locator(SELECTOR.userDisableConfirm).click()
-
+        await page.waitForResponse((response) => response.status() === 200)
         const resp = await request.post('/api/v1/login', {
             multipart: {
                 userName: CONST.newUserName,
@@ -106,7 +106,7 @@ test.describe('Admin Users', () => {
         page.locator(`tr:has-text("${CONST.newUserName}") .status button`).click()
         await page.waitForSelector(SELECTOR.userDisableConfirm)
         await page.locator(SELECTOR.userDisableConfirm).click()
-        page.waitForResponse((response) => response.status() === 200)
+        await page.waitForResponse((response) => response.status() === 200)
         const resp = await request.post('/api/v1/login', {
             multipart: {
                 userName: CONST.newUserName,
