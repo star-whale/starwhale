@@ -62,6 +62,7 @@ from starwhale.api._impl.service.service import ApiSpec, ServiceSpec
 from starwhale.base.client.models.models import (
     UserVo,
     ModelVo,
+    StepType,
     JobRequest,
     ModelVersionVo,
     ResponseMessageString,
@@ -120,6 +121,7 @@ class StandaloneModelTestCase(TestCase):
             show_name="t1",
             func_name="test_func1",
             module_name="mock",
+            step_type="EVALUATION",
         )
         Handler._registered_handlers["depend"] = StepSpecClient(
             name="depend",
@@ -191,6 +193,7 @@ class StandaloneModelTestCase(TestCase):
                     func_name="test_func1",
                     module_name="mock",
                     replicas=1,
+                    step_type=StepType.evaluation,
                 )
             ],
             "depend": [
@@ -200,6 +203,7 @@ class StandaloneModelTestCase(TestCase):
                     func_name="test_func1",
                     module_name="mock",
                     replicas=1,
+                    step_type=StepType.evaluation,
                 ),
                 StepSpecClient(
                     name="depend",
@@ -208,11 +212,13 @@ class StandaloneModelTestCase(TestCase):
                     module_name="mock",
                     replicas=1,
                     needs=["base"],
+                    step_type=None,
                 ),
             ],
             "serving": [
                 StepSpecClient(
                     name="serving",
+                    step_type=StepType.serving,
                     show_name="virtual handler for model serving",
                     func_name="StandaloneModel._serve_handler",
                     module_name="starwhale.core.model.model",
