@@ -1660,7 +1660,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         console.print(f":carrot: activate the current shell for the runtime uri: {uri}")
         activate_python_env(
-            mode=mode, identity=str(prefix_path.resolve()), interactive=True
+            mode=mode,
+            identity=str(prefix_path.resolve()),
+            interactive=True,
+            original_runtime_uri=uri.full_uri,
         )
 
     @classmethod

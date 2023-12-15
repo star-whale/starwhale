@@ -29,6 +29,7 @@ from starwhale.consts import (
     SW_DEV_DUMMY_VERSION,
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
+    SWShellActivatedRuntimeEnv,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
@@ -666,7 +667,9 @@ def package_python_env(
     return True
 
 
-def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
+def activate_python_env(
+    mode: str, identity: str, interactive: bool, original_runtime_uri: str = ""
+) -> None:
     if mode == PythonRunEnv.VENV:
         cmd = f"source {identity}/bin/activate"
     elif mode == PythonRunEnv.CONDA:
@@ -685,24 +688,34 @@ def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
         if not _bin.startswith("/") or _name == _bin:
             _bin = shutil.which(_name) or _bin
 
+        envs = os.environ.copy()
+        envs[SWShellActivatedRuntimeEnv.MODE] = mode
+        envs[SWShellActivatedRuntimeEnv.PREFIX] = identity
+        envs[SWShellActivatedRuntimeEnv.URI] = original_runtime_uri
+
         if _name == "zsh":
             # https://zsh.sourceforge.io/Intro/intro_3.html
-            os.execl(
+            os.execle(
                 _bin,
                 _bin,
                 "-c",
                 f"""temp_dir={identity} && \
                 echo ". $HOME/.zshrc && {cmd}" > $temp_dir/.zshrc && \
                 ZDOTDIR=$temp_dir zsh -i""",
+                envs,
             )
         elif _name == "bash":
             # https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html
-            os.execl(
-                _bin, _bin, "-c", f'bash --rcfile <(echo ". "$HOME/.bashrc" && {cmd}")'
+            os.execle(
+                _bin,
+                _bin,
+                "-c",
+                f'bash --rcfile <(echo ". "$HOME/.bashrc" && {cmd}")',
+                envs,
             )
         elif _name == "fish":
             # https://fishshell.com/docs/current/language.html#configuration
-            os.execl(_bin, _bin, "-C", cmd)
+            os.execle(_bin, _bin, "-C", cmd, envs)
 
     # user executes the command manually
     console.print(":cake: run command in shell :cake:")
