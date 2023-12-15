@@ -659,11 +659,7 @@ def _tag(
     )
 
 
-@runtime_cmd.command(
-    "activate",
-    aliases=["actv"],
-    help="",
-)
+@runtime_cmd.command("activate", aliases=["actv"])
 @click.argument("uri")
 @click.option(
     "-f",
@@ -680,6 +676,15 @@ def _activate(uri: str, force_restore: bool) -> None:
     """
     _uri = Resource(uri, typ=ResourceType.runtime)
     RuntimeTermView.activate(_uri, force_restore)
+
+
+@runtime_cmd.command(
+    "deactivate",
+    aliases=["deactv"],
+    help="Deactivate the current activate runtime environment, enter the normal shell environment",
+)
+def _deactivate() -> None:
+    RuntimeTermView.deactivate()
 
 
 @runtime_cmd.command("lock")

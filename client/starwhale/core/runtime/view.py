@@ -104,6 +104,11 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
     def activate(cls, uri: Resource, force_restore: bool = False) -> None:
         Runtime.activate(uri, force_restore)
 
+    @classmethod
+    @BaseTermView._only_standalone
+    def deactivate(cls) -> None:
+        Runtime.deactivate()
+
     @BaseTermView._only_standalone
     def dockerize(
         self,
