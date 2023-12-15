@@ -7,8 +7,11 @@ import { IApiSchema, InferenceType, ISpecSchema } from './schemas/api'
 import { useChatStore } from '@starwhale/ui/Serving/store/chat'
 import ChatGroup from './components/ChatGroup'
 
+// @ts-ignore
+const rootPath = window?.starwhaleConfig?.root ?? ''
+
 const fetchSpec = async () => {
-    const { data } = await axios.get<ISpecSchema>('/api/spec')
+    const { data } = await axios.get<ISpecSchema>(`${rootPath}/api/spec`)
     return data
 }
 
@@ -28,7 +31,7 @@ export default function ServingPage() {
             job: { id: 'client' } as any,
             type: apiSpec?.inference_type,
             exposedLink: {
-                link: '',
+                link: `${rootPath}/`,
                 type: 'WEB_HANDLER',
                 name: 'llm_chat',
             },

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import json
 import typing as t
 import functools
 
@@ -14,7 +15,7 @@ else:
 
 from fastapi import FastAPI
 from pydantic import Field
-from starlette.responses import FileResponse
+from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 
 from starwhale.utils import console
@@ -149,8 +150,21 @@ class Service:
                 methods=["POST"],
             )
 
-        def index(opt: t.Any) -> FileResponse:
-            return FileResponse(os.path.join(STATIC_DIR_DEV, "client/index.html"))
+        def index(_: t.Any) -> HTMLResponse:
+            with open(os.path.join(STATIC_DIR_DEV, "client/index.html"), "r") as file:
+                content = file.read()
+            # https://github.com/star-whale/starwhale/pull/2996
+            root = os.getenv("SW_ONLINE_SERVING_ROOT_PATH", "")
+            opt = {
+                "root": root,
+            }
+            script = f"""<script type="text/javascript">
+                window.starwhaleConfig = {json.dumps(opt)}
+                </script>"""
+            content = content.replace("<!-- starwhale-client-placeholder -->", script)
+            # replace assets path
+            content = content.replace("/assets/", f"{root}/assets/")
+            return HTMLResponse(content=content)
 
         app.add_route("/", index, methods=["GET"])
         app.mount("/", StaticFiles(directory=STATIC_DIR_DEV), name="assets")
