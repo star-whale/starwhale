@@ -354,7 +354,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
         model_config: ModelConfig,
         add_all: bool,
         runtime_uri: str = "",
-        package_runtime: bool = False,
+        package_runtime: bool = True,
         tags: t.List[str] | None = None,
         excludes: t.List[str] | None = None,
     ) -> None:
