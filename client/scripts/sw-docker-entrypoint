@@ -14,6 +14,7 @@ STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
 RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
+RUNTIME_WORKDIR=${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}
 
 
 welcome() {
@@ -39,7 +40,8 @@ welcome() {
 prepare(){
     if [ "${RUNTIME_RESTORED}" == "1" ]; then
         echo '-->[Preparing] Runtime has been restored, activate it...'
-        $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
+        source "${RUNTIME_WORKDIR}"/env.sw
+        $(bash "${RUNTIME_WORKDIR}"/activate.sw)
     fi
 
     if [ "${SW_INSTANCE_URI}" != "local" ]; then

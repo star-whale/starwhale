@@ -161,7 +161,7 @@ class Process:
         if force_restore or not is_valid_prefix or is_invalid_status:
             console.print(f":snail: start to restore runtime: {_uri}")
             extract_tar(tar_path=bundle_path, dest_dir=snapshot_workdir, force=True)
-            StandaloneRuntime.restore(snapshot_workdir, verbose=False)
+            StandaloneRuntime.restore(snapshot_workdir, verbose=False, runtime_uri=_uri)
 
         if venv_prefix.exists():
             prefix = venv_prefix

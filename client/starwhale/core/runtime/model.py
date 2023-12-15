@@ -727,8 +727,16 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
-        StandaloneRuntime.restore(workdir, isolated_env_dir)
+    def restore(
+        cls,
+        workdir: Path,
+        isolated_env_dir: Path | None = None,
+        verbose: bool = True,
+        runtime_uri: Resource | None = None,
+    ) -> None:
+        StandaloneRuntime.restore(
+            workdir, isolated_env_dir, verbose=verbose, runtime_uri=runtime_uri
+        )
 
     @classmethod
     def get_runtime(cls, uri: Resource) -> Runtime:
@@ -1656,7 +1664,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         if force_restore or not prefix_path.exists() or is_invalid_status:
             console.print(f":safety_vest: restore runtime into {workdir}")
-            cls.restore(workdir)
+            cls.restore(workdir, runtime_uri=uri)
 
         console.print(f":carrot: activate the current shell for the runtime uri: {uri}")
         activate_python_env(
@@ -1961,8 +1969,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def restore(
         cls,
         workdir: Path,
-        isolated_env_dir: t.Optional[Path] = None,
+        isolated_env_dir: Path | None = None,
         verbose: bool = True,
+        runtime_uri: Resource | None = None,
     ) -> None:
         if not (workdir.exists() and (workdir / DEFAULT_MANIFEST_NAME).exists()):
             raise NoSupportError("only support swrt extract workdir")
@@ -2064,6 +2073,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                             "local_packaged_env", False
                         ),
                         verbose=verbose,
+                        runtime_uri=runtime_uri.full_uri if runtime_uri else "",
                     ),
                 ),
             ]

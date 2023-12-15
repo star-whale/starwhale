@@ -365,7 +365,7 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
             workdir = _runtime.store.snapshot_workdir
             if not workdir.exists():
                 _runtime.extract(force=True, target=workdir)
-            Runtime.restore(workdir)
+            Runtime.restore(workdir, runtime_uri=_uri)
             console.print(
                 f":ramen: runtime(from uri:{_uri}) has been restored, activate it in the current shell: \n"
                 f"\t :stars: run command: [bold green]swcli runtime activate {target}[/]"
