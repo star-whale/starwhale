@@ -28,6 +28,7 @@ def build(
     add_all: bool = False,
     tags: t.List[str] | None = None,
     excludes: t.List[str] | None = None,
+    package_runtime: bool = True,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -49,6 +50,8 @@ def build(
         tags: (list(str), optional) The tags for the model version. `latest` and `^v\d+$` tags are reserved tags.
         excludes: (list(str), optional) The excludes files or dirs in the workdir. The excludes files or dirs will be ignored when building the Starwhale Model Package.
             The `.swignore` file in the workdir will always take effect.
+        package_runtime: (bool, optional) Package the runtime in the Starwhale Model Package. If the argument is True, the Starwhale Model Package will be a standalone package.
+            The packaged runtime is the active runtime in the current process.
 
     Examples:
     ```python
@@ -124,6 +127,7 @@ def build(
             add_all=add_all,
             tags=tags,
             excludes=excludes,
+            package_runtime=package_runtime,
         )
 
     if remote_project_uri:
