@@ -106,7 +106,7 @@ class Handler:
         require_dataset: bool = False,
         built_in: bool = False,
         fine_tune: FineTune | None = None,
-        typ: StepType | None = None,
+        typetypo: StepType | None = None,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control replicas of handler run.
@@ -127,7 +127,7 @@ class Handler:
             built_in: [bool, optional] A special flag to distinguish user defined args in handler function from the StarWhale ones.
               This should always be False unless you know what it does.
             fine_tune: [FineTune, optional The fine tune config for the handler. Default is None.
-            typ:
+            type:
               - [str, optional] The type of the handler. Default is None.
 
         Example:
@@ -206,7 +206,7 @@ class Handler:
                 parameters_sig=parameters_sig,
                 ext_cmd_args=ext_cmd_args,
                 fine_tune=fine_tune,
-                step_type=typ,
+                step_type=type,
             )
 
             cls._register(_handler, func)

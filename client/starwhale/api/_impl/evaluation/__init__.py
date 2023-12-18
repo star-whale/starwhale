@@ -110,7 +110,7 @@ def _register_predict(
             dataset_uris=datasets,
         ),
         built_in=True,
-        typ=StepType.evaluation,
+        type=StepType.evaluation,
     )(func)
 
 
@@ -175,7 +175,7 @@ def _register_evaluate(
             predict_auto_log=use_predict_auto_log,
         ),
         built_in=True,
-        typ=StepType.evaluation,
+        type=StepType.evaluation,
     )(func)
 
 

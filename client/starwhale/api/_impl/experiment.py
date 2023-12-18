@@ -140,6 +140,6 @@ def _register_ft(
             require_train_datasets=require_train_datasets,
             require_validation_datasets=require_validation_datasets,
         ),
-        typ=StepType.fine_tune,
+        type=StepType.fine_tune,
     )(func)
     setattr(func, DecoratorInjectAttr.FineTune, True)
