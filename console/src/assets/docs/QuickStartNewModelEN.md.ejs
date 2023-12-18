@@ -16,13 +16,14 @@ sudo ln -s "$(which swcli)" /usr/local/bin/
 **Step2: Log in Starwhale Cloud Instance**
 
 ```
-swcli instance login --username <your username> --password <your password> --alias swcloud https://cloud.starwhale.cn
+swcli instance login --username <your username> --password <your password> --alias swcloud <%= consoleUrl %>
 ```
 
-**Step3: Build a new model**
+**Step3: Build and copy a new model**
 
-```
+```bash
 swcli model build . --model-yaml /path/to/model.yaml
+swcli model copy <model name> cloud://swcloud/project/<project name or ID>
 ```
 
 **Step4: See your model displayed here in Starwhale**
