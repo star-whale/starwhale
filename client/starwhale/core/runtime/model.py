@@ -88,6 +88,7 @@ from starwhale.utils.venv import (
     pip_freeze_by_pybin,
     guess_current_py_env,
     trunc_python_version,
+    deactivate_python_env,
     get_conda_prefix_path,
     check_valid_venv_prefix,
     get_user_python_version,
@@ -778,6 +779,10 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def activate(cls, uri: Resource, force_restore: bool = False) -> None:
         StandaloneRuntime.activate(uri, force_restore)
+
+    @classmethod
+    def deactivate(cls) -> None:
+        deactivate_python_env()
 
     @classmethod
     def lock(

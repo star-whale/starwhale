@@ -666,6 +666,36 @@ def package_python_env(
     return True
 
 
+def deactivate_python_env() -> None:
+    pyenv = guess_current_py_env()
+    if pyenv not in (PythonRunEnv.VENV, PythonRunEnv.CONDA):
+        console.print(f":tea: current python env is {pyenv}, no need to deactivate.")
+        return
+    else:
+        _name, _bin = get_shell_info()
+        console.print(
+            f":cake: deactivate {pyenv} environment, enter a new shell({_name})..."
+        )
+        envs = os.environ.copy()
+
+        for e in ("PATH", "VIRTUAL_ENV"):
+            envs.pop(e, None)
+        os.execl(_bin, _bin, "-i")
+
+
+def get_shell_info() -> t.Tuple:
+    import shellingham
+
+    try:
+        _name, _bin = shellingham.detect_shell()
+    except shellingham.ShellDetectionFailure:
+        _name, _bin = "", ""
+
+    if not _bin.startswith("/") or _name == _bin:
+        _bin = shutil.which(_name) or _bin
+    return _name, _bin
+
+
 def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
     if mode == PythonRunEnv.VENV:
         cmd = f"source {identity}/bin/activate"
@@ -675,15 +705,7 @@ def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
         raise NoSupportError(mode)
 
     if interactive:
-        import shellingham
-
-        try:
-            _name, _bin = shellingham.detect_shell()
-        except shellingham.ShellDetectionFailure:
-            _name, _bin = "", ""
-
-        if not _bin.startswith("/") or _name == _bin:
-            _bin = shutil.which(_name) or _bin
+        _name, _bin = get_shell_info()
 
         if _name == "zsh":
             # https://zsh.sourceforge.io/Intro/intro_3.html
