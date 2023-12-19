@@ -16,13 +16,14 @@ sudo ln -s "$(which swcli)" /usr/local/bin/
 **第二步：登录云实例**
 
 ```
-swcli instance login --username <您的用户名> --password <您的密码> --alias swcloud https://cloud.starwhale.cn
+swcli instance login --username <您的用户名> --password <您的密码> --alias swcloud <%= consoleUrl %>
 ```
 
-**第三步：构建新模型**
+**第三步：构建并拷贝新模型**
 
-```
+```bash
 swcli model build . --model-yaml /path/to/model.yaml
+swcli model copy <模型名称> cloud://swcloud/project/<项目名称或ID>
 ```
 
 **第四步：在 UI 页面的模型列表页查看**

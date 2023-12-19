@@ -369,3 +369,8 @@ export function expandMargin(top: string, right: string, bottom: string, left: s
         marginRight: right ?? undefined,
     }
 }
+
+export function getCurrentHost() {
+    const { hostname, port, protocol } = window.location
+    return `${protocol}//${hostname}${port ? `:${port}` : ''}`
+}
