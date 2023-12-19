@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Callable, Optional
 
 from pydantic import BaseModel
 
 from starwhale.base.client.models.models import (
     ComponentValueSpecInt,
-    ComponentSpecValueType,
     ComponentValueSpecFloat,
 )
-from starwhale.api._impl.service.types.types import ServiceType
+from starwhale.api._impl.service.types.types import (
+    ServiceType,
+    generate_type_definition,
+)
 
 
 class Query(BaseModel):
@@ -28,18 +30,7 @@ class Query(BaseModel):
 class TextToImage(ServiceType):
     name = "text_to_image"
     args = {}
-
-    arg_types: Dict[str, ComponentSpecValueType] = {
-        "prompt": ComponentSpecValueType.string,
-        "negative_prompt": ComponentSpecValueType.string,
-        "sampling_steps": ComponentSpecValueType.int,
-        "width": ComponentSpecValueType.int,
-        "height": ComponentSpecValueType.int,
-        "seed": ComponentSpecValueType.int,
-        "batch_size": ComponentSpecValueType.int,
-        "batch_count": ComponentSpecValueType.int,
-        "guidance_scale": ComponentSpecValueType.float,
-    }
+    arg_types = generate_type_definition(Query)
 
     def __init__(
         self,

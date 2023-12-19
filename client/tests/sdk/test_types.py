@@ -1,10 +1,14 @@
+from typing import List, Optional
+
 import pytest
+from pydantic import BaseModel
 
 from starwhale.api._impl.service.types import all_components_are_gradio
 from starwhale.base.client.models.models import (
     ComponentValueSpecInt,
     ComponentSpecValueType,
 )
+from starwhale.api._impl.service.types.types import generate_type_definition
 from starwhale.api._impl.service.types.text_to_img import TextToImage
 
 
@@ -54,4 +58,34 @@ def test_text_to_image():
 
     assert t.args == {
         "sampling_steps": ComponentValueSpecInt(default_val=1),
+    }
+
+
+def test_generate_type_definition():
+    class MyType(BaseModel):
+        a: int
+        b: str
+        c: float
+        d: bool
+        e: Optional[int] = None
+        f: Optional[str] = None
+        g: Optional[float] = None
+        h: Optional[bool] = None
+        i: List[int]
+        j: List[str]
+        k: Optional[List[int]] = None
+
+    types = generate_type_definition(MyType)
+    assert types == {
+        "a": ComponentSpecValueType.int,
+        "b": ComponentSpecValueType.string,
+        "c": ComponentSpecValueType.float,
+        "d": ComponentSpecValueType.bool,
+        "e": ComponentSpecValueType.int,
+        "f": ComponentSpecValueType.string,
+        "g": ComponentSpecValueType.float,
+        "h": ComponentSpecValueType.bool,
+        "i": ComponentSpecValueType.list,
+        "j": ComponentSpecValueType.list,
+        "k": ComponentSpecValueType.list,
     }
