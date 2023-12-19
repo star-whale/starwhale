@@ -3254,10 +3254,10 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.core.runtime.model.StandaloneRuntime.restore")
     @patch("starwhale.core.runtime.model.StandaloneRuntime.extract")
     @patch("shellingham.detect_shell")
-    @patch("os.execl")
+    @patch("os.execle")
     def test_activate(
         self,
-        m_execl: MagicMock,
+        m_execle: MagicMock,
         m_detect: MagicMock,
         m_extract: MagicMock,
         m_restore: MagicMock,
@@ -3285,7 +3285,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_detect.return_value = ["zsh", "/usr/bin/zsh"]
         uri = Resource(f"{name}/version/{version}", typ=ResourceType.runtime)
         StandaloneRuntime.activate(uri=uri)
-        assert m_execl.call_args[0][0] == "/usr/bin/zsh"
+        assert m_execle.call_args[0][0] == "/usr/bin/zsh"
         assert not m_extract.called
         assert not m_restore.called
 
@@ -3307,14 +3307,14 @@ class StandaloneRuntimeTestCase(TestCase):
         StandaloneRuntime.activate(uri=uri, force_restore=False)
         assert m_restore.called
 
-        m_execl.reset_mock()
+        m_execle.reset_mock()
         runtime_config = self.get_runtime_config()
         runtime_config["mode"] = "conda"
         ensure_file(
             snapshot_dir / DefaultYAMLName.RUNTIME, yaml.safe_dump(runtime_config)
         )
 
-        m_execl.reset_mock()
+        m_execle.reset_mock()
         m_detect.return_value = ["bash", "/usr/bin/bash"]
         StandaloneRuntime.activate(uri=uri, force_restore=True)
         assert not m_extract.called

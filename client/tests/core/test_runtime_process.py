@@ -1,3 +1,4 @@
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -6,7 +7,7 @@ from unittest.mock import patch, MagicMock
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.consts import DEFAULT_MANIFEST_NAME
+from starwhale.consts import DEFAULT_MANIFEST_NAME, SWShellActivatedRuntimeEnv
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
@@ -236,3 +237,36 @@ class RuntimeProcessTestCase(TestCase):
         ):
             uri = "http://1.1.1.1:8081/projects/self/runtimes/rttest/versoin/123"
             Process(uri).run()
+
+    @patch("os.environ", {})
+    def test_activated_runtime_uri(self) -> None:
+        get_uri = Process.get_activated_runtime_uri
+        os.environ[Process.ActivatedRuntimeURI] = "runtime-in-process"
+        assert get_uri() == "runtime-in-process"
+
+        del os.environ[Process.ActivatedRuntimeURI]
+
+        os.environ[SWShellActivatedRuntimeEnv.MODE] = "system"
+        assert get_uri() is None
+
+        os.environ[SWShellActivatedRuntimeEnv.URI] = ""
+        assert get_uri() is None
+
+        os.environ[SWShellActivatedRuntimeEnv.URI] = "runtime-in-shell-venv"
+        assert get_uri() is None
+
+        os.environ[SWShellActivatedRuntimeEnv.MODE] = "venv"
+        os.environ[SWShellActivatedRuntimeEnv.PREFIX] = "/opt/sw/venv"
+        assert get_uri() is None
+
+        os.environ["VIRTUAL_ENV"] = "/opt/sw/venv"
+        assert get_uri() == "runtime-in-shell-venv"
+        del os.environ["VIRTUAL_ENV"]
+
+        os.environ[SWShellActivatedRuntimeEnv.URI] = "runtime-in-shell-conda"
+        os.environ[SWShellActivatedRuntimeEnv.MODE] = "conda"
+        os.environ[SWShellActivatedRuntimeEnv.PREFIX] = "/opt/sw/conda"
+        assert get_uri() is None
+
+        os.environ["CONDA_PREFIX"] = "/opt/sw/conda"
+        assert get_uri() == "runtime-in-shell-conda"

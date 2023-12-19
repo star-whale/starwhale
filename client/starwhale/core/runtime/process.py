@@ -8,7 +8,12 @@ from pathlib import Path
 from functools import partial
 
 from starwhale.utils import console
-from starwhale.consts import PythonRunEnv
+from starwhale.consts import (
+    ENV_VENV,
+    PythonRunEnv,
+    ENV_CONDA_PREFIX,
+    SWShellActivatedRuntimeEnv,
+)
 from starwhale.utils.fs import extract_tar
 from starwhale.utils.venv import (
     get_conda_bin,
@@ -168,3 +173,48 @@ class Process:
             )
 
         return prefix.resolve()
+
+    @classmethod
+    def get_activated_runtime_uri(cls) -> str | None:
+        _env = os.environ.get
+        # process activated runtime is the first priority
+        uri = _env(cls.ActivatedRuntimeURI)
+        if uri:
+            return uri
+
+        # detect shell activated runtime
+        uri = _env(SWShellActivatedRuntimeEnv.URI)
+        if not uri:
+            return None
+
+        mode = _env(SWShellActivatedRuntimeEnv.MODE)
+        prefix = _env(SWShellActivatedRuntimeEnv.PREFIX)
+        if not mode or not prefix:
+            console.debug(
+                f"env {SWShellActivatedRuntimeEnv.MODE} or {SWShellActivatedRuntimeEnv.PREFIX} is not set, skip detect"
+            )
+            return None
+
+        if mode == PythonRunEnv.VENV:
+            env_prefix = _env(ENV_VENV, "")
+            if prefix != env_prefix:
+                console.debug(
+                    f"venv prefix: {prefix} is not equal to {ENV_VENV} env({env_prefix}), skip detect"
+                )
+                return None
+            else:
+                return uri
+        elif mode == PythonRunEnv.CONDA:
+            env_prefix = _env(ENV_CONDA_PREFIX, "")
+            if prefix != env_prefix:
+                console.debug(
+                    f"conda prefix: {prefix} is not equal to {ENV_CONDA_PREFIX} env({env_prefix}), skip detect"
+                )
+                return None
+            else:
+                return uri
+        else:
+            console.debug(
+                f"{SWShellActivatedRuntimeEnv.MODE}={mode} is not supported to detect shell activated runtime, skip detect"
+            )
+            return None

@@ -367,14 +367,9 @@ class ModelTermView(BaseTermView, TagViewMixin):
                 typ=ResourceType.model,
             )
             m = Model.get_model(model_uri)
-
-            if package_runtime:
-                packaging_runtime_uri = os.environ.get(
-                    RuntimeProcess.ActivatedRuntimeURI
-                )
-            else:
-                packaging_runtime_uri = None
-
+            packaging_runtime_uri = (
+                RuntimeProcess.get_activated_runtime_uri() if package_runtime else None
+            )
             m.build(
                 Path(workdir),
                 model_config=model_config,
