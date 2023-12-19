@@ -91,6 +91,15 @@ def model_cmd(ctx: click.Context) -> None:
     help="Ignore files or directories. The option can be used multiple times."
     "The '.swignore' file still takes effect.",
 )
+@click.option(
+    "--push",
+    help="Cloud/Server dest project uri or model uri",
+)
+@click.option(
+    "--force-push",
+    is_flag=True,
+    help="Force to push model package, even the version has been pushed",
+)
 def _build(
     workdir: str,
     project: str,
@@ -103,6 +112,8 @@ def _build(
     desc: str,
     add_all: bool,
     excludes: t.List[str],
+    push: str,
+    force_push: bool,
 ) -> None:
     """Build starwhale model package.
     Only standalone instance supports model build.
@@ -124,6 +135,10 @@ def _build(
         swcli model build . --tag tag1 --tag tag2
         # build model package with ignores.
         swcli model build . --exclude .git --exclude checkpoint/*
+        # build and push model package to the cloud instance.
+        swcli model build . --push https://cloud.starwhale.cn/project/starwhale:public
+        # build and push model package to the cloud instance with a specified model name.
+        swcli model build . --push https://cloud.starwhale.cn/project/starwhale:public/model/new-model-name
     """
     if model_yaml is None:
         yaml_path = Path(workdir) / DefaultYAMLName.MODEL
@@ -140,7 +155,7 @@ def _build(
     config.desc = desc
     config.do_validate()
 
-    ModelTermView.build(
+    uri = ModelTermView.build(
         workdir=workdir,
         project=project,
         model_config=config,
@@ -150,6 +165,9 @@ def _build(
         tags=tags,
         excludes=excludes,
     )
+
+    if push and uri:
+        ModelTermView.copy(src_uri=uri.full_uri, dest_uri=push, force=force_push)
 
 
 @model_cmd.command("extract")

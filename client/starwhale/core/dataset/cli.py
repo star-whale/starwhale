@@ -148,6 +148,15 @@ def dataset_cmd(ctx: click.Context) -> None:
     "--encoding",
     help="The csv/json/jsonl file encoding.",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--push",
+    help="Cloud/Server dest project uri or dataset uri",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--force-push",
+    is_flag=True,
+    help="Force to push dataset, even the version has been pushed",
+)
 @optgroup.option("-r", "--runtime", help="runtime uri")  # type: ignore[no-untyped-call]
 @optgroup.group("\n  ** Handler Build Source Configurations")
 @optgroup.option("-w", "--workdir", default=".", help="work dir to search handler, the option only works for the handler build source.")  # type: ignore[no-untyped-call]
@@ -285,6 +294,8 @@ def _build(
     csv_skipinitialspace: bool,
     csv_strict: bool,
     file_encoding: str,
+    push: str,
+    force_push: bool,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -311,6 +322,8 @@ def _build(
         swcli dataset build --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, all the involved files are related to the dataset.yaml file.
         swcli dataset build --overwrite --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, and overwrite the existed dataset.
         swcli dataset build --tag tag1 --tag tag2
+        swcli dataset build --push https://cloud.starwhale.cn/project/starwhale:public
+        swcli dataset build --push https://cloud.starwhale.cn/project/starwhale:public/dataset/new-dataset-name
 
         \b
         - from handler
@@ -367,7 +380,7 @@ def _build(
 
         folder = Path(folder).absolute()
         # TODO: support desc field
-        view.build_from_folder(
+        built_dataset_uri = view.build_from_folder(
             folder,
             kind,
             name=name or folder.name,
@@ -379,7 +392,7 @@ def _build(
             tags=tags,
         )
     elif json_files:
-        view.build_from_json_files(
+        built_dataset_uri = view.build_from_json_files(
             json_files,
             name=name or f"json-{random_str()}",
             project_uri=project,
@@ -391,7 +404,7 @@ def _build(
             encoding=file_encoding,
         )
     elif csv_files:
-        view.build_from_csv_files(
+        built_dataset_uri = view.build_from_csv_files(
             csv_files,
             name=name or f"csv-{random_str()}",
             project_uri=project,
@@ -421,10 +434,10 @@ def _build(
             tags=tags,
         )
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type, tags=tags)
+        built_dataset_uri = view.build(_workdir, config, mode=mode_type, tags=tags)
     elif hf_repo:
         _candidate_name = (f"{hf_repo}").strip("/").replace("/", "-")
-        view.build_from_huggingface(
+        built_dataset_uri = view.build_from_huggingface(
             hf_repo,
             name=name or _candidate_name,
             project_uri=project,
@@ -455,7 +468,15 @@ def _build(
         config.runtime_uri = runtime or config.runtime_uri
         config.project_uri = project or config.project_uri
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type, tags=tags)
+        built_dataset_uri = view.build(_workdir, config, mode=mode_type, tags=tags)
+
+    if push and built_dataset_uri:
+        DatasetTermView.copy(
+            src_uri=built_dataset_uri.full_uri,
+            dest_uri=push,
+            mode=mode_type,
+            force=force_push,
+        )
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")

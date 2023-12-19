@@ -284,6 +284,15 @@ def _quickstart(
     multiple=True,
     help="runtime tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
 )
+@click.option(
+    "--push",
+    help="Cloud/Server dest project uri or runtime uri",
+)
+@click.option(
+    "--force-push",
+    is_flag=True,
+    help="Force to push runtime, even the version has been pushed",
+)
 def _build(
     name: str,
     project: str,
@@ -304,6 +313,8 @@ def _build(
     dump_pip_options: bool,
     dump_condarc: bool,
     tags: t.List[str],
+    push: str,
+    force_push: bool,
 ) -> None:
     """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
     Runtime build only works in the Standalone instance.
@@ -327,6 +338,8 @@ def _build(
         swcli runtime build -y example/pytorch/runtime.yaml # use example/pytorch/runtime.yaml as the runtime.yaml file
         swcli runtime build --yaml runtime.yaml # use runtime.yaml at the current directory as the runtime.yaml file
         swcli runtime build --tag tag1 --tag tag2
+        swcli runtime build --push https://cloud.starwhale.cn/project/starwhale:public --force-push # push runtime to the cloud instance
+        swcli runtime build --push https://cloud.starwhale.cn/project/starwhale:public/runtime/new-runtime-name --force-push # push runtime to the cloud instance with a specified runtime name
 
         \b
         - from conda name:
@@ -354,12 +367,12 @@ def _build(
         swcli runtime build --shell --name pytorch-runtime # lock the current shell environment and use `pytorch-runtime` as the runtime name
     """
     if docker:
-        RuntimeTermView.build_from_docker_image(
+        uri = RuntimeTermView.build_from_docker_image(
             image=docker, runtime_name=name, project=project
         )
     elif conda or conda_prefix or venv or shell:
         # TODO: support auto mode for cuda, cudnn and arch
-        RuntimeTermView.build_from_python_env(
+        uri = RuntimeTermView.build_from_python_env(
             runtime_name=name,
             conda_name=conda,
             conda_prefix=conda_prefix,
@@ -376,7 +389,7 @@ def _build(
             tags=tags,
         )
     else:
-        RuntimeTermView.build_from_runtime_yaml(
+        uri = RuntimeTermView.build_from_runtime_yaml(
             workdir=Path.cwd(),
             yaml_path=Path(yaml),
             project=project,
@@ -390,6 +403,9 @@ def _build(
             dump_pip_options=dump_pip_options,
             tags=tags,
         )
+
+    if push and uri:
+        RuntimeTermView.copy(src_uri=uri.full_uri, dest_uri=push, force=force_push)
 
 
 @runtime_cmd.command("remove", aliases=["rm"])
