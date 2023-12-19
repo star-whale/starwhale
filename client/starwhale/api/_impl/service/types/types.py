@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import abc
+import typing
 import inspect
-from typing import Any, Dict, List, Union, Callable
+from typing import Any, Dict, List, Type, Union, Callable
 
+from pydantic import BaseModel
 from typing_extensions import Protocol
 
 from starwhale.utils import console
@@ -164,3 +166,53 @@ def all_components_are_gradio(
             all([isinstance(out, gradio.components.Component) for out in outputs]),
         ]
     )
+
+
+def generate_type_definition(
+    model: Type[BaseModel],
+) -> Dict[str, ComponentSpecValueType]:
+    """
+    Generate the type definition for a given model.
+
+    Args:
+        model (Type[BaseModel]): The model for which to generate the type definition.
+
+    Returns:
+        Dict[str, ComponentSpecValueType]: The generated type definition.
+
+    Raises:
+        ValueError: If the field type is not supported.
+    """
+    type_definition: Dict[str, ComponentSpecValueType] = {}
+    anns = typing.get_type_hints(model)
+    # if we use model.__annotations__:
+    #   we will get multiple type field_type, e.g. 'str', typing.Optional[str], typing.List[str], <class 'str'>
+    #     or typing.Union[str, NoneType](in py3.7)
+    #   if we use from __future__ import annotations, we will get 'str'
+    #   else we will get typing.Optional[str] or <class 'str'>
+    for field_name, field_type in anns.items():
+        # process union type
+        if getattr(field_type, "__origin__", None) == Union:
+            types = [arg for arg in field_type.__args__ if arg is not type(None)]
+            # we only support Optional[T] for now
+            if len(types) != 1:
+                raise ValueError(
+                    f"Unsupported field type: {field_type} with name {field_name}"
+                )
+            field_type = types[0]
+
+        if field_type == str:
+            type_definition[field_name] = ComponentSpecValueType.string
+        elif field_type == int:
+            type_definition[field_name] = ComponentSpecValueType.int
+        elif field_type == float:
+            type_definition[field_name] = ComponentSpecValueType.float
+        elif field_type == bool:
+            type_definition[field_name] = ComponentSpecValueType.bool
+        elif field_type == list or getattr(field_type, "__origin__", None) == list:
+            type_definition[field_name] = ComponentSpecValueType.list
+        else:
+            raise ValueError(
+                f"Unsupported field type: {field_type} with name {field_name}"
+            )
+    return type_definition

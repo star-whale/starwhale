@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict, List, Callable, Optional
+from typing import Any, List, Callable, Optional
 
 from pydantic import BaseModel
 
 from starwhale.base.client.models.models import (
     ComponentValueSpecInt,
-    ComponentSpecValueType,
     ComponentValueSpecFloat,
 )
 
-from .types import ServiceType
+from .types import ServiceType, generate_type_definition
 
 
 class MessageItem(BaseModel):
@@ -31,17 +30,7 @@ class Query(BaseModel):
 class LLMChat(ServiceType):
     name = "llm_chat"
     args = {}
-
-    # TODO use pydantic model annotations generated arg_types
-    arg_types: Dict[str, ComponentSpecValueType] = {
-        "user_input": ComponentSpecValueType.string,
-        "history": ComponentSpecValueType.list,  # list of Message
-        "top_k": ComponentSpecValueType.int,
-        "top_p": ComponentSpecValueType.float,
-        "temperature": ComponentSpecValueType.float,
-        "max_new_tokens": ComponentSpecValueType.int,
-    }
-
+    arg_types = generate_type_definition(Query)
     Message = MessageItem
 
     def __init__(
