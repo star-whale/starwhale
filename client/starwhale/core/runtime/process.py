@@ -47,10 +47,11 @@ class Process:
     def __repr__(self) -> str:
         return f"process: {self._mode} in prefix path {self._prefix_path}, runtime uri: {self._uri}"
 
-    def run(self) -> None:
-        if os.environ.get(self.EnvInActivatedProcess, "0") == "1":
-            raise RuntimeError("already in runtime activated process")
+    def run_self_swcli_cmd(self) -> None:
+        """Run the original swcli command in the runtime environment.
 
+        The function will remove `--runtime` option and replace the proper swcli bin path.
+        """
         argv = copy.deepcopy(sys.argv)
         if len(argv) < 2:
             raise NoSupportError("no cli command")
@@ -72,19 +73,36 @@ class Process:
         for p in clear_positions[::-1]:
             argv.pop(p)
 
-        sub_cmd = " ".join(argv)
+        return self.run_arbitrary_cmd(argv)
+
+    run = run_self_swcli_cmd
+
+    def run_arbitrary_cmd(
+        self,
+        cmd: str | t.List[str],
+        cwd: str | Path | None = None,
+        live_stream: bool = False,
+    ) -> None:
+        """Run the arbitrary command in the runtime environment."""
+        if os.environ.get(self.EnvInActivatedProcess, "0") == "1":
+            raise RuntimeError("already in runtime activated process")
+
+        if isinstance(cmd, (list, tuple)):
+            cmd = " ".join([f"'{c}'" for c in cmd])
 
         # TODO: support windows platform
         if self._mode == PythonRunEnv.VENV:
             _bin_path = (self._prefix_path / "bin/activate").absolute()
-            cmd = " && ".join([f"source {_bin_path}", sub_cmd])
+            cmd = " && ".join([f"source {_bin_path}", cmd])
         elif self._mode == PythonRunEnv.CONDA:
-            cmd = f"{get_conda_bin()} run --live-stream --prefix {self._prefix_path.absolute()} {sub_cmd}"
+            cmd = f"{get_conda_bin()} run --live-stream --prefix {self._prefix_path.absolute()} {cmd}"
         else:
             raise NoSupportError(f"get activate command for mode: {self._mode}")
 
-        console.print(
-            f":rooster: run process in the python isolated environment(prefix: {self._prefix_path})"
+        console.info(
+            f":rooster: run process in the python isolated environment: \n"
+            f"\t :herb: env prefix: {self._prefix_path} \n"
+            f"\t :hibiscus: command: {cmd}"
         )
         check_call(
             ["bash", "-c", cmd],
@@ -93,6 +111,8 @@ class Process:
                 self.ActivatedRuntimeURI: str(self._uri),
             },
             log=partial(console.print, without_timestamp=True),
+            cwd=cwd,
+            capture_stdout=not live_stream,
         )
 
     def _restore_runtime(
@@ -101,7 +121,7 @@ class Process:
     ) -> Path:
         _uri = self._uri
 
-        console.print(
+        console.info(
             f":owl: start to run in the new process with runtime environment: {_uri}"
         )
         # TODO: support cloud runtime uri

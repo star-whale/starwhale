@@ -42,6 +42,7 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
+from starwhale.core.runtime.cli import _run as runtime_run_cli
 from starwhale.core.runtime.cli import _list as runtime_list_cli
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.view import (
@@ -154,6 +155,47 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert _rt_config.dependencies._pip_pkgs[0] == "starwhale"
         assert _rt_config.dependencies._pip_files == []
+
+    @patch("starwhale.core.runtime.cli.RuntimeProcess")
+    def test_run_cmd(self, mock_process: MagicMock) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            runtime_run_cli,
+            [
+                "helloworld",
+                "--cwd",
+                "test",
+                "python3",
+                "-c",
+                "import requests; print(requests.__version__)",
+            ],
+            obj=MagicMock(),
+        )
+        run_cmd_args = mock_process().run_arbitrary_cmd.call_args[1]
+        assert not run_cmd_args["live_stream"]
+        assert run_cmd_args["cwd"] == "test"
+        assert run_cmd_args["cmd"] == [
+            "python3",
+            "-c",
+            "import requests; print(requests.__version__)",
+        ]
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            runtime_run_cli,
+            [
+                "helloworld",
+                "--live-stream",
+                "python3",
+            ],
+            obj=MagicMock(),
+        )
+
+        run_cmd_args = mock_process().run_arbitrary_cmd.call_args[1]
+        assert run_cmd_args["live_stream"]
+        assert run_cmd_args["cwd"] is None
+        assert run_cmd_args["cmd"] == ["python3"]
+        assert result.exit_code == 0
 
     @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_call")

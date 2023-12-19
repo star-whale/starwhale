@@ -26,6 +26,30 @@ class RuntimeProcessTestCase(TestCase):
 
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
     @patch("starwhale.core.runtime.process.check_call")
+    @patch("starwhale.core.runtime.process.Process._restore_runtime")
+    def test_run_arbitrary_cmd(
+        self, m_restore: MagicMock, m_check_call: MagicMock, m_mode: MagicMock
+    ) -> None:
+        m_mode.return_value = "venv"
+        p = Process("helloworld")
+        p.run_arbitrary_cmd(
+            ["python3", "-c", "import requests; print(requests.__version__)"],
+            live_stream=True,
+            cwd="/tmp",
+        )
+
+        assert m_restore.called
+        assert m_check_call.called
+
+        assert not m_check_call.call_args[1]["capture_stdout"]
+        assert m_check_call.call_args[1]["cwd"] == "/tmp"
+        assert (
+            "'python3' '-c' 'import requests; print(requests.__version__)'"
+            in m_check_call.call_args[0][0][2]
+        )
+
+    @patch("starwhale.core.runtime.process.guess_python_env_mode")
+    @patch("starwhale.core.runtime.process.check_call")
     @patch("starwhale.core.runtime.process.extract_tar")
     @patch("starwhale.core.runtime.process.StandaloneRuntime.restore")
     def test_run_with_runtime_uri(
@@ -61,11 +85,13 @@ class RuntimeProcessTestCase(TestCase):
         ]
         assert (
             m_call.call_args[0][0][2]
-            == f"source {p._prefix_path}/bin/activate && {p._prefix_path}/bin/swcli model run"
+            == f"source {p._prefix_path}/bin/activate && '{p._prefix_path}/bin/swcli' 'model' 'run'"
         )
         env = m_call.call_args[1]["env"]
         assert env["SW_RUNTIME_ACTIVATED_PROCESS"] == "1"
         assert env["SW_ACTIVATED_RUNTIME_URI_IN_SUBPROCESS"] == str(uri)
+        assert m_call.call_args[1]["cwd"] is None
+        assert m_call.call_args[1]["capture_stdout"]
 
         m_restore.reset_mock()
         m_extract.reset_mock()
@@ -129,7 +155,7 @@ class RuntimeProcessTestCase(TestCase):
         ]
         assert (
             m_call.call_args[0][0][2]
-            == f"{conda_bin_path} run --live-stream --prefix {conda_dir} {p._prefix_path}/bin/swcli model run mock another"
+            == f"{conda_bin_path} run --live-stream --prefix {conda_dir} '{p._prefix_path}/bin/swcli' 'model' 'run' 'mock' 'another'"
         )
         env = m_call.call_args[1]["env"]
         assert env["SW_RUNTIME_ACTIVATED_PROCESS"] == "1"

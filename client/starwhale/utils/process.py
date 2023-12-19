@@ -7,9 +7,11 @@ from starwhale.utils import console
 
 def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     log = kwargs.pop("log", console.debug)
+    capture_stdout = kwargs.pop("capture_stdout", True)
+
     kwargs["bufsize"] = 1
-    kwargs["stdout"] = PIPE
-    kwargs["stderr"] = STDOUT
+    kwargs["stdout"] = PIPE if capture_stdout else None
+    kwargs["stderr"] = STDOUT if capture_stdout else None
     env = os.environ.copy()
     env.update(kwargs.get("env", {}))
     env["PYTHONUNBUFFERED"] = "1"
@@ -20,25 +22,29 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     p = Popen(*args, **kwargs)
     console.debug(f"cmd: {p.args!r}")
 
-    while True:
-        line = p.stdout.readline()  # type: ignore
-        if line:
-            log(line.rstrip())
-            output.append(line)
+    if capture_stdout:
+        while True:
+            line = p.stdout.readline()  # type: ignore
+            if line:
+                log(line.rstrip())
+                output.append(line)
 
-        if p.poll() is not None:
-            break
+            if p.poll() is not None:
+                break
 
-    p.wait()
-    for line in p.stdout.readlines():  # type: ignore
-        if line:
-            log(line.rstrip())
-            output.append(line)
+        p.wait()
+        for line in p.stdout.readlines():  # type: ignore
+            if line:
+                log(line.rstrip())
+                output.append(line)
 
-    try:
-        p.stdout.close()  # type: ignore
-    except Exception as ex:
-        log(f"failed to close stdout:{ex}")
+        try:
+            p.stdout.close()  # type: ignore
+        except Exception as ex:
+            log(f"failed to close stdout:{ex}")
+    else:
+        _stdout, _stderr = p.communicate()
+        output.append(f"stdout: {_stdout} \nstderr: {_stderr}")
 
     if p.returncode != 0:
         cmd = kwargs.get("args") or args[0]
