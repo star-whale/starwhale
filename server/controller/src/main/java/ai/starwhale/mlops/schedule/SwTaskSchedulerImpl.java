@@ -88,6 +88,9 @@ public class SwTaskSchedulerImpl implements SwTaskScheduler {
                     .logDir(runEntity.getLogDir())
                     .build();
             task.setCurrentRun(run);
+            var envs = run.getRunSpec().getEnvs();
+            envs.put("SW_TASK_ID", task.getId().toString());
+            envs.put("SW_RUN_ID", task.getCurrentRun().getId().toString());
             runExecutor.run(run, runReportReceiver);
         }
     }
