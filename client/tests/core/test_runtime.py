@@ -1884,6 +1884,13 @@ class StandaloneRuntimeTestCase(TestCase):
         os.environ["SW_CONTAINER"] = "1"
         Runtime.restore(Path(workdir))
 
+        env_fpath = Path(workdir) / "env.sw"
+        assert env_fpath.exists()
+        envs = env_fpath.read_text().split("\n")
+        assert "SW_ACTIVATED_RUNTIME_URI_IN_SHELL=" in envs
+        assert "SW_ACTIVATED_RUNTIME_MODE_IN_SHELL=venv" in envs
+        assert f"SW_ACTIVATED_RUNTIME_PREFIX_IN_SHELL={workdir}/export/venv" in envs
+
         assert m_command_call.call_count == 2
         assert m_command_call.call_args_list[0][0][0] == "apt-get install xxx"
         assert m_command_call.call_args_list[1][0][0] == "echo 'helloworld'"
@@ -2273,7 +2280,15 @@ class StandaloneRuntimeTestCase(TestCase):
 
         m_machine.return_value = "arm64"
         os.environ[ENV_LOG_LEVEL] = "TRACE"
-        Runtime.restore(Path(workdir))
+        runtime_uri = Resource("rttest", typ=ResourceType.runtime, refine=False)
+        Runtime.restore(Path(workdir), runtime_uri=runtime_uri)
+
+        env_fpath = Path(workdir) / "env.sw"
+        assert env_fpath.exists()
+        envs = env_fpath.read_text().split("\n")
+        assert f"SW_ACTIVATED_RUNTIME_URI_IN_SHELL={runtime_uri}" in envs
+        assert "SW_ACTIVATED_RUNTIME_MODE_IN_SHELL=conda" in envs
+        assert f"SW_ACTIVATED_RUNTIME_PREFIX_IN_SHELL={workdir}/export/conda" in envs
 
         assert "CONDARC" not in os.environ
         assert m_call.call_count == 8

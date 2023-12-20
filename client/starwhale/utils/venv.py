@@ -207,13 +207,23 @@ def render_python_env_activate(
     workdir: Path,
     local_packaged_env: bool = False,
     verbose: bool = True,
+    runtime_uri: str = "",
 ) -> None:
     if mode not in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
         raise NoSupportError(f"mode({mode}) render python env activate scripts")
 
+    envs = {
+        SWShellActivatedRuntimeEnv.MODE: mode,
+        SWShellActivatedRuntimeEnv.PREFIX: str(prefix_path),
+        SWShellActivatedRuntimeEnv.URI: runtime_uri,
+    }
+    ensure_file(workdir / "env.sw", "\n".join({f"{k}={v}" for k, v in envs.items()}))
+
     if local_packaged_env:
         # conda local mode(conda-pack) should be activated by the source command.
-        venv_activate_render(prefix_path, workdir, relocate=mode == PythonRunEnv.VENV)
+        venv_activate_render(
+            prefix_path, workdir, relocate=mode == PythonRunEnv.VENV, verbose=verbose
+        )
     else:
         if mode == PythonRunEnv.CONDA:
             conda_activate_render(prefix_path, workdir, verbose=verbose)

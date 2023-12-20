@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import typing as t
@@ -461,7 +463,9 @@ class StandaloneModelTestCase(TestCase):
 
         m_env_mode.return_value = "conda"
 
-        def _restore(workdir: Path, verbose: bool = False) -> None:
+        def _restore(
+            workdir: Path, verbose: bool = False, runtime_uri: Resource | None = None
+        ) -> None:
             ensure_dir(workdir / "export/conda")
 
         m_restore.side_effect = _restore
