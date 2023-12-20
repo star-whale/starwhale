@@ -65,4 +65,10 @@ public interface MemoryTable {
     long getLastRevision();
 
     Map<String, ColumnStatistics> getColumnStatistics(Map<String, String> columnMapping);
+
+    Checkpoint createCheckpoint(String userData);
+
+    List<Checkpoint> getCheckpoints();
+
+    void deleteCheckpoint(long revision);
 }

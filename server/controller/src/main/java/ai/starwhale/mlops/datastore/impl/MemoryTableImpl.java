@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
+import ai.starwhale.mlops.datastore.Checkpoint;
 import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnStatistics;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
+import ai.starwhale.mlops.datastore.Wal.Checkpoint.OP;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
@@ -40,6 +42,8 @@ import ai.starwhale.mlops.datastore.type.Int64Value;
 import ai.starwhale.mlops.datastore.type.IntValue;
 import ai.starwhale.mlops.datastore.type.StringValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -63,6 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -120,11 +125,15 @@ public class MemoryTableImpl implements MemoryTable {
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    public MemoryTableImpl(String tableName,
+    private final Map<Long, Checkpoint> checkpoints = new ConcurrentHashMap<>();
+
+    public MemoryTableImpl(
+            String tableName,
             WalManager walManager,
             StorageAccessService storageAccessService,
             String dataPathPrefix,
-            ParquetConfig parquetConfig) {
+            ParquetConfig parquetConfig
+    ) {
         this.tableName = tableName;
         this.walManager = walManager;
         this.storageAccessService = storageAccessService;
@@ -161,6 +170,8 @@ public class MemoryTableImpl implements MemoryTable {
                             this.lastWalLogId = metadata.getLastWalLogId();
                             this.lastUpdateTime = metadata.getLastUpdateTime();
                             this.lastRevision = metadata.getLastRevision();
+                            metadata.getCheckpointsList()
+                                    .forEach(cp -> this.checkpoints.put(cp.getRevision(), Checkpoint.from(cp)));
                         }
                         if (record == null) {
                             break;
@@ -208,6 +219,9 @@ public class MemoryTableImpl implements MemoryTable {
                             .setLastWalLogId(this.lastWalLogId)
                             .setLastUpdateTime(this.lastUpdateTime)
                             .setLastRevision(this.lastRevision)
+                            .addAllCheckpoints(this.checkpoints.values().stream()
+                                    .map(Checkpoint::toWalCheckpoint)
+                                    .collect(Collectors.toList()))
                             .build());
                 } catch (InvalidProtocolBufferException e) {
                     throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
@@ -330,6 +344,11 @@ public class MemoryTableImpl implements MemoryTable {
         if (entry.getId() <= this.lastWalLogId) {
             return;
         }
+
+        if (tryUpdateCheckpointFromWal(entry)) {
+            return;
+        }
+
         if (entry.hasTableSchema()) {
             this.schema.update(entry.getTableSchema());
         }
@@ -344,6 +363,25 @@ public class MemoryTableImpl implements MemoryTable {
             this.firstWalLogId = entry.getId();
         }
         this.lastWalLogId = entry.getId();
+    }
+
+    private boolean tryUpdateCheckpointFromWal(Wal.WalEntry entry) {
+        if (!Wal.WalEntry.Type.CHECKPOINT.equals(entry.getEntryType())) {
+            return false;
+        }
+        var checkpoint = entry.getCheckpoint();
+        if (OP.DELETE.equals(checkpoint.getOp())) {
+            this.checkpoints.remove(checkpoint.getRevision());
+            return true;
+        }
+
+        var cp = Checkpoint.builder()
+                .revision(checkpoint.getRevision())
+                .timestamp(checkpoint.getTimestamp())
+                .userData(checkpoint.getUserData())
+                .build();
+        this.checkpoints.putIfAbsent(cp.getRevision(), cp);
+        return true;
     }
 
     @Override
@@ -498,7 +536,8 @@ public class MemoryTableImpl implements MemoryTable {
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
@@ -551,7 +590,8 @@ public class MemoryTableImpl implements MemoryTable {
             String end,
             String endType,
             boolean endInclusive,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
@@ -725,9 +765,11 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
-    private RecordResult toRecordResult(Map<String, BaseValue> record,
+    private RecordResult toRecordResult(
+            Map<String, BaseValue> record,
             Map<String, String> columnMapping,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         var key = record.get(this.schema.getKeyColumn());
         if (record.get(DELETED_FLAG_COLUMN_NAME) != null) {
             return new RecordResult(key, true, null);
@@ -752,4 +794,61 @@ public class MemoryTableImpl implements MemoryTable {
                         Entry::getValue));
     }
 
+    @Override
+    public Checkpoint createCheckpoint(String userData) {
+        // check if the checkpoint already exists
+        // we do not support multiple checkpoints for the same revision (even with different user data)
+        var revision = this.lastRevision;
+        if (this.checkpoints.containsKey(revision)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "checkpoint already exists for revision " + revision);
+        }
+
+        var timestamp = System.currentTimeMillis();
+        var cp = Checkpoint.builder()
+                .revision(revision)
+                .timestamp(timestamp)
+                .userData(userData)
+                .build();
+
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
+                .setTableName(this.tableName)
+                .setCheckpoint(Wal.Checkpoint.newBuilder()
+                        .setOp(OP.CREATE)
+                        .setTimestamp(timestamp)
+                        .setRevision(revision)
+                        .setUserData(userData));
+        this.lastWalLogId = this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+        this.checkpoints.put(revision, cp);
+
+        return cp;
+    }
+
+    @Override
+    public List<Checkpoint> getCheckpoints() {
+        return new ArrayList<>(this.checkpoints.values());
+    }
+
+    @Override
+    public void deleteCheckpoint(long revision) {
+        if (!this.checkpoints.containsKey(revision)) {
+            throw new SwNotFoundException(ResourceType.DATASTORE, "checkpoint not found for revision " + revision);
+        }
+
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
+                .setTableName(this.tableName)
+                .setCheckpoint(Wal.Checkpoint.newBuilder()
+                        .setOp(OP.DELETE)
+                        .setRevision(revision));
+        this.lastWalLogId = this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+        this.checkpoints.remove(revision);
+    }
 }

@@ -18,7 +18,9 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.datastore.CheckpointVo;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
+import ai.starwhale.mlops.api.protocol.datastore.CreateCheckpointRequest;
 import ai.starwhale.mlops.api.protocol.datastore.FlushRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
@@ -60,9 +62,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -292,6 +297,34 @@ public class DataStoreController {
             throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
         }
     }
+
+    @PostMapping(value = "/datastore/checkpoint")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<CheckpointVo>> createCheckpoint(
+            @Valid @RequestBody CreateCheckpointRequest request
+    ) {
+        var cp = this.dataStore.createCheckpoint(request);
+        return ResponseEntity.ok(Code.success.asResponse(CheckpointVo.from(cp)));
+    }
+
+    @GetMapping(value = "/datastore/checkpoint")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST', 'ANONYMOUS')")
+    ResponseEntity<ResponseMessage<List<CheckpointVo>>> getCheckpoints(@RequestParam(name = "table") String table) {
+        var cps = this.dataStore.getCheckpoints(table);
+        return ResponseEntity.ok(
+                Code.success.asResponse(cps.stream().map(CheckpointVo::from).collect(Collectors.toList())));
+    }
+
+    @DeleteMapping(value = "/datastore/checkpoint")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteCheckpoint(
+            @RequestParam(name = "table") String table,
+            @RequestParam(name = "id") String id
+    ) {
+        this.dataStore.deleteCheckpoint(table, id);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
 
     private RecordList queryRecordList(QueryTableRequest request) {
         if (request.getTableName() == null) {
