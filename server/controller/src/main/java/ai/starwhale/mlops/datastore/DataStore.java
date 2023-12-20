@@ -340,11 +340,12 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
             }
             Map<String, ColumnSchema> columnSchemaMap;
             if (!req.isEncodeWithType()) {
-                columnSchemaMap = table.getSchema().getColumnSchemaList().stream()
-                        .filter(col -> columns.containsKey(col.getName()))
+                // columnSchemaMap is useless except column name
+                columnSchemaMap = table.getSchema().getColumnNames().stream()
+                        .filter(columns::containsKey)
                         .map(col -> {
-                            var ret = new ColumnSchema(col);
-                            ret.setName(columns.get(col.getName()));
+                            var ret = new ColumnSchema(col, 0);
+                            ret.setName(columns.get(col));
                             return ret;
                         })
                         .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
@@ -613,11 +614,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                             .collect(Collectors.toMap(Entry::getKey,
                                     entry -> info.getColumnPrefix() + entry.getValue()));
                 }
-                ret.columnSchemaMap = ret.schema.getColumnSchemaList().stream()
-                        .filter(c -> ret.columns.containsKey(c.getName()))
+                ret.columnSchemaMap = ret.schema.getColumnNames().stream()
+                        .filter(c -> ret.columns.containsKey(c))
                         .map(c -> {
-                            var schema = new ColumnSchema(c);
-                            schema.setName(ret.columns.get(c.getName()));
+                            var schema = new ColumnSchema(c, 0);
+                            schema.setName(ret.columns.get(c));
                             return schema;
                         })
                         .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
@@ -647,25 +648,7 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
                     for (var entry : table.columnSchemaMap.entrySet()) {
                         var columnName = entry.getKey();
                         var columnSchema = entry.getValue();
-                        var old = columnSchemaMap.putIfAbsent(columnName, columnSchema);
-                        if (old != null && !old.isSameType(columnSchema)) {
-                            for (var t : tables) {
-                                if (t.columnSchemaMap.get(columnName) != null) {
-                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                                            MessageFormat.format(
-                                                    "conflicting column type. {0}: column={1}, alias={2}, type={3}, "
-                                                            + "{4}: column={5}, alias={6}, type={7}",
-                                                    t.tableName,
-                                                    columnName,
-                                                    t.columns.get(columnName),
-                                                    t.columnSchemaMap.get(columnName),
-                                                    table.tableName,
-                                                    columnName,
-                                                    table.columns.get(columnName),
-                                                    table.columnSchemaMap.get(columnName)));
-                                }
-                            }
-                        }
+                        columnSchemaMap.putIfAbsent(columnName, columnSchema);
                     }
                 }
             }
@@ -762,14 +745,12 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
 
     private Map<String, String> getColumnAliases(TableSchema schema, Map<String, String> columns) {
         if (columns == null || columns.isEmpty()) {
-            return schema.getColumnSchemaList().stream()
-                    .map(ColumnSchema::getName)
+            return schema.getColumnNames().stream()
                     .collect(Collectors.toMap(Function.identity(), Function.identity()));
         } else {
             var ret = new HashMap<String, String>();
             var invalidColumns = new HashSet<>(columns.keySet());
-            for (var columnSchema : schema.getColumnSchemaList()) {
-                var columnName = columnSchema.getName();
+            for (var columnName : schema.getColumnNames()) {
                 var alias = columns.get(columnName);
                 if (alias != null) {
                     ret.put(columnName, alias);

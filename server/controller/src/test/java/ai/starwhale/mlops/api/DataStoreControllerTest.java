@@ -357,8 +357,8 @@ public class DataStoreControllerTest {
         assertThat("t2", resp.getStatusCode().is2xxSuccessful(), is(true));
         assertThat("t2",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                        ColumnSchemaDesc.builder().name("b").build()));
         assertThat("t2",
                 Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                 is(List.of(Map.of("k", "00000003", "b", "00000002"))));
@@ -757,9 +757,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("x").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build(),
+                            ColumnSchemaDesc.builder().name("x").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000000", "a", "00000005"),
@@ -789,8 +789,8 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000001", "b", "00000004"),
@@ -828,8 +828,8 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000001", "b", "00000004"))));
@@ -854,9 +854,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("x").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("b").build(),
+                            ColumnSchemaDesc.builder().name("x").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(new HashMap<>() {
@@ -886,9 +886,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("x").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("b").build(),
+                            ColumnSchemaDesc.builder().name("x").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(new HashMap<>() {
@@ -1051,8 +1051,8 @@ public class DataStoreControllerTest {
             var resp = DataStoreControllerTest.this.controller.queryTable(this.req);
             assertThat(resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat(Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat(Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(new HashMap<>() {
                         {
@@ -1417,8 +1417,8 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000000", "a", "00000005"),
@@ -1445,9 +1445,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000001", "b", "00000001", "a", "00000010"),
@@ -1479,9 +1479,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "00000001", "b", "00000001", "a", "00000010"))));
@@ -1506,9 +1506,9 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build(),
+                            ColumnSchemaDesc.builder().name("b").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "1", "b", "1", "a", "16"))));
@@ -1533,10 +1533,10 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("xb").type("INT32").build(),
-                            ColumnSchemaDesc.builder().name("xa").type("INT32").build()));
+                    containsInAnyOrder(ColumnSchemaDesc.builder().name("k").build(),
+                            ColumnSchemaDesc.builder().name("a").build(),
+                            ColumnSchemaDesc.builder().name("xb").build(),
+                            ColumnSchemaDesc.builder().name("xa").build()));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("xa", "4", "xb", "1", "k", "1", "a", "16"))));

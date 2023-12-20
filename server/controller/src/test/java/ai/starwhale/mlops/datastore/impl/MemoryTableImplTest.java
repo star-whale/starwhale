@@ -305,9 +305,6 @@ public class MemoryTableImplTest {
                             put("x", null);
                         }
                     }));
-            assertThat("unknown",
-                    this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
-                    is(ColumnType.UNKNOWN));
             assertThat("unknown", scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f"), false),
                     contains(new RecordResult(BaseValue.valueOf("0"),
                                     false,
@@ -325,9 +322,6 @@ public class MemoryTableImplTest {
             desc.getColumnSchemaList().set(desc.getColumnSchemaList().size() - 1,
                     ColumnSchemaDesc.builder().name("x").type("INT32").build());
             this.memoryTable.update(desc, List.of(Map.of("k", "1", "x", "1")));
-            assertThat("update unknown",
-                    this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
-                    is(ColumnType.INT32));
             assertThat("update unknown",
                     scanAll(this.memoryTable, List.of("k", "a", "b", "c", "a-b/c/d:e_f", "x"), false),
                     contains(new RecordResult(BaseValue.valueOf("0"),

@@ -157,7 +157,7 @@ public class SwReadSupport extends ReadSupport<Map<String, BaseValue>> {
                         wal.getListValueList()
                                 .forEach(col -> {
                                     if (col.getIndex() >= 0) {
-                                        value.add(col.getIndex(), WalRecordDecoder.decodeValue(null, col));
+                                        value.add(col.getIndex(), WalRecordDecoder.decodeValue(col));
                                     } else {
                                         var element = value.get(-col.getIndex() - 1);
                                         switch (element.getColumnType()) {
@@ -182,7 +182,7 @@ public class SwReadSupport extends ReadSupport<Map<String, BaseValue>> {
                     private void mergeMap(MapValue value, Wal.Column wal) {
                         for (var entry : wal.getMapValueList()) {
                             this.mergeMapEntry(value,
-                                    WalRecordDecoder.decodeValue(null, entry.getKey()),
+                                    WalRecordDecoder.decodeValue(entry.getKey()),
                                     entry.getValue());
                         }
                     }
@@ -194,7 +194,7 @@ public class SwReadSupport extends ReadSupport<Map<String, BaseValue>> {
                     private <T> void mergeMapEntry(Map<T, BaseValue> value, T k, Wal.Column v) {
                         var old = value.get(k);
                         if (old == null) {
-                            value.put(k, WalRecordDecoder.decodeValue(null, v));
+                            value.put(k, WalRecordDecoder.decodeValue(v));
                         } else {
                             switch (old.getColumnType()) {
                                 case LIST:

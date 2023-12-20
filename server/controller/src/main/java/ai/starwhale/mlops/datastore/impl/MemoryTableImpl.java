@@ -508,8 +508,8 @@ public class MemoryTableImpl implements MemoryTable {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "order by column should not be null");
                 }
-                var colSchema = this.schema.getColumnSchemaByName(col.getColumnName());
-                if (colSchema == null) {
+                var idx = this.schema.getColumnIndexByName(col.getColumnName());
+                if (idx == null) {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "unknown orderBy column " + col);
                 }
@@ -566,7 +566,7 @@ public class MemoryTableImpl implements MemoryTable {
         } else {
             ColumnType startKeyType;
             if (startType == null) {
-                startKeyType = this.schema.getColumnSchemaByName(this.schema.getKeyColumn()).getType();
+                startKeyType = this.schema.getKeyColumnSchema().getType();
             } else {
                 try {
                     startKeyType = ColumnType.valueOf(startType);
@@ -588,7 +588,7 @@ public class MemoryTableImpl implements MemoryTable {
         } else {
             ColumnType endKeyType;
             if (endType == null) {
-                endKeyType = this.schema.getColumnSchemaByName(this.schema.getKeyColumn()).getType();
+                endKeyType = this.schema.getKeyColumnSchema().getType();
             } else {
                 try {
                     endKeyType = ColumnType.valueOf(endType);

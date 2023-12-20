@@ -238,15 +238,15 @@ public class DataStoreTest {
     public void testMigration() {
         var srcTable = "t1";
         var srcDesc = new TableSchemaDesc("k",
-                                       List.of(ColumnSchemaDesc.string().name("k").build(),
-                                               ColumnSchemaDesc.int32().name("a").build()));
+                List.of(ColumnSchemaDesc.string().name("k").build(),
+                        ColumnSchemaDesc.int32().name("a").build()));
         this.dataStore.update(srcTable,
-                              srcDesc,
-                              List.of(Map.of("k", "0", "a", "5"),
-                                      Map.of("k", "1", "a", "4"),
-                                      Map.of("k", "2", "a", "3"),
-                                      Map.of("k", "3", "a", "2"),
-                                      Map.of("k", "4", "a", "1"))
+                srcDesc,
+                List.of(Map.of("k", "0", "a", "5"),
+                        Map.of("k", "1", "a", "4"),
+                        Map.of("k", "2", "a", "3"),
+                        Map.of("k", "3", "a", "2"),
+                        Map.of("k", "4", "a", "1"))
         );
         var targetTable = "t2";
 
@@ -254,40 +254,40 @@ public class DataStoreTest {
         assertThrows(
                 SwValidationException.class,
                 () -> this.dataStore.migration(DataStoreMigrationRequest.builder()
-                                                  .srcTableName(srcTable)
-                                                  .targetTableName(targetTable)
-                                                  .createNonExistingTargetTable(false)
-                                                  .build())
+                        .srcTableName(srcTable)
+                        .targetTableName(targetTable)
+                        .createNonExistingTargetTable(false)
+                        .build())
         );
 
         // case: target table doesn't exist but allow to create, migration with filter
         var length = this.dataStore.migration(DataStoreMigrationRequest.builder()
-                                    .srcTableName(srcTable)
-                                    .targetTableName(targetTable)
-                                    .filter(TableQueryFilter.builder()
-                                                    .operator(Operator.OR)
-                                                    .operands(List.of(
-                                                            TableQueryFilter.builder()
-                                                                    .operator(Operator.EQUAL)
-                                                                    .operands(List.of(
-                                                                            new TableQueryFilter.Column("k"),
-                                                                            new TableQueryFilter.Constant(
-                                                                                    ColumnType.STRING, "0")
-                                                                    ))
-                                                                    .build(),
-                                                            TableQueryFilter.builder()
-                                                                    .operator(Operator.EQUAL)
-                                                                    .operands(List.of(
-                                                                            new TableQueryFilter.Column("k"),
-                                                                            new TableQueryFilter.Constant(
-                                                                                    ColumnType.STRING, "2")
-                                                                    ))
-                                                                    .build()
-                                                    ))
-                                                    .build()
-                                    )
-                                    .createNonExistingTargetTable(true)
-                                    .build());
+                .srcTableName(srcTable)
+                .targetTableName(targetTable)
+                .filter(TableQueryFilter.builder()
+                        .operator(Operator.OR)
+                        .operands(List.of(
+                                TableQueryFilter.builder()
+                                        .operator(Operator.EQUAL)
+                                        .operands(List.of(
+                                                new TableQueryFilter.Column("k"),
+                                                new TableQueryFilter.Constant(
+                                                        ColumnType.STRING, "0")
+                                        ))
+                                        .build(),
+                                TableQueryFilter.builder()
+                                        .operator(Operator.EQUAL)
+                                        .operands(List.of(
+                                                new TableQueryFilter.Column("k"),
+                                                new TableQueryFilter.Constant(
+                                                        ColumnType.STRING, "2")
+                                        ))
+                                        .build()
+                        ))
+                        .build()
+                )
+                .createNonExistingTargetTable(true)
+                .build());
         assertEquals(2, length);
 
         var recordList = this.dataStore.query(
@@ -300,10 +300,10 @@ public class DataStoreTest {
 
         // case: migration all records without filter
         length = this.dataStore.migration(DataStoreMigrationRequest.builder()
-                                    .srcTableName(srcTable)
-                                    .targetTableName(targetTable)
-                                    .createNonExistingTargetTable(true)
-                                    .build());
+                .srcTableName(srcTable)
+                .targetTableName(targetTable)
+                .createNonExistingTargetTable(true)
+                .build());
         assertEquals(5, length);
 
         recordList = this.dataStore.query(
@@ -339,10 +339,6 @@ public class DataStoreTest {
                 .limit(2)
                 .build());
         assertThat("test",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("a", ColumnType.INT32)));
-        assertThat("test",
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "00000003"),
                         Map.of("a", "00000004"))));
@@ -374,10 +370,6 @@ public class DataStoreTest {
                 .limit(2)
                 .build());
         assertThat("all columns",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
-        assertThat("all columns",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "2", "a", "00000003"),
                         Map.of("k", "1", "a", "00000004"))));
@@ -401,16 +393,12 @@ public class DataStoreTest {
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png")));
         recordList = this.dataStore.query(DataStoreQueryRequest.builder().tableName("t1").build());
         assertThat("object type",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k",
-                        ColumnType.STRING,
-                        "a",
-                        ColumnType.INT32,
-                        "x:link/url",
-                        ColumnType.STRING,
-                        "x:link/mime_type",
-                        ColumnType.STRING)));
+                recordList.getColumnSchemaMap()
+                        .keySet()
+                        .stream()
+                        .sorted(Comparator.naturalOrder())
+                        .collect(Collectors.toList()),
+                is(List.of("a", "k", "x:link/mime_type", "x:link/url")));
         assertThat("object type",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005"),
@@ -443,9 +431,12 @@ public class DataStoreTest {
                 .columns(Map.of("x", "y", "x:link/url", "url"))
                 .build());
         assertThat("object type alias",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("url", ColumnType.STRING, "y:link/mime_type", ColumnType.STRING)));
+                recordList.getColumnSchemaMap()
+                        .keySet()
+                        .stream()
+                        .sorted(Comparator.naturalOrder())
+                        .collect(Collectors.toList()),
+                is(List.of("url", "y:link/mime_type")));
         assertThat("object type alias",
                 recordList.getRecords(),
                 is(List.of(Map.of(),
@@ -521,7 +512,7 @@ public class DataStoreTest {
         }
 
         var encodeString = new EncodeString();
-        var testParams = new boolean[] {true, false, true, false, true, false};
+        var testParams = new boolean[]{true, false, true, false, true, false};
         for (boolean rawResult : testParams) {
             var recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                     .tableName("t1")
@@ -693,16 +684,16 @@ public class DataStoreTest {
         assertThat("part range test with exactly param",
                 rangeList.getRanges(),
                 is(List.of(
-                    KeyRangeList.Range.builder()
-                            .start("1").startType("STRING").startInclusive(true)
-                            .end("3").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("3").startType("STRING").startInclusive(true)
-                            .end("3").endType("STRING").endInclusive(true)
-                            .size(1)
-                            .build()
+                        KeyRangeList.Range.builder()
+                                .start("1").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("3").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(true)
+                                .size(1)
+                                .build()
                 ))
         );
         // only one item(for the range test)
@@ -719,9 +710,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .build());
         assertThat("scan one item",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("a", ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a")));
         assertThat("scan one item",
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "00000002"))));
@@ -745,16 +735,16 @@ public class DataStoreTest {
         assertThat("all range test with exactly param",
                 rangeList.getRanges(),
                 is(List.of(
-                    KeyRangeList.Range.builder()
-                            .start("0").startType("STRING").startInclusive(true)
-                            .end("2").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("2").startType("STRING").startInclusive(true)
-                            .end("3").endType("STRING").endInclusive(true)
-                            .size(2)
-                            .build()
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end("3").endType("STRING").endInclusive(true)
+                                .size(2)
+                                .build()
                 ))
         );
 
@@ -775,21 +765,21 @@ public class DataStoreTest {
         assertThat("all range test with exactly param",
                 rangeList.getRanges(),
                 is(List.of(
-                    KeyRangeList.Range.builder()
-                            .start("0").startType("STRING").startInclusive(true)
-                            .end("2").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("2").startType("STRING").startInclusive(true)
-                            .end("4").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("4").startType("STRING").startInclusive(true)
-                            .end("4").endType("STRING").endInclusive(true)
-                            .size(1)
-                            .build()
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end("4").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("4").startType("STRING").startInclusive(true)
+                                .end("4").endType("STRING").endInclusive(true)
+                                .size(1)
+                                .build()
                 ))
         );
 
@@ -806,21 +796,21 @@ public class DataStoreTest {
         assertThat("all range test without param",
                 rangeList.getRanges(),
                 is(List.of(
-                    KeyRangeList.Range.builder()
-                            .start("0").startType("STRING").startInclusive(true)
-                            .end("2").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("2").startType("STRING").startInclusive(true)
-                            .end("4").endType("STRING").endInclusive(false)
-                            .size(2)
-                            .build(),
-                    KeyRangeList.Range.builder()
-                            .start("4").startType("STRING").startInclusive(true)
-                            .end(null).endType("STRING").endInclusive(false)
-                            .size(1)
-                            .build()
+                        KeyRangeList.Range.builder()
+                                .start("0").startType("STRING").startInclusive(true)
+                                .end("2").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("2").startType("STRING").startInclusive(true)
+                                .end("4").endType("STRING").endInclusive(false)
+                                .size(2)
+                                .build(),
+                        KeyRangeList.Range.builder()
+                                .start("4").startType("STRING").startInclusive(true)
+                                .end(null).endType("STRING").endInclusive(false)
+                                .size(1)
+                                .build()
                 ))
         );
     }
@@ -855,9 +845,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .build());
         assertThat("test",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("a", ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a")));
         assertThat("test",
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "00000004"),
@@ -880,9 +869,8 @@ public class DataStoreTest {
                 .limit(2)
                 .build());
         assertThat("test",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("a", ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a")));
         assertThat("test",
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "00000004"), Map.of())));
@@ -900,9 +888,8 @@ public class DataStoreTest {
                 .limit(3)
                 .build());
         assertThat("all columns",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32, "l", ColumnType.FLOAT64)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "k", "l")));
         assertThat("all columns",
                 recordList.getRecords(),
                 is(List.of(
@@ -920,9 +907,8 @@ public class DataStoreTest {
                 .limit(0)
                 .build());
         assertThat("schema only",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32, "l", ColumnType.FLOAT64)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "k", "l")));
         assertThat("schema only", recordList.getRecords(), empty());
         desc.setColumnSchemaList(new ArrayList<>(desc.getColumnSchemaList()));
         desc.getColumnSchemaList().addAll(
@@ -938,18 +924,13 @@ public class DataStoreTest {
                         .build()))
                 .build());
         assertThat("object type",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k",
-                        ColumnType.STRING,
-                        "a",
-                        ColumnType.INT32,
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a",
+                        "k",
                         "l",
-                        ColumnType.FLOAT64,
-                        "x:link/url",
-                        ColumnType.STRING,
                         "x:link/mime_type",
-                        ColumnType.STRING)));
+                        "x:link/url"
+                )));
         assertThat("object type",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005", "l", "3ff8000000000000"),
@@ -968,9 +949,8 @@ public class DataStoreTest {
                                 .build()))
                         .build());
         assertThat("object type alias",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("url", ColumnType.STRING, "y:link/mime_type", ColumnType.STRING)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("url", "y:link/mime_type")));
         assertThat("object type alias",
                 recordList.getRecords(),
                 is(List.of(Map.of(),
@@ -1036,14 +1016,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .build());
         assertThat("test",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k",
-                        ColumnType.STRING,
-                        "a",
-                        ColumnType.INT32,
-                        "b",
-                        ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "b", "k")));
         assertThat("test",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005", "b", "00000015"),
@@ -1085,14 +1059,8 @@ public class DataStoreTest {
                                 .build()))
                 .build());
         assertThat("test",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k",
-                        ColumnType.STRING,
-                        "a",
-                        ColumnType.INT32,
-                        "b",
-                        ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "b", "k")));
         assertThat("test",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005", "b", "00000015"),
@@ -1118,9 +1086,8 @@ public class DataStoreTest {
                 .start("7")
                 .build());
         assertThat("empty",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("a", ColumnType.INT32, "b", ColumnType.INT32, "k", ColumnType.STRING)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "b", "k")));
         assertThat("empty", recordList.getRecords(), empty());
         assertThat("empty", recordList.getLastKey(), nullValue());
 
@@ -1141,9 +1108,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .build());
         assertThat("alias",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "k")));
         assertThat("alias",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000015"),
@@ -1160,13 +1126,6 @@ public class DataStoreTest {
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
                         DataStoreScanRequest.TableInfo.builder().tableName("t4").build()))
                 .build()));
-        assertThrows(SwValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
-                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
-                        DataStoreScanRequest.TableInfo.builder()
-                                .tableName("t2")
-                                .columns(Map.of("k", "a"))
-                                .build()))
-                .build()));
 
         // scan non exist table
         final String tableNonExist = "tableNonExist";
@@ -1178,9 +1137,8 @@ public class DataStoreTest {
 
         recordList = this.dataStore.scan(builder.ignoreNonExistingTable(true).build());
         assertThat("result of non exist table",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("a", "k")));
         assertThat("result of non exist table",
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "0", "a", "00000005"))));
@@ -1197,16 +1155,8 @@ public class DataStoreTest {
                                 .build()))
                 .build());
         assertThat("column prefix",
-                recordList.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(Map.of("ak",
-                        ColumnType.STRING,
-                        "bk",
-                        ColumnType.STRING,
-                        "aa",
-                        ColumnType.INT32,
-                        "bb",
-                        ColumnType.INT32)));
+                recordList.getColumnSchemaMap().keySet().stream().sorted().collect(Collectors.toList()),
+                is(List.of("aa", "ak", "bb", "bk")));
         assertThat("column prefix",
                 recordList.getRecords(),
                 is(List.of(Map.of("ak", "0", "bk", "0", "aa", "00000005", "bb", "00000015"),
@@ -1622,7 +1572,8 @@ public class DataStoreTest {
         var schema = new TableSchemaDesc("key", columnSchemaList);
         var expected = new RecordList(
                 columnSchemaList.stream()
-                        .collect(Collectors.toMap(ColumnSchemaDesc::getName, col -> new ColumnSchema(col, 0))),
+                        .collect(
+                                Collectors.toMap(ColumnSchemaDesc::getName, col -> new ColumnSchema(col.getName(), 0))),
                 new HashMap<>() {
                     {
                         put("key", ColumnHintsDesc.builder()
@@ -1785,7 +1736,7 @@ public class DataStoreTest {
                 .keepNone(true)
                 .build());
         result.getColumnSchemaMap().entrySet()
-                .forEach(entry -> entry.setValue(new ColumnSchema(entry.getValue().toColumnSchemaDesc(), 0)));
+                .forEach(entry -> entry.setValue(new ColumnSchema(entry.getValue().getName(), 0)));
 
         var originFlatMap = records.get(0).get("o");
         // hack flat map in record list
@@ -1804,7 +1755,9 @@ public class DataStoreTest {
                 .build());
         // restore flat map in record list
         records.get(0).put("o", originFlatMap);
-        var encoded = encodeResultWithType(expected);
+        var schemaMap = columnSchemaList.stream()
+                .collect(Collectors.toMap(ColumnSchemaDesc::getName, col -> new ColumnSchema(col, 0)));
+        var encoded = encodeResultWithType(schemaMap, expected);
 
         // encode of map value will return list of map,
         // the order of the list items is not guaranteed,
@@ -1830,29 +1783,6 @@ public class DataStoreTest {
                 List.of(Map.of("key", "1")));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t").build())).build());
-        assertThat(result.getColumnSchemaMap().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getType())),
-                is(new HashMap<>() {
-                    {
-                        put("key", ColumnType.INT32);
-                        put("a", ColumnType.BOOL);
-                        put("b", ColumnType.INT8);
-                        put("c", ColumnType.INT16);
-                        put("d", ColumnType.INT32);
-                        put("e", ColumnType.INT64);
-                        put("f", ColumnType.FLOAT32);
-                        put("g", ColumnType.FLOAT64);
-                        put("h", ColumnType.BYTES);
-                        put("i", ColumnType.UNKNOWN);
-                        put("j", ColumnType.LIST);
-                        put("k", ColumnType.OBJECT);
-                        put("l", ColumnType.TUPLE);
-                        put("m", ColumnType.MAP);
-                        put("n", ColumnType.LIST);
-                        put("o", ColumnType.MAP);
-                        put("complex", ColumnType.OBJECT);
-                    }
-                }));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")
@@ -1902,13 +1832,13 @@ public class DataStoreTest {
         assertEquals(encoded, result);
     }
 
-    private static RecordList encodeResultWithType(RecordList records) {
+    private static RecordList encodeResultWithType(Map<String, ColumnSchema> schemaMap, RecordList records) {
         return new RecordList(null,
                 records.getColumnHints(),
                 records.getRecords().stream()
                         .map(r -> r.entrySet().stream()
                                 .collect(Collectors.toMap(Entry::getKey,
-                                        entry -> encodeValueWithType(records.getColumnSchemaMap().get(entry.getKey()),
+                                        entry -> encodeValueWithType(schemaMap.get(entry.getKey()),
                                                 entry.getValue()))))
                         .collect(Collectors.toList()),
                 records.getLastKey(),
