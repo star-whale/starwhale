@@ -30,6 +30,7 @@ import ai.starwhale.mlops.schedule.impl.container.ContainerSpecification;
 import ai.starwhale.mlops.schedule.impl.container.TaskContainerSpecificationFinder;
 import ai.starwhale.mlops.schedule.reporting.RunReportReceiver;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -88,9 +89,10 @@ public class SwTaskSchedulerImpl implements SwTaskScheduler {
                     .logDir(runEntity.getLogDir())
                     .build();
             task.setCurrentRun(run);
-            var envs = run.getRunSpec().getEnvs();
+            var envs = new HashMap<>(run.getRunSpec().getEnvs());
             envs.put("SW_TASK_ID", task.getId().toString());
             envs.put("SW_RUN_ID", task.getCurrentRun().getId().toString());
+            run.getRunSpec().setEnvs(envs);
             runExecutor.run(run, runReportReceiver);
         }
     }
