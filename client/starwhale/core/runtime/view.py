@@ -155,7 +155,7 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
     @BaseTermView._only_standalone
     def build_from_docker_image(
         cls, image: str, runtime_name: str = "", project: str = ""
-    ) -> None:
+    ) -> Resource:
         runtime_name = runtime_name or image.split(":")[0].split("/")[-1]
         runtime_uri = cls.prepare_build_bundle(
             project=project, bundle_name=runtime_name, typ=ResourceType.runtime
@@ -163,6 +163,7 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
 
         rt = Runtime.get_runtime(runtime_uri)
         rt.build_from_docker_image(image=image, runtime_name=runtime_name)
+        return runtime_uri
 
     @classmethod
     @BaseTermView._only_standalone

@@ -357,9 +357,10 @@ class ModelTermView(BaseTermView, TagViewMixin):
         package_runtime: bool = True,
         tags: t.List[str] | None = None,
         excludes: t.List[str] | None = None,
-    ) -> None:
+    ) -> Resource | None:
         if runtime_uri:
             RuntimeProcess(uri=Resource(runtime_uri, typ=ResourceType.runtime)).run()
+            return None
         else:
             model_uri = cls.prepare_build_bundle(
                 project=project,
@@ -378,6 +379,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
                 tags=tags,
                 excludes=excludes,
             )
+            return model_uri
 
     @classmethod
     def copy(

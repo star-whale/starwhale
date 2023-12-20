@@ -198,7 +198,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         name: str,
         project_uri: str,
         **kwargs: t.Any,
-    ) -> None:
+    ) -> Resource:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
             bundle_name=name,
@@ -207,12 +207,13 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         )
         ds = Dataset.get_dataset(dataset_uri)
         ds.build_from_huggingface(repo=repo, **kwargs)
+        return dataset_uri
 
     @classmethod
     @BaseTermView._only_standalone
     def build_from_csv_files(
         cls, paths: t.List[PathLike], name: str, project_uri: str, **kwargs: t.Any
-    ) -> None:
+    ) -> Resource:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
             bundle_name=name,
@@ -221,6 +222,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         )
         ds = Dataset.get_dataset(dataset_uri)
         ds.build_from_csv_files(paths, **kwargs)
+        return dataset_uri
 
     @classmethod
     @BaseTermView._only_standalone
@@ -230,7 +232,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         name: str,
         project_uri: str,
         **kwargs: t.Any,
-    ) -> None:
+    ) -> Resource:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
             bundle_name=name,
@@ -239,6 +241,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         )
         ds = Dataset.get_dataset(dataset_uri)
         ds.build_from_json_files(paths, **kwargs)
+        return dataset_uri
 
     @classmethod
     @BaseTermView._only_standalone
@@ -249,7 +252,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         name: str,
         project_uri: str,
         **kwargs: t.Any,
-    ) -> None:
+    ) -> Resource:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
             bundle_name=name,
@@ -258,6 +261,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         )
         ds = Dataset.get_dataset(dataset_uri)
         ds.build_from_folder(folder=folder, kind=kind, **kwargs)
+        return dataset_uri
 
     @classmethod
     @BaseTermView._only_standalone
@@ -267,9 +271,10 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         config: DatasetConfig,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         tags: t.List[str] | None = None,
-    ) -> None:
+    ) -> Resource | None:
         if config.runtime_uri:
             RuntimeProcess(uri=config.runtime_uri).run()
+            return None
         else:
             dataset_uri = cls.prepare_build_bundle(
                 project=config.project_uri,
@@ -279,6 +284,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             )
             ds = Dataset.get_dataset(dataset_uri)
             ds.build(workdir=Path(workdir), config=config, mode=mode, tags=tags)
+            return dataset_uri
 
     @classmethod
     def copy(
