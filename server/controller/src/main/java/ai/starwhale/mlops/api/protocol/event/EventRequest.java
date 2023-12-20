@@ -18,12 +18,14 @@ package ai.starwhale.mlops.api.protocol.event;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Validated
 @SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class EventRequest extends Event {
 
