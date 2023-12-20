@@ -2,6 +2,8 @@ class SWEnv:
     instance_uri = "SW_INSTANCE_URI"
     project = "SW_PROJECT"
     task_id = "SW_TASK_ID"
+    run_id = "SW_RUN_ID"
+    project_uri = "SW_PROJECT_URI"
     job_version = "SW_JOB_VERSION"
     model_version = "SW_MODEL_VERSION"
     runtime_version = "SW_RUNTIME_VERSION"

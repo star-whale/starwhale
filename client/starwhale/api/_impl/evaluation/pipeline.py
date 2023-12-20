@@ -18,6 +18,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType, PredictLogMode
 from starwhale.api.service import Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
+from starwhale.utils.event import event
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
@@ -186,6 +187,7 @@ class PipelineHandler(metaclass=ABCMeta):
         return _wrapper
 
     @_record_status  # type: ignore
+    @event(msg="Run Starwhale Model evaluation")
     def _starwhale_internal_run_evaluate(self) -> None:
         now = now_str()
         try:
@@ -279,6 +281,7 @@ class PipelineHandler(metaclass=ABCMeta):
             func()
 
     @_record_status  # type: ignore
+    @event(msg="Run Starwhale Model prediction")
     def _starwhale_internal_run_predict(self) -> None:
         if not self.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")

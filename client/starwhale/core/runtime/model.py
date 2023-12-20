@@ -108,6 +108,7 @@ from starwhale.utils.error import (
     ExclusiveArgsError,
     UnExpectedConfigFieldError,
 )
+from starwhale.utils.event import event
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
@@ -765,6 +766,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Runtime: {self.uri}"
 
     @classmethod
+    @event(msg="Copy Starwhale Runtime")
     def copy(
         cls,
         src_uri: Resource,

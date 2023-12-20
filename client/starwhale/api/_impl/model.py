@@ -9,6 +9,7 @@ from pathlib import Path
 from starwhale.utils import console, disable_progress_bar
 from starwhale.utils.fs import blake2b_content
 from starwhale.consts.env import SWEnv
+from starwhale.utils.event import event
 
 from .job import Handler
 from ...base.uri.project import Project
@@ -18,6 +19,7 @@ _called_build_functions: t.Dict[str, bool] = {}
 _called_build_lock = threading.Lock()
 
 
+@event(msg="Build Starwhale model")
 def build(
     modules: t.Optional[t.List[t.Any]] = None,
     workdir: t.Optional[_path_T] = None,
