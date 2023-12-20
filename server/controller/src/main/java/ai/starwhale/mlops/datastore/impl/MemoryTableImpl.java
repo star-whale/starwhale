@@ -794,6 +794,27 @@ public class MemoryTableImpl implements MemoryTable {
                         Entry::getValue));
     }
 
+    /**
+     * Get the number of records in the table for the latest revision.
+     * @return the number of records
+     */
+    private long getCount() {
+        return this.recordMap.values().stream().filter(versions -> {
+            if (versions.isEmpty()) {
+                return false;
+            }
+            boolean deleted = false;
+            long lastRevision = Long.MIN_VALUE;
+            for (var record : versions) {
+                if (record.getRevision() > lastRevision) {
+                    lastRevision = record.getRevision();
+                    deleted = record.isDeleted();
+                }
+            }
+            return !deleted;
+        }).count();
+    }
+
     @Override
     public Checkpoint createCheckpoint(String userData) {
         // check if the checkpoint already exists
@@ -809,6 +830,7 @@ public class MemoryTableImpl implements MemoryTable {
                 .revision(revision)
                 .timestamp(timestamp)
                 .userData(userData)
+                .count(this.getCount())
                 .build();
 
         var entry = Wal.WalEntry.newBuilder()
@@ -818,6 +840,7 @@ public class MemoryTableImpl implements MemoryTable {
                         .setOp(OP.CREATE)
                         .setTimestamp(timestamp)
                         .setRevision(revision)
+                        .setCount(cp.getCount())
                         .setUserData(userData));
         this.lastWalLogId = this.walManager.append(entry);
         if (this.firstWalLogId < 0) {

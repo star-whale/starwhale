@@ -35,11 +35,13 @@ public interface MemoryTable {
 
     long updateWithObject(TableSchemaDesc schema, List<Map<String, BaseValue>> records);
 
-    Iterator<RecordResult> query(long timestamp,
+    Iterator<RecordResult> query(
+            long timestamp,
             Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     Iterator<RecordResult> scan(
             long timestamp,
@@ -50,7 +52,8 @@ public interface MemoryTable {
             String end,
             String endType,
             boolean endInclusive,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     void lock(boolean forRead);
 
@@ -66,9 +69,31 @@ public interface MemoryTable {
 
     Map<String, ColumnStatistics> getColumnStatistics(Map<String, String> columnMapping);
 
+    /**
+     * Create a checkpoint, the checkpoint means:
+     * 1. the data for the checkpoint is immutable
+     * 2. the data outside the checkpoint may be garbage collected (except the data behind the checkpoint)
+     * 3. getting the count of the checkpoint is constant time
+     * <p>
+     * It should throw SwValidationException if the checkpoint already exists (exists means the revision is the same)
+     *
+     * @param userData user data, nullable
+     * @return checkpoint
+     */
     Checkpoint createCheckpoint(String userData);
 
+    /**
+     * Get the checkpoint by revision
+     *
+     * @return checkpoint list or empty list if table has no checkpoint (without exception)
+     */
     List<Checkpoint> getCheckpoints();
 
+    /**
+     * Delete the checkpoint by revision
+     * It should throw SwNotFoundException if the checkpoint does not exist
+     *
+     * @param revision revision in checkpoint
+     */
     void deleteCheckpoint(long revision);
 }
