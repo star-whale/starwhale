@@ -104,6 +104,8 @@ class SwTaskSchedulerImplTest {
         Assertions.assertEquals(1L, run.getTaskId());
         Assertions.assertEquals(run, task.getCurrentRun());
         Assertions.assertEquals("bbb", run.getRunSpec().getEnvs().get("aaa"));
+        Assertions.assertEquals("1", run.getRunSpec().getEnvs().get("SW_TASK_ID"));
+        Assertions.assertEquals("11", run.getRunSpec().getEnvs().get("SW_RUN_ID"));
         Assertions.assertEquals("img", run.getRunSpec().getImage());
         Assertions.assertEquals("cmd", run.getRunSpec().getCommand().getCmd()[0]);
         Assertions.assertEquals("bash -c", run.getRunSpec().getCommand().getEntrypoint()[0]);
