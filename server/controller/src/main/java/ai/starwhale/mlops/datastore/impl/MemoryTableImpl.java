@@ -841,7 +841,7 @@ public class MemoryTableImpl implements MemoryTable {
                 .revision(revision)
                 .timestamp(timestamp)
                 .userData(userData)
-                .count(this.getCount())
+                .rowCount(this.getCount())
                 .build();
 
         var entry = Wal.WalEntry.newBuilder()
@@ -851,7 +851,7 @@ public class MemoryTableImpl implements MemoryTable {
                         .setOp(OP.CREATE)
                         .setTimestamp(timestamp)
                         .setRevision(revision)
-                        .setCount(cp.getCount())
+                        .setCount(cp.getRowCount())
                         .setUserData(userData));
         this.lastWalLogId = this.walManager.append(entry);
         if (this.firstWalLogId < 0) {

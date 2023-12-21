@@ -3164,7 +3164,7 @@ public class MemoryTableImplTest {
         var cp1 = memoryTable.createCheckpoint("foo");
         assertEquals("foo", cp1.getUserData());
         assertEquals(t2, cp1.getRevision());
-        assertEquals(1, cp1.getCount());
+        assertEquals(1, cp1.getRowCount());
 
         var cps = memoryTable.getCheckpoints();
         assertEquals(1, cps.size());
@@ -3191,7 +3191,7 @@ public class MemoryTableImplTest {
         var cp2 = memoryTable.createCheckpoint("bar");
         assertEquals("bar", cp2.getUserData());
         assertEquals(t3, cp2.getRevision());
-        assertEquals(1, cp2.getCount());
+        assertEquals(1, cp2.getRowCount());
 
         cps = memoryTable.getCheckpoints();
         assertEquals(2, cps.size());

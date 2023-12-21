@@ -31,7 +31,7 @@ public class CheckpointVo {
     private Long createdTime;
 
     @NotNull
-    private Long count;
+    private Long rowCount;
 
     private String userData;
 
@@ -40,7 +40,7 @@ public class CheckpointVo {
                 .id(String.valueOf(checkpoint.getRevision()))
                 .createdTime(checkpoint.getTimestamp())
                 .userData(checkpoint.getUserData())
-                .count(checkpoint.getCount())
+                .rowCount(checkpoint.getRowCount())
                 .build();
     }
 }

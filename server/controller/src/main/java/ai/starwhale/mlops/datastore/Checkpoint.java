@@ -25,14 +25,14 @@ public class Checkpoint {
     private String userData;
     private long revision;
     private long timestamp;
-    private long count;
+    private long rowCount;
 
     public static Checkpoint from(Wal.Checkpoint checkpoint) {
         return Checkpoint.builder()
                 .userData(checkpoint.getUserData())
                 .revision(checkpoint.getRevision())
                 .timestamp(checkpoint.getTimestamp())
-                .count(checkpoint.getCount())
+                .rowCount(checkpoint.getCount())
                 .build();
     }
 
@@ -41,7 +41,7 @@ public class Checkpoint {
                 .setUserData(userData)
                 .setRevision(revision)
                 .setTimestamp(timestamp)
-                .setCount(count)
+                .setCount(rowCount)
                 .build();
     }
 }
