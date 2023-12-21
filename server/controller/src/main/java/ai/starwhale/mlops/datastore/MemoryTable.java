@@ -31,12 +31,13 @@ public interface MemoryTable {
     void updateFromWal(Wal.WalEntry entry);
 
     // update records, returns the timestamp in milliseconds
+    // TODO remove the return revision in the breaking change version
     long update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
     long updateWithObject(TableSchemaDesc schema, List<Map<String, BaseValue>> records);
 
     Iterator<RecordResult> query(
-            long timestamp,
+            long revision,
             Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
@@ -44,7 +45,7 @@ public interface MemoryTable {
     );
 
     Iterator<RecordResult> scan(
-            long timestamp,
+            long revision,
             Map<String, String> columns,
             String start,
             String startType,
@@ -71,11 +72,12 @@ public interface MemoryTable {
 
     /**
      * Create a checkpoint, the checkpoint means:
-     * 1. the data for the checkpoint is immutable
-     * 2. the data outside the checkpoint may be garbage collected (except the data behind the checkpoint)
+     * 1. the version for the checkpoint is immutable
+     * 2. the versions outside the checkpoint may be garbage collected
      * 3. getting the count of the checkpoint is constant time
      * <p>
-     * It should throw SwValidationException if the checkpoint already exists (exists means the revision is the same)
+     * It should throw SwValidationException if the checkpoint already exists
+     * (exists means that the latest revision has checkpoint)
      *
      * @param userData user data, nullable
      * @return checkpoint
