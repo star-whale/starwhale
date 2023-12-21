@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.Wal.Checkpoint.OptionalUserDataCase;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,20 +29,26 @@ public class Checkpoint {
     private long rowCount;
 
     public static Checkpoint from(Wal.Checkpoint checkpoint) {
+        String userData = null;
+        if (checkpoint.getOptionalUserDataCase() == OptionalUserDataCase.USER_DATA) {
+            userData = checkpoint.getUserData();
+        }
         return Checkpoint.builder()
-                .userData(checkpoint.getUserData())
+                .userData(userData)
                 .revision(checkpoint.getRevision())
                 .timestamp(checkpoint.getTimestamp())
-                .rowCount(checkpoint.getCount())
+                .rowCount(checkpoint.getRowCount())
                 .build();
     }
 
     public Wal.Checkpoint toWalCheckpoint() {
-        return Wal.Checkpoint.newBuilder()
-                .setUserData(userData)
+        var cp = Wal.Checkpoint.newBuilder()
                 .setRevision(revision)
                 .setTimestamp(timestamp)
-                .setCount(rowCount)
-                .build();
+                .setRowCount(rowCount);
+        if (userData != null) {
+            cp.setUserData(userData);
+        }
+        return cp.build();
     }
 }

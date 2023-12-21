@@ -3140,7 +3140,7 @@ public class MemoryTableImplTest {
     }
 
     @Test
-    public void testCheckpoint() {
+    public void testCheckpoint() throws IOException {
         var memoryTable = createInstance("checkpoint-test");
         var tableSchemaDesc = new TableSchemaDesc("key",
                 List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build(),
@@ -3224,21 +3224,47 @@ public class MemoryTableImplTest {
         assertThat(ImmutableList.copyOf(result),
                 is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
 
+        // reload from wal
+        this.walManager.terminate();
+        MemoryTableImplTest.this.walManager = new WalManager(MemoryTableImplTest.this.storageAccessService,
+                4096,
+                MemoryTableImplTest.this.fs.getPath("/wal_cache"),
+                "wal/",
+                3);
+        var reloadedMemoryTable = createInstance("checkpoint-test");
+        var it = MemoryTableImplTest.this.walManager.readAll();
+        while (it.hasNext()) {
+            reloadedMemoryTable.updateFromWal(it.next());
+        }
+
+        cps = reloadedMemoryTable.getCheckpoints();
+        assertEquals(1, cps.size());
+        assertEquals(cp2, cps.get(0));
+
+        // get the row in revision t2 will get []
+        result = reloadedMemoryTable.query(t2, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result), is(List.of()));
+
+        // get t3
+        result = reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
+
         // delete the checkpoint in t2 will throw exception
-        assertThrows(SwNotFoundException.class, () -> memoryTable.deleteCheckpoint(t2));
+        assertThrows(SwNotFoundException.class, () -> reloadedMemoryTable.deleteCheckpoint(t2));
 
         // delete the checkpoint in t3
-        memoryTable.deleteCheckpoint(t3);
-        cps = memoryTable.getCheckpoints();
+        reloadedMemoryTable.deleteCheckpoint(t3);
+        cps = reloadedMemoryTable.getCheckpoints();
         assertEquals(0, cps.size());
 
         // get t3
-        result = memoryTable.query(t3, Map.of("a", "a"), null, null, false);
+        result = reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false);
         assertThat(ImmutableList.copyOf(result),
                 is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
 
         // get t4
-        result = memoryTable.query(t4, Map.of("a", "a"), null, null, false);
+        result = reloadedMemoryTable.query(t4, Map.of("a", "a"), null, null, false);
         assertThat(ImmutableList.copyOf(result),
                 is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(4))))));
     }

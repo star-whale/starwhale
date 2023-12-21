@@ -382,11 +382,7 @@ public class MemoryTableImpl implements MemoryTable {
             return true;
         }
 
-        var cp = Checkpoint.builder()
-                .revision(checkpoint.getRevision())
-                .timestamp(checkpoint.getTimestamp())
-                .userData(checkpoint.getUserData())
-                .build();
+        var cp = Checkpoint.from(checkpoint);
         this.checkpoints.putIfAbsent(cp.getRevision(), cp);
         var prevCp = this.checkpoints.lowerEntry(cp.getRevision());
         this.garbageCollect(prevCp == null ? null : prevCp.getValue(), cp);
@@ -844,15 +840,18 @@ public class MemoryTableImpl implements MemoryTable {
                 .rowCount(this.getCount())
                 .build();
 
+        var walCp = Wal.Checkpoint.newBuilder()
+                .setOp(OP.CREATE)
+                .setTimestamp(timestamp)
+                .setRevision(revision)
+                .setRowCount(cp.getRowCount());
+        if (userData != null) {
+            walCp.setUserData(userData);
+        }
         var entry = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
                 .setTableName(this.tableName)
-                .setCheckpoint(Wal.Checkpoint.newBuilder()
-                        .setOp(OP.CREATE)
-                        .setTimestamp(timestamp)
-                        .setRevision(revision)
-                        .setCount(cp.getRowCount())
-                        .setUserData(userData));
+                .setCheckpoint(walCp);
         this.lastWalLogId = this.walManager.append(entry);
         if (this.firstWalLogId < 0) {
             this.firstWalLogId = this.lastWalLogId;

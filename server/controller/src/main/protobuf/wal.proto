@@ -56,9 +56,11 @@ message Checkpoint {
   }
   OP op = 1;
   int64 revision = 2;
-  string user_data = 3;
+  oneof optional_user_data {
+    string user_data = 3;
+  }
   int64 timestamp = 4;
-  int64 count = 5;
+  int64 row_count = 5;
 }
 
 message Tombstone {
