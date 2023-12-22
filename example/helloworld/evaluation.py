@@ -1,11 +1,17 @@
 from pathlib import Path
+from dataclasses import field, dataclass
 
 import numpy as np
 import onnxruntime as rt
 
-from starwhale import Image, evaluation, multi_classification
+from starwhale import Image, argument, evaluation, multi_classification
 
 _g_model = None
+
+
+@dataclass
+class EvaluationArguments:
+    reshape: int = field(default=64, metadata={"help": "reshape image size"})
 
 
 def _load_model():
@@ -19,16 +25,20 @@ def _load_model():
     return _g_model
 
 
+@argument(EvaluationArguments)
 @evaluation.predict(
     resources={"memory": {"request": "500M", "limit": "2G"}},
     log_mode="plain",
 )
-def predict_image(data):
+def predict_image(data: dict, argument: EvaluationArguments):
+    # def predict_image(data: dict, argument: EvaluationArguments):
+    # def predict_image(data: dict, external=None):
+    # def predict_image(data: dict, external=None, argument: EvaluationArguments=None):
     img: Image = data["img"]
     model = _load_model()
     input_name = model.get_inputs()[0].name
     label_name = model.get_outputs()[0].name
-    input_array = [img.to_numpy().astype(np.float32).reshape(64)]
+    input_array = [img.to_numpy().astype(np.float32).reshape(argument.reshape)]
     pred = model.run([label_name], {input_name: input_array})[0]
     return pred.item()
 

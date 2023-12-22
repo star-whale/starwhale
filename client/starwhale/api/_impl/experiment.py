@@ -75,7 +75,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
             )
 
             @wraps(func)
-            def _run_wrapper(*args: t.Any, **kw: t.Any) -> t.Any:
+            def _run_wrapper(*func_args: t.Any, **func_kw: t.Any) -> t.Any:
                 ctx = Context.get_runtime_context()
                 load_dataset = partial(Dataset.dataset, readonly=True, create="forbid")
 
@@ -97,7 +97,8 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
 
                 # TODO: support arguments from command line
                 add_event(f"Start to finetune model by {func.__qualname__} function")
-                ret = func(*inject_args)
+
+                ret = func(*(inject_args + list(func_args)), **func_kw)
 
                 if auto_build_model:
                     console.info(f"building starwhale model package from {workdir}")

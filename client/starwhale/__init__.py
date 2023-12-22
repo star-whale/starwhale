@@ -14,6 +14,7 @@ from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import Dataset
 from starwhale.utils.debug import init_logger
+from starwhale.api.argument import argument
 from starwhale.api.instance import login, logout
 from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import Evaluation, PipelineHandler
@@ -47,6 +48,7 @@ fine_tune = finetune
 
 __all__ = [
     "__version__",
+    "argument",
     "model",
     "Job",
     "job",
