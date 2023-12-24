@@ -8,6 +8,7 @@ from functools import wraps, partial
 
 from starwhale.utils import console
 from starwhale.consts import SHORT_VERSION_CNT, DecoratorInjectAttr
+from starwhale.utils.event import add_event
 from starwhale.base.context import Context
 from starwhale.api._impl.model import build as build_starwhale_model
 from starwhale.api._impl.dataset import Dataset
@@ -95,6 +96,7 @@ def finetune(*args: t.Any, **kw: t.Any) -> t.Any:
                     )
 
                 # TODO: support arguments from command line
+                add_event(f"Start to finetune model by {func.__qualname__} function")
                 ret = func(*inject_args)
 
                 if auto_build_model:

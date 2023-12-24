@@ -62,6 +62,7 @@ from starwhale.utils.load import load_module
 from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
+from starwhale.utils.event import event, add_event
 from starwhale.base.context import Context
 from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler
@@ -197,6 +198,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
             raise NoSupportError(f"model uri:{uri}")
 
     @classmethod
+    @event(msg="Copy Starwhale Model")
     def copy(
         cls,
         src_uri: Resource,
@@ -883,6 +885,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         port: int,
     ) -> None:
         svc = cls._get_service(model_config.run.modules, model_src_dir)
+        add_event("Serving Starwhale Model")
         svc.serve(host, port, model_config.name)
 
     @classmethod

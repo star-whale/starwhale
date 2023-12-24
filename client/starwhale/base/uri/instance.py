@@ -1,15 +1,18 @@
 from typing import Any, Dict, Tuple, Optional
 from urllib.parse import urlparse
 
-from starwhale.utils import config
 from starwhale.base.uri.exceptions import NoMatchException
 
 
 def _get_instances() -> Dict[str, Dict]:
+    from starwhale.utils import config
+
     return config.load_swcli_config().get("instances", {})  # type: ignore[no-any-return]
 
 
 def _get_default_instance_alias() -> str:
+    from starwhale.utils import config
+
     return config.load_swcli_config().get("current_instance", "")  # type: ignore[no-any-return]
 
 

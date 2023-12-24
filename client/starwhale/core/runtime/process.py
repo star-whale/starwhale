@@ -22,6 +22,7 @@ from starwhale.utils.venv import (
     check_valid_conda_prefix,
 )
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.utils.event import event
 from starwhale.utils.process import check_call
 from starwhale.core.model.model import StandaloneModel
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -120,6 +121,7 @@ class Process:
             capture_stdout=not live_stream,
         )
 
+    @event(msg="Restore Starwhale Runtime")
     def _restore_runtime(
         self,
         force_restore: bool = False,
