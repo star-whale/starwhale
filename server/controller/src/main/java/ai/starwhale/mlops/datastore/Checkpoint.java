@@ -28,6 +28,11 @@ public class Checkpoint {
     private long timestamp;
     private long rowCount;
 
+    // mark the very first checkpoint as virtual
+    // prevent querying the garbage collected revisions
+    @Builder.Default
+    private boolean virtual = false;
+
     public static Checkpoint from(Wal.Checkpoint checkpoint) {
         String userData = null;
         if (checkpoint.getOptionalUserDataCase() == OptionalUserDataCase.USER_DATA) {

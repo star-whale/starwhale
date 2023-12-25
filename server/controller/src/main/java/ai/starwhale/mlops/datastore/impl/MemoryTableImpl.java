@@ -73,6 +73,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -371,13 +372,19 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var checkpoint = entry.getCheckpoint();
         if (OP.DELETE.equals(checkpoint.getOp())) {
-            this.checkpoints.remove(checkpoint.getRevision());
+            var prevCp = this.checkpoints.lowerEntry(checkpoint.getRevision());
+            if (prevCp != null) {
+                this.checkpoints.remove(checkpoint.getRevision());
+            } else {
+                this.checkpoints.get(checkpoint.getRevision()).setVirtual(true);
+            }
             var nextCp = this.checkpoints.higherEntry(checkpoint.getRevision());
             if (nextCp == null) {
                 return true;
             }
-            var prevCp = this.checkpoints.lowerEntry(checkpoint.getRevision());
-            this.garbageCollect(prevCp == null ? null : prevCp.getValue(), nextCp.getValue());
+            if (prevCp != null) {
+                this.garbageCollect(prevCp.getValue(), nextCp.getValue());
+            }
 
             return true;
         }
@@ -385,7 +392,9 @@ public class MemoryTableImpl implements MemoryTable {
         var cp = Checkpoint.from(checkpoint);
         this.checkpoints.putIfAbsent(cp.getRevision(), cp);
         var prevCp = this.checkpoints.lowerEntry(cp.getRevision());
-        this.garbageCollect(prevCp == null ? null : prevCp.getValue(), cp);
+        if (prevCp != null) {
+            this.garbageCollect(prevCp.getValue(), cp);
+        }
 
         return true;
     }
@@ -547,6 +556,30 @@ public class MemoryTableImpl implements MemoryTable {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
+
+        //noinspection LoopStatementThatDoesntLoop
+        do {
+            if (this.checkpoints.isEmpty()) {
+                break;
+            }
+
+            if (revision < this.checkpoints.firstKey()) {
+                break;
+            }
+
+            if (revision > this.checkpoints.lastKey()) {
+                break;
+            }
+
+            var cp = this.checkpoints.get(revision);
+            if (cp != null && !cp.isVirtual()) {
+                break;
+            }
+
+            // this table had been garbage collected, so we can not query it
+            throw new SwNotFoundException(ResourceType.DATASTORE, "revision " + revision + " not found");
+        } while (false);
+
         if (orderBy != null) {
             for (var col : orderBy) {
                 if (col == null) {
@@ -822,16 +855,7 @@ public class MemoryTableImpl implements MemoryTable {
         }).count();
     }
 
-    @Override
-    public Checkpoint createCheckpoint(String userData) {
-        // check if the checkpoint already exists
-        // we do not support multiple checkpoints for the same revision (even with different user data)
-        var revision = this.lastRevision;
-        if (this.checkpoints.containsKey(revision)) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "checkpoint already exists for revision " + revision);
-        }
-
+    private Checkpoint createCheckpoint(long revision, String userData) {
         var timestamp = System.currentTimeMillis();
         var cp = Checkpoint.builder()
                 .revision(revision)
@@ -857,20 +881,36 @@ public class MemoryTableImpl implements MemoryTable {
             this.firstWalLogId = this.lastWalLogId;
         }
         this.checkpoints.put(revision, cp);
-        var prevCp = this.checkpoints.lowerEntry(revision);
-        this.garbageCollect(prevCp == null ? null : prevCp.getValue(), cp);
 
         return cp;
     }
 
     @Override
+    public Checkpoint createCheckpoint(String userData) {
+        // check if the checkpoint already exists
+        // we do not support multiple checkpoints for the same revision (even with different user data)
+        var revision = this.lastRevision;
+        if (this.checkpoints.containsKey(revision)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "checkpoint already exists for revision " + revision);
+        }
+        var cp = this.createCheckpoint(revision, userData);
+        var prevCp = this.checkpoints.lowerEntry(revision);
+        if (prevCp != null) {
+            // do not garbage collect with the previous data without checkpoint
+            this.garbageCollect(prevCp.getValue(), cp);
+        }
+        return cp;
+    }
+
+    @Override
     public List<Checkpoint> getCheckpoints() {
-        return new ArrayList<>(this.checkpoints.values());
+        return this.checkpoints.values().stream().filter(cp -> !cp.isVirtual()).collect(Collectors.toList());
     }
 
     @Override
     public void deleteCheckpoint(long revision) {
-        if (!this.checkpoints.containsKey(revision)) {
+        if (!this.checkpoints.containsKey(revision) || this.checkpoints.get(revision).isVirtual()) {
             throw new SwNotFoundException(ResourceType.DATASTORE, "checkpoint not found for revision " + revision);
         }
 
@@ -884,59 +924,72 @@ public class MemoryTableImpl implements MemoryTable {
         if (this.firstWalLogId < 0) {
             this.firstWalLogId = this.lastWalLogId;
         }
-        this.checkpoints.remove(revision);
+        var prevCp = this.checkpoints.lowerEntry(revision);
+        if (prevCp != null) {
+            this.checkpoints.remove(revision);
+        } else {
+            this.checkpoints.get(revision).setVirtual(true);
+        }
 
         var nextCp = this.checkpoints.higherEntry(revision);
         if (nextCp == null) {
             // no next checkpoint, no need to garbage collect
             return;
         }
-        var prevCp = this.checkpoints.lowerEntry(revision);
-        this.garbageCollect(prevCp == null ? null : prevCp.getValue(), nextCp.getValue());
+        if (prevCp != null) {
+            this.garbageCollect(prevCp.getValue(), nextCp.getValue());
+        }
     }
 
     /**
      * Garbage collect the versions of records.
-     * This function will remove the versions of records between from and to (exclusive).
+     * This function will compact the versions between from (exclusive) and to (inclusive).
      *
-     * @param from the checkpoint to start garbage collection, if null, it means from the beginning
-     * @param to   the checkpoint to end garbage collection, if null, it means to the end
+     * @param from the checkpoint to start garbage collection
+     * @param to   the checkpoint to end garbage collection
      */
-    private void garbageCollect(Checkpoint from, Checkpoint to) {
-        Long fromRevision;
-        if (from != null) {
-            fromRevision = from.getRevision();
-        } else {
-            fromRevision = null;
-        }
-        Long toRevision;
-        if (to != null) {
-            toRevision = to.getRevision();
-        } else {
-            toRevision = null;
-        }
+    private void garbageCollect(@NotNull Checkpoint from, @NotNull Checkpoint to) {
+        var fromRevision = from.getRevision();
+        var toRevision = to.getRevision();
 
-        if (fromRevision != null && toRevision != null) {
-            if (fromRevision > toRevision) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        "fromRevision " + fromRevision + " is greater than toRevision " + toRevision);
-            }
-            if (fromRevision.equals(toRevision)) {
-                return;
-            }
+        if (fromRevision > toRevision) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "fromRevision " + fromRevision + " is greater than toRevision " + toRevision);
+        }
+        if (fromRevision == toRevision) {
+            return;
         }
 
         this.recordMap.values().forEach(versions -> {
             if (versions.isEmpty()) {
                 return;
             }
-            versions.removeIf(record -> {
-                var revision = record.getRevision();
-                if (fromRevision != null && revision <= fromRevision) {
-                    return false;
+            versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
+            var it = versions.iterator();
+            MemoryRecord current = null;
+            while (it.hasNext()) {
+                var record = it.next();
+                if (record.getRevision() <= fromRevision) {
+                    continue;
                 }
-                return toRevision == null || revision < toRevision;
-            });
+                if (record.getRevision() > toRevision) {
+                    break;
+                }
+
+                if (current == null) {
+                    current = record;
+                    continue;
+                }
+                // patch the current record
+                if (current.isDeleted() || record.isDeleted()) {
+                    current = record;
+                } else {
+                    for (var entry : record.getValues().entrySet()) {
+                        current.getValues().put(entry.getKey(), entry.getValue());
+                    }
+                }
+                it.remove();
+            }
         });
     }
 }
