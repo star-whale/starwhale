@@ -5,6 +5,7 @@ client:
 
 console:
   - "console/**"
+  - ".github/workflows/console.yaml"
 
 docker:
   - "docker/**"
