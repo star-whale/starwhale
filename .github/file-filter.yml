@@ -1,7 +1,7 @@
 client:
   - "**/*.py"
   - "client/**"
-  - ".github/workflows/client.yaml"
+  - ".github/workflows/client.yml"
 
 console:
   - "console/**"
