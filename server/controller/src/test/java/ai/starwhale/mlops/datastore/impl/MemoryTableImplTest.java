@@ -3173,7 +3173,7 @@ public class MemoryTableImplTest {
         // |  t1  |  t2  |
         // |  1   |  2   |
         //           ^
-        //           cp1
+        //          cp1
 
         // get the row in revision t1
         result = memoryTable.query(t1, Map.of("a", "a"), null, null, false);
@@ -3207,7 +3207,7 @@ public class MemoryTableImplTest {
         // |  t1  |  t2  |  t3  |
         // |  1   |  2   |  3   |
         //           ^      ^
-        //           cp1    cp2
+        //          cp1    cp2
 
         // add checkpoint without new version added, will throw exception
         assertThrows(SwValidationException.class, () -> memoryTable.createCheckpoint("baz"));
@@ -3229,7 +3229,7 @@ public class MemoryTableImplTest {
         // |  t1  |  t3  |  t4  |
         // |  1   |  3   |  4   |
         //           ^
-        //           cp1
+        //          cp1
 
         // get the row in revision t2 will throw exception(t2 has been garbage collected)
         assertThrows(SwNotFoundException.class, () -> memoryTable.query(t2, Map.of("a", "a"), null, null, false));
@@ -3272,10 +3272,12 @@ public class MemoryTableImplTest {
         cps = reloadedMemoryTable.getCheckpoints();
         assertEquals(0, cps.size());
 
+        // |  t1  |  t4  |
+        // |  1   |  4   |
+
         // get t3
-        result = reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false);
-        assertThat(ImmutableList.copyOf(result),
-                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
+        assertThrows(SwNotFoundException.class,
+                () -> reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false));
 
         // get t4
         result = reloadedMemoryTable.query(t4, Map.of("a", "a"), null, null, false);

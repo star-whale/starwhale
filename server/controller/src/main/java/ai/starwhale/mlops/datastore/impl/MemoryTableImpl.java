@@ -925,19 +925,13 @@ public class MemoryTableImpl implements MemoryTable {
             this.firstWalLogId = this.lastWalLogId;
         }
         var prevCp = this.checkpoints.lowerEntry(revision);
-        if (prevCp != null) {
+        var nextCp = this.checkpoints.higherEntry(revision);
+
+        if (prevCp != null && nextCp != null) {
             this.checkpoints.remove(revision);
+            this.garbageCollect(prevCp.getValue(), nextCp.getValue());
         } else {
             this.checkpoints.get(revision).setVirtual(true);
-        }
-
-        var nextCp = this.checkpoints.higherEntry(revision);
-        if (nextCp == null) {
-            // no next checkpoint, no need to garbage collect
-            return;
-        }
-        if (prevCp != null) {
-            this.garbageCollect(prevCp.getValue(), nextCp.getValue());
         }
     }
 
