@@ -881,14 +881,7 @@ public class MemoryTableImpl implements MemoryTable {
                 .rowCount(this.getCount())
                 .build();
 
-        var walCp = Wal.Checkpoint.newBuilder()
-                .setOp(OP.CREATE)
-                .setTimestamp(timestamp)
-                .setRevision(revision)
-                .setRowCount(cp.getRowCount());
-        if (userData != null) {
-            walCp.setUserData(userData);
-        }
+        var walCp = cp.toWalCheckpoint();
         var entry = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
                 .setTableName(this.tableName)

@@ -321,7 +321,7 @@ public class DataStoreController {
             @RequestParam(name = "table") String table,
             @RequestParam(name = "id") String id
     ) {
-        this.dataStore.deleteCheckpoint(table, id);
+        this.dataStore.deleteCheckpoint(table, Long.parseLong(id));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

@@ -929,12 +929,12 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         }
     }
 
-    public void deleteCheckpoint(String tableName, String id) {
+    public void deleteCheckpoint(String tableName, long revision) {
         var table = this.getTable(tableName, false, false);
         //noinspection ConstantConditions
         table.lock(false);
         try {
-            table.deleteCheckpoint(Long.parseLong(id));
+            table.deleteCheckpoint(revision);
         } finally {
             table.unlock(false);
         }
