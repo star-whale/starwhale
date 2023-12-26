@@ -28,7 +28,7 @@ public class Checkpoint {
     private long timestamp;
     private long rowCount;
 
-    // mark the very first checkpoint as virtual
+    // mark the first and the last checkpoints as virtual
     // prevent querying the garbage collected revisions
     @Builder.Default
     private boolean virtual = false;
