@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -3304,9 +3305,12 @@ public class MemoryTableImplTest {
 
         var expect = new HashMap<String, BaseValue>();
 
-        // random insert row with random cells
+        // snapshot of the checkpoints
+        var snapshots = new TreeMap<Long, Map<String, Object>>();
+
+        // insert row with random cells
         var random = new Random();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             var cells = new HashMap<String, Object>();
             var j = random.nextInt();
             cells.put("key", "1");
@@ -3325,6 +3329,7 @@ public class MemoryTableImplTest {
                 expect.put("c", v3);
             }
             if (j % 5 == 0) {
+                // delete the row
                 cells.put("-", "1");
                 expect.clear();
             }
@@ -3332,14 +3337,17 @@ public class MemoryTableImplTest {
             log.info("insert cells: {}", cells);
             memoryTable.update(tableSchemaDesc, List.of(cells));
 
+            var addSnapshot = false;
             if (j % 7 == 0) {
                 log.info("create checkpoint");
                 memoryTable.createCheckpoint("foo");
+                // only record the snapshot of the checkpoint to save memory
+                addSnapshot = true;
             }
 
             if (j % 11 == 0) {
                 var cps = memoryTable.getCheckpoints();
-                // remove random cp
+                // remove a random checkpoint
                 if (!cps.isEmpty()) {
                     var rev = cps.get(random.nextInt(cps.size())).getRevision();
                     log.info("delete checkpoint: {}", rev);
@@ -3355,7 +3363,24 @@ public class MemoryTableImplTest {
             } else {
                 assertThat(result.get(0).getValues(), is(expect));
             }
+            if (addSnapshot) {
+                snapshots.put(memoryTable.getLastRevision(), new HashMap<>(expect));
+            }
         }
 
+        // check all the checkpoints
+        var cps = memoryTable.getCheckpoints();
+        for (var cp : cps) {
+            var rev = cp.getRevision();
+            var resp = memoryTable.query(rev, Map.of("a", "a", "b", "b", "c", "c"), null, null, false);
+            var result = ImmutableList.copyOf(resp);
+            assertThat(result.size(), is(1));
+            if (result.get(0).isDeleted()) {
+                // when the row is deleted, the values is null, can not compare with the snapshot (empty map)
+                assertThat(snapshots.get(rev).size(), is(0));
+            } else {
+                assertThat(result.get(0).getValues(), is(snapshots.get(rev)));
+            }
+        }
     }
 }

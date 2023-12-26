@@ -948,6 +948,7 @@ public class MemoryTableImpl implements MemoryTable {
      * <pre>
      *     versions:   [v1, v2, v3, v5, v6]
      *     checkpoints: [-,  -, cp1, cp2, -]
+     * </pre>
      *
      * @param from the checkpoint to start garbage collection
      * @param to   the checkpoint to end garbage collection
