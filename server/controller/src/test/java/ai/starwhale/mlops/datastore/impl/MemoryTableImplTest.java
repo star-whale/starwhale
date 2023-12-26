@@ -3178,7 +3178,8 @@ public class MemoryTableImplTest {
         // get the row in revision t1
         result = memoryTable.query(t1, Map.of("a", "a"), null, null, false);
         // the t1 version can't be garbage collected because there is no previous checkpoint
-        assertThat(ImmutableList.copyOf(result), is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(1))))));
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(1))))));
 
         // get the row in revision t2
         result = memoryTable.query(t2, Map.of("a", "a"), null, null, false);
