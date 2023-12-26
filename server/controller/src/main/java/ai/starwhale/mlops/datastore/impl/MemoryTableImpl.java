@@ -937,7 +937,17 @@ public class MemoryTableImpl implements MemoryTable {
 
     /**
      * Garbage collect the versions of records.
-     * This function will compact the versions between from (exclusive) and to (inclusive).
+     * This function will compact the versions between from (exclusive) and to (exclusive).
+     * e.g.
+     * Before garbage collection:
+     * <pre>
+     *     versions:    [v1, v2, v3, v4, v5, v6]
+     *     checkpoints: [-,  -, cp1, -,  cp2, -]
+     * </pre>
+     * After garbage collection (cp1, cp2):
+     * <pre>
+     *     versions:   [v1, v2, v3, v5, v6]
+     *     checkpoints: [-,  -, cp1, cp2, -]
      *
      * @param from the checkpoint to start garbage collection
      * @param to   the checkpoint to end garbage collection
@@ -950,7 +960,7 @@ public class MemoryTableImpl implements MemoryTable {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "fromRevision " + fromRevision + " is greater than toRevision " + toRevision);
         }
-        if (fromRevision == toRevision) {
+        if ((toRevision - fromRevision) <= 1) {
             return;
         }
 
@@ -959,8 +969,10 @@ public class MemoryTableImpl implements MemoryTable {
                 return;
             }
             versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
-            var it = versions.iterator();
+            var it = versions.listIterator();
             MemoryRecord current = null;
+            MemoryRecord lastDeletion = null;
+            long lastRevision = 0;
             while (it.hasNext()) {
                 var record = it.next();
                 if (record.getRevision() <= fromRevision) {
@@ -974,6 +986,10 @@ public class MemoryTableImpl implements MemoryTable {
                     current = record;
                     continue;
                 }
+                if (record.isDeleted()) {
+                    lastDeletion = record;
+                }
+
                 // patch the current record
                 if (current.isDeleted() || record.isDeleted()) {
                     current = record;
@@ -982,8 +998,22 @@ public class MemoryTableImpl implements MemoryTable {
                         current.getValues().put(entry.getKey(), entry.getValue());
                     }
                 }
+                lastRevision = record.getRevision();
                 it.remove();
             }
+            // replace the current item with the patched one
+            if (current != null) {
+                // reserve the last deletion to make sure the previous record is deleted
+                if (lastDeletion != null && !current.isDeleted()) {
+                    it.add(lastDeletion);
+                }
+                it.add(MemoryRecord.builder()
+                        .revision(lastRevision)
+                        .deleted(current.isDeleted())
+                        .values(current.getValues())
+                        .build());
+            }
+            versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
         });
     }
 }

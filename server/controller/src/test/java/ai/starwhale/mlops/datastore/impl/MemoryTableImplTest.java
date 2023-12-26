@@ -35,7 +35,9 @@ import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
+import ai.starwhale.mlops.datastore.type.Int32Value;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
+import ai.starwhale.mlops.datastore.type.StringValue;
 import ai.starwhale.mlops.datastore.type.TupleValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
 import ai.starwhale.mlops.exception.SwNotFoundException;
@@ -54,11 +56,14 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -66,6 +71,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Slf4j
 public class MemoryTableImplTest {
 
     private static List<RecordResult> scanAll(
@@ -3283,5 +3289,73 @@ public class MemoryTableImplTest {
         result = reloadedMemoryTable.query(t4, Map.of("a", "a"), null, null, false);
         assertThat(ImmutableList.copyOf(result),
                 is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(4))))));
+    }
+
+    @Test
+    public void testCheckpointIntegrate() {
+        var memoryTable = createInstance("checkpoint-integrate");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("b").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("c").type("INT32").build()
+                ));
+
+        var expect = new HashMap<String, BaseValue>();
+
+        // random insert row with random cells
+        var random = new Random();
+        for (int i = 0; i < 100; i++) {
+            var cells = new HashMap<String, Object>();
+            var j = random.nextInt();
+            cells.put("key", "1");
+            var v1 = new Int32Value(i);
+            cells.put("a", v1.encode(false));
+            expect.put("a", v1);
+
+            if (j % 2 == 0) {
+                var v2 = new StringValue(UUID.randomUUID().toString());
+                cells.put("b", v2.getValue());
+                expect.put("b", v2);
+            }
+            if (j % 3 == 0) {
+                var v3 = new Int32Value(random.nextInt());
+                cells.put("c", v3.encode(false));
+                expect.put("c", v3);
+            }
+            if (j % 5 == 0) {
+                cells.put("-", "1");
+                expect.clear();
+            }
+
+            log.info("insert cells: {}", cells);
+            memoryTable.update(tableSchemaDesc, List.of(cells));
+
+            if (j % 7 == 0) {
+                log.info("create checkpoint");
+                memoryTable.createCheckpoint("foo");
+            }
+
+            if (j % 11 == 0) {
+                var cps = memoryTable.getCheckpoints();
+                // remove random cp
+                if (!cps.isEmpty()) {
+                    var rev = cps.get(random.nextInt(cps.size())).getRevision();
+                    log.info("delete checkpoint: {}", rev);
+                    memoryTable.deleteCheckpoint(rev);
+                }
+            }
+
+            var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a", "b", "b", "c", "c"), null, null, false);
+            var result = ImmutableList.copyOf(resp);
+            assertThat(result.size(), is(1));
+            if (cells.containsKey("-")) {
+                assertThat(result.get(0).isDeleted(), is(true));
+            } else {
+                assertThat(result.get(0).getValues(), is(expect));
+            }
+        }
+
     }
 }
