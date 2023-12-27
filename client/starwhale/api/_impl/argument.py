@@ -90,7 +90,19 @@ def init_dataclasses_values(
     ret = []
     for dtype in dataclass_types:
         keys = {f.name for f in dataclasses.fields(dtype) if f.init}
-        inputs = {k: param_map[k].type(v) for k, v in args_map.items() if k in keys}
+        inputs = {}
+        for k, v in args_map.items():
+            if k not in keys:
+                continue
+
+            # TODO: support dict type convert
+            # handle multiple args for list type
+            if isinstance(v, list):
+                v = [param_map[k].type(i) for i in v]
+            else:
+                v = param_map[k].type(v)
+            inputs[k] = v
+
         for k in inputs:
             del args_map[k]
         ret.append(dtype(**inputs))
@@ -118,8 +130,11 @@ def get_parser_from_dataclasses(dataclass_types: t.Any) -> click.OptionParser:
 
 def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) -> None:
     # TODO: field.name need format for click option?
+    decls = [f"--{field.name}"]
+    if "_" in field.name:
+        decls.append(f"--{field.name.replace('_', '-')}")
     kw: t.Dict[str, t.Any] = {
-        "param_decls": [f"--{field.name}"],
+        "param_decls": decls,
         "help": field.metadata.get("help"),
         "show_default": True,
         "hidden": field.metadata.get("hidden", False),
@@ -129,9 +144,9 @@ def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) 
     # only support: Union[xxx, None] or Union[EnumType, str] or [List[EnumType], str] type
     origin_type = getattr(field.type, "__origin__", field.type)
     if origin_type is t.Union:
-        if (str not in field.type.__args and type(None) not in field.type.__args__) or (
-            len(field.type.__args__) != 2
-        ):
+        if (
+            str not in field.type.__args__ and type(None) not in field.type.__args__
+        ) or (len(field.type.__args__) != 2):
             raise ValueError(
                 f"{field.type} is not supported."
                 "Only support Union[xxx, None] or Union[EnumType, str] or [List[EnumType], str] type"
@@ -154,10 +169,16 @@ def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) 
             )
             origin_type = getattr(field.type, "__origin__", field.type)
 
-    if origin_type is t.Literal or (
+    try:
+        # typing.Literal is only supported in python3.8+
+        literal_type = t.Literal  # type: ignore[attr-defined]
+    except AttributeError:
+        literal_type = None
+
+    if (literal_type and origin_type is literal_type) or (
         isinstance(field.type, type) and issubclass(field.type, Enum)
     ):
-        if origin_type is t.Literal:
+        if literal_type and origin_type is literal_type:
             kw["type"] = click.Choice(field.type.__args__)
         else:
             kw["type"] = click.Choice([e.value for e in field.type])
@@ -171,14 +192,17 @@ def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) 
         kw["is_flag"] = True
         kw["type"] = bool
         kw["default"] = False if field.default is dataclasses.MISSING else field.default
-    elif inspect.isclass(origin_type) and issubclass(origin_type, list):
-        kw["type"] = field.type.__args__[0]
-        kw["multiple"] = True
-        if field.default is not dataclasses.MISSING:
-            kw["default"] = field.default
-        elif field.default_factory is not dataclasses.MISSING:
+    elif inspect.isclass(origin_type) and issubclass(origin_type, (list, dict)):
+        if issubclass(origin_type, list):
+            kw["type"] = field.type.__args__[0]
+            kw["multiple"] = True
+        elif issubclass(origin_type, dict):
+            kw["type"] = dict
+
+        # list and dict types both need default_factory
+        if field.default_factory is not dataclasses.MISSING:
             kw["default"] = field.default_factory()
-        else:
+        elif field.default is dataclasses.MISSING:
             kw["required"] = True
     else:
         kw["type"] = field.type
