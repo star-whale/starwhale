@@ -9,7 +9,6 @@ from typing_extensions import Protocol
 from starlette.requests import Request
 from starlette.responses import Response, FileResponse, StreamingResponse
 from starlette.background import BackgroundTask
-from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 
 from starwhale.web import user, panel, system, project, data_store
@@ -31,14 +30,14 @@ class Server(FastAPI):
 
     @classmethod
     def mount_static(cls, app: FastAPI) -> FastAPI:
-        def index() -> FileResponse:
+        def index(_: Request) -> FileResponse:
             return FileResponse(os.path.join(STATIC_DIR_DEV, "index.html"))
 
         app.add_route("/", index, methods=["GET"])
         app.mount("/", StaticFiles(directory=STATIC_DIR_DEV), name="assets")
 
         def not_found_exception_handler(
-            request: Request, exc: HTTPException
+            request: Request, exc: Exception
         ) -> FileResponse:
             return FileResponse(os.path.join(STATIC_DIR_DEV, "index.html"))
 
