@@ -22,7 +22,6 @@ class Scheduler:
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
-        handler_args: t.List[str] | None = None,
         run_project: t.Optional[Project] = None,
         log_project: t.Optional[Project] = None,
         dataset_head: int = 0,
@@ -36,7 +35,6 @@ class Scheduler:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
-        self.handler_args = handler_args or []
         self.dataset_head = dataset_head
         self.finetune_val_dataset_uris = finetune_val_dataset_uris
         self.model_name = model_name
@@ -80,7 +78,6 @@ class Scheduler:
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
                     version=self.version,
-                    handler_args=self.handler_args,
                     dataset_head=self.dataset_head,
                     finetune_val_dataset_uris=self.finetune_val_dataset_uris,
                     model_name=self.model_name,

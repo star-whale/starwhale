@@ -108,7 +108,6 @@ def _register_predict(
             predict_log_dataset_features=log_dataset_features,
             dataset_uris=datasets,
         ),
-        built_in=True,
     )(func)
 
 
@@ -172,7 +171,6 @@ def _register_evaluate(
         extra_kwargs=dict(
             predict_auto_log=use_predict_auto_log,
         ),
-        built_in=True,
     )(func)
 
 

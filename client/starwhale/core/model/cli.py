@@ -729,7 +729,6 @@ def _run(
                 "task_num": override_task_num,
             },
             force_generate_jobs_yaml=uri is None,
-            handler_args=ctx.args,
         )
 
 

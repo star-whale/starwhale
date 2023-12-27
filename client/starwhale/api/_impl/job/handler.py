@@ -4,7 +4,6 @@ import sys
 import typing as t
 import inspect
 import threading
-from abc import ABC, abstractmethod
 from pathlib import Path
 from functools import partial
 from collections import defaultdict
@@ -18,11 +17,7 @@ from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
 from starwhale.base.models.model import StepSpecClient
 from starwhale.api._impl.evaluation import PipelineHandler
-from starwhale.base.client.models.models import (
-    FineTune,
-    RuntimeResource,
-    ParameterSignature,
-)
+from starwhale.base.client.models.models import FineTune, RuntimeResource
 
 
 class Handler:
@@ -103,7 +98,6 @@ class Handler:
         name: str = "",
         expose: int = 0,
         require_dataset: bool = False,
-        built_in: bool = False,
         fine_tune: FineTune | None = None,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
@@ -122,8 +116,6 @@ class Handler:
             require_dataset: [bool, optional] Whether you need datasets when execute the handler.
               Default is False, It means that there is no need to select datasets when executing this handler on the server or cloud instance.
               If True, You must select datasets when executing on the server or cloud instance.
-            built_in: [bool, optional] A special flag to distinguish user defined args in handler function from the StarWhale ones.
-              This should always be False unless you know what it does.
             fine_tune: [FineTune, optional The fine tune config for the handler. Default is None.
 
         Example:
@@ -166,26 +158,7 @@ class Handler:
 
                 key_name_needs.append(f"{n.__module__}:{n.__qualname__}")
 
-            ext_cmd_args = ""
-            parameters_sig = []
-            #  user defined handlers i.e. not predict/evaluate/fine_tune
-            if not built_in:
-                sig = inspect.signature(func)
-                parameters_sig = [
-                    ParameterSignature(
-                        name=p_name,
-                        required=_p.default is inspect._empty
-                        or (
-                            isinstance(_p.default, HandlerInput) and _p.default.required
-                        ),
-                        multiple=isinstance(_p.default, ListInput),
-                    )
-                    for idx, (p_name, _p) in enumerate(sig.parameters.items())
-                    if idx != 0 or not cls_name
-                ]
-                ext_cmd_args = " ".join(
-                    [f"--{p.name}" for p in parameters_sig if p.required]
-                )
+            # TODO: check arguments, then dump for Starwhale Console
             _handler = StepSpecClient(
                 name=key_name,
                 show_name=name or func_name,
@@ -199,76 +172,12 @@ class Handler:
                 extra_kwargs=extra_kwargs,
                 expose=expose,
                 require_dataset=require_dataset,
-                parameters_sig=parameters_sig,
-                ext_cmd_args=ext_cmd_args,
                 fine_tune=fine_tune,
             )
 
             cls._register(_handler, func)
             setattr(func, DecoratorInjectAttr.Step, True)
-            import functools
-
-            if built_in:
-                return func
-            else:
-
-                @functools.wraps(func)
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-                    if "handler_args" in kwargs:
-                        import click
-                        from click.parser import OptionParser
-
-                        handler_args: t.List[str] = kwargs.pop("handler_args")
-
-                        parser = OptionParser()
-                        sig = inspect.signature(func)
-                        for idx, (p_name, _p) in enumerate(sig.parameters.items()):
-                            if (
-                                idx == 0
-                                and args
-                                and callable(getattr(args[0], func.__name__))
-                            ):  # if the first argument has a function with the same name it is considered as self
-                                continue
-                            required = _p.default is inspect._empty or (
-                                isinstance(_p.default, HandlerInput)
-                                and _p.default.required
-                            )
-                            click.Option(
-                                [f"--{p_name}", f"-{p_name}"],
-                                is_flag=False,
-                                multiple=isinstance(_p.default, ListInput),
-                                required=required,
-                            ).add_to_parser(
-                                parser, None  # type:ignore
-                            )
-                        hargs, _, _ = parser.parse_args(handler_args)
-
-                        for idx, (p_name, _p) in enumerate(sig.parameters.items()):
-                            if (
-                                idx == 0
-                                and args
-                                and callable(getattr(args[0], func.__name__))
-                            ):
-                                continue
-                            parsed_args = {
-                                p_name: fetch_real_args(
-                                    (p_name, _p), hargs.get(p_name, None)
-                                )
-                            }
-                            kwargs.update(
-                                {k: v for k, v in parsed_args.items() if v is not None}
-                            )
-                    func(*args, **kwargs)
-
-                def fetch_real_args(
-                    parameter: t.Tuple[str, inspect.Parameter], user_input: t.Any
-                ) -> t.Any:
-                    if isinstance(parameter[1].default, HandlerInput):
-                        return parameter[1].default.parse(user_input)
-                    else:
-                        return user_input
-
-                return wrapper
+            return func
 
         return decorator
 
@@ -346,14 +255,12 @@ class Handler:
                         Handler.register,
                         name="predict",
                         require_dataset=True,
-                        built_in=True,
                     )
 
                     evaluate_register = partial(
                         Handler.register,
                         needs=[predict_func],
                         name="evaluate",
-                        built_in=True,
                         replicas=1,
                     )
 
@@ -415,61 +322,3 @@ def generate_jobs_yaml(
         ),
         parents=True,
     )
-
-
-class HandlerInput(ABC):
-    def __init__(self, required: bool = False) -> None:
-        self.required = required
-
-    @abstractmethod
-    def parse(self, user_input: t.Any) -> t.Any:
-        raise NotImplementedError
-
-
-class ListInput(HandlerInput):
-    def __init__(
-        self, member_type: t.Any | None = None, required: bool = False
-    ) -> None:
-        super().__init__(required)
-        self.member_type = member_type or None
-
-    def parse(self, user_input: t.List) -> t.Any:
-        if not user_input:
-            return user_input
-        if isinstance(self.member_type, HandlerInput):
-            return [self.member_type.parse(item) for item in user_input]
-        elif inspect.isclass(self.member_type) and issubclass(
-            self.member_type, HandlerInput
-        ):
-            return [self.member_type().parse(item) for item in user_input]
-        else:
-            return user_input
-
-
-class DatasetInput(HandlerInput):
-    def parse(self, user_input: str) -> t.Any:
-        from starwhale import dataset
-
-        return dataset(user_input) if user_input else None
-
-
-class BoolInput(HandlerInput):
-    def parse(self, user_input: str) -> t.Any:
-        return "false" != str(user_input).lower()
-
-
-class IntInput(HandlerInput):
-    def parse(self, user_input: str) -> t.Any:
-        return int(user_input)
-
-
-class FloatInput(HandlerInput):
-    def parse(self, user_input: str) -> t.Any:
-        return float(user_input)
-
-
-class ContextInput(HandlerInput):
-    def parse(self, user_input: str) -> t.Any:
-        from starwhale import Context
-
-        return Context.get_runtime_context()

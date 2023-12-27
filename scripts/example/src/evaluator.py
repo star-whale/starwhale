@@ -1,27 +1,15 @@
+import os
 import time
 import random
 import typing as t
 import os.path as osp
 import dataclasses
+from enum import Enum
 from functools import wraps
 
 import numpy
 
-from starwhale import (
-    Text,
-    Image,
-    Context,
-    Dataset,
-    handler,
-    argument,
-    IntInput,
-    ListInput,
-    evaluation,
-    ContextInput,
-    DatasetInput,
-    HandlerInput,
-    multi_classification,
-)
+from starwhale import Text, Image, Context, argument, evaluation, multi_classification
 from starwhale.utils import in_container
 
 try:
@@ -30,9 +18,24 @@ except ImportError:
     from util import random_image
 
 
+class IntervalStrategy(Enum):
+    NO = "no"
+    STEPS = "steps"
+    EPOCH = "epoch"
+
+
 @dataclasses.dataclass
 class TestArguments:
+    learning_rate: float = dataclasses.field(default=0.01, metadata={"help": "lr"})
     epoch: int = dataclasses.field(default=10, metadata={"help": "epoch"})
+    labels: t.Optional[t.List[str]] = dataclasses.field(
+        default=None, metadata={"help": "labels"}
+    )
+    debug: bool = dataclasses.field(default=False, metadata={"help": "debug"})
+    evaluation_strategy: t.Union[IntervalStrategy, str] = dataclasses.field(
+        default="no", metadata={"help": "evaluation strategy"}
+    )
+    default_value: str = dataclasses.field(default="default value")
 
 
 def timing(func: t.Callable) -> t.Any:
@@ -60,8 +63,8 @@ def predict(data: t.Dict, external: t.Dict, argument) -> t.Any:
     assert isinstance(external["context"], Context)
     assert external["dataset_uri"].name
     assert external["dataset_uri"].version
-    assert isinstance(argument, TestArguments)
-    assert argument.epoch == 10
+
+    _check_argument_values(argument)
 
     if in_container():
         assert osp.exists("/tmp/runtime-command-run.flag")
@@ -86,8 +89,7 @@ def predict(data: t.Dict, external: t.Dict, argument) -> t.Any:
 )
 @argument(TestArguments)
 def evaluate(ppl_result: t.Iterator, argument: TestArguments) -> t.Any:
-    assert isinstance(argument, TestArguments)
-    assert argument.epoch == 10
+    _check_argument_values(argument)
 
     result, label, pr = [], [], []
     for _data in ppl_result:
@@ -105,44 +107,15 @@ def evaluate(ppl_result: t.Iterator, argument: TestArguments) -> t.Any:
     return label, result, pr
 
 
-class MyInput(HandlerInput):
-    def parse(self, user_input):
-        return f"MyInput {user_input}"
-
-
-class X:
-    def __init__(self) -> None:
-        self.a = 1
-
-    @handler()
-    def f(
-        self,
-        x=ListInput(IntInput),
-        y=2,
-        mi=MyInput(),
-        ds=DatasetInput(required=True),
-        ctx=ContextInput(),
-    ):
-        assert self.a + x[0] == 3
-        assert self.a + x[1] == 2
-        assert y == 2
-        assert mi == "MyInput blab-la"
-        assert isinstance(ds, Dataset)
-        assert isinstance(ctx, Context)
-
-
-@handler()
-def f(
-    x=ListInput(IntInput()),
-    y=2,
-    mi=MyInput(),
-    ds=DatasetInput(required=True),
-    ctx=ContextInput(),
-):
-    assert x[0] == 2
-    assert x[1] == 1
-    assert y == 2
-    assert mi == "MyInput blab-la"
-
-    assert isinstance(ds, Dataset)
-    assert isinstance(ctx, Context)
+def _check_argument_values(argument: TestArguments) -> None:
+    # TODO: support to specify model run arguments to server instance
+    if os.environ.get("SW_INSTANCE_URI", "local") != "local":
+        return
+    assert isinstance(argument, TestArguments)
+    # the values are configured in `scripts/client_test/cli_test.py`
+    assert argument.default_value == "default value"
+    assert argument.learning_rate == 0.1
+    assert argument.epoch == 100
+    assert argument.labels == ["l1", "l2", "l3"]
+    assert argument.debug is True
+    assert argument.evaluation_strategy == "steps"
