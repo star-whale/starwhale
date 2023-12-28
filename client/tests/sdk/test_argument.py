@@ -80,13 +80,18 @@ class ArgumentTestCase(TestCase):
         with self.assertRaisesRegex(TypeError, "got an unexpected keyword argument"):
             no_argument_func()
 
-        with self.assertRaisesRegex(RuntimeError, "argument is a reserved keyword"):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "has been used as a keyword argument in the decorated function",
+        ):
             argument_keyword_func(argument=1)
 
     def test_argument_decorator(self) -> None:
-        @argument_decorator((ScalarArguments, ComposeArguments))
-        def assert_func(argument: t.Tuple) -> None:
-            scalar_argument, compose_argument = argument
+        @argument_decorator(
+            (ScalarArguments, ComposeArguments), inject_name="starwhale_argument"
+        )
+        def assert_func(starwhale_argument: t.Tuple) -> None:
+            scalar_argument, compose_argument = starwhale_argument
             assert isinstance(scalar_argument, ScalarArguments)
             assert isinstance(compose_argument, ComposeArguments)
 

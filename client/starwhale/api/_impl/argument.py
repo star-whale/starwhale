@@ -28,7 +28,7 @@ class ExtraCliArgsRegistry:
             return cls._args or []
 
 
-def argument(dataclass_types: t.Any) -> t.Any:
+def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
     """argument is a decorator function to define arguments for model running(predict, evaluate, serve and finetune).
 
     The decorated function will receive the instances of the dataclass types as the arguments.
@@ -40,6 +40,8 @@ def argument(dataclass_types: t.Any) -> t.Any:
     Argument:
         dataclass_types: [required] The dataclass type of the arguments.
           A list of dataclass types or a single dataclass type is supported.
+        inject_name: [optional] The name of the keyword argument that will be passed to the decorated function.
+          Default is "argument".
 
     Examples:
     ```python
@@ -52,6 +54,11 @@ def argument(dataclass_types: t.Any) -> t.Any:
     @argument(EvaluationArguments)
     @evaluation.predict
     def predict_image(data, argument: EvaluationArguments):
+        ...
+
+    @argument(EvaluationArguments, inject_name="starwhale_arguments")
+    @evaluation.evaluate(needs=[])
+    def evaluate_summary(predict_result_iter, starwhale_arguments: EvaluationArguments):
         ...
     ```
     """
@@ -69,11 +76,11 @@ def argument(dataclass_types: t.Any) -> t.Any:
         @wraps(func)
         def _run_wrapper(*args: t.Any, **kw: t.Any) -> t.Any:
             dataclass_values = init_dataclasses_values(parser, dataclass_types)
-            if "argument" in kw:
+            if inject_name in kw:
                 raise RuntimeError(
-                    "argument is a reserved keyword for @starwhale.argument decorator in the "
+                    f"{inject_name} has been used as a keyword argument in the decorated function, please use another name by the `inject_name` option."
                 )
-            kw["argument"] = dataclass_values if is_sequence else dataclass_values[0]
+            kw[inject_name] = dataclass_values if is_sequence else dataclass_values[0]
             return func(*args, **kw)
 
         return _run_wrapper
