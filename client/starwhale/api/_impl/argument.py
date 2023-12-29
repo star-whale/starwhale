@@ -6,6 +6,7 @@ import threading
 import dataclasses
 from enum import Enum
 from functools import wraps
+from collections import defaultdict
 
 import click
 
@@ -26,6 +27,46 @@ class ExtraCliArgsRegistry:
     def get(cls) -> t.List[str]:
         with cls._lock:
             return cls._args or []
+
+
+class ArgumentContext:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __init__(self) -> None:
+        self._click_ctx = click.Context(click.Command("Starwhale Argument Decorator"))
+        self._options: t.Dict[str, list] = defaultdict(list)
+
+    @classmethod
+    def get_current_context(cls) -> ArgumentContext:
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = ArgumentContext()
+        return cls._instance
+
+    def add_option(self, option: click.Option, group: str) -> None:
+        with self._lock:
+            self._options[group].append(option)
+
+    def echo_help(self) -> None:
+        if not self._options:
+            click.echo("No options")
+            return
+
+        formatter = self._click_ctx.make_formatter()
+        formatter.write_heading("\nOptions from Starwhale Argument Decorator")
+
+        for group, options in self._options.items():
+            help_records = []
+            for option in options:
+                record = option.get_help_record(self._click_ctx)
+                if record:
+                    help_records.append(record)
+
+            with formatter.section(f"** {group}"):
+                formatter.write_dl(help_records)
+
+        click.echo(formatter.getvalue().rstrip("\n"))
 
 
 def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
@@ -68,9 +109,7 @@ def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
         is_sequence = False
 
     def _register_wrapper(func: t.Callable) -> t.Any:
-        # TODO: add `--help` for the arguments
         # TODO: dump parser to json file when model building
-        # TODO: `@handler` decorator function supports @argument decorator
         parser = get_parser_from_dataclasses(dataclass_types)
 
         @wraps(func)
@@ -113,12 +152,14 @@ def init_dataclasses_values(
         for k in inputs:
             del args_map[k]
         ret.append(dtype(**inputs))
+
     if args_map:
         console.warn(f"Unused args from command line: {args_map}")
     return ret
 
 
 def get_parser_from_dataclasses(dataclass_types: t.Any) -> click.OptionParser:
+    argument_ctx = ArgumentContext.get_current_context()
     parser = click.OptionParser()
     for dtype in dataclass_types:
         if not dataclasses.is_dataclass(dtype):
@@ -129,13 +170,17 @@ def get_parser_from_dataclasses(dataclass_types: t.Any) -> click.OptionParser:
             if not field.init:
                 continue
             field.type = type_hints[field.name]
-            add_field_into_parser(parser, field)
+            option = convert_field_to_option(field)
+            option.add_to_parser(parser=parser, ctx=parser.ctx)  # type: ignore
+            argument_ctx.add_option(
+                option=option, group=f"{dtype.__module__}.{dtype.__qualname__}"
+            )
 
     parser.ignore_unknown_options = True
     return parser
 
 
-def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) -> None:
+def convert_field_to_option(field: dataclasses.Field) -> click.Option:
     # TODO: field.name need format for click option?
     decls = [f"--{field.name}"]
     if "_" in field.name:
@@ -220,4 +265,4 @@ def add_field_into_parser(parser: click.OptionParser, field: dataclasses.Field) 
         else:
             kw["required"] = True
 
-    click.Option(**kw).add_to_parser(parser=parser, ctx=None)  # type: ignore
+    return click.Option(**kw)

@@ -247,6 +247,26 @@ class ModelTermView(BaseTermView, TagViewMixin):
 
     @classmethod
     @BaseTermView._only_standalone
+    def show_argument(
+        cls,
+        model_src_dir: Path | str,
+        search_modules: t.List[str],
+        runtime_uri: t.Optional[Resource] = None,
+    ) -> None:
+        if runtime_uri:
+            RuntimeProcess(uri=runtime_uri).run()
+        else:
+            from starwhale.api._impl.argument import ArgumentContext
+            from starwhale.api._impl.job.handler import Handler
+
+            Handler._preload_registering_handlers(
+                search_modules=search_modules, package_dir=Path(model_src_dir)
+            )
+            ctx = ArgumentContext.get_current_context()
+            ctx.echo_help()
+
+    @classmethod
+    @BaseTermView._only_standalone
     def run_in_host(
         cls,
         model_src_dir: Path | str,

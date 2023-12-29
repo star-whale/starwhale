@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import typing as t
 from pathlib import Path
 
@@ -473,6 +474,13 @@ def _recover(model: str, force: bool) -> None:
     help="module name, the format is python module import path, handlers will be searched in the module. The option supports set multiple times.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "-sa",
+    "--show-argument",
+    is_flag=True,
+    default=False,
+    help="[ONLY STANDALONE]Show the argument help info by the @starwhale.argument decorator registered arguments. The help info only analysis the imported modules.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-f",
     "--model-yaml",
     help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
@@ -609,6 +617,7 @@ def _run(
     forbid_packaged_runtime: bool,
     forbid_snapshot: bool,
     cleanup_snapshot: bool,
+    show_argument: bool,
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -644,9 +653,15 @@ def _run(
         \b
         # --> run with finetune validation dataset
         swcli model run --workdir . -m mnist.finetune --dataset mnist --val-dataset mnist-val
+
+        \b
+        # --> echo the argument help info by the @starwhale argument decorator
+        swcli model run --workdir . -m mnist.finetune --show-argument
+        swcli model run --uri mnist --show-argument
     """
     from starwhale.api.argument import ExtraCliArgsRegistry
 
+    # TODO: currently, ExtraCliArgsRegistry must be set before the model run. We will find a better way to set it, such as ctx hooking.
     ExtraCliArgsRegistry.set(ctx.args)
 
     # TODO: support run model in cluster mode
@@ -697,6 +712,21 @@ def _run(
         model_yaml=model_yaml,
         forbid_packaged_runtime=forbid_packaged_runtime,
     )
+
+    if show_argument:
+        search_modules = model_config.run.modules
+        if not search_modules:
+            click.echo(
+                "no modules specified, please use `--module` option to set search modules"
+            )
+            sys.exit(1)
+
+        ModelTermView.show_argument(
+            model_src_dir=model_src_dir,
+            search_modules=search_modules,
+            runtime_uri=runtime_uri,
+        )
+        return
 
     if in_container:
         ModelTermView.run_in_container(
