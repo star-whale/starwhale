@@ -779,6 +779,12 @@ class RuntimeResource(SwBaseModel):
     limit: Optional[float] = None
 
 
+class StepType(Enum):
+    evaluation = 'EVALUATION'
+    fine_tune = 'FINE_TUNE'
+    serving = 'SERVING'
+
+
 class DatasetVersionViewVo(SwBaseModel):
     id: str
     version_name: str = Field(..., alias='versionName')
@@ -1492,6 +1498,7 @@ class StepSpec(SwBaseModel):
     virtual: Optional[bool] = None
     job_name: Optional[str] = None
     show_name: str
+    step_type: Optional[StepType] = None
     require_dataset: Optional[bool] = None
     fine_tune: Optional[FineTune] = None
     container_spec: Optional[ContainerSpec] = None

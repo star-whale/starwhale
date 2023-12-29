@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.spec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;

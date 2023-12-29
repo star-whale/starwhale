@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.spec;
+package ai.starwhale.mlops.domain.job.spec.step;
 
+import ai.starwhale.mlops.domain.job.spec.ContainerSpec;
+import ai.starwhale.mlops.domain.job.spec.ParameterSignature;
 import ai.starwhale.mlops.domain.job.spec.svc.ServiceSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -62,6 +64,9 @@ public class StepSpec {
     @NotNull
     @JsonProperty("show_name")
     private String showName;
+
+    @JsonProperty("step_type")
+    private StepType stepType;
 
     private Integer concurrency = 1;
 
@@ -131,5 +136,9 @@ public class StepSpec {
     @JsonIgnore
     public String getFriendlyName() {
         return StringUtils.hasText(showName) ? showName : name;
+    }
+
+    public enum StepType {
+        EVALUATION, FINE_TUNE, SERVING
     }
 }

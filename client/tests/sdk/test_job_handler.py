@@ -15,6 +15,7 @@ from starwhale.base.uri.project import Project
 from starwhale.base.models.model import JobHandlers, StepSpecClient
 from starwhale.base.client.models.models import (
     FineTune,
+    StepType,
     RuntimeResource,
     ParameterSignature,
 )
@@ -250,6 +251,7 @@ def mock_predict_handler2(data, argument=None): ...
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
             StepSpecClient(
                 cls_name="",
@@ -265,6 +267,7 @@ def mock_predict_handler2(data, argument=None): ...
                 require_dataset=False,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
         ]
 
@@ -290,6 +293,7 @@ def mock_predict_handler2(data, argument=None): ...
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
             StepSpecClient(
                 cls_name="",
@@ -305,6 +309,7 @@ def mock_predict_handler2(data, argument=None): ...
                 require_dataset=False,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
         ]
 
@@ -354,6 +359,7 @@ def evaluate_handler(*args, **kwargs): ...
                     require_dataset=True,
                     parameters_sig=[],
                     ext_cmd_args="",
+                    step_type=StepType.evaluation,
                 ),
                 StepSpecClient(
                     cls_name="",
@@ -369,6 +375,7 @@ def evaluate_handler(*args, **kwargs): ...
                     require_dataset=False,
                     parameters_sig=[],
                     ext_cmd_args="",
+                    step_type=StepType.evaluation,
                 ),
             ],
             "mock_user_module:predict_handler": [
@@ -393,6 +400,7 @@ def evaluate_handler(*args, **kwargs): ...
                     require_dataset=True,
                     parameters_sig=[],
                     ext_cmd_args="",
+                    step_type=StepType.evaluation,
                 )
             ],
         }
@@ -519,6 +527,7 @@ class MockHandler(PipelineHandler):
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
             StepSpecClient(
                 cls_name="MockHandler",
@@ -536,6 +545,7 @@ class MockHandler(PipelineHandler):
                 require_dataset=False,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -554,6 +564,7 @@ class MockHandler(PipelineHandler):
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             )
         ]
         _, steps = Step.get_steps_from_yaml(
@@ -622,6 +633,7 @@ class MockHandler:
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             )
         ]
 
@@ -647,6 +659,7 @@ class MockHandler:
                 require_dataset=True,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
             StepSpecClient(
                 cls_name="MockHandler",
@@ -662,6 +675,7 @@ class MockHandler:
                 require_dataset=False,
                 parameters_sig=[],
                 ext_cmd_args="",
+                step_type=StepType.evaluation,
             ),
         ]
 
@@ -801,6 +815,7 @@ def ft2(): ...
                         require_train_datasets=True,
                         require_validation_datasets=True,
                     ),
+                    step_type=StepType.fine_tune,
                 ),
             ],
             "mock_user_module:ft2": [
@@ -824,6 +839,7 @@ def ft2(): ...
                         require_train_datasets=True,
                         require_validation_datasets=True,
                     ),
+                    step_type=StepType.fine_tune,
                 ),
                 StepSpecClient(
                     name="mock_user_module:ft2",
@@ -851,6 +867,7 @@ def ft2(): ...
                         require_train_datasets=False,
                         require_validation_datasets=False,
                     ),
+                    step_type=StepType.fine_tune,
                 ),
             ],
         }

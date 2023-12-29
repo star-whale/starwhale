@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.schedule.impl.container.impl;
 
 import ai.starwhale.mlops.domain.job.spec.ContainerSpec;
-import ai.starwhale.mlops.domain.job.spec.Env;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.Env;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;

@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.List;

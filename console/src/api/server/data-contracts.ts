@@ -1305,6 +1305,7 @@ export interface IStepSpec {
     virtual?: boolean
     job_name?: string
     show_name: string
+    step_type?: 'EVALUATION' | 'FINE_TUNE' | 'SERVING'
     require_dataset?: boolean
     fine_tune?: IFineTune
     container_spec?: IContainerSpec

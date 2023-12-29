@@ -20,6 +20,7 @@ from starwhale.base.models.model import StepSpecClient
 from starwhale.api._impl.evaluation import PipelineHandler
 from starwhale.base.client.models.models import (
     FineTune,
+    StepType,
     RuntimeResource,
     ParameterSignature,
 )
@@ -105,6 +106,7 @@ class Handler:
         require_dataset: bool = False,
         built_in: bool = False,
         fine_tune: FineTune | None = None,
+        typetypo: StepType | None = None,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control replicas of handler run.
@@ -125,6 +127,8 @@ class Handler:
             built_in: [bool, optional] A special flag to distinguish user defined args in handler function from the StarWhale ones.
               This should always be False unless you know what it does.
             fine_tune: [FineTune, optional The fine tune config for the handler. Default is None.
+            type:
+              - [str, optional] The type of the handler. Default is None.
 
         Example:
         ```python
@@ -202,6 +206,7 @@ class Handler:
                 parameters_sig=parameters_sig,
                 ext_cmd_args=ext_cmd_args,
                 fine_tune=fine_tune,
+                step_type=type,
             )
 
             cls._register(_handler, func)
@@ -347,6 +352,7 @@ class Handler:
                         name="predict",
                         require_dataset=True,
                         built_in=True,
+                        typ=StepType.evaluation,
                     )
 
                     evaluate_register = partial(
@@ -355,6 +361,7 @@ class Handler:
                         name="evaluate",
                         built_in=True,
                         replicas=1,
+                        typ=StepType.evaluation,
                     )
 
                     run_info = getattr(_cls, "_registered_run_info", None)

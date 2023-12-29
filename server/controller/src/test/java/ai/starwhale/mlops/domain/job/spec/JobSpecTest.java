@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.spec;
 
+import ai.starwhale.mlops.domain.job.spec.step.StepSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.spec;
+package ai.starwhale.mlops.domain.job.spec.step;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
