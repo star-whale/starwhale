@@ -193,7 +193,7 @@ class GenerateJobsTestCase(BaseTestCase):
 
     def test_multi_predict_decorators(self) -> None:
         content = """
-from starwhale import evaluation
+from starwhale import evaluation, argument
 
 @evaluation.predict
 def img_predict_handler(*args, **kwargs): ...
@@ -206,6 +206,12 @@ def video_predict_handler(*args, **kwargs): ...
 
 @evaluation.evaluate(needs=[video_predict_handler])
 def video_evaluate_handler(*args, **kwargs): ...
+
+@evaluation.predict
+def mock_predict_handler1(data, external): ...
+
+@evaluation.predict
+def mock_predict_handler2(data, argument=None): ...
         """
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
@@ -219,6 +225,8 @@ def video_evaluate_handler(*args, **kwargs): ...
             "mock_user_module:img_predict_handler",
             "mock_user_module:video_evaluate_handler",
             "mock_user_module:video_predict_handler",
+            "mock_user_module:mock_predict_handler1",
+            "mock_user_module:mock_predict_handler2",
         } == set(jobs_info.keys())
         assert jobs_info["mock_user_module:img_evaluate_handler"] == [
             StepSpecClient(

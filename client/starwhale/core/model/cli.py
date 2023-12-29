@@ -435,7 +435,13 @@ def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
 
-@model_cmd.command("run")
+@model_cmd.command(
+    "run",
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
 @optgroup.group(
     "\n ** Model Selectors",
     cls=RequiredMutuallyExclusiveOptionGroup,
@@ -579,8 +585,9 @@ def _recover(model: str, force: bool) -> None:
     multiple=True,
     help=f"validation dataset uri for finetune, env is {SWEnv.finetune_validation_dataset_uri}",
 )
-@click.argument("handler_args", nargs=-1)
+@click.pass_context
 def _run(
+    ctx: click.Context,
     workdir: str,
     uri: str,
     handler: int | str,
@@ -602,7 +609,6 @@ def _run(
     forbid_packaged_runtime: bool,
     forbid_snapshot: bool,
     cleanup_snapshot: bool,
-    handler_args: t.Tuple[str],
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -639,6 +645,10 @@ def _run(
         # --> run with finetune validation dataset
         swcli model run --workdir . -m mnist.finetune --dataset mnist --val-dataset mnist-val
     """
+    from starwhale.api.argument import ExtraCliArgsRegistry
+
+    ExtraCliArgsRegistry.set(ctx.args)
+
     # TODO: support run model in cluster mode
     run_project_uri = Project(run_project)
     log_project_uri = Project(log_project)
@@ -719,7 +729,7 @@ def _run(
                 "task_num": override_task_num,
             },
             force_generate_jobs_yaml=uri is None,
-            handler_args=list(handler_args) if handler_args else [],
+            handler_args=ctx.args,
         )
 
 

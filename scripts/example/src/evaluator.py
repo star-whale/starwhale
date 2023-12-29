@@ -2,6 +2,7 @@ import time
 import random
 import typing as t
 import os.path as osp
+import dataclasses
 from functools import wraps
 
 import numpy
@@ -12,6 +13,7 @@ from starwhale import (
     Context,
     Dataset,
     handler,
+    argument,
     IntInput,
     ListInput,
     evaluation,
@@ -26,6 +28,11 @@ try:
     from .util import random_image
 except ImportError:
     from util import random_image
+
+
+@dataclasses.dataclass
+class TestArguments:
+    epoch: int = dataclasses.field(default=10, metadata={"help": "epoch"})
 
 
 def timing(func: t.Callable) -> t.Any:
@@ -45,13 +52,16 @@ def timing(func: t.Callable) -> t.Any:
     log_mode="plain",
     log_dataset_features=["txt", "img", "label"],
 )
-def predict(data: t.Dict, external: t.Dict) -> t.Any:
+@argument(TestArguments)
+def predict(data: t.Dict, external: t.Dict, argument) -> t.Any:
     # Test relative path case
     file_name = osp.join("templates", "data.json")
     assert osp.exists(file_name)
     assert isinstance(external["context"], Context)
     assert external["dataset_uri"].name
     assert external["dataset_uri"].version
+    assert isinstance(argument, TestArguments)
+    assert argument.epoch == 10
 
     if in_container():
         assert osp.exists("/tmp/runtime-command-run.flag")
@@ -74,7 +84,11 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
     show_roc_auc=True,
     all_labels=[f"label-{i}" for i in range(0, 5)],
 )
-def evaluate(ppl_result: t.Iterator):
+@argument(TestArguments)
+def evaluate(ppl_result: t.Iterator, argument: TestArguments) -> t.Any:
+    assert isinstance(argument, TestArguments)
+    assert argument.epoch == 10
+
     result, label, pr = [], [], []
     for _data in ppl_result:
         assert _data["_mode"] == "plain"
