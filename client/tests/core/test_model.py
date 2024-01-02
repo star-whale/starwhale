@@ -25,6 +25,7 @@ from starwhale.consts import (
     RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_JOBS_FILE_NAME,
+    ARGUMENTS_DUMPED_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
@@ -234,6 +235,12 @@ class StandaloneModelTestCase(TestCase):
                 ),
             ],
         }
+
+        argument_json_path = (
+            bundle_path / "src" / SW_AUTO_DIRNAME / ARGUMENTS_DUMPED_JSON_FILE_NAME
+        )
+        assert argument_json_path.exists()
+        assert json.loads(argument_json_path.read_text()) == {}
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
         assert "name" not in _manifest

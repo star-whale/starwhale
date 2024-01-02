@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import typing as t
 import dataclasses
 from enum import Enum
@@ -162,7 +163,7 @@ class ArgumentTestCase(TestCase):
 
         argument_ctx = ArgumentContext.get_current_context()
         assert len(argument_ctx._options) == 1
-        options = argument_ctx._options["tests.sdk.test_argument.ScalarArguments"]
+        options = argument_ctx._options["tests.sdk.test_argument:ScalarArguments"]
         assert len(options) == 5
         assert options[0].name == "batch"
         assert options[-1].name == "epoch"
@@ -213,13 +214,13 @@ class ArgumentTestCase(TestCase):
 
         argument_ctx = ArgumentContext.get_current_context()
         assert len(argument_ctx._options) == 1
-        options = argument_ctx._options["tests.sdk.test_argument.ComposeArguments"]
+        options = argument_ctx._options["tests.sdk.test_argument:ComposeArguments"]
         assert len(options) == 6
         assert options[0].name == "debug"
         argument_ctx.echo_help()
 
     @patch("click.echo")
-    def test_argument_help_output(self, mock_echo: MagicMock):
+    def test_argument_help_output(self, mock_echo: MagicMock) -> None:
         @argument_decorator((ScalarArguments, ComposeArguments))
         def mock_func(starwhale_argument: t.Tuple) -> None:
             ...
@@ -227,13 +228,13 @@ class ArgumentTestCase(TestCase):
         ArgumentContext.get_current_context().echo_help()
         help_output = mock_echo.call_args[0][0]
         cases = [
-            "tests.sdk.test_argument.ScalarArguments:",
+            "tests.sdk.test_argument:ScalarArguments:",
             "--batch INTEGER",
             "--overwrite",
             "--learning_rate, --learning-rate FLOAT",
             "--half_precision_backend, --half-precision-backend TEXT",
             "--epoch INTEGER",
-            "tests.sdk.test_argument.ComposeArguments:",
+            "tests.sdk.test_argument:ComposeArguments:",
             "--debug DEBUGOPTION",
             "--lr_scheduler_kwargs, --lr-scheduler-kwargs DICT",
             "--evaluation_strategy, --evaluation-strategy [no|steps|epoch]",
@@ -243,3 +244,90 @@ class ArgumentTestCase(TestCase):
         ]
         for case in cases:
             assert case in help_output
+
+    def test_argument_dict(self) -> None:
+        @argument_decorator((ScalarArguments, ComposeArguments))
+        def mock_f1(starwhale_argument: t.Tuple) -> None:
+            ...
+
+        @argument_decorator(ScalarArguments)
+        def mock_f2(starwhale_argument: t.Tuple) -> None:
+            ...
+
+        @argument_decorator(ComposeArguments)
+        def mock_f3(starwhale_argument: t.Tuple) -> None:
+            ...
+
+        info = ArgumentContext.get_current_context().asdict()
+        assert len(info) == 3
+        assert list(
+            info[
+                "tests.sdk.test_argument:ArgumentTestCase.test_argument_dict.<locals>.mock_f1"
+            ].keys()
+        ) == [
+            "tests.sdk.test_argument:ScalarArguments",
+            "tests.sdk.test_argument:ComposeArguments",
+        ]
+        batch = info[
+            "tests.sdk.test_argument:ArgumentTestCase.test_argument_dict.<locals>.mock_f1"
+        ]["tests.sdk.test_argument:ScalarArguments"]["batch"]
+        assert batch == {
+            "name": "batch",
+            "opts": ["--batch"],
+            "type": {
+                "name": "integer",
+                "param_type": "INT",
+                "case_sensitive": False,
+                "choices": None,
+            },
+            "required": False,
+            "multiple": False,
+            "default": 64,
+            "help": "batch size",
+            "is_flag": False,
+            "hidden": False,
+        }
+
+        evaluation_strategy = info[
+            "tests.sdk.test_argument:ArgumentTestCase.test_argument_dict.<locals>.mock_f1"
+        ]["tests.sdk.test_argument:ComposeArguments"]["evaluation_strategy"]
+
+        assert evaluation_strategy == {
+            "default": "no",
+            "help": "evaluation strategy",
+            "hidden": False,
+            "is_flag": False,
+            "multiple": False,
+            "name": "evaluation_strategy",
+            "opts": ["--evaluation_strategy", "--evaluation-strategy"],
+            "required": False,
+            "type": {
+                "case_sensitive": True,
+                "choices": ["no", "steps", "epoch"],
+                "name": "choice",
+                "param_type": "CHOICE",
+            },
+        }
+
+        debug = info[
+            "tests.sdk.test_argument:ArgumentTestCase.test_argument_dict.<locals>.mock_f1"
+        ]["tests.sdk.test_argument:ComposeArguments"]["debug"]
+
+        assert debug == {
+            "default": None,
+            "help": "debug mode",
+            "hidden": False,
+            "is_flag": False,
+            "multiple": True,
+            "name": "debug",
+            "opts": ["--debug"],
+            "required": False,
+            "type": {
+                "name": "DebugOption",
+                "param_type": "STRING",
+                "case_sensitive": False,
+                "choices": None,
+            },
+        }
+
+        assert json.loads(json.dumps(info)) == info

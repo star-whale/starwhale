@@ -21,6 +21,8 @@ SW_BUILT_IN = "starwhale-built-in"
 
 # evaluation related constants
 DEFAULT_JOBS_FILE_NAME = "jobs.yaml"
+# dump @starwhale.argument received dataclasses to json file
+ARGUMENTS_DUMPED_JSON_FILE_NAME = "arguments.json"
 # auto generated evaluation panel layout file name from yaml or local console
 EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME = "eval_panel_layout.json"
 # user defined evaluation panel layout file name
