@@ -157,7 +157,6 @@ class StepExecutor:
         workdir: Path,
         dataset_uris: t.List[str],
         task_num: int = 0,
-        handler_args: t.List[str] | None = None,
         dataset_head: int = 0,
         finetune_val_dataset_uris: t.List[str] | None = None,
         model_name: str = "",
@@ -169,7 +168,6 @@ class StepExecutor:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
-        self.handler_args = handler_args or []
         self.dataset_head = dataset_head
         self.finetune_val_dataset_uris = finetune_val_dataset_uris
         self.model_name = model_name
@@ -199,7 +197,6 @@ class StepExecutor:
                     finetune_val_dataset_uris=self.finetune_val_dataset_uris,
                     model_name=self.model_name,
                 ),
-                handler_args=self.handler_args,
                 step=self.step,
                 workdir=self.workdir,
             )

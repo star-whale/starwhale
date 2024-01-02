@@ -138,7 +138,6 @@ def _register_ft(
         extra_kwargs=dict(
             auto_build_model=auto_build_model,
         ),
-        built_in=True,
         fine_tune=FineTune(
             require_train_datasets=require_train_datasets,
             require_validation_datasets=require_validation_datasets,

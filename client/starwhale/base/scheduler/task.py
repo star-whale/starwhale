@@ -32,7 +32,6 @@ class TaskExecutor:
         context: Context,
         workdir: Path,
         step: Step,
-        handler_args: t.List[str] | None = None,
     ):
         self.index = index
         self.context = context
@@ -40,7 +39,6 @@ class TaskExecutor:
         self.exception: t.Optional[Exception] = None
         self.step = step
         self.__status = RunStatus.INIT
-        self.handler_args = handler_args or []
         self._validate()
 
     def _validate(self) -> None:
@@ -128,10 +126,7 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 elif getattr(func, DecoratorInjectAttr.Step, False):
-                    if self.handler_args:
-                        func(**{"handler_args": self.handler_args})
-                    else:
-                        func()
+                    func()
                 else:
                     raise NoSupportError(
                         f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict, @evaluate or @finetune decorator"
@@ -151,10 +146,7 @@ class TaskExecutor:
                     elif getattr(func, DecoratorInjectAttr.Predict, False):
                         self._run_in_pipeline_handler_cls(func, "predict")
                     else:
-                        if self.handler_args:
-                            func(**{"handler_args": self.handler_args})
-                        else:
-                            func()
+                        func()
             else:
                 func = getattr(cls_(), func_name)
                 if getattr(func, DecoratorInjectAttr.Evaluate, False):
@@ -162,10 +154,7 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 else:
-                    if self.handler_args:
-                        func(**{"handler_args": self.handler_args})
-                    else:
-                        func()
+                    func()
 
     def execute(self) -> TaskResult:
         console.info(

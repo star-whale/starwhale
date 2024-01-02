@@ -192,8 +192,6 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                         show_name="handle",
                         expose=0,
                         require_dataset=False,
-                        parameters_sig=[],
-                        ext_cmd_args="",
                     )
                 ]
             }

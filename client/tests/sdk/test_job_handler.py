@@ -13,11 +13,7 @@ from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
 from starwhale.base.models.base import obj_to_model
 from starwhale.base.uri.project import Project
 from starwhale.base.models.model import JobHandlers, StepSpecClient
-from starwhale.base.client.models.models import (
-    FineTune,
-    RuntimeResource,
-    ParameterSignature,
-)
+from starwhale.base.client.models.models import FineTune, RuntimeResource
 
 
 class JobTestCase(unittest.TestCase):
@@ -248,8 +244,6 @@ def mock_predict_handler2(data, argument=None): ...
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="",
@@ -263,8 +257,6 @@ def mock_predict_handler2(data, argument=None): ...
                 show_name="evaluate",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
 
@@ -288,8 +280,6 @@ def mock_predict_handler2(data, argument=None): ...
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="",
@@ -303,8 +293,6 @@ def mock_predict_handler2(data, argument=None): ...
                 show_name="evaluate",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
 
@@ -352,8 +340,6 @@ def evaluate_handler(*args, **kwargs): ...
                     show_name="predict",
                     expose=0,
                     require_dataset=True,
-                    parameters_sig=[],
-                    ext_cmd_args="",
                 ),
                 StepSpecClient(
                     cls_name="",
@@ -367,8 +353,6 @@ def evaluate_handler(*args, **kwargs): ...
                     show_name="evaluate",
                     expose=0,
                     require_dataset=False,
-                    parameters_sig=[],
-                    ext_cmd_args="",
                 ),
             ],
             "mock_user_module:predict_handler": [
@@ -391,8 +375,6 @@ def evaluate_handler(*args, **kwargs): ...
                     show_name="predict",
                     expose=0,
                     require_dataset=True,
-                    parameters_sig=[],
-                    ext_cmd_args="",
                 )
             ],
         }
@@ -517,8 +499,6 @@ class MockHandler(PipelineHandler):
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="MockHandler",
@@ -534,8 +514,6 @@ class MockHandler(PipelineHandler):
                 show_name="evaluate",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -552,8 +530,6 @@ class MockHandler(PipelineHandler):
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             )
         ]
         _, steps = Step.get_steps_from_yaml(
@@ -620,8 +596,6 @@ class MockHandler:
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             )
         ]
 
@@ -645,8 +619,6 @@ class MockHandler:
                 show_name="predict",
                 expose=0,
                 require_dataset=True,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="MockHandler",
@@ -660,8 +632,6 @@ class MockHandler:
                 show_name="evaluate",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
 
@@ -712,18 +682,22 @@ def run(): ...
                     show_name="run",
                     expose=0,
                     require_dataset=False,
-                    parameters_sig=[],
-                    ext_cmd_args="",
                 )
             ]
         }
 
     def test_handler_with_other_decorator(self) -> None:
         content = """
-from starwhale import handler
+import dataclasses
+from starwhale import handler, argument
 
+@dataclasses.dataclass
+class TestArgument:
+    epoch: int = dataclasses.field(default=1)
+
+@argument(TestArgument)
 @handler(replicas=2)
-def handle(context): ...
+def handle(argument): ...
         """
 
         self._ensure_py_script(content)
@@ -744,14 +718,6 @@ def handle(context): ...
                     show_name="handle",
                     expose=0,
                     require_dataset=False,
-                    parameters_sig=[
-                        ParameterSignature(
-                            name="context",
-                            required=True,
-                            multiple=False,
-                        )
-                    ],
-                    ext_cmd_args="--context",
                 )
             ]
         }
@@ -791,9 +757,7 @@ def ft2(): ...
                     expose=0,
                     replicas=1,
                     resources=[],
-                    parameters_sig=[],
                     cls_name="",
-                    ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": True,
                     },
@@ -814,9 +778,7 @@ def ft2(): ...
                     expose=0,
                     replicas=1,
                     resources=[],
-                    parameters_sig=[],
                     cls_name="",
-                    ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": True,
                     },
@@ -841,9 +803,7 @@ def ft2(): ...
                     replicas=1,
                     needs=["mock_user_module:ft1"],
                     expose=0,
-                    parameters_sig=[],
                     cls_name="",
-                    ext_cmd_args="",
                     extra_kwargs={
                         "auto_build_model": False,
                     },
@@ -914,9 +874,7 @@ class MockReport:
                 needs=[],
                 expose=0,
                 resources=[],
-                parameters_sig=[],
                 cls_name="",
-                ext_cmd_args="",
             )
             in report_handler
         )
@@ -932,9 +890,7 @@ class MockReport:
                 needs=["mock_user_module:prepare_handler"],
                 expose=0,
                 resources=[],
-                parameters_sig=[],
                 cls_name="",
-                ext_cmd_args="",
             )
             in report_handler
         )
@@ -950,9 +906,7 @@ class MockReport:
                 show_name="evaluate",
                 expose=0,
                 replicas=1,
-                parameters_sig=[],
                 cls_name="",
-                ext_cmd_args="",
             )
             in report_handler
         )
@@ -972,8 +926,6 @@ class MockReport:
                 show_name="report",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             )
             in report_handler
         )
@@ -989,8 +941,6 @@ class MockReport:
             show_name="predict",
             expose=0,
             require_dataset=False,
-            parameters_sig=[],
-            ext_cmd_args="",
         )
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
@@ -1005,8 +955,6 @@ class MockReport:
                 show_name="prepare",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="",
@@ -1019,8 +967,6 @@ class MockReport:
                 show_name="evaluate",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
@@ -1035,8 +981,6 @@ class MockReport:
                 show_name="prepare",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
             StepSpecClient(
                 cls_name="",
@@ -1049,8 +993,6 @@ class MockReport:
                 show_name="predict",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             ),
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
@@ -1065,8 +1007,6 @@ class MockReport:
                 show_name="prepare",
                 expose=0,
                 require_dataset=False,
-                parameters_sig=[],
-                ext_cmd_args="",
             )
         ]
 
@@ -1265,203 +1205,3 @@ def predict_handler(): ...
         yaml_path = self.workdir / "job.yaml"
         with self.assertRaisesRegex(RuntimeError, "dependency not found"):
             generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
-
-    def test_handler_args(self) -> None:
-        content = """
-from starwhale import (
-    Context,
-    Dataset,
-    handler,
-    IntInput,
-    ListInput,
-    HandlerInput,
-    ContextInput,
-    DatasetInput,
-)
-
-class MyInput(HandlerInput):
-    def parse(self, user_input):
-
-        return f"MyInput {user_input}"
-
-class X:
-    def __init__(self) -> None:
-        self.a = 1
-
-    @handler()
-    def f(
-        self, x=ListInput(IntInput), y=2, mi=MyInput(), ds=DatasetInput(required=True), ctx=ContextInput()
-    ):
-        assert self.a + x[0] == 3
-        assert self.a + x[1] == 2
-        assert y == 2
-        assert mi == "MyInput blab-la"
-        assert isinstance(ds, Dataset)
-        assert isinstance(ctx, Context)
-
-
-@handler()
-def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True), ctx=ContextInput()):
-    assert x[0] == 2
-    assert x[1] == 1
-    assert y == 2
-    assert mi == "MyInput blab-la"
-
-    assert isinstance(ds, Dataset)
-    assert isinstance(ctx, Context)
-
-@handler()
-def f_no_args():
-    print("code here is executed")
-
-
-"""
-        self._ensure_py_script(content)
-        yaml_path = self.workdir / "job.yaml"
-        generate_jobs_yaml(
-            [f"{self.module_name}:X", self.module_name], self.workdir, yaml_path
-        )
-        jobs_info = obj_to_model(load_yaml(yaml_path), JobHandlers).data
-        assert jobs_info["mock_user_module:X.f"] == [
-            StepSpecClient(
-                name="mock_user_module:X.f",
-                cls_name="X",
-                func_name="f",
-                module_name="mock_user_module",
-                show_name="f",
-                parameters_sig=[
-                    ParameterSignature(
-                        name="x",
-                        required=False,
-                        multiple=True,
-                    ),
-                    ParameterSignature(
-                        name="y",
-                        required=False,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="mi",
-                        required=False,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="ds",
-                        required=True,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="ctx",
-                        required=False,
-                        multiple=False,
-                    ),
-                ],
-                ext_cmd_args="--ds",
-                needs=[],
-                resources=[],
-                expose=0,
-                require_dataset=False,
-            ),
-        ]
-        assert jobs_info["mock_user_module:f"] == [
-            StepSpecClient(
-                name="mock_user_module:f",
-                cls_name="",
-                func_name="f",
-                module_name="mock_user_module",
-                show_name="f",
-                parameters_sig=[
-                    ParameterSignature(
-                        name="x",
-                        required=False,
-                        multiple=True,
-                    ),
-                    ParameterSignature(
-                        name="y",
-                        required=False,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="mi",
-                        required=False,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="ds",
-                        required=True,
-                        multiple=False,
-                    ),
-                    ParameterSignature(
-                        name="ctx",
-                        required=False,
-                        multiple=False,
-                    ),
-                ],
-                ext_cmd_args="--ds",
-                needs=[],
-                resources=[],
-                expose=0,
-                require_dataset=False,
-            ),
-        ]
-        assert jobs_info["mock_user_module:f_no_args"] == [
-            StepSpecClient(
-                name="mock_user_module:f_no_args",
-                cls_name="",
-                func_name="f_no_args",
-                module_name="mock_user_module",
-                show_name="f_no_args",
-                parameters_sig=[],
-                ext_cmd_args="",
-                needs=[],
-                resources=[],
-                expose=0,
-                require_dataset=False,
-            ),
-        ]
-        _, steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
-        context = Context(
-            workdir=self.workdir,
-            run_project=Project("test"),
-            version="123",
-        )
-        task = TaskExecutor(
-            index=1,
-            context=context,
-            workdir=self.workdir,
-            step=steps[0],
-            handler_args=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
-        )
-        result = task.execute()
-        assert result.status == "success"
-        _, steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
-        context = Context(
-            workdir=self.workdir,
-            run_project=Project("test"),
-            version="123",
-        )
-        task = TaskExecutor(
-            index=1,
-            context=context,
-            workdir=self.workdir,
-            step=steps[0],
-            handler_args=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
-        )
-        result = task.execute()
-        assert result.status == "success"
-
-        _, steps = Step.get_steps_from_yaml("mock_user_module:f_no_args", yaml_path)
-        context = Context(
-            workdir=self.workdir,
-            run_project=Project("test"),
-            version="123",
-        )
-        task = TaskExecutor(
-            index=1,
-            context=context,
-            workdir=self.workdir,
-            step=steps[0],
-            handler_args=[],
-        )
-        result = task.execute()
-        assert result.status == "success"

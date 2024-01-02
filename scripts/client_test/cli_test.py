@@ -358,7 +358,23 @@ class TestCli:
         dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
 
         remote_job_ids = []
+        handler_args = [
+            "--learning_rate",
+            "0.1",
+            "--epoch",
+            "100",
+            "--labels",
+            "l1",
+            "--labels",
+            "l2",
+            "--labels",
+            "l3",
+            "--debug",
+            "--evaluation_strategy",
+            "steps",
+        ]
         if self.server_url:
+            # TODO: support to specify model run arguments to server instance
             remote_job_ids = self.run_model_in_server(
                 dataset_uris=[dataset_uri],
                 model_uri=model_uri,
@@ -380,26 +396,14 @@ class TestCli:
                     )
                 ],
                 run_handler=run_handler,
+                handler_args=handler_args,
             )
 
         self.run_model_in_standalone(
             dataset_uris=[dataset_uri],
             model_uri=model_uri,
             run_handler=run_handler,
-        )
-
-        self.run_model_in_standalone(
-            dataset_uris=[],
-            model_uri=model_uri,
-            run_handler="src.evaluator:f",
-            handler_args=["--x", "2", "-x", "1", "--ds", "simple", "-mi=blab-la"],
-        )
-
-        self.run_model_in_standalone(
-            dataset_uris=[],
-            model_uri=model_uri,
-            run_handler="src.evaluator:X.f",
-            handler_args=["--x", "2", "-x", "1", "--ds", "simple", "-mi=blab-la"],
+            handler_args=handler_args,
         )
 
         futures = [
@@ -597,18 +601,14 @@ class TestCli:
         assert set(ctx_handle_info["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
-            "src.evaluator:f",
-            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
-        }, ctx_handle_info["basic"]["handlers"]
+        }, ctx_handle_info["handlers"]
 
         ctx_handle_no_modules_info = self.model_api.info("ctx_handle_no_modules")
         assert set(ctx_handle_no_modules_info["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
-            "src.evaluator:f",
-            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
         }, ctx_handle_no_modules_info["handlers"]

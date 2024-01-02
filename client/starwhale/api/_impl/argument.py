@@ -72,10 +72,17 @@ def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
         # TODO: dump parser to json file when model building
         # TODO: `@handler` decorator function supports @argument decorator
         parser = get_parser_from_dataclasses(dataclass_types)
+        lock = threading.Lock()
+        parsed_cache: t.Any = None
 
         @wraps(func)
         def _run_wrapper(*args: t.Any, **kw: t.Any) -> t.Any:
-            dataclass_values = init_dataclasses_values(parser, dataclass_types)
+            nonlocal parsed_cache, lock
+            with lock:
+                if parsed_cache is None:
+                    parsed_cache = init_dataclasses_values(parser, dataclass_types)
+
+            dataclass_values = parsed_cache
             if inject_name in kw:
                 raise RuntimeError(
                     f"{inject_name} has been used as a keyword argument in the decorated function, please use another name by the `inject_name` option."
@@ -91,7 +98,8 @@ def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
 def init_dataclasses_values(
     parser: click.OptionParser, dataclass_types: t.Any
 ) -> t.Any:
-    args_map, _, params = parser.parse_args(ExtraCliArgsRegistry.get())
+    # forbid to modify the ExtraCliArgsRegistry args values
+    args_map, _, params = parser.parse_args(ExtraCliArgsRegistry.get().copy())
     param_map = {p.name: p for p in params}
 
     ret = []

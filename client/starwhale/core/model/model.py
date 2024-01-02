@@ -362,7 +362,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
         force_generate_jobs_yaml: bool = False,
-        handler_args: t.List[str] | None = None,
     ) -> Resource:
         dataset_uris = dataset_uris or []
         finetune_val_dataset_uris = finetune_val_dataset_uris or []
@@ -401,7 +400,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             workdir=snapshot_dir,
             dataset_uris=dataset_uris,
             steps=steps,
-            handler_args=handler_args or [],
             dataset_head=dataset_head,
             finetune_val_dataset_uris=finetune_val_dataset_uris,
             model_name=model_config.name,
