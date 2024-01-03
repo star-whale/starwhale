@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
+import computed from 'zustand-computed'
 
 // eslint-disable-next-line
 export function arrayOverride(objValue: any, srcValue: any, key, object) {
@@ -436,6 +437,52 @@ const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
         ),
 })
 
+const getColumnsIds = (state: ITableState) => {
+    const { currentView: view, columns } = state
+    const { pinnedIds = [], ids = [] }: ConfigT = view
+    const columnIds = columns?.map((c) => c.key) ?? []
+    if (!view.id || (view.id === 'all' && !view.updateColumn)) {
+        return Array.from(new Set([...pinnedIds, ...columnIds]))
+    }
+    return ids
+}
+
+const getColumns = (state: ITableState) => {
+    const { currentView: view, columns } = state
+
+    if (!columns) return []
+    if (!view) return columns
+
+    const { pinnedIds = [] }: ConfigT = view
+    const columnsMap = _.keyBy(columns, (c) => c.key)
+    const ids = getColumnsIds(state)
+    console.log('columnsMap')
+    return ids
+        .filter((id: any) => id in columnsMap)
+        .map((id: any) => {
+            const _pin = columnsMap[id].pin ?? undefined
+            return {
+                ...columnsMap[id],
+                pin: pinnedIds.includes(id) ? 'LEFT' : _pin,
+            }
+        })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const createComputeSlice: IStateCreator<any> = (set, get, store) => ({
+    setColumns: (args) =>
+        set(
+            {
+                compare: {
+                    ...get().compare,
+                    ...args,
+                },
+            },
+            false,
+            'setColumns'
+        ),
+})
+
 export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
     const name = `table/${key}`
     //
@@ -452,42 +499,64 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
         ...createRowSlice(...a),
         // @ts-ignore
         ...createCompareSlice(...a),
+        // @ts-ignore
+        ...createComputeSlice(...a),
         ...initState,
         key: name,
     })
     if (isPersist) {
         return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any, { name }))))
     }
+
+    const computeState = (state: ITableState) => {
+        const { sortBy, sortDirection } = state.currentView || {}
+        const sortIndex = state.columns?.findIndex((c) => c.key === sortBy)
+        console.log('computeState 1')
+
+        return {
+            sortIndex,
+            sortDirection,
+            $columns: getColumns(state),
+        }
+    }
+
     const useStore = create<ITableState>()(
         subscribeWithSelector(
-            devtools(actions as any, {
-                serialize: {
-                    options: {
-                        undefined: true,
-                        // function: function (fn) {
-                        //     // return fn.toString()
-                        //     return 'function'
-                        // },
-                        // @
-                        function: undefined,
-                        symbol: undefined,
+            devtools(
+                computed(actions as any, computeState, {
+                    keys: ['currentView', 'columns'],
+                }),
+                {
+                    serialize: {
+                        options: {
+                            undefined: true,
+                            // function: function (fn) {
+                            //     // return fn.toString()
+                            //     return 'function'
+                            // },
+                            // @
+                            function: undefined,
+                            symbol: undefined,
+                        },
                     },
-                },
-                stateSanitizer: (state) => {
-                    return {
-                        ...state,
-                        // rowSelectedRecords: '<<LONG_BLOB>>',
-                        // columnTypes: '<<LONG_BLOB>>',
-                        // records: '<<LONG_BLOB>>',
-                        rows: '<<LONG_BLOB>>',
-                        wrapperRef: '<<LONG_BLOB>>',
-                    }
-                },
-            })
+                    stateSanitizer: (state) => {
+                        return {
+                            ...state,
+                            // rowSelectedRecords: '<<LONG_BLOB>>',
+                            // columnTypes: '<<LONG_BLOB>>',
+                            // records: '<<LONG_BLOB>>',
+                            rows: '<<LONG_BLOB>>',
+                            columns: '<<LONG_BLOB>>',
+                            wrapperRef: '<<DOM>>',
+                        }
+                    },
+                }
+            )
         )
     )
     return useStore as UseBoundStore<StoreApi<ITableState>>
 }
+
 export type IStore = ReturnType<typeof createCustomStore>
 
 export default createCustomStore

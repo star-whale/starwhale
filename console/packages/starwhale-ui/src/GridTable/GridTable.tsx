@@ -109,13 +109,13 @@ function GridTable({
     const { onRemove, onIncludedRowsChange, onRowHighlightChange, getId } = useStore(selector)
     const store = useStoreApi()
     // @FIXME inline set move to  store updater ?
-    useDirectStoreUpdater(
-        'getColumns',
-        useCallback(() => columns, [columns]),
-        store.setState
-    )
-    useDirectStoreUpdater('rows', rows, store.setState)
-    useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
+    // useDirectStoreUpdater(
+    //     'getColumns',
+    //     useCallback(() => columns, [columns]),
+    //     store.setState
+    // )
+    // useDirectStoreUpdater('rows', rows, store.setState)
+    // useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
 
     const {
         selectedRowIds,

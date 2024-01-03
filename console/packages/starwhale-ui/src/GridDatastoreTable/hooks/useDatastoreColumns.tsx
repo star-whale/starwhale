@@ -5,6 +5,7 @@ import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { RecordAttr } from '../recordAttrModel'
 import CustomColumn from '@starwhale/ui/base/data-table/column-custom'
 import { FilterBuilderByColumnType, SearchFieldSchemaT } from '@starwhale/ui/Search'
+import { useIfChanged } from '@starwhale/core'
 
 export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
@@ -56,6 +57,7 @@ export function useDatastoreColumns(
             })
         })
 
+        console.log('sort columns 1', columnTypes)
         return arr.sort(sortColumn)
     }, [columnTypes])
 
@@ -104,10 +106,11 @@ export function useDatastoreColumns(
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
                             return RecordAttr.decode(record, name)
+                            // return record
                         },
                         // search bar
                         getFilters,
-                        buildFilters: build({ fieldOptions, valueOptions }),
+                        // buildFilters: build({ fieldOptions, valueOptions }),
                     })
                 )
             })

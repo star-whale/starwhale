@@ -6,6 +6,8 @@ import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
 import { ITableState } from '../store'
 import { ConfigT } from '@starwhale/ui/base/data-table/types'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
+import { useTrace } from '@starwhale/core'
 
 type StoreUpdaterProps = ITableProps
 
@@ -74,6 +76,7 @@ const StoreUpdater = ({
     onRemove,
     removable,
     selectable,
+    columns,
 }: StoreUpdaterProps) => {
     const { reset, setCurrentView } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -83,6 +86,16 @@ const StoreUpdater = ({
             // reset()
         }
     }, [reset])
+
+    const trace = useTrace('store-updater')
+
+    const $columns = useDatastoreColumns({
+        fillWidth: !!fillable,
+        columnTypes,
+        columnHints,
+    })
+
+    trace('-- GridTable StoreUpdater --', { $columns, columnTypes, columnHints })
 
     // config
     useDirectStoreUpdater('sortable', sortable, store.setState)
@@ -106,6 +119,8 @@ const StoreUpdater = ({
     // data
     useDirectStoreUpdater('page', page, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('originalColumns', columns, store.setState)
     useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
     useDirectStoreUpdater('columnHints', columnHints, store.setState)

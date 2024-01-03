@@ -118,13 +118,6 @@ export default function DatasetVersionFiles() {
         !!datasetVersion?.versionInfo?.indexTable
     )
 
-    const $columns = useDatastoreColumns({
-        showPrivate: false,
-        showLink: false,
-        columnTypes,
-        columnHints,
-    })
-
     return (
         <div className={styles.wrapper}>
             <GridCombineTable
@@ -138,7 +131,7 @@ export default function DatasetVersionFiles() {
                 records={records}
                 columnTypes={columnTypes}
                 columnHints={columnHints}
-                columns={$columns}
+                // columns={$columns}
                 paginationable
                 page={tablePage}
                 onPageChange={setPage}

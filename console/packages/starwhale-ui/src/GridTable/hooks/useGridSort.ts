@@ -1,21 +1,14 @@
-import { useMemo } from 'react'
-import useGirdData from './useGridData'
-import useGridCurrentView from './useGridCurrentView'
+import { shallow } from 'zustand/shallow'
+import { useStore, useStoreApi } from './useStore'
+import { ITableState } from '../store'
+
+const selector = (state: ITableState) => ({
+    sortIndex: state.sortIndex,
+    sortDirection: state.sortDirection ?? [],
+})
 
 function useGridSort() {
-    const { originalColumns } = useGirdData()
-    const { columns, currentView } = useGridCurrentView(originalColumns)
-
-    const [$sortIndex, $sortDirection] = useMemo(() => {
-        const { sortBy, sortDirection } = currentView || {}
-        const sortIndex = columns?.findIndex((c) => c.key === sortBy)
-        return [sortIndex, sortDirection]
-    }, [currentView, columns])
-
-    return {
-        sortIndex: $sortIndex,
-        sortDirection: $sortDirection,
-    }
+    return useStore(selector, shallow)
 }
 
 export { useGridSort }

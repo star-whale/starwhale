@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { StoreApi } from 'zustand'
 import { useStoreApi } from '../hooks/useStore'
 import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
+import { useTrace } from '@starwhale/core/utils'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 
 type StoreUpdaterProps = Pick<WidgetStoreState, 'panelGroup' | 'editable'> & {
     onStateChange?: (param: WidgetStateT) => void
@@ -49,6 +51,12 @@ const StoreUpdater = ({
     onSave,
     initialState,
     onInit,
+    rows,
+    columns,
+    wrapperRef,
+    fillable,
+    columnTypes,
+    columnHints,
 }: StoreUpdaterProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // const { reset } = useStore(selector, shallow)
@@ -59,6 +67,21 @@ const StoreUpdater = ({
     //         // reset()
     //     }
     // }, [reset])
+
+    const trace = useTrace('store-updater')
+
+    const $columns = useDatastoreColumns({
+        fillWidth: !!fillable,
+        columnTypes,
+        columnHints,
+    })
+
+    trace('-- Store StoreUpdater --', { $columns, columnTypes, columnHints })
+
+    useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('originalColumns', columns, store.setState)
+    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
 
     useDirectStoreUpdater('editable', editable, store.setState)
     useDirectStoreUpdater('panelGroup', panelGroup, store.setState)
