@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.datastore.BatchDeleteRequest;
 import ai.starwhale.mlops.api.protocol.datastore.CheckpointVo;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
 import ai.starwhale.mlops.api.protocol.datastore.CreateCheckpointRequest;
@@ -139,6 +140,10 @@ public class DataStoreController {
         } catch (SwValidationException e) {
             throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         }
+    }
+
+    ResponseEntity<ResponseMessage<String>> batchDelete(@Valid @RequestBody BatchDeleteRequest request) {
+        return ResponseEntity.ok(Code.success.asResponse("Success"));
     }
 
     @PostMapping(value = "/datastore/flush")

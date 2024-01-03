@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 
 public interface MemoryTable {
 
@@ -98,4 +99,26 @@ public interface MemoryTable {
      * @param revision revision in checkpoint
      */
     void deleteCheckpoint(long revision);
+
+    /**
+     * Batch delete rows by start end
+     *
+     * @param start          start key, nullable
+     *                       if start is null, it means start from the beginning
+     *                       if start is not null, it means start from the start key
+     *                       (inclusive or not depends on startInclusive)
+     * @param startInclusive start key inclusive or not
+     * @param end            end key, nullable
+     *                       if end is null, it means end at the end
+     *                       if end is not null, it means end at the end key (inclusive or not depends on endInclusive)
+     * @param endInclusive   end key inclusive or not
+     */
+    void deleteRowsWithRange(BaseValue start, Boolean startInclusive, BaseValue end, Boolean endInclusive);
+
+    /**
+     * Delete rows with key prefix
+     *
+     * @param keyPrefix key prefix
+     */
+    void deleteRowsWithKeyPrefix(@NotNull String keyPrefix);
 }

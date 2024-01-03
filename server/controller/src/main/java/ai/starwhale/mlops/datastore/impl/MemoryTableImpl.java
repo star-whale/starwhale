@@ -28,8 +28,12 @@ import ai.starwhale.mlops.datastore.TableMeta;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.datastore.Tombstone;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.Wal.Checkpoint.OP;
+import ai.starwhale.mlops.datastore.Wal.Tombstone.Builder;
+import ai.starwhale.mlops.datastore.Wal.Tombstone.Prefix;
+import ai.starwhale.mlops.datastore.Wal.WalEntry.Type;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
@@ -127,6 +131,7 @@ public class MemoryTableImpl implements MemoryTable {
     private final Lock writeLock = lock.writeLock();
 
     private final ConcurrentSkipListMap<Long, Checkpoint> checkpoints = new ConcurrentSkipListMap<>();
+    private final ConcurrentSkipListMap<Long, Tombstone> tombstones = new ConcurrentSkipListMap<>();
 
     public MemoryTableImpl(
             String tableName,
@@ -510,7 +515,7 @@ public class MemoryTableImpl implements MemoryTable {
             if (record.getRevision() <= revision) {
                 // record may be empty, use hasVersion to mark if there is a record
                 hasVersion = true;
-                if (record.isDeleted()) {
+                if (record.isDeleted() || checkIfDeletedByTombstone(key, record.getRevision(), revision)) {
                     deleted = true;
                     ret.clear();
                 } else {
@@ -527,6 +532,13 @@ public class MemoryTableImpl implements MemoryTable {
             ret.put(DELETED_FLAG_COLUMN_NAME, BoolValue.TRUE);
         }
         return ret;
+    }
+
+    private boolean checkIfDeletedByTombstone(BaseValue key, long curRevision, long maxRevision) {
+        return this.tombstones.tailMap(curRevision, false).entrySet().stream()
+                .filter(tombstone -> tombstone.getKey() <= maxRevision)
+                .anyMatch(tombstone -> tombstone.getValue().keyDeleted(key)
+                );
     }
 
     @Override
@@ -920,6 +932,41 @@ public class MemoryTableImpl implements MemoryTable {
         deleteCheckpointAndGc(revision);
     }
 
+    @Override
+    public void deleteRowsWithRange(BaseValue start, Boolean startInclusive, BaseValue end, Boolean endInclusive) {
+        var range = Wal.Tombstone.Range.newBuilder()
+                .setStartKey(BaseValue.encodeWal(start))
+                .setStartInclusive(startInclusive)
+                .setEndKey(BaseValue.encodeWal(end))
+                .setEndInclusive(endInclusive);
+        var tombstone = Wal.Tombstone.newBuilder().setRange(range);
+        addTombstone(tombstone);
+    }
+
+    @Override
+    public void deleteRowsWithKeyPrefix(String keyPrefix) {
+        // write wal entry
+        var tombstone = Wal.Tombstone.newBuilder()
+                .setPrefix(Prefix.newBuilder().setKeyPrefix(keyPrefix).build());
+        addTombstone(tombstone);
+    }
+
+    private void addTombstone(Builder tombstone) {
+        //noinspection NonAtomicOperationOnVolatileField
+        this.lastRevision++;
+        tombstone.setRevision(this.lastRevision);
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Type.TOMBSTONE)
+                .setTableName(this.tableName)
+                .setTombstone(tombstone);
+
+        this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+        this.tombstones.put(tombstone.getRevision(), Tombstone.from(tombstone.build()));
+    }
+
     /**
      * Check if the revision is valid, and valid means one of the following:
      * <ul>
@@ -982,7 +1029,7 @@ public class MemoryTableImpl implements MemoryTable {
             return;
         }
 
-        this.recordMap.values().forEach(versions -> {
+        this.recordMap.forEach((key, versions) -> {
             if (versions.isEmpty()) {
                 return;
             }
@@ -993,10 +1040,11 @@ public class MemoryTableImpl implements MemoryTable {
             long lastRevision = 0;
             while (it.hasNext()) {
                 var record = it.next();
-                if (record.getRevision() <= fromRevision) {
+                var recordRevision = record.getRevision();
+                if (recordRevision <= fromRevision) {
                     continue;
                 }
-                if (record.getRevision() > toRevision) {
+                if (recordRevision > toRevision) {
                     break;
                 }
 
@@ -1004,6 +1052,7 @@ public class MemoryTableImpl implements MemoryTable {
                     current = record;
                     continue;
                 }
+
                 if (record.isDeleted()) {
                     lastDeletion = record;
                 }
@@ -1016,7 +1065,7 @@ public class MemoryTableImpl implements MemoryTable {
                         current.getValues().put(entry.getKey(), entry.getValue());
                     }
                 }
-                lastRevision = record.getRevision();
+                lastRevision = recordRevision;
                 it.remove();
             }
             // replace the current item with the patched one
@@ -1031,6 +1080,7 @@ public class MemoryTableImpl implements MemoryTable {
                         .values(current.getValues())
                         .build());
             }
+
             versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
         });
     }

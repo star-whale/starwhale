@@ -64,7 +64,20 @@ message Checkpoint {
 }
 
 message Tombstone {
-  // TODO add more biz fields
+  message Range {
+    Column start_key = 1;
+    Column end_key = 2;
+    bool start_inclusive = 3;
+    bool end_inclusive = 4;
+  }
+  message Prefix {
+    string key_prefix = 1;
+  }
+  int64 revision = 1;
+  oneof optional_range_or_prefix {
+    Range range = 2;
+    Prefix prefix = 3;
+  }
 }
 
 message WalEntry {

@@ -16,9 +16,11 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.api.protocol.datastore.BatchDeleteRequest;
 import ai.starwhale.mlops.api.protocol.datastore.CreateCheckpointRequest;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
+import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.datastore.impl.RecordEncoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
@@ -935,6 +937,30 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         table.lock(false);
         try {
             table.deleteCheckpoint(revision);
+        } finally {
+            table.unlock(false);
+        }
+    }
+
+    public void batchDeleteRows(BatchDeleteRequest req) {
+        var table = this.getTable(req.getTableName(), false, false);
+        //noinspection ConstantConditions
+        table.lock(false);
+        try {
+            boolean useKeyPrefix = StringUtils.hasText(req.getKeyPrefix());
+            // keyPrefix and (start, end) can not be used together
+            if (useKeyPrefix && (req.getStartKey() != null || req.getEndKey() != null)) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "keyPrefix and (start, end) can not be used together");
+            }
+
+            if (useKeyPrefix) {
+                table.deleteRowsWithKeyPrefix(req.getKeyPrefix());
+            } else {
+                var start = RecordDecoder.decodeScalar(req.getStartKey(), req.getKeyType());
+                var end = RecordDecoder.decodeScalar(req.getEndKey(), req.getKeyType());
+                table.deleteRowsWithRange(start, req.getStartKeyInclusive(), end, req.getEndKeyInclusive());
+            }
         } finally {
             table.unlock(false);
         }

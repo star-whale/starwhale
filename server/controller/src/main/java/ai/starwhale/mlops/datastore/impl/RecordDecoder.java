@@ -126,6 +126,14 @@ public class RecordDecoder {
         }
     }
 
+    public static ScalarValue decodeScalar(@NonNull String type, String value) {
+        if (value == null) {
+            return null;
+        }
+        var columnType = ColumnType.valueOf(type);
+        return RecordDecoder.decodeScalar(columnType, value);
+    }
+
     private static ListValue decodeList(@NonNull ColumnSchemaDesc columnSchema, Object value) {
         var ret = new ListValue();
         var elements = (List<?>) value;

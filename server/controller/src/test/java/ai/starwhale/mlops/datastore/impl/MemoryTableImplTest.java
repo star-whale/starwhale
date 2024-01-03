@@ -3383,4 +3383,84 @@ public class MemoryTableImplTest {
             }
         }
     }
+
+    @Test
+    public void testTombstone() {
+        var memoryTable = createInstance("tombstone");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "1", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "2", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "3", "a", "3")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "4", "a", "4")));
+
+        // test by range
+        memoryTable.deleteRowsWithRange(BaseValue.valueOf(1), true, BaseValue.valueOf(3), false);
+        var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        var result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(4));
+        assertThat(result.get(0), is(new RecordResult(BaseValue.valueOf(1), true, null)));
+        assertThat(result.get(1), is(new RecordResult(BaseValue.valueOf(2), true, null)));
+        assertThat(result.get(2).getValues(), is(Map.of("a", BaseValue.valueOf(3))));
+        assertThat(result.get(3).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+
+        // test by key prefix
+        memoryTable = createInstance("tombstone-key-prefix");
+        tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "aac", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abd", "a", "3")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "afe", "a", "4")));
+
+        memoryTable.deleteRowsWithKeyPrefix("ab");
+        resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(4));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1), is(new RecordResult(BaseValue.valueOf("abc"), true, null)));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
+        assertThat(result.get(3).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+    }
+
+    @Test
+    public void testTombStoneWithRevision() {
+        var memoryTable = createInstance("tombstone");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+
+        memoryTable.createCheckpoint(null);
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "aac", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abd", "a", "3")));
+
+        memoryTable.deleteRowsWithKeyPrefix("ab");
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "4")));
+
+        var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        var result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
+
+        // create a checkpoint to trigger garbage collection
+        memoryTable.createCheckpoint(null);
+
+        resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
+    }
 }
