@@ -3,12 +3,14 @@ from __future__ import annotations
 import typing as t
 import dataclasses
 from enum import Enum
+from unittest.mock import patch, MagicMock
 
 import click
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.api._impl.argument import argument as argument_decorator
 from starwhale.api._impl.argument import (
+    ArgumentContext,
     ExtraCliArgsRegistry,
     get_parser_from_dataclasses,
 )
@@ -67,6 +69,7 @@ class ArgumentTestCase(TestCase):
 
     def tearDown(self) -> None:
         ExtraCliArgsRegistry._args = None
+        ArgumentContext._instance = None
 
     def test_argument_exceptions(self) -> None:
         @argument_decorator(ScalarArguments)
@@ -157,6 +160,14 @@ class ArgumentTestCase(TestCase):
         assert scalar_parser._long_opt["--epoch"].obj.type == click.INT
         assert scalar_parser._long_opt["--epoch"].obj.default == 1
 
+        argument_ctx = ArgumentContext.get_current_context()
+        assert len(argument_ctx._options) == 1
+        options = argument_ctx._options["tests.sdk.test_argument.ScalarArguments"]
+        assert len(options) == 5
+        assert options[0].name == "batch"
+        assert options[-1].name == "epoch"
+        argument_ctx.echo_help()
+
     def test_compose_parser(self) -> None:
         compose_parser = get_parser_from_dataclasses([ComposeArguments])
 
@@ -199,3 +210,36 @@ class ArgumentTestCase(TestCase):
         assert not optional_list_obj.required
         assert optional_list_obj.multiple
         assert optional_list_obj.default is None
+
+        argument_ctx = ArgumentContext.get_current_context()
+        assert len(argument_ctx._options) == 1
+        options = argument_ctx._options["tests.sdk.test_argument.ComposeArguments"]
+        assert len(options) == 6
+        assert options[0].name == "debug"
+        argument_ctx.echo_help()
+
+    @patch("click.echo")
+    def test_argument_help_output(self, mock_echo: MagicMock):
+        @argument_decorator((ScalarArguments, ComposeArguments))
+        def mock_func(starwhale_argument: t.Tuple) -> None:
+            ...
+
+        ArgumentContext.get_current_context().echo_help()
+        help_output = mock_echo.call_args[0][0]
+        cases = [
+            "tests.sdk.test_argument.ScalarArguments:",
+            "--batch INTEGER",
+            "--overwrite",
+            "--learning_rate, --learning-rate FLOAT",
+            "--half_precision_backend, --half-precision-backend TEXT",
+            "--epoch INTEGER",
+            "tests.sdk.test_argument.ComposeArguments:",
+            "--debug DEBUGOPTION",
+            "--lr_scheduler_kwargs, --lr-scheduler-kwargs DICT",
+            "--evaluation_strategy, --evaluation-strategy [no|steps|epoch]",
+            "--per_gpu_train_batch_size, --per-gpu-train-batch-size INTEGER",
+            "--eval_delay, --eval-delay FLOAT",
+            "--label_names, --label-names TEXT",
+        ]
+        for case in cases:
+            assert case in help_output
