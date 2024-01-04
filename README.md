@@ -19,8 +19,8 @@
     <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/starwhale">
 </a>
 
-<a href="https://github.com/star-whale/starwhale/actions/workflows/client.yaml">
-    <img src="https://github.com/star-whale/starwhale/actions/workflows/client.yaml/badge.svg"  alt="Client/SDK UT">
+<a href="https://github.com/star-whale/starwhale/actions/workflows/client.yml">
+    <img src="https://github.com/star-whale/starwhale/actions/workflows/client.yml/badge.svg"  alt="Client/SDK UT">
 </a>
 
 <a href="https://github.com/star-whale/starwhale/actions/workflows/server-ut-report.yml">
