@@ -2279,9 +2279,17 @@ const locales0 = {
         en: 'Client Login Success',
         zh: '客户端登录成功',
     },
+    'Client Login Confirm': {
+        en: 'Please confirm the login request from client, request code is: {{0}}, if not your operation, please close this page directly',
+        zh: '请确认来自客户端的登陆请求, 请求code为: {{0}}, 如果非本人操作, 请直接关闭此页面',
+    },
     'Client Login Failed': {
         en: 'Client Login Failed',
         zh: '客户端登录失败',
+    },
+    'Allow': {
+        en: 'Allow',
+        zh: '允许',
     },
     'copyright': {
         en: 'Copyright © 2023 Starwhale, Inc. All rights reserved. ',
