@@ -26,6 +26,8 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.StarwhaleException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
@@ -66,9 +68,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     boolean allowAnonymous(HttpServletRequest request) {
-        var projects = getProjects(request);
-        // only for public project
-        return projects.stream().allMatch(p -> p.getPrivacy() == Project.Privacy.PUBLIC);
+        try {
+            var projects = getProjects(request);
+            // only for public project
+            return projects.stream().allMatch(p -> p.getPrivacy() == Project.Privacy.PUBLIC);
+        } catch (SwNotFoundException e) {
+            return false;
+        }
     }
 
     @Override
@@ -120,6 +126,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 Set<Project> projects = getProjects(httpServletRequest);
                 Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user, projects);
                 roles.addAll(rolesOfUser);
+            } catch (SwNotFoundException e) {
+                error(httpServletResponse, HttpStatus.NOT_FOUND.value(), Code.validationException, e.getMessage());
+                return;
             } catch (StarwhaleException e) {
                 logger.error(e.getMessage());
             }
@@ -133,12 +142,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     @NotNull
-    private Set<Project> getProjects(HttpServletRequest httpServletRequest) {
+    private Set<Project> getProjects(HttpServletRequest httpServletRequest) throws SwNotFoundException {
         @SuppressWarnings("unchecked")
         Set<Project> projects = ((Set<String>) httpServletRequest
                 .getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT))
                 .stream()
-                .map(projectService::findProject)
+                .map((String projectUrl) -> {
+                    var p = projectService.findProject(projectUrl);
+                    if (p.isDeleted()) {
+                        throw new SwNotFoundException(ResourceType.PROJECT, "Project is deleted");
+                    }
+                    return p;
+                })
                 .collect(Collectors.toSet());
         return projects;
     }
