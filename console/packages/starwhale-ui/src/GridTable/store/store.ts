@@ -4,7 +4,6 @@ import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
-import computed from 'zustand-computed'
 
 // eslint-disable-next-line
 export function arrayOverride(objValue: any, srcValue: any, key, object) {
@@ -58,12 +57,26 @@ export interface IViewInteractiveState {
     viewModelShow: boolean
     onShowViewModel: (viewModelShow: boolean, viewEditing: ConfigT | null) => void
 }
+export interface IComputeState {
+    columns: any[]
+    rows: any[]
+    sortIndex: number
+    sortDirection: SortDirectionsT
+}
+export interface IUpdaterState {
+    originalColumns: any[]
+    columns: any[]
+    records: any[]
+    getId: (record: any) => any
+}
 export type ITableState = IViewState &
     ICurrentViewState &
     IViewInteractiveState &
     ITableStateInitState &
     IRowState &
-    ICompareState
+    ICompareState & {
+        compute: IComputeState
+    } & IUpdaterState
 
 // , ['zustand/persist', unknown]
 export type IStateCreator<T> = StateCreator<
@@ -449,14 +462,11 @@ const getColumnsIds = (state: ITableState) => {
 
 const getColumns = (state: ITableState) => {
     const { currentView: view, columns } = state
-
     if (!columns) return []
     if (!view) return columns
-
     const { pinnedIds = [] }: ConfigT = view
     const columnsMap = _.keyBy(columns, (c) => c.key)
     const ids = getColumnsIds(state)
-    console.log('columnsMap')
     return ids
         .filter((id: any) => id in columnsMap)
         .map((id: any) => {
@@ -469,19 +479,51 @@ const getColumns = (state: ITableState) => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createComputeSlice: IStateCreator<any> = (set, get, store) => ({
-    setColumns: (args) =>
+const createComputeSlice: IStateCreator<{
+    compute: IComputeState
+}> = (set, get, store) => {
+    const update = (updateAttrs: Partial<IComputeState>, name?: string) => {
+        const curr = get().compute
         set(
             {
-                compare: {
-                    ...get().compare,
-                    ...args,
+                compute: {
+                    ...curr,
+                    ...updateAttrs,
                 },
             },
-            false,
-            'setColumns'
-        ),
-})
+            undefined,
+            name
+        )
+    }
+
+    return {
+        compute: { columns: [], rows: [], sortIndex: -1, sortDirection: undefined },
+        computeColumns: () => {
+            console.log('computeColumns')
+            return update({ columns: getColumns(get()) }, 'setColumns')
+        },
+        computeSortIndex: () => {
+            console.log('computeSortIndex')
+            const { sortBy } = get().currentView || {}
+            const sortIndex = get().columns?.findIndex((c) => c.key === sortBy)
+            return update({ sortIndex }, 'computeSortIndex')
+        },
+        computeRows: () => {
+            const { getId, records } = store.getState()
+            console.log('computeRows')
+            const rows =
+                records?.map((raw, index) => {
+                    // console.log(raw, getId)
+                    return {
+                        id: getId?.(raw) ?? index.toFixed(),
+                        data: raw,
+                    }
+                }) ?? []
+
+            return update({ rows }, 'computeRows')
+        },
+    }
+}
 
 export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
     const name = `table/${key}`
@@ -504,54 +546,48 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
         ...initState,
         key: name,
     })
+
     if (isPersist) {
-        return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any, { name }))))
-    }
-
-    const computeState = (state: ITableState) => {
-        const { sortBy, sortDirection } = state.currentView || {}
-        const sortIndex = state.columns?.findIndex((c) => c.key === sortBy)
-        console.log('computeState 1')
-
-        return {
-            sortIndex,
-            sortDirection,
-            $columns: getColumns(state),
-        }
+        return create<ITableState>()(
+            subscribeWithSelector(
+                devtools(
+                    persist(actions as any, {
+                        name,
+                        partialize: (state) =>
+                            Object.fromEntries(
+                                Object.entries(state).filter(([_key]) => !Object.keys(rawInitialState).includes(_key))
+                            ),
+                    })
+                )
+            )
+        )
     }
 
     const useStore = create<ITableState>()(
         subscribeWithSelector(
-            devtools(
-                computed(actions as any, computeState, {
-                    keys: ['currentView', 'columns'],
-                }),
-                {
-                    serialize: {
-                        options: {
-                            undefined: true,
-                            // function: function (fn) {
-                            //     // return fn.toString()
-                            //     return 'function'
-                            // },
-                            // @
-                            function: undefined,
-                            symbol: undefined,
-                        },
+            devtools(actions, {
+                serialize: {
+                    options: {
+                        undefined: true,
+                        // function: function (fn) {
+                        //     // return fn.toString()
+                        //     return 'function'
+                        // },
+                        // @
+                        function: undefined,
+                        symbol: undefined,
                     },
-                    stateSanitizer: (state) => {
-                        return {
-                            ...state,
-                            // rowSelectedRecords: '<<LONG_BLOB>>',
-                            // columnTypes: '<<LONG_BLOB>>',
-                            // records: '<<LONG_BLOB>>',
-                            rows: '<<LONG_BLOB>>',
-                            columns: '<<LONG_BLOB>>',
-                            wrapperRef: '<<DOM>>',
-                        }
-                    },
-                }
-            )
+                },
+                stateSanitizer: (state) => {
+                    return {
+                        ...state,
+                        rows: '<<LONG_BLOB>>',
+                        columns: '<<LONG_BLOB>>',
+                        wrapperRef: '<<DOM>>',
+                        compute: '<<compute>>',
+                    }
+                },
+            })
         )
     )
     return useStore as UseBoundStore<StoreApi<ITableState>>

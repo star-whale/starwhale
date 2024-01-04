@@ -13,7 +13,6 @@ const selector = (state: IGridState) => ({
 function useGridConfigColumns() {
     const { onCurrentViewColumnsChange, originalColumns } = useStore(selector, shallow)
     const { currentView } = useGridCurrentView()
-    console.log('useGridConfigColumns')
 
     const renderStatefulConfigColumns = React.useCallback(
         (props?: ExtraPropsT) => {

@@ -28,23 +28,6 @@ function useGridCurrentView() {
         return ids
     }, [view, columnIds])
 
-    const $columns = React.useMemo(() => {
-        console.log('useGridCurrentView columns')
-        const { pinnedIds = [] }: ConfigT = view
-        const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
-        const a = $ids
-            .filter((id: any) => id in columnsMap)
-            .map((id: any) => {
-                const _pin = columnsMap[id].pin ?? undefined
-                return {
-                    ...columnsMap[id],
-                    pin: pinnedIds.includes(id) ? 'LEFT' : _pin,
-                }
-            }) as ColumnT[]
-
-        return a
-    }, [view, columns, $ids])
-
     const $view = React.useMemo(() => {
         return {
             ...view,
@@ -58,7 +41,6 @@ function useGridCurrentView() {
 
     return {
         ids: $ids,
-        columns: $columns,
         currentView: $view,
         isAllRuns,
     }

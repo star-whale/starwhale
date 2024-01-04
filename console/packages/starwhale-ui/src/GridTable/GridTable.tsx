@@ -84,7 +84,6 @@ const selector = (state: IGridState) => ({
 function GridTable({
     isLoading,
     columns,
-    rows,
     rowActions,
     compareable = false,
     selectable = false,

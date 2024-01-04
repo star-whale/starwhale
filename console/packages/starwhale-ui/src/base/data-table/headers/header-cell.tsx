@@ -15,7 +15,6 @@ import { DataTableLocaleT } from '../locale'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 import { shallow } from 'zustand/shallow'
-import useGridSort from '@starwhale/ui/GridTable/hooks/useGridSort'
 
 type HeaderCellPropsT = {
     index: number
@@ -52,6 +51,7 @@ const selector = (s: IGridState) => ({
     wrapperRef: s.wrapperRef,
     sortable: s.sortable,
     rowSelectedIds: s.rowSelectedIds,
+    sortIndex: s.compute.sortIndex,
 })
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -60,9 +60,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
-    const { sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
-
-    const { sortIndex } = useGridSort()
+    const { sortIndex, sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {

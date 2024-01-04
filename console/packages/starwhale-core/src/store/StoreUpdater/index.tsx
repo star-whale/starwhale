@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { StoreApi } from 'zustand'
-import { useStoreApi } from '../hooks/useStore'
+import { useStore, useStoreApi } from '../hooks/useStore'
 import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
 import { useTrace } from '@starwhale/core/utils'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
+import { shallow } from 'zustand/shallow'
 
 type StoreUpdaterProps = Pick<WidgetStoreState, 'panelGroup' | 'editable'> & {
     onStateChange?: (param: WidgetStateT) => void
@@ -38,9 +39,34 @@ export function useDirectStoreUpdater(
     }, [value])
 }
 
+const useStoreComputeUpdater = (
+    deps,
+    fn: (selectedState: WidgetStoreState, previousSelectedState: WidgetStoreState) => void,
+    subscribe
+) => {
+    useEffect(() => {
+        const unsub = subscribe(
+            (state) => deps.map((dep) => (typeof dep === 'function' ? dep(state) : state[dep])),
+            // @ts-ignore
+            fn,
+            { equalityFn: shallow }
+        )
+
+        return () => {
+            // reset()
+            unsub()
+        }
+    }, [])
+
+    return subscribe
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const selector = (s: WidgetStoreState) => ({
     // initState: s.initState,
+    computeColumns: s.computeColumns,
+    computeSortIndex: s.computeSortIndex,
+    computeRows: s.computeRows,
 })
 
 const StoreUpdater = ({
@@ -57,18 +83,14 @@ const StoreUpdater = ({
     fillable,
     columnTypes,
     columnHints,
+    records,
+    page,
 }: StoreUpdaterProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // const { reset } = useStore(selector, shallow)
+    const { computeColumns, computeSortIndex, computeRows } = useStore(selector, shallow)
+
     const store = useStoreApi()
 
-    // useEffect(() => {
-    //     return () => {
-    //         // reset()
-    //     }
-    // }, [reset])
-
-    const trace = useTrace('store-updater')
+    const trace = useTrace('core-store-updater')
 
     const $columns = useDatastoreColumns({
         fillWidth: !!fillable,
@@ -78,9 +100,6 @@ const StoreUpdater = ({
 
     trace('-- Store StoreUpdater --', { $columns, columnTypes, columnHints })
 
-    useDirectStoreUpdater('rows', rows, store.setState)
-    useDirectStoreUpdater('originalColumns', columns, store.setState)
-    useDirectStoreUpdater('columns', $columns, store.setState)
     useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
 
     useDirectStoreUpdater('editable', editable, store.setState)
@@ -90,8 +109,21 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onEvalSectionDelete', onEvalSectionDelete, store.setState)
     useDirectStoreUpdater('onSave', onSave, store.setState)
     useDirectStoreUpdater('initialState', initialState, store.setState)
-    //
+    // init
     useDirectStoreUpdater('onInit', onInit, store.setState)
+    // data
+    useDirectStoreUpdater('page', page, store.setState)
+    useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
+    useDirectStoreUpdater('columnHints', columnHints, store.setState)
+    // columns
+    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('originalColumns', columns, store.setState)
+    useStoreComputeUpdater(['columns', 'currentView'], computeColumns, store.subscribe)
+    useStoreComputeUpdater(['columns', (s) => s.currentView?.sortBy], computeSortIndex, store.subscribe)
+    // rows
+    useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('records', records, store.setState)
+    useStoreComputeUpdater(['records'], computeRows, store.subscribe)
 
     return null
 }

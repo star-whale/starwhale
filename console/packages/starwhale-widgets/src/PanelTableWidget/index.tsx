@@ -50,8 +50,6 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
 
     const [debug] = useLocalStorage('debug', false)
 
-    console.log('PanelTableWidget')
-
     return (
         <>
             <GridTable

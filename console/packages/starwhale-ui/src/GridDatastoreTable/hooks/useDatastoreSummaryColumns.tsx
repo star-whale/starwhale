@@ -32,7 +32,6 @@ export function useDatastoreSummaryColumns(
     const [t] = useTranslation()
     const { projectId } = options
 
-    console.log('useDatastoreSummaryColumns')
     const $columns = useDatastoreColumns(options)
 
     const $columnsWithSpecColumns = useMemo(() => {

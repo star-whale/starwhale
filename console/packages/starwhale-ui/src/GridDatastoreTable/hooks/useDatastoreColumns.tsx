@@ -56,8 +56,6 @@ export function useDatastoreColumns(
                 name,
             })
         })
-
-        console.log('sort columns 1', columnTypes)
         return arr.sort(sortColumn)
     }, [columnTypes])
 

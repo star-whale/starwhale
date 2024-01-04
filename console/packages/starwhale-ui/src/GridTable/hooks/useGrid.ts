@@ -1,8 +1,6 @@
 import useGridQueryText from './useGridQueryText'
 import useGridSave from './useGridSave'
 import useGridSelection from './useGridSelection'
-import useGridSort from './useGridSort'
-import useGirdData from './useGridData'
 import useGridQuery from './useGridQuery'
 import { IGridState } from '../types'
 import { useStore } from './useStore'
@@ -13,14 +11,17 @@ import useGridCellPreview from './useGridCellPreview'
 
 const selector = (s: IGridState) => ({
     initStore: s.initStore,
+    originalColumns: s.originalColumns,
+    rows: s.compute?.rows ?? [],
+    sortIndex: s.compute?.sortIndex,
+    sortDirection: s.currentView.sortDirection,
+    columns: s.compute?.columns ?? [],
 })
 
 function useGrid() {
-    const { initStore } = useStore(selector, shallow)
-    const { rows, originalColumns } = useGirdData()
-    const { ids, isAllRuns, columns, currentView } = useGridCurrentView()
+    const { initStore, originalColumns, rows, columns, sortIndex, sortDirection } = useStore(selector, shallow)
+    const { ids, isAllRuns, currentView } = useGridCurrentView()
     const { onSave, onSaveAs, changed } = useGridSave()
-    const { sortIndex, sortDirection } = useGridSort()
     const { textQuery, setTextQuery } = useGridQueryText()
     const {
         selectedRowIds,
@@ -34,8 +35,6 @@ function useGrid() {
     const { renderConfigQuery, renderConfigQueryInline } = useGridQuery()
     const { renderConfigColumns, renderStatefulConfigColumns } = useGridConfigColumns()
     const preview = useGridCellPreview(rows, columns)
-
-    console.log('usegrid 2')
 
     return {
         onSave,
