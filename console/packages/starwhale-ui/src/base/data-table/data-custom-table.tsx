@@ -294,6 +294,11 @@ export function DataTable({
             return w + delta
         })
 
+        console.log({
+            columns,
+            resizedWidths,
+        })
+
         if (gridRef) {
             const gridProps = gridRef.props
 
@@ -461,6 +466,10 @@ export function DataTable({
         },
         [normalizedWidths, columns]
     )
+
+    console.log({
+        columns,
+    })
 
     return (
         <>

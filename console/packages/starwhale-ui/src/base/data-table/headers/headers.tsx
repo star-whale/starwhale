@@ -2,7 +2,6 @@ import React, { useCallback } from 'react'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
 import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
-import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useStore, useStoreApi } from '../../../GridTable/hooks/useStore'
 import { IGridState } from '../../../GridTable/types'
@@ -14,18 +13,17 @@ const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 const selector = (s: IGridState) => ({
     queryinline: s.queryinline,
     compare: s.compare,
-    columns: s.columns,
     selectedRowIds: s.selectedRowIds,
 })
 
 export default function Headers({ width }: { width: number }) {
     const [, theme] = themedUseStyletron()
-    const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-    const { queryinline, selectedRowIds, columns } = useStore(selector)
+    const { queryinline, selectedRowIds } = useStore(selector)
     const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
         useStoreApi().getState()
+    const { columns } = ctx
 
     const [t] = useTranslation()
 

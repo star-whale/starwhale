@@ -141,7 +141,7 @@ const StoreUpdater = ({
     //
     useStoreEmptyUpdater<ConfigT>(currentView, setCurrentView)
     // columns
-    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('columns', columns ?? $columns, store.setState)
     useDirectStoreUpdater('originalColumns', columns, store.setState)
     // rows
     useDirectStoreUpdater('rows', rows, store.setState)

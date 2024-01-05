@@ -57,7 +57,14 @@ export interface IViewInteractiveState {
     viewModelShow: boolean
     onShowViewModel: (viewModelShow: boolean, viewEditing: ConfigT | null) => void
 }
+
 export interface IComputeState {
+    computeColumns: () => void
+    computeSortIndex: () => void
+    computeRows: () => void
+    compute: IComputeData
+}
+export interface IComputeData {
     columns: any[]
     rows: any[]
     sortIndex: number
@@ -74,9 +81,9 @@ export type ITableState = IViewState &
     IViewInteractiveState &
     ITableStateInitState &
     IRowState &
-    ICompareState & {
-        compute: IComputeState
-    } & IUpdaterState
+    ICompareState &
+    IComputeState &
+    IUpdaterState
 
 // , ['zustand/persist', unknown]
 export type IStateCreator<T> = StateCreator<

@@ -1,5 +1,5 @@
 // @ts-nocehck
-import React, { useRef } from 'react'
+import React, { startTransition, useEffect, useRef } from 'react'
 import { useStyletron } from 'baseui'
 import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
@@ -137,18 +137,31 @@ export default function MeasureColumnWidths({
             // 1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
             if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 5) {
                 widthMap.set(columnIndex, nextWidth)
-
-                const widths = columns.map((tmp) => widthMap.get(tmp.key)).filter(Boolean)
-
-                // 1.Refresh at 100% of done
-                if (widths.length === columns.length) {
-                    setWidthMap(widthMap)
-                    debounceWideChange(widthMap)
-                }
+                setWidthMap(widthMap)
             }
         },
-        [columns, debounceWideChange, widthMap]
+        [widthMap]
     )
+
+    useEffect(() => {
+        let updated = false
+        columns.forEach((tmp) => {
+            if (!widthMap.has(tmp.key)) return
+            if (!measuredWidths.get(tmp.key) && widthMap.get(tmp.key)) {
+                measuredWidths.set(tmp.key, widthMap.get(tmp.key))
+                updated = true
+            } else if (Math.abs(measuredWidths.get(tmp.key) - Number(widthMap.get(tmp.key))) > 5) {
+                measuredWidths.set(tmp.key, widthMap.get(tmp.key))
+                updated = true
+            }
+        })
+        if (updated) {
+            // console.log('updated', measuredWidths)
+            startTransition(() => {
+                debounceWideChange(measuredWidths)
+            })
+        }
+    }, [columns, widthMap, measuredWidths, debounceWideChange])
 
     const $columns = React.useMemo(() => {
         return columns.map((column, i) => {
