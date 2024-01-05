@@ -60,7 +60,7 @@ const useStoreComputeUpdater = (
             // reset()
             unsub()
         }
-    }, [])
+    }, [deps, fn, subscribe])
 
     return subscribe
 }
@@ -146,8 +146,6 @@ const StoreUpdater = ({
     // rows
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('records', records, store.setState)
-
-    console.log(store.getState())
 
     return null
 }

@@ -1,4 +1,4 @@
-import { traceCreator, useEventCallback } from '@starwhale/core'
+import { useEventCallback } from '@starwhale/core'
 import React, { useReducer } from 'react'
 import { ValueT } from './types'
 

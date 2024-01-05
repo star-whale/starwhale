@@ -1,6 +1,5 @@
-import _ from 'lodash'
 import React from 'react'
-import { ColumnT, ConfigT } from '../../base/data-table/types'
+import { ConfigT } from '../../base/data-table/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 import { ITableState } from '../store'
 

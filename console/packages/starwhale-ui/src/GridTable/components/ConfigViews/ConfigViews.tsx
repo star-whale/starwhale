@@ -14,7 +14,6 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import Button from '../../../Button'
 import { shallow } from 'zustand/shallow'
-import useGrid from '../../hooks/useGrid'
 
 const ALLRUNS = 'all'
 
