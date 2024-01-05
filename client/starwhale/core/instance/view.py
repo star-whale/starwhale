@@ -48,7 +48,7 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
             )
             sys.exit(1)
 
-    def login_with_browser(self, instance: str, alias: str) -> None:
+    def login_with_browser(self, instance: str, alias: str) -> None:  # pragma: no cover
         p = urlparse(instance)
         instance = f"{p.scheme}://{p.netloc}"
 
@@ -69,8 +69,16 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
 
         @app.on_event("startup")
         async def on_startup() -> None:
+            import random
+
+            # generate 4 digits random number for web confirmation
+            uid = "".join([str(random.randint(0, 9)) for _ in range(4)])
+            console.print(
+                f":point_right: please confirm the random number [bold][green]{uid}[/green][/bold] in your browser"
+            )
+
             nonlocal instance
-            url = f"{instance}/auth/client"
+            url = f"{instance}/auth/client?random={uid}"
             import webbrowser
 
             webbrowser.open(url)
