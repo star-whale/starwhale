@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import io.jsonwebtoken.impl.DefaultClaims;
@@ -65,6 +67,7 @@ public class JwtTokenFilterTest {
         when(jwtTokenUtil.parseJwt("y")).thenThrow(new SwValidationException(ValidSubject.USER));
         DefaultClaims claims = new DefaultClaims(Map.of("taskId", "x"));
         when(jwtTokenUtil.parseJwt("a")).thenReturn(claims);
+        userService = mock(UserService.class);
         JwtClaimValidator jwtClaimValidator = mock(JwtClaimValidator.class);
         doThrow(SwValidationException.class).when(jwtClaimValidator).validClaims(claims);
         jwtClaimValidators = List.of(jwtClaimValidator);
@@ -119,4 +122,21 @@ public class JwtTokenFilterTest {
                 "Not logged in."), times(errorTimes));
     }
 
+    @Test
+    public void testDeletedProject() throws ServletException, IOException {
+        when(projectService.findProject("deleted"))
+                .thenReturn(Project.builder().isDeleted(true).build());
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn("Bearer a");
+        when(request.getAttribute("PROJECT")).thenReturn(Set.of("deleted"));
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain filterchain = mock(FilterChain.class);
+        when(jwtTokenUtil.getUsername(any())).thenReturn("foo");
+        when(userService.loadUserByUsername("foo")).thenReturn(mock(User.class));
+        jwtTokenFilter = new JwtTokenFilter(jwtTokenUtil, userService, projectService, List.of());
+        jwtTokenFilter.doFilterInternal(request, response, filterchain);
+        httpUtilMockedStatic.verify(
+                () -> HttpUtil.error(response, HttpStatus.NOT_FOUND.value(), Code.validationException,
+                        "Resource is not found Project\nProject is deleted"), times(1));
+    }
 }
