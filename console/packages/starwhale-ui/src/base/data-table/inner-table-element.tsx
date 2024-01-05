@@ -224,7 +224,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
             )
         }
 
-        if (!innerRef?.current) return
+        if (!innerRef?.current) return null
 
         return (
             <TableActions
@@ -251,7 +251,6 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         ctx.width,
         ctx.scrollLeft,
         ctx.rowHeight,
-        innerRef?.current,
     ])
 
     if (ctx.widths.size === 0) {
@@ -260,6 +259,8 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
 
     const $pinned = (
         <div
+            role='button'
+            tabIndex={0}
             className='table-inner-sticky bg-white sticky z-2 flex h-0 left-0 border-l-0 overflow-visible break-inside-avoid'
             onClick={handleClick}
         >

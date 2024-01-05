@@ -1,13 +1,11 @@
 import React, { useCallback } from 'react'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
-import cn from 'classnames'
 import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useStore, useStoreApi } from '../../../GridTable/hooks/useStore'
 import { IGridState } from '../../../GridTable/types'
-import useGrid from '../../../GridTable/hooks/useGrid'
 import HeaderBar from './header-bar'
 import useTranslation from '@/hooks/useTranslation'
 
@@ -21,7 +19,7 @@ const selector = (s: IGridState) => ({
 })
 
 export default function Headers({ width }: { width: number }) {
-    const [css, theme] = themedUseStyletron()
+    const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
@@ -64,6 +62,15 @@ export default function Headers({ width }: { width: number }) {
 
             const isFoucs = column.key === compare?.comparePinnedKey
             const isPin = !!column.pin
+
+            if (
+                (columnIndex < ctx.overscanColumnStartIndex || columnIndex > ctx.overscanColumnStopIndex) &&
+                columnIndex !== 0
+            ) {
+                return <div style={{ width: ctx.widths.get(column.key) }} />
+            }
+
+            console.log(ctx.overscanColumnStartIndex)
 
             return (
                 <Tooltip key={columnIndex} placement={PLACEMENT.bottomLeft}>
@@ -121,6 +128,10 @@ export default function Headers({ width }: { width: number }) {
             )
         },
         [
+            ctx.overscanColumnStartIndex,
+            ctx.overscanColumnStopIndex,
+            selectedRowIds,
+            ctx.removable,
             onNoSelect,
             onCompareUpdate,
             onCurrentViewColumnsPin,
@@ -158,7 +169,7 @@ export default function Headers({ width }: { width: number }) {
     }, [$columns, ctx.widths])
 
     const headers = React.useMemo(() => {
-        return $columns.filter((v) => v.pin !== 'LEFT').map(headerRender)
+        return $columns.filter((v) => v.pin !== 'LEFT' && v.pin !== 'RIGHT').map(headerRender)
     }, [$columns, headerRender])
 
     const headersRightCount = React.useMemo(() => {
@@ -215,12 +226,18 @@ export default function Headers({ width }: { width: number }) {
             {headers.length > 0 && (
                 <>
                     <div
-                        className='table-headers absolute left-0 w-full'
+                        className='table-headers absolute left-0 w-full flex'
                         style={{
                             marginLeft: headersLeftWidth,
                             transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
                         }}
                     >
+                        {/* <div
+                            style={{
+                                flexShrink: 0,
+                                flexBasis: `${ctx.scrollLeft}px`,
+                            }}
+                        /> */}
                         <div
                             style={{
                                 display: 'flex',

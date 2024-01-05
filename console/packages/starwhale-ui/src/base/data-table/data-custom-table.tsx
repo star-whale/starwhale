@@ -538,6 +538,7 @@ export function DataTable({
                                     width,
                                     scrollbarWidth: scrollbarWidth(),
                                     rowActions,
+                                    ...itemIndexs,
                                 }}
                             >
                                 {/*  headers outside to make scroll not covered header bar */}

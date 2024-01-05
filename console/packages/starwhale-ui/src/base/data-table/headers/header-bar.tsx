@@ -38,19 +38,16 @@ function HeaderBar(props: { wrapperWidth: any }) {
                 },
                 columnleinline && { label: locale.datatable.columnConfig, type: 'column' },
             ].filter(Boolean),
-        [queryinline, locale]
+        [queryinline, locale, columnleinline]
     )
 
-    const handleColumnOptionSelect = React.useCallback(
-        (option: any) => {
-            if (option.type === 'query') {
-                setIsShowQuery(true)
-            } else if (option.type === 'column') {
-                setIsShowConfigColumns(true)
-            }
-        },
-        [props]
-    )
+    const handleColumnOptionSelect = React.useCallback((option: any) => {
+        if (option.type === 'query') {
+            setIsShowQuery(true)
+        } else if (option.type === 'column') {
+            setIsShowConfigColumns(true)
+        }
+    }, [])
 
     if (!columnleinline && !queryinline) {
         if (!removable && !selectable) {
