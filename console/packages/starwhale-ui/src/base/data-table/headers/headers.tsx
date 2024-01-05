@@ -229,12 +229,6 @@ export default function Headers({ width }: { width: number }) {
                             transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
                         }}
                     >
-                        {/* <div
-                            style={{
-                                flexShrink: 0,
-                                flexBasis: `${ctx.scrollLeft}px`,
-                            }}
-                        /> */}
                         <div
                             style={{
                                 display: 'flex',

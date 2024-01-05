@@ -1,10 +1,5 @@
 import React, { createContext } from 'react'
-// import StoreContext from '../../contexts/GridStoreContext'
 import createCustomStore, { IStore, ITableState } from '../store'
-
-// import { IGridState } from '../types'
-
-// import { UseBoundStore, StoreApi } from 'zustand'
 
 type IStoreProviderProps = {
     store?: IStore
