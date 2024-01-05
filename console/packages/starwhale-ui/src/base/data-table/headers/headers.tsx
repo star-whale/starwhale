@@ -63,7 +63,8 @@ export default function Headers({ width }: { width: number }) {
 
             if (
                 (columnIndex < ctx.overscanColumnStartIndex || columnIndex > ctx.overscanColumnStopIndex) &&
-                columnIndex !== 0
+                columnIndex !== 0 &&
+                !column.pin
             ) {
                 return <div key={column.key} style={{ width: ctx.widths.get(column.key) }} />
             }
