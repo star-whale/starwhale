@@ -486,10 +486,8 @@ const getColumns = (state: ITableState) => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createComputeSlice: IStateCreator<{
-    compute: IComputeState
-}> = (set, get, store) => {
-    const update = (updateAttrs: Partial<IComputeState>, name?: string) => {
+const createComputeSlice: IStateCreator<IComputeState> = (set, get, store) => {
+    const update = (updateAttrs: Partial<IComputeState['compute']>, name?: string) => {
         const curr = get().compute
         set(
             {
@@ -504,23 +502,19 @@ const createComputeSlice: IStateCreator<{
     }
 
     return {
-        compute: { columns: [], rows: [], sortIndex: -1, sortDirection: undefined },
+        compute: { columns: [], rows: [], sortIndex: -1, sortDirection: 'DESC' },
         computeColumns: () => {
-            console.log('computeColumns')
             return update({ columns: getColumns(get()) }, 'setColumns')
         },
         computeSortIndex: () => {
-            console.log('computeSortIndex')
             const { sortBy } = get().currentView || {}
             const sortIndex = get().columns?.findIndex((c) => c.key === sortBy)
             return update({ sortIndex }, 'computeSortIndex')
         },
         computeRows: () => {
             const { getId, records } = store.getState()
-            console.log('computeRows')
             const rows =
                 records?.map((raw, index) => {
-                    // console.log(raw, getId)
                     return {
                         id: getId?.(raw) ?? index.toFixed(),
                         data: raw,

@@ -294,11 +294,6 @@ export function DataTable({
             return w + delta
         })
 
-        console.log({
-            columns,
-            resizedWidths,
-        })
-
         if (gridRef) {
             const gridProps = gridRef.props
 
@@ -406,9 +401,9 @@ export function DataTable({
 
     const itemData = React.useMemo(() => {
         return {
-            // columnHighlightIndex,
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
             // rowHighlightIndex,
+            // columnHighlightIndex,
             isRowSelected,
             isQueryInline,
             isSelectable,
@@ -466,10 +461,6 @@ export function DataTable({
         },
         [normalizedWidths, columns]
     )
-
-    console.log({
-        columns,
-    })
 
     return (
         <>

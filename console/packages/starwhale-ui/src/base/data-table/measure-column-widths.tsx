@@ -145,6 +145,7 @@ export default function MeasureColumnWidths({
 
     useEffect(() => {
         let updated = false
+        // console.log('updated', widthMap, measuredWidths)
         columns.forEach((tmp) => {
             if (!widthMap.has(tmp.key)) return
             if (!measuredWidths.get(tmp.key) && widthMap.get(tmp.key)) {
