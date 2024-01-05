@@ -108,7 +108,7 @@ export function useDatastoreColumns(
                         },
                         // search bar
                         getFilters,
-                        // buildFilters: build({ fieldOptions, valueOptions }),
+                        buildFilters: build({ fieldOptions, valueOptions }),
                     })
                 )
             })

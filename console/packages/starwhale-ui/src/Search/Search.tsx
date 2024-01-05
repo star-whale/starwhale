@@ -121,6 +121,7 @@ export default function Search({ value = [], onChange, getFilters }: ISearchProp
         })
         tmps.push(
             <FilterRenderer
+                key={-1}
                 value={{}}
                 isFocus={checkIsFocus(-1)}
                 getFilters={getFilters}
@@ -171,7 +172,12 @@ export function DatastoreMixedTypeSearch({ columns, ...props }: ISearchProps & {
     const getFilters = React.useCallback(
         (name: string) => {
             const column = columns?.find((tmp) => tmp.key === name) || columns?.[0]
+            console.log(columns, column)
+
             if (!column) return undefined
+
+            console.log(column, column.getFilters?.())
+
             return column.getFilters?.()
         },
         [columns]

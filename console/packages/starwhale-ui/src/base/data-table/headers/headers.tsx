@@ -67,10 +67,8 @@ export default function Headers({ width }: { width: number }) {
                 (columnIndex < ctx.overscanColumnStartIndex || columnIndex > ctx.overscanColumnStopIndex) &&
                 columnIndex !== 0
             ) {
-                return <div style={{ width: ctx.widths.get(column.key) }} />
+                return <div key={column.key} style={{ width: ctx.widths.get(column.key) }} />
             }
-
-            console.log(ctx.overscanColumnStartIndex)
 
             return (
                 <Tooltip key={columnIndex} placement={PLACEMENT.bottomLeft}>

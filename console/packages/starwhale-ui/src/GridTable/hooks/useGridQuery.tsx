@@ -11,17 +11,17 @@ const non: any = []
 const selector = (state: IGridState) => ({
     queries: state.currentView?.queries || non,
     onCurrentViewQueriesChange: state.onCurrentViewQueriesChange,
-    originalColumns: state.originalColumns,
+    columns: state.columns,
 })
 
 function useGridQuery() {
-    const { queries, onCurrentViewQueriesChange: onChange, originalColumns } = useStore(selector, shallow)
+    const { queries, onCurrentViewQueriesChange: onChange, columns } = useStore(selector, shallow)
     const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
 
     const hasFilter = React.useMemo(() => {
-        return originalColumns?.find((column) => column.filterable)
-    }, [originalColumns])
+        return columns?.find((column) => column.filterable)
+    }, [columns])
 
     const renderConfigQuery = React.useCallback(() => {
         return (
@@ -29,9 +29,9 @@ function useGridQuery() {
                 <div className='flex justify-between items-center gap-20px'>
                     <div className='flex flex-1'>
                         {isSimpleQuery ? (
-                            <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
+                            <ConfigSimpleQuery columns={columns} value={queries} onChange={onChange} />
                         ) : (
-                            <ConfigQuery value={queries} onChange={onChange} columns={originalColumns} />
+                            <ConfigQuery value={queries} onChange={onChange} columns={columns} />
                         )}
                     </div>
                     {hasFilter && (
@@ -42,13 +42,13 @@ function useGridQuery() {
                 </div>
             </>
         )
-    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, t])
+    }, [columns, queries, onChange, isSimpleQuery, hasFilter, t])
 
     const renderConfigQueryInline = React.useCallback(
         (props: ExtraPropsT) => {
-            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columns={originalColumns} />
+            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columns={columns} />
         },
-        [originalColumns, queries, onChange]
+        [columns, queries, onChange]
     )
 
     return {
