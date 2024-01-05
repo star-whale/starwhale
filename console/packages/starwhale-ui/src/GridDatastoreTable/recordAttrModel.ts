@@ -49,12 +49,12 @@ export class RecordAttr {
         })
 
         if (isComplexType(type)) {
-            // const decode = getSummary(tmp, {
-            //     showPrivate: false,
-            //     showLink: false,
-            // })
+            const decode = getSummary(tmp, {
+                showPrivate: false,
+                showLink: false,
+            })
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            return new RecordComplexAttr(data, tmp)
+            return new RecordComplexAttr(data, tmp, decode)
         }
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return new RecordBasicAttr(data, tmp)
