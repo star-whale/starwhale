@@ -13,7 +13,7 @@ const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 const selector = (s: IGridState) => ({
     queryinline: s.queryinline,
     compare: s.compare,
-    selectedRowIds: s.selectedRowIds,
+    selectedRowIds: s.rowSelectedIds,
 })
 
 export default function Headers({ width }: { width: number }) {

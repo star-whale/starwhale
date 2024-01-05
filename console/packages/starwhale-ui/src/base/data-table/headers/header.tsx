@@ -42,6 +42,8 @@ export type HeaderContextT = {
     wrapperWidth?: number
     scrollbarWidth: number
     width: number
+    overscanColumnStartIndex: number
+    overscanColumnStopIndex: number
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -79,6 +81,8 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     widths: new Map(),
     scrollbarWidth: 0,
     width: 0,
+    overscanColumnStartIndex: 0,
+    overscanColumnStopIndex: 10,
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {
@@ -91,7 +95,7 @@ type HeaderProps = {
     isQueryInline?: boolean
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
-    selectedRowIds: Set<any>
+    selectedRowIds: any[]
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void

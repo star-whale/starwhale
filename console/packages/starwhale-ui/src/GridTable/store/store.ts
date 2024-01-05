@@ -71,10 +71,13 @@ export interface IComputeData {
     sortDirection: SortDirectionsT
 }
 export interface IUpdaterState {
-    originalColumns: any[]
-    columns: any[]
-    records: any[]
-    getId: (record: any) => any
+    originalColumns?: any[]
+    columns?: any[]
+    records?: any[]
+    getId?: (record: any) => any
+    onPageChange?: (page: number, pageSize: number) => void
+    page?: any
+    onSave?: (view: any) => void
 }
 export type ITableState = IViewState &
     ICurrentViewState &
@@ -425,7 +428,7 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
             update(
                 {
                     rowSelectedIds,
-                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId(r))),
+                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId?.(r))),
                 },
                 'setRowSelectedIds'
             )

@@ -25,7 +25,6 @@ type HeaderCellPropsT = {
     isSelectedAll?: boolean
     isQueryInline?: boolean
     isSelectedIndeterminate?: boolean
-    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
     onSelectAll?: () => void
@@ -42,6 +41,7 @@ type HeaderCellPropsT = {
     compareable?: boolean
     removable?: boolean
     querySlot?: React.ReactNode
+    selectedRowIds?: any[]
 }
 
 const selector = (s: IGridState) => ({
