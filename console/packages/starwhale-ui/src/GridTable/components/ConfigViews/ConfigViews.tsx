@@ -14,7 +14,6 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import Button from '../../../Button'
 import { shallow } from 'zustand/shallow'
-import useGrid from '../../hooks/useGrid'
 
 const ALLRUNS = 'all'
 
@@ -23,16 +22,16 @@ const selector = (s: ITableState) => ({
     views: s.views,
     viewEditing: s.viewEditing,
     viewModelShow: s.viewModelShow,
+    originalColumns: s.originalColumns,
 })
 
 function ConfigViews() {
     const store = useStoreApi()
-    const { currentView, views, viewModelShow, viewEditing } = useStore(selector, shallow)
+    const { currentView, views, viewModelShow, viewEditing, originalColumns } = useStore(selector, shallow)
     const { onShowViewModel, onCurrentViewIdChange, checkDuplicateViewName, onViewUpdate, setViews } = store.getState()
     const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
-    const { originalColumns } = useGrid()
 
     useEffect(() => {
         if (currentView) {

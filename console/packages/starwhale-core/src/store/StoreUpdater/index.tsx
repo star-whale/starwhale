@@ -50,15 +50,7 @@ const StoreUpdater = ({
     initialState,
     onInit,
 }: StoreUpdaterProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
-
-    // useEffect(() => {
-    //     return () => {
-    //         // reset()
-    //     }
-    // }, [reset])
 
     useDirectStoreUpdater('editable', editable, store.setState)
     useDirectStoreUpdater('panelGroup', panelGroup, store.setState)
@@ -67,7 +59,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onEvalSectionDelete', onEvalSectionDelete, store.setState)
     useDirectStoreUpdater('onSave', onSave, store.setState)
     useDirectStoreUpdater('initialState', initialState, store.setState)
-    //
+    // init
     useDirectStoreUpdater('onInit', onInit, store.setState)
 
     return null

@@ -65,8 +65,8 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
         start,
         limit,
         rawResult: true,
-        ignoreNonExistingTable: true,
         encodeWithType: true,
+        ignoreNonExistingTable: true,
     }
     if (revision) {
         raw.revision = revision

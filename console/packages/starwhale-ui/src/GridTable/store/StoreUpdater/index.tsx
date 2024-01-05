@@ -6,6 +6,7 @@ import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
 import { ITableState } from '../store'
 import { ConfigT } from '@starwhale/ui/base/data-table/types'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 
 type StoreUpdaterProps = ITableProps
 
@@ -42,11 +43,36 @@ export function useDirectStoreUpdater(
     }, [value])
 }
 
+const useStoreComputeUpdater = (
+    deps,
+    fn: (selectedState: IGridState, previousSelectedState: IGridState) => void,
+    subscribe
+) => {
+    useEffect(() => {
+        const unsub = subscribe(
+            (state) => deps.map((dep) => (typeof dep === 'function' ? dep(state) : state[dep])),
+            // @ts-ignore
+            fn,
+            { equalityFn: shallow }
+        )
+
+        return () => {
+            // reset()
+            unsub()
+        }
+    }, [deps, fn, subscribe])
+
+    return subscribe
+}
+
 const globalGetId = (record: any) => val(record.id)
 
 const selector = (s: ITableState) => ({
     reset: s.reset,
     setCurrentView: s.setCurrentView,
+    computeColumns: s.computeColumns,
+    computeSortIndex: s.computeSortIndex,
+    computeRows: s.computeRows,
 })
 
 const StoreUpdater = ({
@@ -74,15 +100,19 @@ const StoreUpdater = ({
     onRemove,
     removable,
     selectable,
+    columns,
 }: StoreUpdaterProps) => {
-    const { reset, setCurrentView } = useStore(selector, shallow)
+    const { setCurrentView, computeColumns, computeSortIndex, computeRows } = useStore(selector, shallow)
     const store = useStoreApi()
-
-    useEffect(() => {
-        return () => {
-            // reset()
-        }
-    }, [reset])
+    const $columns = useDatastoreColumns({
+        fillWidth: !!fillable,
+        columnTypes,
+        columnHints,
+    })
+    // subscribe before
+    useStoreComputeUpdater(['columns', 'currentView'], computeColumns, store.subscribe)
+    useStoreComputeUpdater(['columns', (s) => s.currentView.sortBy], computeSortIndex, store.subscribe)
+    useStoreComputeUpdater(['records'], computeRows, store.subscribe)
 
     // config
     useDirectStoreUpdater('sortable', sortable, store.setState)
@@ -105,13 +135,18 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onRowSelectedChange', onRowSelectedChange, store.setState)
     // data
     useDirectStoreUpdater('page', page, store.setState)
-    useDirectStoreUpdater('rows', rows, store.setState)
-    useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
     useDirectStoreUpdater('columnHints', columnHints, store.setState)
     useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
-
+    //
     useStoreEmptyUpdater<ConfigT>(currentView, setCurrentView)
+    // columns
+    useDirectStoreUpdater('columns', columns ?? $columns, store.setState)
+    useDirectStoreUpdater('originalColumns', columns, store.setState)
+    // rows
+    useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('records', records, store.setState)
+
     return null
 }
 

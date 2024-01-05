@@ -1,4 +1,4 @@
-import { traceCreator, useEventCallback } from '@starwhale/core'
+import { useEventCallback } from '@starwhale/core'
 import React, { useReducer } from 'react'
 import { ValueT } from './types'
 
@@ -34,7 +34,7 @@ const isValueExist = (value: any) => {
     return !!value
 }
 
-const trace = traceCreator('search-state')
+// const trace = traceCreator('search-state')
 
 const reducer = (state, action) => {
     let next = { ...state }
@@ -124,7 +124,7 @@ const reducer = (state, action) => {
         default:
             throw new Error('Unexpected action')
     }
-    trace('✅', { type: action.type }, action.payload, { next })
+    // trace('✅', { type: action.type }, action.payload, { next })
     return next
 }
 

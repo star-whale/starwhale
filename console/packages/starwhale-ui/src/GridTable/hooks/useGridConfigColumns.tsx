@@ -2,18 +2,17 @@ import React from 'react'
 import { useStore } from './useStore'
 import { shallow } from 'zustand/shallow'
 import { IGridState } from '../types'
-import useGirdData from './useGridData'
 import { ExtraPropsT, ConfigColumns, StatefulConfigColumns } from '../components/ConfigColumns'
 import useGridCurrentView from './useGridCurrentView'
 
 const selector = (state: IGridState) => ({
     onCurrentViewColumnsChange: state.onCurrentViewColumnsChange,
+    columns: state.columns,
 })
 
 function useGridConfigColumns() {
-    const { onCurrentViewColumnsChange } = useStore(selector, shallow)
-    const { originalColumns } = useGirdData()
-    const { currentView } = useGridCurrentView(originalColumns)
+    const { onCurrentViewColumnsChange, columns } = useStore(selector, shallow)
+    const { currentView } = useGridCurrentView()
 
     const renderStatefulConfigColumns = React.useCallback(
         (props?: ExtraPropsT) => {
@@ -21,12 +20,12 @@ function useGridConfigColumns() {
                 <StatefulConfigColumns
                     {...props}
                     view={currentView}
-                    columns={originalColumns}
+                    columns={columns}
                     onColumnsChange={onCurrentViewColumnsChange}
                 />
             )
         },
-        [currentView, onCurrentViewColumnsChange, originalColumns]
+        [currentView, onCurrentViewColumnsChange, columns]
     )
 
     const renderConfigColumns = React.useCallback(
@@ -36,12 +35,12 @@ function useGridConfigColumns() {
                     {...props}
                     // @ts-ignore
                     view={currentView}
-                    columns={originalColumns}
+                    columns={columns}
                     onColumnsChange={onCurrentViewColumnsChange}
                 />
             )
         },
-        [currentView, onCurrentViewColumnsChange, originalColumns]
+        [currentView, onCurrentViewColumnsChange, columns]
     )
 
     return {

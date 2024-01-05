@@ -7,7 +7,8 @@ import { LocaleContext } from 'baseui/locale'
 import { DataTableLocaleT } from '../locale'
 import { IGridState } from '../../../GridTable/types'
 import { useStore } from '../../../GridTable/hooks/useStore'
-import useGrid from '../../../GridTable/hooks/useGrid'
+import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
+import useGridConfigColumns from '@starwhale/ui/GridTable/hooks/useGridConfigColumns'
 
 const selector = (s: IGridState) => ({
     queryinline: s.queryinline,
@@ -23,7 +24,8 @@ function HeaderBar(props: { wrapperWidth: any }) {
     // @ts-ignore
     const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
     const { wrapperRef, queryinline, columnleinline, removable, selectable } = useStore(selector)
-    const { renderConfigQueryInline, renderConfigColumns } = useGrid()
+    const { renderConfigQueryInline } = useGridQuery()
+    const { renderConfigColumns } = useGridConfigColumns()
     const [isShowQuery, setIsShowQuery] = React.useState(false)
     const [isShowConfigColumns, setIsShowConfigColumns] = React.useState(false)
 
@@ -36,19 +38,16 @@ function HeaderBar(props: { wrapperWidth: any }) {
                 },
                 columnleinline && { label: locale.datatable.columnConfig, type: 'column' },
             ].filter(Boolean),
-        [queryinline, locale]
+        [queryinline, locale, columnleinline]
     )
 
-    const handleColumnOptionSelect = React.useCallback(
-        (option: any) => {
-            if (option.type === 'query') {
-                setIsShowQuery(true)
-            } else if (option.type === 'column') {
-                setIsShowConfigColumns(true)
-            }
-        },
-        [props]
-    )
+    const handleColumnOptionSelect = React.useCallback((option: any) => {
+        if (option.type === 'query') {
+            setIsShowQuery(true)
+        } else if (option.type === 'column') {
+            setIsShowConfigColumns(true)
+        }
+    }, [])
 
     if (!columnleinline && !queryinline) {
         if (!removable && !selectable) {

@@ -319,10 +319,10 @@ function TabControl({
                 <div className={styles.annotation}>
                     <LabelMedium>Annotation Type</LabelMedium>
                     <div className={styles.annotationTypes}>
-                        {Array.from(annotationTypes).map((type: any) => {
+                        {Array.from(annotationTypes).map((type: any, index) => {
                             return (
                                 <Checkbox
-                                    key={type}
+                                    key={index}
                                     checked={!hiddenTypes.has(type)}
                                     onChange={(e) => {
                                         const { checked } = e.target

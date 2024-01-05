@@ -1,9 +1,7 @@
 import * as React from 'react'
 
-import { useStyletron } from 'baseui'
-import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
-import { StatefulPopover, PLACEMENT, Popover, TRIGGER_TYPE } from 'baseui/popover'
+import { StatefulPopover, PLACEMENT, TRIGGER_TYPE } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '../../../IconFont'
 import cn from 'classnames'
@@ -17,7 +15,6 @@ import { DataTableLocaleT } from '../locale'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 import { shallow } from 'zustand/shallow'
-import useGridSort from '@starwhale/ui/GridTable/hooks/useGridSort'
 
 type HeaderCellPropsT = {
     index: number
@@ -28,7 +25,6 @@ type HeaderCellPropsT = {
     isSelectedAll?: boolean
     isQueryInline?: boolean
     isSelectedIndeterminate?: boolean
-    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
     onSelectAll?: () => void
@@ -45,6 +41,7 @@ type HeaderCellPropsT = {
     compareable?: boolean
     removable?: boolean
     querySlot?: React.ReactNode
+    selectedRowIds?: any[]
 }
 
 const selector = (s: IGridState) => ({
@@ -54,17 +51,16 @@ const selector = (s: IGridState) => ({
     wrapperRef: s.wrapperRef,
     sortable: s.sortable,
     rowSelectedIds: s.rowSelectedIds,
+    sortIndex: s.compute.sortIndex,
 })
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
-    //@ts-ignore
+    // @ts-ignore
     const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
-    const { sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
-
-    const { sortIndex, sortDirection } = useGridSort()
+    const { sortIndex, sortable, rowSelectedIds, queryinline, columnleinline } = useStore(selector, shallow)
 
     const handleFocus = (event: React.SyntheticEvent) => {
         if (isFocusVisible(event as any)) {
@@ -88,7 +84,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 sortable && { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
                 sortable && { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
             ].filter(Boolean),
-        [props.isPin, locale]
+        [props.isPin, locale, sortable]
     )
 
     const handleColumnOptionSelect = React.useCallback(

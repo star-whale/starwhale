@@ -73,6 +73,7 @@ const htmlPlugin = (mode) => {
           ;(function () {
               var hm = document.createElement('script')
               hm.src = 'https://hm.baidu.com/hm.js?82145850946f2ffce3c1366524ebe861'
+              hm.async = true
               var s = document.getElementsByTagName('script')[0]
               s.parentNode.insertBefore(hm, s)
           })()

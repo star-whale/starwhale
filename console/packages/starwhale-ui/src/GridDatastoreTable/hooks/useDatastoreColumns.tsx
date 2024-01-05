@@ -55,7 +55,6 @@ export function useDatastoreColumns(
                 name,
             })
         })
-
         return arr.sort(sortColumn)
     }, [columnTypes])
 
@@ -104,6 +103,7 @@ export function useDatastoreColumns(
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
                             return RecordAttr.decode(record, name)
+                            // return record
                         },
                         // search bar
                         getFilters,

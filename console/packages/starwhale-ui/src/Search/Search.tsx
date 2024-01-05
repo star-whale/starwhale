@@ -121,6 +121,7 @@ export default function Search({ value = [], onChange, getFilters }: ISearchProp
         })
         tmps.push(
             <FilterRenderer
+                key={-1}
                 value={{}}
                 isFocus={checkIsFocus(-1)}
                 getFilters={getFilters}

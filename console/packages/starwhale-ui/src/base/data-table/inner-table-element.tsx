@@ -7,7 +7,7 @@ import { ColumnT } from './types'
 import Headers from './headers/headers'
 import { VariableSizeGrid } from '../react-window'
 import TableActions from '../../GridTable/components/TableActions'
-import { useEventCallback } from '@starwhale/core/utils'
+import { useEventCallback, useIfChanged } from '@starwhale/core/utils'
 import { useClickAway } from 'ahooks'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
@@ -49,7 +49,6 @@ const filterColumns = (columns: ColumnT[], attr: string, value: any) => {
 // replaces the content of the virtualized window with contents. in this case,
 // we are prepending a table header row before the table rows (children to the fn).
 const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProps>((props, ref) => {
-    const [css] = themedUseStyletron()
     const ctx = React.useContext(HeaderContext)
     let viewState = RENDERING
     if (ctx.loading) {
@@ -108,7 +107,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
 
             return cells
         },
-        [$columns, data, props.children, ctx.widths, gridRef, rowStopIndex]
+        [$columns, data, props.children, ctx.widths, gridRef, rowStopIndex, rowStartIndex]
     )
 
     const $childrenPinnedLeft = React.useMemo(() => {
@@ -172,14 +171,11 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     }, [props.children, gridRef, rowHighlightIndex])
 
     // useIfChanged({
-    //     $childrenPinned,
-    //     $children,
     //     $background,
+    //     $backgroundPinned,
+    //     $childrenPinnedLeft,
+    //     children: props.children,
     // })
-
-    if (ctx.widths.size === 0) {
-        return null
-    }
 
     /* action bar */
     const innerRef = React.useRef<HTMLDivElement | undefined>(undefined)
@@ -228,7 +224,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
             )
         }
 
-        if (!innerRef?.current) return
+        if (!innerRef?.current) return null
 
         return (
             <TableActions
@@ -255,11 +251,16 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         ctx.width,
         ctx.scrollLeft,
         ctx.rowHeight,
-        innerRef?.current,
     ])
+
+    if (ctx.widths.size === 0) {
+        return null
+    }
 
     const $pinned = (
         <div
+            role='button'
+            tabIndex={0}
             className='table-inner-sticky bg-white sticky z-2 flex h-0 left-0 border-l-0 overflow-visible break-inside-avoid'
             onClick={handleClick}
         >

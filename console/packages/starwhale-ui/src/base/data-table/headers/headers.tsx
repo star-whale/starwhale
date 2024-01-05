@@ -1,13 +1,10 @@
 import React, { useCallback } from 'react'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
-import cn from 'classnames'
 import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
-import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useStore, useStoreApi } from '../../../GridTable/hooks/useStore'
 import { IGridState } from '../../../GridTable/types'
-import useGrid from '../../../GridTable/hooks/useGrid'
 import HeaderBar from './header-bar'
 import useTranslation from '@/hooks/useTranslation'
 
@@ -16,17 +13,18 @@ const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 const selector = (s: IGridState) => ({
     queryinline: s.queryinline,
     compare: s.compare,
+    selectedRowIds: s.rowSelectedIds,
 })
 
 export default function Headers({ width }: { width: number }) {
-    const [css, theme] = themedUseStyletron()
-    const locale = React.useContext(LocaleContext)
+    const [, theme] = themedUseStyletron()
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-    const { queryinline } = useStore(selector)
+    const { queryinline, selectedRowIds } = useStore(selector)
     const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
         useStoreApi().getState()
-    const { columns, selectedRowIds } = useGrid()
+    const { columns } = ctx
+
     const [t] = useTranslation()
 
     const $columns = React.useMemo(
@@ -62,6 +60,14 @@ export default function Headers({ width }: { width: number }) {
 
             const isFoucs = column.key === compare?.comparePinnedKey
             const isPin = !!column.pin
+
+            if (
+                (columnIndex < ctx.overscanColumnStartIndex || columnIndex > ctx.overscanColumnStopIndex) &&
+                columnIndex !== 0 &&
+                !column.pin
+            ) {
+                return <div key={column.key} style={{ width: ctx.widths.get(column.key) }} />
+            }
 
             return (
                 <Tooltip key={columnIndex} placement={PLACEMENT.bottomLeft}>
@@ -119,6 +125,10 @@ export default function Headers({ width }: { width: number }) {
             )
         },
         [
+            ctx.overscanColumnStartIndex,
+            ctx.overscanColumnStopIndex,
+            selectedRowIds,
+            ctx.removable,
             onNoSelect,
             onCompareUpdate,
             onCurrentViewColumnsPin,
@@ -156,7 +166,7 @@ export default function Headers({ width }: { width: number }) {
     }, [$columns, ctx.widths])
 
     const headers = React.useMemo(() => {
-        return $columns.filter((v) => v.pin !== 'LEFT').map(headerRender)
+        return $columns.filter((v) => v.pin !== 'LEFT' && v.pin !== 'RIGHT').map(headerRender)
     }, [$columns, headerRender])
 
     const headersRightCount = React.useMemo(() => {
@@ -213,7 +223,7 @@ export default function Headers({ width }: { width: number }) {
             {headers.length > 0 && (
                 <>
                     <div
-                        className='table-headers absolute left-0 w-full'
+                        className='table-headers absolute left-0 w-full flex'
                         style={{
                             marginLeft: headersLeftWidth,
                             transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,

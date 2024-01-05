@@ -58,6 +58,8 @@ export default function DataViewer({
 
         switch (_type) {
             case ArtifactType.Image: {
+                if (!summary) return null
+
                 if (mimeType === MIMES.GRAYSCALE) {
                     return <ImageGrayscaleViewer data={data as IArtifactImage} isZoom={isZoom} />
                 }

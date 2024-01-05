@@ -401,9 +401,9 @@ export function DataTable({
 
     const itemData = React.useMemo(() => {
         return {
-            // columnHighlightIndex,
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
             // rowHighlightIndex,
+            // columnHighlightIndex,
             isRowSelected,
             isQueryInline,
             isSelectable,
@@ -538,6 +538,7 @@ export function DataTable({
                                     width,
                                     scrollbarWidth: scrollbarWidth(),
                                     rowActions,
+                                    ...itemIndexs,
                                 }}
                             >
                                 {/*  headers outside to make scroll not covered header bar */}

@@ -57,12 +57,36 @@ export interface IViewInteractiveState {
     viewModelShow: boolean
     onShowViewModel: (viewModelShow: boolean, viewEditing: ConfigT | null) => void
 }
+
+export interface IComputeState {
+    computeColumns: () => void
+    computeSortIndex: () => void
+    computeRows: () => void
+    compute: IComputeData
+}
+export interface IComputeData {
+    columns: any[]
+    rows: any[]
+    sortIndex: number
+    sortDirection: SortDirectionsT
+}
+export interface IUpdaterState {
+    originalColumns?: any[]
+    columns?: any[]
+    records?: any[]
+    getId?: (record: any) => any
+    onPageChange?: (page: number, pageSize: number) => void
+    page?: any
+    onSave?: (view: any) => void
+}
 export type ITableState = IViewState &
     ICurrentViewState &
     IViewInteractiveState &
     ITableStateInitState &
     IRowState &
-    ICompareState
+    ICompareState &
+    IComputeState &
+    IUpdaterState
 
 // , ['zustand/persist', unknown]
 export type IStateCreator<T> = StateCreator<
@@ -404,7 +428,7 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
             update(
                 {
                     rowSelectedIds,
-                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId(r))),
+                    rowSelectedRecords: selectedRecords.filter((r) => rowSelectedIds.includes(getId?.(r))),
                 },
                 'setRowSelectedIds'
             )
@@ -436,6 +460,75 @@ const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
         ),
 })
 
+const getColumnsIds = (state: ITableState) => {
+    const { currentView: view, columns } = state
+    const { pinnedIds = [], ids = [] }: ConfigT = view
+    const columnIds = columns?.map((c) => c.key) ?? []
+    if (!view.id || (view.id === 'all' && !view.updateColumn)) {
+        return Array.from(new Set([...pinnedIds, ...columnIds]))
+    }
+    return ids
+}
+
+const getColumns = (state: ITableState) => {
+    const { currentView: view, columns } = state
+    if (!columns) return []
+    if (!view) return columns
+    const { pinnedIds = [] }: ConfigT = view
+    const columnsMap = _.keyBy(columns, (c) => c.key)
+    const ids = getColumnsIds(state)
+    return ids
+        .filter((id: any) => id in columnsMap)
+        .map((id: any) => {
+            const _pin = columnsMap[id].pin ?? undefined
+            return {
+                ...columnsMap[id],
+                pin: pinnedIds.includes(id) ? 'LEFT' : _pin,
+            }
+        })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const createComputeSlice: IStateCreator<IComputeState> = (set, get, store) => {
+    const update = (updateAttrs: Partial<IComputeState['compute']>, name?: string) => {
+        const curr = get().compute
+        set(
+            {
+                compute: {
+                    ...curr,
+                    ...updateAttrs,
+                },
+            },
+            undefined,
+            name
+        )
+    }
+
+    return {
+        compute: { columns: [], rows: [], sortIndex: -1, sortDirection: 'DESC' },
+        computeColumns: () => {
+            return update({ columns: getColumns(get()) }, 'setColumns')
+        },
+        computeSortIndex: () => {
+            const { sortBy } = get().currentView || {}
+            const sortIndex = get().columns?.findIndex((c) => c.key === sortBy)
+            return update({ sortIndex }, 'computeSortIndex')
+        },
+        computeRows: () => {
+            const { getId, records } = store.getState()
+            const rows =
+                records?.map((raw, index) => {
+                    return {
+                        id: getId?.(raw) ?? index.toFixed(),
+                        data: raw,
+                    }
+                }) ?? []
+
+            return update({ rows }, 'computeRows')
+        },
+    }
+}
+
 export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
     const name = `table/${key}`
     //
@@ -452,15 +545,31 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
         ...createRowSlice(...a),
         // @ts-ignore
         ...createCompareSlice(...a),
+        // @ts-ignore
+        ...createComputeSlice(...a),
         ...initState,
         key: name,
     })
+
     if (isPersist) {
-        return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any, { name }))))
+        return create<ITableState>()(
+            subscribeWithSelector(
+                devtools(
+                    persist(actions as any, {
+                        name,
+                        partialize: (state) =>
+                            Object.fromEntries(
+                                Object.entries(state).filter(([_key]) => !Object.keys(rawInitialState).includes(_key))
+                            ),
+                    })
+                )
+            )
+        )
     }
+
     const useStore = create<ITableState>()(
         subscribeWithSelector(
-            devtools(actions as any, {
+            devtools(actions, {
                 serialize: {
                     options: {
                         undefined: true,
@@ -476,11 +585,10 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
                 stateSanitizer: (state) => {
                     return {
                         ...state,
-                        // rowSelectedRecords: '<<LONG_BLOB>>',
-                        // columnTypes: '<<LONG_BLOB>>',
-                        // records: '<<LONG_BLOB>>',
                         rows: '<<LONG_BLOB>>',
-                        wrapperRef: '<<LONG_BLOB>>',
+                        columns: '<<LONG_BLOB>>',
+                        wrapperRef: '<<DOM>>',
+                        compute: '<<compute>>',
                     }
                 },
             })
@@ -488,6 +596,7 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
     )
     return useStore as UseBoundStore<StoreApi<ITableState>>
 }
+
 export type IStore = ReturnType<typeof createCustomStore>
 
 export default createCustomStore
