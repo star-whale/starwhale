@@ -9,8 +9,11 @@ from functools import wraps
 from collections import defaultdict
 
 import click
+from pydantic import BaseModel, validator
+from typing_extensions import Literal
 
 from starwhale.utils import console
+from starwhale.utils.pydantic import PYDANTIC_V2
 
 
 # TODO: use a more elegant way to pass extra cli args
@@ -29,6 +32,36 @@ class ExtraCliArgsRegistry:
             return cls._args or []
 
 
+# Current supported types(ref: (click types)[https://github.com/pallets/click/blob/main/src/click/types.py]):
+# 1. primitive types: INT,FLOAT,BOOL,STRING
+# 2. Func: FuncParamType, such as: debug: t.Union[str, t.List[DebugOption]] = dataclasses.field(default="", metadata={"help": "debug mode"})
+#       we will convert FuncParamType to STRING type to simplify the input implementation. We ignore `func` field.
+# 3. Choice: click.Choice type, add choices and case_sensitive options.
+class OptionType(BaseModel):
+    name: str
+    param_type: str
+    # for Choice type
+    choices: t.Optional[t.List[str]] = None
+    case_sensitive: bool = False
+
+    @validator("param_type", pre=True)
+    def parse_param_type(cls, value: str) -> str:
+        value = value.upper()
+        return "STRING" if value == "FUNC" else value
+
+
+class OptionField(BaseModel):
+    name: str
+    opts: t.List[str]
+    type: OptionType
+    required: bool = False
+    multiple: bool = False
+    default: t.Any = None
+    help: t.Optional[str] = None
+    is_flag: bool = False
+    hidden: bool = False
+
+
 class ArgumentContext:
     _instance = None
     _lock = threading.Lock()
@@ -36,6 +69,7 @@ class ArgumentContext:
     def __init__(self) -> None:
         self._click_ctx = click.Context(click.Command("Starwhale Argument Decorator"))
         self._options: t.Dict[str, list] = defaultdict(list)
+        self._func_related_dataclasses: t.Dict[str, list] = defaultdict(list)
 
     @classmethod
     def get_current_context(cls) -> ArgumentContext:
@@ -44,9 +78,29 @@ class ArgumentContext:
                 cls._instance = ArgumentContext()
         return cls._instance
 
-    def add_option(self, option: click.Option, group: str) -> None:
+    def _key(self, o: t.Any) -> str:
+        return f"{o.__module__}:{o.__qualname__}"
+
+    def add_dataclass_type(self, func: t.Callable, dtype: t.Any) -> None:
         with self._lock:
-            self._options[group].append(option)
+            self._func_related_dataclasses[self._key(func)].append(self._key(dtype))
+
+    def add_option(self, option: click.Option, dtype: t.Any) -> None:
+        with self._lock:
+            self._options[self._key(dtype)].append(option)
+
+    def asdict(self) -> t.Dict[str, t.Any]:
+        r: t.Dict = defaultdict(lambda: defaultdict(dict))
+        for func, dtypes in self._func_related_dataclasses.items():
+            for dtype in dtypes:
+                for option in self._options[dtype]:
+                    field = OptionField(**option.to_info_dict())
+                    if PYDANTIC_V2:
+                        info = field.model_dump(mode="json")
+                    else:
+                        info = field.dict()
+                    r[func][dtype][option.name] = info
+        return r
 
     def echo_help(self) -> None:
         if not self._options:
@@ -104,13 +158,13 @@ def argument(dataclass_types: t.Any, inject_name: str = "argument") -> t.Any:
     ```
     """
     is_sequence = True
+    # TODO: support pydantic model as argument type
     if dataclasses.is_dataclass(dataclass_types):
         dataclass_types = [dataclass_types]
         is_sequence = False
 
     def _register_wrapper(func: t.Callable) -> t.Any:
-        # TODO: dump parser to json file when model building
-        parser = get_parser_from_dataclasses(dataclass_types)
+        parser = get_parser_from_dataclasses(dataclass_types, func)
         lock = threading.Lock()
         parsed_cache: t.Any = None
 
@@ -166,12 +220,18 @@ def init_dataclasses_values(
     return ret
 
 
-def get_parser_from_dataclasses(dataclass_types: t.Any) -> click.OptionParser:
+def get_parser_from_dataclasses(
+    dataclass_types: t.List, deco_func: t.Callable | None = None
+) -> click.OptionParser:
     argument_ctx = ArgumentContext.get_current_context()
+
     parser = click.OptionParser()
     for dtype in dataclass_types:
         if not dataclasses.is_dataclass(dtype):
             raise ValueError(f"{dtype} is not a dataclass type")
+
+        if deco_func:
+            argument_ctx.add_dataclass_type(func=deco_func, dtype=dtype)
 
         type_hints: t.Dict[str, type] = t.get_type_hints(dtype)
         for field in dataclasses.fields(dtype):
@@ -180,9 +240,7 @@ def get_parser_from_dataclasses(dataclass_types: t.Any) -> click.OptionParser:
             field.type = type_hints[field.name]
             option = convert_field_to_option(field)
             option.add_to_parser(parser=parser, ctx=parser.ctx)  # type: ignore
-            argument_ctx.add_option(
-                option=option, group=f"{dtype.__module__}.{dtype.__qualname__}"
-            )
+            argument_ctx.add_option(option=option, dtype=dtype)
 
     parser.ignore_unknown_options = True
     return parser
@@ -229,16 +287,10 @@ def convert_field_to_option(field: dataclasses.Field) -> click.Option:
             )
             origin_type = getattr(field.type, "__origin__", field.type)
 
-    try:
-        # typing.Literal is only supported in python3.8+
-        literal_type = t.Literal  # type: ignore[attr-defined]
-    except AttributeError:
-        literal_type = None
-
-    if (literal_type and origin_type is literal_type) or (
+    if (origin_type is Literal) or (
         isinstance(field.type, type) and issubclass(field.type, Enum)
     ):
-        if literal_type and origin_type is literal_type:
+        if origin_type is Literal:
             kw["type"] = click.Choice(field.type.__args__)
         else:
             kw["type"] = click.Choice([e.value for e in field.type])
