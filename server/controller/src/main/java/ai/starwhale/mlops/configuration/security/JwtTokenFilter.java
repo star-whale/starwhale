@@ -26,13 +26,12 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.StarwhaleException;
-import ai.starwhale.mlops.exception.SwNotFoundException;
-import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -58,40 +57,50 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final List<JwtClaimValidator> jwtClaimValidators;
 
     private static final String AUTH_HEADER = "Authorization";
+    private static final List<Pattern> WHITE_LIST_FOR_DELETED_PROJECTS = List.of(
+            Pattern.compile("/api/v1/project/[^/]+/recover")
+    );
 
-    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService, ProjectService projectService,
-            List<JwtClaimValidator> jwtClaimValidators) {
+    public JwtTokenFilter(
+            JwtTokenUtil jwtTokenUtil,
+            UserService userService,
+            ProjectService projectService,
+            List<JwtClaimValidator> jwtClaimValidators
+    ) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
         this.projectService = projectService;
         this.jwtClaimValidators = jwtClaimValidators;
     }
 
-    boolean allowAnonymous(HttpServletRequest request) {
-        try {
-            var projects = getProjects(request);
-            // only for public project
-            return projects.stream().allMatch(p -> p.getPrivacy() == Project.Privacy.PUBLIC);
-        } catch (SwNotFoundException e) {
-            return false;
-        }
+    boolean allowAnonymous(Set<Project> projects) {
+        // only for public project
+        return projects.stream().allMatch(p -> p.getPrivacy() == Project.Privacy.PUBLIC);
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest httpServletRequest,
+    protected void doFilterInternal(
+            HttpServletRequest httpServletRequest,
             @NonNull HttpServletResponse httpServletResponse,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
         String header = httpServletRequest.getHeader(AUTH_HEADER);
 
-        if (!checkHeader(header)) {
+        if (isInvalidAuthHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
         }
-        if (!checkHeader(header)) {
+
+        var projects = getProjects(httpServletRequest);
+        if (!verifyProjectsExist(httpServletRequest, httpServletResponse, projects)) {
+            return;
+        }
+
+        if (isInvalidAuthHeader(header)) {
             // check whether the uri allow anonymous in public project
-            if (allowAnonymous(httpServletRequest)) {
+            if (allowAnonymous(projects)) {
                 // Build jwt token with anonymous user
                 JwtLoginToken jwtLoginToken = new JwtLoginToken(null, "", List.of(
-                            Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build()));
+                        Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build()));
                 jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
                 SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
             } else {
@@ -123,12 +132,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     role -> role.getAuthority().equals(Role.CODE_OWNER)).collect(Collectors.toSet());
             // Get project roles
             try {
-                Set<Project> projects = getProjects(httpServletRequest);
                 Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user, projects);
                 roles.addAll(rolesOfUser);
-            } catch (SwNotFoundException e) {
-                error(httpServletResponse, HttpStatus.NOT_FOUND.value(), Code.validationException, e.getMessage());
-                return;
             } catch (StarwhaleException e) {
                 logger.error(e.getMessage());
             }
@@ -142,23 +147,40 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     @NotNull
-    private Set<Project> getProjects(HttpServletRequest httpServletRequest) throws SwNotFoundException {
+    private Set<Project> getProjects(HttpServletRequest httpServletRequest) {
         @SuppressWarnings("unchecked")
-        Set<Project> projects = ((Set<String>) httpServletRequest
-                .getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT))
+        var projectIds = (Set<String>) httpServletRequest.getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT);
+        if (projectIds == null) {
+            return Set.of();
+        }
+
+        return projectIds
                 .stream()
-                .map((String projectUrl) -> {
-                    var p = projectService.findProject(projectUrl);
-                    if (p.isDeleted()) {
-                        throw new SwNotFoundException(ResourceType.PROJECT, "Project is deleted");
-                    }
-                    return p;
-                })
+                .map(projectService::findProject)
                 .collect(Collectors.toSet());
-        return projects;
     }
 
-    private boolean checkHeader(String header) {
-        return StringUtils.hasText(header) && header.startsWith("Bearer ");
+    private boolean isInvalidAuthHeader(String header) {
+        return !StringUtils.hasText(header) || !header.startsWith("Bearer ");
+    }
+
+    private boolean verifyProjectsExist(HttpServletRequest request, HttpServletResponse response, Set<Project> projects)
+            throws IOException {
+        // never check for root path
+        var uri = request.getRequestURI();
+        if (!StringUtils.hasText(uri)) {
+            return true;
+        }
+        if (projects.isEmpty()) {
+            return true;
+        }
+        if (projects.stream().noneMatch(Project::isDeleted)) {
+            return true;
+        }
+        if (WHITE_LIST_FOR_DELETED_PROJECTS.stream().anyMatch(p -> p.matcher(request.getRequestURI()).matches())) {
+            return true;
+        }
+        error(response, HttpStatus.NOT_FOUND.value(), Code.validationException, "Project is deleted");
+        return false;
     }
 }
