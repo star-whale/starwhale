@@ -17,9 +17,12 @@
 package ai.starwhale.mlops.configuration.security;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -129,6 +132,7 @@ public class JwtTokenFilterTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("Authorization")).thenReturn("Bearer a");
         when(request.getAttribute("PROJECT")).thenReturn(Set.of("deleted"));
+        when(request.getRequestURI()).thenReturn("/api/v1/project/1/jobs");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain filterchain = mock(FilterChain.class);
         when(jwtTokenUtil.getUsername(any())).thenReturn("foo");
@@ -137,6 +141,16 @@ public class JwtTokenFilterTest {
         jwtTokenFilter.doFilterInternal(request, response, filterchain);
         httpUtilMockedStatic.verify(
                 () -> HttpUtil.error(response, HttpStatus.NOT_FOUND.value(), Code.validationException,
-                        "Resource is not found Project\nProject is deleted"), times(1));
+                        "Project is deleted"), times(1));
+
+        // test project recover
+        for (var uri : List.of("/api/v1/project/1/recover", "/api/v1/project/abc/recover")) {
+            when(request.getRequestURI()).thenReturn(uri);
+            httpUtilMockedStatic.clearInvocations();
+            jwtTokenFilter.doFilterInternal(request, response, filterchain);
+            httpUtilMockedStatic.verify(
+                    () -> HttpUtil.error(any(HttpServletResponse.class), anyInt(), any(Code.class), anyString()),
+                    never());
+        }
     }
 }
