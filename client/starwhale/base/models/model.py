@@ -2,9 +2,16 @@ from __future__ import annotations
 
 import typing as t
 
+from pydantic import validator
+
 from starwhale.utils.pydantic import PYDANTIC_V2
 from starwhale.base.models.base import SwBaseModel, SequenceSwBaseModel
-from starwhale.base.client.models.models import ModelVo, StepSpec
+from starwhale.base.client.models.models import (
+    ModelVo,
+    StepSpec,
+    OptionType,
+    OptionField,
+)
 
 
 class StepSpecClient(StepSpec):
@@ -15,6 +22,22 @@ class StepSpecClient(StepSpec):
     cls_name: t.Optional[str] = None
     extra_args: t.Optional[t.List] = None
     extra_kwargs: t.Optional[t.Dict[str, t.Any]] = None
+
+
+# Current supported types(ref: (click types)[https://github.com/pallets/click/blob/main/src/click/types.py]):
+# 1. primitive types: INT,FLOAT,BOOL,STRING
+# 2. Func: FuncParamType, such as: debug: t.Union[str, t.List[DebugOption]] = dataclasses.field(default="", metadata={"help": "debug mode"})
+#       we will convert FuncParamType to STRING type to simplify the input implementation. We ignore `func` field.
+# 3. Choice: click.Choice type, add choices and case_sensitive options.
+class OptionTypeClient(OptionType):
+    @validator("param_type", pre=True)
+    def parse_param_type(cls, value: str) -> str:
+        value = value.upper()
+        return "STRING" if value == "FUNC" else value
+
+
+class OptionFieldClient(OptionField):
+    type: OptionTypeClient
 
 
 class File(SwBaseModel):

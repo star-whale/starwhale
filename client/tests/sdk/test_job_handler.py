@@ -13,7 +13,12 @@ from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
 from starwhale.base.models.base import obj_to_model
 from starwhale.base.uri.project import Project
 from starwhale.base.models.model import JobHandlers, StepSpecClient
-from starwhale.base.client.models.models import FineTune, RuntimeResource
+from starwhale.base.client.models.models import (
+    FineTune,
+    OptionType,
+    OptionField,
+    RuntimeResource,
+)
 
 
 class JobTestCase(unittest.TestCase):
@@ -718,6 +723,25 @@ def handle(argument): ...
                     show_name="handle",
                     expose=0,
                     require_dataset=False,
+                    arguments={
+                        "mock_user_module:TestArgument": {
+                            "epoch": OptionField(
+                                default=1,
+                                hidden=False,
+                                is_flag=False,
+                                multiple=False,
+                                name="epoch",
+                                opts=["--epoch"],
+                                required=False,
+                                type=OptionType(
+                                    case_sensitive=False,
+                                    choices=None,
+                                    name="integer",
+                                    param_type="INT",
+                                ),
+                            )
+                        }
+                    },
                 )
             ]
         }

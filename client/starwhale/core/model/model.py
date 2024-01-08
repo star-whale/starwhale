@@ -40,7 +40,6 @@ from starwhale.consts import (
     DEFAULT_RESOURCE_POOL,
     DEFAULT_JOBS_FILE_NAME,
     DEFAULT_STARWHALE_API_VERSION,
-    ARGUMENTS_DUMPED_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
@@ -287,16 +286,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             service_spec=spec,
         )
         Handler._register(h, func)
-
-    def _gen_arguments_json(self) -> None:
-        from starwhale.api._impl.argument import ArgumentContext
-
-        ctx = ArgumentContext.get_current_context()
-        ensure_file(
-            self.store.src_dir / SW_AUTO_DIRNAME / ARGUMENTS_DUMPED_JSON_FILE_NAME,
-            json.dumps(ctx.asdict(), indent=4),
-            parents=True,
-        )
 
     def _render_eval_layout(self, workdir: Path) -> None:
         # render eval layout
@@ -674,11 +663,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     / SW_AUTO_DIRNAME
                     / DEFAULT_JOBS_FILE_NAME,
                 ),
-            ),
-            (
-                self._gen_arguments_json,
-                5,
-                "generate arguments json",
             ),
             (
                 self._render_eval_layout,

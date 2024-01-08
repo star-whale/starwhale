@@ -1480,6 +1480,26 @@ class ServiceSpec(SwBaseModel):
     apis: Optional[List[ApiSpec]] = None
 
 
+class OptionType(SwBaseModel):
+    name: str
+    param_type: str
+    # for Choice type
+    choices: Optional[List[str]] = None
+    case_sensitive: bool = False
+
+
+class OptionField(SwBaseModel):
+    name: str
+    opts: List[str]
+    type: OptionType
+    required: bool = False
+    multiple: bool = False
+    default: Any = None
+    help: Optional[str] = None
+    is_flag: bool = False
+    hidden: bool = False
+
+
 class StepSpec(SwBaseModel):
     name: str
     concurrency: Optional[int] = None
@@ -1498,6 +1518,7 @@ class StepSpec(SwBaseModel):
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
     service_spec: Optional[ServiceSpec] = None
+    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
 
 
 class ModelVersionVo(SwBaseModel):

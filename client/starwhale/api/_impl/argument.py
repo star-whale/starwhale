@@ -9,11 +9,12 @@ from functools import wraps
 from collections import defaultdict
 
 import click
-from pydantic import BaseModel, validator
 from typing_extensions import Literal
 
 from starwhale.utils import console
 from starwhale.utils.pydantic import PYDANTIC_V2
+from starwhale.base.models.model import OptionFieldClient
+from starwhale.base.client.models.models import OptionField
 
 
 # TODO: use a more elegant way to pass extra cli args
@@ -30,36 +31,6 @@ class ExtraCliArgsRegistry:
     def get(cls) -> t.List[str]:
         with cls._lock:
             return cls._args or []
-
-
-# Current supported types(ref: (click types)[https://github.com/pallets/click/blob/main/src/click/types.py]):
-# 1. primitive types: INT,FLOAT,BOOL,STRING
-# 2. Func: FuncParamType, such as: debug: t.Union[str, t.List[DebugOption]] = dataclasses.field(default="", metadata={"help": "debug mode"})
-#       we will convert FuncParamType to STRING type to simplify the input implementation. We ignore `func` field.
-# 3. Choice: click.Choice type, add choices and case_sensitive options.
-class OptionType(BaseModel):
-    name: str
-    param_type: str
-    # for Choice type
-    choices: t.Optional[t.List[str]] = None
-    case_sensitive: bool = False
-
-    @validator("param_type", pre=True)
-    def parse_param_type(cls, value: str) -> str:
-        value = value.upper()
-        return "STRING" if value == "FUNC" else value
-
-
-class OptionField(BaseModel):
-    name: str
-    opts: t.List[str]
-    type: OptionType
-    required: bool = False
-    multiple: bool = False
-    default: t.Any = None
-    help: t.Optional[str] = None
-    is_flag: bool = False
-    hidden: bool = False
 
 
 class ArgumentContext:
@@ -94,12 +65,23 @@ class ArgumentContext:
         for func, dtypes in self._func_related_dataclasses.items():
             for dtype in dtypes:
                 for option in self._options[dtype]:
-                    field = OptionField(**option.to_info_dict())
+                    field = OptionFieldClient(**option.to_info_dict())
                     if PYDANTIC_V2:
                         info = field.model_dump(mode="json")
                     else:
                         info = field.dict()
                     r[func][dtype][option.name] = info
+        return r
+
+    def asobj(self) -> t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]]:
+        r: t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]] = defaultdict(
+            lambda: defaultdict(dict)
+        )
+        for func, dtypes in self._func_related_dataclasses.items():
+            for dtype in dtypes:
+                for option in self._options[dtype]:
+                    field = OptionFieldClient(**option.to_info_dict())
+                    r[func][dtype][option.name] = field
         return r
 
     def echo_help(self) -> None:
