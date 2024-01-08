@@ -28,6 +28,11 @@ class DebugOption(Enum):
     TPU_METRICS_DEBUG = "tpu_metrics_debug"
 
 
+class FSDPOption(Enum):
+    FSDP = "fsdp"
+    FSDP2 = "fsdp2"
+
+
 @dataclasses.dataclass
 class ScalarArguments:
     no_field = 1
@@ -62,6 +67,13 @@ class ComposeArguments:
     label_names: t.Optional[t.List[str]] = dataclasses.field(
         default=None, metadata={"help": "label names"}
     )
+    fsdp: t.Optional[t.Union[t.List[FSDPOption], str]] = dataclasses.field(
+        default="", metadata={"help": "fsdp"}
+    )
+    fsdp2: t.Optional[t.Union[str, t.List[FSDPOption]]] = dataclasses.field(
+        default="", metadata={"help": "fsdp2"}
+    )
+    tf32: t.Optional[bool] = dataclasses.field(default=None, metadata={"help": "tf32"})
 
 
 class ArgumentTestCase(TestCase):
@@ -212,10 +224,20 @@ class ArgumentTestCase(TestCase):
         assert optional_list_obj.multiple
         assert optional_list_obj.default is None
 
+        fsdp_obj = compose_parser._long_opt["--fsdp"].obj
+        assert isinstance(fsdp_obj.type, click.types.FuncParamType)
+        assert fsdp_obj.type.func == FSDPOption
+
+        fsdp_obj2 = compose_parser._long_opt["--fsdp2"].obj
+        assert fsdp_obj2.type.func == fsdp_obj.type.func
+
+        tf32_obj = compose_parser._long_opt["--tf32"].obj
+        assert tf32_obj.type == click.BOOL
+
         argument_ctx = ArgumentContext.get_current_context()
         assert len(argument_ctx._options) == 1
         options = argument_ctx._options["tests.sdk.test_argument:ComposeArguments"]
-        assert len(options) == 6
+        assert len(options) == 9
         assert options[0].name == "debug"
         argument_ctx.echo_help()
 

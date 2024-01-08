@@ -259,32 +259,27 @@ def convert_field_to_option(field: dataclasses.Field) -> click.Option:
     }
 
     # reference from huggingface transformers: https://github.com/huggingface/transformers/blob/main/src/transformers/hf_argparser.py
-    # only support: Union[xxx, None] or Union[EnumType, str] or [List[EnumType], str] type
+    # only support Union: NoneType(optional), str(optional) and other types, such as: Optional[int], Union[int], Union[int, str], Union[List[str], str] and Optional[Union[List[str], str]]
     origin_type = getattr(field.type, "__origin__", field.type)
     if origin_type is t.Union:
-        if (
-            str not in field.type.__args__ and type(None) not in field.type.__args__
-        ) or (len(field.type.__args__) != 2):
+        _args = list(field.type.__args__)
+        if type(None) in _args:
+            _args.remove(type(None))
+
+        _args_cnt = len(_args)
+        if (_args_cnt == 2 and str not in _args) or _args_cnt > 2 or _args_cnt == 0:
             raise ValueError(
-                f"{field.type} is not supported."
-                "Only support Union[xxx, None] or Union[EnumType, str] or [List[EnumType], str] type"
+                "Only `Union[X, str, NoneType]` (i.e., `Optional[X]`) or `Union[X, str]` is allowed for `Union` because"
+                " the argument parser only supports one type per argument."
+                f" Problem encountered in field '{field.name}'."
             )
 
-        if type(None) in field.type.__args__:
-            # ignore None type, use another type as the field type
-            field.type = (
-                field.type.__args__[0]
-                if field.type.__args__[1] == type(None)
-                else field.type.__args__[1]
-            )
+        if _args_cnt == 1:
+            field.type = _args[0]
             origin_type = getattr(field.type, "__origin__", field.type)
-        else:
-            # ignore str and None type, use another type as the field type
-            field.type = (
-                field.type.__args__[0]
-                if field.type.__args__[1] == str
-                else field.type.__args__[1]
-            )
+        elif _args_cnt == 2:
+            # filter `str` in Union
+            field.type = _args[0] if _args[1] == str else _args[1]
             origin_type = getattr(field.type, "__origin__", field.type)
 
     if (origin_type is Literal) or (
@@ -300,7 +295,7 @@ def convert_field_to_option(field: dataclasses.Field) -> click.Option:
             kw["default"] = field.default
         else:
             kw["required"] = True
-    elif field.type is bool or field.type == t.Optional[bool]:
+    elif field.type is bool:
         kw["is_flag"] = True
         kw["type"] = bool
         kw["default"] = False if field.default is dataclasses.MISSING else field.default
