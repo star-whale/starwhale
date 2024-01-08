@@ -97,7 +97,7 @@ export default function TiptapEditor({ id = '', initialContent, editable, onSave
             // tabIndex={0}
             className='relative self-center min-h-[500px] w-full h-full bg-white sm:mb-[calc(10px)] sm:rounded-lg'
         >
-            {editor && <EditorBubbleMenu editor={editor} />}
+            {editor && editable && <EditorBubbleMenu editor={editor} />}
             <EditorContent editor={editor} />
         </div>
     )
