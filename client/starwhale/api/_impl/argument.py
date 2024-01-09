@@ -73,8 +73,8 @@ class ArgumentContext:
                     r[func][dtype][option.name] = info
         return r
 
-    def asobj(self) -> t.Dict[str, t.Optional[t.Dict[str, t.Dict[str, OptionField]]]]:
-        r: t.Dict[str, t.Optional[t.Dict[str, t.Dict[str, OptionField]]]] = defaultdict(
+    def asobj(self) -> t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]]:
+        r: t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]] = defaultdict(
             lambda: defaultdict(dict)
         )
         for func, dtypes in self._func_related_dataclasses.items():

@@ -195,7 +195,7 @@ class Handler:
             ctx = ArgumentContext.get_current_context()
             handler_args = ctx.asobj()
             for name, handler in cls._registered_handlers.items():
-                handler.arguments = handler_args.get(handler.name)
+                handler.arguments = handler_args.get(handler.name)  # type: ignore[assignment]
 
                 if name not in expanded_names:
                     expanded_names[name] = set()
