@@ -96,7 +96,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
             put("SW_RUN_HANDLER", null);
             put("SW_DEV_TOKEN", null);
             put("SW_DEV_PORT", "8000");
-            put("SW_TASK_EXTRA_CMD_ARGS", "--a 11");
+            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --a 11");
             put("SW_CONDA_CONFIG", "channels:\n"
                     + "  - defaults\n"
                     + "show_channel_urls: true\n"
@@ -139,7 +139,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
             put("SW_PYPI_RETRIES", "1");
             put("SW_PYPI_TIMEOUT", "2");
             put("SW_RUN_HANDLER", null);
-            put("SW_TASK_EXTRA_CMD_ARGS", "--a 11");
+            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --a 11");
             put("SW_CONDA_CONFIG", "channels:\n"
                     + "  - defaults\n"
                     + "show_channel_urls: true\n"
@@ -240,7 +240,60 @@ public class SwCliModelHandlerContainerSpecificationTest {
                         + "      required: false\n"
                         + "    - name: c\n"
                         + "      required: false\n"
-                        + "  ext_cmd_args: '--a 11'",
+                        + "  ext_cmd_args: '--a 11'\n"
+                        + "  arguments:\n"
+                        + "    evaluation:EvaluationArguments:\n"
+                        + "      is_eval:\n"
+                        + "        default: false\n"
+                        + "        help: whether eval\n"
+                        + "        hidden: false\n"
+                        + "        is_flag: true\n"
+                        + "        multiple: false\n"
+                        + "        name: is_eval\n"
+                        + "        opts:\n"
+                        + "        - --is_eval\n"
+                        + "        required: false\n"
+                        + "        value: true\n"
+                        + "        type:\n"
+                        + "          case_sensitive: false\n"
+                        + "          name: boolean\n"
+                        + "          param_type: BOOL\n"
+                        + "      is_train:\n" // this will not be used
+                        + "        default: false\n"
+                        + "        help: whether eval\n"
+                        + "        hidden: false\n"
+                        + "        is_flag: true\n"
+                        + "        multiple: false\n"
+                        + "        name: is_train\n"
+                        + "        opts:\n"
+                        + "        - --is_train\n"
+                        + "        required: false\n"
+                        + "        value: false\n"
+                        + "        type:\n"
+                        + "          case_sensitive: false\n"
+                        + "          name: boolean\n"
+                        + "          param_type: BOOL\n"
+                        + "      reshape:\n"
+                        + "        default: 64\n"
+                        + "        help: reshape image size\n"
+                        + "        hidden: false\n"
+                        + "        is_flag: false\n"
+                        + "        multiple: false\n"
+                        + "        name: reshape\n"
+                        + "        value: 32\n"
+                        + "        opts:\n"
+                        + "        - --reshape\n"
+                        + "        required: false\n"
+                        + "      patch:\n" // this will not be used
+                        + "        default: 16\n"
+                        + "        help: batch size\n"
+                        + "        hidden: false\n"
+                        + "        is_flag: false\n"
+                        + "        multiple: false\n"
+                        + "        name: patch\n"
+                        + "        opts:\n"
+                        + "        - --patch\n"
+                        + "        required: false",
                 new TypeReference<>() {
                 }
         );
