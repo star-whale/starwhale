@@ -33,7 +33,7 @@ const getPopoverOverrides = ({ left, top }) => {
                 },
             },
             style: {
-                zIndex: 999,
+                zIndex: 99,
             },
         },
     }
