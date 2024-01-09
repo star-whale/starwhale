@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.datastore.BackupVo;
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
 import ai.starwhale.mlops.api.protocol.datastore.FlushRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
@@ -35,6 +36,7 @@ import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.backup.Meta;
 import ai.starwhale.mlops.datastore.exporter.RecordsStreamingExporter;
 import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -60,9 +62,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -291,6 +296,49 @@ public class DataStoreController {
             log.error("writing response failed", e);
             throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
         }
+    }
+
+    @PostMapping(value = "/datastore/maintain/backup")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<BackupVo>> createBackup() {
+        try {
+            var meta = this.dataStore.createBackup();
+            return ResponseEntity.ok(Code.success.asResponse(meta.toVo()));
+        } catch (IOException e) {
+            log.error("create backup failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "create backup failed", e);
+        }
+    }
+
+    @GetMapping(value = "/datastore/maintain/backup")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<List<BackupVo>>> listBackups() {
+        var backups = this.dataStore.listBackups().stream().map(Meta::toVo).collect(Collectors.toList());
+        return ResponseEntity.ok(Code.success.asResponse(backups));
+    }
+
+    @PostMapping(value = "/datastore/maintain/backup/restore")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> restoreBackup(@Valid @RequestParam String id) {
+        try {
+            this.dataStore.restoreWithBackup(id);
+        } catch (IOException e) {
+            log.error("restore backup failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "restore backup failed", e);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @DeleteMapping(value = "/datastore/maintain/backup")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> deleteBackup(@Valid @RequestParam String id) {
+        try {
+            this.dataStore.deleteBackup(id);
+        } catch (IOException e) {
+            log.error("delete backup failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "delete backup failed", e);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     private RecordList queryRecordList(QueryTableRequest request) {

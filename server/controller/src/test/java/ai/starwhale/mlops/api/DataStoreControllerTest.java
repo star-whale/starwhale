@@ -96,6 +96,7 @@ public class DataStoreControllerTest {
                         this.fs.getPath("/wal_cache"),
                         3,
                         "",
+                        "backup",
                         "1h",
                         "1d",
                         1000,

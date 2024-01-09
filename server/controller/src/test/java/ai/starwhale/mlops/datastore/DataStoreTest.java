@@ -116,6 +116,7 @@ public class DataStoreTest {
                 this.fs.getPath("/wal_cache"),
                 params.ossMaxAttempts,
                 params.dataRootPath,
+                "backup",
                 params.dumpInterval,
                 params.minNoUpdatePeriod,
                 params.minWalIdGap,

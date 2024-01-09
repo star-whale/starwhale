@@ -410,6 +410,19 @@ class OrderByDesc(SwBaseModel):
     descending: Optional[bool] = None
 
 
+class BackupVo(SwBaseModel):
+    id: Optional[str] = None
+    created_at: Optional[int] = Field(None, alias='createdAt')
+    done_at: Optional[int] = Field(None, alias='doneAt')
+    approximate_size_bytes: Optional[int] = Field(None, alias='approximateSizeBytes')
+
+
+class ResponseMessageBackupVo(SwBaseModel):
+    code: str
+    message: str
+    data: BackupVo
+
+
 class ListTablesRequest(SwBaseModel):
     prefix: Optional[str] = None
     prefixes: Optional[List[str]] = Field(None)
@@ -1125,6 +1138,12 @@ class PanelPluginVo(SwBaseModel):
 
 class RuntimeSuggestionVo(SwBaseModel):
     runtimes: Optional[List[RuntimeVersionVo]] = None
+
+
+class ResponseMessageListBackupVo(SwBaseModel):
+    code: str
+    message: str
+    data: List[BackupVo]
 
 
 class UserRoleDeleteRequest(UserCheckPasswordRequest):

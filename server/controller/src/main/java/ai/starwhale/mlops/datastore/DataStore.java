@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
+import ai.starwhale.mlops.datastore.backup.BackupManager;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.datastore.impl.RecordEncoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
@@ -49,6 +50,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.convert.DurationStyle;
@@ -68,6 +70,8 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
 
     private WalManager walManager;
     private final StorageAccessService storageAccessService;
+    @Delegate
+    private final BackupManager backupManager;
 
     private final Map<String, SoftReference<MemoryTable>> tables = new ConcurrentHashMap<>();
     private final Set<MemoryTable> dirtyTables = new HashSet<>();
@@ -86,25 +90,34 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
 
     private final int ossMaxAttempts;
 
-    public DataStore(StorageAccessService storageAccessService,
+    public DataStore(
+            StorageAccessService storageAccessService,
             @Value("${sw.datastore.wal-max-file-size}") int walMaxFileSize,
             @Value("#{T(java.nio.file.Paths).get('${sw.datastore.wal-local-cache-dir:wal_cache}')}")
             Path walLocalCacheDir,
             @Value("${sw.datastore.oss-max-attempts:5}") int ossMaxAttempts,
             @Value("${sw.datastore.data-root-path:}") String dataRootPath,
+            @Value("${sw.datastore.backup.backup-path:backup/datastore}") String backupPath,
             @Value("${sw.datastore.dump-interval:1h}") String dumpInterval,
             @Value("${sw.datastore.min-no-update-period:4h}") String minNoUpdatePeriod,
             @Value("${sw.datastore.min-wal-id-gap:1000}") int minWalIdGap,
             @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
-            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit) {
+            @Value("${sw.datastore.parquet.page-row-count-limit:20000}") int pageRowCountLimit
+    ) throws IOException {
         this.storageAccessService = storageAccessService;
         if (!dataRootPath.isEmpty() && !dataRootPath.endsWith("/")) {
             dataRootPath += "/";
         }
         this.dataRootPath = dataRootPath;
         this.snapshotRootPath = dataRootPath + "snapshot/";
+        this.backupManager = new BackupManager(
+                backupPath,
+                this.snapshotRootPath,
+                this.dataRootPath + "wal/",
+                this.storageAccessService
+        );
         this.walMaxFileSize = walMaxFileSize;
         this.walLocalCacheDir = walLocalCacheDir;
         this.ossMaxAttempts = ossMaxAttempts;
@@ -185,9 +198,11 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
     }
 
     @WriteOperation
-    public String update(String tableName,
+    public String update(
+            String tableName,
             TableSchemaDesc schema,
-            List<Map<String, Object>> records) {
+            List<Map<String, Object>> records
+    ) {
         if (schema != null && schema.getColumnSchemaList() != null) {
             for (var col : schema.getColumnSchemaList()) {
                 if (col.getName() != null && !COLUMN_NAME_PATTERN.matcher(col.getName()).matches()) {
@@ -559,9 +574,9 @@ public class DataStore implements OrderedRollingUpdateStatusListener {
         /**
          * Applies this function to the given arguments.
          *
-         * @param tables table meta data
+         * @param tables          table meta data
          * @param columnSchemaMap column schema map
-         * @param recordIter records iterator
+         * @param recordIter      records iterator
          * @return r the result
          */
         R apply(
