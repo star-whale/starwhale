@@ -14,8 +14,7 @@ from typing_extensions import Literal
 from starwhale.utils import console
 from starwhale.utils.pydantic import PYDANTIC_V2
 from starwhale.base.models.model import OptionFieldClient
-from starwhale.base.client.models.models import Arguments
-
+from starwhale.base.client.models.models import OptionField
 
 # TODO: use a more elegant way to pass extra cli args
 class ExtraCliArgsRegistry:
@@ -31,6 +30,9 @@ class ExtraCliArgsRegistry:
     def get(cls) -> t.List[str]:
         with cls._lock:
             return cls._args or []
+
+
+Arguments = t.Dict[str, t.Dict[str, OptionField]]
 
 
 class ArgumentContext:

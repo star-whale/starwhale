@@ -1499,9 +1499,6 @@ class OptionField(SwBaseModel):
     hidden: bool = False
 
 
-Arguments = Dict[str, Dict[str, OptionField]]
-
-
 class StepSpec(SwBaseModel):
     name: str
     concurrency: Optional[int] = None
@@ -1520,7 +1517,7 @@ class StepSpec(SwBaseModel):
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
     service_spec: Optional[ServiceSpec] = None
-    arguments: Optional[Arguments] = None
+    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
 
 
 class ModelVersionVo(SwBaseModel):
