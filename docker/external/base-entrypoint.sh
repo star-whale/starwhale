@@ -36,7 +36,7 @@ set_pip_config() {
     echo "-->[Preparing] config pypi and conda config ..."
 
     if [ "${SW_PYPI_INDEX_URL}" ] ; then
-        echo -e "\t ** use SW_PYPI_* env to config ~/.pip/pip.conf"
+        echo -e "\t ** use SW_PYPI_* env to config ~/.pip/pip.conf and ~/.pydistutils.cfg"
         mkdir -p ~/.pip
         cat > ~/.pip/pip.conf << EOF
 [global]
@@ -47,9 +47,15 @@ timeout = ${SW_PYPI_TIMEOUT:-90}
 [install]
 trusted-host= ${SW_PYPI_TRUSTED_HOST}
 EOF
+
+        cat > ~/.pydistutils.cfg << EOF
+[easy_install]
+index_url = ${SW_PYPI_INDEX_URL}
+EOF
         echo -e "\t ** current pip conf:"
         echo "-------------------"
         cat ~/.pip/pip.conf
+        cat ~/.pydistutils.cfg
         echo "-------------------"
     else
         echo -e "\t ** use image builtin pip.conf"
