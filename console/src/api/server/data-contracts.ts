@@ -1262,18 +1262,6 @@ export interface IModelViewVo {
     versions: IModelVersionViewVo[]
 }
 
-export interface IParameterSignature {
-    name: string
-    required?: boolean
-    multiple?: boolean
-}
-
-export interface IResponseMessageListModelViewVo {
-    code: string
-    message: string
-    data: IModelViewVo[]
-}
-
 export interface IOptionField {
     name?: string
     type?: IOptionType
@@ -1291,6 +1279,18 @@ export interface IOptionType {
     choices?: string[]
     param_type?: string
     case_sensitive?: boolean
+}
+
+export interface IParameterSignature {
+    name: string
+    required?: boolean
+    multiple?: boolean
+}
+
+export interface IResponseMessageListModelViewVo {
+    code: string
+    message: string
+    data: IModelViewVo[]
 }
 
 export interface IRuntimeResource {
