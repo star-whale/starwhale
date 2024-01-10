@@ -1509,6 +1509,7 @@ class StepSpec(SwBaseModel):
     env: Optional[List[Env]] = None
     expose: Optional[int] = None
     virtual: Optional[bool] = None
+    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
     job_name: Optional[str] = None
     show_name: str
     require_dataset: Optional[bool] = None
@@ -1517,7 +1518,6 @@ class StepSpec(SwBaseModel):
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
     service_spec: Optional[ServiceSpec] = None
-    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
 
 
 class ModelVersionVo(SwBaseModel):

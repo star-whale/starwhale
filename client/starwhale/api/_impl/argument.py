@@ -16,6 +16,7 @@ from starwhale.utils.pydantic import PYDANTIC_V2
 from starwhale.base.models.model import OptionFieldClient
 from starwhale.base.client.models.models import OptionField
 
+
 # TODO: use a more elegant way to pass extra cli args
 class ExtraCliArgsRegistry:
     _args = None
