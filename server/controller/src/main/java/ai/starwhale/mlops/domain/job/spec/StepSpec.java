@@ -136,7 +136,7 @@ public class StepSpec {
         private boolean required = false;
         @NotNull
         private boolean multiple = false;
-        
+
         @JsonProperty("default")
         private String defaultValue;
 

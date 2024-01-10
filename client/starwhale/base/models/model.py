@@ -43,7 +43,10 @@ class OptionFieldClient(OptionField):
     required: bool = False
     multiple: bool = False
     is_flag: bool = False
-    default: t.Any = None
+
+    @validator("default", pre=True)
+    def parse_default(cls, value: str) -> str:
+        return str(value)
 
 
 class File(SwBaseModel):
