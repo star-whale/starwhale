@@ -126,7 +126,6 @@ public class StepSpec {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OptionField {
         private String name;
-        private List<String> opts;
         private OptionType type;
         private boolean required = false;
         private boolean multiple = false;
