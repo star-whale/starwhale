@@ -767,6 +767,13 @@ class FineTune(SwBaseModel):
     require_validation_datasets: Optional[bool] = None
 
 
+class OptionType(SwBaseModel):
+    name: Optional[str] = None
+    choices: Optional[List[str]] = None
+    param_type: Optional[str] = None
+    case_sensitive: Optional[bool] = None
+
+
 class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
@@ -1380,6 +1387,18 @@ class ComponentSpec(SwBaseModel):
     component_spec_value_type: ComponentSpecValueType
 
 
+class OptionField(SwBaseModel):
+    name: Optional[str] = None
+    type: Optional[OptionType] = None
+    required: Optional[bool] = None
+    multiple: Optional[bool] = None
+    value: Optional[str] = None
+    help: Optional[str] = None
+    hidden: Optional[bool] = None
+    default: Optional[Dict[str, Any]] = None
+    is_flag: Optional[bool] = None
+
+
 class PageInfoTaskVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[TaskVo]] = None
@@ -1478,25 +1497,6 @@ class ServiceSpec(SwBaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     apis: Optional[List[ApiSpec]] = None
-
-
-class OptionType(SwBaseModel):
-    name: str
-    param_type: str
-    # for Choice type
-    choices: Optional[List[str]] = None
-    case_sensitive: bool = False
-
-
-class OptionField(SwBaseModel):
-    name: str
-    type: OptionType
-    required: bool = False
-    multiple: bool = False
-    default: Any = None
-    help: Optional[str] = None
-    is_flag: bool = False
-    hidden: bool = False
 
 
 class StepSpec(SwBaseModel):
