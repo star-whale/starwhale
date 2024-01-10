@@ -307,6 +307,7 @@ class ArgumentTestCase(TestCase):
             "help": "batch size",
             "is_flag": False,
             "hidden": False,
+            'value': None,
         }
 
         evaluation_strategy = info[
@@ -327,6 +328,7 @@ class ArgumentTestCase(TestCase):
                 "name": "choice",
                 "param_type": "CHOICE",
             },
+            'value': None,
         }
 
         debug = info[
@@ -347,6 +349,7 @@ class ArgumentTestCase(TestCase):
                 "case_sensitive": False,
                 "choices": None,
             },
+            'value': None,
         }
 
         assert json.loads(json.dumps(info)) == info

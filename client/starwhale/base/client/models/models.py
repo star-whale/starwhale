@@ -768,10 +768,10 @@ class FineTune(SwBaseModel):
 
 
 class OptionType(SwBaseModel):
-    name: Optional[str] = None
+    name: str
     choices: Optional[List[str]] = None
-    param_type: Optional[str] = None
-    case_sensitive: Optional[bool] = None
+    param_type: str
+    case_sensitive: bool = False
 
 
 class ParameterSignature(SwBaseModel):
@@ -1388,15 +1388,15 @@ class ComponentSpec(SwBaseModel):
 
 
 class OptionField(SwBaseModel):
-    name: Optional[str] = None
-    type: Optional[OptionType] = None
-    required: Optional[bool] = None
-    multiple: Optional[bool] = None
+    name: str
+    type: OptionType
+    required: bool = False
+    multiple: bool = False
     value: Optional[str] = None
+    default: Any = None
     help: Optional[str] = None
-    hidden: Optional[bool] = None
-    default: Optional[Dict[str, Any]] = None
-    is_flag: Optional[bool] = None
+    is_flag: bool = False
+    hidden: bool = False
 
 
 class PageInfoTaskVo(SwBaseModel):

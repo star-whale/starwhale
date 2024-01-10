@@ -111,13 +111,16 @@ public class StepSpec {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OptionType {
+        @NotNull
         private String name;
 
+        @NotNull
         @JsonProperty("param_type")
         private String paramType;
 
         private List<String> choices;
 
+        @NotNull
         @JsonProperty("case_sensitive")
         private boolean caseSensitive = false;
     }
@@ -125,11 +128,16 @@ public class StepSpec {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OptionField {
+        @NotNull
         private String name;
+        @NotNull
         private OptionType type;
+        @NotNull
         private boolean required = false;
+        @NotNull
         private boolean multiple = false;
 
+        @NotNull
         @JsonProperty("default")
         private Object defaultValue;
 
@@ -140,9 +148,11 @@ public class StepSpec {
 
         private String help;
 
+        @NotNull
         @JsonProperty("is_flag")
         private boolean isFlag = false;
 
+        @NotNull
         private boolean hidden = false;
     }
 
