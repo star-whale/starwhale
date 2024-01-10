@@ -303,7 +303,7 @@ class ArgumentTestCase(TestCase):
             },
             "required": False,
             "multiple": False,
-            "default": 64,
+            "default": "64",
             "help": "batch size",
             "is_flag": False,
             "hidden": False,
