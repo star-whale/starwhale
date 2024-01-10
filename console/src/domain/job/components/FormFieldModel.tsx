@@ -36,6 +36,14 @@ const useStyles = createUseStyles({
     },
 })
 
+const boolValue = (value) => {
+    if (value === null) return null
+    if (typeof value === 'string') {
+        return value === 'true'
+    }
+    return Boolean(value)
+}
+
 function FormFieldModel({
     form,
     FormItem,
@@ -152,13 +160,15 @@ function FormFieldModel({
             if (spec?.arguments) {
                 Object.entries(spec?.arguments).forEach(([argument, fields]) => {
                     Object.entries(fields as any).forEach(([field, v]) => {
-                        const { type, value } = v as any
-                        if (type?.param_type === 'BOOL' && typeof value === 'string') {
-                            _RJSFData[[spec?.job_name, argument, field].join('@@@')] = value === 'true'
+                        const { type, value, default: _rawDefault } = (v as any) ?? {}
+                        const _value = type?.param_type === 'BOOL' ? boolValue(value) : value
+                        const _default = type?.param_type === 'BOOL' ? boolValue(_rawDefault) : _rawDefault
+                        if (value === null) {
+                            _RJSFData[[spec?.job_name, argument, field].join('@@@')] = _default
                             return
                         }
                         // eslint-disable-next-line
-                        _RJSFData[[spec?.job_name, argument, field].join('@@@')] = value
+                        _RJSFData[[spec?.job_name, argument, field].join('@@@')] = _value
                     })
                 })
             }
