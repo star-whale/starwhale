@@ -726,7 +726,7 @@ def handle(argument): ...
                     arguments={
                         "mock_user_module:TestArgument": {
                             "epoch": OptionField(
-                                default=1,
+                                default="1",
                                 hidden=False,
                                 is_flag=False,
                                 multiple=False,
