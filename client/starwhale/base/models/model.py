@@ -30,6 +30,8 @@ class StepSpecClient(StepSpec):
 #       we will convert FuncParamType to STRING type to simplify the input implementation. We ignore `func` field.
 # 3. Choice: click.Choice type, add choices and case_sensitive options.
 class OptionTypeClient(OptionType):
+    case_sensitive: bool = False
+
     @validator("param_type", pre=True)
     def parse_param_type(cls, value: str) -> str:
         value = value.upper()
@@ -38,6 +40,10 @@ class OptionTypeClient(OptionType):
 
 class OptionFieldClient(OptionField):
     type: OptionTypeClient
+    required: bool = False
+    multiple: bool = False
+    is_flag: bool = False
+    default: t.Any = None
 
 
 class File(SwBaseModel):

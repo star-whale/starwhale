@@ -771,7 +771,7 @@ class OptionType(SwBaseModel):
     name: str
     choices: Optional[List[str]] = None
     param_type: str
-    case_sensitive: bool = False
+    case_sensitive: bool
 
 
 class ParameterSignature(SwBaseModel):
@@ -1390,13 +1390,13 @@ class ComponentSpec(SwBaseModel):
 class OptionField(SwBaseModel):
     name: str
     type: OptionType
-    required: bool = False
-    multiple: bool = False
+    required: bool
+    multiple: bool
     value: Optional[str] = None
-    default: Any = None
     help: Optional[str] = None
-    is_flag: bool = False
-    hidden: bool = False
+    hidden: bool
+    default: Optional[str] = None
+    is_flag: bool
 
 
 class PageInfoTaskVo(SwBaseModel):

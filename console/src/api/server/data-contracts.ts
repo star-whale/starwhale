@@ -1282,7 +1282,7 @@ export interface IOptionField {
     value?: string
     help?: string
     hidden?: boolean
-    default?: object
+    default?: string
     is_flag?: boolean
 }
 
