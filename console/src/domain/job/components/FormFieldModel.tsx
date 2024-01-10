@@ -84,7 +84,6 @@ function FormFieldModel({
 
     const _modelVersionUrl = form.getFieldValue('modelVersionUrl')
     const rawType = form.getFieldValue('rawType')
-    const modelVersionHandler = form.getFieldValue('modelVersionHandler')
 
     const [RJSFData, setRJSFData] = useSetState<any>({})
     const getRJSFFormSchema = React.useCallback((currentStepSource) => {
