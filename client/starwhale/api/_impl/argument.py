@@ -14,7 +14,7 @@ from typing_extensions import Literal
 from starwhale.utils import console
 from starwhale.utils.pydantic import PYDANTIC_V2
 from starwhale.base.models.model import OptionFieldClient
-from starwhale.base.client.models.models import OptionField
+from starwhale.base.client.models.models import Arguments
 
 
 # TODO: use a more elegant way to pass extra cli args
@@ -73,10 +73,8 @@ class ArgumentContext:
                     r[func][dtype][option.name] = info
         return r
 
-    def asobj(self) -> t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]]:
-        r: t.Dict[str, t.Dict[str, t.Dict[str, OptionField]]] = defaultdict(
-            lambda: defaultdict(dict)
-        )
+    def asobj(self) -> t.Dict[str, Arguments]:
+        r: t.Dict[str, Arguments] = defaultdict(lambda: defaultdict(dict))
         for func, dtypes in self._func_related_dataclasses.items():
             for dtype in dtypes:
                 for option in self._options[dtype]:

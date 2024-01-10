@@ -731,7 +731,6 @@ def handle(argument): ...
                                 is_flag=False,
                                 multiple=False,
                                 name="epoch",
-                                opts=["--epoch"],
                                 required=False,
                                 type=OptionType(
                                     case_sensitive=False,

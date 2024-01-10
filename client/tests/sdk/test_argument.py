@@ -295,7 +295,6 @@ class ArgumentTestCase(TestCase):
         ]["tests.sdk.test_argument:ScalarArguments"]["batch"]
         assert batch == {
             "name": "batch",
-            "opts": ["--batch"],
             "type": {
                 "name": "integer",
                 "param_type": "INT",
@@ -321,7 +320,6 @@ class ArgumentTestCase(TestCase):
             "is_flag": False,
             "multiple": False,
             "name": "evaluation_strategy",
-            "opts": ["--evaluation_strategy", "--evaluation-strategy"],
             "required": False,
             "type": {
                 "case_sensitive": True,
@@ -342,7 +340,6 @@ class ArgumentTestCase(TestCase):
             "is_flag": False,
             "multiple": True,
             "name": "debug",
-            "opts": ["--debug"],
             "required": False,
             "type": {
                 "name": "DebugOption",

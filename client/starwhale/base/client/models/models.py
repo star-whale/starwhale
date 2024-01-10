@@ -1490,7 +1490,6 @@ class OptionType(SwBaseModel):
 
 class OptionField(SwBaseModel):
     name: str
-    opts: List[str]
     type: OptionType
     required: bool = False
     multiple: bool = False
@@ -1498,6 +1497,9 @@ class OptionField(SwBaseModel):
     help: Optional[str] = None
     is_flag: bool = False
     hidden: bool = False
+
+
+Arguments = Dict[str, Dict[str, OptionField]]
 
 
 class StepSpec(SwBaseModel):
@@ -1518,7 +1520,7 @@ class StepSpec(SwBaseModel):
     ext_cmd_args: Optional[str] = None
     parameters_sig: Optional[List[ParameterSignature]] = None
     service_spec: Optional[ServiceSpec] = None
-    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
+    arguments: Optional[Arguments] = None
 
 
 class ModelVersionVo(SwBaseModel):
