@@ -63,21 +63,18 @@ public interface ProjectMapper {
     String getReadme(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from project_info"
-            + " where project_name = #{projectName}"
-            + " and is_deleted = 0")
+            + " where project_name = #{projectName}")
     List<ProjectEntity> findByName(@Param("projectName") String projectName);
 
     @Select("select " + COLUMNS + " from project_info"
             + " where project_name = #{projectName}"
-            + " and owner_id = #{ownerId}"
-            + " and is_deleted = 0")
+            + " and owner_id = #{ownerId}")
     ProjectEntity findExistingByNameAndOwner(@NotNull @Param("projectName") String projectName,
             @NotNull @Param("ownerId") Long ownerId);
 
     @Select("select " + COLUMNS + " from project_info"
             + " where project_name = #{projectName}"
-            + " and owner_id = (select id from user_info where user_name = #{ownerName})"
-            + " and is_deleted = 0")
+            + " and owner_id = (select id from user_info where user_name = #{ownerName})")
     ProjectEntity findExistingByNameAndOwnerName(@NotNull @Param("projectName") String projectName,
             @NotNull @Param("ownerName") String ownerName);
 
