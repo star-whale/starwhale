@@ -1263,22 +1263,22 @@ export interface IModelViewVo {
 }
 
 export interface IOptionField {
-    name?: string
-    type?: IOptionType
-    required?: boolean
-    multiple?: boolean
+    name: string
+    type: IOptionType
+    required: boolean
+    multiple: boolean
     value?: string
     help?: string
-    hidden?: boolean
+    hidden: boolean
     default?: string
-    is_flag?: boolean
+    is_flag: boolean
 }
 
 export interface IOptionType {
-    name?: string
+    name: string
     choices?: string[]
-    param_type?: string
-    case_sensitive?: boolean
+    param_type: string
+    case_sensitive: boolean
 }
 
 export interface IParameterSignature {
