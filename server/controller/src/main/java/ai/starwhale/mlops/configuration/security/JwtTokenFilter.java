@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.StarwhaleException;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
@@ -90,7 +91,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             header = httpServletRequest.getParameter(AUTH_HEADER);
         }
 
-        var projects = getProjects(httpServletRequest);
+        Set<Project> projects;
+        try {
+            projects = getProjects(httpServletRequest);
+        } catch (SwNotFoundException e) {
+            error(httpServletResponse, HttpStatus.NOT_FOUND.value(), Code.validationException, e.getMessage());
+            return;
+        }
+
         if (!verifyProjectsExist(httpServletRequest, httpServletResponse, projects)) {
             return;
         }
