@@ -48,7 +48,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     curl -s -o /tmp/conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${arch_alias}.sh \
     && bash /tmp/conda.sh -b -p /opt/miniconda3 \
     && /opt/miniconda3/bin/conda clean -a -y -f \
-    && rm -rf /tmp/conda.sh
+    && rm -rf /tmp/conda.sh \
+    && ln -sf /opt/miniconda3/bin/conda /usr/local/bin/
 COPY external/condarc /root/.condarc
 
 RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
