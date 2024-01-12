@@ -1331,7 +1331,6 @@ export interface IStepSpec {
     ext_cmd_args?: string
     parameters_sig?: IParameterSignature[]
     service_spec?: IServiceSpec
-    arguments?: Record<string, any>
 }
 
 /**
