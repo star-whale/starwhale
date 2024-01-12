@@ -767,6 +767,13 @@ class FineTune(SwBaseModel):
     require_validation_datasets: Optional[bool] = None
 
 
+class OptionType(SwBaseModel):
+    name: str
+    choices: Optional[List[str]] = None
+    param_type: str
+    case_sensitive: bool
+
+
 class ParameterSignature(SwBaseModel):
     name: str
     required: Optional[bool] = None
@@ -1380,6 +1387,18 @@ class ComponentSpec(SwBaseModel):
     component_spec_value_type: ComponentSpecValueType
 
 
+class OptionField(SwBaseModel):
+    name: str
+    type: OptionType
+    required: bool
+    multiple: bool
+    value: Optional[str] = None
+    help: Optional[str] = None
+    hidden: bool
+    default: Optional[str] = None
+    is_flag: bool
+
+
 class PageInfoTaskVo(SwBaseModel):
     total: Optional[int] = None
     list: Optional[List[TaskVo]] = None
@@ -1490,6 +1509,7 @@ class StepSpec(SwBaseModel):
     env: Optional[List[Env]] = None
     expose: Optional[int] = None
     virtual: Optional[bool] = None
+    arguments: Optional[Dict[str, Dict[str, OptionField]]] = None
     job_name: Optional[str] = None
     show_name: str
     require_dataset: Optional[bool] = None

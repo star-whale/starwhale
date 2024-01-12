@@ -190,7 +190,13 @@ class Handler:
         with cls._registering_lock:
             expanded_names: t.Dict[str, t.Set] = {}
 
+            from starwhale.api._impl.argument import ArgumentContext
+
+            ctx = ArgumentContext.get_current_context()
+            handler_args = ctx.asobj()
             for name, handler in cls._registered_handlers.items():
+                handler.arguments = handler_args.get(handler.name)  # type: ignore[assignment]
+
                 if name not in expanded_names:
                     expanded_names[name] = set()
 

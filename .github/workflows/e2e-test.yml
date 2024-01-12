@@ -229,16 +229,17 @@ jobs:
           SERVER_DRIVER: ${{ matrix.server-driver }}
           SW_IMAGE_REPO: "ghcr.io/star-whale"
 
+
+      - name: Test by api side
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh api_test
+        env:
+          SERVER_DRIVER: ${{ matrix.server-driver }}
+
       - name: Post output client-side test logs
         if: failure()
         working-directory: ./scripts/e2e_test
         run: |
           bash start_test.sh show_logs
-        env:
-          SERVER_DRIVER: ${{ matrix.server-driver }}
-
-      - name: Test by api side
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh api_test
         env:
           SERVER_DRIVER: ${{ matrix.server-driver }}

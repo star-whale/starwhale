@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -106,6 +107,55 @@ public class StepSpec {
 
     @JsonProperty("service_spec")
     private ServiceSpec serviceSpec;
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OptionType {
+        @NotNull
+        private String name;
+
+        @NotNull
+        @JsonProperty("param_type")
+        private String paramType;
+
+        private List<String> choices;
+
+        @NotNull
+        @JsonProperty("case_sensitive")
+        private boolean caseSensitive = false;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OptionField {
+        @NotNull
+        private String name;
+        @NotNull
+        private OptionType type;
+        @NotNull
+        private boolean required = false;
+        @NotNull
+        private boolean multiple = false;
+
+        @JsonProperty("default")
+        private String defaultValue;
+
+        /**
+         * used for server side only
+         */
+        private String value;
+
+        private String help;
+
+        @NotNull
+        @JsonProperty("is_flag")
+        private boolean isFlag = false;
+
+        @NotNull
+        private boolean hidden = false;
+    }
+
+    public Map<String, Map<String, OptionField>> arguments;
 
     public void verifyStepSpecArgs() {
         if (CollectionUtils.isEmpty(this.getParametersSig())) {

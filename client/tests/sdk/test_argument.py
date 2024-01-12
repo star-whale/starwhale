@@ -295,7 +295,6 @@ class ArgumentTestCase(TestCase):
         ]["tests.sdk.test_argument:ScalarArguments"]["batch"]
         assert batch == {
             "name": "batch",
-            "opts": ["--batch"],
             "type": {
                 "name": "integer",
                 "param_type": "INT",
@@ -304,10 +303,11 @@ class ArgumentTestCase(TestCase):
             },
             "required": False,
             "multiple": False,
-            "default": 64,
+            "default": "64",
             "help": "batch size",
             "is_flag": False,
             "hidden": False,
+            "value": None,
         }
 
         evaluation_strategy = info[
@@ -321,7 +321,6 @@ class ArgumentTestCase(TestCase):
             "is_flag": False,
             "multiple": False,
             "name": "evaluation_strategy",
-            "opts": ["--evaluation_strategy", "--evaluation-strategy"],
             "required": False,
             "type": {
                 "case_sensitive": True,
@@ -329,6 +328,7 @@ class ArgumentTestCase(TestCase):
                 "name": "choice",
                 "param_type": "CHOICE",
             },
+            "value": None,
         }
 
         debug = info[
@@ -342,7 +342,6 @@ class ArgumentTestCase(TestCase):
             "is_flag": False,
             "multiple": True,
             "name": "debug",
-            "opts": ["--debug"],
             "required": False,
             "type": {
                 "name": "DebugOption",
@@ -350,6 +349,7 @@ class ArgumentTestCase(TestCase):
                 "case_sensitive": False,
                 "choices": None,
             },
+            "value": None,
         }
 
         assert json.loads(json.dumps(info)) == info

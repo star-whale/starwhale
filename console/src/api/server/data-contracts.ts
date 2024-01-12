@@ -1262,6 +1262,25 @@ export interface IModelViewVo {
     versions: IModelVersionViewVo[]
 }
 
+export interface IOptionField {
+    name: string
+    type: IOptionType
+    required: boolean
+    multiple: boolean
+    value?: string
+    help?: string
+    hidden: boolean
+    default?: string
+    is_flag: boolean
+}
+
+export interface IOptionType {
+    name: string
+    choices?: string[]
+    param_type: string
+    case_sensitive: boolean
+}
+
 export interface IParameterSignature {
     name: string
     required?: boolean
@@ -1303,6 +1322,7 @@ export interface IStepSpec {
     /** @format int32 */
     expose?: number
     virtual?: boolean
+    arguments?: Record<string, Record<string, IOptionField>>
     job_name?: string
     show_name: string
     require_dataset?: boolean
