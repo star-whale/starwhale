@@ -3,7 +3,7 @@ import Form from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
 import React from 'react'
 // @ts-ignore
-function WidgetForm({ formData, onChange, onSubmit, form }: any, ref: any) {
+function WidgetForm({ formData, onChange, onSubmit, form }: any, ref?: any) {
     const { schema, uiSchema } = form.schemas
     return (
         <Form
@@ -16,8 +16,9 @@ function WidgetForm({ formData, onChange, onSubmit, form }: any, ref: any) {
             onSubmit={onSubmit}
             // @ts-ignore
             ref={(f) => {
-                // eslint-disable-next-line no-param-reassign
-                ref.current = f
+                if (ref)
+                    // eslint-disable-next-line no-param-reassign
+                    ref.current = f
             }}
             onChange={(e) => {
                 onChange?.(e.formData)

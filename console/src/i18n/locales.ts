@@ -2232,8 +2232,16 @@ const locales0 = {
         zh: '副本',
     },
     'Raw Type': {
-        en: 'Edit',
-        zh: '修改',
+        en: 'Advanced Setting',
+        zh: '高级配置',
+    },
+    'Adjust Arguments': {
+        en: 'Adjust Arguments',
+        zh: '调整参数',
+    },
+    'Parameters': {
+        en: 'Parameters',
+        zh: '参数',
     },
     'eval debug mode': {
         en: 'Debug Mode',

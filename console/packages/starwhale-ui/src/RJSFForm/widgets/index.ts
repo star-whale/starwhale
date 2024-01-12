@@ -1,7 +1,7 @@
 // import AltDateTimeWidget from "./AltDateTimeWidget";
 // import AltDateWidget from "./AltDateWidget";
 // import CheckboxesWidget from "./CheckboxesWidget";
-// import CheckboxWidget from "./CheckboxWidget";
+import CheckboxWidget from './CheckboxWidget'
 // import DateTimeWidget from "./DateTimeWidget";
 // import DateWidget from "./DateWidget";
 // import PasswordWidget from "./PasswordWidget";
@@ -14,7 +14,7 @@ const Widgets = {
     // AltDateTimeWidget,
     // AltDateWidget,
     // CheckboxesWidget,
-    // CheckboxWidget,
+    CheckboxWidget,
     // DateTimeWidget,
     // DateWidget,
     // PasswordWidget,
