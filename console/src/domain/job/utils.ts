@@ -1,5 +1,6 @@
 // @ts-nocheck
-
+import ArgumentFieldTemplate from '@starwhale/ui/RJSFForm/templates/ArgumentFieldTemplate'
+import FieldTemplate from '@starwhale/ui/RJSFForm/templates/FieldTemplate'
 const SPLITER = '@@@'
 
 function convertToRJSF(sourceJson) {
@@ -34,8 +35,9 @@ function convertToRJSF(sourceJson) {
                 if (field) {
                     const rjsfField = {
                         type: mapParamTypeToRJSFType(field.type.param_type),
-                        title: field.help,
+                        title: field.name,
                         default: field.default,
+                        required: field.required,
                     }
 
                     if (field.type.choices && field.type.choices?.length > 0) {
@@ -67,6 +69,11 @@ function convertToRJSF(sourceJson) {
 
                     if (typeof field.type.name === 'object' && field.type.name !== null) {
                         traverse(field.type.name, currentKey, field.multiple)
+                    }
+
+                    uiSchema[currentKey] = {
+                        'ui:help': field.help,
+                        // 'ui:field': FieldTemplate,
                     }
                 }
             })

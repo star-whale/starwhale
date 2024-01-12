@@ -16,6 +16,11 @@ import { convertToRJSF } from '../utils'
 import { Button } from '@starwhale/ui'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { useSelections, useSetState } from 'ahooks'
+import ArgumentFieldTemplate from '@starwhale/ui/RJSFForm/templates/ArgumentFieldTemplate'
+import { FieldTemplateProps } from '@rjsf/utils'
+import ModelArgumentForm from './ModelArgumentForm'
+import ThemedForm from '@starwhale/ui/RJSFForm/ArgumentForm'
+import ArgumentForm from '@starwhale/ui/RJSFForm/ArgumentForm'
 
 const useStyles = createUseStyles({
     modelField: {
@@ -25,13 +30,19 @@ const useStyles = createUseStyles({
         gridTemplateRows: 'minmax(0px, max-content)',
     },
     rjsfForm: {
-        '& .control-label': {
-            flexBasis: '170px !important',
-            width: '170px !important',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+        // '& .control-label': {
+        //     flexBasis: '170px !important',
+        //     width: '170px !important',
+        //     display: '-webkit-box',
+        //     WebkitLineClamp: 2,
+        //     WebkitBoxOrient: 'vertical',
+        //     overflow: 'hidden',
+        // },
+        '& .rjsf fieldset .form-group > div': {
+            width: '400px !important',
+        },
+        '& .rjsf .array-item .field > p': {
+            display: 'none',
         },
     },
 })
@@ -99,6 +110,7 @@ function FormFieldModel({
             'ui:submitButtonOptions': { norender: true },
         }
         const { schema, uiSchema } = convertToRJSF(currentStepSource ?? [])
+        console.log(schema)
         return {
             schemas: {
                 schema,
@@ -176,6 +188,8 @@ function FormFieldModel({
         setRJSFData(_RJSFData)
     }, [stepSource, setRJSFData])
 
+    console.log(RJSFData)
+
     return (
         <>
             <div className={styles.modelField}>
@@ -248,7 +262,7 @@ function FormFieldModel({
                                                     <div className='pt-[15px] pb-[25px] color-[rgba(2,16,43,0.60)] b-[#E2E7F0] border-t-1'>
                                                         {t('Parameters')}
                                                     </div>
-                                                    <WidgetForm
+                                                    <ArgumentForm
                                                         form={getRJSFFormSchema([spec])}
                                                         formData={RJSFData}
                                                         onChange={setRJSFData}
