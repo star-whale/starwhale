@@ -5,6 +5,6 @@ environment:
   os: ubuntu:20.04
   cuda: "11.7"
   python: "3.10"
-  starwhale_version: "0.6.7"
+  starwhale_version: "0.6.10" # use @starwhale.argument feature
 dependencies:
   - requirements.txt

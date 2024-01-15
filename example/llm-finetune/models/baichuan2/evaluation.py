@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+import dataclasses
 
 import torch
 import gradio
@@ -9,7 +10,7 @@ from peft import PeftModel
 from transformers import AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM
 from transformers.generation.utils import GenerationConfig
 
-from starwhale import handler, evaluation
+from starwhale import handler, argument, evaluation
 
 try:
     from .utils import BASE_MODEL_DIR, ADAPTER_MODEL_DIR
@@ -18,6 +19,22 @@ except ImportError:
 
 _g_model = None
 _g_tokenizer = None
+
+
+@dataclasses.dataclass
+class ModelGenerateArguments:
+    max_new_tokens: int = dataclasses.field(
+        default=512, metadata={"help": "max length of generated text"}
+    )
+    do_sample: bool = dataclasses.field(default=True, metadata={"help": "do sample"})
+    temperature: float = dataclasses.field(
+        default=0.7, metadata={"help": "temperature"}
+    )
+    top_p: float = dataclasses.field(default=0.9, metadata={"help": "top p"})
+    top_k: int = dataclasses.field(default=30, metadata={"help": "top k"})
+    repetition_penalty: float = dataclasses.field(
+        default=1.3, metadata={"help": "repetition penalty"}
+    )
 
 
 def _load_model_and_tokenizer() -> t.Tuple:
@@ -57,26 +74,19 @@ def _load_model_and_tokenizer() -> t.Tuple:
     return _g_model, _g_tokenizer
 
 
+@argument(ModelGenerateArguments)
 @evaluation.predict(
     resources={"nvidia.com/gpu": 1},
     replicas=1,
     log_mode="plain",
 )
-def copilot_predict(data: dict) -> str:
+def copilot_predict(data: dict, arguments: ModelGenerateArguments) -> str:
     model, tokenizer = _load_model_and_tokenizer()
     # support z-bench-common dataset: https://cloud.starwhale.cn/projects/401/datasets/161/versions/223/files
     messages = [{"role": "user", "content": data["prompt"]}]
 
     config_dict = model.generation_config.to_dict()
-    # TODO: use arguments
-    config_dict.update(
-        max_new_tokens=int(os.environ.get("MAX_MODEL_LENGTH", 512)),
-        do_sample=True,
-        temperature=float(os.environ.get("TEMPERATURE", 0.7)),
-        top_p=float(os.environ.get("TOP_P", 0.9)),
-        top_k=int(os.environ.get("TOP_K", 30)),
-        repetition_penalty=float(os.environ.get("REPETITION_PENALTY", 1.3)),
-    )
+    config_dict.update(dataclasses.asdict(arguments))
     return model.chat(
         tokenizer,
         messages=messages,

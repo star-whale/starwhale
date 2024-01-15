@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
 import typing as t
-from dataclasses import dataclass
+import dataclasses
 
 import torch
 from peft import (
@@ -20,9 +19,9 @@ from transformers import (
     AutoModelForCausalLM,
 )
 from torch.utils.data import ChainDataset
-from transformers.training_args import TrainingArguments
+from transformers.training_args import TrainingArguments as HFTrainingArguments
 
-from starwhale import Dataset, finetune
+from starwhale import Dataset, argument, finetune
 
 try:
     from .utils import BASE_MODEL_DIR, ADAPTER_MODEL_DIR
@@ -36,7 +35,7 @@ except ImportError:
 torch.backends.cuda.matmul.allow_tf32 = True
 
 
-@dataclass
+@dataclasses.dataclass
 class DataCollatorForCausalLM:
     tokenizer: PreTrainedTokenizer
     source_max_len: int
@@ -81,12 +80,78 @@ class DataCollatorForCausalLM:
         }
 
 
+@dataclasses.dataclass
+class ModelArguments:
+    model_max_length: int = dataclasses.field(
+        default=512, metadata={"help": "max length of generated text"}
+    )
+
+
+@dataclasses.dataclass
+class TrainingArguments(HFTrainingArguments):
+    # change default value
+    # copy from https://github.com/baichuan-inc/Baichuan2/blob/main/README.md#%E5%8D%95%E6%9C%BA%E8%AE%AD%E7%BB%83
+    output_dir: str = dataclasses.field(
+        default=str(ADAPTER_MODEL_DIR), metadata={"help": "output dir"}
+    )
+    optim: str = dataclasses.field(
+        default="adamw_torch", metadata={"help": "optimizer"}
+    )
+    report_to: str = dataclasses.field(
+        default="none", metadata={"help": "report metrics to some service"}
+    )
+    num_train_epochs: int = dataclasses.field(default=2, metadata={"help": "epochs"})
+    max_steps: int = dataclasses.field(default=18, metadata={"help": "max steps"})
+    per_device_train_batch_size: int = dataclasses.field(
+        default=2, metadata={"help": "per device train batch size"}
+    )
+    gradient_accumulation_steps: int = dataclasses.field(
+        default=16, metadata={"help": "gradient accumulation steps"}
+    )
+    save_strategy: str = dataclasses.field(
+        default="no", metadata={"help": "save strategy"}
+    )
+    learning_rate: float = dataclasses.field(
+        default=2e-5, metadata={"help": "learning rate"}
+    )
+    lr_scheduler_type: str = dataclasses.field(
+        default="constant", metadata={"help": "lr scheduler type"}
+    )
+    adam_beta1: float = dataclasses.field(default=0.9, metadata={"help": "adam beta1"})
+    adam_beta2: float = dataclasses.field(default=0.98, metadata={"help": "adam beta2"})
+    adam_epsilon: float = dataclasses.field(
+        default=1e-8, metadata={"help": "adam epsilon"}
+    )
+    max_grad_norm: float = dataclasses.field(
+        default=1.0, metadata={"help": "max grad norm"}
+    )
+    weight_decay: float = dataclasses.field(
+        default=1e-4, metadata={"help": "weight decay"}
+    )
+    warmup_ratio: float = dataclasses.field(
+        default=0.0, metadata={"help": "warmup ratio"}
+    )
+    logging_steps: int = dataclasses.field(
+        default=10, metadata={"help": "logging steps"}
+    )
+    gradient_checkpointing: bool = dataclasses.field(
+        default=False, metadata={"help": "gradient checkpointing"}
+    )
+    remove_unused_columns: bool = dataclasses.field(
+        default=False, metadata={"help": "remove unused columns"}
+    )
+
+
+@argument((ModelArguments, TrainingArguments))
 @finetune(
     resources={"nvidia.com/gpu": 1},
     require_train_datasets=True,
     model_modules=[copilot_predict, "finetune:lora_finetune"],
 )
-def lora_finetune(train_datasets: t.List[Dataset]) -> None:
+def lora_finetune(
+    train_datasets: t.List[Dataset],
+    arguments: t.Tuple[ModelArguments, HFTrainingArguments],
+) -> None:
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_DIR,
         trust_remote_code=True,
@@ -133,38 +198,15 @@ def lora_finetune(train_datasets: t.List[Dataset]) -> None:
         if "norm" in name:
             module = module.to(torch.float32)
 
+    model_arguments, train_arguments = arguments
+
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL_DIR,
         use_fast=False,
         trust_remote_code=True,
-        model_max_length=int(os.environ.get("MODEL_MAX_LENGTH", 512)),
+        model_max_length=model_arguments.model_max_length,
     )
 
-    # TODO: support finetune arguments
-    # copy from https://github.com/baichuan-inc/Baichuan2/blob/main/README.md#%E5%8D%95%E6%9C%BA%E8%AE%AD%E7%BB%83
-    train_args = TrainingArguments(
-        output_dir=str(ADAPTER_MODEL_DIR),
-        optim="adamw_torch",
-        report_to="none",
-        num_train_epochs=int(os.environ.get("NUM_TRAIN_EPOCHS", 2)),
-        max_steps=int(os.environ.get("MAX_STEPS", 18)),
-        per_device_train_batch_size=2,  # more batch size will cause OOM
-        gradient_accumulation_steps=16,
-        save_strategy="no",  # no need to save checkpoint for finetune
-        learning_rate=2e-5,
-        lr_scheduler_type="constant",
-        adam_beta1=0.9,
-        adam_beta2=0.98,
-        adam_epsilon=1e-8,
-        max_grad_norm=1.0,
-        weight_decay=1e-4,
-        warmup_ratio=0.0,
-        logging_steps=10,
-        gradient_checkpointing=False,
-        remove_unused_columns=False,
-    )
-
-    # TODO: support deepspeed
     train_dataset = ChainDataset(
         [
             ds.to_pytorch(
@@ -179,7 +221,7 @@ def lora_finetune(train_datasets: t.List[Dataset]) -> None:
     trainer = Trainer(
         model=model,
         tokenizer=tokenizer,
-        args=train_args,
+        args=train_arguments,
         train_dataset=train_dataset,
     )
 
