@@ -11,15 +11,10 @@ import { createUseStyles } from 'react-jss'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
 import { IStepSpec } from '@/api'
-import { WidgetForm } from '@starwhale/core/form'
 import { convertToRJSF } from '../utils'
 import { Button } from '@starwhale/ui'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { useSelections, useSetState } from 'ahooks'
-import ArgumentFieldTemplate from '@starwhale/ui/RJSFForm/templates/ArgumentFieldTemplate'
-import { FieldTemplateProps } from '@rjsf/utils'
-import ModelArgumentForm from './ModelArgumentForm'
-import ThemedForm from '@starwhale/ui/RJSFForm/ArgumentForm'
 import ArgumentForm from '@starwhale/ui/RJSFForm/ArgumentForm'
 
 const useStyles = createUseStyles({
@@ -110,7 +105,6 @@ function FormFieldModel({
             'ui:submitButtonOptions': { norender: true },
         }
         const { schema, uiSchema } = convertToRJSF(currentStepSource ?? [])
-        console.log(schema)
         return {
             schemas: {
                 schema,
@@ -187,8 +181,6 @@ function FormFieldModel({
         })
         setRJSFData(_RJSFData)
     }, [stepSource, setRJSFData])
-
-    console.log(RJSFData)
 
     return (
         <>

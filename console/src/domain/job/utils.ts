@@ -1,6 +1,4 @@
 // @ts-nocheck
-import ArgumentFieldTemplate from '@starwhale/ui/RJSFForm/templates/ArgumentFieldTemplate'
-import FieldTemplate from '@starwhale/ui/RJSFForm/templates/FieldTemplate'
 const SPLITER = '@@@'
 
 function convertToRJSF(sourceJson) {

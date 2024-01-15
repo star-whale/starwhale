@@ -15,6 +15,7 @@ const Index: Partial<TemplatesType> = {
     ArrayFieldItemTemplate,
     ArrayFieldTemplate: ArrayFieldTemplate as TemplatesType['ArrayFieldTemplate'],
     // BaseInputTemplate,
+    // @ts-ignore
     ButtonTemplates: {
         AddButton,
         MoveDownButton,

@@ -27,9 +27,9 @@ export default function ArrayFieldTemplate<
         onAddClick,
         readonly,
         registry,
-        required,
+        // required,
         schema,
-        title,
+        // title,
     } = props
     const uiOptions = getUiOptions<T, S, F>(uiSchema)
     const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate', T, S, F>(
@@ -42,17 +42,15 @@ export default function ArrayFieldTemplate<
         registry,
         uiOptions
     )
-    const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', T, S, F>(
-        'ArrayFieldTitleTemplate',
-        registry,
-        uiOptions
-    )
+    // const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate', T, S, F>(
+    //     'ArrayFieldTitleTemplate',
+    //     registry,
+    //     uiOptions
+    // )
     // Button templates are not overridden in the uiSchema
     const {
         ButtonTemplates: { AddButton },
     } = registry.templates
-
-    console.log(items)
 
     return (
         <fieldset className={className} id={idSchema.$id}>

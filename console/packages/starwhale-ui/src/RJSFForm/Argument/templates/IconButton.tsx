@@ -4,12 +4,14 @@ import { ExtendButton } from '@starwhale/ui/Button'
 export default function IconButton<T = any, S extends StrictRJSFSchema = RJSFSchema, F extends FormContextType = any>(
     props: IconButtonProps<T, S, F>
 ) {
-    const { iconType = 'default', icon, className, uiSchema, registry, ...otherProps } = props
+    const { icon, ...otherProps } = props
     return (
         // <button type='button' className={`btn btn-${iconType} ${className}`} {...otherProps}>
         //     <i className={`iconfont icon-${icon}`} />
         // </button>
-        <ExtendButton {...props} icon={icon} kind='secondary' />
+        //
+        // @ts-ignore
+        <ExtendButton {...otherProps} icon={icon as any} kind='secondary' />
     )
 }
 
