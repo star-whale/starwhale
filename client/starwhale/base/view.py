@@ -186,80 +186,8 @@ class BaseTermView(SWCliConfigMixed):
         return history
 
     @staticmethod
-    def _print_list(
-        _bundles: t.Dict[str, t.Any], show_removed: bool = False, fullname: bool = False
-    ) -> None:
-        table = Table(title="Bundle List", box=box.SIMPLE, expand=True)
-
-        table.add_column("Name")
-        table.add_column("Version")
-        table.add_column("Tags")
-        table.add_column("Size")
-        table.add_column("Runtime")
-        table.add_column("Created")
-
-        for _name, _versions in _bundles.items():
-            for _v in _versions:
-                if show_removed ^ _v["is_removed"]:
-                    continue
-
-                _version = (
-                    _v["version"]
-                    if fullname or show_removed
-                    else _v["version"][:SHORT_VERSION_CNT]
-                )
-                if _v.get("id"):
-                    _version = f"[{_v['id']:2}] {_version}"
-
-                table.add_row(
-                    _name,
-                    _version,
-                    ",".join(_v.get("tags", [])),
-                    pretty_bytes(_v["size"]),
-                    _v.get("runtime", "--"),
-                    _v[CREATED_AT_KEY],
-                )
-
-        console.print(table)
-
-    @staticmethod
     def pretty_json(data: t.Any) -> None:
         print(json.dumps(data, indent=4, sort_keys=True, cls=Encoder))
-
-    @staticmethod
-    def list_data(
-        _bundles: t.Dict[str, t.Any], show_removed: bool = False, fullname: bool = False
-    ) -> t.List[t.Dict[str, t.Any]]:
-        result = []
-        for _name, _versions in _bundles.items():
-            # compatible with standalone and cloud
-            # TODO: use a better way to handle this
-            if not isinstance(_versions, (list, tuple)):
-                _versions = [_versions]
-
-            for _v in _versions:
-                if show_removed ^ _v.get("is_removed", False):
-                    continue
-
-                _info = {
-                    "version": (
-                        _v["version"]
-                        if fullname or show_removed
-                        else _v["version"][:SHORT_VERSION_CNT]
-                    ),
-                    "name": _name,
-                    CREATED_AT_KEY: _v[CREATED_AT_KEY],
-                    "tags": _v.get("tags"),
-                }
-
-                for k in ("rows", "mode", "python", "size"):
-                    if k in _v:
-                        _info[k] = _v[k]
-
-                result.append(_info)
-
-        order_keys = [Order("name"), Order(CREATED_AT_KEY, True)]
-        return sort_obj_list(result, order_keys)
 
     @staticmethod
     def place_holder_for_empty(place_holder: str = "--") -> t.Callable[[str], str]:
@@ -353,7 +281,7 @@ class BaseTermView(SWCliConfigMixed):
                     CREATED_AT_KEY: _h.get(CREATED_AT_KEY),
                 }
             )
-        return result
+        return sort_obj_list(result, [Order(CREATED_AT_KEY, True)])
 
     @staticmethod
     def must_have_project(uri: Project) -> None:
