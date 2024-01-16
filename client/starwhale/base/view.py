@@ -353,7 +353,7 @@ class BaseTermView(SWCliConfigMixed):
                     CREATED_AT_KEY: _h.get(CREATED_AT_KEY),
                 }
             )
-        return result
+        return sort_obj_list(result, [Order(CREATED_AT_KEY, True)])
 
     @staticmethod
     def must_have_project(uri: Project) -> None:
