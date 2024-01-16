@@ -1,4 +1,5 @@
 import os
+import warnings
 
 from rich import traceback
 
@@ -31,6 +32,7 @@ def init_logger(verbose: int = 0) -> None:
     if verbose == 0:
         lvl = console.ERROR
         max_frames = 1
+        warnings.simplefilter(action="ignore")
     elif verbose == 1:
         lvl = console.WARNING
         max_frames = 5
