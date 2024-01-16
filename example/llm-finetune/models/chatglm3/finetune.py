@@ -72,6 +72,10 @@ class TrainArguments(Seq2SeqTrainingArguments):
     remove_unused_columns: bool = dataclasses.field(
         default=False, metadata={"help": "remove unused columns"}
     )
+    # Currently, we don't support `Optional[Union[str, Path, GenerationConfig]]` for the command line.
+    generation_config: t.Optional[str] = dataclasses.field(
+        default=None, metadata={"help": "generation config json file path"}
+    )
 
 
 @argument((ModelArguments, DatasetArguments, TrainArguments))
