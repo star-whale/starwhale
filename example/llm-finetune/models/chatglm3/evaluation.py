@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import os
 import typing as t
+import dataclasses
 
 import torch
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 
-from starwhale import evaluation
+from starwhale import argument, evaluation
 from starwhale.api.service import api, LLMChat
 
 try:
@@ -18,15 +18,26 @@ _g_model = None
 _g_tokenizer = None
 
 
-def _load_model_and_tokenizer() -> t.Tuple:
+@dataclasses.dataclass
+class ModelGenerateArguments:
+    max_length: int = dataclasses.field(
+        default=512, metadata={"help": "max length of generated text"}
+    )
+    top_p: float = dataclasses.field(default=0.9, metadata={"help": "top p"})
+    temperature: float = dataclasses.field(
+        default=1.2, metadata={"help": "temperature"}
+    )
+    pre_seq_len: int = dataclasses.field(default=128, metadata={"help": "pre seq len"})
+
+
+def _load_model_and_tokenizer(pre_seq_len: int = 128) -> t.Tuple:
     global _g_model, _g_tokenizer
 
     if _g_model is None:
-        # TODO: after starwhale supports parameters, we can remove os environ.
         config = AutoConfig.from_pretrained(
             BASE_MODEL_DIR,
             trust_remote_code=True,
-            pre_seq_len=int(os.environ.get("PT_PRE_SEQ_LEN", "128")),
+            pre_seq_len=pre_seq_len,
         )
         _g_model = (
             AutoModel.from_pretrained(
@@ -59,21 +70,22 @@ def _load_model_and_tokenizer() -> t.Tuple:
     return _g_model, _g_tokenizer
 
 
+@argument(ModelGenerateArguments)
 @evaluation.predict(
     resources={"nvidia.com/gpu": 1},
     replicas=1,
     log_mode="plain",
 )
-def copilot_predict(data: dict) -> str:
-    model, tokenizer = _load_model_and_tokenizer()
+def copilot_predict(data: dict, argument: ModelGenerateArguments) -> str:
+    model, tokenizer = _load_model_and_tokenizer(argument.pre_seq_len)
     print(data["prompt"])
     response, _ = model.chat(
         tokenizer,
         data["prompt"],
         history=[],
-        max_length=int(os.environ.get("MAX_LENGTH", "512")),
-        top_p=float(os.environ.get("TOP_P", "0.9")),
-        temperature=float(os.environ.get("TEMPERATURE", "1.2")),
+        max_length=argument.max_length,
+        top_p=argument.top_p,
+        temperature=argument.temperature,
     )
     return response
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 import typing as t
+import dataclasses
 from typing import Any
-from dataclasses import dataclass
 
 import torch
 from transformers import (
@@ -18,7 +18,7 @@ from transformers import (
 from torch.utils.data import ChainDataset
 from transformers.modeling_utils import unwrap_model, PreTrainedModel
 
-from starwhale import Dataset, finetune
+from starwhale import Dataset, argument, finetune
 
 try:
     from .consts import PT_DIR, BASE_MODEL_DIR
@@ -28,16 +28,67 @@ except ImportError:
 # fork from https://github.com/THUDM/ChatGLM3/tree/main/finetune_chatmodel_demo
 
 
+@dataclasses.dataclass
+class ModelArguments:
+    pre_seq_len: int = dataclasses.field(default=128, metadata={"help": "pre seq len"})
+
+
+@dataclasses.dataclass
+class DatasetArguments:
+    max_seq_len: int = dataclasses.field(default=2048, metadata={"help": "max seq len"})
+
+
+@dataclasses.dataclass
+class TrainArguments(Seq2SeqTrainingArguments):
+    # change default value
+    output_dir: str = dataclasses.field(
+        default=str(PT_DIR), metadata={"help": "output dir"}
+    )
+    report_to: str = dataclasses.field(
+        default="none", metadata={"help": "report metrics to some service"}
+    )
+    logging_steps: int = dataclasses.field(
+        default=10, metadata={"help": "logging steps"}
+    )
+    per_device_train_batch_size: int = dataclasses.field(
+        default=1, metadata={"help": "per device train batch size"}
+    )
+    gradient_accumulation_steps: int = dataclasses.field(
+        default=16, metadata={"help": "gradient accumulation steps"}
+    )
+    save_strategy: str = dataclasses.field(
+        default="no", metadata={"help": "save strategy"}
+    )
+    learning_rate: float = dataclasses.field(
+        default=2e-2, metadata={"help": "learning rate"}
+    )
+    max_steps: int = dataclasses.field(default=18, metadata={"help": "max steps"})
+    num_train_epochs: int = dataclasses.field(
+        default=2, metadata={"help": "num train epochs"}
+    )
+    gradient_checkpointing: bool = dataclasses.field(
+        default=False, metadata={"help": "gradient checkpointing"}
+    )
+    remove_unused_columns: bool = dataclasses.field(
+        default=False, metadata={"help": "remove unused columns"}
+    )
+
+
+@argument((ModelArguments, DatasetArguments, TrainArguments))
 @finetune(
     resources={"nvidia.com/gpu": 1},
     require_train_datasets=True,
     model_modules=["evaluation", "finetune"],
 )
-def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
+def p_tuning_v2_finetune(
+    train_datasets: t.List[Dataset],
+    arguments: t.Tuple[ModelArguments, DatasetArguments, TrainArguments],
+) -> None:
+    model_arguments, dataset_arguments, train_arguments = arguments
     config = AutoConfig.from_pretrained(
         BASE_MODEL_DIR,
         trust_remote_code=True,
-        pre_seq_len=int(os.environ.get("PT_PRE_SEQ_LEN", "128")),
+        pre_seq_len=model_arguments.pre_seq_len,
         prefix_projection=False,
     )
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_DIR, trust_remote_code=True)
@@ -68,7 +119,7 @@ def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
             ds.to_pytorch(
                 transform=MultiTurnDataTransform(
                     tokenizer=tokenizer,
-                    max_seq_len=int(os.environ.get("MAX_SEQ_LEN", 2048)),
+                    max_seq_len=dataset_arguments.max_seq_len,
                 )
             )
             for ds in train_datasets
@@ -78,19 +129,7 @@ def p_tuning_v2_finetune(train_datasets: t.List[Dataset]) -> None:
     trainer = PrefixTrainer(
         model=model,
         tokenizer=tokenizer,
-        args=Seq2SeqTrainingArguments(
-            output_dir=str(PT_DIR),
-            report_to="none",
-            logging_steps=10,
-            per_device_train_batch_size=1,  # more batch size will cause OOM
-            gradient_accumulation_steps=16,
-            save_strategy="no",  # no need to save checkpoint for finetune
-            learning_rate=2e-2,
-            max_steps=int(os.environ.get("MAX_STEPS", 18)),
-            num_train_epochs=int(os.environ.get("NUM_TRAIN_EPOCHS", 2)),
-            gradient_checkpointing=False,
-            remove_unused_columns=False,
-        ),
+        args=train_arguments,
         train_dataset=train_dataset,
         data_collator=DataCollatorForSeq2Seq(
             tokenizer=tokenizer,
@@ -157,7 +196,7 @@ class PrefixTrainer(Trainer):
         torch.save(self.args, os.path.join(output_dir, self.TRAINING_ARGS_NAME))
 
 
-@dataclass
+@dataclasses.dataclass
 class MultiTurnDataTransform:
     tokenizer: PreTrainedTokenizer
     max_seq_len: int
