@@ -612,7 +612,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     created_at=_info[CREATED_AT_KEY],
                 )
             )
-        return rs, {}
+        return cls.group_and_filter_local_info(rs), {}  # type: ignore
 
     def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
         model_config: ModelConfig = kw["model_config"]

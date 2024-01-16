@@ -1509,7 +1509,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 )
             )
 
-        return ret, {}
+        return cls.group_and_filter_local_info(ret), {}  # type: ignore
 
     @classmethod
     def quickstart_from_uri(

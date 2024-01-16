@@ -1144,7 +1144,7 @@ class StandaloneRuntimeTestCase(TestCase):
         )
 
         rts, _ = StandaloneRuntime.list(Project(""))
-        assert len(rts) == 2
+        assert len(rts) == 1
 
         rtv = runtime_term_view(f"{name}/version/{build_version[:8]}")
         ok, _ = rtv.remove()
