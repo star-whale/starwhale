@@ -543,7 +543,7 @@ echo 'source {venvdir}/bin/activate'
         # TODO: support relocatable editable python package
         sw_cntr_content = f"""
 sed -i '1d' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
-sed -i '1i\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
+sed -i '1i\\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
 
 sed -i 's#^VIRTUAL_ENV=.*$#VIRTUAL_ENV={venvdir}#g' {bin}/activate
 rm -rf {bin}/python3

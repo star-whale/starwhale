@@ -49,7 +49,7 @@ def build(
         remote_project_uri: (str, optional) The destination project uri(cloud://remote-instance/project/starwhale) of the Starwhale Model Package
         add_all: (bool, optional) Add all files in the workdir to the Starwhale Model Package. If the argument is False, the python cache files and virtualenv files will be ignored.
             the ".swignore" file in the workdir will always take effect.
-        tags: (list(str), optional) The tags for the model version. `latest` and `^v\d+$` tags are reserved tags.
+        tags: (list(str), optional) The tags for the model version. `latest` and `^v\\d+$` tags are reserved tags.
         excludes: (list(str), optional) The excludes files or dirs in the workdir. The excludes files or dirs will be ignored when building the Starwhale Model Package.
             The `.swignore` file in the workdir will always take effect.
         package_runtime: (bool, optional) Package the runtime in the Starwhale Model Package. If the argument is True, the Starwhale Model Package will be a standalone package.

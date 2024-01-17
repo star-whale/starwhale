@@ -13,14 +13,12 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
 import numpy
-import torch
 import pytest
 import jsonlines
-import torch.utils.data as tdata
 from PIL import Image as PILImage
 from requests_mock import Mocker
 
-from tests import ROOT_DIR, BaseTestCase
+from tests import ROOT_DIR, skip_py312, BaseTestCase
 from starwhale import Dataset, dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -48,6 +46,13 @@ from starwhale.core.dataset.model import DatasetSummary
 from starwhale.base.models.dataset import LocalDatasetInfo, LocalDatasetInfoBase
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
+
+try:
+    import torch
+    import torch.utils.data as tdata
+except ImportError:
+    torch = None
+    tdata = None
 
 
 class _DatasetSDKTestBase(BaseTestCase):
@@ -1767,6 +1772,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._dataset_builder.signature_bins_meta[0].size == 48
 
 
+@skip_py312
 @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info", MagicMock())
 @patch("starwhale.base.uri.resource.Resource._refine_remote_rc_info", MagicMock())
 class TestPytorch(_DatasetSDKTestBase):
@@ -1944,6 +1950,7 @@ class TestPytorch(_DatasetSDKTestBase):
         assert item["audio"].dtype == torch.float64
 
 
+@skip_py312
 class TestTensorflow(_DatasetSDKTestBase):
     def test_simple_data(self) -> None:
         import tensorflow as tf
@@ -2248,6 +2255,7 @@ class TestHuggingface(_DatasetSDKTestBase):
         assert transform_data["sequence_dict"]["int"] == 1
         assert transform_data["sequence_dict"]["list_int"] == [1, 1, 1]
 
+    @skip_py312
     @patch(
         "starwhale.integrations.huggingface.dataset.hf_datasets.get_dataset_config_names"
     )

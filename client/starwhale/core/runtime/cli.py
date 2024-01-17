@@ -282,7 +282,7 @@ def _quickstart(
     "-t",
     "--tag",
     multiple=True,
-    help="runtime tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+    help="runtime tags, the option can be used multiple times. `latest` and `^v\\d+$` tags are reserved tags.",
 )
 @click.option(
     "--push",
@@ -582,7 +582,7 @@ def _copy(
     DEST: project uri or runtime uri with name.
 
     In default, copy runtime with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
-    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+    `latest` and `^v\\d+$` are the system builtin tags, they are ignored automatically.
 
     When the tags are already used for the other runtime version in the dest instance, you should use `--force` option or adjust the tags.
 

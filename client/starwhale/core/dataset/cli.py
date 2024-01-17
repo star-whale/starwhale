@@ -141,7 +141,7 @@ def dataset_cmd(ctx: click.Context) -> None:
     "-t",
     "--tag",
     multiple=True,
-    help="dataset tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+    help="dataset tags, the option can be used multiple times. `latest` and `^v\\d+$` tags are reserved tags.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "file_encoding",
@@ -350,7 +350,7 @@ def _build(
         swcli dataset build --json /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
         swcli dataset build --name qald9 --json https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
         swcli dataset build --json /path/to/test01.jsonl --json /path/to/test02.jsonl
-        swcli dataset build --json https://modelscope.cn/api/v1/datasets/damo/100PoisonMpts/repo\?Revision\=master\&FilePath\=train.jsonl
+        swcli dataset build --json https://modelscope.cn/api/v1/datasets/damo/100PoisonMpts/repo\\?Revision\\=master\\&FilePath\\=train.jsonl
 
         \b
         - from huggingface dataset
@@ -364,7 +364,7 @@ def _build(
         swcli dataset build --csv /path/to/example.csv --csv-file /path/to/example2.csv
         swcli dataset build --csv /path/to/csv-dir
         swcli dataset build --csv http://example.com/example.csv
-        swcli dataset build --name product-desc-modelscope --csv https://modelscope.cn/api/v1/datasets/lcl193798/product_description_generation/repo\?Revision\=master\&FilePath\=test.csv --encoding=utf-8-sig
+        swcli dataset build --name product-desc-modelscope --csv https://modelscope.cn/api/v1/datasets/lcl193798/product_description_generation/repo\\?Revision\\=master\\&FilePath\\=test.csv --encoding=utf-8-sig
     """
     # TODO: add dry-run
     # TODO: add compress args
@@ -661,7 +661,7 @@ def _copy(
     DEST: project uri or dataset uri with name.
 
     In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
-    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+    `latest` and `^v\\d+$` are the system builtin tags, they are ignored automatically.
 
     When the tags are already used for the other dataset version in the dest instance, you should use `--force` option or adjust the tags.
 
