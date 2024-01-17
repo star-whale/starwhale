@@ -370,7 +370,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 )
             )
 
-        return rs, {}
+        return cls.group_and_filter_local_info(rs), {}  # type: ignore
 
     def build_from_csv_files(self, paths: t.List[PathLike], **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset

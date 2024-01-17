@@ -32,7 +32,14 @@ from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldErro
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.base import ListFilter
 from starwhale.base.uri.project import Project
+from starwhale.base.models.model import LocalModelInfoBase
 from starwhale.base.uri.resource import Resource
+from starwhale.base.models.dataset import LocalDatasetInfoBase
+from starwhale.base.models.runtime import LocalRuntimeVersion
+
+_LOCAL_INFO_TYPE = t.Union[
+    LocalModelInfoBase, LocalRuntimeVersion, LocalDatasetInfoBase
+]
 
 
 class BaseBundle(metaclass=ABCMeta):
@@ -278,3 +285,23 @@ class LocalStorageBundleMixin(LocalStorageBundleProtocol):
                     False,
                 )
             return _ok and _ok2, _reason + _reason2
+
+    @classmethod
+    def group_and_filter_local_info(
+        cls,
+        rows: t.List[_LOCAL_INFO_TYPE],
+    ) -> t.List[_LOCAL_INFO_TYPE]:
+        rs: t.Dict[str, _LOCAL_INFO_TYPE] = {}
+        for row in rows:
+            if not isinstance(
+                row, (LocalModelInfoBase, LocalRuntimeVersion, LocalDatasetInfoBase)
+            ):
+                raise TypeError(f"invalid type {type(row)}")
+
+            if row.name not in rs:
+                rs[row.name] = row
+            else:
+                if row.created_at > rs[row.name].created_at:
+                    rs[row.name] = row
+
+        return list(rs.values())

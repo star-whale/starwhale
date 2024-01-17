@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 from typing import Union
 
-from starwhale import Resource
 from starwhale.base.models.base import SwBaseModel
+from starwhale.base.uri.resource import Resource
 from starwhale.base.client.models.models import RuntimeVo
 
 
