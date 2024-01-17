@@ -143,7 +143,7 @@ public class StepSpec {
         /**
          * used for server side only
          */
-        private String value;
+        private Object value;
 
         private String help;
 
