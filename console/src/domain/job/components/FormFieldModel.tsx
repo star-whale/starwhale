@@ -11,11 +11,11 @@ import { createUseStyles } from 'react-jss'
 import yaml from 'js-yaml'
 import { toaster } from 'baseui/toast'
 import { IStepSpec } from '@/api'
-import { WidgetForm } from '@starwhale/core/form'
 import { convertToRJSF } from '../utils'
 import { Button } from '@starwhale/ui'
 import { getReadableStorageQuantityStr } from '@/utils'
 import { useSelections, useSetState } from 'ahooks'
+import ArgumentForm from '@starwhale/ui/RJSFForm/ArgumentForm'
 
 const useStyles = createUseStyles({
     modelField: {
@@ -25,13 +25,19 @@ const useStyles = createUseStyles({
         gridTemplateRows: 'minmax(0px, max-content)',
     },
     rjsfForm: {
-        '& .control-label': {
-            flexBasis: '170px !important',
-            width: '170px !important',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+        // '& .control-label': {
+        //     flexBasis: '170px !important',
+        //     width: '170px !important',
+        //     display: '-webkit-box',
+        //     WebkitLineClamp: 2,
+        //     WebkitBoxOrient: 'vertical',
+        //     overflow: 'hidden',
+        // },
+        '& .rjsf fieldset .form-group > div': {
+            width: '400px !important',
+        },
+        '& .rjsf .array-item .field > p': {
+            display: 'none',
         },
     },
 })
@@ -248,7 +254,7 @@ function FormFieldModel({
                                                     <div className='pt-[15px] pb-[25px] color-[rgba(2,16,43,0.60)] b-[#E2E7F0] border-t-1'>
                                                         {t('Parameters')}
                                                     </div>
-                                                    <WidgetForm
+                                                    <ArgumentForm
                                                         form={getRJSFFormSchema([spec])}
                                                         formData={RJSFData}
                                                         onChange={setRJSFData}
