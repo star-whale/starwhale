@@ -1392,7 +1392,7 @@ class OptionField(SwBaseModel):
     type: OptionType
     required: bool
     multiple: bool
-    value: Optional[str] = None
+    value: Optional[Dict[str, Any]] = None
     help: Optional[str] = None
     hidden: bool
     default: Optional[str] = None
