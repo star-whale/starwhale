@@ -48,9 +48,44 @@ message Record {
   repeated Column columns = 1;
 }
 
+message Checkpoint {
+  enum OP {
+    CREATE = 0;
+    // if the op is DELETE, only the revision field is valid.
+    DELETE = 1;
+  }
+  OP op = 1;
+  int64 revision = 2;
+  oneof optional_user_data {
+    string user_data = 3;
+  }
+  int64 timestamp = 4;
+  int64 row_count = 5;
+}
+
+message Tombstone {
+  message Range {
+    Column start_key = 1;
+    Column end_key = 2;
+    bool start_inclusive = 3;
+    bool end_inclusive = 4;
+  }
+  message Prefix {
+    string key_prefix = 1;
+  }
+  int64 revision = 1;
+  oneof optional_range_or_prefix {
+    Range range = 2;
+    Prefix prefix = 3;
+  }
+}
+
 message WalEntry {
   enum Type {
     UPDATE = 0;
+    // if the entry is a checkpoint, only the id, table_name and checkpoint fields are valid.
+    CHECKPOINT = 1;
+    TOMBSTONE = 2;
   }
   Type entry_type = 1;
   string table_name = 2;
@@ -58,4 +93,8 @@ message WalEntry {
   repeated Record records = 4;
   int64 id = 5;
   int64 revision = 6;
+  oneof payload {
+    Checkpoint checkpoint = 7;
+    Tombstone tombstone = 8;
+  }
 }

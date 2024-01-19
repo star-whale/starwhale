@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 
 public interface MemoryTable {
 
@@ -31,18 +32,21 @@ public interface MemoryTable {
     void updateFromWal(Wal.WalEntry entry);
 
     // update records, returns the timestamp in milliseconds
+    // TODO remove the return revision in the breaking change version
     long update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
     long updateWithObject(TableSchemaDesc schema, List<Map<String, BaseValue>> records);
 
-    Iterator<RecordResult> query(long timestamp,
+    Iterator<RecordResult> query(
+            long revision,
             Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     Iterator<RecordResult> scan(
-            long timestamp,
+            long revision,
             Map<String, String> columns,
             String start,
             String startType,
@@ -50,7 +54,8 @@ public interface MemoryTable {
             String end,
             String endType,
             boolean endInclusive,
-            boolean keepNone);
+            boolean keepNone
+    );
 
     void lock(boolean forRead);
 
@@ -65,4 +70,55 @@ public interface MemoryTable {
     long getLastRevision();
 
     Map<String, ColumnStatistics> getColumnStatistics(Map<String, String> columnMapping);
+
+    /**
+     * Create a checkpoint, the checkpoint means:
+     * 1. the version for the checkpoint is immutable
+     * 2. the versions outside the checkpoint may be garbage collected
+     * 3. getting the count of the checkpoint is constant time
+     * <p>
+     * It should throw SwValidationException if the checkpoint already exists
+     * (exists means that the latest revision has checkpoint)
+     *
+     * @param userData user data, nullable
+     * @return checkpoint
+     */
+    Checkpoint createCheckpoint(String userData);
+
+    /**
+     * Get the checkpoint by revision
+     *
+     * @return checkpoint list or empty list if table has no checkpoint (without exception)
+     */
+    List<Checkpoint> getCheckpoints();
+
+    /**
+     * Delete the checkpoint by revision
+     * It should throw SwNotFoundException if the checkpoint does not exist
+     *
+     * @param revision revision in checkpoint
+     */
+    void deleteCheckpoint(long revision);
+
+    /**
+     * Batch delete rows by start end
+     *
+     * @param start          start key, nullable
+     *                       if start is null, it means start from the beginning
+     *                       if start is not null, it means start from the start key
+     *                       (inclusive or not depends on startInclusive)
+     * @param startInclusive start key inclusive or not
+     * @param end            end key, nullable
+     *                       if end is null, it means end at the end
+     *                       if end is not null, it means end at the end key (inclusive or not depends on endInclusive)
+     * @param endInclusive   end key inclusive or not
+     */
+    void deleteRowsWithRange(BaseValue start, Boolean startInclusive, BaseValue end, Boolean endInclusive);
+
+    /**
+     * Delete rows with key prefix
+     *
+     * @param keyPrefix key prefix
+     */
+    void deleteRowsWithKeyPrefix(@NotNull String keyPrefix);
 }

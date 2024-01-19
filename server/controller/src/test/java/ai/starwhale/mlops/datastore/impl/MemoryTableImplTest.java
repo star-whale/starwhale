@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
@@ -34,9 +35,12 @@ import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.type.BaseValue;
+import ai.starwhale.mlops.datastore.type.Int32Value;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
+import ai.starwhale.mlops.datastore.type.StringValue;
 import ai.starwhale.mlops.datastore.type.TupleValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
@@ -52,11 +56,15 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -64,6 +72,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Slf4j
 public class MemoryTableImplTest {
 
     private static List<RecordResult> scanAll(
@@ -3135,5 +3144,323 @@ public class MemoryTableImplTest {
                                     null, null, false, null, null, false, false)),
                     is(expected));
         }
+    }
+
+    @Test
+    public void testCheckpoint() throws IOException {
+        var memoryTable = createInstance("checkpoint-test");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()));
+        // insert row
+        var t1 = memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "0", "a", "1")));
+        // modify this row
+        var t2 = memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "0", "a", "2")));
+
+        // get the row in revision t1
+        var result = memoryTable.query(t1, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(1))))));
+
+        // get the row in revision t2
+        result = memoryTable.query(t2, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(2))))));
+
+        // add a checkpoint
+        var cp1 = memoryTable.createCheckpoint("foo");
+        assertEquals("foo", cp1.getUserData());
+        assertEquals(t2, cp1.getRevision());
+        assertEquals(1, cp1.getRowCount());
+
+        var cps = memoryTable.getCheckpoints();
+        assertEquals(1, cps.size());
+        assertEquals(cp1, cps.get(0));
+
+        // |  t1  |  t2  |
+        // |  1   |  2   |
+        //           ^
+        //          cp1
+
+        // get the row in revision t1
+        result = memoryTable.query(t1, Map.of("a", "a"), null, null, false);
+        // the t1 version can't be garbage collected because there is no previous checkpoint
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(1))))));
+
+        // get the row in revision t2
+        result = memoryTable.query(t2, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(2))))));
+
+        // add version v3
+        var t3 = memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "0", "a", "3")));
+        // get the row in revision t3
+        result = memoryTable.query(t3, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
+
+        // add checkpoint
+        var cp2 = memoryTable.createCheckpoint("bar");
+        assertEquals("bar", cp2.getUserData());
+        assertEquals(t3, cp2.getRevision());
+        assertEquals(1, cp2.getRowCount());
+
+        cps = memoryTable.getCheckpoints();
+        assertEquals(2, cps.size());
+        assertEquals(cp1, cps.get(0));
+        assertEquals(cp2, cps.get(1));
+
+        // |  t1  |  t2  |  t3  |
+        // |  1   |  2   |  3   |
+        //           ^      ^
+        //          cp1    cp2
+
+        // add checkpoint without new version added, will throw exception
+        assertThrows(SwValidationException.class, () -> memoryTable.createCheckpoint("baz"));
+
+        // add t4
+        var t4 = memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "0", "a", "4")));
+
+        // get the row in revision t2 again
+        result = memoryTable.query(t2, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(2))))));
+
+        // delete the checkpoint in t2
+        memoryTable.deleteCheckpoint(t2);
+        cps = memoryTable.getCheckpoints();
+        assertEquals(1, cps.size());
+        assertEquals(cp2, cps.get(0));
+
+        // |  t1  |  t3  |  t4  |
+        // |  1   |  3   |  4   |
+        //           ^
+        //          cp1
+
+        // get the row in revision t2 will throw exception(t2 has been garbage collected)
+        assertThrows(SwNotFoundException.class, () -> memoryTable.query(t2, Map.of("a", "a"), null, null, false));
+
+        // get t3
+        result = memoryTable.query(t3, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
+
+        // reload from wal
+        this.walManager.terminate();
+        MemoryTableImplTest.this.walManager = new WalManager(MemoryTableImplTest.this.storageAccessService,
+                4096,
+                MemoryTableImplTest.this.fs.getPath("/wal_cache"),
+                "wal/",
+                3);
+        var reloadedMemoryTable = createInstance("checkpoint-test");
+        var it = MemoryTableImplTest.this.walManager.readAll();
+        while (it.hasNext()) {
+            reloadedMemoryTable.updateFromWal(it.next());
+        }
+
+        cps = reloadedMemoryTable.getCheckpoints();
+        assertEquals(1, cps.size());
+        assertEquals(cp2, cps.get(0));
+
+        // get the row in revision t2 will get []
+        assertThrows(SwNotFoundException.class, () -> memoryTable.query(t2, Map.of("a", "a"), null, null, false));
+
+        // get t3
+        result = reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(3))))));
+
+        // delete the checkpoint in t2 will throw exception
+        assertThrows(SwNotFoundException.class, () -> reloadedMemoryTable.deleteCheckpoint(t2));
+
+        // delete the checkpoint in t3
+        reloadedMemoryTable.deleteCheckpoint(t3);
+        cps = reloadedMemoryTable.getCheckpoints();
+        assertEquals(0, cps.size());
+
+        // |  t1  |  t4  |
+        // |  1   |  4   |
+
+        // get t3
+        assertThrows(SwNotFoundException.class,
+                () -> reloadedMemoryTable.query(t3, Map.of("a", "a"), null, null, false));
+
+        // get t4
+        result = reloadedMemoryTable.query(t4, Map.of("a", "a"), null, null, false);
+        assertThat(ImmutableList.copyOf(result),
+                is(List.of(new RecordResult(BaseValue.valueOf(0), false, Map.of("a", BaseValue.valueOf(4))))));
+    }
+
+    @Test
+    public void testCheckpointIntegrate() {
+        var memoryTable = createInstance("checkpoint-integrate");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("b").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("c").type("INT32").build()
+                ));
+
+        var expect = new HashMap<String, BaseValue>();
+
+        // snapshot of the checkpoints
+        var snapshots = new TreeMap<Long, Map<String, Object>>();
+
+        // insert row with random cells
+        var random = new Random();
+        for (int i = 0; i < 1000; i++) {
+            var cells = new HashMap<String, Object>();
+            var j = random.nextInt();
+            cells.put("key", "1");
+            var v1 = new Int32Value(i);
+            cells.put("a", v1.encode(false));
+            expect.put("a", v1);
+
+            if (j % 2 == 0) {
+                var v2 = new StringValue(UUID.randomUUID().toString());
+                cells.put("b", v2.getValue());
+                expect.put("b", v2);
+            }
+            if (j % 3 == 0) {
+                var v3 = new Int32Value(random.nextInt());
+                cells.put("c", v3.encode(false));
+                expect.put("c", v3);
+            }
+            if (j % 5 == 0) {
+                // delete the row
+                cells.put("-", "1");
+                expect.clear();
+            }
+
+            log.info("insert cells: {}", cells);
+            memoryTable.update(tableSchemaDesc, List.of(cells));
+
+            var addSnapshot = false;
+            if (j % 7 == 0) {
+                log.info("create checkpoint");
+                memoryTable.createCheckpoint("foo");
+                // only record the snapshot of the checkpoint to save memory
+                addSnapshot = true;
+            }
+
+            if (j % 11 == 0) {
+                var cps = memoryTable.getCheckpoints();
+                // remove a random checkpoint
+                if (!cps.isEmpty()) {
+                    var rev = cps.get(random.nextInt(cps.size())).getRevision();
+                    log.info("delete checkpoint: {}", rev);
+                    memoryTable.deleteCheckpoint(rev);
+                }
+            }
+
+            var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a", "b", "b", "c", "c"), null, null, false);
+            var result = ImmutableList.copyOf(resp);
+            assertThat(result.size(), is(1));
+            if (cells.containsKey("-")) {
+                assertThat(result.get(0).isDeleted(), is(true));
+            } else {
+                assertThat(result.get(0).getValues(), is(expect));
+            }
+            if (addSnapshot) {
+                snapshots.put(memoryTable.getLastRevision(), new HashMap<>(expect));
+            }
+        }
+
+        // check all the checkpoints
+        var cps = memoryTable.getCheckpoints();
+        for (var cp : cps) {
+            var rev = cp.getRevision();
+            var resp = memoryTable.query(rev, Map.of("a", "a", "b", "b", "c", "c"), null, null, false);
+            var result = ImmutableList.copyOf(resp);
+            assertThat(result.size(), is(1));
+            if (result.get(0).isDeleted()) {
+                // when the row is deleted, the values is null, can not compare with the snapshot (empty map)
+                assertThat(snapshots.get(rev).size(), is(0));
+            } else {
+                assertThat(result.get(0).getValues(), is(snapshots.get(rev)));
+            }
+        }
+    }
+
+    @Test
+    public void testTombstone() {
+        var memoryTable = createInstance("tombstone");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "1", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "2", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "3", "a", "3")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "4", "a", "4")));
+
+        // test by range
+        memoryTable.deleteRowsWithRange(BaseValue.valueOf(1), true, BaseValue.valueOf(3), false);
+        var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        var result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(4));
+        assertThat(result.get(0), is(new RecordResult(BaseValue.valueOf(1), true, null)));
+        assertThat(result.get(1), is(new RecordResult(BaseValue.valueOf(2), true, null)));
+        assertThat(result.get(2).getValues(), is(Map.of("a", BaseValue.valueOf(3))));
+        assertThat(result.get(3).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+
+        // test by key prefix
+        memoryTable = createInstance("tombstone-key-prefix");
+        tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "aac", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abd", "a", "3")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "afe", "a", "4")));
+
+        memoryTable.deleteRowsWithKeyPrefix("ab");
+        resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(4));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1), is(new RecordResult(BaseValue.valueOf("abc"), true, null)));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
+        assertThat(result.get(3).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+    }
+
+    @Test
+    public void testTombStoneWithRevision() {
+        var memoryTable = createInstance("tombstone");
+        var tableSchemaDesc = new TableSchemaDesc("key",
+                List.of(
+                        ColumnSchemaDesc.builder().name("key").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build()
+                ));
+
+        memoryTable.createCheckpoint(null);
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "aac", "a", "1")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "2")));
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abd", "a", "3")));
+
+        memoryTable.deleteRowsWithKeyPrefix("ab");
+        memoryTable.update(tableSchemaDesc, List.of(Map.of("key", "abc", "a", "4")));
+
+        var resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        var result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
+
+        // create a checkpoint to trigger garbage collection
+        memoryTable.createCheckpoint(null);
+
+        resp = memoryTable.query(Long.MAX_VALUE, Map.of("a", "a"), null, null, false);
+        result = ImmutableList.copyOf(resp);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0).getValues(), is(Map.of("a", BaseValue.valueOf(1))));
+        assertThat(result.get(1).getValues(), is(Map.of("a", BaseValue.valueOf(4))));
+        assertThat(result.get(2), is(new RecordResult(BaseValue.valueOf("abd"), true, null)));
     }
 }

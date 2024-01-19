@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
+import ai.starwhale.mlops.datastore.Checkpoint;
 import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnStatistics;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -27,7 +28,12 @@ import ai.starwhale.mlops.datastore.TableMeta;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.datastore.Tombstone;
 import ai.starwhale.mlops.datastore.Wal;
+import ai.starwhale.mlops.datastore.Wal.Checkpoint.OP;
+import ai.starwhale.mlops.datastore.Wal.Tombstone.Builder;
+import ai.starwhale.mlops.datastore.Wal.Tombstone.Prefix;
+import ai.starwhale.mlops.datastore.Wal.WalEntry.Type;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
@@ -40,6 +46,8 @@ import ai.starwhale.mlops.datastore.type.Int64Value;
 import ai.starwhale.mlops.datastore.type.IntValue;
 import ai.starwhale.mlops.datastore.type.StringValue;
 import ai.starwhale.mlops.datastore.wal.WalManager;
+import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -63,11 +71,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -120,11 +130,16 @@ public class MemoryTableImpl implements MemoryTable {
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    public MemoryTableImpl(String tableName,
+    private final ConcurrentSkipListMap<Long, Checkpoint> checkpoints = new ConcurrentSkipListMap<>();
+    private final ConcurrentSkipListMap<Long, Tombstone> tombstones = new ConcurrentSkipListMap<>();
+
+    public MemoryTableImpl(
+            String tableName,
             WalManager walManager,
             StorageAccessService storageAccessService,
             String dataPathPrefix,
-            ParquetConfig parquetConfig) {
+            ParquetConfig parquetConfig
+    ) {
         this.tableName = tableName;
         this.walManager = walManager;
         this.storageAccessService = storageAccessService;
@@ -161,6 +176,8 @@ public class MemoryTableImpl implements MemoryTable {
                             this.lastWalLogId = metadata.getLastWalLogId();
                             this.lastUpdateTime = metadata.getLastUpdateTime();
                             this.lastRevision = metadata.getLastRevision();
+                            metadata.getCheckpointsList()
+                                    .forEach(cp -> this.checkpoints.put(cp.getRevision(), Checkpoint.from(cp)));
                         }
                         if (record == null) {
                             break;
@@ -208,6 +225,9 @@ public class MemoryTableImpl implements MemoryTable {
                             .setLastWalLogId(this.lastWalLogId)
                             .setLastUpdateTime(this.lastUpdateTime)
                             .setLastRevision(this.lastRevision)
+                            .addAllCheckpoints(this.checkpoints.values().stream()
+                                    .map(Checkpoint::toWalCheckpoint)
+                                    .collect(Collectors.toList()))
                             .build());
                 } catch (InvalidProtocolBufferException e) {
                     throw new SwProcessException(ErrorType.DATASTORE, "failed to print table meta", e);
@@ -330,6 +350,11 @@ public class MemoryTableImpl implements MemoryTable {
         if (entry.getId() <= this.lastWalLogId) {
             return;
         }
+
+        if (tryUpdateCheckpointFromWal(entry)) {
+            return;
+        }
+
         if (entry.hasTableSchema()) {
             this.schema.update(entry.getTableSchema());
         }
@@ -344,6 +369,23 @@ public class MemoryTableImpl implements MemoryTable {
             this.firstWalLogId = entry.getId();
         }
         this.lastWalLogId = entry.getId();
+    }
+
+    private boolean tryUpdateCheckpointFromWal(Wal.WalEntry entry) {
+        if (!Wal.WalEntry.Type.CHECKPOINT.equals(entry.getEntryType())) {
+            return false;
+        }
+        var checkpoint = entry.getCheckpoint();
+        if (OP.DELETE.equals(checkpoint.getOp())) {
+            deleteCheckpointAndGc(checkpoint.getRevision());
+        } else if (OP.CREATE.equals(checkpoint.getOp())) {
+            var cp = Checkpoint.from(checkpoint);
+            addCheckpointAndGc(cp);
+        } else {
+            throw new SwProcessException(ErrorType.DATASTORE, "unknown checkpoint op " + checkpoint.getOp());
+        }
+
+        return true;
     }
 
     @Override
@@ -473,7 +515,7 @@ public class MemoryTableImpl implements MemoryTable {
             if (record.getRevision() <= revision) {
                 // record may be empty, use hasVersion to mark if there is a record
                 hasVersion = true;
-                if (record.isDeleted()) {
+                if (record.isDeleted() || checkIfDeletedByTombstone(key, record.getRevision(), revision)) {
                     deleted = true;
                     ret.clear();
                 } else {
@@ -492,16 +534,27 @@ public class MemoryTableImpl implements MemoryTable {
         return ret;
     }
 
+    private boolean checkIfDeletedByTombstone(BaseValue key, long curRevision, long maxRevision) {
+        return this.tombstones.tailMap(curRevision, false).entrySet().stream()
+                .filter(tombstone -> tombstone.getKey() <= maxRevision)
+                .anyMatch(tombstone -> tombstone.getValue().keyDeleted(key)
+                );
+    }
+
     @Override
     public Iterator<RecordResult> query(
             long revision,
             @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
+
+        validateRevision(revision);
+
         if (orderBy != null) {
             for (var col : orderBy) {
                 if (col == null) {
@@ -551,10 +604,14 @@ public class MemoryTableImpl implements MemoryTable {
             String end,
             String endType,
             boolean endInclusive,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         if (this.schema.getKeyColumn() == null) {
             return Collections.emptyIterator();
         }
+
+        validateRevision(revision);
+
         if (this.recordMap.isEmpty()) {
             return Collections.emptyIterator();
         }
@@ -725,9 +782,11 @@ public class MemoryTableImpl implements MemoryTable {
         }
     }
 
-    private RecordResult toRecordResult(Map<String, BaseValue> record,
+    private RecordResult toRecordResult(
+            Map<String, BaseValue> record,
             Map<String, String> columnMapping,
-            boolean keepNone) {
+            boolean keepNone
+    ) {
         var key = record.get(this.schema.getKeyColumn());
         if (record.get(DELETED_FLAG_COLUMN_NAME) != null) {
             return new RecordResult(key, true, null);
@@ -752,4 +811,277 @@ public class MemoryTableImpl implements MemoryTable {
                         Entry::getValue));
     }
 
+    /**
+     * Get the number of records in the table for the latest revision.
+     *
+     * @return the number of records
+     */
+    private long getCount() {
+        return this.recordMap.values().stream().filter(versions -> {
+            if (versions.isEmpty()) {
+                return false;
+            }
+            boolean deleted = false;
+            long lastRevision = Long.MIN_VALUE;
+            for (var record : versions) {
+                if (record.getRevision() > lastRevision) {
+                    lastRevision = record.getRevision();
+                    deleted = record.isDeleted();
+                }
+            }
+            return !deleted;
+        }).count();
+    }
+
+    private void addCheckpointAndGc(Checkpoint checkpoint) {
+        var revision = checkpoint.getRevision();
+        this.checkpoints.put(revision, checkpoint);
+
+        // remove the virtual checkpoints after the first checkpoint and before the current checkpoint
+        var it = this.checkpoints.entrySet().iterator();
+        var remove = false;
+        while (it.hasNext()) {
+            var entry = it.next();
+            if (entry.getKey() >= revision) {
+                break;
+            }
+            if (!remove && entry.getValue().isVirtual()) {
+                remove = true;
+                continue;
+            }
+            if (!entry.getValue().isVirtual()) {
+                continue;
+            }
+            it.remove();
+        }
+
+        var prevCp = this.checkpoints.lowerEntry(revision);
+        if (prevCp != null) {
+            // do not garbage collect with the previous data without checkpoint
+            // virtual checkpoint is ok
+            this.garbageCollect(prevCp.getValue(), checkpoint);
+        }
+    }
+
+    private void deleteCheckpointAndGc(long revision) {
+        var prevCp = this.checkpoints.lowerEntry(revision);
+        var nextCp = this.checkpoints.higherEntry(revision);
+
+        if (prevCp != null && nextCp != null) {
+            this.checkpoints.remove(revision);
+            this.garbageCollect(prevCp.getValue(), nextCp.getValue());
+        } else {
+            this.checkpoints.get(revision).setVirtual(true);
+        }
+    }
+
+    @Override
+    public Checkpoint createCheckpoint(String userData) {
+        // check if the checkpoint already exists
+        // we do not support multiple checkpoints for the same revision (even with different user data)
+        var revision = this.lastRevision;
+        if (this.checkpoints.containsKey(revision)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "checkpoint already exists for revision " + revision);
+        }
+
+        var timestamp = System.currentTimeMillis();
+        var cp = Checkpoint.builder()
+                .revision(revision)
+                .timestamp(timestamp)
+                .userData(userData)
+                .rowCount(this.getCount())
+                .build();
+
+        var walCp = cp.toWalCheckpoint();
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
+                .setTableName(this.tableName)
+                .setCheckpoint(walCp);
+        this.lastWalLogId = this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+
+        addCheckpointAndGc(cp);
+        return cp;
+    }
+
+    @Override
+    public List<Checkpoint> getCheckpoints() {
+        return this.checkpoints.values().stream().filter(cp -> !cp.isVirtual()).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteCheckpoint(long revision) {
+        if (!this.checkpoints.containsKey(revision) || this.checkpoints.get(revision).isVirtual()) {
+            throw new SwNotFoundException(ResourceType.DATASTORE, "checkpoint not found for revision " + revision);
+        }
+
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Wal.WalEntry.Type.CHECKPOINT)
+                .setTableName(this.tableName)
+                .setCheckpoint(Wal.Checkpoint.newBuilder()
+                        .setOp(OP.DELETE)
+                        .setRevision(revision));
+        this.lastWalLogId = this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+
+        deleteCheckpointAndGc(revision);
+    }
+
+    @Override
+    public void deleteRowsWithRange(BaseValue start, Boolean startInclusive, BaseValue end, Boolean endInclusive) {
+        var range = Wal.Tombstone.Range.newBuilder()
+                .setStartKey(BaseValue.encodeWal(start))
+                .setStartInclusive(startInclusive)
+                .setEndKey(BaseValue.encodeWal(end))
+                .setEndInclusive(endInclusive);
+        var tombstone = Wal.Tombstone.newBuilder().setRange(range);
+        addTombstone(tombstone);
+    }
+
+    @Override
+    public void deleteRowsWithKeyPrefix(String keyPrefix) {
+        // write wal entry
+        var tombstone = Wal.Tombstone.newBuilder()
+                .setPrefix(Prefix.newBuilder().setKeyPrefix(keyPrefix).build());
+        addTombstone(tombstone);
+    }
+
+    private void addTombstone(Builder tombstone) {
+        //noinspection NonAtomicOperationOnVolatileField
+        this.lastRevision++;
+        tombstone.setRevision(this.lastRevision);
+        var entry = Wal.WalEntry.newBuilder()
+                .setEntryType(Type.TOMBSTONE)
+                .setTableName(this.tableName)
+                .setTombstone(tombstone);
+
+        this.walManager.append(entry);
+        if (this.firstWalLogId < 0) {
+            this.firstWalLogId = this.lastWalLogId;
+        }
+        this.tombstones.put(tombstone.getRevision(), Tombstone.from(tombstone.build()));
+    }
+
+    /**
+     * Check if the revision is valid, and valid means one of the following:
+     * <ul>
+     *     <li>the revision is smaller than the first checkpoint</li>
+     *     <li>the revision is greater than the last checkpoint</li>
+     *     <li>the revision is in the checkpoint list</li>
+     * </ul>
+     *
+     * @param revision the revision to check
+     */
+    private void validateRevision(long revision) {
+        if (this.checkpoints.isEmpty()) {
+            return;
+        }
+
+        if (revision < this.checkpoints.firstKey()) {
+            return;
+        }
+
+        if (revision > this.checkpoints.lastKey()) {
+            return;
+        }
+
+        var cp = this.checkpoints.get(revision);
+        if (cp != null && !cp.isVirtual()) {
+            return;
+        }
+
+        // this table had been garbage collected, so we can not query it
+        throw new SwNotFoundException(ResourceType.DATASTORE, "revision " + revision + " not found");
+    }
+
+    /**
+     * Garbage collect the versions of records.
+     * This function will compact the versions between from (exclusive) and to (exclusive).
+     * e.g.
+     * Before garbage collection:
+     * <pre>
+     *     versions:    [v1, v2, v3, v4, v5, v6]
+     *     checkpoints: [-,  -, cp1, -,  cp2, -]
+     * </pre>
+     * After garbage collection (cp1, cp2):
+     * <pre>
+     *     versions:   [v1, v2, v3, v5, v6]
+     *     checkpoints: [-,  -, cp1, cp2, -]
+     * </pre>
+     *
+     * @param from the checkpoint to start garbage collection
+     * @param to   the checkpoint to end garbage collection
+     */
+    private void garbageCollect(@NotNull Checkpoint from, @NotNull Checkpoint to) {
+        var fromRevision = from.getRevision();
+        var toRevision = to.getRevision();
+
+        if (fromRevision > toRevision) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "fromRevision " + fromRevision + " is greater than toRevision " + toRevision);
+        }
+        if ((toRevision - fromRevision) <= 1) {
+            return;
+        }
+
+        this.recordMap.forEach((key, versions) -> {
+            if (versions.isEmpty()) {
+                return;
+            }
+            versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
+            var it = versions.listIterator();
+            MemoryRecord current = null;
+            MemoryRecord lastDeletion = null;
+            long lastRevision = 0;
+            while (it.hasNext()) {
+                var record = it.next();
+                var recordRevision = record.getRevision();
+                if (recordRevision <= fromRevision) {
+                    continue;
+                }
+                if (recordRevision > toRevision) {
+                    break;
+                }
+
+                if (current == null) {
+                    current = record;
+                    continue;
+                }
+
+                if (record.isDeleted()) {
+                    lastDeletion = record;
+                }
+
+                // patch the current record
+                if (current.isDeleted() || record.isDeleted()) {
+                    current = record;
+                } else {
+                    for (var entry : record.getValues().entrySet()) {
+                        current.getValues().put(entry.getKey(), entry.getValue());
+                    }
+                }
+                lastRevision = recordRevision;
+                it.remove();
+            }
+            // replace the current item with the patched one
+            if (current != null) {
+                // reserve the last deletion to make sure the previous record is deleted
+                if (lastDeletion != null && !current.isDeleted()) {
+                    it.add(lastDeletion);
+                }
+                it.add(MemoryRecord.builder()
+                        .revision(lastRevision)
+                        .deleted(current.isDeleted())
+                        .values(current.getValues())
+                        .build());
+            }
+
+            versions.sort(Comparator.comparingLong(MemoryRecord::getRevision));
+        });
+    }
 }

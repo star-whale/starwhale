@@ -566,6 +566,26 @@ export interface ITableNameListVo {
 
 export type IFlushRequest = object
 
+export interface ICreateCheckpointRequest {
+    table: string
+    userData?: string
+}
+
+export interface ICheckpointVo {
+    id: string
+    /** @format int64 */
+    createdTime: number
+    /** @format int64 */
+    rowCount: number
+    userData?: string
+}
+
+export interface IResponseMessageCheckpointVo {
+    code: string
+    message: string
+    data: ICheckpointVo
+}
+
 export interface IInitUploadBlobRequest {
     contentMd5: string
     /** @format int64 */
@@ -2165,6 +2185,12 @@ export interface IRuntimeSuggestionVo {
     runtimes?: IRuntimeVersionVo[]
 }
 
+export interface IResponseMessageListCheckpointVo {
+    code: string
+    message: string
+    data: ICheckpointVo[]
+}
+
 export interface IUserRoleDeleteRequest {
     currentUserPwd: string
 }
@@ -2382,6 +2408,12 @@ export type IQueryAndExportData = any
 export type IListTablesData = IResponseMessageTableNameListVo['data']
 
 export type IFlushData = IResponseMessageString['data']
+
+export type IGetCheckpointsData = IResponseMessageListCheckpointVo['data']
+
+export type ICreateCheckpointData = IResponseMessageCheckpointVo['data']
+
+export type IDeleteCheckpointData = IResponseMessageString['data']
 
 export type IInitUploadBlobData = IResponseMessageInitUploadBlobResult['data']
 
