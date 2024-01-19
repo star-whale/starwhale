@@ -1267,7 +1267,7 @@ export interface IOptionField {
     type: IOptionType
     required: boolean
     multiple: boolean
-    value?: string
+    value?: object
     help?: string
     hidden: boolean
     default?: string

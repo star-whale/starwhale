@@ -28,6 +28,7 @@ import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,14 +87,18 @@ public class SwCliModelHandlerContainerSpecification implements ContainerSpecifi
                     cmdArgs.append(
                             stepSpec.getArguments().values().stream()
                             .flatMap(options -> options.values().stream())
-                            .filter(optionField -> StringUtils.hasText(optionField.getValue()))
+                            .filter(optionField -> Objects.nonNull(optionField.getValue()))
                             .map(optionField -> {
                                 if (optionField.isFlag()) {
-                                    return Boolean.parseBoolean(optionField.getValue())
+                                    return (boolean) optionField.getValue()
                                             ? "--" + optionField.getName() : "";
-                                } else {
-                                    return "--" + optionField.getName() + " " + optionField.getValue();
+                                } else if (optionField.isMultiple()
+                                        && optionField.getValue() instanceof List) {
+                                    return ((List<?>) optionField.getValue()).stream()
+                                            .map(value -> "--" + optionField.getName() + " " + value)
+                                            .collect(Collectors.joining(" "));
                                 }
+                                return "--" + optionField.getName() + " " + optionField.getValue();
                             }).collect(Collectors.joining(" "))
                     );
                 }

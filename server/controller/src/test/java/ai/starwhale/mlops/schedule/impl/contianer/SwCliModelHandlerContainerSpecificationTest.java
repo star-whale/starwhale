@@ -96,7 +96,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
             put("SW_RUN_HANDLER", null);
             put("SW_DEV_TOKEN", null);
             put("SW_DEV_PORT", "8000");
-            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --a 11");
+            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --patch 1 --patch 2 --a 11");
             put("SW_CONDA_CONFIG", "channels:\n"
                     + "  - defaults\n"
                     + "show_channel_urls: true\n"
@@ -139,7 +139,7 @@ public class SwCliModelHandlerContainerSpecificationTest {
             put("SW_PYPI_RETRIES", "1");
             put("SW_PYPI_TIMEOUT", "2");
             put("SW_RUN_HANDLER", null);
-            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --a 11");
+            put("SW_TASK_EXTRA_CMD_ARGS", "--is_eval  --reshape 32 --patch 1 --patch 2 --a 11");
             put("SW_CONDA_CONFIG", "channels:\n"
                     + "  - defaults\n"
                     + "show_channel_urls: true\n"
@@ -284,13 +284,16 @@ public class SwCliModelHandlerContainerSpecificationTest {
                         + "        opts:\n"
                         + "        - --reshape\n"
                         + "        required: false\n"
-                        + "      patch:\n" // this will not be used
+                        + "      patch:\n"
                         + "        default: 16\n"
                         + "        help: batch size\n"
                         + "        hidden: false\n"
                         + "        is_flag: false\n"
-                        + "        multiple: false\n"
+                        + "        multiple: true\n"
                         + "        name: patch\n"
+                        + "        value:\n"
+                        + "        - 1\n"
+                        + "        - 2\n"
                         + "        opts:\n"
                         + "        - --patch\n"
                         + "        required: false",
