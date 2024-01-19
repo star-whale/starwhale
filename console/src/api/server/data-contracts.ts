@@ -548,6 +548,22 @@ export interface ITableQueryOperandDesc {
     bytesValue?: string
 }
 
+export interface IBackupVo {
+    id?: string
+    /** @format int64 */
+    createdAt?: number
+    /** @format int64 */
+    doneAt?: number
+    /** @format int64 */
+    approximateSizeBytes?: number
+}
+
+export interface IResponseMessageBackupVo {
+    code: string
+    message: string
+    data: IBackupVo
+}
+
 export interface IListTablesRequest {
     prefix?: string
     /** @uniqueItems true */
@@ -2165,6 +2181,12 @@ export interface IRuntimeSuggestionVo {
     runtimes?: IRuntimeVersionVo[]
 }
 
+export interface IResponseMessageListBackupVo {
+    code: string
+    message: string
+    data: IBackupVo[]
+}
+
 export interface IUserRoleDeleteRequest {
     currentUserPwd: string
 }
@@ -2378,6 +2400,14 @@ export type IScanAndExportData = any
 export type IQueryTableData = IResponseMessageRecordListVo['data']
 
 export type IQueryAndExportData = any
+
+export type IListBackupsData = IResponseMessageListBackupVo['data']
+
+export type ICreateBackupData = IResponseMessageBackupVo['data']
+
+export type IDeleteBackupData = IResponseMessageString['data']
+
+export type IRestoreBackupData = IResponseMessageString['data']
 
 export type IListTablesData = IResponseMessageTableNameListVo['data']
 

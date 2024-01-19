@@ -33,6 +33,7 @@ import {
     ICompleteUploadBlobData,
     IConfigRequest,
     IConsumeNextDataData,
+    ICreateBackupData,
     ICreateJobData,
     ICreateJobTemplateRequest,
     ICreateModelServingData,
@@ -49,6 +50,7 @@ import {
     IDatasetBuildRequest,
     IDatasetTagRequest,
     IDatasetUploadRequest,
+    IDeleteBackupData,
     IDeleteDatasetData,
     IDeleteDatasetVersionTagData,
     IDeleteModelData,
@@ -113,6 +115,7 @@ import {
     IJobModifyPinRequest,
     IJobModifyRequest,
     IJobRequest,
+    IListBackupsData,
     IListBuildRecordsData,
     IListDatasetData,
     IListDatasetTreeData,
@@ -179,6 +182,7 @@ import {
     IReleaseFtData,
     IRemoveJobData,
     IResourcePool,
+    IRestoreBackupData,
     IRevertDatasetRequest,
     IRevertDatasetVersionData,
     IRevertModelVersionData,
@@ -2773,6 +2777,90 @@ export class Api<SecurityDataType = unknown> {
             body: data,
             secure: true,
             type: ContentType.Json,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name ListBackups
+     * @request GET:/api/v1/datastore/maintain/backup
+     * @secure
+     * @response `200` `IListBackupsData` OK
+     */
+    listBackups = (params: RequestParams = {}) =>
+        this.http.request<IListBackupsData, any>({
+            path: `/api/v1/datastore/maintain/backup`,
+            method: 'GET',
+            secure: true,
+            ...params,
+        })
+
+    useListBackups = (params: RequestParams = {}) =>
+        useQuery(qs.stringify(['listBackups', params]), () => this.listBackups(params), {
+            enabled: [].every(Boolean),
+        })
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name CreateBackup
+     * @request POST:/api/v1/datastore/maintain/backup
+     * @secure
+     * @response `200` `ICreateBackupData` OK
+     */
+    createBackup = (params: RequestParams = {}) =>
+        this.http.request<ICreateBackupData, any>({
+            path: `/api/v1/datastore/maintain/backup`,
+            method: 'POST',
+            secure: true,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name DeleteBackup
+     * @request DELETE:/api/v1/datastore/maintain/backup
+     * @secure
+     * @response `200` `IDeleteBackupData` OK
+     */
+    deleteBackup = (
+        query: {
+            id: string
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IDeleteBackupData, any>({
+            path: `/api/v1/datastore/maintain/backup`,
+            method: 'DELETE',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name RestoreBackup
+     * @request POST:/api/v1/datastore/maintain/backup/restore
+     * @secure
+     * @response `200` `IRestoreBackupData` OK
+     */
+    restoreBackup = (
+        query: {
+            id: string
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IRestoreBackupData, any>({
+            path: `/api/v1/datastore/maintain/backup/restore`,
+            method: 'POST',
+            query: query,
+            secure: true,
             ...params,
         })
 
