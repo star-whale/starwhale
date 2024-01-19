@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.api.protocol.datastore.CreateCheckpointRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
@@ -1782,8 +1783,6 @@ public class DataStoreTest {
                 new TableSchemaDesc("key", List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build())),
                 List.of(Map.of("key", "1")));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
-                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t").build())).build());
-        result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")
                         .keepNone(true)
@@ -1915,5 +1914,35 @@ public class DataStoreTest {
         ret.put("type", schema.getType().name());
         ret.put("value", value);
         return ret;
+    }
+
+    @Test
+    public void testCheckpoints() {
+        var tableSchema = new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build()));
+        this.dataStore.update("t1", tableSchema, List.of(Map.of("k", "1")));
+        this.dataStore.update("t2", tableSchema, List.of(Map.of("k", "2")));
+
+        var tables = List.of("t1", "t2");
+        for (var table : tables) {
+            var checkpoints = this.dataStore.getCheckpoints(table);
+            assertEquals(0, checkpoints.size());
+        }
+
+        var checkpoint = this.dataStore.createCheckpoint(CreateCheckpointRequest.builder()
+                .table("t1")
+                .userData("foo")
+                .build());
+        assertEquals("foo", checkpoint.getUserData());
+
+        assertEquals(0, this.dataStore.getCheckpoints("t2").size());
+        var checkpoints = this.dataStore.getCheckpoints("t1");
+        assertEquals(1, checkpoints.size());
+        assertEquals(checkpoint, checkpoints.get(0));
+
+        this.dataStore.deleteCheckpoint("t1", checkpoint.getRevision());
+        for (var table : tables) {
+            checkpoints = this.dataStore.getCheckpoints(table);
+            assertEquals(0, checkpoints.size());
+        }
     }
 }

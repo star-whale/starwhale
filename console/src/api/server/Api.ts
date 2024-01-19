@@ -33,6 +33,8 @@ import {
     ICompleteUploadBlobData,
     IConfigRequest,
     IConsumeNextDataData,
+    ICreateCheckpointData,
+    ICreateCheckpointRequest,
     ICreateJobData,
     ICreateJobTemplateRequest,
     ICreateModelServingData,
@@ -49,6 +51,7 @@ import {
     IDatasetBuildRequest,
     IDatasetTagRequest,
     IDatasetUploadRequest,
+    IDeleteCheckpointData,
     IDeleteDatasetData,
     IDeleteDatasetVersionTagData,
     IDeleteModelData,
@@ -72,6 +75,7 @@ import {
     IFineTuneSpaceCreateRequest,
     IFlushData,
     IFlushRequest,
+    IGetCheckpointsData,
     IGetCurrentUserData,
     IGetCurrentUserRolesData,
     IGetCurrentVersionData,
@@ -2813,6 +2817,81 @@ export class Api<SecurityDataType = unknown> {
         this.http.request<IFlushData, any>({
             path: `/api/v1/datastore/flush`,
             method: 'POST',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name GetCheckpoints
+     * @request GET:/api/v1/datastore/checkpoint
+     * @secure
+     * @response `200` `IGetCheckpointsData` OK
+     */
+    getCheckpoints = (
+        query: {
+            table: string
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IGetCheckpointsData, any>({
+            path: `/api/v1/datastore/checkpoint`,
+            method: 'GET',
+            query: query,
+            secure: true,
+            ...params,
+        })
+
+    useGetCheckpoints = (
+        query: {
+            table: string
+        },
+        params: RequestParams = {}
+    ) =>
+        useQuery(qs.stringify(['getCheckpoints', query, params]), () => this.getCheckpoints(query, params), {
+            enabled: [query].every(Boolean),
+        })
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name CreateCheckpoint
+     * @request POST:/api/v1/datastore/checkpoint
+     * @secure
+     * @response `200` `ICreateCheckpointData` OK
+     */
+    createCheckpoint = (data: ICreateCheckpointRequest, params: RequestParams = {}) =>
+        this.http.request<ICreateCheckpointData, any>({
+            path: `/api/v1/datastore/checkpoint`,
+            method: 'POST',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name DeleteCheckpoint
+     * @request DELETE:/api/v1/datastore/checkpoint
+     * @secure
+     * @response `200` `IDeleteCheckpointData` OK
+     */
+    deleteCheckpoint = (
+        query: {
+            table: string
+            id: string
+        },
+        params: RequestParams = {}
+    ) =>
+        this.http.request<IDeleteCheckpointData, any>({
+            path: `/api/v1/datastore/checkpoint`,
+            method: 'DELETE',
             query: query,
             secure: true,
             ...params,
