@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import lombok.AllArgsConstructor;
@@ -34,6 +36,11 @@ public class Float64Value implements FloatValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.FLOAT64;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        return ColumnSchemaDesc.float64();
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import lombok.EqualsAndHashCode;
@@ -38,6 +40,11 @@ public class BoolValue implements ScalarValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.BOOL;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        return ColumnSchemaDesc.bool();
     }
 
     @Override

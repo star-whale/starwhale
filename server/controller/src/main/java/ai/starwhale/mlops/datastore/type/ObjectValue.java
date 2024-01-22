@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.util.HashMap;
@@ -48,6 +50,15 @@ public class ObjectValue extends HashMap<String, BaseValue> implements BaseValue
     @Override
     public ColumnType getColumnType() {
         return ColumnType.OBJECT;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        var attrs = this.entrySet()
+                .stream()
+                .map(entry -> entry.getValue().generateColumnSchemaDesc().name(entry.getKey()).build())
+                .collect(Collectors.toList());
+        return ColumnSchemaDesc.objectOf(this.pythonType, attrs);
     }
 
     @Override

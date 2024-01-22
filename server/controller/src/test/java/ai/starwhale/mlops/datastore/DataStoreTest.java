@@ -25,6 +25,9 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.starwhale.mlops.api.protocol.datastore.RecordCellDesc;
+import ai.starwhale.mlops.api.protocol.datastore.RecordRowDesc;
+import ai.starwhale.mlops.api.protocol.datastore.UpdateTableEmbeddedRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc.KeyValuePairSchema;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
@@ -1915,5 +1918,41 @@ public class DataStoreTest {
         ret.put("type", schema.getType().name());
         ret.put("value", value);
         return ret;
+    }
+
+    @Test
+    public void testUpdateWithTypeEmbed() {
+        var intCell = RecordCellDesc.builder().dataStoreValueType(ColumnType.INT32).scalarValue("00000001").build();
+        var rows = List.of(
+                RecordRowDesc.builder().cells(Map.of("key", intCell)).build()
+        );
+        var req = UpdateTableEmbeddedRequest.builder()
+                .tableName("t")
+                .keyColumn("key")
+                .rows(rows)
+                .build();
+
+        // update with type
+        this.dataStore.updateWithTypeEmbed(req);
+        var result = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t")
+                        .keepNone(true)
+                        .build()))
+                .keepNone(true)
+                .encodeWithType(true)
+                .build());
+        var expected = new RecordList(
+                null,
+                Map.of("key",
+                        ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1"))
+                                .build()),
+                List.of(Map.of("key", Map.of("type", "INT32", "value", "00000001"))),
+                "00000001",
+                "INT32"
+        );
+        assertEquals(expected, result);
     }
 }

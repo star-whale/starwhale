@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc.ColumnSchemaDescBuilder;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.math.BigDecimal;
@@ -35,6 +37,11 @@ public class Int64Value implements IntValue {
     @Override
     public ColumnType getColumnType() {
         return ColumnType.INT64;
+    }
+
+    @Override
+    public ColumnSchemaDescBuilder generateColumnSchemaDesc() {
+        return ColumnSchemaDesc.int64();
     }
 
     @Override

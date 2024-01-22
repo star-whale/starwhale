@@ -384,6 +384,23 @@ class RecordValueDesc(SwBaseModel):
     value: Optional[Dict[str, Any]] = None
 
 
+class DataStoreValueType(Enum):
+    unknown = 'UNKNOWN'
+    bool = 'BOOL'
+    int8 = 'INT8'
+    int16 = 'INT16'
+    int32 = 'INT32'
+    int64 = 'INT64'
+    float32 = 'FLOAT32'
+    float64 = 'FLOAT64'
+    string = 'STRING'
+    bytes = 'BYTES'
+    list = 'LIST'
+    tuple = 'TUPLE'
+    map = 'MAP'
+    object = 'OBJECT'
+
+
 class ColumnDesc(SwBaseModel):
     column_name: Optional[str] = Field(None, alias='columnName')
     alias: Optional[str] = None
@@ -1783,6 +1800,34 @@ class UpdateTableRequest(SwBaseModel):
     records: Optional[List[RecordDesc]] = None
 
 
+class RecordCellDesc(SwBaseModel):
+    data_store_value_type: DataStoreValueType = Field(..., alias='dataStoreValueType')
+    scalar_value: Optional[str] = Field(None, alias='scalarValue')
+    list_value: Optional[List[RecordCellDesc]] = Field(None, alias='listValue')
+    map_value: Optional[List[RecordCellMapItem]] = Field(None, alias='mapValue')
+    object_value: Optional[RecordCellObject] = Field(None, alias='objectValue')
+
+
+class RecordCellMapItem(SwBaseModel):
+    key: Optional[RecordCellDesc] = None
+    value: Optional[RecordCellDesc] = None
+
+
+class RecordCellObject(SwBaseModel):
+    attrs: Optional[Dict[str, RecordCellDesc]] = None
+    python_type: Optional[str] = Field(None, alias='pythonType')
+
+
+class RecordRowDesc(SwBaseModel):
+    cells: Dict[str, RecordCellDesc]
+
+
+class UpdateTableEmbeddedRequest(SwBaseModel):
+    table_name: str = Field(..., alias='tableName')
+    key_column: str = Field(..., alias='keyColumn')
+    rows: List[RecordRowDesc]
+
+
 class RecordListVo(SwBaseModel):
     column_types: Optional[List[ColumnSchemaDesc]] = Field(None, alias='columnTypes')
     column_hints: Optional[Dict[str, ColumnHintsDesc]] = Field(
@@ -1832,5 +1877,6 @@ class TableQueryOperandDesc(SwBaseModel):
 
 ColumnHintsDesc.update_forward_refs()
 ColumnSchemaDesc.update_forward_refs()
+RecordCellDesc.update_forward_refs()
 QueryTableRequest.update_forward_refs()
 TableQueryFilterDesc.update_forward_refs()

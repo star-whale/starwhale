@@ -213,6 +213,8 @@ import {
     IUpdateSettingData,
     IUpdateSpaceData,
     IUpdateTableData,
+    IUpdateTableEmbeddedData,
+    IUpdateTableEmbeddedRequest,
     IUpdateTableRequest,
     IUpdateUserPwdData,
     IUpdateUserStateData,
@@ -2693,6 +2695,25 @@ export class Api<SecurityDataType = unknown> {
     updateTable = (data: IUpdateTableRequest, params: RequestParams = {}) =>
         this.http.request<IUpdateTableData, any>({
             path: `/api/v1/datastore/updateTable`,
+            method: 'POST',
+            body: data,
+            secure: true,
+            type: ContentType.Json,
+            ...params,
+        })
+
+    /**
+     * No description
+     *
+     * @tags data-store-controller
+     * @name UpdateTableEmbedded
+     * @request POST:/api/v1/datastore/updateTable/embedded
+     * @secure
+     * @response `200` `IUpdateTableEmbeddedData` OK
+     */
+    updateTableEmbedded = (data: IUpdateTableEmbeddedRequest, params: RequestParams = {}) =>
+        this.http.request<IUpdateTableEmbeddedData, any>({
+            path: `/api/v1/datastore/updateTable/embedded`,
             method: 'POST',
             body: data,
             secure: true,

@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -640,5 +641,21 @@ public class BaseValueTest {
         assertThat(BaseValue.valueOf(Map.of("0", 0)).equals(
                         ObjectValue.valueOf("t", Map.of("0", 0))),
                 is(false));
+    }
+
+    @Test
+    public void testScalarGenerateColumnSchemaDesc() {
+        assertThat(BaseValue.valueOf(false).generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.bool().build()));
+        assertThat(BaseValue.valueOf((byte) 0).generateColumnSchemaDesc().build(),
+                is(ColumnSchemaDesc.int8().build()));
+        assertThat(BaseValue.valueOf((short) 0).generateColumnSchemaDesc().build(),
+                is(ColumnSchemaDesc.int16().build()));
+        assertThat(BaseValue.valueOf(0).generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.int32().build()));
+        assertThat(BaseValue.valueOf(0L).generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.int64().build()));
+        assertThat(BaseValue.valueOf(0.f).generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.float32().build()));
+        assertThat(BaseValue.valueOf(0.).generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.float64().build()));
+        assertThat(BaseValue.valueOf("0").generateColumnSchemaDesc().build(), is(ColumnSchemaDesc.string().build()));
+        assertThat(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).generateColumnSchemaDesc().build(),
+                is(ColumnSchemaDesc.bytes().build()));
     }
 }
