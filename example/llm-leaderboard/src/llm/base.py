@@ -5,6 +5,7 @@ import json
 import typing as t
 import logging
 from abc import ABC, abstractmethod
+from typing import Dict, List
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -37,7 +38,8 @@ class LLMModelDesc:
 
 
 class LLMBase(ABC):
-    def __init__(self, rootdir: Path | None = None) -> None:
+    def __init__(self, **kwargs: t.Any) -> None:
+        rootdir = kwargs.get("rootdir")
         self.rootdir = rootdir if rootdir is not None else Path.cwd()
 
     @classmethod
@@ -53,6 +55,9 @@ class LLMBase(ABC):
     @abstractmethod
     def download(self) -> None:
         raise NotImplementedError
+
+    def support_batch_inference(self) -> bool:
+        return False
 
     def ensure_swignore(self) -> None:
         swi_path = self.rootdir / ".swignore"
@@ -80,15 +85,28 @@ class LLMBase(ABC):
     @abstractmethod
     def do_predict(
         self,
-        input_prompt: str,
+        input_prompt: str | t.List[str],
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-        predict_choice_by_logits: bool = False,
-    ) -> t.Dict | str:
+        **kwargs: t.Any,
+    ) -> t.Dict | str | t.List:
         raise NotImplementedError
 
     def calculate_tokens_length(self, input_prompt: str) -> int:
         return len(input_prompt)
+
+    def _simplify_content(self, content: str) -> str:
+        content = content.strip()
+
+        for token in ("###", "[UNK]", "</s>", "]", ")", "）", "】"):
+            if content.endswith(token):
+                content = content[: -len(token)].strip()
+
+        for prefix in (":", "：", "(", "（", "[", "【"):
+            if content.startswith(prefix):
+                content = content[len(prefix) :].strip()
+
+        return content
 
     def ensure_readme(self) -> None:
         readme_path = self.rootdir / "README.md"
@@ -141,9 +159,82 @@ Enjoy! 🎉
         ensure_file(readme_path, content)
 
 
+class vLLMBase(LLMBase):
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
+
+        self._model = None
+        self._tensor_parallel = kwargs.get("tensor_parallel", 1)
+        self._max_model_len = kwargs.get("max_model_len", 32768)
+
+    @abstractmethod
+    def get_hf_repo_id(self) -> str:
+        raise NotImplementedError
+
+    def get_base_dir(self) -> Path:
+        return self.get_pretrained_dir() / self.get_name() / "base"
+
+    def download(self) -> None:
+        from huggingface_hub import snapshot_download
+
+        local_dir = self.get_base_dir()
+        ensure_dir(local_dir)
+        snapshot_download(
+            repo_id=self.get_hf_repo_id(), local_dir=local_dir, max_workers=16
+        )
+
+    def support_batch_inference(self) -> bool:
+        return True
+
+    def _get_model(self) -> t.Any:
+        if self._model is None:
+            path = self.get_base_dir()
+            console.print(f":monkey: try to load model({path}) into memory...")
+
+            import vllm
+
+            self._model = vllm.LLM(
+                path,
+                dtype=torch.float16,
+                tensor_parallel_size=self._tensor_parallel,
+                max_model_len=self._max_model_len,
+            )
+
+        return self._model
+
+    @torch.no_grad()
+    def do_predict(
+        self,
+        input_prompts: str | List[str],
+        benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
+        max_new_tokens: int = 50,
+        **kwargs: t.Any,
+    ) -> Dict | str | t.List:
+        if isinstance(input_prompts, str):
+            input_prompts = [input_prompts]
+
+        import vllm
+
+        temperature = kwargs.get("temperature", 0.8)
+        top_p = kwargs.get("top_p", 0.95)
+
+        sp = vllm.SamplingParams(
+            temperature=temperature, top_p=top_p, max_tokens=max_new_tokens
+        )
+        outputs = self._get_model().generate(input_prompts, sp)
+        outputs.sort(key=lambda x: x.request_id)
+
+        ret = []
+        for output in outputs:
+            content = "".join([o.text for o in output.outputs])
+            content = self._simplify_content(content)
+            ret.append(content)
+        return ret
+
+
 class HuggingfaceLLMBase(LLMBase):
-    def __init__(self, rootdir: Path | None = None) -> None:
-        super().__init__(rootdir)
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
 
         self._tokenizer = None
         self._model = None
@@ -247,30 +338,17 @@ class HuggingfaceLLMBase(LLMBase):
             repetition_penalty=float(os.environ.get("REPETITION_PENALTY", 1.3)),
         )
 
-    def _simplify_content(self, content: str) -> str:
-        content = content.strip()
-
-        for token in ("###", "[UNK]", "</s>", "]", ")", "）", "】"):
-            if content.endswith(token):
-                content = content[: -len(token)].strip()
-
-        for prefix in (":", "：", "(", "（", "[", "【"):
-            if content.startswith(prefix):
-                content = content[len(prefix) :].strip()
-
-        return content
-
     def do_predict(
         self,
         input_prompt: str,
         benchmark_type: BenchmarkType = BenchmarkType.MultipleChoice,
         max_new_tokens: int = 50,
-        predict_choice_by_logits: bool = False,
-    ) -> t.Dict | str:
+        **kwargs: t.Any,
+    ) -> t.Dict | str | t.List:
         # TODO: add self prompt wrapper
         content = self._do_predict_with_generate(input_prompt, max_new_tokens)
         ret = {"content": self._simplify_content(content)}
-        if predict_choice_by_logits:
+        if kwargs.get("predict_choice_by_logits", False):
             if benchmark_type != BenchmarkType.MultipleChoice:
                 raise ValueError(
                     "predict_choice_by_logits only support BenchmarkType.MultipleChoice"
@@ -363,7 +441,8 @@ def get_llm(name: str, **kwargs: t.Any) -> LLMBase:
     return _SUPPORTED_LLM[name](**kwargs)
 
 
-def get_built_llm(rootdir: Path | None = None, **kwargs: t.Any) -> LLMBase:
+def get_built_llm(**kwargs: t.Any) -> LLMBase:
+    rootdir = kwargs.get("rootdir")
     rootdir = rootdir if rootdir is not None else Path.cwd()
     config_path = rootdir / "pretrained" / "sw_config.json"
     if not config_path.exists():

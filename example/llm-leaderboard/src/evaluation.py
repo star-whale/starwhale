@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import threading
+import dataclasses
 from collections import defaultdict
 
 import numpy
 
-from starwhale import evaluation
+from starwhale import argument, evaluation
 from starwhale.utils.debug import console
 
 try:
@@ -30,27 +30,51 @@ few_shot_choices = {
 _g_llm = None
 _g_benchmarks: t.Dict[str, BenchmarkBase] = {}
 
-max_prompt_length = int(os.environ.get("MAX_PROMPT_LENGTH", 2048))
-max_new_tokens = int(os.environ.get("MAX_NEW_TOKENS", 256))
+
+@dataclasses.dataclass
+class ModelGenerateArguments:
+    max_prompt_length: int = dataclasses.field(
+        default=2048, metadata={"help": "max length of prompt"}
+    )
+    max_new_tokens: int = dataclasses.field(
+        default=256, metadata={"help": "max length of generated text"}
+    )
+    batch: int = dataclasses.field(
+        default=1, metadata={"help": "batch size for inference"}
+    )
+    temperature: float = dataclasses.field(
+        default=0.8, metadata={"help": "temperature"}
+    )
+    top_p: float = dataclasses.field(default=0.95, metadata={"help": "top p"})
+    tensor_parallel: int = dataclasses.field(
+        default=1, metadata={"help": "tensor parallel for vllm"}
+    )
+    max_model_len: int = dataclasses.field(
+        default=16384, metadata={"help": "max model len for vllm kv cache"}
+    )
 
 
 # TODO: support multi-gpus evaluation
 # TODO: enhance selected features
+@argument(ModelGenerateArguments)
 @evaluation.predict(
     resources={"nvidia.com/gpu": 1},
     replicas=1,
+    batch_size=32,
     auto_log=False,
 )
-def predict_question(data: dict, external: dict) -> None:
-    # dev split is used for few shot samples
-    if data.get("_hf_split", "") == "dev":
-        return
-
+def predict_question(
+    data: t.List[dict], external: dict, argument: ModelGenerateArguments
+) -> None:
     # TODO: record cpu/gpu/memory info per predict pod
     global _g_llm
+
     with threading.Lock():
         if _g_llm is None:
-            _g_llm = get_built_llm()
+            _g_llm = get_built_llm(
+                tensor_parallel=argument.tensor_parallel,
+                max_model_len=argument.max_model_len,
+            )
 
     global _g_benchmarks
     dataset_uri = external["dataset_uri"]
@@ -59,34 +83,61 @@ def predict_question(data: dict, external: dict) -> None:
         # TODO: use dataset_info to get benchmark
         _g_benchmarks[dataset_name] = get_benchmark(dataset_name)
 
-    result = {}
     benchmark = _g_benchmarks[dataset_name]()
-    for shot, show_name in few_shot_choices.items():
-        prompt = benchmark.generate_prompt(
-            data,
-            few_shot=shot,
-            dataset_uri=dataset_uri,
-            max_length=max_prompt_length,
-            len_tokens=_g_llm.calculate_tokens_length,
-        )
-        predict_result = _g_llm.do_predict(
-            prompt,
-            benchmark_type=benchmark.get_type(),
-            max_new_tokens=max_new_tokens,
-            predict_choice_by_logits=True,
-        )
-        result[show_name] = benchmark.calculate_score(predict_result, data)
-        console.trace(f"prompt:\n {prompt}")
-        console.trace(f"answer: {data['answer']}, predict: {result[show_name]}")
 
-    evaluation.log(
-        category="results",
-        id=f"{benchmark.get_name()}-{external['index']}",
-        metrics={
-            "input": benchmark.make_input_features_display(data),
-            "output": result,
-        },
-    )
+    inputs = []
+    for _index, _data in zip(external["index"], data):
+        # dev split is used for few shot samples
+        if _data.get("_hf_split", "") == "dev":
+            continue
+
+        for _shot, _show_name in few_shot_choices.items():
+            _prompt = benchmark.generate_prompt(
+                _data,
+                few_shot=_shot,
+                dataset_uri=dataset_uri,
+                max_length=argument.max_prompt_length,
+                len_tokens=_g_llm.calculate_tokens_length,
+            )
+            inputs.append((_index, _show_name, _data, _prompt))
+
+    predict_results = []
+    for idx in range(0, len(inputs), argument.batch):
+        batch_prompts = [x[-1] for x in inputs[idx : idx + argument.batch]]
+
+        if _g_llm.support_batch_inference():
+            _results = _g_llm.do_predict(
+                batch_prompts,
+                benchmark_type=benchmark.get_type(),
+                max_new_tokens=argument.max_new_tokens,
+                predict_choice_by_logits=True,
+            )
+            predict_results.extend(_results)
+        else:
+            for _prompt in batch_prompts:
+                _result = _g_llm.do_predict(
+                    _prompt,
+                    benchmark_type=benchmark.get_type(),
+                    max_new_tokens=argument.max_new_tokens,
+                    predict_choice_by_logits=True,
+                )
+                predict_results.append(_result)
+
+    for (_index, _show_name, _data, _prompt), predict_result in zip(
+        inputs, predict_results
+    ):
+        score = benchmark.calculate_score(predict_result, _data)
+        console.trace(f"prompt:\n {_prompt}")
+        console.trace(f"answer: {_data['answer']}, predict: {score}")
+
+        evaluation.log(
+            category="results",
+            id=f"{benchmark.get_name()}-{_index}",
+            metrics={
+                "input": benchmark.make_input_features_display(_data),
+                "output": {_show_name: score},
+            },
+        )
 
 
 @evaluation.evaluate(needs=[predict_question], use_predict_auto_log=False)

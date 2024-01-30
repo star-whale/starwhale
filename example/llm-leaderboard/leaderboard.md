@@ -15,6 +15,8 @@ Current supported LLMs:
 - chatglm 6b
 - chatglm2 6b
 - aquila 7b/7b-chat
+- mistral-7b-instruct
+- mistral-8*7b-instruct
 
 ## Build Starwhale Runtime
 
