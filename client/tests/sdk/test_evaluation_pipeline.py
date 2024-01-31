@@ -39,10 +39,29 @@ class BatchDataHandler(PipelineHandler):
     def __init__(self) -> None:
         super().__init__(predict_batch_size=2)
 
-    def predict(self, data: t.List[t.Dict]) -> t.Dict:
+    def predict(self, data: t.List[t.Dict]) -> t.List:
         assert isinstance(data, list)
         assert isinstance(data[0]["image"], GrayscaleImage)
-        return {"result": "ok"}
+        return [{"result": "ok"}]
+
+
+class BatchDataHandlerWithoutReturn(PipelineHandler):
+    def __init__(self) -> None:
+        super().__init__(predict_batch_size=10)
+
+    def predict(self, data: t.List[t.Dict]) -> None:
+        assert isinstance(data, list)
+        assert isinstance(data[0]["image"], GrayscaleImage)
+
+
+class BatchDataHandlerReturnError(PipelineHandler):
+    def __init__(self) -> None:
+        super().__init__(predict_batch_size=10)
+
+    def predict(self, data: t.List[t.Dict]) -> t.Any:
+        assert isinstance(data, list)
+        assert isinstance(data[0]["image"], GrayscaleImage)
+        return 1
 
 
 class ExceptionHandler(PipelineHandler):
@@ -407,26 +426,44 @@ class TestModelPipelineHandler(TestCase):
             yield _status_dir, m_log_result
 
     def test_ppl_with_dataset_head(self) -> None:
-        with self._mock_ppl_prepare_data(dataset_head=10) as (status_dir, m_log_result):
+        with self._mock_ppl_prepare_data(dataset_head=10) as (_, m_log_result):
             with SimpleHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
             assert m_log_result.call_count == 10
 
     def test_ppl_with_batch_input(self) -> None:
-        with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
+        with self._mock_ppl_prepare_data(dataset_head=10) as (_, m_log_result):
             with BatchDataHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
+            assert m_log_result.call_count == 10
+
+    def test_ppl_with_batch_input_return_error(self) -> None:
+        with self._mock_ppl_prepare_data(dataset_head=10):
+            with BatchDataHandlerReturnError() as _handler:
+                with self.assertRaisesRegex(
+                    TypeError,
+                    "predict function must return list, tuple or None, but got 1",
+                ):
+                    _handler._starwhale_internal_run_predict()
+
+    def test_ppl_with_batch_input_no_return(self) -> None:
+        with self._mock_ppl_prepare_data(dataset_head=10) as (_, m_log_result):
+            with BatchDataHandlerWithoutReturn() as _handler:
+                _handler._starwhale_internal_run_predict()
+
+            assert m_log_result.call_count == 0
+
     def test_ppl_with_no_predict_log(self) -> None:
-        with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
+        with self._mock_ppl_prepare_data() as (_, m_log_result):
             with NoLogHandler() as _handler:
                 _handler._starwhale_internal_run_predict()
 
             m_log_result.assert_not_called()
 
     def test_ppl_with_exception(self) -> None:
-        with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
+        with self._mock_ppl_prepare_data() as (status_dir, _):
             with self.assertRaisesRegex(Exception, "predict test exception"):
                 with ExceptionHandler() as _handler:
                     _handler._starwhale_internal_run_predict()
