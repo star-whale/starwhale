@@ -344,6 +344,13 @@ class PipelineHandler(metaclass=ABCMeta):
                             dataset_info=dataset_info,
                             dataset_uri=_uri,
                         )
+
+                        if _results is not None and not isinstance(
+                            _results, (list, tuple)
+                        ):
+                            raise TypeError(
+                                f"predict function must return list, tuple or None, but got {_results}"
+                            )
                     else:
                         _results = [
                             self._do_predict(
@@ -365,12 +372,13 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     _exception = None
 
-                if len(rows) != len(_results):
+                if _results is not None and len(rows) != len(_results):
                     console.warn(
                         f"The number of results({len(_results)}) is not equal to the number of rows({len(rows)})"
                         "maybe batch predict does not return the expected results or ignore some predict exceptions"
                     )
 
+                _results = _results or []
                 for (_idx, _features), _result in zip(rows, _results):
                     _idx_with_ds = f"{idx_prefix}{join_str}{_idx}"
                     _duration = time.time() - _start
@@ -388,6 +396,9 @@ class PipelineHandler(metaclass=ABCMeta):
                             "duration_seconds": _duration,
                         }
                     )
+
+                    if _result is None:
+                        continue
 
                     self._log_predict_result(
                         features=_features,
