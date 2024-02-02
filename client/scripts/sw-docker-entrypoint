@@ -75,7 +75,7 @@ run() {
         --uri="${SW_MODEL_URI}" --version="${SW_JOB_VERSION}" \
         --log-project="${SW_PROJECT_URI}" \
         --forbid-snapshot \
-        ${runtime_args} -- "${SW_TASK_EXTRA_CMD_ARGS}" || exit 1
+        ${runtime_args} -- ${SW_TASK_EXTRA_CMD_ARGS} || exit 1
 }
 
 serve() {
