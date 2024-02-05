@@ -83,10 +83,13 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         server-driver:
           - "docker-compose"
           - "minikube"
         exclude:
+          - python-version: "3.12"
+            server-driver: "docker-compose"
           - python-version: "3.10"
             server-driver: "docker-compose"
           - python-version: "3.9"

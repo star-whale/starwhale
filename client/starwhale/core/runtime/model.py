@@ -140,7 +140,7 @@ _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
 
 _SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
 _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
-_SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+_SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 
 # workaround popular libs with some setup_requires dependencies in the setup.py(pip)
 _SUPPORT_PIP_SETUP_REQUIRES_LIBS = {

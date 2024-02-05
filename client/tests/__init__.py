@@ -1,7 +1,10 @@
 import os
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
+
+import pytest
 
 from starwhale.utils import config as sw_config
 from starwhale.consts import ENV_SW_CLI_CONFIG, ENV_SW_LOCAL_STORAGE
@@ -9,6 +12,12 @@ from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.api._impl.data_store import LocalDataStore
 
 ROOT_DIR = os.path.dirname(__file__)
+
+# TODO: wait for pytorch and tensorflow release for python3.11
+skip_py312 = pytest.mark.skipif(
+    sys.version_info >= (3, 12),
+    reason="skip python3.12, because tensorflow and pytorch don't release the related wheel package.",
+)
 
 
 def get_predefined_config_yaml() -> str:

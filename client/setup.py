@@ -10,12 +10,13 @@ install_requires = [
     # importlib-metadata supplies a backport of 'importlib.metadata'; Python 3.8 makes 'importlib' part of the standard lib.
     "importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'",
     "attrs>=21.4.0",
-    "pyyaml==6.0",
+    "pyyaml==6.0.1",
     "cattrs>=1.7.1",
     "requests>=2.1.0",
     "requests-toolbelt>=0.9.0",
     "loguru==0.6.0",
-    "conda-pack==0.6.0",
+    "conda-pack==0.7.1; python_version >= '3.12'",
+    "conda-pack==0.6.0; python_version < '3.12'",
     "virtualenv>=13.0.0",
     "fs>=2.4.0",
     "typing-extensions>=4.0.0",
@@ -103,7 +104,7 @@ setup(
       sw = starwhale.cli:cli
       starwhale = starwhale.cli:cli
       """,
-    python_requires=">=3.7, <3.12",
+    python_requires=">=3.7, <3.13",
     scripts=[
         "scripts/sw-docker-entrypoint",
     ],
@@ -119,6 +120,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",

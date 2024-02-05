@@ -65,7 +65,7 @@ def model_cmd(ctx: click.Context) -> None:
     "-t",
     "--tag",
     multiple=True,
-    help="model tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+    help="model tags, the option can be used multiple times. `latest` and `^v\\d+$` tags are reserved tags.",
 )
 @click.option(
     "--package-runtime/--no-package-runtime",
@@ -262,7 +262,7 @@ def _copy(
     DEST: project uri or model uri with name.
 
     In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
-    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+    `latest` and `^v\\d+$` are the system builtin tags, they are ignored automatically.
 
     When the tags are already used for the other model version in the dest instance, you should use `--force` option or adjust the tags.
 

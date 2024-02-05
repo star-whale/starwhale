@@ -7,11 +7,11 @@ from unittest.mock import patch, MagicMock
 
 import numpy
 import numpy as np
-import torch
 from PIL import Image as PILImage
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from tests import skip_py312
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
 from starwhale.utils.error import FieldTypeOrValueError
@@ -37,6 +37,11 @@ from starwhale.base.data_type import (
     COCOObjectAnnotation,
 )
 from starwhale.base.uri.instance import Instance
+
+try:
+    import torch
+except ImportError:
+    torch = None
 
 
 class TestDataType(TestCase):
@@ -120,6 +125,7 @@ class TestDataType(TestCase):
         assert len(s) == 0
         assert s.to_raw_data() == []
 
+    @skip_py312
     def test_numpy_binary(self) -> None:
         np_array = np.array([[1.008, 6.94, 22.990], [39.098, 85.468, 132.91]])
         b = NumpyBinary(np_array.tobytes(), np_array.dtype, np_array.shape)
@@ -227,7 +233,8 @@ class TestDataType(TestCase):
         assert _asdict["y"] == 2
         assert _asdict["width"] == 3
         assert _asdict["height"] == 4
-        assert torch.equal(bbox.to_tensor(), torch.Tensor([1, 2, 3, 4]))
+        if torch is not None:
+            assert torch.equal(bbox.to_tensor(), torch.Tensor([1, 2, 3, 4]))
         _bout = bbox.to_bytes()
         assert isinstance(_bout, bytes)
         _array = numpy.frombuffer(_bout, dtype=numpy.float64)
@@ -257,7 +264,10 @@ class TestDataType(TestCase):
         assert _asdict["bbox_b"]["y"] == 4
         assert _asdict["bbox_b"]["width"] == 3
         assert _asdict["bbox_b"]["height"] == 4
-        assert torch.equal(bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]]))
+        if torch is not None:
+            assert torch.equal(
+                bbox.to_tensor(), torch.Tensor([[1, 2, 3, 4], [3, 4, 3, 4]])
+            )
         _bout = bbox.to_bytes()
         assert isinstance(_bout, bytes)
         _array = numpy.frombuffer(_bout, dtype=numpy.float64).reshape(

@@ -921,12 +921,12 @@ class Dataset:
         force_add_tags: bool = False,
         ignore_add_tags_errors: bool = False,
     ) -> str:
-        """Commit into dataset
+        """Commit into dataset.
         Commit will flush and generate a version of the dataset. At the same time, commit
         operation will also generate auto-increment tag, such as v0, v1, v2. Only one commit is allowed.
 
         Arguments:
-            tags: (list(str), optional) Specify the tags for the version. Default is None. `latest` and `^v\d+$` tags are reserved tags.
+            tags: (list(str), optional) Specify the tags for the version. Default is None. `latest` and `^v\\d+$` tags are reserved tags.
             message: (str, optional) Commit message. Default is empty str.
             force_add_tags: (bool, optional) Force to add tags. Default is False.
             ignore_add_tags_errors: (bool, optional) Ignore add tags errors. Default is False.
@@ -1104,7 +1104,7 @@ class Dataset:
               `patch` mode: only update the changed rows and columns for the remote dataset;
               `overwrite` mode: update records and delete extraneous rows from the remote dataset
             ignore_tags: (list(str), optional) ignore tags when copying.
-              In default, copy dataset with all user custom tags. `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+              In default, copy dataset with all user custom tags. `latest` and `^v\\d+$` are the system builtin tags, they are ignored automatically.
               When the tags are already used for the other dataset version in the dest instance, you should use `force` option or adjust the tags.
 
         Returns:
@@ -1317,7 +1317,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
-            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\\d+$` tags are reserved tags.
             encoding: (str, optional) The encoding used to decode the input file. The default is None.
                 encoding does not support text parameter.
 
@@ -1484,7 +1484,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
-            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\\d+$` tags are reserved tags.
             delimiter: (str, optional) A one-character string used to separate fields. It defaults to ','.
             quotechar: (str, optional) A one-character string used to quote fields containing special characters,
               such as the delimiter or quotechar, or which contain new-line characters. It defaults to '"'.
@@ -1562,7 +1562,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
-            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\\d+$` tags are reserved tags.
 
         Returns:
             A Dataset Object
@@ -1690,7 +1690,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
-            tags: (list(str), optional) The tags for the dataset version. `latest` and `^v\d+$` tags are reserved tags.
+            tags: (list(str), optional) The tags for the dataset version. `latest` and `^v\\d+$` tags are reserved tags.
 
         Returns:
             A Dataset Object.
