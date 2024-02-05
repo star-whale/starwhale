@@ -440,6 +440,24 @@ class FlushRequest(SwBaseModel):
     pass
 
 
+class CreateCheckpointRequest(SwBaseModel):
+    table: str
+    user_data: Optional[str] = Field(None, alias='userData')
+
+
+class CheckpointVo(SwBaseModel):
+    id: str
+    created_time: int = Field(..., alias='createdTime')
+    row_count: int = Field(..., alias='rowCount')
+    user_data: Optional[str] = Field(None, alias='userData')
+
+
+class ResponseMessageCheckpointVo(SwBaseModel):
+    code: str
+    message: str
+    data: CheckpointVo
+
+
 class InitUploadBlobRequest(SwBaseModel):
     content_md5: str = Field(..., alias='contentMd5')
     content_length: int = Field(..., alias='contentLength')
@@ -1149,6 +1167,12 @@ class PanelPluginVo(SwBaseModel):
 
 class RuntimeSuggestionVo(SwBaseModel):
     runtimes: Optional[List[RuntimeVersionVo]] = None
+
+
+class ResponseMessageListCheckpointVo(SwBaseModel):
+    code: str
+    message: str
+    data: List[CheckpointVo]
 
 
 class UserRoleDeleteRequest(UserCheckPasswordRequest):
