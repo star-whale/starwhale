@@ -6,9 +6,9 @@ gradio >= 3.37.0
 scikit-learn
 einops
 sentencepiece
-starwhale>=0.5.10
+starwhale>=0.6.12
+vllm >= 0.2.7
 transformers_stream_generator
 numpy
 tiktoken
 scipy
-flash-attn

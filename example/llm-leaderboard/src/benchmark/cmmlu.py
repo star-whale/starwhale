@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
+import random
 import typing as t
 
-from starwhale import dataset
 from starwhale.utils.debug import console
 from starwhale.base.uri.resource import Resource
 
@@ -79,11 +79,97 @@ class Cmmlu(BenchmarkBase):
         if few_shot <= 0:
             return ""
 
-        ds = dataset(dataset_uri)
+        # simplify samples with some fixed questions
+        samples_features = [
+            {
+                "question": "病毒体核心的主要物质是",
+                "a": "类脂",
+                "b": "核酸",
+                "c": "蛋白质",
+                "d": "磷酸",
+                "answer": "B",
+            },
+            {
+                "question": "流行病学属于什么范畴",
+                "a": "临床医学",
+                "b": "生物医学",
+                "c": "基础医学",
+                "d": "预防医学",
+                "answer": "D",
+            },
+            {
+                "question": "下列选项中，属于处分行为的是",
+                "a": "捐助行为",
+                "b": "抛弃所有权的行为",
+                "c": "签订货物买卖合同",
+                "d": "委托行为",
+                "answer": "B",
+            },
+            {
+                "question": "对累犯从重处罚的刑罚制度，体现了我国刑法的",
+                "a": "罪刑法定原则",
+                "b": "惩罚与教育相结合原则",
+                "c": "刑法适用平等原则",
+                "d": "罪责刑相适应原则",
+                "answer": "D",
+            },
+            {
+                "question": "犯罪分子具有刑法规定的减轻处罚情节的，应当在（）判处刑罚。",
+                "a": "法定刑幅度内按照最低刑",
+                "b": "法定最高刑以下",
+                "c": "法定刑以下",
+                "d": "法定刑以内",
+                "answer": "C",
+            },
+            {
+                "question": "下列短语中，是定中短语的是",
+                "a": "打扫干净",
+                "b": "操作方法",
+                "c": "张华同学",
+                "d": "已经完成",
+                "answer": "B",
+            },
+            {
+                "question": "在下面重叠的例子中，表示“适度、适中”意义的是",
+                "a": "白白的",
+                "b": "坐坐",
+                "c": "客客气气的",
+                "d": "散散步",
+                "answer": "A",
+            },
+            {
+                "question": "“员、祖、乡、分、妊、严”中包含的自由语素是",
+                "a": "乡、分、严",
+                "b": "祖、分、严",
+                "c": "祖、乡、分",
+                "d": "员、分、妊",
+                "answer": "A",
+            },
+            {
+                "question": "必然王国和自由王国是社会发展的",
+                "a": "两条不同的道路",
+                "b": "两种不同的理想",
+                "c": "两种不同的状态",
+                "d": "两种不同的选择",
+                "answer": "C",
+            },
+            {
+                "question": "在垄断资本主义阶段占统治地位的资本是",
+                "a": "工业资本",
+                "b": "金融资本",
+                "c": "农业资本",
+                "d": "银行资本",
+                "answer": "B",
+            },
+        ]
+
+        random.shuffle(samples_features)
         samples = []
         total = 0
-        for i in range(0, few_shot):
-            features = ds[f"{subject}/dev/{i}"].features
+        idx = 0
+        for _ in range(0, few_shot):
+            features = samples_features[idx]
+            idx = (idx + 1) % len(samples_features)
             question = self.generate_question(features, include_answer=True)
             total += len_tokens(question)
             if total > max_length:
@@ -120,6 +206,10 @@ class Cmmlu(BenchmarkBase):
             match = re.search(pattern, content)
             if match:
                 return match.group(index)
+
+        m = re.findall(r"[ABCD]", content)
+        if len(m) >= 1:
+            return m[0]
 
         raise ValueError(f"cannot ingest ABCD choice from {content}")
 
