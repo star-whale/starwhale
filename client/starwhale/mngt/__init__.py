@@ -164,7 +164,7 @@ def check() -> None:
         out = subprocess.check_output(
             ["docker", "compose", "version", "--short"], stderr=subprocess.STDOUT
         )
-        return out.decode().strip()
+        return out.decode().strip().split('-')[0]
 
     dependencies: t.List[_Dependency] = [
         _Dependency(
