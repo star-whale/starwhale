@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 import org.springframework.validation.annotation.Validated;
 
 @Data
@@ -30,5 +31,6 @@ public class SystemVersionVo implements Serializable {
 
     private String id;
 
+    @NonNull
     private String version;
 }
