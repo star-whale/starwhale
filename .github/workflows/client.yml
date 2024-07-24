@@ -100,7 +100,7 @@ jobs:
           - "3.10"
           - "3.11"
         os:
-          - macos-latest
+          - macos-13 # TODO: macos-latest is switched to arm64, we need to adjust ut for arm64 macos. For now, we use macos-13 as a workaround.
           - ubuntu-latest
     runs-on: ${{ matrix.os }}
     defaults:
@@ -168,12 +168,12 @@ jobs:
           - "3.10"
           - "3.11"
         os:
-          - macos-latest
+          - macos-13 # TODO: macos-latest is switched to arm64, we need to adjust ut for arm64 macos. For now, we use macos-13 as a workaround.
           - ubuntu-latest
         exclude:
           # https://github.com/pytorch/pytorch/issues/86566
           # pytorch does not release python 3.11 wheel package for macosx os yet.
-          - os: macos-latest
+          - os: macos-13 # TODO: macos-latest is switched to arm64, we need to adjust ut for arm64 macos. For now, we use macos-13 as a workaround.
             python-version: "3.11"
     runs-on: ${{ matrix.os }}
     defaults:
