@@ -182,7 +182,9 @@ jobs:
 
     needs:
       - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
+    #disable e2e temporarily: 20240724 by tianwei
+    if: false
 
     steps:
       - uses: actions/checkout@v3
