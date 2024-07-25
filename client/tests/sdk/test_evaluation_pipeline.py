@@ -539,7 +539,7 @@ class TestModelPipelineHandler(TestCase):
             try:
                 self.fs.add_real_directory(i)
             except OSError as e:
-                if e.errno not in [errno.EEXIST, errno.ENOENT]:
+                if e.errno not in [errno.EEXIST, errno.ENOENT, errno.EACCES]:
                     raise e
         import numpy as np
         import torch

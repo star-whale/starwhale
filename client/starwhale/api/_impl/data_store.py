@@ -457,7 +457,7 @@ _TYPE_DICT: Dict[Any, SwScalarType] = {
     int: INT64,
     np.float16: FLOAT16,
     np.float32: FLOAT32,
-    np.float_: FLOAT64,
+    np.float64: FLOAT64,
     float: FLOAT64,
     np.bool_: BOOL,
     bool: BOOL,
