@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
@@ -13,6 +14,15 @@ class TestCloudBlobCache(TestCase):
         )
 
         gethostbyname_ex.return_value = ("localhost", [], ["1", "2", "3"])
+
+        os.environ["SW_ENABLE_BLOB_CACHE"] = "false"
+        cloud_blob_cache.init()
+        iter = cloud_blob_cache.replace_url("https://t/other?a=1", True)
+        for _ in range(10):
+            self.assertEqual(next(iter), "https://t/other?a=1")
+
+        cloud_blob_cache._servers = None
+        os.environ["SW_ENABLE_BLOB_CACHE"] = "true"
         cloud_blob_cache.init()
         iter = cloud_blob_cache.replace_url("https://t/other?a=1", True)
         for _ in range(10):

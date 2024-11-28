@@ -19,8 +19,11 @@ _servers: t.List[_Server] | None = None
 
 
 def init() -> None:
+    enable_blob_cache = os.getenv("SW_ENABLE_BLOB_CACHE", "false").lower() == "true"
     global _servers
-    if _servers is None:
+    if not enable_blob_cache:
+        _servers = []
+    elif _servers is None:
         try:
             _servers = [
                 _Server(ip) for ip in socket.gethostbyname_ex(_pseudo_host_name)[2]
