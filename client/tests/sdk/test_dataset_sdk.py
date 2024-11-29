@@ -2033,7 +2033,6 @@ class TestTensorflow(_DatasetSDKTestBase):
             td["map_list"]["a"]["a"][0][0], numpy.array(b"", dtype=numpy.bytes_)
         )
 
-    @pytest.mark.filterwarnings("ignore::numpy.VisibleDeprecationWarning")
     def test_inspect_exceptions(self) -> None:
         import starwhale.integrations.tensorflow.dataset as tf_dataset
 
