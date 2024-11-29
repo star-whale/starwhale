@@ -504,7 +504,7 @@ class StatisticsVo(SwBaseModel):
 
 class SystemVersionVo(SwBaseModel):
     id: Optional[str] = None
-    version: Optional[str] = None
+    version: str
 
 
 class FeaturesVo(SwBaseModel):
