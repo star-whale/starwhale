@@ -37,7 +37,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
@@ -104,6 +103,13 @@ jobs:
           # TODO: macos-latest is switched to arm64, we need to adjust ut for arm64 macos. For now, we use macos-13 as a workaround.
           # TODO: codecov always fail on macOS, temporarily disable
           - ubuntu-latest
+        exclude:
+          # ubuntu-lastest is refer to ubuntu 24.04, but the python action does not support 3.7 on ubuntu 24.04
+          # https://github.com/actions/runner-images/issues/10636
+          # https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+          - os: ubuntu-latest
+            python-version: "3.7.16"
+
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -177,6 +183,12 @@ jobs:
           # pytorch does not release python 3.11 wheel package for macosx os yet.
           - os: macos-13 # TODO: macos-latest is switched to arm64, we need to adjust ut for arm64 macos. For now, we use macos-13 as a workaround.
             python-version: "3.11"
+          # ubuntu-lastest is refer to ubuntu 24.04, but the python action does not support 3.7 on ubuntu 24.04
+          # https://github.com/actions/runner-images/issues/10636
+          # https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+          - os: ubuntu-latest
+            python-version: "3.7"
+
     runs-on: ${{ matrix.os }}
     defaults:
       run:
