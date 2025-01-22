@@ -28,7 +28,6 @@ install_requires = [
     # Python 3.11 needs dill >= 0.3.6
     "dill>=0.3.6",
     "packaging>=21.3",
-    "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1,<=8.3.0",
     # for system monitor
@@ -49,6 +48,7 @@ install_requires = [
     "importlib_resources",
     # workaround: email-validator 2.1.0 has a syntax error in python 3.7, but the email-validator is necessary for fastapi.
     "email-validator <= 2.0.0; python_version < '3.8'",
+    "semver",
 ]
 
 extras_require = {

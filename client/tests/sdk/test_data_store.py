@@ -29,6 +29,12 @@ from starwhale.api._impl.data_store import (
     TableWriterException,
     datastore_max_dirty_records,
 )
+from starwhale.base.client.models.models import (
+    RecordRowDesc,
+    RecordCellDesc,
+    DataStoreValueType,
+    UpdateTableEmbeddedRequest,
+)
 
 
 class TestBasicFunctions(BaseTestCase):
@@ -796,30 +802,22 @@ class TestLocalDataStore(BaseTestCase):
         with self.assertRaises(RuntimeError, msg="invalid column name"):
             ds.update_table(
                 "test",
-                data_store.TableSchema(
-                    "+", [data_store.ColumnSchema("+", data_store.INT64)]
-                ),
-                [{"+": 0}],
+                key_column="+",
+                schema=None,
+                records=[{"+": 0}],
             )
         with self.assertRaises(RuntimeError, msg="no key field"):
             ds.update_table(
                 "test",
-                data_store.TableSchema(
-                    "k", [data_store.ColumnSchema("k", data_store.INT64)]
-                ),
-                [{"a": 0}],
+                key_column="k",
+                schema=None,
+                records=[{"a": 0}],
             )
         ds.update_table(
             "project/a_b/eval/test-0",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
+            key_column="k",
+            schema=None,
+            records=[{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
         )
         self.assertEqual(
             [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
@@ -832,15 +830,9 @@ class TestLocalDataStore(BaseTestCase):
         )
         ds.update_table(
             "test",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
+            key_column="k",
+            schema=None,
+            records=[{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
         )
         self.assertEqual(
             [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
@@ -849,15 +841,9 @@ class TestLocalDataStore(BaseTestCase):
         )
         rev = ds.update_table(
             "test",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {"k": 1, "-": True},
                 {"k": 2, "a": None, "b": "2"},
                 {"k": 3, "-": True},
@@ -888,16 +874,9 @@ class TestLocalDataStore(BaseTestCase):
         )
         ds.update_table(
             "test",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                    data_store.ColumnSchema("c", data_store.INT64),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {"k": 0, "-": True},
                 {"k": 1, "a": "1", "b": "1"},
                 {"k": 3, "a": "33", "c": 3},
@@ -929,44 +908,9 @@ class TestLocalDataStore(BaseTestCase):
 
         ds.update_table(
             "test",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema(
-                        "x", data_store.SwListType(data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "xx", data_store.SwTupleType(data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "xxx", data_store.SwMapType(data_store.STRING, data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "y", data_store._get_type(data_store.Link("a", "b", "c"))
-                    ),
-                    data_store.ColumnSchema(
-                        "z",
-                        data_store.SwListType(
-                            data_store._get_type(data_store.Link("a", "b", "c"))
-                        ),
-                    ),
-                    data_store.ColumnSchema(
-                        "zz",
-                        data_store.SwTupleType(
-                            data_store._get_type(data_store.Link("a", "b", "c"))
-                        ),
-                    ),
-                    data_store.ColumnSchema(
-                        "zzz",
-                        data_store.SwMapType(
-                            data_store.STRING,
-                            data_store._get_type(data_store.Link("a", "b", "c")),
-                        ),
-                    ),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {
                     "k": 0,
                     "x": [1, 2, 3],
@@ -1022,15 +966,9 @@ class TestLocalDataStore(BaseTestCase):
             for i in range(100 * (index - 1), 100 * index):
                 ds.update_table(
                     "project/a_b/eval/test-m",
-                    data_store.TableSchema(
-                        "k",
-                        [
-                            data_store.ColumnSchema("k", data_store.INT64),
-                            data_store.ColumnSchema("a", data_store.STRING),
-                            data_store.ColumnSchema("b", data_store.STRING),
-                        ],
-                    ),
-                    [{"k": i, "a": "0", "b": "0"}],
+                    key_column="k",
+                    schema=None,
+                    records=[{"k": i, "a": "0", "b": "0"}],
                 )
             return True
 
@@ -1062,21 +1000,26 @@ class TestLocalDataStore(BaseTestCase):
         tables = ds.list_tables([prefix])
         assert tables == []
 
-        schema = data_store.TableSchema(
-            "k", [data_store.ColumnSchema("k", data_store.INT64)]
+        ds.update_table(
+            f"{prefix}/labels", key_column="k", schema=None, records=[{"k": 0}]
         )
-        ds.update_table(f"{prefix}/labels", schema, [{"k": 0}])
         assert ds.list_tables([prefix]) == [f"{prefix.strip('/')}/labels"]
 
         # release tables in memory and reload
         ds.tables.clear()
-        ds.update_table(f"{prefix}/labels", schema, [{"k": 1}])
+        ds.update_table(
+            f"{prefix}/labels", key_column="k", schema=None, records=[{"k": 1}]
+        )
         assert ds.list_tables([prefix]) == [f"{prefix.strip('/')}/labels"]
 
-        ds.update_table(f"{prefix}/results", schema, [{"k": 0}])
+        ds.update_table(
+            f"{prefix}/results", key_column="k", schema=None, records=[{"k": 0}]
+        )
 
         for i in range(0, 3):
-            ds.update_table(f"{prefix}/roc/{i}", schema, [{"k": 0}])
+            ds.update_table(
+                f"{prefix}/roc/{i}", key_column="k", schema=None, records=[{"k": 0}]
+            )
 
         tables = ds.list_tables([prefix])
         assert set(tables) == {
@@ -1094,15 +1037,9 @@ class TestLocalDataStore(BaseTestCase):
         ds = data_store.LocalDataStore(self.datastore_root)
         ds.update_table(
             "1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {"k": 0, "a": "0", "b": "0"},
                 {"k": 1, "a": "1", "b": "1"},
                 {"k": 2, "b": "2"},
@@ -1111,14 +1048,9 @@ class TestLocalDataStore(BaseTestCase):
         )
         ds.update_table(
             "2",
-            data_store.TableSchema(
-                "a",
-                [
-                    data_store.ColumnSchema("a", data_store.INT64),
-                    data_store.ColumnSchema("b", data_store.STRING),
-                ],
-            ),
-            [
+            key_column="a",
+            schema=None,
+            records=[
                 {"a": 0, "b": "0"},
                 {"a": 1, "b": "1"},
                 {"a": 2, "b": "2"},
@@ -1127,14 +1059,9 @@ class TestLocalDataStore(BaseTestCase):
         )
         ds.update_table(
             "3",
-            data_store.TableSchema(
-                "a",
-                [
-                    data_store.ColumnSchema("a", data_store.INT64),
-                    data_store.ColumnSchema("x", data_store.STRING),
-                ],
-            ),
-            [
+            key_column="a",
+            schema=None,
+            records=[
                 {"a": 0, "x": "0"},
                 {"a": 1, "x": "1"},
                 {"a": 2, "x": "2"},
@@ -1143,67 +1070,28 @@ class TestLocalDataStore(BaseTestCase):
         )
         ds.update_table(
             "4",
-            data_store.TableSchema(
-                "x",
-                [
-                    data_store.ColumnSchema("x", data_store.STRING),
-                ],
-            ),
-            [{"x": "0"}, {"x": "1"}, {"x": "2"}, {"x": "3"}],
+            key_column="x",
+            schema=None,
+            records=[{"x": "0"}, {"x": "1"}, {"x": "2"}, {"x": "3"}],
         )
         ds.update_table(
             "5",
-            data_store.TableSchema(
-                "a",
-                [
-                    data_store.ColumnSchema("a", data_store.INT64),
-                    data_store.ColumnSchema("x", data_store.STRING),
-                ],
-            ),
-            [{"a": 0, "x": "10"}, {"a": 1}, {"a": 2, "x": "12"}, {"a": 3, "x": "13"}],
+            key_column="a",
+            schema=None,
+            records=[
+                {"a": 0, "x": "10"},
+                {"a": 1},
+                {"a": 2, "x": "12"},
+                {"a": 3, "x": "13"},
+            ],
         )
         with open(os.path.join(self.datastore_root, "6"), "w"):
             pass
         ds.update_table(
             "7",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema(
-                        "x", data_store.SwListType(data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "xx", data_store.SwTupleType(data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "xxx", data_store.SwMapType(data_store.STRING, data_store.INT64)
-                    ),
-                    data_store.ColumnSchema(
-                        "y", data_store._get_type(data_store.Link("a", "b", "c"))
-                    ),
-                    data_store.ColumnSchema(
-                        "z",
-                        data_store.SwListType(
-                            data_store._get_type(data_store.Link("a", "b", "c"))
-                        ),
-                    ),
-                    data_store.ColumnSchema(
-                        "zz",
-                        data_store.SwTupleType(
-                            data_store._get_type(data_store.Link("a", "b", "c"))
-                        ),
-                    ),
-                    data_store.ColumnSchema(
-                        "zzz",
-                        data_store.SwMapType(
-                            data_store.STRING,
-                            data_store._get_type(data_store.Link("a", "b", "c")),
-                        ),
-                    ),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {
                     "k": 0,
                     "x": [1, 2, 3],
@@ -1357,14 +1245,9 @@ class TestLocalDataStore(BaseTestCase):
 
         ds.update_table(
             "1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("a", data_store.STRING),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {"k": 0, "a": None},
             ],
         )
@@ -1410,14 +1293,9 @@ class TestLocalDataStore(BaseTestCase):
 
         ds.update_table(
             "1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("c", data_store.INT64),
-                ],
-            ),
-            [
+            key_column="k",
+            schema=None,
+            records=[
                 {"k": 0, "c": 1},
                 {"k": 1, "-": True},
             ],
@@ -1463,17 +1341,20 @@ class TestRemoteDataStore(unittest.TestCase):
     def setUp(self) -> None:
         self.ds = data_store.RemoteDataStore("http://test", "tt")
 
+    @patch("starwhale.base.client.api.data_store.DataStoreApi.update")
     @patch("starwhale.api._impl.data_store.requests.post")
-    def test_update_table(self, mock_post: Mock) -> None:
+    def test_update_table(self, mock_post: Mock, mock_api: Mock) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
             "code": "success",
             "message": "Success",
             "data": "fake revision",
         }
+        mock_api.return_value = "fake version"
         revision = self.ds.update_table(
             "t1",
-            data_store.TableSchema(
+            key_column=None,
+            schema=data_store.TableSchema(
                 "k",
                 [
                     data_store.ColumnSchema("k", data_store.INT64),
@@ -1481,7 +1362,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     data_store.ColumnSchema("z", data_store.FLOAT64),
                 ],
             ),
-            [
+            records=[
                 {"k": 1, "a": "1"},
                 {"k": 2, "a": "2"},
                 {"k": 3, "-": True},
@@ -1542,36 +1423,30 @@ class TestRemoteDataStore(unittest.TestCase):
             timeout=90,
         )
         self.ds.update_table(
-            "t1",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                ],
-            ),
-            [],
+            "t2",
+            key_column="k",
+            schema=None,
+            records=[{"k": "1"}],
         )
-        mock_post.assert_called_with(
-            "http://test/api/v1/datastore/updateTable",
-            json={
-                "tableName": "t1",
-                "tableSchemaDesc": {
-                    "keyColumn": "k",
-                    "columnSchemaList": [
-                        {"name": "k", "type": "INT64"},
-                    ],
-                },
-                "records": [],
-            },
-            headers={
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "tt",
-            },
-            timeout=90,
+        req = UpdateTableEmbeddedRequest(
+            table_name="t2",
+            key_column="k",
+            rows=[
+                RecordRowDesc(
+                    cells={
+                        "k": RecordCellDesc(
+                            data_store_value_type=DataStoreValueType.string,
+                            scalarValue="1",
+                        )
+                    }
+                )
+            ],
         )
+        mock_api.assert_called_with(req)
         self.ds.update_table(
             "t1",
-            data_store.TableSchema(
+            key_column=None,
+            schema=data_store.TableSchema(
                 "key",
                 [
                     data_store.ColumnSchema("key", data_store.INT64),
@@ -1655,7 +1530,7 @@ class TestRemoteDataStore(unittest.TestCase):
                     ),
                 ],
             ),
-            [
+            records=[
                 {
                     "key": 1,
                     "b": True,
@@ -2331,6 +2206,16 @@ class TestTableWriter(BaseTestCase):
             url="http://1.1.1.1/api/v1/datastore/updateTable",
             status_code=400,
         )
+        request_mock.request(
+            HTTPMethod.GET,
+            url="http://1.1.1.1/api/v1/system/version",
+            status_code=200,
+            json={
+                "data": {"version": "0.6.8"},
+                "code": "success",
+                "message": "success",
+            },
+        )
         remote_store = data_store.RemoteDataStore("http://1.1.1.1", "tt")
         remote_writer = data_store.TableWriter(
             "p/test", "k", remote_store, run_exceptions_limits=0
@@ -2371,6 +2256,16 @@ class TestTableWriter(BaseTestCase):
             HTTPMethod.POST,
             url="http://1.1.1.1/api/v1/datastore/updateTable",
             status_code=400,
+        )
+        request_mock.request(
+            HTTPMethod.GET,
+            url="http://1.1.1.1/api/v1/system/version",
+            status_code=200,
+            json={
+                "data": {"version": "0.6.8"},
+                "code": "success",
+                "message": "success",
+            },
         )
         remote_store = data_store.RemoteDataStore("http://1.1.1.1", "tt")
         remote_writer = data_store.TableWriter("p/test", "k", remote_store)
