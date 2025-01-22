@@ -59,7 +59,12 @@ from starwhale.utils.retry import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.models.base import SwBaseModel
-from starwhale.base.client.models.models import ColumnSchemaDesc, KeyValuePairSchema
+from starwhale.base.client.models.models import (
+    ColumnSchemaDesc,
+    KeyValuePairSchema,
+    CreateCheckpointRequest,
+)
+from starwhale.base.client.api.data_store import DataStoreApi
 
 datastore_manifest_file_name = "manifest.json"
 datastore_max_dirty_records = int(os.getenv("DATASTORE_MAX_DIRTY_RECORDS", "10000"))
@@ -2591,6 +2596,7 @@ class RemoteDataStore:
 
         self.instance_uri = instance_uri
         self.token = token
+        self.client = DataStoreApi(instance_uri, token)
 
     def __str__(self) -> str:
         return f"RemoteDataStore for {self.instance_uri}"
@@ -2710,13 +2716,15 @@ class RemoteDataStore:
         return ""
 
     def list_table_checkpoints(self, table_name: str) -> List[Checkpoint]:
-        return []
+        resp = self.client.list_checkpoints(table_name)
+        return [Checkpoint(revision=cp.id) for cp in resp]
 
-    def add_checkpoint(self, table_name: str, revision: str) -> None:
-        ...
+    def add_checkpoint(self, table_name: str) -> Checkpoint:
+        resp = self.client.create_checkpoint(CreateCheckpointRequest(table=table_name))
+        return Checkpoint(revision=resp.id)
 
     def remove_checkpoint(self, table_name: str, cp: Checkpoint) -> None:
-        ...
+        self.client.delete_checkpoint(table_name, cp.revision)
 
     def get_table_size(self, table_name: str, cp: Checkpoint | None = None) -> int:
         return 0
@@ -2724,7 +2732,7 @@ class RemoteDataStore:
 
 class Checkpoint(SwBaseModel):
     revision: str
-    created_at: int  # timestamp in milliseconds
+    created_at: Optional[int]  # timestamp in milliseconds
 
 
 class DataStore(Protocol):
@@ -2777,7 +2785,7 @@ class DataStore(Protocol):
     def list_table_checkpoints(self, table_name: str) -> List[Checkpoint]:
         ...
 
-    def add_checkpoint(self, table_name: str, revision: str) -> None:
+    def add_checkpoint(self, table_name: str) -> Checkpoint:
         ...
 
     def remove_checkpoint(self, table_name: str, cp: Checkpoint) -> None:
